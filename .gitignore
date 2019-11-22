@@ -1,3 +1,5 @@
 .vscode
 devel
 build
+.catkin_workspace
+CMakeLists.txt
