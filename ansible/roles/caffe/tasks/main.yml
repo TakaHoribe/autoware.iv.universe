@@ -1,0 +1,79 @@
+---
+- name: Caffe (install dependencies for building packages)
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items:
+    - libhdf5-serial-dev
+    - libgflags-dev
+    - libgoogle-glog-dev
+    - liblmdb-dev
+    - libleveldb-dev
+    - libsnappy-dev
+    - protobuf-compiler
+    - libatlas-base-dev
+
+- name: Caffe (clone repository)
+  become: no
+  git:
+    repo: https://github.com/BVLC/caffe.git
+    dest: "{{ role_path }}/caffe"
+
+- name: Caffe (make build dir)
+  become: no
+  file: 
+    path: "{{ role_path }}/caffe/{{ item }}"
+    state: directory
+  with_items:
+    - build
+
+- name: Caffe (cmake)
+  become: no
+  command: cmake .. chdir={{ role_path }}/caffe/build
+
+- name: Caffe (make all)
+  become: no
+  command: make all
+  args:
+    chdir: "{{ role_path }}/caffe/build"
+
+- name: Caffe (confirm install)
+  pause: prompt="install to /usr/local/caffe？ (y/n)"
+  register: yn
+
+- name: abort
+  fail: msg="Aborted!!"
+  when: yn.user_input != 'y'
+
+- name: Caffe (make install dir)
+  become: yes
+  file: 
+    path: "/usr/local/{{ item }}"
+    state: directory
+  with_items:
+    - caffe
+
+- name: Caffe (install pb header file)
+  become: yes
+  copy:
+    src: "{{ role_path }}/caffe/build/include"
+    dest: /usr/local/caffe/
+    mode: 0755
+  when: yn.user_input == 'y'
+
+- name: Caffe (install header files)
+  become: yes
+  copy:
+    src: "{{ role_path }}/caffe/include"
+    dest: /usr/local/caffe/
+    mode: 0755
+  when: yn.user_input == 'y'
+
+- name: Caffe (link lib files)
+  become: yes
+  copy:
+    src: "{{ role_path }}/caffe/build/lib"
+    dest: /usr/local/caffe/
+    mode: 0755
+  when: yn.user_input == 'y'
