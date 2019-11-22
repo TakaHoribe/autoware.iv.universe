@@ -25,7 +25,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool TruckCorrector::correct(autoware_msgs::Shape &shape_output,
+bool TruckCorrector::correct(autoware_perception_msgs::Shape &shape_output,
                        geometry_msgs::Pose &pose_output,
                        bool &orientaion_output)
 {

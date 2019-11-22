@@ -18,7 +18,7 @@
 
 #pragma once
 #include <unique_id/unique_id.h>
-#include <autoware_msgs/DynamicObject.h>
+#include <autoware_perception_msgs/DynamicObject.h>
 #include <geometry_msgs/Point.h>
 #include <ros/ros.h>
 
@@ -38,7 +38,7 @@ private:
 public:
   Tracker(const ros::Time &time, const int type);
   virtual ~Tracker(){};
-  bool updateWithMeasurement(const autoware_msgs::DynamicObject &object, const ros::Time &measurement_time);
+  bool updateWithMeasurement(const autoware_perception_msgs::DynamicObject &object, const ros::Time &measurement_time);
   bool updateWithoutMeasurement();
   int getType() { return type_; }
   int getNoMeasurementCount() { return no_measurement_count_; }
@@ -51,9 +51,9 @@ public:
    *　Pure virtual function
    */
 protected:
-  virtual bool measure(const autoware_msgs::DynamicObject &object, const ros::Time &time) = 0;
+  virtual bool measure(const autoware_perception_msgs::DynamicObject &object, const ros::Time &time) = 0;
 
 public:
-  virtual bool getEstimatedDynamicObject(const ros::Time &time, autoware_msgs::DynamicObject &object) = 0;
+  virtual bool getEstimatedDynamicObject(const ros::Time &time, autoware_perception_msgs::DynamicObject &object) = 0;
   virtual bool predict(const ros::Time &time) = 0;
 };

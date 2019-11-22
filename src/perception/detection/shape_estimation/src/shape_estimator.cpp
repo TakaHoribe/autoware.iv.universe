@@ -19,7 +19,7 @@
 
 #include "shape_estimation/shape_estimator.hpp"
 #include "shape_estimation/model_interface.hpp"
-#include "autoware_msgs/Semantic.h"
+#include "autoware_perception_msgs/Semantic.h"
 #include "model/bounding_box.hpp"
 #include "model/convex_hull.hpp"
 #include "model/cylinder.hpp"
@@ -39,13 +39,13 @@ ShapeEstimator::ShapeEstimator()
 }
 
 bool ShapeEstimator::getShapeAndPose(const int type, const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                                     autoware_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
+                                     autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
 {
   // check input
   if (cluster.empty())
     return false;
 
-  autoware_msgs::Shape shape;
+  autoware_perception_msgs::Shape shape;
   geometry_msgs::Pose pose;
   bool orientation;
 
@@ -74,23 +74,23 @@ bool ShapeEstimator::getShapeAndPose(const int type, const pcl::PointCloud<pcl::
 }
 
 bool ShapeEstimator::estimateShape(const int type, const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                                   autoware_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
+                                   autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
 {
   // estimate shape
   std::unique_ptr<ShapeEstimationModelInterface> model_ptr;
-  if (type == autoware_msgs::Semantic::CAR || type == autoware_msgs::Semantic::TRUCK || type == autoware_msgs::Semantic::BUS)
+  if (type == autoware_perception_msgs::Semantic::CAR || type == autoware_perception_msgs::Semantic::TRUCK || type == autoware_perception_msgs::Semantic::BUS)
   {
     model_ptr.reset(new BoundingBoxModel);
   }
-  else if (type == autoware_msgs::Semantic::PEDESTRIAN)
+  else if (type == autoware_perception_msgs::Semantic::PEDESTRIAN)
   {
     model_ptr.reset(new CylinderModel);
   }
-  else if (type == autoware_msgs::Semantic::MOTORBIKE)
+  else if (type == autoware_perception_msgs::Semantic::MOTORBIKE)
   {
     model_ptr.reset(new BoundingBoxModel);
   }
-  else if (type == autoware_msgs::Semantic::BICYCLE)
+  else if (type == autoware_perception_msgs::Semantic::BICYCLE)
   {
     model_ptr.reset(new BoundingBoxModel);
   }
@@ -103,18 +103,18 @@ bool ShapeEstimator::estimateShape(const int type, const pcl::PointCloud<pcl::Po
 }
 
 bool ShapeEstimator::applyFilter(const int type,
-                                 const autoware_msgs::Shape &shape_output, const geometry_msgs::Pose &pose_output, const bool &orientaion_output)
+                                 const autoware_perception_msgs::Shape &shape_output, const geometry_msgs::Pose &pose_output, const bool &orientaion_output)
 {
   std::unique_ptr<ShapeEstimationFilterInterface> filter_ptr;
-  if (type == autoware_msgs::Semantic::CAR)
+  if (type == autoware_perception_msgs::Semantic::CAR)
   {
     filter_ptr.reset(new CarFilter);
   }
-  else if (type == autoware_msgs::Semantic::BUS)
+  else if (type == autoware_perception_msgs::Semantic::BUS)
   {
     filter_ptr.reset(new BusFilter);
   }
-  else if (type == autoware_msgs::Semantic::TRUCK)
+  else if (type == autoware_perception_msgs::Semantic::TRUCK)
   {
     filter_ptr.reset(new TruckFilter);
   }
@@ -127,18 +127,18 @@ bool ShapeEstimator::applyFilter(const int type,
 }
 
 bool ShapeEstimator::applyCorrector(const int type,
-                                    autoware_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
+                                    autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output)
 {
   std::unique_ptr<ShapeEstimationCorrectorInterface> corrector_ptr;
-  if (type == autoware_msgs::Semantic::CAR)
+  if (type == autoware_perception_msgs::Semantic::CAR)
   {
     corrector_ptr.reset(new CarCorrector);
   }
-  else if (type == autoware_msgs::Semantic::BUS)
+  else if (type == autoware_perception_msgs::Semantic::BUS)
   {
     corrector_ptr.reset(new BusCorrector);
   }
-  else if (type == autoware_msgs::Semantic::TRUCK)
+  else if (type == autoware_perception_msgs::Semantic::TRUCK)
   {
     corrector_ptr.reset(new TruckCorrector);
   }

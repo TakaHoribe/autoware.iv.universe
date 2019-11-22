@@ -1,8 +1,8 @@
 #include <euclidean_cluster/euclidean_cluster_nodelet.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-#include <autoware_msgs/DynamicObjectWithFeature.h>
-#include <autoware_msgs/DynamicObjectWithFeatureArray.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeature.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -27,7 +27,7 @@ void EuclideanClusterNodelet::onInit()
     nh_ = getNodeHandle();
     pointcloud_sub_ = private_nh_.subscribe("input", 1, &EuclideanClusterNodelet::pointcloudCallback, this);
 
-    cluster_pub_ = private_nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("output", 10);
+    cluster_pub_ = private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
     debug_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("debug/clusters", 1);
 }
 
@@ -69,7 +69,7 @@ void EuclideanClusterNodelet::pointcloudCallback(const sensor_msgs::PointCloud2C
 
     // build output msg
     {
-        autoware_msgs::DynamicObjectWithFeatureArray output;
+        autoware_perception_msgs::DynamicObjectWithFeatureArray output;
         output.header = input_msg->header;
         for (std::vector<pcl::PointIndices>::const_iterator cluster_itr = cluster_indices.begin();
              cluster_itr != cluster_indices.end();
@@ -86,7 +86,7 @@ void EuclideanClusterNodelet::pointcloudCallback(const sensor_msgs::PointCloud2C
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
             sensor_msgs::PointCloud2 ros_pointcloud;
-            autoware_msgs::DynamicObjectWithFeature feature_object;
+            autoware_perception_msgs::DynamicObjectWithFeature feature_object;
             pcl::toROSMsg(*cloud_cluster, ros_pointcloud);
             ros_pointcloud.header = input_msg->header;
             feature_object.feature.cluster = ros_pointcloud;

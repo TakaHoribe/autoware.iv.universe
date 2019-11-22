@@ -19,7 +19,7 @@
 #pragma once
 
 #include <string>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 
 class ShapeEstimationCorrectorInterface
@@ -29,7 +29,7 @@ public:
 
   virtual ~ShapeEstimationCorrectorInterface(){};
 
-  virtual bool correct(autoware_msgs::Shape &shape_output,
+  virtual bool correct(autoware_perception_msgs::Shape &shape_output,
                        geometry_msgs::Pose &pose_output,
                        bool &orientaion_output) = 0;
 };

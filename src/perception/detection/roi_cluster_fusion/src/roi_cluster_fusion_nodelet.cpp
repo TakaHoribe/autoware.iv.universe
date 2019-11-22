@@ -60,7 +60,7 @@ void RoiClusterFusionNodelet::onInit()
     v_roi_sub_.resize(rois_number_);
     for (int id = 0; id < (int)v_roi_sub_.size(); ++id)
     {
-        v_roi_sub_.at(id) = std::make_shared<message_filters::Subscriber<autoware_msgs::DynamicObjectWithFeatureArray>>();
+        v_roi_sub_.at(id) = std::make_shared<message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray>>();
         v_roi_sub_.at(id)->subscribe(nh_, "rois" + std::to_string(id), 1);
     }
     // add dummy callback to enable passthrough filter
@@ -106,7 +106,7 @@ void RoiClusterFusionNodelet::onInit()
                                           std::placeholders::_7,
                                           std::placeholders::_8,
                                           std::placeholders::_9));
-    labeled_cluster_pub_ = nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 10);
+    labeled_cluster_pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 10);
 }
 
 void RoiClusterFusionNodelet::cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr &input_camera_info_msg, const int id)
@@ -114,22 +114,22 @@ void RoiClusterFusionNodelet::cameraInfoCallback(const sensor_msgs::CameraInfoCo
     m_camera_info_[id] = *input_camera_info_msg;
 }
 
-void RoiClusterFusionNodelet::fusionCallback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_cluster_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi0_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi1_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi2_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi3_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi4_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi5_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi6_msg,
-                                             const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi7_msg)
+void RoiClusterFusionNodelet::fusionCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_cluster_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi0_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi1_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi2_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi3_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi4_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi5_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi6_msg,
+                                             const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_roi7_msg)
 {
     // Guard
     if (labeled_cluster_pub_.getNumSubscribers() < 1)
         return;
 
     // build output msg
-    autoware_msgs::DynamicObjectWithFeatureArray output_msg;
+    autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
     output_msg = *input_cluster_msg;
 
     for (int id = 0; id < (int)v_roi_sub_.size(); ++id)
@@ -225,7 +225,7 @@ void RoiClusterFusionNodelet::fusionCallback(const autoware_msgs::DynamicObjectW
         }
 
         // calc iou
-        autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr input_roi_msg;
+        autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr input_roi_msg;
         if (id == 0)
             input_roi_msg = input_roi0_msg;
         else if (id == 1)
@@ -353,7 +353,7 @@ void RoiClusterFusionNodelet::fusionCallback(const autoware_msgs::DynamicObjectW
 
 #if 0
         // build output msg
-        autoware_msgs::DynamicObjectWithFeatureArray output_msg;
+        autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
         output_msg = *input_cluster_msg;
         // intrinsic
         Eigen::Matrix3d intrinsic;

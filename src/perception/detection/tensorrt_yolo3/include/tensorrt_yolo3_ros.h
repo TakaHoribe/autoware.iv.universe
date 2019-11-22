@@ -4,7 +4,7 @@
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include <autoware_msgs/DynamicObjectWithFeatureArray.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 
 // STL
 #include <string>
@@ -31,7 +31,7 @@ private:
   std::vector<Tn::Bbox> postProcessImg(std::vector<Yolo::Detection>& detections,
                                        const int classes, 
                                        cv::Mat& img, 
-                                       autoware_msgs::DynamicObjectWithFeatureArray & out_objects);
+                                       autoware_perception_msgs::DynamicObjectWithFeatureArray & out_objects);
   void doNms(std::vector<Yolo::Detection>& detections,int classes ,float nmsThresh);
   /* data */
 public:

@@ -75,7 +75,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
    roscpp
    roslib
 #    pcl_ros
-   autoware_msgs
+   autoware_perception_msgs
    cv_bridge
 #    tf2
 #    tf2_geometry_msgs
@@ -88,7 +88,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
    roscpp
    roslib
 #    pcl_ros
-   autoware_msgs
+   autoware_perception_msgs
    cv_bridge
 #    tf2
 #    tf2_geometry_msgs

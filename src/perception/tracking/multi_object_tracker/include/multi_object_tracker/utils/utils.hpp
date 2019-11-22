@@ -20,12 +20,12 @@
 #include "geometry_msgs/Polygon.h"
 #include "geometry_msgs/Vector3.h"
 #include <cmath>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 
 namespace utils
 {
 double getPolygonArea(const geometry_msgs::Polygon &footprint);
 double getRectangleArea(const geometry_msgs::Vector3 &dimensions);
 double getCircleArea(const geometry_msgs::Vector3 &dimensions);
-double getArea(const autoware_msgs::Shape &shape);
+double getArea(const autoware_perception_msgs::Shape &shape);
 } // namespace utils

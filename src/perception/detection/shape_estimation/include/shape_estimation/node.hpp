@@ -21,7 +21,7 @@
 #include <ros/ros.h>
 #include "shape_estimation/shape_estimator.hpp"
 #include "shape_estimation/map_corrector_node.hpp"
-#include "autoware_msgs/DynamicObjectWithFeatureArray.h"
+#include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
 
 class ShapeEstimationNode
 {
@@ -32,7 +32,7 @@ private: // ros
   ros::Subscriber sub_;
   bool use_map_correct_;
 
-  void callback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg);
+  void callback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg);
 
 private:
   ShapeEstimator estimator_;

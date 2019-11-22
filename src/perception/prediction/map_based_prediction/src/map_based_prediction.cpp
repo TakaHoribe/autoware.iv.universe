@@ -42,17 +42,17 @@ bool MapBasedPrediction::getNearestLane(const std::vector<LanePoint>& lane_point
   return flag;
 }
 
-bool MapBasedPrediction::doPrediction(const autoware_msgs::DynamicObjectArray& in_objects,
+bool MapBasedPrediction::doPrediction(const autoware_perception_msgs::DynamicObjectArray& in_objects,
                                       const std::vector<LanePoint>& lane_poitns,
-                                      autoware_msgs::DynamicObjectArray& out_objects)
+                                      autoware_perception_msgs::DynamicObjectArray& out_objects)
 {
   // std::cerr << "frame start  ***************" << std::endl;
   // std::cerr << "num input object " << in_objects->objects.size()<< std::endl;
   out_objects = in_objects;
   for (auto& object: out_objects.objects)
   {
-    if(object.semantic.type != autoware_msgs::Semantic::CAR &&
-       object.semantic.type != autoware_msgs::Semantic::BUS)
+    if(object.semantic.type != autoware_perception_msgs::Semantic::CAR &&
+       object.semantic.type != autoware_perception_msgs::Semantic::BUS)
     {
       continue;
     }
@@ -123,7 +123,7 @@ bool MapBasedPrediction::doPrediction(const autoware_msgs::DynamicObjectArray& i
         double current_s_velocity = object_velocity* std::cos(delta_theta);
         double target_s_position = goal_path.back().cumulated_s;
 
-        autoware_msgs::PredictedPath path;
+        autoware_perception_msgs::PredictedPath path;
 
         // for ego point
         const double height = object_pose.position.z;
@@ -158,7 +158,7 @@ bool MapBasedPrediction::doPrediction(const autoware_msgs::DynamicObjectArray& i
   return true;
 }
 
-bool MapBasedPrediction::normalizeLikelyhood(std::vector<autoware_msgs::PredictedPath>& paths)
+bool MapBasedPrediction::normalizeLikelyhood(std::vector<autoware_perception_msgs::PredictedPath>& paths)
 {
   // TODO: is could not be the smartest way
   double sum_confidence = 0;
@@ -182,7 +182,7 @@ bool MapBasedPrediction::getPredictedPath(
   const double current_s_position,
   const double current_s_velocity,
   const double target_s_position,
-  autoware_msgs::PredictedPath& path)
+  autoware_perception_msgs::PredictedPath& path)
 {
   //Quintic polynominal for d
   // A = np.array([[T**3, T**4, T**5],

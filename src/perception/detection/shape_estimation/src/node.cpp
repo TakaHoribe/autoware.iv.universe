@@ -23,20 +23,20 @@
 ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~")
 {
   sub_ = nh_.subscribe("input", 1, &ShapeEstimationNode::callback, this);
-  pub_ = nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("objects", 1, true);
+  pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("objects", 1, true);
   pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
   if (use_map_correct_)
     map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
 }
 
-void ShapeEstimationNode::callback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg)
+void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg)
 {
   // Guard
   if (pub_.getNumSubscribers() < 1)
     return;
 
   // Create output msg
-  autoware_msgs::DynamicObjectWithFeatureArray output_msg;
+  autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
   output_msg.header = input_msg->header;
 
   // Estimate shape for each object and pack msg
@@ -46,7 +46,7 @@ void ShapeEstimationNode::callback(const autoware_msgs::DynamicObjectWithFeature
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(feature_object.feature.cluster, *cluster);
     // estimate shape and pose
-    autoware_msgs::Shape shape;
+    autoware_perception_msgs::Shape shape;
     geometry_msgs::Pose pose;
     bool orientation;
     if (!estimator_.getShapeAndPose(feature_object.object.semantic.type, *cluster, shape, pose, orientation))

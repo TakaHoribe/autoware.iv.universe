@@ -44,7 +44,7 @@ TensorrtYoloROS::~TensorrtYoloROS()
 void TensorrtYoloROS::createROSPubSub()
 {
   sub_image_ = nh_.subscribe<sensor_msgs::Image>("/image_raw", 1, &TensorrtYoloROS::imageCallback, this);
-  pub_objects_ = nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("rois", 1);
+  pub_objects_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("rois", 1);
   pub_image_ = nh_.advertise<sensor_msgs::Image>("/perception/tensorrt_yolo3/classified_image", 1);
 }
 
@@ -81,7 +81,7 @@ void TensorrtYoloROS::imageCallback(const sensor_msgs::Image::ConstPtr& in_image
   memcpy(result.data(), &output[1], count*sizeof(Yolo::Detection));
 
   int class_num = 80;
-  autoware_msgs::DynamicObjectWithFeatureArray out_objects;
+  autoware_perception_msgs::DynamicObjectWithFeatureArray out_objects;
   out_objects.header = in_image_msg->header;
   // TODO: if this file is ros interface class, not appropriate to write this method in this file/class
   auto bbox = postProcessImg(result,class_num,in_image_ptr->image, out_objects);
@@ -139,7 +139,7 @@ std::vector<float> TensorrtYoloROS::prepareImage(cv::Mat& in_img)
 std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(std::vector<Yolo::Detection>& detections,
                                                       const int classes,
                                                       cv::Mat& img, 
-                                                      autoware_msgs::DynamicObjectWithFeatureArray& out_objects)
+                                                      autoware_perception_msgs::DynamicObjectWithFeatureArray& out_objects)
 {
     int h = 416;
     int w = 416;
@@ -182,7 +182,7 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(std::vector<Yolo::Detectio
         boxes.push_back(bbox);
         
         
-        autoware_msgs::DynamicObjectWithFeature obj;
+        autoware_perception_msgs::DynamicObjectWithFeature obj;
 
         obj.feature.roi.x_offset = std::max(int((b[0]-b[2]/2.)*width),0);
         obj.feature.roi.y_offset = std::max(int((b[1]-b[3]/2.)*height),0);
@@ -202,31 +202,31 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(std::vector<Yolo::Detectio
         obj.object.semantic.confidence = item.prob;
         if ( item.classId == 2)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::CAR;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::CAR;
         }
         else if (item.classId == 0)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::PEDESTRIAN;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
         }
         else if (item.classId == 5)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::BUS;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::BUS;
         }
         else if (item.classId == 7)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::TRUCK;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::TRUCK;
         }
         else if (item.classId == 1)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::BICYCLE;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::BICYCLE;
         }
         else if (item.classId == 3)
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::MOTORBIKE;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::MOTORBIKE;
         }
         else
         {
-            obj.object.semantic.type = autoware_msgs::Semantic::UNKNOWN;
+            obj.object.semantic.type = autoware_perception_msgs::Semantic::UNKNOWN;
         }
         out_objects.feature_objects.push_back(obj);
     }

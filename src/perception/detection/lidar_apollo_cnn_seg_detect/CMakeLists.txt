@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
         pcl_ros
         sensor_msgs
         geometry_msgs
-        autoware_msgs
+        autoware_perception_msgs
         )
 
 find_package(CUDA)
@@ -28,7 +28,7 @@ catkin_package(
         pcl_ros
         sensor_msgs
         geometry_msgs
-        autoware_msgs
+        autoware_perception_msgs
 )
 
 IF (CUDA_FOUND)

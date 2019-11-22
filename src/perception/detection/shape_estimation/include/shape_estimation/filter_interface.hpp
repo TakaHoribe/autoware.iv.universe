@@ -19,7 +19,7 @@
 #pragma once
 
 #include <string>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 
 class ShapeEstimationFilterInterface
@@ -29,7 +29,7 @@ public:
 
   virtual ~ShapeEstimationFilterInterface(){};
 
-  virtual bool filter(const autoware_msgs::Shape &shape,
+  virtual bool filter(const autoware_perception_msgs::Shape &shape,
                       const geometry_msgs::Pose &pose,
                       const bool &orientaion) = 0;
 };

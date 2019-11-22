@@ -5,7 +5,7 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED
              COMPONENTS roscpp
-                        autoware_msgs
+                        autoware_perception_msgs
                         geometry_msgs
                         sensor_msgs
                         visualization_msgs)
@@ -14,7 +14,7 @@ catkin_package(INCLUDE_DIRS include
                # LIBRARIES dynamic_object_visualizer
                CATKIN_DEPENDS
                roscpp
-               autoware_msgs
+               autoware_perception_msgs
                geometry_msgs
                sensor_msgs
                visualization_msgs

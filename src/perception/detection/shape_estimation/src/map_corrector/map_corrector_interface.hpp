@@ -19,7 +19,7 @@
 #pragma once
 
 #include <string>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 #include "shape_estimation/vector_map.hpp"
 #include "geometry_msgs/TransformStamped.h"
@@ -33,7 +33,7 @@ public:
 
   virtual bool correct(const VectorMap &vector_map,
                        const geometry_msgs::TransformStamped &transform_stamped,
-                       autoware_msgs::Shape &shape_output,
+                       autoware_perception_msgs::Shape &shape_output,
                        geometry_msgs::Pose &pose_output,
                        bool &orientaion_output) = 0;
 };

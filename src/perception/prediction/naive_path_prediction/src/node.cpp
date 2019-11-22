@@ -28,15 +28,15 @@
 NaivePathPredictionNode::NaivePathPredictionNode() : nh_(""), pnh_("~")
 {
     sub_ = nh_.subscribe("input", 1, &NaivePathPredictionNode::callback, this);
-    pub_ = nh_.advertise<autoware_msgs::DynamicObjectArray>("output", 1, true);
+    pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
 }
 
-void NaivePathPredictionNode::callback(const autoware_msgs::DynamicObjectArray::ConstPtr &input_msg)
+void NaivePathPredictionNode::callback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr &input_msg)
 {
-    autoware_msgs::DynamicObjectArray output_msg = *input_msg;
+    autoware_perception_msgs::DynamicObjectArray output_msg = *input_msg;
 
     for (size_t i = 0; i < output_msg.objects.size();++i){
-        autoware_msgs::PredictedPath predicted_path;
+        autoware_perception_msgs::PredictedPath predicted_path;
         predicted_path.confidence = 1.0;
         const double ep = 0.001;
         for (double dt = 0.0; dt < 3.0 + ep; dt += 0.5)

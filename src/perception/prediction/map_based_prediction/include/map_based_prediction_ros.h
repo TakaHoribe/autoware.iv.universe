@@ -36,7 +36,7 @@
 // headers in local files
 #include "vectormap_ros.h"
 #include "map_based_prediction.h"
-#include "autoware_msgs/DynamicObjectArray.h"
+#include "autoware_perception_msgs/DynamicObjectArray.h"
 // #include "lidar_point_pillars/point_pillars.h"
 
 class MapBasedPredictionROS
@@ -64,9 +64,9 @@ private:
   VectorMap vectormap_;
   MapBasedPrediction map_based_prediction_;
 
-  void objectsCallback(const autoware_msgs::DynamicObjectArrayConstPtr& in_objects);
+  void objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects);
   
-  void publishMarker(const autoware_msgs::DynamicObjectArray& out_objects);
+  void publishMarker(const autoware_perception_msgs::DynamicObjectArray& out_objects);
 
 public:
   MapBasedPredictionROS();

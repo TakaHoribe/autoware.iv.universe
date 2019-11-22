@@ -32,7 +32,7 @@ MapCorrectorNode::MapCorrectorNode() : nh_(""), pnh_("~"), tf_listener_(tf_buffe
   pnh_.param<double>("map_corrector/rad_threshold", rad_threshold_, M_PI_2 * 0.7);
 }
 
-bool MapCorrectorNode::correct(autoware_msgs::DynamicObjectWithFeatureArray &input)
+bool MapCorrectorNode::correct(autoware_perception_msgs::DynamicObjectWithFeatureArray &input)
 {
   geometry_msgs::TransformStamped tf_stamped;
   try
@@ -44,21 +44,21 @@ bool MapCorrectorNode::correct(autoware_msgs::DynamicObjectWithFeatureArray &inp
     ROS_WARN("failed to lookup transform: %s", exception.what());
     return false;
   }
-  autoware_msgs::DynamicObjectWithFeatureArray output;
+  autoware_perception_msgs::DynamicObjectWithFeatureArray output;
   output.header = input.header;
 
   for (const auto &input_feature_object : input.feature_objects)
   {
-    autoware_msgs::DynamicObjectWithFeature feature_object = input_feature_object;
+    autoware_perception_msgs::DynamicObjectWithFeature feature_object = input_feature_object;
     if (feature_object.object.state.pose_reliable)
     {
       output.feature_objects.push_back(feature_object);
       continue;
     }
     std::unique_ptr<MapCorrectorInterface> corrector_ptr;
-    if (feature_object.object.semantic.type == autoware_msgs::Semantic::CAR ||
-        feature_object.object.semantic.type == autoware_msgs::Semantic::TRUCK ||
-        feature_object.object.semantic.type == autoware_msgs::Semantic::BUS)
+    if (feature_object.object.semantic.type == autoware_perception_msgs::Semantic::CAR ||
+        feature_object.object.semantic.type == autoware_perception_msgs::Semantic::TRUCK ||
+        feature_object.object.semantic.type == autoware_perception_msgs::Semantic::BUS)
     {
       corrector_ptr.reset(new VehicleMapCorrector(use_rad_filter_, rad_threshold_));
     }

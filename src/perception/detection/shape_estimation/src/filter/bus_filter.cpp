@@ -19,7 +19,7 @@
 
 #include "bus_filter.hpp"
 
-bool BusFilter::filter(const autoware_msgs::Shape &shape,
+bool BusFilter::filter(const autoware_perception_msgs::Shape &shape,
                        const geometry_msgs::Pose &pose,
                        const bool &orientaion)
 {

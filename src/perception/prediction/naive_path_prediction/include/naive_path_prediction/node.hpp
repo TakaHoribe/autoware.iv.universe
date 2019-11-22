@@ -19,7 +19,7 @@
 #pragma once
 
 #include <ros/ros.h>
-#include "autoware_msgs/DynamicObjectArray.h"
+#include "autoware_perception_msgs/DynamicObjectArray.h"
 
 class NaivePathPredictionNode
 {
@@ -29,7 +29,7 @@ private: // ros
   ros::Publisher pub_;
   ros::Subscriber sub_;
 
-  void callback(const autoware_msgs::DynamicObjectArray::ConstPtr &input_msg);
+  void callback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr &input_msg);
 
 public:
   NaivePathPredictionNode();
