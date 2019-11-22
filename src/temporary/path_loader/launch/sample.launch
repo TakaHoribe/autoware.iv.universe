@@ -1,0 +1,6 @@
+<launch>
+    <arg name="file_name" default="$(find path_loader)/data/sample.csv" />
+    <node pkg="path_loader" type="path_loader_node" name="path_loader" output="screen">
+        <param name="path_file_name" value="$(arg file_name)" />
+    </node>
+</launch>
