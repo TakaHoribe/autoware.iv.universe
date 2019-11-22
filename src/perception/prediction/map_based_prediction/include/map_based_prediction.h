@@ -42,7 +42,7 @@
 
 // headers in local files
 #include "vectormap_struct.h"
-#include "autoware_msgs/DynamicObjectArray.h"
+#include "autoware_perception_msgs/DynamicObjectArray.h"
 
 // #include "lidar_point_pillars/point_pillars.h"
 
@@ -70,7 +70,7 @@ private:
 
   // VectorMap vectormap_;
 
-  // void objectsCallback(const autoware_msgs::DynamicObjectArrayConstPtr& msg);
+  // void objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& msg);
   bool getPredictedPath(
     const std::vector<LanePoint>& goal_path,
     const double current_yaw,
@@ -80,7 +80,7 @@ private:
     const double current_s_position,
     const double current_s_velocity,
     const double target_s_position, 
-    autoware_msgs::PredictedPath& path);
+    autoware_perception_msgs::PredictedPath& path);
 
   bool getNearestLane(const std::vector<LanePoint>& lane_points, 
   const geometry_msgs::Pose object_pose,
@@ -100,16 +100,16 @@ private:
                            
   double calculateLikelyhood(const double desired_yaw, const double current_d, const double current_yaw);
   
-  bool normalizeLikelyhood(std::vector<autoware_msgs::PredictedPath>& paths);
+  bool normalizeLikelyhood(std::vector<autoware_perception_msgs::PredictedPath>& paths);
 
   void toEulerAngle(const geometry_msgs::Quaternion& q, 
                     double& roll, double& pitch, double& yaw);
 public:
   MapBasedPrediction();
   
-  bool doPrediction(const autoware_msgs::DynamicObjectArray& in_objects,
+  bool doPrediction(const autoware_perception_msgs::DynamicObjectArray& in_objects,
                     const std::vector<LanePoint>& lane_poitns,
-                    autoware_msgs::DynamicObjectArray& out_objects);
+                    autoware_perception_msgs::DynamicObjectArray& out_objects);
                     
   
   /**

@@ -19,7 +19,7 @@
 #pragma once
 
 #include "ros/ros.h"
-#include "autoware_msgs/DynamicObjectWithFeatureArray.h"
+#include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
 #include "shape_estimation/vector_map.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Matrix3x3.h"
@@ -43,5 +43,5 @@ class MapCorrectorNode
 
     ~MapCorrectorNode(){};
 
-    bool correct(autoware_msgs::DynamicObjectWithFeatureArray &input_msg);
+    bool correct(autoware_perception_msgs::DynamicObjectWithFeatureArray &input_msg);
 };

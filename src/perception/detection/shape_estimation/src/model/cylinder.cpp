@@ -24,10 +24,10 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 
 bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                                autoware_msgs::Shape &shape_output,
+                                autoware_perception_msgs::Shape &shape_output,
                                 geometry_msgs::Pose &pose_output,
                                 bool &orientation_output)
 {
@@ -70,7 +70,7 @@ bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   constexpr double ep = 0.001;
   radius = std::max(radius, (float)ep);
 
-  shape_output.type = autoware_msgs::Shape::CYLINDER;
+  shape_output.type = autoware_perception_msgs::Shape::CYLINDER;
   pose_output.position.x = center.x;
   pose_output.position.y = center.y;
   pose_output.position.z = centroid.z;

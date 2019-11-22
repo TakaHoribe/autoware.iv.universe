@@ -18,11 +18,11 @@ DynamicObjectVisualizer::DynamicObjectVisualizer() : nh_(""), private_nh_("~")
   initColorList(colors_);
 }
 
-void DynamicObjectVisualizer::dynamicObjectWithFeatureCallback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg)
+void DynamicObjectVisualizer::dynamicObjectWithFeatureCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg)
 {
   if (pub_.getNumSubscribers() < 1)
     return;
-  boost::shared_ptr<autoware_msgs::DynamicObjectArray> converted_objects_ptr = boost::make_shared<autoware_msgs::DynamicObjectArray>();
+  boost::shared_ptr<autoware_perception_msgs::DynamicObjectArray> converted_objects_ptr = boost::make_shared<autoware_perception_msgs::DynamicObjectArray>();
   converted_objects_ptr->header = input_msg->header;
   for (const auto &feature_object : input_msg->feature_objects)
   {
@@ -31,7 +31,7 @@ void DynamicObjectVisualizer::dynamicObjectWithFeatureCallback(const autoware_ms
   dynamicObjectCallback(converted_objects_ptr);
 }
 
-void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::DynamicObjectArray::ConstPtr &input_msg)
+void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr &input_msg)
 {
   if (pub_.getNumSubscribers() < 1)
     return;
@@ -42,26 +42,26 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
   {
     if (only_known_objects_)
     {
-      if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+      if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
         continue;
     }
     visualization_msgs::Marker marker;
     marker.header = input_msg->header;
     marker.id = i;
     marker.ns = std::string("shape");
-    if (input_msg->objects.at(i).shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (input_msg->objects.at(i).shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
       marker.type = visualization_msgs::Marker::LINE_LIST;
       if (!calcBoundingBoxLineList(input_msg->objects.at(i).shape, marker.points))
         continue;
     }
-    else if (input_msg->objects.at(i).shape.type == autoware_msgs::Shape::CYLINDER)
+    else if (input_msg->objects.at(i).shape.type == autoware_perception_msgs::Shape::CYLINDER)
     {
       marker.type = visualization_msgs::Marker::LINE_LIST;
       if (!calcCylinderLineList(input_msg->objects.at(i).shape, marker.points))
         continue;
     }
-    else if (input_msg->objects.at(i).shape.type == autoware_msgs::Shape::POLYGON)
+    else if (input_msg->objects.at(i).shape.type == autoware_perception_msgs::Shape::POLYGON)
     {
       marker.type = visualization_msgs::Marker::LINE_LIST;
       if (!calcPolygonLineList(input_msg->objects.at(i).shape, marker.points))
@@ -95,7 +95,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
     }
     if (only_known_objects_)
     {
-      if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+      if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
         continue;
     }
     visualization_msgs::Marker marker;
@@ -138,7 +138,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
   {
     if (only_known_objects_)
     {
-      if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+      if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
         continue;
     }
     visualization_msgs::Marker marker;
@@ -182,7 +182,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
     }
     if (only_known_objects_)
     {
-      if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+      if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
         continue;
     }
     visualization_msgs::Marker marker;
@@ -219,7 +219,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
     {
       if (only_known_objects_)
       {
-        if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+        if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
           continue;
       }
       visualization_msgs::Marker marker;
@@ -254,7 +254,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
     {
       if (only_known_objects_)
       {
-        if (input_msg->objects.at(i).semantic.type == autoware_msgs::Semantic::UNKNOWN)
+        if (input_msg->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::UNKNOWN)
           continue;
       }
       visualization_msgs::Marker marker;
@@ -285,7 +285,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_msgs::Dynamic
   pub_.publish(output);
 }
 
-bool DynamicObjectVisualizer::calcBoundingBoxLineList(const autoware_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
+bool DynamicObjectVisualizer::calcBoundingBoxLineList(const autoware_perception_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
 {
   geometry_msgs::Point point;
   point.x = shape.dimensions.x / 2.0;
@@ -401,7 +401,7 @@ bool DynamicObjectVisualizer::calcBoundingBoxLineList(const autoware_msgs::Shape
   return true;
 }
 
-bool DynamicObjectVisualizer::calcCylinderLineList(const autoware_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
+bool DynamicObjectVisualizer::calcCylinderLineList(const autoware_perception_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
 {
   int n = 20;
   for (int i = 0; i < n; ++i)
@@ -451,7 +451,7 @@ bool DynamicObjectVisualizer::calcCircleLineList(const geometry_msgs::Point cent
   }
 }
 
-bool DynamicObjectVisualizer::calcPolygonLineList(const autoware_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
+bool DynamicObjectVisualizer::calcPolygonLineList(const autoware_perception_msgs::Shape &shape, std::vector<geometry_msgs::Point> &points)
 {
   if (shape.footprint.points.size() < 2)
     return false;
@@ -494,7 +494,7 @@ bool DynamicObjectVisualizer::calcPolygonLineList(const autoware_msgs::Shape &sh
   return true;
 }
 
-bool DynamicObjectVisualizer::calcPathLineList(const autoware_msgs::PredictedPath &paths, std::vector<geometry_msgs::Point> &points)
+bool DynamicObjectVisualizer::calcPathLineList(const autoware_perception_msgs::PredictedPath &paths, std::vector<geometry_msgs::Point> &points)
 {
   for (int i = 0; i < (int)paths.path.size() - 1; ++i)
   {
@@ -523,38 +523,38 @@ void DynamicObjectVisualizer::initPose(geometry_msgs::Pose &pose)
   pose.orientation.w = 1.0;
 }
 
-bool DynamicObjectVisualizer::getLabel(const autoware_msgs::Semantic &semantic, std::string &label)
+bool DynamicObjectVisualizer::getLabel(const autoware_perception_msgs::Semantic &semantic, std::string &label)
 {
 
-  if (autoware_msgs::Semantic::UNKNOWN == semantic.type)
+  if (autoware_perception_msgs::Semantic::UNKNOWN == semantic.type)
   {
     label = std::string("unknown");
   }
-  else if (autoware_msgs::Semantic::CAR == semantic.type)
+  else if (autoware_perception_msgs::Semantic::CAR == semantic.type)
   {
     label = std::string("car");
   }
-  else if (autoware_msgs::Semantic::TRUCK == semantic.type)
+  else if (autoware_perception_msgs::Semantic::TRUCK == semantic.type)
   {
     label = std::string("truck");
   }
-  else if (autoware_msgs::Semantic::BUS == semantic.type)
+  else if (autoware_perception_msgs::Semantic::BUS == semantic.type)
   {
     label = std::string("bus");
   }
-  else if (autoware_msgs::Semantic::BICYCLE == semantic.type)
+  else if (autoware_perception_msgs::Semantic::BICYCLE == semantic.type)
   {
     label = std::string("bicycle");
   }
-  else if (autoware_msgs::Semantic::MOTORBIKE == semantic.type)
+  else if (autoware_perception_msgs::Semantic::MOTORBIKE == semantic.type)
   {
     label = std::string("motorbike");
   }
-  else if (autoware_msgs::Semantic::PEDESTRIAN == semantic.type)
+  else if (autoware_perception_msgs::Semantic::PEDESTRIAN == semantic.type)
   {
     label = std::string("pedestrian");
   }
-  else if (autoware_msgs::Semantic::ANIMAL == semantic.type)
+  else if (autoware_perception_msgs::Semantic::ANIMAL == semantic.type)
   {
     label = std::string("animal");
   }
@@ -565,7 +565,7 @@ bool DynamicObjectVisualizer::getLabel(const autoware_msgs::Semantic &semantic, 
   return true;
 }
 
-void DynamicObjectVisualizer::getColor(const autoware_msgs::DynamicObject &object, std_msgs::ColorRGBA &color)
+void DynamicObjectVisualizer::getColor(const autoware_perception_msgs::DynamicObject &object, std_msgs::ColorRGBA &color)
 {
   std::string id_str = unique_id::toHexString(object.id);
   std::remove(id_str.begin(), id_str.end(), '-');

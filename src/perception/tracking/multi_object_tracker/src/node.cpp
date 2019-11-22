@@ -28,7 +28,7 @@
 MultiObjectTrackerNode::MultiObjectTrackerNode() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
     // sub_ = nh_.subscribe("input", 1, &MultiObjectTrackerNode::measurementCallback, this);
-    pub_ = nh_.advertise<autoware_msgs::DynamicObjectArray>("output", 1, true);
+    pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
     double publish_rate;
     pnh_.param<double>("publish_rate", publish_rate, double(30.0));
     publish_timer_ = nh_.createTimer(ros::Duration(1.0 / publish_rate), &MultiObjectTrackerNode::publishTimerCallback, this);
@@ -41,10 +41,10 @@ MultiObjectTrackerNode::MultiObjectTrackerNode() : nh_(""), pnh_("~"), tf_listen
     sync_ptr_->registerCallback(boost::bind(&MultiObjectTrackerNode::measurementCallback, this, _1, _2));
 }
 
-void MultiObjectTrackerNode::measurementCallback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
+void MultiObjectTrackerNode::measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
                                                  const geometry_msgs::PoseStamped::ConstPtr &input_current_pose_msg)
 {
-    autoware_msgs::DynamicObjectWithFeatureArray input_transformed_objects = *input_objects_msg;
+    autoware_perception_msgs::DynamicObjectWithFeatureArray input_transformed_objects = *input_objects_msg;
 
     /* transform to world coordinate */
     if (input_objects_msg->header.frame_id != world_frame_id_)
@@ -116,18 +116,18 @@ void MultiObjectTrackerNode::measurementCallback(const autoware_msgs::DynamicObj
         if (reverse_assignment.find(i) != reverse_assignment.end()) // found
             continue;
 
-        if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::CAR ||
-            input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::TRUCK ||
-            input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::BUS)
+        if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::CAR ||
+            input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::TRUCK ||
+            input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::BUS)
         {
             list_tracker_.push_back(std::make_shared<VehicleTracker>(measuremet_time, input_transformed_objects.feature_objects.at(i).object));
         }
-        else if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::PEDESTRIAN)
+        else if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
         {
             list_tracker_.push_back(std::make_shared<PedestrianTracker>(measuremet_time, input_transformed_objects.feature_objects.at(i).object));
         }
-        else if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::BICYCLE ||
-                 input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_msgs::Semantic::MOTORBIKE)
+        else if (input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE ||
+                 input_transformed_objects.feature_objects.at(i).object.semantic.type == autoware_perception_msgs::Semantic::MOTORBIKE)
         {
             list_tracker_.push_back(std::make_shared<BicycleTracker>(measuremet_time, input_transformed_objects.feature_objects.at(i).object));
         }
@@ -157,14 +157,14 @@ void MultiObjectTrackerNode::publishTimerCallback(const ros::TimerEvent &e)
 
     // Create output msg
     ros::Time current_time = ros::Time::now();
-    autoware_msgs::DynamicObjectArray output_msg;
+    autoware_perception_msgs::DynamicObjectArray output_msg;
     output_msg.header.frame_id = world_frame_id_;
     output_msg.header.stamp = current_time;
     for (auto itr = list_tracker_.begin(); itr != list_tracker_.end(); ++itr)
     {
         if ((*itr)->getTotalMeasurementCount() < 3)
             continue;
-        autoware_msgs::DynamicObject object;
+        autoware_perception_msgs::DynamicObject object;
         (*itr)->getEstimatedDynamicObject(current_time, object);
         output_msg.objects.push_back(object);
     }

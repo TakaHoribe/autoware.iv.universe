@@ -19,7 +19,7 @@
 
 #include "car_filter.hpp"
 
-bool CarFilter::filter(const autoware_msgs::Shape &shape,
+bool CarFilter::filter(const autoware_perception_msgs::Shape &shape,
                        const geometry_msgs::Pose &pose,
                        const bool &orientaion)
 {

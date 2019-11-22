@@ -26,7 +26,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-VehicleTracker::VehicleTracker(const ros::Time &time, const autoware_msgs::DynamicObject &object)
+VehicleTracker::VehicleTracker(const ros::Time &time, const autoware_perception_msgs::DynamicObject &object)
     : Tracker(time, object.semantic.type),
       filtered_yaw_(0.0),
       yaw_filter_gain_(0.7),
@@ -47,7 +47,7 @@ VehicleTracker::VehicleTracker(const ros::Time &time, const autoware_msgs::Dynam
 {
     object_ = object;
     // yaw
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         double roll, pitch, yaw;
         tf2::Quaternion quaternion;
@@ -57,7 +57,7 @@ VehicleTracker::VehicleTracker(const ros::Time &time, const autoware_msgs::Dynam
         filtered_yaw_ = yaw;
     }
     // dim
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         is_fixed_dim_ = true;
         filtered_dim_x_ = object.shape.dimensions.x;
@@ -90,11 +90,11 @@ bool VehicleTracker::predict(const ros::Time &time)
     last_update_time_ = time;
     return true;
 }
-bool VehicleTracker::measure(const autoware_msgs::DynamicObject &object, const ros::Time &time)
+bool VehicleTracker::measure(const autoware_perception_msgs::DynamicObject &object, const ros::Time &time)
 {
     int type = object.semantic.type;
     bool is_changed_unknown_object = false;
-    if (type == autoware_msgs::Semantic::UNKNOWN)
+    if (type == autoware_perception_msgs::Semantic::UNKNOWN)
     {
         type = getType();
         is_changed_unknown_object = true;
@@ -103,7 +103,7 @@ bool VehicleTracker::measure(const autoware_msgs::DynamicObject &object, const r
     setType(type);
 
     // yaw
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         double roll, pitch, yaw;
         tf2::Quaternion quaternion;
@@ -137,7 +137,7 @@ bool VehicleTracker::measure(const autoware_msgs::DynamicObject &object, const r
         filtered_yaw_ = std::atan2(filtered_yaw_vector.y(), filtered_yaw_vector.x());
     }
     // dim
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         if (!is_fixed_dim_)
         {
@@ -197,13 +197,13 @@ bool VehicleTracker::measure(const autoware_msgs::DynamicObject &object, const r
     return true;
 }
 
-bool VehicleTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_msgs::DynamicObject &object)
+bool VehicleTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_perception_msgs::DynamicObject &object)
 {
     object = object_;
     object.id = unique_id::toMsg(getUUID());
     object.semantic.type = getType();
 
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         double roll, pitch, yaw;
         tf2::Quaternion quaternion;
@@ -214,7 +214,7 @@ bool VehicleTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_m
         object.state.pose.pose.orientation = tf2::toMsg(filtered_quaternion);
         object.state.pose_reliable = is_fixed_yaw_;
     }
-    if (is_fixed_dim_ && object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (is_fixed_dim_ && object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         object.shape.dimensions.x = filtered_dim_x_;
         object.shape.dimensions.y = filtered_dim_y_;
@@ -242,7 +242,7 @@ bool VehicleTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_m
     tf2::Quaternion quaternion;
     tf2::fromMsg(object.state.pose.pose.orientation, quaternion);
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-    if (object.shape.type == autoware_msgs::Shape::BOUNDING_BOX)
+    if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX)
     {
         object.state.twist.twist.linear.x = filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
     }

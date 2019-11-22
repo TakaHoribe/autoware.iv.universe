@@ -8,7 +8,7 @@ project(naive_path_prediction)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  autoware_msgs
+  autoware_perception_msgs
   geometry_msgs
   tf2
   roscpp
@@ -71,7 +71,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   autoware_msgs#   geometry_msgs
+#   autoware_perception_msgs#   geometry_msgs
 # )
 
 ################################################
@@ -106,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES naive_path_prediction
-#  CATKIN_DEPENDS autoware_msgs geometry_msgs roscpp
+#  CATKIN_DEPENDS autoware_perception_msgs geometry_msgs roscpp
 #  DEPENDS system_lib
 )
 

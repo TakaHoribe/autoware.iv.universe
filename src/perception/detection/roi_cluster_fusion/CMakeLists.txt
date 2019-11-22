@@ -4,7 +4,7 @@ project(roi_cluster_fusion)
 add_compile_options(-std=c++11 -O3)
 
 find_package(catkin REQUIRED
-             COMPONENTS autoware_msgs
+             COMPONENTS autoware_perception_msgs
                         nodelet
                         pcl_conversions
                         pcl_ros
@@ -23,7 +23,7 @@ catkin_package(INCLUDE_DIRS
                LIBRARIES
                roi_cluster_fusion
                CATKIN_DEPENDS
-               autoware_msgs
+               autoware_perception_msgs
                nodelet
                pcl_conversions
                pcl_ros

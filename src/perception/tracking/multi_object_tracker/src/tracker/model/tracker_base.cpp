@@ -26,7 +26,7 @@ Tracker::Tracker(const ros::Time &time, const int type) : uuid_(unique_id::fromR
                                                           total_measurement_count_(1),
                                                           last_update_with_measurement_time_(time) {}
 
-bool Tracker::updateWithMeasurement(const autoware_msgs::DynamicObject &object, const ros::Time &measurement_time)
+bool Tracker::updateWithMeasurement(const autoware_perception_msgs::DynamicObject &object, const ros::Time &measurement_time)
 {
     no_measurement_count_ = 0;
     ++total_measurement_count_;
@@ -43,7 +43,7 @@ bool Tracker::updateWithoutMeasurement()
 
 geometry_msgs::Point Tracker::getPosition(const ros::Time &time)
 {
-    autoware_msgs::DynamicObject object;
+    autoware_perception_msgs::DynamicObject object;
     getEstimatedDynamicObject(time, object);
     geometry_msgs::Point position;
     position.x = object.state.pose.pose.position.x;
@@ -54,7 +54,7 @@ geometry_msgs::Point Tracker::getPosition(const ros::Time &time)
 
 double Tracker::getArea(const ros::Time &time)
 {
-    autoware_msgs::DynamicObject object;
+    autoware_perception_msgs::DynamicObject object;
     getEstimatedDynamicObject(time, object);
     return utils::getArea(object.shape);
 }

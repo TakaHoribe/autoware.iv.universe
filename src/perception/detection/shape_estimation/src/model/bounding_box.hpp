@@ -35,7 +35,7 @@ public:
    * minimum cluster size is 2.
    */
   bool estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                autoware_msgs::Shape &shape_output,
+                autoware_perception_msgs::Shape &shape_output,
                 geometry_msgs::Pose &pose_output,
                 bool &orientation_output) override;
 };

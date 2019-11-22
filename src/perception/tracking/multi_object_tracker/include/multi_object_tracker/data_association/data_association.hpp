@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <list>
 #include "multi_object_tracker/tracker/tracker.hpp"
-#include <autoware_msgs/DynamicObjectWithFeatureArray.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -41,7 +41,7 @@ public:
   bool assign(const Eigen::MatrixXd &src,
               std::unordered_map<int, int> &direct_assignment,
               std::unordered_map<int, int> &reverse_assignment);
-  Eigen::MatrixXd calcScoreMatrix(const autoware_msgs::DynamicObjectWithFeatureArray &measurements,
+  Eigen::MatrixXd calcScoreMatrix(const autoware_perception_msgs::DynamicObjectWithFeatureArray &measurements,
                                   const std::list<std::shared_ptr<Tracker>> &trackers);
   virtual ~DataAssociation(){};
 };

@@ -26,7 +26,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-PedestrianTracker::PedestrianTracker(const ros::Time &time, const autoware_msgs::DynamicObject &object)
+PedestrianTracker::PedestrianTracker(const ros::Time &time, const autoware_perception_msgs::DynamicObject &object)
     : Tracker(time, object.semantic.type),
       filtered_posx_(object.state.pose.pose.position.x),
       filtered_posy_(object.state.pose.pose.position.y),
@@ -55,11 +55,11 @@ bool PedestrianTracker::predict(const ros::Time &time)
     last_update_time_ = time;
     return true;
 }
-bool PedestrianTracker::measure(const autoware_msgs::DynamicObject &object, const ros::Time &time)
+bool PedestrianTracker::measure(const autoware_perception_msgs::DynamicObject &object, const ros::Time &time)
 {
     int type = object.semantic.type;
     bool is_changed_unknown_object = false;
-    if (type == autoware_msgs::Semantic::UNKNOWN)
+    if (type == autoware_perception_msgs::Semantic::UNKNOWN)
     {
         type = getType();
         is_changed_unknown_object = true;
@@ -109,7 +109,7 @@ bool PedestrianTracker::measure(const autoware_msgs::DynamicObject &object, cons
     return true;
 }
 
-bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_msgs::DynamicObject &object)
+bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_perception_msgs::DynamicObject &object)
 {
     object = object_;
     object.id = unique_id::toMsg(getUUID());

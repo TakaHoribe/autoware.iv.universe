@@ -4,7 +4,7 @@ project(multi_object_tracker)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED
-             COMPONENTS autoware_msgs
+             COMPONENTS autoware_perception_msgs
                         roscpp
                         tf2
                         tf2_ros
@@ -15,7 +15,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(# INCLUDE_DIRS include
                # LIBRARIES multi_object_tracker
                CATKIN_DEPENDS
-               autoware_msgs
+               autoware_perception_msgs
                roscpp
                tf2
                tf2_ros

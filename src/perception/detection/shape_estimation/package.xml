@@ -10,7 +10,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>autoware_msgs</build_depend>
+  <build_depend>autoware_perception_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
@@ -18,7 +18,7 @@
   <build_depend>rosunit</build_depend>
 
   <exec_depend>roscpp</exec_depend>
-  <exec_depend>autoware_msgs</exec_depend>
+  <exec_depend>autoware_perception_msgs</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>

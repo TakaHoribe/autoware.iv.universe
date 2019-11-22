@@ -29,7 +29,7 @@ public:
 
   ~BusFilter(){};
 
-  bool filter(const autoware_msgs::Shape &shape_output,
+  bool filter(const autoware_perception_msgs::Shape &shape_output,
               const geometry_msgs::Pose &pose_output,
               const bool &orientaion_output) override;
 };

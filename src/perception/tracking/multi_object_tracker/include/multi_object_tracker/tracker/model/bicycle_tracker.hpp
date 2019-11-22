@@ -18,12 +18,12 @@
 
 #pragma once
 #include "tracker_base.hpp"
-#include "autoware_msgs/DynamicObject.h"
+#include "autoware_perception_msgs/DynamicObject.h"
 
 class BicycleTracker : public Tracker
 {
 private:
-  autoware_msgs::DynamicObject object_;
+  autoware_perception_msgs::DynamicObject object_;
   double filtered_posx_;
   double filtered_posy_;
   double pos_filter_gain_;
@@ -38,10 +38,10 @@ private:
   ros::Time last_measurement_time_;
 
 public:
-  BicycleTracker(const ros::Time &time, const autoware_msgs::DynamicObject &object);
+  BicycleTracker(const ros::Time &time, const autoware_perception_msgs::DynamicObject &object);
 
   bool predict(const ros::Time &time) override;
-  bool measure(const autoware_msgs::DynamicObject &object, const ros::Time &time) override;
-  bool getEstimatedDynamicObject(const ros::Time &time, autoware_msgs::DynamicObject &object) override;
+  bool measure(const autoware_perception_msgs::DynamicObject &object, const ros::Time &time) override;
+  bool getEstimatedDynamicObject(const ros::Time &time, autoware_perception_msgs::DynamicObject &object) override;
   virtual ~BicycleTracker(){};
 };

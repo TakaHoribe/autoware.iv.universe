@@ -31,7 +31,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 // headers in local files
-#include "autoware_msgs/DynamicObjectWithFeatureArray.h"
+#include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
 #include "lidar_point_pillars/point_pillars_ros.h"
 
 PointPillarsROS::PointPillarsROS()
@@ -60,7 +60,7 @@ PointPillarsROS::PointPillarsROS()
 void PointPillarsROS::createROSPubSub()
 {
   sub_points_ = nh_.subscribe<sensor_msgs::PointCloud2>("/points_raw", 1, &PointPillarsROS::pointsCallback, this);
-  pub_objects_ = nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("objects", 1);
+  pub_objects_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("objects", 1);
 }
 
 geometry_msgs::Pose PointPillarsROS::getTransformedPose(const geometry_msgs::Pose& in_pose, const tf::Transform& tf)
@@ -77,16 +77,16 @@ geometry_msgs::Pose PointPillarsROS::getTransformedPose(const geometry_msgs::Pos
 
 void PointPillarsROS::pubDynamicObject(const std::vector<float>& detections, const std_msgs::Header& in_header)
 {
-  autoware_msgs::DynamicObjectWithFeatureArray objects;
+  autoware_perception_msgs::DynamicObjectWithFeatureArray objects;
   objects.header = in_header;
   int num_objects = detections.size() / OUTPUT_NUM_BOX_FEATURE_;
   for (size_t i = 0; i < num_objects; i++)
   {
-    autoware_msgs::DynamicObjectWithFeature object;
+    autoware_perception_msgs::DynamicObjectWithFeature object;
     object.object.state.pose_reliable = false;
 
-    autoware_msgs::Shape shape;
-    shape.type = autoware_msgs::Shape::BOUNDING_BOX;
+    autoware_perception_msgs::Shape shape;
+    shape.type = autoware_perception_msgs::Shape::BOUNDING_BOX;
     // Trained this way
     shape.dimensions.x = detections[i * OUTPUT_NUM_BOX_FEATURE_ + 4];
     shape.dimensions.y = detections[i * OUTPUT_NUM_BOX_FEATURE_ + 3];
@@ -111,7 +111,7 @@ void PointPillarsROS::pubDynamicObject(const std::vector<float>& detections, con
 
 
     //Only detects car in Version 1.0
-    object.object.semantic.type = autoware_msgs::Semantic::CAR ;
+    object.object.semantic.type = autoware_perception_msgs::Semantic::CAR ;
 
     // correct to set long length is x, short length is y
     if (shape.dimensions.x < shape.dimensions.y)

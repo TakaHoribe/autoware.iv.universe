@@ -25,10 +25,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <geometry_msgs/Point32.h>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 
 bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                               autoware_msgs::Shape &shape_output,
+                               autoware_perception_msgs::Shape &shape_output,
                                geometry_msgs::Pose &pose_output,
                                bool &orientation_output)
 {
@@ -87,7 +87,7 @@ bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   }
 
   constexpr double ep = 0.001;
-  shape_output.type = autoware_msgs::Shape::POLYGON;
+  shape_output.type = autoware_perception_msgs::Shape::POLYGON;
   pose_output.position.x = centroid.x + polygon_centroid.x;
   pose_output.position.y = centroid.y + polygon_centroid.y;
   pose_output.position.z = centroid.z;

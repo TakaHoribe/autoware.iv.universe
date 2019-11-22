@@ -4,7 +4,7 @@ project(shape_estimation)
 add_compile_options(-std=c++11 -O3)
 
 find_package(catkin REQUIRED
-             COMPONENTS autoware_msgs
+             COMPONENTS autoware_perception_msgs
                         pcl_ros
                         roscpp
                         tf2
@@ -19,7 +19,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(INCLUDE_DIRS
                include
                CATKIN_DEPENDS
-               autoware_msgs
+               autoware_perception_msgs
                pcl_ros
                roscpp
                tf2

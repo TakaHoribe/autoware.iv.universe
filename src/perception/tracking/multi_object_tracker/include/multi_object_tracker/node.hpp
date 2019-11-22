@@ -19,8 +19,8 @@
 #pragma once
 
 #include <ros/ros.h>
-#include "autoware_msgs/DynamicObjectWithFeatureArray.h"
-#include "autoware_msgs/DynamicObjectArray.h"
+#include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
+#include "autoware_perception_msgs/DynamicObjectArray.h"
 #include "geometry_msgs/PoseStamped.h"
 #include <tf2/transform_datatypes.h>
 #include <tf2/convert.h>
@@ -42,9 +42,9 @@ private: // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
-  message_filters::Subscriber<autoware_msgs::DynamicObjectWithFeatureArray> object_sub_;
+  message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> object_sub_;
   message_filters::Subscriber<geometry_msgs::PoseStamped> current_pose_sub_;
-  typedef message_filters::sync_policies::ApproximateTime<autoware_msgs::DynamicObjectWithFeatureArray,
+  typedef message_filters::sync_policies::ApproximateTime<autoware_perception_msgs::DynamicObjectWithFeatureArray,
                                                           geometry_msgs::PoseStamped>
       SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Sync;
@@ -53,7 +53,7 @@ private: // ros
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
-  void measurementCallback(const autoware_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
+  void measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
                            const geometry_msgs::PoseStamped::ConstPtr &input_current_pose_msg);
   void publishTimerCallback(const ros::TimerEvent &e);
 

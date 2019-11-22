@@ -1,8 +1,8 @@
 #include <euclidean_cluster/voxel_grid_based_euclidean_cluster_nodelet.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-#include <autoware_msgs/DynamicObjectWithFeature.h>
-#include <autoware_msgs/DynamicObjectWithFeatureArray.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeature.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -28,7 +28,7 @@ void VoxelGridBasedEuclideanClusterNodelet::onInit()
     nh_ = getNodeHandle();
     pointcloud_sub_ = private_nh_.subscribe("input", 1, &VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback, this);
 
-    cluster_pub_ = private_nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("output", 10);
+    cluster_pub_ = private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
     debug_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("debug/clusters", 1);
 }
 
@@ -100,7 +100,7 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
 
     // build output msg
     {
-        autoware_msgs::DynamicObjectWithFeatureArray output;
+        autoware_perception_msgs::DynamicObjectWithFeatureArray output;
         output.header = input_msg->header;
         for (std::vector<pcl::PointCloud<pcl::PointXYZ>>::const_iterator cluster_itr = v_cluster.begin();
              cluster_itr != v_cluster.end();
@@ -117,7 +117,7 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
             sensor_msgs::PointCloud2 ros_pointcloud;
-            autoware_msgs::DynamicObjectWithFeature feature_object;
+            autoware_perception_msgs::DynamicObjectWithFeature feature_object;
             pcl::toROSMsg(*cloud_cluster, ros_pointcloud);
             ros_pointcloud.header = input_msg->header;
             feature_object.feature.cluster = ros_pointcloud;

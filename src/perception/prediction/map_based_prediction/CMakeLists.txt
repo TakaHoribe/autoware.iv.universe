@@ -4,7 +4,7 @@ project(map_based_prediction)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
-        autoware_msgs
+        autoware_perception_msgs
         pcl_ros
         roscpp
         tf2
@@ -20,7 +20,7 @@ catkin_package(
         INCLUDE_DIRS
             include
         CATKIN_DEPENDS
-            autoware_msgs
+            autoware_perception_msgs
             pcl_ros
             roscpp
             tf2

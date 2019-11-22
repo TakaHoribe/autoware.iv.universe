@@ -9,7 +9,7 @@ find_package(catkin REQUIRED
                         sensor_msgs
                         nodelet
                         pcl_conversions
-                        autoware_msgs
+                        autoware_perception_msgs
                         # tf2
                         # tf2_sensor_msgs
              )
@@ -25,7 +25,7 @@ catkin_package(INCLUDE_DIRS
                sensor_msgs
                nodelet
                pcl_conversions
-               autoware_msgs)
+               autoware_perception_msgs)
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIR})
 

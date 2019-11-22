@@ -19,7 +19,7 @@
 
 #include "truck_filter.hpp"
 
-bool TruckFilter::filter(const autoware_msgs::Shape &shape,
+bool TruckFilter::filter(const autoware_perception_msgs::Shape &shape,
                          const geometry_msgs::Pose &pose,
                          const bool &orientaion)
 {

@@ -44,15 +44,15 @@ pnh_("~"),tf_listener_(tf_buffer_)
 
 void MapBasedPredictionROS::createROSPubSub()
 {
-  sub_objects_ = nh_.subscribe<autoware_msgs::DynamicObjectArray>("/perception/tracking/objects", 1, &MapBasedPredictionROS::objectsCallback, this);
-  pub_objects_ = nh_.advertise<autoware_msgs::DynamicObjectArray>("objects", 1);
+  sub_objects_ = nh_.subscribe<autoware_perception_msgs::DynamicObjectArray>("/perception/tracking/objects", 1, &MapBasedPredictionROS::objectsCallback, this);
+  pub_objects_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("objects", 1);
   pub_markers_ = nh_.advertise<visualization_msgs::MarkerArray>("objects_path_markers", 1);
 }
 
-void MapBasedPredictionROS::objectsCallback(const autoware_msgs::DynamicObjectArrayConstPtr& in_objects)
+void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects)
 {
   std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-  autoware_msgs::DynamicObjectArray objects_in_map;
+  autoware_perception_msgs::DynamicObjectArray objects_in_map;
   /* transform to map coordinate */
   geometry_msgs::TransformStamped objects2map;
   try
@@ -71,7 +71,7 @@ void MapBasedPredictionROS::objectsCallback(const autoware_msgs::DynamicObjectAr
   { 
     geometry_msgs::Pose pose_out;
     tf2::doTransform(object.state.pose.pose, pose_out, objects2map);
-    autoware_msgs::DynamicObject tmp_object;
+    autoware_perception_msgs::DynamicObject tmp_object;
     tmp_object = object;
     tmp_object.state.pose.pose = pose_out;
     objects_in_map.objects.push_back(tmp_object);
@@ -91,7 +91,7 @@ void MapBasedPredictionROS::objectsCallback(const autoware_msgs::DynamicObjectAr
     ROS_INFO("succeeded to load vector map");
   }
 
-  autoware_msgs::DynamicObjectArray out_objects;
+  autoware_perception_msgs::DynamicObjectArray out_objects;
   if(map_based_prediction_.doPrediction(objects_in_map, vectormap_.lane_points_, out_objects))
   {
     /* transform form map to world coordinate */
@@ -108,19 +108,19 @@ void MapBasedPredictionROS::objectsCallback(const autoware_msgs::DynamicObjectAr
       ROS_WARN("%s", ex.what());
       return;
     }
-    autoware_msgs::DynamicObjectArray objects_in_world;
+    autoware_perception_msgs::DynamicObjectArray objects_in_world;
     objects_in_world.header = in_objects->header;
     for(const auto& object: out_objects.objects)
     { 
       geometry_msgs::Pose pose_out;
       tf2::doTransform(object.state.pose.pose, pose_out, map2world);
-      autoware_msgs::DynamicObject tmp_object;
+      autoware_perception_msgs::DynamicObject tmp_object;
       tmp_object = object;
       tmp_object.state.pose.pose = pose_out;
       tmp_object.state.predicted_paths.clear();
       for(const auto& path: object.state.predicted_paths)
       {
-        autoware_msgs::PredictedPath tmp_path;
+        autoware_perception_msgs::PredictedPath tmp_path;
         tmp_path.confidence = path.confidence;
         for(const auto& path_pose: path.path)
         {
@@ -149,7 +149,7 @@ void MapBasedPredictionROS::objectsCallback(const autoware_msgs::DynamicObjectAr
 
 }
 
-void MapBasedPredictionROS::publishMarker(const autoware_msgs::DynamicObjectArray& out_objects)
+void MapBasedPredictionROS::publishMarker(const autoware_perception_msgs::DynamicObjectArray& out_objects)
 {
   visualization_msgs::MarkerArray predicted_markers;
   // for (int i = 0; i < out_objects.objects.size(); i++)

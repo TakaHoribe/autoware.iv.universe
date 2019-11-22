@@ -131,7 +131,7 @@ bool CNNSegmentation::init()
 
 bool CNNSegmentation::segment(const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
                               const pcl::PointIndices &valid_idx,
-                              autoware_msgs::DetectedObjectArray &objects)
+                              autoware_perception_msgs::DetectedObjectArray &objects)
 {
   int num_pts = static_cast<int>(pc_ptr->points.size());
   if (num_pts == 0)
@@ -182,7 +182,7 @@ void CNNSegmentation::test_run()
   indices.resize(in_pc_ptr->size());
   std::iota(indices.begin(), indices.end(), 0);
 
-  autoware_msgs::DetectedObjectArray objects;
+  autoware_perception_msgs::DetectedObjectArray objects;
   init();
   segment(in_pc_ptr, valid_idx, objects);
 
@@ -195,8 +195,8 @@ void CNNSegmentation::run()
 
   points_sub_ = nh_.subscribe(topic_src_, 1, &CNNSegmentation::pointsCallback, this);
   points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/detection/lidar_detector/points_cluster", 1);
-  objects_pub_ = nh_.advertise<autoware_msgs::DetectedObjectArray>("/detection/lidar_detector/objects", 1);
-  d_objects_pub_ = nh_.advertise<autoware_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 1);
+  objects_pub_ = nh_.advertise<autoware_perception_msgs::DetectedObjectArray>("/detection/lidar_detector/objects", 1);
+  d_objects_pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 1);
 
   ROS_INFO("[%s] Ready. Waiting for data...", __APP_NAME__);
 }
@@ -214,11 +214,11 @@ void CNNSegmentation::pointsCallback(const sensor_msgs::PointCloud2 &msg)
   std::iota(indices.begin(), indices.end(), 0);
   message_header_ = msg.header;
 
-  autoware_msgs::DetectedObjectArray objects;
+  autoware_perception_msgs::DetectedObjectArray objects;
   objects.header = message_header_;
   segment(in_pc_ptr, valid_idx, objects);
   
-  autoware_msgs::DynamicObjectWithFeatureArray d_objects;
+  autoware_perception_msgs::DynamicObjectWithFeatureArray d_objects;
   convertDetected2Dynamic(objects, d_objects);
 
   pubColoredPoints(objects);
@@ -230,7 +230,7 @@ void CNNSegmentation::pointsCallback(const sensor_msgs::PointCloud2 &msg)
   double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 }
 
-void CNNSegmentation::pubColoredPoints(const autoware_msgs::DetectedObjectArray &objects_array)
+void CNNSegmentation::pubColoredPoints(const autoware_perception_msgs::DetectedObjectArray &objects_array)
 {
   pcl::PointCloud<pcl::PointXYZRGB> colored_cloud;
   for (size_t object_i = 0; object_i < objects_array.objects.size(); object_i++)
@@ -263,13 +263,13 @@ void CNNSegmentation::pubColoredPoints(const autoware_msgs::DetectedObjectArray 
 
 
 void CNNSegmentation::convertDetected2Dynamic(
-  const autoware_msgs::DetectedObjectArray &objects, 
-        autoware_msgs::DynamicObjectWithFeatureArray &d_objects)
+  const autoware_perception_msgs::DetectedObjectArray &objects, 
+        autoware_perception_msgs::DynamicObjectWithFeatureArray &d_objects)
 {
   d_objects.header = objects.header;
   for (const auto& object: objects.objects)
   {
-    autoware_msgs::DynamicObjectWithFeature d_object;
+    autoware_perception_msgs::DynamicObjectWithFeature d_object;
     // d_object.object.state.pose.pose = object.pose;
     if(object.label == "person")
     {

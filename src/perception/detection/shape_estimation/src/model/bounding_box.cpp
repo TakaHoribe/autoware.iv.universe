@@ -26,14 +26,14 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include "autoware_msgs/Shape.h"
+#include "autoware_perception_msgs/Shape.h"
 
 #define EIGEN_MPL2_ONLY
 
 #include <Eigen/Core>
 
 bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                                autoware_msgs::Shape &shape_output,
+                                autoware_perception_msgs::Shape &shape_output,
                                 geometry_msgs::Pose &pose_output,
                                 bool &orientation_output)
 {
@@ -150,7 +150,7 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   quat.setEuler(/* roll */ 0, /* pitch */ 0, /* yaw */ std::atan2(e_1_star.y(), e_1_star.x()));
 
   // output
-  shape_output.type = autoware_msgs::Shape::BOUNDING_BOX;
+  shape_output.type = autoware_perception_msgs::Shape::BOUNDING_BOX;
   pose_output.position.x = (intersection_x_1 + intersection_x_2) / 2.0;
   pose_output.position.y = (intersection_y_1 + intersection_y_2) / 2.0;
   pose_output.position.z = centroid.z;

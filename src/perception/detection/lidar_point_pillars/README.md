@@ -72,7 +72,7 @@ void doInference(float* in_points_array, int in_num_points, std::vector<float> o
 
 |Topic|Type|Description|
 |---|---|---|
-|`/detection/lidar_detector/objects`|`autoware_msgs/DetectedObjetArray`|Array of Detected Objects in Autoware format|
+|`/detection/lidar_detector/objects`|`autoware_perception_msgs/DetectedObjetArray`|Array of Detected Objects in Autoware format|
 
 ## Notes
 
