@@ -31,6 +31,10 @@ vehicle_width: 1.775 # wheel_tread + wheel_width
 vehicle_height: 2.0
 ```
 
+### Run
+```
+$ roslaunch autoware_launch autoware.launch
+```
 
 # for developper (temporary)
 ## rule
