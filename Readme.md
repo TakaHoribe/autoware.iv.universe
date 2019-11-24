@@ -12,6 +12,7 @@
 ```
 
 ubuntu 18.04
+If you get a caffe build error, cmake must be upgraded
 
 ```
 ./setup_ubuntu18.04.sh
