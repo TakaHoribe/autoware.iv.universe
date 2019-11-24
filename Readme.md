@@ -3,7 +3,7 @@
 # How to setup
 ## Software setup
 ### Install Autoware
-1. install CUDA,TensorRT
+1. install CUDA, [TensorRT](https://docs.nvidia.com/deeplearning/sdk/tensorrt-archived/index.html)
 2. ROS, Caffe setup
 
  ubuntu 16.04
