@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Vehicle Setting -->
+  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
+
+  <!-- Sensing -->
+
+  <!-- Localization -->
+
+  <!-- Perception -->
+  <!-- Traffic Light Recognition -->
+  <!-- Planning -->
+  <!-- Control -->
+
+</launch>

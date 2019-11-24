@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>sensor_launch</name>
+  <name>sensing_launch</name>
   <version>0.0.0</version>
-  <description>The sensor_launch package</description>
+  <description>The sensing_launch package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
