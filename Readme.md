@@ -8,14 +8,13 @@
 
  ubuntu 16.04
 ```
-./setup.sh
+./setup_ubuntu16.04.sh
 ```
 
 ubuntu 18.04
 
-change `kinetic` in ansible/roles/ros/defaults/main.yml
 ```
-./setup.sh
+./setup_ubuntu18.04.sh
 ```
 ### Set hardware configuration
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
