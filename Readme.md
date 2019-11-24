@@ -17,6 +17,13 @@ If you get a caffe build error, cmake must be upgraded
 ```
 ./setup_ubuntu18.04.sh
 ```
+
+3. install dependency
+```
+rosdep install  --from-paths src --ignore-src
+```
+
+
 ### Set hardware configuration
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
 ```
