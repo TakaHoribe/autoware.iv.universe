@@ -3,5 +3,5 @@
   connection: local
   become: yes
   roles:
-    - ros
+    - {role: ros, release: melodic}
     - caffe

@@ -3,19 +3,19 @@
 # How to setup
 ## Software setup
 ### Install Autoware
-1. install CUDA,TensorRT
+1. install CUDA, [TensorRT](https://docs.nvidia.com/deeplearning/sdk/tensorrt-archived/index.html)
 2. ROS, Caffe setup
 
  ubuntu 16.04
 ```
-./setup.sh
+./setup_ubuntu16.04.sh
 ```
 
 ubuntu 18.04
+If you get a caffe build error, cmake must be upgraded
 
-change `kinetic` in ansible/roles/ros/defaults/main.yml
 ```
-./setup.sh
+./setup_ubuntu18.04.sh
 ```
 ### Set hardware configuration
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
