@@ -30,7 +30,7 @@
 - name: ROS (Add path >> bashrc)
   lineinfile:
     dest: ~/.bashrc
-    line: source /opt/ros/kinetic/setup.bash
+    line: source /opt/ros/{{ release }}/setup.bash
     state: present
   become: no
 
