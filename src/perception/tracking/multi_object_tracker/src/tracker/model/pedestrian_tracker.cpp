@@ -28,15 +28,15 @@
 
 PedestrianTracker::PedestrianTracker(const ros::Time &time, const autoware_perception_msgs::DynamicObject &object)
     : Tracker(time, object.semantic.type),
-      filtered_posx_(object.state.pose.pose.position.x),
-      filtered_posy_(object.state.pose.pose.position.y),
+      filtered_posx_(object.state.pose_covariance.pose.position.x),
+      filtered_posy_(object.state.pose_covariance.pose.position.y),
       pos_filter_gain_(0.2),
       filtered_vx_(0.0),
       filtered_vy_(0.0),
       v_filter_gain_(0.6),
       area_filter_gain_(0.8),
-      last_measurement_posx_(object.state.pose.pose.position.x),
-      last_measurement_posy_(object.state.pose.pose.position.y),
+      last_measurement_posx_(object.state.pose_covariance.pose.position.x),
+      last_measurement_posy_(object.state.pose_covariance.pose.position.y),
       last_update_time_(time),
       last_measurement_time_(time)
 {
@@ -77,33 +77,33 @@ bool PedestrianTracker::measure(const autoware_perception_msgs::DynamicObject &o
     if (0.0 < dt)
     {
         double current_vel =
-            std::sqrt((object.state.pose.pose.position.x - last_measurement_posx_) *
-                          (object.state.pose.pose.position.x - last_measurement_posx_) +
-                      (object.state.pose.pose.position.y - last_measurement_posy_) *
-                          (object.state.pose.pose.position.y - last_measurement_posy_));
+            std::sqrt((object.state.pose_covariance.pose.position.x - last_measurement_posx_) *
+                          (object.state.pose_covariance.pose.position.x - last_measurement_posx_) +
+                      (object.state.pose_covariance.pose.position.y - last_measurement_posy_) *
+                          (object.state.pose_covariance.pose.position.y - last_measurement_posy_));
         const double max_vel = 15.0; /* [m/s]*/
         const double vel_scale = std::min(max_vel, current_vel) / current_vel;
         if (is_changed_unknown_object)
         {
-            filtered_vx_ = 0.9 * filtered_vx_ + (1.0 - 0.9) * ((object.state.pose.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
-            filtered_vy_ = 0.9 * filtered_vy_ + (1.0 - 0.9) * ((object.state.pose.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
+            filtered_vx_ = 0.9 * filtered_vx_ + (1.0 - 0.9) * ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
+            filtered_vy_ = 0.9 * filtered_vy_ + (1.0 - 0.9) * ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
         }
         else
         {
-            filtered_vx_ = v_filter_gain_ * filtered_vx_ + (1.0 - v_filter_gain_) * ((object.state.pose.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
-            filtered_vy_ = v_filter_gain_ * filtered_vy_ + (1.0 - v_filter_gain_) * ((object.state.pose.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
+            filtered_vx_ = v_filter_gain_ * filtered_vx_ + (1.0 - v_filter_gain_) * ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
+            filtered_vy_ = v_filter_gain_ * filtered_vy_ + (1.0 - v_filter_gain_) * ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
             v_filter_gain_ = std::min(0.9, v_filter_gain_ + 0.05);
         }
     }
 
 
     // pos x, pos y
-    // filtered_posx_ = object.state.pose.pose.position.x;
-    // filtered_posy_ = object.state.pose.pose.position.y;
-    last_measurement_posx_ = object.state.pose.pose.position.x;
-    last_measurement_posy_ = object.state.pose.pose.position.y;
-    filtered_posx_ = pos_filter_gain_ * filtered_posx_ + (1.0 - pos_filter_gain_) * object.state.pose.pose.position.x;
-    filtered_posy_ = pos_filter_gain_ * filtered_posy_ + (1.0 - pos_filter_gain_) * object.state.pose.pose.position.y;
+    // filtered_posx_ = object.state.pose_covariance.pose.position.x;
+    // filtered_posy_ = object.state.pose_covariance.pose.position.y;
+    last_measurement_posx_ = object.state.pose_covariance.pose.position.x;
+    last_measurement_posy_ = object.state.pose_covariance.pose.position.y;
+    filtered_posx_ = pos_filter_gain_ * filtered_posx_ + (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.x;
+    filtered_posy_ = pos_filter_gain_ * filtered_posy_ + (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.y;
     pos_filter_gain_ = std::min(0.8, pos_filter_gain_ + 0.05);
 
     return true;
@@ -118,19 +118,19 @@ bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time &time, autowar
     if (dt < 0.0)
         dt = 0.0;
 
-    object.state.pose.pose.position.x = filtered_posx_;
-    object.state.pose.pose.position.y = filtered_posy_;
-    object.state.pose.pose.position.x += filtered_vx_ * dt;
-    object.state.pose.pose.position.y += filtered_vy_ * dt;
+    object.state.pose_covariance.pose.position.x = filtered_posx_;
+    object.state.pose_covariance.pose.position.y = filtered_posy_;
+    object.state.pose_covariance.pose.position.x += filtered_vx_ * dt;
+    object.state.pose_covariance.pose.position.y += filtered_vy_ * dt;
 
-    object.state.pose_reliable = false;
+    object.state.orientation_reliable = false;
 
     double roll, pitch, yaw;
     tf2::Quaternion quaternion;
-    tf2::fromMsg(object.state.pose.pose.orientation, quaternion);
+    tf2::fromMsg(object.state.pose_covariance.pose.orientation, quaternion);
     tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-    object.state.twist.twist.linear.x = filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
-    object.state.twist.twist.linear.y = filtered_vx_ * std::sin(-yaw) + filtered_vy_ * std::cos(-yaw);
+    object.state.twist_covariance.twist.linear.x = filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
+    object.state.twist_covariance.twist.linear.y = filtered_vx_ * std::sin(-yaw) + filtered_vy_ * std::cos(-yaw);
 
     object.state.twist_reliable = true;
 
@@ -142,7 +142,7 @@ bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time &time, autowar
 //     geometry_msgs::Point position;
 //     position.x = filtered_posx_;
 //     position.y = filtered_posy_;
-//     position.z = object_.state.pose.pose.position.z;
+//     position.z = object_.state.pose_covariance.pose.position.z;
 //     return position;
 // }
 

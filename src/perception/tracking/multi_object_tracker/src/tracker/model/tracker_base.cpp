@@ -46,9 +46,9 @@ geometry_msgs::Point Tracker::getPosition(const ros::Time &time)
     autoware_perception_msgs::DynamicObject object;
     getEstimatedDynamicObject(time, object);
     geometry_msgs::Point position;
-    position.x = object.state.pose.pose.position.x;
-    position.y = object.state.pose.pose.position.y;
-    position.z = object.state.pose.pose.position.z;
+    position.x = object.state.pose_covariance.pose.position.x;
+    position.y = object.state.pose_covariance.pose.position.y;
+    position.z = object.state.pose_covariance.pose.position.z;
     return position;
 }
 

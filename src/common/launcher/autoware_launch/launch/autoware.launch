@@ -8,6 +8,10 @@
   <!-- Localization -->
 
   <!-- Perception -->
+  <include file="$(find perception_launch)/launch/perception.launch" >
+    <arg name="mode" default="lidar"/>  <!-- "camera_lidar_fusion", "lidar" or "camera" -->
+  </include>
+
   <!-- Traffic Light Recognition -->
   <!-- Planning -->
   <!-- Control -->

@@ -70,10 +70,10 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
   for(const auto& object: in_objects->objects)
   { 
     geometry_msgs::Pose pose_out;
-    tf2::doTransform(object.state.pose.pose, pose_out, objects2map);
+    tf2::doTransform(object.state.pose_covariance.pose, pose_out, objects2map);
     autoware_perception_msgs::DynamicObject tmp_object;
     tmp_object = object;
-    tmp_object.state.pose.pose = pose_out;
+    tmp_object.state.pose_covariance.pose = pose_out;
     objects_in_map.objects.push_back(tmp_object);
   }
   
@@ -113,10 +113,10 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
     for(const auto& object: out_objects.objects)
     { 
       geometry_msgs::Pose pose_out;
-      tf2::doTransform(object.state.pose.pose, pose_out, map2world);
+      tf2::doTransform(object.state.pose_covariance.pose, pose_out, map2world);
       autoware_perception_msgs::DynamicObject tmp_object;
       tmp_object = object;
-      tmp_object.state.pose.pose = pose_out;
+      tmp_object.state.pose_covariance.pose = pose_out;
       tmp_object.state.predicted_paths.clear();
       for(const auto& path: object.state.predicted_paths)
       {
@@ -198,7 +198,7 @@ void MapBasedPredictionROS::publishMarker(const autoware_perception_msgs::Dynami
         //goal point, it extracts the first pose
         geometry_point.x = point.pose.pose.position.x;
         geometry_point.y = point.pose.pose.position.y;
-        geometry_point.z = object.state.pose.pose.position.z - 1.0;
+        geometry_point.z = object.state.pose_covariance.pose.position.z - 1.0;
         predicted_points.points.push_back(geometry_point);
         predicted_line.points.push_back(geometry_point);
       }

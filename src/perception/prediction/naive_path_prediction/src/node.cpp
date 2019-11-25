@@ -46,13 +46,13 @@ void NaivePathPredictionNode::callback(const autoware_perception_msgs::DynamicOb
             pose_cov_stamped.header.stamp = output_msg.header.stamp + ros::Duration(dt);
             geometry_msgs::Pose object_frame_pose;
             geometry_msgs::Pose world_frame_pose;
-            object_frame_pose.position.x = output_msg.objects.at(i).state.twist.twist.linear.x * dt;
-            object_frame_pose.position.y = output_msg.objects.at(i).state.twist.twist.linear.y * dt;
+            object_frame_pose.position.x = output_msg.objects.at(i).state.twist_covariance.twist.linear.x * dt;
+            object_frame_pose.position.y = output_msg.objects.at(i).state.twist_covariance.twist.linear.y * dt;
             tf2::Transform tf_object2future;
             tf2::Transform tf_world2object;
             tf2::Transform tf_world2future;
 
-            tf2::fromMsg(output_msg.objects.at(i).state.pose.pose, tf_world2object);
+            tf2::fromMsg(output_msg.objects.at(i).state.pose_covariance.pose, tf_world2object);
             tf2::fromMsg(object_frame_pose, tf_object2future);
             tf_world2future = tf_world2object * tf_object2future;
             tf2::toMsg(tf_world2future, world_frame_pose);
