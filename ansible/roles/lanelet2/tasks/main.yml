@@ -1,0 +1,26 @@
+---
+- name: Lanelet2 (install dependencies for building packages)
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items:
+    - libboost-dev
+    - libeigen3-dev
+    - libgeographic-dev
+    - libpugixml-dev
+    - libpython-dev
+    - libboost-python-dev
+    - python-catkin-tools
+    
+- name: Lanelet2 (clone Lanelet2 repository catkin workspace)
+  become: no
+  git:
+    repo: https://github.com/fzi-forschungszentrum-informatik/Lanelet2.git
+    dest: "{{ playbook_dir | dirname}}/src/map/lanelet2/"
+
+- name: Lanelet2 (clone mrt_cmake_modules catkin workspace)
+  become: no
+  git:
+    repo: https://github.com/KIT-MRT/mrt_cmake_modules.git
+    dest: "{{ playbook_dir | dirname}}/src/map/mrt_cmake_modules/"
