@@ -3,20 +3,18 @@
 # How to setup
 ## Software setup
 ### Install Autoware
-1. install CUDA, [TensorRT](https://docs.nvidia.com/deeplearning/sdk/tensorrt-archived/index.html)
-2. ROS, Caffe setup
-
- ubuntu 16.04
+1. install CUDA[**recommend 10.1**], [TensorRT](https://docs.nvidia.com/deeplearning/sdk/tensorrt-archived/index.html)[**recomend 5.1GA**]
+2. setup ROS, Caffe
+- ubuntu 16.04
 ```
 ./setup_ubuntu16.04.sh
 ```
-
-ubuntu 18.04
-If you get a caffe build error, cmake must be upgraded
+- ubuntu 18.04
 
 ```
 ./setup_ubuntu18.04.sh
 ```
+**if you got cmake error in caffe build, please see [this](https://github.com/tier4/Autoware-T4B/wiki/Trouble-shooting)**.
 
 3. install dependency
 ```
