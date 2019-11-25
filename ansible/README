@@ -1,2 +1,0 @@
-sudo apt install ansible
-ansible-playbook ./localhost-setup-devpc.yml

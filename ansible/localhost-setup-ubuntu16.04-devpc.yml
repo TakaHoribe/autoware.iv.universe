@@ -1,0 +1,8 @@
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - lanelet2
+    - {role: ros, release: kinetic}
+    - caffe

@@ -75,7 +75,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     }
 
     marker.action = visualization_msgs::Marker::MODIFY;
-    marker.pose = input_msg->objects.at(i).state.pose.pose;
+    marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     marker.lifetime = ros::Duration(0.2);
     marker.scale.x = line_width;
     marker.color.a = 1.0; // Don't forget to set the alpha!
@@ -89,7 +89,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
   // orientation
   for (size_t i = 0; i < input_msg->objects.size(); ++i)
   {
-    if (!input_msg->objects.at(i).state.pose_reliable)
+    if (!input_msg->objects.at(i).state.orientation_reliable)
     {
       continue;
     }
@@ -105,7 +105,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.ns = std::string("orientation");
     marker.scale.x = line_width;
     marker.action = visualization_msgs::Marker::MODIFY;
-    marker.pose = input_msg->objects.at(i).state.pose.pose;
+    marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     geometry_msgs::Point point;
     point.x = 0.0;
     point.y = 0;
@@ -157,13 +157,13 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.text = label + ":" + id_str.substr(0, 4);
     if (input_msg->objects.at(i).state.twist_reliable)
     {
-      double vel = std::sqrt(input_msg->objects.at(i).state.twist.twist.linear.x * input_msg->objects.at(i).state.twist.twist.linear.x +
-                             input_msg->objects.at(i).state.twist.twist.linear.y * input_msg->objects.at(i).state.twist.twist.linear.y +
-                             input_msg->objects.at(i).state.twist.twist.linear.z * input_msg->objects.at(i).state.twist.twist.linear.z);
+      double vel = std::sqrt(input_msg->objects.at(i).state.twist_covariance.twist.linear.x * input_msg->objects.at(i).state.twist_covariance.twist.linear.x +
+                             input_msg->objects.at(i).state.twist_covariance.twist.linear.y * input_msg->objects.at(i).state.twist_covariance.twist.linear.y +
+                             input_msg->objects.at(i).state.twist_covariance.twist.linear.z * input_msg->objects.at(i).state.twist_covariance.twist.linear.z);
       marker.text = marker.text + "\n" + std::to_string(int(vel * 3.6)) + std::string("[km/h]");
     }
     marker.action = visualization_msgs::Marker::MODIFY;
-    marker.pose = input_msg->objects.at(i).state.pose.pose;
+    marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     marker.lifetime = ros::Duration(0.2);
     marker.color.a = 1.0; // Don't forget to set the alpha!
     marker.color.r = 1.0;
@@ -192,15 +192,15 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.ns = std::string("twist");
     marker.scale.x = line_width;
     marker.action = visualization_msgs::Marker::MODIFY;
-    marker.pose = input_msg->objects.at(i).state.pose.pose;
+    marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     geometry_msgs::Point point;
     point.x = 0.0;
     point.y = 0;
     point.z = 0;
     marker.points.push_back(point);
-    point.x = input_msg->objects.at(i).state.twist.twist.linear.x;
-    point.y = input_msg->objects.at(i).state.twist.twist.linear.y;
-    point.z = input_msg->objects.at(i).state.twist.twist.linear.z;
+    point.x = input_msg->objects.at(i).state.twist_covariance.twist.linear.x;
+    point.y = input_msg->objects.at(i).state.twist_covariance.twist.linear.y;
+    point.z = input_msg->objects.at(i).state.twist_covariance.twist.linear.z;
     marker.points.push_back(point);
 
     marker.lifetime = ros::Duration(0.2);

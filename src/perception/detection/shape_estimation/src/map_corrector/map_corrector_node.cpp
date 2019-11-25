@@ -50,7 +50,7 @@ bool MapCorrectorNode::correct(autoware_perception_msgs::DynamicObjectWithFeatur
   for (const auto &input_feature_object : input.feature_objects)
   {
     autoware_perception_msgs::DynamicObjectWithFeature feature_object = input_feature_object;
-    if (feature_object.object.state.pose_reliable)
+    if (feature_object.object.state.orientation_reliable)
     {
       output.feature_objects.push_back(feature_object);
       continue;
@@ -66,10 +66,10 @@ bool MapCorrectorNode::correct(autoware_perception_msgs::DynamicObjectWithFeatur
     {
       corrector_ptr.reset(new NoMapCorrector);
     }
-    bool orientation = feature_object.object.state.pose_reliable;
-    if (corrector_ptr->correct(vector_map_, tf_stamped, feature_object.object.shape, feature_object.object.state.pose.pose, orientation))
+    bool orientation = feature_object.object.state.orientation_reliable;
+    if (corrector_ptr->correct(vector_map_, tf_stamped, feature_object.object.shape, feature_object.object.state.pose_covariance.pose, orientation))
     {
-      feature_object.object.state.pose_reliable = orientation;
+      feature_object.object.state.orientation_reliable = orientation;
       output.feature_objects.push_back(feature_object);
     }
     // if (corrector_ptr->correct(feature_object.object.shape, feature_object.object.state.pose.pose, bool(feature_object.object.state.pose_reliable)))
