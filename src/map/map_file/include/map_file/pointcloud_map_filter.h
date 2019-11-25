@@ -55,10 +55,10 @@
 #include <mutex>
 #include <regex>
 
-class points_map_filter {
+class pointcloud_map_filter {
 public:
-  points_map_filter(ros::NodeHandle nh, ros::NodeHandle pnh);
-  ~points_map_filter();
+  pointcloud_map_filter(ros::NodeHandle nh, ros::NodeHandle pnh);
+  ~pointcloud_map_filter();
   void init();
   void run();
 

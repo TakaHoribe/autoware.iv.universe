@@ -60,7 +60,7 @@ Changelog for package map_file
   * Message packages fixes
   * Fix missing dependency
 * Feature/points map filter (`#1658 <https://github.com/CPFL/Autoware/issues/1658>`_)
-  * add points_map_filter node
+  * add pointcloud_map_filter node
   * add passthrough filter
   * fix filter function
   * apply clang-format
@@ -174,14 +174,14 @@ Changelog for package map_file
 * Fix typos around map_db
 * Add vector_map_loader corresponding to new road objects
 * Add draft proposal of vector_map_loader
-* Runtime Manager, update points_map_loader for SIGINT termination
+* Runtime Manager, update pointcloud_map_loader for SIGINT termination
 * add const to errp read only parameter
 * Runtime Manager Quick Start tab, fix Map load OK label
 * Add module graph tool
 * Fix for rosjava installed platform
   Some packages don't declare package dependencies correctly.
   This makes message jar files built failure.
-* Rewrite points_map_loader
+* Rewrite pointcloud_map_loader
   Rewrite the entire main program.
   Delete a noisy debug message in library.
 * Use pcd download thread too
