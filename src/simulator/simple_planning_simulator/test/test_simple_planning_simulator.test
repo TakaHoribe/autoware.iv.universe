@@ -1,0 +1,5 @@
+<launch>
+
+  <test test-name="test-simple_planning_simulator" pkg="simple_planning_simulator" type="test-simple_planning_simulator" name="test" time-limit="300.0"/>
+
+</launch>
