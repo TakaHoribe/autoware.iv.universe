@@ -32,18 +32,18 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <map_file/points_map_filter.h>
+#include <map_file/pointcloud_map_filter.h>
 
-points_map_filter::points_map_filter(ros::NodeHandle nh, ros::NodeHandle pnh) {
+pointcloud_map_filter::pointcloud_map_filter(ros::NodeHandle nh, ros::NodeHandle pnh) {
   map_cloud_ =
       pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
   nh_ = nh;
   pnh_ = pnh;
 }
 
-points_map_filter::~points_map_filter() {}
+pointcloud_map_filter::~pointcloud_map_filter() {}
 
-void points_map_filter::init() {
+void pointcloud_map_filter::init() {
   std::lock_guard<std::mutex> lock(mtx_);
   pnh_.param("load_grid_size", load_grid_size_, 100.0);
   pnh_.param("load_trigger_distance", load_trigger_distance_, 20.0);
@@ -55,18 +55,18 @@ void points_map_filter::init() {
   return;
 }
 
-void points_map_filter::run() {
+void pointcloud_map_filter::run() {
   std::lock_guard<std::mutex> lock(mtx_);
   map_pub_ =
-      nh_.advertise<sensor_msgs::PointCloud2>("/points_map/filtered", 10);
+      nh_.advertise<sensor_msgs::PointCloud2>("/pointcloud_map/filtered", 10);
   map_sub_ =
-      nh_.subscribe("/points_map", 1, &points_map_filter::map_callback_, this);
+      nh_.subscribe("/pointcloud_map", 1, &pointcloud_map_filter::map_callback_, this);
   pose_sub_ = nh_.subscribe("/current_pose", 1,
-                            &points_map_filter::current_pose_callback_, this);
+                            &pointcloud_map_filter::current_pose_callback_, this);
   return;
 }
 
-void points_map_filter::map_callback_(
+void pointcloud_map_filter::map_callback_(
     const sensor_msgs::PointCloud2::ConstPtr msg) {
   std::lock_guard<std::mutex> lock(mtx_);
   ROS_INFO_STREAM("loading map started.");
@@ -77,7 +77,7 @@ void points_map_filter::map_callback_(
   return;
 }
 
-void points_map_filter::current_pose_callback_(
+void pointcloud_map_filter::current_pose_callback_(
     const geometry_msgs::PoseStamped::ConstPtr msg) {
   std::lock_guard<std::mutex> lock(mtx_);
   ROS_INFO_STREAM("pose received");

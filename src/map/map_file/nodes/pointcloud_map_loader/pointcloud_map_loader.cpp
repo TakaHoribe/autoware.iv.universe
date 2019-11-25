@@ -438,16 +438,16 @@ void request_lookahead_download(const autoware_msgs::LaneArray& msg)
 void print_usage()
 {
 	ROS_ERROR_STREAM("Usage:");
-	ROS_ERROR_STREAM("rosrun map_file points_map_loader noupdate [PCD]...");
-	ROS_ERROR_STREAM("rosrun map_file points_map_loader {1x1|3x3|5x5|7x7|9x9} AREALIST [PCD]...");
-	ROS_ERROR_STREAM("rosrun map_file points_map_loader {1x1|3x3|5x5|7x7|9x9} download");
+	ROS_ERROR_STREAM("rosrun map_file pointcloud_map_loader noupdate [PCD]...");
+	ROS_ERROR_STREAM("rosrun map_file pointcloud_map_loader {1x1|3x3|5x5|7x7|9x9} AREALIST [PCD]...");
+	ROS_ERROR_STREAM("rosrun map_file pointcloud_map_loader {1x1|3x3|5x5|7x7|9x9} download");
 }
 
 } // namespace
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "points_map_loader");
+	ros::init(argc, argv, "pointcloud_map_loader");
 
 	ros::NodeHandle n;
 
@@ -487,13 +487,13 @@ int main(int argc, char **argv)
 		if (mode == "download") {
 			can_download = true;
 			std::string host_name;
-			n.param<std::string>("points_map_loader/host_name", host_name, HTTP_HOSTNAME);
+			n.param<std::string>("pointcloud_map_loader/host_name", host_name, HTTP_HOSTNAME);
 			int port;
-			n.param<int>("points_map_loader/port", port, HTTP_PORT);
+			n.param<int>("pointcloud_map_loader/port", port, HTTP_PORT);
 			std::string user;
-			n.param<std::string>("points_map_loader/user", user, HTTP_USER);
+			n.param<std::string>("pointcloud_map_loader/user", user, HTTP_USER);
 			std::string password;
-			n.param<std::string>("points_map_loader/password", password, HTTP_PASSWORD);
+			n.param<std::string>("pointcloud_map_loader/password", password, HTTP_PASSWORD);
 			gf = GetFile(host_name, port, user, password);
 		} else {
 			can_download = false;
@@ -505,7 +505,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	pcd_pub = n.advertise<sensor_msgs::PointCloud2>("points_map", 1, true);
+	pcd_pub = n.advertise<sensor_msgs::PointCloud2>("pointcloud_map", 1, true);
 	stat_pub = n.advertise<std_msgs::Bool>("pmap_stat", 1, true);
 
 	stat_msg.data = false;
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
 		int err = 0;
 		publish_pcd(create_pcd(pcd_paths, &err), &err);
 	} else {
-		n.param<int>("points_map_loader/update_rate", update_rate, DEFAULT_UPDATE_RATE);
+		n.param<int>("pointcloud_map_loader/update_rate", update_rate, DEFAULT_UPDATE_RATE);
 		fallback_rate = update_rate * 2; // XXX better way?
 
 		gnss_sub = n.subscribe("gnss_pose", 1000, publish_gnss_pcd);
