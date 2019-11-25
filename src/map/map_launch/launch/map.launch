@@ -10,6 +10,6 @@
 
  <node pkg="map_file" type="pointcloud_map_loader" name="pointcloud_map_loader" args="noupdate $(arg pointcloud_map_path)"/>
 
- <!-- <include file="$(arg map_tf_path)"/> -->
+ <include file="$(arg map_tf_path)"/>
 
 </launch>
