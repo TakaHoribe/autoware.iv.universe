@@ -40,7 +40,6 @@
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_control_msgs/VehicleCommandStamped.h>
 #include <autoware_control_msgs/VehicleStatusStamped.h>
-#include <autoware_planning_msgs/Trajectory.h>
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 #include "simple_planning_simulator/vehicle_model/sim_model_ideal.hpp"
