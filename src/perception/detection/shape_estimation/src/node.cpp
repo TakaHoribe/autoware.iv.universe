@@ -53,8 +53,8 @@ void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObject
       continue;
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
-    output_msg.feature_objects.back().object.state.pose.pose = pose;
-    output_msg.feature_objects.back().object.state.pose_reliable = orientation;
+    output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
+    output_msg.feature_objects.back().object.state.orientation_reliable = orientation;
   }
   if (use_map_correct_)
   {

@@ -73,9 +73,9 @@ void MultiObjectTrackerNode::measurementCallback(const autoware_perception_msgs:
         tf2::fromMsg(input_current_pose_msg->pose, tf_current_pose_world2current_pose);
         for (size_t i = 0; i < input_transformed_objects.feature_objects.size(); ++i)
         {
-            tf2::fromMsg(input_transformed_objects.feature_objects.at(i).object.state.pose.pose, tf_objets_world2objects);
+            tf2::fromMsg(input_transformed_objects.feature_objects.at(i).object.state.pose_covariance.pose, tf_objets_world2objects);
             tf_world2objets = tf_world2current_pose_world * tf_current_pose_world2current_pose * tf_current_pose2objects_world * tf_objets_world2objects;
-            tf2::toMsg(tf_world2objets, input_transformed_objects.feature_objects.at(i).object.state.pose.pose);
+            tf2::toMsg(tf_world2objets, input_transformed_objects.feature_objects.at(i).object.state.pose_covariance.pose);
         }
     }
 

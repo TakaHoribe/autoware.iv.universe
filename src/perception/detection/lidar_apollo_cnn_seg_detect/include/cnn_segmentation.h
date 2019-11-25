@@ -26,10 +26,8 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <autoware_perception_msgs/DetectedObjectArray.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
 
 #include <std_msgs/Header.h>
 
@@ -73,7 +71,6 @@ private:
 
   // publisher
   ros::Publisher points_pub_;
-  ros::Publisher objects_pub_;
   ros::Publisher d_objects_pub_;
 
   // subscriber
@@ -104,14 +101,14 @@ private:
 
   bool segment(const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
                const pcl::PointIndices &valid_idx,
-               autoware_perception_msgs::DetectedObjectArray &objects);
+               autoware_perception_msgs::DynamicObjectWithFeatureArray &objects);
 
   void pointsCallback(const sensor_msgs::PointCloud2 &msg);
 
-  void pubColoredPoints(const autoware_perception_msgs::DetectedObjectArray &objects);
+  void pubColoredPoints(const autoware_perception_msgs::DynamicObjectWithFeatureArray &objects);
   
-  void convertDetected2Dynamic(const autoware_perception_msgs::DetectedObjectArray &objects, 
-                                     autoware_perception_msgs::DynamicObjectWithFeatureArray &d_objects);
+  // void convertDetected2Dynamic(const autoware_perception_msgs::DetectedObjectArray &objects, 
+  //                                    autoware_perception_msgs::DynamicObjectWithFeatureArray &d_objects);
 
 };
 

@@ -57,7 +57,7 @@ bool MapBasedPrediction::doPrediction(const autoware_perception_msgs::DynamicObj
       continue;
     }
     
-    const double abs_velo = std::sqrt(std::pow(object.state.twist.twist.linear.x, 2)+std::pow(object.state.twist.twist.linear.y,2));
+    const double abs_velo = std::sqrt(std::pow(object.state.twist_covariance.twist.linear.x, 2)+std::pow(object.state.twist_covariance.twist.linear.y,2));
     double minimum_velocity_threshold = 0.5;
     if(abs_velo < minimum_velocity_threshold)
     {
@@ -65,18 +65,18 @@ bool MapBasedPrediction::doPrediction(const autoware_perception_msgs::DynamicObj
     }
     // std::cerr << "id " << unique_id::toHexString(object.id) << std::endl;
     // std::cerr << "clsdd " << object.semantic.type << std::endl;
-    // std::cerr << "velo x " << object.state.twist.twist.linear.x << std::endl;
-    // std::cerr << "velo y " << object.state.twist.twist.linear.y << std::endl;
+    // std::cerr << "velo x " << object.state.twist_covariance.twist.linear.x << std::endl;
+    // std::cerr << "velo y " << object.state.twist_covariance.twist.linear.y << std::endl;
     
-    geometry_msgs::Pose object_pose = object.state.pose.pose;
+    geometry_msgs::Pose object_pose = object.state.pose_covariance.pose;
     LanePoint nearest_lane;
     if(getNearestLane(lane_poitns, object_pose, nearest_lane))
     {
       // calculate initial position in Frenet coordinate
       // Optimal Trajectory Generation for Dynamic Street Scenarios in a Frenet Frame
       // Path Planning for Highly Automated Driving on Embedded GPUs
-      double px = object.state.pose.pose.position.x;
-      double py = object.state.pose.pose.position.y;
+      double px = object.state.pose_covariance.pose.position.x;
+      double py = object.state.pose_covariance.pose.position.y;
 
       // std::cerr << "object 0000000" << std::endl;
       for(const auto& goal_path: nearest_lane.goal_paths)
@@ -96,16 +96,16 @@ bool MapBasedPrediction::doPrediction(const autoware_perception_msgs::DynamicObj
         
         double yaw;
         double object_velocity;
-        if(object.state.pose_reliable)
+        if(object.state.orientation_reliable)
         {
           double roll, pitch;
-          toEulerAngle(object.state.pose.pose.orientation, roll, pitch, yaw);
-          object_velocity = object.state.twist.twist.linear.x;
+          toEulerAngle(object.state.pose_covariance.pose.orientation, roll, pitch, yaw);
+          object_velocity = object.state.twist_covariance.twist.linear.x;
         }
         else
         {
-          double theta = std::atan2(object.state.pose.pose.position.y,
-                           object.state.pose.pose.position.x);
+          double theta = std::atan2(object.state.pose_covariance.pose.position.y,
+                           object.state.pose_covariance.pose.position.x);
           // East is 0(rad) according to REP
           // since x and y is inverse in map coordinate, offset -M_PI/2
           yaw = theta + M_PI/2;

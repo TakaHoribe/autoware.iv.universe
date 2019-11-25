@@ -235,20 +235,44 @@ void Cluster2D::classify(const caffe::Blob<float> &classify_pt_blob)
     }
 }
 
-autoware_perception_msgs::DetectedObject
+autoware_perception_msgs::DynamicObjectWithFeature
 Cluster2D::obstacleToObject(const Obstacle& in_obstacle, const std_msgs::Header& in_header)
 {
-    autoware_perception_msgs::DetectedObject resulting_object;
+    autoware_perception_msgs::DynamicObjectWithFeature resulting_object;
 
     sensor_msgs::PointCloud2 ros_pc;
     pcl::PointCloud<pcl::PointXYZI> in_cluster = *in_obstacle.cloud_ptr;
     pcl::toROSMsg(in_cluster, ros_pc);
-    resulting_object.header = in_header;
-    resulting_object.pointcloud = ros_pc;
-    resulting_object.pointcloud.header = in_header;
-    resulting_object.score = in_obstacle.score;
-    resulting_object.label = in_obstacle.GetTypeString();
-    resulting_object.valid = true;
+    // resulting_object.header = in_header;
+    resulting_object.feature.cluster = ros_pc;
+    resulting_object.feature.cluster.header = in_header;
+    resulting_object.object.semantic.confidence = in_obstacle.score;
+    const std::string label = in_obstacle.GetTypeString();
+    if(label == "person")
+    {
+      resulting_object.object.semantic.type = resulting_object.object.semantic.PEDESTRIAN;
+    }
+    else if(label == "bike" || label == "bicycle")
+    {
+      resulting_object.object.semantic.type = resulting_object.object.semantic.BICYCLE;
+    }
+    else if(label == "car")
+    {
+      resulting_object.object.semantic.type = resulting_object.object.semantic.CAR;
+    }
+    else if(label == "truck" )
+    {
+      resulting_object.object.semantic.type = resulting_object.object.semantic.TRUCK;
+    }
+    else if(label == "bus")
+    {
+      resulting_object.object.semantic.type = resulting_object.object.semantic.BUS;
+    }
+    else
+    {
+      // d_object.object.semantic.type = d_object.object.semantic.UNKNOWN;
+      resulting_object.object.semantic.type = resulting_object.object.semantic.PEDESTRIAN;
+    }
 
     float min_x = std::numeric_limits<float>::max();
     float max_x = -std::numeric_limits<float>::max();
@@ -304,12 +328,12 @@ Cluster2D::obstacleToObject(const Obstacle& in_obstacle, const std_msgs::Header&
     width = max_point.y - min_point.y;
     height = max_point.z - min_point.z;
 
-    resulting_object.pose.position.x = min_point.x + length / 2;
-    resulting_object.pose.position.y = min_point.y + width / 2;
-    resulting_object.pose.position.z = min_point.z + height / 2;
-    resulting_object.dimensions.x = ((length < 0) ? -1 * length : length);
-    resulting_object.dimensions.y = ((width < 0) ? -1 * width : width);
-    resulting_object.dimensions.z = ((height < 0) ? -1 * height : height);
+    resulting_object.object.state.pose_covariance.pose.position.x = min_point.x + length / 2;
+    resulting_object.object.state.pose_covariance.pose.position.y = min_point.y + width / 2;
+    resulting_object.object.state.pose_covariance.pose.position.z = min_point.z + height / 2;
+    // resulting_object.object.state.dimensions.x = ((length < 0) ? -1 * length : length);
+    // resulting_object.object.state.dimensions.y = ((width < 0) ? -1 * width : width);
+    // resulting_object.object.state.dimensions.z = ((height < 0) ? -1 * height : height);
 
     std::vector<cv::Point2f> points;
     for (unsigned int i = 0; i < in_cluster.points.size(); i++)
@@ -320,7 +344,7 @@ Cluster2D::obstacleToObject(const Obstacle& in_obstacle, const std_msgs::Header&
         points.push_back(pt);
     }
 
-    resulting_object.space_frame = in_header.frame_id;
+    // resulting_object.space_frame = in_header.frame_id;
 
     return resulting_object;
 }
@@ -328,7 +352,7 @@ Cluster2D::obstacleToObject(const Obstacle& in_obstacle, const std_msgs::Header&
 void Cluster2D::getObjects(const float confidence_thresh,
                            const float height_thresh,
                            const int min_pts_num,
-                           autoware_perception_msgs::DetectedObjectArray &objects,
+                           autoware_perception_msgs::DynamicObjectWithFeatureArray &objects,
                            const std_msgs::Header &in_header)
 {
     CHECK(valid_indices_in_pc_ != nullptr);
@@ -370,9 +394,9 @@ void Cluster2D::getObjects(const float confidence_thresh,
             continue;
         }
 
-        autoware_perception_msgs::DetectedObject out_obj = obstacleToObject(*obs, in_header);
+        autoware_perception_msgs::DynamicObjectWithFeature out_obj = obstacleToObject(*obs, in_header);
 
-        objects.objects.push_back(out_obj);
+        objects.feature_objects.push_back(out_obj);
     }
 }
 
