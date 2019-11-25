@@ -332,6 +332,7 @@ void Simulator::getTransformFromTF(const std::string parent_frame, const std::st
     try
     {
       transform = tf_buffer_.lookupTransform(parent_frame, child_frame, ros::Time(0));
+      break;
     }
     catch (tf2::TransformException &ex)
     {
