@@ -3,6 +3,13 @@
   <!-- Vehicle Setting -->
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
+  <!-- Map -->
+  <include file="$(find map_launch)/launch/map.launch" >
+    <arg name="lanelet_map_path" default=""/>
+    <arg name="points_map_path" default=""/>
+    <arg name="map_tf_path" default=""/>
+  </include>
+
   <!-- Sensing -->
 
   <!-- Localization -->
