@@ -53,6 +53,8 @@ set(simple_planning_simulator_SRC
 )
 add_executable(simple_planning_simulator src/simple_planning_simulator_node.cpp ${simple_planning_simulator_SRC})
 target_link_libraries(simple_planning_simulator ${catkin_LIBRARIES})
+add_dependencies(simple_planning_simulator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 
 ## Install executables and/or libraries
