@@ -5,6 +5,7 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
         autoware_perception_msgs
+        vector_map_msgs
         pcl_ros
         roscpp
         tf2
@@ -21,6 +22,7 @@ catkin_package(
             include
         CATKIN_DEPENDS
             autoware_perception_msgs
+            vector_map_msgs
             pcl_ros
             roscpp
             tf2
@@ -75,14 +77,14 @@ install(DIRECTORY launch/
 # endif()
 # if (CATKIN_ENABLE_TESTING)
 #     find_package(rostest REQUIRED)
-#     add_rostest_gtest(test-lidar_shape_estimation 
-#     test/test_lidar_shape_estimation.test 
+#     add_rostest_gtest(test-lidar_shape_estimation
+#     test/test_lidar_shape_estimation.test
 #     test/src/test_lidar_shape_estimation.cpp
 #     src/shape_estimator.cpp
 #     src/model/bounding_box.cpp
 #     src/model/convex_hull.cpp
 #     src/model/cylinder.cpp)
-#     target_link_libraries(test-lidar_shape_estimation 
+#     target_link_libraries(test-lidar_shape_estimation
 #     ${catkin_LIBRARIES}
 #     ${OpenCV_LIBS}
 #     ${PCL_LIBRARIES})

@@ -5,6 +5,7 @@ add_compile_options(-std=c++11 -O3)
 
 find_package(catkin REQUIRED
              COMPONENTS autoware_perception_msgs
+                        vector_map_msgs
                         pcl_ros
                         roscpp
                         tf2
@@ -20,6 +21,7 @@ catkin_package(INCLUDE_DIRS
                include
                CATKIN_DEPENDS
                autoware_perception_msgs
+               vector_map_msgs
                pcl_ros
                roscpp
                tf2
