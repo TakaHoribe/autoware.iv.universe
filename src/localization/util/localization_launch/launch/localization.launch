@@ -12,9 +12,9 @@
             <include file="$(find localization_launch)/launch/twist_generator/twist_generator.launch">
             </include>
         </group>
-        <!-- pose_fixer module -->
-        <group ns="pose_fixer">
-            <include file="$(find localization_launch)/launch/pose_fixer/pose_fixer.launch">
+        <!-- fusion_localizer module -->
+        <group ns="fusion_localizer">
+            <include file="$(find localization_launch)/launch/fusion_localizer/fusion_localizer.launch">
             </include>
         </group>
     </group>
