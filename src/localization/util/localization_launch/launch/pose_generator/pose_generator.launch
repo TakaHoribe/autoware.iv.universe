@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find ndt_slam)/launch/ndt_slam.launch">
+    </include>
+</launch>

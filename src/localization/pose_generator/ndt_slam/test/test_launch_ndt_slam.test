@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="lidar_localizer" type="ndt_slam" name="ndt_slam" />
+  <test pkg="lidar_localizer" type="test_launch_ndt_slam" test-name="test_launch_ndt_slam" />
+</launch>
+
