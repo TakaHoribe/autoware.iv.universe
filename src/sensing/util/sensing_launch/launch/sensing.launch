@@ -25,4 +25,15 @@
         <arg name="input_points_number" default="1"/>
         <arg name="output_points_raw" default="/points_raw/cropbox/filtered"/>
     </include>
+    <!-- PointCloud Outlier Filter -->
+    <!-- <node pkg="nodelet" type="nodelet" name="voxel_grid_outlier_filter" args="load pointcloud_preprocessor/voxel_grid_outlier_filter_nodelet pcl_manager" output="screen">
+            <remap from="~input" to="/points_raw/cropbox/filtered" />
+            <remap from="~output" to="/points_raw/outlier/filtered" />
+            <rosparam>
+                voxel_size_x: 0.3
+                voxel_size_y: 0.3
+                voxel_size_z: 0.5
+                voxel_points_threshold: 2
+            </rosparam>
+        </node> -->
 </launch>
