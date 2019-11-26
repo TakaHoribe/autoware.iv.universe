@@ -12,7 +12,6 @@
     <arg name="pointcloud_map_path" default=""/>
     <arg name="map_tf_path" default=""/>
   </include>
-  <node pkg="tf2_ros" type="static_transform_publisher" name="link1_broadcaster" args="80700 7500 120 0 0 0 1 map world" />
 
   <!-- Planning -->
 
