@@ -11,8 +11,12 @@
   </include>
 
   <!-- Sensing -->
+  <include file="$(find sensing_launch)/launch/sensing.launch" >
+  </include>
 
   <!-- Localization -->
+  <include file="$(find localization_launch)/launch/localization.launch" >
+  </include>
 
   <!-- Perception -->
   <include file="$(find perception_launch)/launch/perception.launch" >
