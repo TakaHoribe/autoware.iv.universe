@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Vehicle Setting -->
+  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
+
+  <!-- Simulator -->
+  <include file="$(find simple_planning_simulator)/launch/simple_planning_simulator.launch" />
+
+  <!-- Map -->
+  <include file="$(find map_launch)/launch/map.launch" >
+    <arg name="lanelet_map_path" default=""/>
+    <arg name="pointcloud_map_path" default=""/>
+    <arg name="map_tf_path" default=""/>
+  </include>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="link1_broadcaster" args="80700 7500 120 0 0 0 1 map world" />
+
+  <!-- Planning -->
+
+  <!-- Control -->
+
+</launch>
