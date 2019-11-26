@@ -223,24 +223,21 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
   }
 }
 
-double getAngle(const geometry_msgs::Point32& p0, const geometry_msgs::Point32& p1, const geometry_msgs::Point32& p2)
+// Is angle AOB less than 180?
+// https://qiita.com/fujii-kotaro/items/a411f2a45627ed2f156e
+bool isAcuteAngle(const geometry_msgs::Point32& a, const geometry_msgs::Point32& o, const geometry_msgs::Point32& b)
 {
-  // angle at vertex i formed by p0, p1, p2
-  double a = hypot(p0, p1);
-  double b = hypot(p1, p2);
-  double c = hypot(p0, p2);
-  double theta = acos((a * a + b * b - c * c) / (2.0 * a * b));
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) >= 0;
+}
 
-  // get explementary angle for superior angles
-  geometry_msgs::Point p64_0, p64_1, p64_2;
-  lanelet::utils::conversion::toGeomMsgPt(p0, &p64_0);
-  lanelet::utils::conversion::toGeomMsgPt(p1, &p64_1);
-  lanelet::utils::conversion::toGeomMsgPt(p2, &p64_2);
-  if (amathutils::isPointLeftFromLine(p64_2, p64_0, p64_1) > 0)
-  {
-    theta = 2 * M_PI - theta;
-  }
-  return theta;
+// https://qiita.com/fujii-kotaro/items/a411f2a45627ed2f156e
+bool isWithinTriangle(const geometry_msgs::Point32& a, const geometry_msgs::Point32& b, const geometry_msgs::Point32& c, const geometry_msgs::Point32& p)
+{
+  double c1 = (b.x - a.x) * (p.y - b.y) - (b.y - a.y) * (p.x - b.x);
+  double c2 = (c.x - b.x) * (p.y - c.y) - (c.y - b.y) * (p.x - c.x);
+  double c3 = (a.x - c.x) * (p.y - a.y) - (a.y - c.y) * (p.x - a.x);
+
+  return c1 > 0.0 && c2 > 0.0 && c3 >0.0 || c1 < 0.0 && c2 < 0.0 && c3 < 0.0;
 }
 }  // anonymous namespace
 
@@ -268,37 +265,53 @@ void visualization::polygon2Triangle(const geometry_msgs::Polygon& polygon,
   int N = poly.points.size();
 
   // array of angles for each vertex
-  std::vector<double> vertex_angles;
-  vertex_angles.assign(N, 0);
+  std::vector<bool> is_acute_angle;
+  is_acute_angle.assign(N, false);
   for (int i = 0; i < N; i++)
   {
     geometry_msgs::Point32 p0, p1, p2;
 
     adjacentPoints(i, N, poly, &p0, &p1, &p2);
-    double theta = getAngle(p0, p1, p2);
-    vertex_angles.at(i) = theta;
+    is_acute_angle.at(i) = isAcuteAngle(p0, p1, p2);
   }
 
   // start ear clipping
   while (N >= 3)
   {
-    double min_angle = 2 * M_PI;
-    int min_i = -1;
+    int clipped_vertex = -1;
 
     for (int i = 0; i < N; i++)
     {
-      double theta = vertex_angles.at(i);
-      if (theta < min_angle)
+      bool theta = is_acute_angle.at(i);
+      if (theta == true)
       {
-        min_angle = theta;
-        min_i = i;
+        geometry_msgs::Point32 p0, p1, p2;
+        adjacentPoints(i, N, poly, &p0, &p1, &p2);
+
+        int j_begin = (i + 2) % N;
+        int j_end = (i - 1 + N) % N;
+        bool is_ear = true;
+        for (int j = j_begin;j != j_end; j = (j+1) % N)
+        {
+          if(isWithinTriangle(p0, p1, p2, poly.points.at(j)))
+          {
+            is_ear = false;
+            break;
+          }
+        }
+
+        if(is_ear)
+        {
+          clipped_vertex = i;
+          break;
+        }
       }
     }
-    if (min_i >= 0 && min_i < N)
+    if (clipped_vertex >= 0 && clipped_vertex < N)
     {
       // create triangle
       geometry_msgs::Point32 p0, p1, p2;
-      adjacentPoints(min_i, N, poly, &p0, &p1, &p2);
+      adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
       geometry_msgs::Polygon triangle;
       triangle.points.push_back(p0);
       triangle.points.push_back(p1);
@@ -307,28 +320,26 @@ void visualization::polygon2Triangle(const geometry_msgs::Polygon& polygon,
 
       // remove vertex of center of angle
       auto it = poly.points.begin();
-      std::advance(it, min_i);
+      std::advance(it, clipped_vertex);
       poly.points.erase(it);
 
       // remove from angle list
-      auto it_angle = vertex_angles.begin();
-      std::advance(it_angle, min_i);
-      vertex_angles.erase(it_angle);
+      auto it_angle = is_acute_angle.begin();
+      std::advance(it_angle, clipped_vertex);
+      is_acute_angle.erase(it_angle);
 
       // update angle list
       N = poly.points.size();
-      if (min_i == N)
+      if (clipped_vertex == N)
       {
-        min_i = 0;
+        clipped_vertex = 0;
       }
-      adjacentPoints(min_i, N, poly, &p0, &p1, &p2);
-      double theta = getAngle(p0, p1, p2);
-      vertex_angles.at(min_i) = theta;
+      adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
+      is_acute_angle.at(clipped_vertex) = isAcuteAngle(p0, p1, p2);
 
-      int i_prev = (min_i == 0) ? N - 1 : min_i - 1;
+      int i_prev = (clipped_vertex == 0) ? N - 1 : clipped_vertex - 1;
       adjacentPoints(i_prev, N, poly, &p0, &p1, &p2);
-      theta = getAngle(p0, p1, p2);
-      vertex_angles.at(i_prev) = theta;
+      is_acute_angle.at(i_prev) = isAcuteAngle(p0, p1, p2);
     }
   }
 }
