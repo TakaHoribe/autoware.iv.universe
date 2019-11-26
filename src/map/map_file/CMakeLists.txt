@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   tf2_ros
   tf2_geometry_msgs
-  autoware_msgs
   lanelet2_extension
 )
 
@@ -45,7 +44,6 @@ catkin_package(
   visualization_msgs
   geometry_msgs
   tf2_geometry_msgs
-  autoware_msgs
 )
 
 ###########

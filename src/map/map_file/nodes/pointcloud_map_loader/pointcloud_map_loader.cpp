@@ -23,8 +23,6 @@
 #include <std_msgs/Bool.h>
 #include <tf/transform_listener.h>
 
-#include "autoware_msgs/LaneArray.h"
-
 #include <map_file/get_file.h>
 
 namespace {
@@ -405,35 +403,35 @@ void publish_dragged_pcd(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	publish_pcd(create_pcd(p));
 }
 
-void request_lookahead_download(const autoware_msgs::LaneArray& msg)
-{
-	request_queue.clear_look_ahead();
+// void request_lookahead_download(const autoware_msgs::LaneArray& msg)
+// {
+// 	request_queue.clear_look_ahead();
 
-	for (const autoware_msgs::Lane& l : msg.lanes) {
-		size_t end = l.waypoints.size() - 1;
-		double distance = 0;
-		double threshold = (MARGIN_UNIT / 2) + margin; // XXX better way?
-		for (size_t i = 0; i <= end; ++i) {
-			if (i == 0 || i == end) {
-				geometry_msgs::Point p;
-				p.x = l.waypoints[i].pose.pose.position.x;
-				p.y = l.waypoints[i].pose.pose.position.y;
-				request_queue.enqueue_look_ahead(p);
-			} else {
-				geometry_msgs::Point p1, p2;
-				p1.x = l.waypoints[i].pose.pose.position.x;
-				p1.y = l.waypoints[i].pose.pose.position.y;
-				p2.x = l.waypoints[i - 1].pose.pose.position.x;
-				p2.y = l.waypoints[i - 1].pose.pose.position.y;
-				distance += hypot(p2.x - p1.x, p2.y - p1.y);
-				if (distance > threshold) {
-					request_queue.enqueue_look_ahead(p1);
-					distance = 0;
-				}
-			}
-		}
-	}
-}
+// 	for (const autoware_msgs::Lane& l : msg.lanes) {
+// 		size_t end = l.waypoints.size() - 1;
+// 		double distance = 0;
+// 		double threshold = (MARGIN_UNIT / 2) + margin; // XXX better way?
+// 		for (size_t i = 0; i <= end; ++i) {
+// 			if (i == 0 || i == end) {
+// 				geometry_msgs::Point p;
+// 				p.x = l.waypoints[i].pose.pose.position.x;
+// 				p.y = l.waypoints[i].pose.pose.position.y;
+// 				request_queue.enqueue_look_ahead(p);
+// 			} else {
+// 				geometry_msgs::Point p1, p2;
+// 				p1.x = l.waypoints[i].pose.pose.position.x;
+// 				p1.y = l.waypoints[i].pose.pose.position.y;
+// 				p2.x = l.waypoints[i - 1].pose.pose.position.x;
+// 				p2.y = l.waypoints[i - 1].pose.pose.position.y;
+// 				distance += hypot(p2.x - p1.x, p2.y - p1.y);
+// 				if (distance > threshold) {
+// 					request_queue.enqueue_look_ahead(p1);
+// 					distance = 0;
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 void print_usage()
 {
@@ -527,7 +525,7 @@ int main(int argc, char **argv)
 		initial_sub = n.subscribe("initialpose", 1, publish_dragged_pcd);
 
 		if (can_download) {
-			waypoints_sub = n.subscribe("traffic_waypoints_array", 1, request_lookahead_download);
+			// waypoints_sub = n.subscribe("traffic_waypoints_array", 1, request_lookahead_download);
 			try {
 				std::thread downloader(download_map);
 				downloader.detach();

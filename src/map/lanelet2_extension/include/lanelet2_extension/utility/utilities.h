@@ -24,26 +24,12 @@
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <autoware_msgs/LaneArray.h>
-
 #include <map>
 
 namespace lanelet
 {
 namespace utils
 {
-/**
- * [matchWaypointAndLanelet Matches waypoints and lanelets]
- * @param lanelet_map          [pointer to lanelet2 map]
- * @param routing_graph        [roughting graph of the map]
- * @param lane_array           [lane array containing waypoints]
- * @param waypointid2laneletid [object with key:"gid(gobal_id) of waypoints"
- * value:"lanelet id"]
- */
-void matchWaypointAndLanelet(const lanelet::LaneletMapPtr lanelet_map,
-                             const lanelet::routing::RoutingGraphPtr routing_graph,
-                             const autoware_msgs::LaneArray& lane_array,
-                             std::map<int, lanelet::Id>* waypointid2laneletid);
 
 /**
  * @brief  Apply a patch for centerline because the original implementation
