@@ -48,7 +48,7 @@
 #include "matching_score.h"
 #include "ndt_slam_pcl.h"
 #include "pose_linear_interpolator.h"
-#include <lidar_localizer/NdtSlamConfig.h>
+#include <ndt_slam/NdtSlamConfig.h>
 
 class NdtSlam {
   using PointSource = pcl::PointXYZI;
@@ -74,7 +74,7 @@ private:
    * @param[in] config ndt_slam config received from dynamic_reconfigure.
    * @param[in] level unused
    */
-  void configCallback(const lidar_localizer::NdtSlamConfig &config, uint32_t level);
+  void configCallback(const ndt_slam::NdtSlamConfig &config, uint32_t level);
 
   void pointsMapUpdatedCallback(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
   void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
@@ -172,8 +172,8 @@ private:
   ros::Time current_scan_time_;
   double matching_score_;
 
-  dynamic_reconfigure::Server<lidar_localizer::NdtSlamConfig> server_;
-  dynamic_reconfigure::Server<lidar_localizer::NdtSlamConfig>::CallbackType f_;
+  dynamic_reconfigure::Server<ndt_slam::NdtSlamConfig> server_;
+  dynamic_reconfigure::Server<ndt_slam::NdtSlamConfig>::CallbackType f_;
 };
 
 #endif

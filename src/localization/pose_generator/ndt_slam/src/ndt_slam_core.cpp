@@ -178,7 +178,7 @@ NdtSlam::~NdtSlam() {
   }
 }
 
-void NdtSlam::configCallback(const lidar_localizer::NdtSlamConfig &config, uint32_t level)
+void NdtSlam::configCallback(const ndt_slam::NdtSlamConfig &config, uint32_t level)
 {
   init_pose_stamped_.pose = Pose(config.init_x, config.init_y,
                                  config.init_z, config.init_roll,
