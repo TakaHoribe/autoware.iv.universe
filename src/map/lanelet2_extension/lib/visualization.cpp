@@ -29,8 +29,6 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
-#include <amathutils_lib/amathutils.hpp>
-
 namespace
 {
 void adjacentPoints(const int i, const int N, const geometry_msgs::Polygon poly, geometry_msgs::Point32* p0,

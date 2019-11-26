@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(map_file)
 
-find_package(autoware_build_flags REQUIRED)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   tf2_ros
   tf2_geometry_msgs
-  autoware_msgs
   lanelet2_extension
 )
 
@@ -45,7 +44,6 @@ catkin_package(
   visualization_msgs
   geometry_msgs
   tf2_geometry_msgs
-  autoware_msgs
 )
 
 ###########
