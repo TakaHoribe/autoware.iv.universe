@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(map_file)
 
-find_package(autoware_build_flags REQUIRED)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
