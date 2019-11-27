@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_dynamic_reconfigure_options(cfg/CompareMapFilter.cfg
                                      cfg/VoxelGridOutlierFilter.cfg
+                                     cfg/VoxelGridDownsampleFilter.cfg
                                      cfg/PointcloudAccumulator.cfg
                                      cfg/PassThroughFilter.cfg
                                      )
@@ -194,7 +195,7 @@ target_link_libraries(voxel_based_compare_map_filter_node
 add_dependencies(voxel_based_compare_map_filter_node
                  ${catkin_EXPORTED_TARGETS})
 
-# Voxel Grid Filter
+# Outlier Filter
 add_library(outlier_filter
             src/outlier_filter/voxel_grid_outlier_filter_nodelet.cpp
             src/filter.cpp # copy from pcl_ros https://github.com/ros-
@@ -213,6 +214,27 @@ target_link_libraries(voxel_grid_outlier_filter_node
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(voxel_grid_outlier_filter_node ${catkin_EXPORTED_TARGETS})
+
+# Downsample Filter
+add_library(downsample_filter
+            src/downsample_filter/voxel_grid_downsample_filter_nodelet.cpp
+            src/filter.cpp # copy from pcl_ros https://github.com/ros-
+                           # perception/perception_pcl/issues/9
+            )
+target_link_libraries(downsample_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(downsample_filter ${catkin_EXPORTED_TARGETS})
+add_executable(voxel_grid_downsample_filter_node
+               src/downsample_filter/voxel_grid_downsample_filter_node.cpp)
+target_link_libraries(voxel_grid_downsample_filter_node
+                      downsample_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(voxel_grid_downsample_filter_node ${catkin_EXPORTED_TARGETS})
+
 
 # Pointcloud Accumulator
 add_library(pointcloud_accumulator
