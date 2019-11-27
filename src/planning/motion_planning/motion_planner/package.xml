@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>motion_base_planner</name>
+  <name>motion_planner</name>
   <version>0.0.0</version>
   <description>The motion_base_planner package</description>
 
