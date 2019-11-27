@@ -9,7 +9,7 @@
   <arg name="input_current_pose_topic" default="/ekf_pose" doc="calculated as the initial position when use fusion_localizer feedback" />
 
   <arg name="input_initial_pose_topic" default="/initialpose" doc="Initial position. Get from RViz's 2D Pose Estimate" />
-  <arg name="input_points_map_topic" default="/points_map" doc="	PointCloud Map topic" />
+  <arg name="input_points_map_topic" default="/pointcloud_map" doc="	PointCloud Map topic" />
 
   <arg name="output_points_map_topic" default="ndt_map" doc="Mapping PointCloud" />
   <arg name="output_pose_topic" default="ndt_pose" doc="Estimated self position" />
@@ -56,6 +56,17 @@
   <arg name="node_name" value="ndt_slam" unless="$(arg use_anonymous_node_name)" doc="Not use anonymous option" />
   <arg name="node_name" value="$(anon ndt_slam)" if="$(arg use_anonymous_node_name)" doc="Use anonymous option" />
 
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="pointcloud_preprocessor" type="voxel_grid_downsample_filter_node" name="voxel_grid_filter" output="screen">
+    <remap from="~input" to="/points_raw" />
+    <remap from="~output" to="$(arg input_localizing_points_topic)" />
+    <rosparam>
+      voxel_size_x: 2.0
+      voxel_size_y: 2.0
+      voxel_size_z: 2.0
+    </rosparam>
+  </node>
+
   <node pkg="ndt_slam" type="ndt_slam" name="$(arg node_name)" output="log">
 
     <remap from="/points_raw" to="$(arg input_mapping_points_topic)" />
@@ -64,6 +75,7 @@
 
     <param name="use_fusion_localizer_feedback" value="$(arg use_fusion_localizer_feedback)" />
     <remap from="/ekf_pose" to="$(arg input_current_pose_topic)" />
+    <remap from="/points_map" to="$(arg input_points_map_topic)" />
 
     <param name="target_frame" value="$(arg target_frame)" />
     <param name="world_frame" value="$(arg world_frame)" />
