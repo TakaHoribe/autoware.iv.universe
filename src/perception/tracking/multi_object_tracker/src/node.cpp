@@ -27,54 +27,40 @@
 
 MultiObjectTrackerNode::MultiObjectTrackerNode() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
-    // sub_ = nh_.subscribe("input", 1, &MultiObjectTrackerNode::measurementCallback, this);
+    sub_ = nh_.subscribe("input", 1, &MultiObjectTrackerNode::measurementCallback, this);
     pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
     double publish_rate;
     pnh_.param<double>("publish_rate", publish_rate, double(30.0));
     publish_timer_ = nh_.createTimer(ros::Duration(1.0 / publish_rate), &MultiObjectTrackerNode::publishTimerCallback, this);
-    pnh_.param<std::string>("base_link_frame_id", base_link_frame_id_, std::string("base_link"));
     pnh_.param<std::string>("world_frame_id", world_frame_id_, std::string("world"));
-    object_sub_.subscribe(nh_, "input/objects", 1);
-    current_pose_sub_.subscribe(nh_, "input/current_pose", 1);
-
-    sync_ptr_ = std::make_shared<Sync>(SyncPolicy(50), object_sub_, current_pose_sub_);
-    sync_ptr_->registerCallback(boost::bind(&MultiObjectTrackerNode::measurementCallback, this, _1, _2));
 }
 
-void MultiObjectTrackerNode::measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
-                                                 const geometry_msgs::PoseStamped::ConstPtr &input_current_pose_msg)
+void MultiObjectTrackerNode::measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg)
 {
     autoware_perception_msgs::DynamicObjectWithFeatureArray input_transformed_objects = *input_objects_msg;
 
     /* transform to world coordinate */
     if (input_objects_msg->header.frame_id != world_frame_id_)
     {
-        tf2::Transform tf_current_pose2objects_world;
-        tf2::Transform tf_current_pose_world2current_pose;
-        tf2::Transform tf_world2current_pose_world;
+        tf2::Transform tf_world2objets_world;
         tf2::Transform tf_world2objets;
         tf2::Transform tf_objets_world2objects;
         try
         {
-            geometry_msgs::TransformStamped ros_current_pose2objects_world;
-            ros_current_pose2objects_world = tf_buffer_.lookupTransform(/*target*/ base_link_frame_id_, /*src*/ input_transformed_objects.header.frame_id,
+            geometry_msgs::TransformStamped ros_world2objets_world;
+            ros_world2objets_world = tf_buffer_.lookupTransform(/*target*/ world_frame_id_, /*src*/ input_transformed_objects.header.frame_id,
                                                                         input_transformed_objects.header.stamp, ros::Duration(0.5));
-            tf2::fromMsg(ros_current_pose2objects_world.transform, tf_current_pose2objects_world);
-            geometry_msgs::TransformStamped ros_world2current_pose_world;
-            ros_world2current_pose_world = tf_buffer_.lookupTransform(/*target*/ world_frame_id_, /*src*/ input_current_pose_msg->header.frame_id,
-                                                                      input_current_pose_msg->header.stamp, ros::Duration(0.5));
-            tf2::fromMsg(ros_world2current_pose_world.transform, tf_world2current_pose_world);
+            tf2::fromMsg(ros_world2objets_world.transform, tf_world2objets_world);
         }
         catch (tf2::TransformException &ex)
         {
             ROS_WARN("%s", ex.what());
             return;
         }
-        tf2::fromMsg(input_current_pose_msg->pose, tf_current_pose_world2current_pose);
         for (size_t i = 0; i < input_transformed_objects.feature_objects.size(); ++i)
         {
             tf2::fromMsg(input_transformed_objects.feature_objects.at(i).object.state.pose_covariance.pose, tf_objets_world2objects);
-            tf_world2objets = tf_world2current_pose_world * tf_current_pose_world2current_pose * tf_current_pose2objects_world * tf_objets_world2objects;
+            tf_world2objets = tf_world2objets_world * tf_objets_world2objects;
             tf2::toMsg(tf_world2objets, input_transformed_objects.feature_objects.at(i).object.state.pose_covariance.pose);
         }
     }
