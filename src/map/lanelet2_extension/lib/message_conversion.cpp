@@ -81,6 +81,14 @@ void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPt
   // *map = std::move(laneletMap);
 }
 
+void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map, lanelet::traffic_rules::TrafficRulesPtr traffic_rules, lanelet::routing::RoutingGraphPtr routing_graph)
+{
+  fromBinMsg(msg, map);
+  traffic_rules =
+    lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
+  routing_graph = lanelet::routing::RoutingGraph::build(*map, *traffic_rules);
+}
+
 void toGeomMsgPt(const geometry_msgs::Point32& src, geometry_msgs::Point* dst)
 {
   if (dst == nullptr)
