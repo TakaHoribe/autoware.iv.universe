@@ -20,6 +20,8 @@
 
 #include <Eigen/Eigen>
 
+#include <lanelet2_core/geometry/Lanelet.h>
+
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
 
@@ -289,6 +291,26 @@ std::vector<lanelet::ConstLineString3d> query::stopSignStopLines(const lanelet::
     }
   }
   return stoplines;
+}
+
+ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const lanelet::BasicPoint2d& search_point, const double range)
+{
+  ConstLanelets near_lanelets;
+  for (const auto& ll : lanelets)
+  {
+    lanelet::BasicPolygon2d poly = ll.polygon2d().basicPolygon();
+    double distance = lanelet::geometry::distance(poly, search_point);
+    if (distance <= range)
+    {
+      near_lanelets.push_back(ll);
+    }
+  }
+  return near_lanelets;
+}
+
+ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const geometry_msgs::Point& search_point, const double range)
+{
+  getLaneletsWithinRange(lanelets, lanelet::BasicPoint2d(search_point.x, search_point.y), range);
 }
 
 }  // namespace utils
