@@ -32,9 +32,6 @@
 #include <vector>
 #include "multi_object_tracker/tracker/model/tracker_base.hpp"
 #include "multi_object_tracker/data_association/data_association.hpp"
-#include "message_filters/subscriber.h"
-#include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/approximate_time.h"
 
 class MultiObjectTrackerNode
 {
@@ -42,23 +39,15 @@ private: // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
-  message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> object_sub_;
-  message_filters::Subscriber<geometry_msgs::PoseStamped> current_pose_sub_;
-  typedef message_filters::sync_policies::ApproximateTime<autoware_perception_msgs::DynamicObjectWithFeatureArray,
-                                                          geometry_msgs::PoseStamped>
-      SyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Sync;
-  std::shared_ptr<Sync> sync_ptr_;
+  ros::Subscriber sub_;
   ros::Timer publish_timer_; // publish timer
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
-  void measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg,
-                           const geometry_msgs::PoseStamped::ConstPtr &input_current_pose_msg);
+  void measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_objects_msg);
   void publishTimerCallback(const ros::TimerEvent &e);
 
   std::string world_frame_id_;     // tracking frame
-  std::string base_link_frame_id_; // current pose child frame
   std::list<std::shared_ptr<Tracker>> list_tracker_;
   DataAssociation data_association_;
 
