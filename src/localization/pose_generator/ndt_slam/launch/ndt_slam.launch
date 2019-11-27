@@ -1,8 +1,7 @@
 <!-- -->
 <launch>
 
-  <arg name="input_mapping_points_topic" default="/points_raw" doc="PointCloud topic use for mapping"/>
-  <arg name="input_localizing_points_topic" default="/filtered_points" doc="PointCloud topic use for localizing" />
+  <arg name="input_pointcloud_topic" default="/points_raw/self_cropped" doc="PointCloud topic use for mapping"/>
   <arg name="points_queue_size" default="1" doc="Subscriber queue size of mapping_points_topic and localizing_points_topic" />
 
   <arg name="use_fusion_localizer_feedback" default="false" doc="If True, input_current_pose_topic is calculated as the initial position" />
@@ -58,8 +57,8 @@
 
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
   <node pkg="pointcloud_preprocessor" type="voxel_grid_downsample_filter_node" name="voxel_grid_filter" output="screen">
-    <remap from="~input" to="/points_raw" />
-    <remap from="~output" to="$(arg input_localizing_points_topic)" />
+    <remap from="~input" to="$(arg input_pointcloud_topic)" />
+    <remap from="~output" to="downsample/filtered" />
     <rosparam>
       voxel_size_x: 2.0
       voxel_size_y: 2.0
@@ -69,8 +68,8 @@
 
   <node pkg="ndt_slam" type="ndt_slam" name="$(arg node_name)" output="log">
 
-    <remap from="/points_raw" to="$(arg input_mapping_points_topic)" />
-    <remap from="/filtered_points" to="$(arg input_localizing_points_topic)" />
+    <remap from="/points_raw" to="$(arg input_pointcloud_topic)" />
+    <remap from="/filtered_points" to="downsample/filtered" />
     <param name="points_queue_size" value="$(arg points_queue_size)" />
 
     <param name="use_fusion_localizer_feedback" value="$(arg use_fusion_localizer_feedback)" />
