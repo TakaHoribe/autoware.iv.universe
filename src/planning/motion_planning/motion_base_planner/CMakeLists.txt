@@ -134,6 +134,18 @@ target_link_libraries(motion_base_planner
 ## either from message generation or dynamic reconfigure
 add_dependencies(motion_base_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(eb_path_planner_node 
+src/eb_path_planner/node.cpp
+src/eb_path_planner/main.cpp)
+
+add_dependencies(eb_path_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(eb_path_planner_node
+  ${catkin_LIBRARIES}
+  motion_base_planner
+)
+
 #############
 ## Install ##
 #############

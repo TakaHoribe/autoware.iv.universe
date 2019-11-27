@@ -15,7 +15,7 @@ protected:
   ros::Subscriber path_sub_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-  virtual bool callback(const autoware_planning_msgs::Path &input_path_msg, autoware_planning_msgs::Path &output_path_msg) = 0;
+  virtual void callback(const autoware_planning_msgs::Path &input_path_msg, autoware_planning_msgs::Path &output_path_msg) = 0;
   void pathCallback(const autoware_planning_msgs::Path &input_path_msg);
   bool getSelfPose(geometry_msgs::TransformStamped& self_pose, const std_msgs::Header &header);
   bool getCurrentSelfPose(geometry_msgs::TransformStamped& self_pose);
