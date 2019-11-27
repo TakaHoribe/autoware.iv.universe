@@ -31,7 +31,7 @@ namespace motion_planner
     private_nh_("~")
   {
     // final_waypoints_pub_ = nh_.advertise<autoware_msgs::Lane>("final_waypoints", 1, true);
-    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("velocity_planner_debug_markes", 1, true);
+    markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_planner_debug_markes", 1, true);
     // safety_waypoints_sub_ = nh_.subscribe("safety_waypoints", 1, &EBPathPlannerNode::waypointsCallback, this);
     // current_pose_sub_ = nh_.subscribe("/current_pose", 1, &EBPathPlannerNode::currentPoseCallback, this);
     // current_velocity_sub_ = nh_.subscribe("/current_velocity", 1, &EBPathPlannerNode::currentVelocityCallback, this);
@@ -60,8 +60,8 @@ namespace motion_planner
     try
     {
       transform = tf_buffer_.lookupTransform(
-        "map",
-        "base_link",
+        "map", //target
+        "base_link", //src
         ros::Time(0));
       // tf_buffer_
       std::cerr << "position in map " << transform.transform.translation.x<<" "<<
@@ -80,8 +80,10 @@ namespace motion_planner
     catch (tf2::TransformException& ex)
     {
       ROS_WARN("%s", ex.what());
+      return;
     }
     
+    std::vector<std::vector<geometry_msgs::Point>> geometry_paths;
     if(kept_lanelet_map_&&kept_map_routing_graph_)
     {
       std::vector<std::pair<double, lanelet::Lanelet>> closest_lanelets =
@@ -99,17 +101,56 @@ namespace motion_planner
       // connected_centerline.front().x;
       for(const auto& path: paths)
       {
+        std::vector<geometry_msgs::Point> geometry_path;
         for(const auto& lanelet: path)
         {
+          geometry_msgs::Point geometry_point;
           std::cerr << "points per lalet " << lanelet.centerline().size() << std::endl;
           for(const auto& pt: lanelet.centerline())
           {
-            // std::cerr << "pt " << pt.x() << std::endl;
+            geometry_point.x = pt.x();
+            geometry_point.y = pt.y();
+            geometry_point.z = pt.z();
+            std::cerr << "pt " << pt.x() << std::endl;
+            geometry_path.push_back(geometry_point);
           }
+          geometry_paths.push_back(geometry_path);
         }
         std::cerr << "------"  << std::endl;
       }
     }
+    
+    //debug; marker array
+    visualization_msgs::MarkerArray marker_array;
+    int unique_id = 0;
+    
+    // visualize gridmap point
+    visualization_msgs::Marker debug_path_planner_marker;
+    debug_path_planner_marker.lifetime = ros::Duration(0.2);
+    debug_path_planner_marker.header = transform.header;
+    debug_path_planner_marker.ns = std::string("debug_path_planner_marker");
+    debug_path_planner_marker.action = visualization_msgs::Marker::MODIFY;
+    debug_path_planner_marker.pose.orientation.w = 1.0;
+    debug_path_planner_marker.id = unique_id;
+    debug_path_planner_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+    debug_path_planner_marker.scale.x = 1.0f;
+    debug_path_planner_marker.scale.y = 0.1f;
+    debug_path_planner_marker.scale.z = 0.1f;
+    debug_path_planner_marker.color.r = 1.0f;
+    debug_path_planner_marker.color.g = 1.0f;
+    debug_path_planner_marker.color.a = 1;
+    for(const auto& path: geometry_paths)
+    {
+      for(const auto& point: path)
+      {
+        debug_path_planner_marker.points.push_back(point);
+      }
+    }
+    
+    marker_array.markers.push_back(debug_path_planner_marker);
+    unique_id++;
+    markers_pub_.publish(marker_array);
+    
   }
   
   void EBPathPlannerNode::binMapCallback(const autoware_lanelet2_msgs::MapBin& msg)
