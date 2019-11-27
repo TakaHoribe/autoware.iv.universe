@@ -20,8 +20,9 @@ generate_dynamic_reconfigure_options(cfg/CompareMapFilter.cfg
                                      cfg/VoxelGridDownsampleFilter.cfg
                                      cfg/PointcloudAccumulator.cfg
                                      cfg/PassThroughFilter.cfg
+                                     cfg/RayGroundFilter.cfg
                                      )
-
+find_package(OpenCV REQUIRED)
 find_package (Eigen3 REQUIRED)
 find_package (Boost REQUIRED)
 find_package (PCL REQUIRED)
@@ -277,6 +278,40 @@ target_link_libraries(passthrough_filter_node
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(passthrough_filter_node ${catkin_EXPORTED_TARGETS})
+
+# Ray Ground Filter
+add_library(ground_filter
+  src/ground_filter/ray_ground_filter_nodelet.cpp
+  src/filter.cpp # copy from pcl_ros https://github.com/ros-
+                 # perception/perception_pcl/issues/9
+  )
+if (OPENMP_FOUND)
+  set_target_properties(ground_filter PROPERTIES
+     COMPILE_FLAGS ${OpenMP_CXX_FLAGS}
+     LINK_FLAGS ${OpenMP_CXX_FLAGS}
+     )
+endif ()
+target_include_directories(ground_filter PRIVATE
+  ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+)
+target_link_libraries(ground_filter
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+add_dependencies(ground_filter ${catkin_EXPORTED_TARGETS})
+add_executable(ray_ground_filter_node
+  src/ground_filter/ray_ground_filter_node.cpp)
+target_link_libraries(ray_ground_filter_node
+   ground_filter
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES}
+   ${OpenCV_LIBRARIES}
+)
+add_dependencies(ray_ground_filter_node ${catkin_EXPORTED_TARGETS})
+
 
 #############
 ## Install ##
