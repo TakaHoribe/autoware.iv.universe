@@ -25,6 +25,9 @@
 #include <geometry_msgs/Polygon.h>
 #include <lanelet2_core/LaneletMap.h>
 
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_traffic_rules/TrafficRulesFactory.h>
+
 namespace lanelet
 {
 namespace utils
@@ -46,6 +49,7 @@ void toBinMsg(const lanelet::LaneletMapPtr& map, autoware_lanelet2_msgs::MapBin*
  * @param map [Converted lanelet2 data]
  */
 void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map);
+void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map, lanelet::traffic_rules::TrafficRulesPtr traffic_rules, lanelet::routing::RoutingGraphPtr routing_graph);
 
 /**
  * [toGeomMsgPt converts various point types to geometry_msgs point]
