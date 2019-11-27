@@ -10,14 +10,20 @@ namespace autoware_lanelet2_msgs
 namespace geometry_msgs
 { 
   ROS_DECLARE_MESSAGE(PoseStamped);
+  ROS_DECLARE_MESSAGE(Pose);
   ROS_DECLARE_MESSAGE(TwistStamped);
 }
 
 
 namespace lanelet
 {
-   class ConstLanelet;
-   using ConstLanelets = std::vector<ConstLanelet>;
+   class LaneletMap;
+   namespace routing
+   {
+     class RoutingGraph;
+   }
+  //  class ConstLanelet;
+  //  using ConstLanelets = std::vector<ConstLanelet>;
 }
 
 namespace motion_planner
@@ -44,7 +50,11 @@ private:
   // std::unique_ptr<geometry_msgs::TransformStaped> gridmap2map_tf_;
   // std::unique_ptr<geometry_msgs::TransformStamped> lidar2map_tf_;
   // std::unique_ptr<geometry_msgs::TransformStamped> map2gridmap_tf_;
-  std::unique_ptr<lanelet::ConstLanelets> kept_road_lanelets_;
+  std::shared_ptr<lanelet::LaneletMap> kept_lanelet_map_;
+  std::unique_ptr<lanelet::routing::RoutingGraph> kept_map_routing_graph_;
+  
+  std::unique_ptr<geometry_msgs::Pose> ego_pose_ptr_;
+  // std::unique_ptr<lanelet::LaneletMapPtr> kept_lanelet_map_ptr_;
   
   // std::shared_ptr<autoware_msgs::Lane> in_waypoints_ptr_;
   // geometry_msgs::PoseStamped in_pose_ptr_;

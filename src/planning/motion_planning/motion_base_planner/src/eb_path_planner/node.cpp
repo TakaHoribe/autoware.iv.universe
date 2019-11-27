@@ -2,17 +2,21 @@
 // #include <autoware_msgs/Lane.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 
-
-// #include <lanelet2_projection/UTM.h>
-// #include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_core/Forward.h>
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_core/geometry/Lanelet.h>
+#include <lanelet2_routing/LaneletPath.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 #include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
+
+#include <tf2/utils.h>
 
 #include <memory>
 
@@ -35,7 +39,7 @@ namespace motion_planner
     bin_map_sub_ = nh_.subscribe("/lanelet_map_bin", 1, &EBPathPlannerNode::binMapCallback,this);
     
     // double timer_callback_dt = 0.05;   
-    double timer_callback_delta_second = 0.1;
+    double timer_callback_delta_second = 1.0;
     // double timer_callback_delta_second = 1.0;
     // double timer_callback_delta_second = 0.5;
     timer_ = nh_.createTimer(ros::Duration(timer_callback_delta_second), &EBPathPlannerNode::timerCallback, this);
@@ -48,80 +52,80 @@ namespace motion_planner
   {
     
   }
-
-//   // void EBPathPlannerNode::waypointsCallback(const autoware_msgs::Lane& msg)
-//   // {
-//   //   in_waypoints_ptr_ = std::make_shared<autoware_msgs::Lane>(msg);
-//   // }
-
-//   void EBPathPlannerNode::currentPoseCallback(const geometry_msgs::PoseStamped & msg)
-//   {
-//     in_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(msg);
-//   }
-
-//   void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStamped& msg)
-//   {
-//     in_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(msg); 
-//   }
   
   void EBPathPlannerNode::timerCallback(const ros::TimerEvent &e)
   {
     std::cerr << "aaaaa"  << std::endl;
-    // if(!in_pose_ptr_)
-    // {
-    //   std::cerr << "pose not arrive" << std::endl;
-    // }
-    // if(!in_twist_ptr_)
-    // {
-    //   std::cerr << "twist not arrive" << std::endl;
-    // }
-    // if(!in_waypoints_ptr_)
-    // {
-    //   std::cerr << "waypoints not arrive" << std::endl;
-    // }
+    geometry_msgs::TransformStamped transform;
+    try
+    {
+      transform = tf_buffer_.lookupTransform(
+        "map",
+        "base_link",
+        ros::Time(0));
+      // tf_buffer_
+      std::cerr << "position in map " << transform.transform.translation.x<<" "<<
+                                         transform.transform.translation.y<<" "<<
+                                         transform.transform.translation.z<<std::endl;
+      geometry_msgs::Pose pose;
+      pose.position.x = transform.transform.translation.x;
+      pose.position.y = transform.transform.translation.y;
+      pose.position.z = transform.transform.translation.z;
+      pose.orientation.x = transform.transform.rotation.x;
+      pose.orientation.y = transform.transform.rotation.y;
+      pose.orientation.z = transform.transform.rotation.z;
+      pose.orientation.w = transform.transform.rotation.z;
+      ego_pose_ptr_.reset(new geometry_msgs::Pose(pose));
+    }
+    catch (tf2::TransformException& ex)
+    {
+      ROS_WARN("%s", ex.what());
+    }
     
-    // if(in_pose_ptr_ && 
-    //   in_twist_ptr_ && 
-    //   in_waypoints_ptr_) 
-    // { 
-    //   final_waypoints_pub_.publish(*in_waypoints_ptr_);
-    // }
+    if(kept_lanelet_map_&&kept_map_routing_graph_)
+    {
+      std::vector<std::pair<double, lanelet::Lanelet>> closest_lanelets =
+      lanelet::geometry::findNearest(kept_lanelet_map_->laneletLayer, 
+                                     lanelet::BasicPoint2d(ego_pose_ptr_->position.x,
+                                                           ego_pose_ptr_->position.y),
+                                     1);
+      lanelet::Lanelet closest_lanelet = closest_lanelets.front().second;
+      
+      lanelet::routing::LaneletPaths paths =  
+        kept_map_routing_graph_->possiblePaths(closest_lanelet, 
+                                                100, 0,true);
+      std::vector<lanelet::Point3d> connected_centerline;
+      std::cerr << "path size " << paths.size() << std::endl;
+      // connected_centerline.front().x;
+      for(const auto& path: paths)
+      {
+        for(const auto& lanelet: path)
+        {
+          std::cerr << "points per lalet " << lanelet.centerline().size() << std::endl;
+          for(const auto& pt: lanelet.centerline())
+          {
+            // std::cerr << "pt " << pt.x() << std::endl;
+          }
+        }
+        std::cerr << "------"  << std::endl;
+      }
+    }
   }
   
   void EBPathPlannerNode::binMapCallback(const autoware_lanelet2_msgs::MapBin& msg)
   {
-    std::cerr << "map"  << std::endl;
-    lanelet::LaneletMapPtr viz_lanelet_map(new lanelet::LaneletMap);
-
-    lanelet::utils::conversion::fromBinMsg(msg, viz_lanelet_map);
-    ROS_INFO("Map is loaded\n");
-
-    // get lanelets etc to visualize
-    lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(viz_lanelet_map);
-    lanelet::ConstLanelets road_lanelets = lanelet::utils::query::roadLanelets(all_lanelets);
-    kept_road_lanelets_.reset(new lanelet::ConstLanelets(road_lanelets));
-    // double lss = 0.2;  // line string size
-    // visualization_msgs::MarkerArray marker_array;
-    // for (auto li = lanelets.begin(); li != lanelets.end(); li++)
-    // {
-    //   lanelet::ConstLanelet lll = *li;
-
-    //   lanelet::ConstLineString3d left_ls = lll.leftBound();
-    //   lanelet::ConstLineString3d right_ls = lll.rightBound();
-    //   lanelet::ConstLineString3d center_ls = lll.centerline();
-
-    //   visualization_msgs::Marker left_line_strip, right_line_strip, center_line_strip;
-
-    //   visualization::lineString2Marker(left_ls, &left_line_strip, "map", "left_lane_bound", c, lss);
-    //   visualization::lineString2Marker(right_ls, &right_line_strip, "map", "right_lane_bound", c, lss);
-    //   marker_array.markers.push_back(left_line_strip);
-    //   marker_array.markers.push_back(right_line_strip);
-    //   if (viz_centerline)
-    //   {
-    //     visualization::lineString2Marker(center_ls, &center_line_strip, "map", "center_lane_line", c, lss * 0.5);
-    //     marker_array.markers.push_back(center_line_strip);
-    //   }
-    // }
+    if(!kept_lanelet_map_|| !kept_map_routing_graph_)
+    {
+      kept_lanelet_map_ = std::make_shared<lanelet::LaneletMap>();
+      std::cerr << "map"  << std::endl;
+      lanelet::utils::conversion::fromBinMsg(msg, kept_lanelet_map_);
+      lanelet::traffic_rules::TrafficRulesPtr traffic_rules =
+        lanelet::traffic_rules::TrafficRulesFactory::create(
+          lanelet::Locations::Germany, 
+          lanelet::Participants::Vehicle);
+      kept_map_routing_graph_ =
+        lanelet::routing::RoutingGraph::build(*kept_lanelet_map_, *traffic_rules);
+      std::cerr << "finish"  << std::endl;
+    }
   }
-
 }// end namespace
