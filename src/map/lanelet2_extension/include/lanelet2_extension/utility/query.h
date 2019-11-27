@@ -24,7 +24,7 @@
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <geometry_msgs/PolygonStamped.h>
-
+#include <geometry_msgs/Point.h>
 #include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
 #include <lanelet2_extension/regulatory_elements/detection_area.h>
 
