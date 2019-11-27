@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
         message_generation
         std_msgs
         geometry_msgs
+        nav_msgs
         )
 
 
@@ -23,6 +24,7 @@ generate_messages(
         DEPENDENCIES
         std_msgs
         geometry_msgs
+        nav_msgs
 )
 
 catkin_package(
@@ -30,4 +32,5 @@ catkin_package(
         message_runtime
         std_msgs
         geometry_msgs
+        nav_msgs
 )
