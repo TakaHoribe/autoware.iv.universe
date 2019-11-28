@@ -7,7 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
   roscpp
   tf2_ros
-  lanelet2_extension
+  # lanelet2_extension
 )
 
 catkin_package(
@@ -17,12 +17,15 @@ catkin_package(
    autoware_planning_msgs 
    roscpp 
    tf2_ros
-   lanelet2_extension
+  #  lanelet2_extension
 )
+
+find_package(Eigen3 REQUIRED)
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
 )
 
 add_library(motion_base_planner
