@@ -100,12 +100,40 @@ namespace motion_planner
       }
       std::vector<double> tmp_x;
       std::vector<double> tmp_y;
+      std::vector<double> tmp_v;
       for(size_t i=min_index; i< min_index+50; i++)
       {
         tmp_x.push_back(in_path_ptr_->points[i].pose.position.x);
         tmp_y.push_back(in_path_ptr_->points[i].pose.position.y);
+        tmp_v.push_back(in_path_ptr_->points[i].twist.linear.x);
       }
-      ReferencePath reference_path(tmp_x, tmp_y, 0.1);
+      // ReferencePath reference_path(tmp_x, tmp_y, 0.1);
+      ReferenceTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_v,0.1);
+      
+      autoware_planning_msgs::Path path_msg;
+      autoware_planning_msgs::Trajectory traj_msg;
+      path_msg.header = transform.header;
+      traj_msg.header = transform.header;
+      for(size_t i = 0; i < reference_trajectory_path.x_.size(); i++)
+      {
+        autoware_planning_msgs::PathPoint path_point_msg;
+        path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
+        path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
+        path_point_msg.pose.position.z = ego_pose_ptr_->position.z;
+        path_point_msg.pose.orientation = ego_pose_ptr_->orientation;
+        path_point_msg.twist.linear.x = reference_trajectory_path.v_[i];
+        path_msg.points.push_back(path_point_msg);
+        
+        autoware_planning_msgs::TrajectoryPoint traj_point_msg;
+        traj_point_msg.pose = path_point_msg.pose;
+        traj_point_msg.twist = path_point_msg.twist;
+        traj_msg.points.push_back(traj_point_msg);
+      }
+      path_pub_.publish(path_msg);
+      traj_pub_.publish(traj_msg);
+      
+      
+      
       //debug; marker array
       visualization_msgs::MarkerArray marker_array;
       int unique_id = 0;
@@ -124,11 +152,11 @@ namespace motion_planner
       debug_cubic_spline.scale.z = 0.1f;
       debug_cubic_spline.color.g = 1.0f;
       debug_cubic_spline.color.a = 1;
-      for(size_t i = 0; i< reference_path.x_.size(); i++)
+      for(size_t i = 0; i< reference_trajectory_path.x_.size(); i++)
       {
         geometry_msgs::Point point;
-        point.x = reference_path.x_[i];
-        point.y = reference_path.y_[i];
+        point.x = reference_trajectory_path.x_[i];
+        point.y = reference_trajectory_path.y_[i];
         debug_cubic_spline.points.push_back(point);
       }
       
