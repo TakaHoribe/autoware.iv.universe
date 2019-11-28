@@ -36,12 +36,9 @@ private:
 
   // ros
   ros::NodeHandle nh_, private_nh_;
-  ros::Publisher final_waypoints_pub_;
+  ros::Publisher path_pub_;
+  ros::Publisher traj_pub_;
   ros::Publisher markers_pub_;
-  ros::Subscriber current_pose_sub_;
-  ros::Subscriber current_velocity_sub_;
-  ros::Subscriber safety_waypoints_sub_;
-  ros::Subscriber objects_sub_;
   ros::Subscriber bin_map_sub_;
   
   

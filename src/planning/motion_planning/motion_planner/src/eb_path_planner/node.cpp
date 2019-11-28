@@ -5,6 +5,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <autoware_planning_msgs/Path.h>
+#include <autoware_planning_msgs/Trajectory.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Lanelet.h>
@@ -20,6 +22,8 @@
 
 #include <memory>
 
+#include "eb_path_planner/reference_path.hpp"
+
 #include "eb_path_planner/node.hpp"
 
 
@@ -30,12 +34,9 @@ namespace motion_planner
     : nh_(), 
     private_nh_("~")
   {
-    // final_waypoints_pub_ = nh_.advertise<autoware_msgs::Lane>("final_waypoints", 1, true);
     markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_planner_debug_markes", 1, true);
-    // safety_waypoints_sub_ = nh_.subscribe("safety_waypoints", 1, &EBPathPlannerNode::waypointsCallback, this);
-    // current_pose_sub_ = nh_.subscribe("/current_pose", 1, &EBPathPlannerNode::currentPoseCallback, this);
-    // current_velocity_sub_ = nh_.subscribe("/current_velocity", 1, &EBPathPlannerNode::currentVelocityCallback, this);
-    // objects_sub_ = nh_.subscribe("/detection/lidar_detector/objects", 1, &QPPlannerROS::objectsCallback, this);
+    path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/motion_planning/avoiding_path", 1, true);
+    traj_pub_ = nh_.advertise<autoware_planning_msgs::Trajectory>("planning/motion_planning/tmp_trajectory_from_path_planner", 1, true);
     bin_map_sub_ = nh_.subscribe("/lanelet_map_bin", 1, &EBPathPlannerNode::binMapCallback,this);
     
     // double timer_callback_dt = 0.05;   
@@ -55,7 +56,6 @@ namespace motion_planner
   
   void EBPathPlannerNode::timerCallback(const ros::TimerEvent &e)
   {
-    std::cerr << "aaaaa"  << std::endl;
     geometry_msgs::TransformStamped transform;
     try
     {
@@ -63,10 +63,6 @@ namespace motion_planner
         "map", //target
         "base_link", //src
         ros::Time(0));
-      // tf_buffer_
-      std::cerr << "position in map " << transform.transform.translation.x<<" "<<
-                                         transform.transform.translation.y<<" "<<
-                                         transform.transform.translation.z<<std::endl;
       geometry_msgs::Pose pose;
       pose.position.x = transform.transform.translation.x;
       pose.position.y = transform.transform.translation.y;
@@ -96,29 +92,60 @@ namespace motion_planner
       lanelet::routing::LaneletPaths paths =  
         kept_map_routing_graph_->possiblePaths(closest_lanelet, 
                                                 100, 0,true);
-      std::vector<lanelet::Point3d> connected_centerline;
-      std::cerr << "path size " << paths.size() << std::endl;
-      // connected_centerline.front().x;
       for(const auto& path: paths)
       {
         std::vector<geometry_msgs::Point> geometry_path;
         for(const auto& lanelet: path)
         {
           geometry_msgs::Point geometry_point;
-          std::cerr << "points per lalet " << lanelet.centerline().size() << std::endl;
           for(const auto& pt: lanelet.centerline())
           {
             geometry_point.x = pt.x();
             geometry_point.y = pt.y();
             geometry_point.z = pt.z();
-            std::cerr << "pt " << pt.x() << std::endl;
             geometry_path.push_back(geometry_point);
           }
           geometry_paths.push_back(geometry_path);
         }
-        std::cerr << "------"  << std::endl;
       }
     }
+    
+    //interpolate with spline
+    std::vector<double> tmp_x;
+    std::vector<double> tmp_y;
+    if(geometry_paths.size()==0)
+    {
+      std::cerr << "there is no lanelet"  << std::endl;
+      return;
+    }
+    for (const auto& point: geometry_paths.front())
+    {
+      tmp_x.push_back(point.x);
+      tmp_y.push_back(point.y);
+    }
+    ReferencePath reference_path(tmp_x, tmp_y, 0.1);
+    
+    autoware_planning_msgs::Path path_msg;
+    autoware_planning_msgs::Trajectory traj_msg;
+    path_msg.header = transform.header;
+    traj_msg.header = transform.header;
+    for(size_t i = 0; i < reference_path.x_.size(); i++)
+    {
+      autoware_planning_msgs::PathPoint path_point_msg;
+      path_point_msg.pose.position.x = reference_path.x_[i];
+      path_point_msg.pose.position.y = reference_path.y_[i];
+      path_point_msg.pose.position.z = ego_pose_ptr_->position.z;
+      path_point_msg.pose.orientation = ego_pose_ptr_->orientation;
+      path_point_msg.twist.linear.x = 1.38;
+      path_msg.points.push_back(path_point_msg);
+      
+      autoware_planning_msgs::TrajectoryPoint traj_point_msg;
+      traj_point_msg.pose = path_point_msg.pose;
+      traj_point_msg.twist = path_point_msg.twist;
+      traj_msg.points.push_back(traj_point_msg);
+    }
+    path_pub_.publish(path_msg);
+    traj_pub_.publish(traj_msg);
     
     //debug; marker array
     visualization_msgs::MarkerArray marker_array;
@@ -149,6 +176,32 @@ namespace motion_planner
     
     marker_array.markers.push_back(debug_path_planner_marker);
     unique_id++;
+    
+    // visualize cubic spline point
+    visualization_msgs::Marker debug_cubic_spline;
+    debug_cubic_spline.lifetime = ros::Duration(0.2);
+    debug_cubic_spline.header = transform.header;
+    debug_cubic_spline.ns = std::string("debug_cubic_spline");
+    debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
+    debug_cubic_spline.pose.orientation.w = 1.0;
+    debug_cubic_spline.id = unique_id;
+    debug_cubic_spline.type = visualization_msgs::Marker::SPHERE_LIST;
+    debug_cubic_spline.scale.x = 1.0f;
+    debug_cubic_spline.scale.y = 0.1f;
+    debug_cubic_spline.scale.z = 0.1f;
+    debug_cubic_spline.color.g = 1.0f;
+    debug_cubic_spline.color.a = 1;
+    for(size_t i = 0; i< reference_path.x_.size(); i++)
+    {
+      geometry_msgs::Point point;
+      point.x = reference_path.x_[i];
+      point.y = reference_path.y_[i];
+      debug_cubic_spline.points.push_back(point);
+    }
+    
+    marker_array.markers.push_back(debug_cubic_spline);
+    unique_id++;
+    
     markers_pub_.publish(marker_array);
     
   }
@@ -157,8 +210,8 @@ namespace motion_planner
   {
     if(!kept_lanelet_map_|| !kept_map_routing_graph_)
     {
+      std::cerr << "start loading lalet"  << std::endl;
       kept_lanelet_map_ = std::make_shared<lanelet::LaneletMap>();
-      std::cerr << "map"  << std::endl;
       lanelet::utils::conversion::fromBinMsg(msg, kept_lanelet_map_);
       lanelet::traffic_rules::TrafficRulesPtr traffic_rules =
         lanelet::traffic_rules::TrafficRulesFactory::create(
@@ -166,7 +219,7 @@ namespace motion_planner
           lanelet::Participants::Vehicle);
       kept_map_routing_graph_ =
         lanelet::routing::RoutingGraph::build(*kept_lanelet_map_, *traffic_rules);
-      std::cerr << "finish"  << std::endl;
+      std::cerr << "finished loading lanelet"  << std::endl;
     }
   }
 }// end namespace
