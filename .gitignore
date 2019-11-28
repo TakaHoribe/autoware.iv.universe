@@ -18,3 +18,6 @@ logs/
 # Lanelet2
 /src/map/lanelet2
 /src/map/mrt_cmake_modules
+
+# peoria sample path data
+src/planning/util/path_loader/data/peoria_path.csv

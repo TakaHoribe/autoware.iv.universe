@@ -6,3 +6,4 @@
     - lanelet2
     - {role: ros, release: melodic}
     - caffe
+    - peoria #could be deprecated in the future

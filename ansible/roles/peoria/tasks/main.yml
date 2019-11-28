@@ -1,0 +1,5 @@
+---
+- name: Peoria download path.csv
+  get_url:
+    url: https://gist.githubusercontent.com/k0suke-murakami/2b429674d762a7ffcccbb52d733062b5/raw/47baf6c3d2093b466812bb8b33225d63ffd954cb/peoria_path.csv
+    dest: "{{ playbook_dir | dirname}}/src/planning/util/path_loader/data/"
