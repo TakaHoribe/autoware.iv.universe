@@ -9,6 +9,9 @@
 #include <rviz/validate_floats.h>
 
 #include "path/display.hpp"
+#define EIGEN_MPL2_ONLY
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace rviz_plugins
 {
@@ -165,12 +168,21 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
           color = *dynamic_color_ptr;
         }
         color.a = property_path_alpha_->getFloat();
-
-        path_manual_object_->position(path_point.pose.position.x, path_point.pose.position.y + (property_path_width_->getFloat() / 2.0), path_point.pose.position.z);
-        path_manual_object_->colour(color);
-
-        path_manual_object_->position(path_point.pose.position.x, path_point.pose.position.y - (property_path_width_->getFloat() / 2.0), path_point.pose.position.z);
-        path_manual_object_->colour(color);
+        Eigen::Vector3f vec_in, vec_out;
+        {
+          vec_in << 0, (property_path_width_->getFloat() / 2.0), 0;
+          Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
+          vec_out = quat * vec_in;
+          path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
+          path_manual_object_->colour(color);
+        }
+        {
+          vec_in << 0, -(property_path_width_->getFloat() / 2.0), 0;
+          Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
+          vec_out = quat * vec_in;
+          path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
+          path_manual_object_->colour(color);
+        }
       }
       /*
        * Velocity
