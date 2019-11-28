@@ -5,9 +5,9 @@
 
   <!-- Map -->
   <include file="$(find map_launch)/launch/map.launch" >
-    <arg name="lanelet_map_path" default="/home/kosuke/data/peoria/peoria_autoware_lanelet_20191124.osm"/>
-    <arg name="pointcloud_map_path" default="/home/kosuke/data/peoria/bin-0.2-mandli_lidar_map.pcd"/>
-    <arg name="map_tf_path" default="/home/kosuke/data/peoria/tf.launch"/>
+    <arg name="lanelet_map_path" default=""/>
+    <arg name="pointcloud_map_path" default=""/>
+    <arg name="map_tf_path" default=""/>
   </include>
 
   <include file="$(find simple_planning_simulator)/launch/simple_planning_simulator.launch" />
