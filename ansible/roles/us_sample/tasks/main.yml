@@ -1,0 +1,5 @@
+---
+- name: Download us sample path.csv
+  get_url:
+    url: https://gist.githubusercontent.com/k0suke-murakami/2b429674d762a7ffcccbb52d733062b5/raw/9d170374552c7bca81b65c4f266a1bdd215eac05/us_sample_path.csv
+    dest: "{{ playbook_dir | dirname}}/src/planning/util/path_loader/data/"

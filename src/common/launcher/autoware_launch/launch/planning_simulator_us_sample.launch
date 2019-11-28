@@ -18,7 +18,7 @@
   <!-- Planning -->
   <arg name="path_topic" default="/path_loader/path" />
   <include file="$(find path_loader)/launch/path_loader.launch">
-    <arg name="file_name" default="$(find path_loader)/data/peoria_path.csv" />
+    <arg name="file_name" default="$(find path_loader)/data/us_sample_path.csv" />
     <arg name="output_path_topic" default="$(arg path_topic)" />
   </include>
   <include file="$(find motion_planner)/launch/motion_planner.launch">
