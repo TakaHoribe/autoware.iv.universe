@@ -13,6 +13,7 @@ set(QT_LIBRARIES Qt5::Widgets)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
+find_package(Eigen3 REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS roscpp rviz
@@ -21,6 +22,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
 )
 
 add_library(autoware_planning_rviz_plugin
