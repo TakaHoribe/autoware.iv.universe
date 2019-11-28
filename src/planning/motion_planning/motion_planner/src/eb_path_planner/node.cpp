@@ -46,6 +46,8 @@ namespace motion_planner
     // bin_map_sub_ = nh_.subscribe("/lanelet_map_bin", 1, &EBPathPlannerNode::binMapCallback,this);
     path_sub_ = nh_.subscribe("/path", 1, &EBPathPlannerNode::pathCallback,this);
     
+    // private_nh_.param<double>("constant_velocity", use_height_, false);
+    
   }
   
   EBPathPlannerNode::~EBPathPlannerNode(){}
