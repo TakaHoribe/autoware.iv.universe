@@ -4,21 +4,29 @@ namespace motion_planner
 {
 BasePlannerNode::BasePlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 {
+  timer_ = nh_.createTimer(ros::Duration(0.1), &BasePlannerNode::timerCallback, this);
   path_sub_ = pnh_.subscribe("input/path", 1, &BasePlannerNode::pathCallback, this);
-  path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/path", 1);
+  trajectory_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/path", 1);
 }
+
+void BasePlannerNode::timerCallback(const ros::TimerEvent &e){
+  if (trajectory_pub_.getNumSubscribers() < 1)
+    return;
+  if(path_ptr_ == nullptr)
+    return;
+  autoware_planning_msgs::Trajectory output_trajectory_msg;
+  output_trajectory_msg.header = path_ptr_->header;
+
+  callback(*path_ptr_, output_trajectory_msg);
+  trajectory_pub_.publish(output_trajectory_msg);
+}
+
 
 void BasePlannerNode::pathCallback(const autoware_planning_msgs::Path &input_path_msg)
 {
-  if (path_pub_.getNumSubscribers() < 1)
-    return;
   if (input_path_msg.points.empty())
     ROS_WARN("path is empty");
-  autoware_planning_msgs::Path output_path_msg;
-  output_path_msg.header = input_path_msg.header;
-
-  callback(input_path_msg, output_path_msg);
-  path_pub_.publish(output_path_msg);
+  path_ptr_ = std::make_shared<autoware_planning_msgs::Path>(input_path_msg);
 }
 
 bool BasePlannerNode::getSelfPose(geometry_msgs::TransformStamped &self_pose, const std_msgs::Header &header)
