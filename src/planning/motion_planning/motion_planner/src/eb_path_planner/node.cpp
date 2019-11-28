@@ -74,7 +74,7 @@ namespace motion_planner
       pose.orientation.x = transform.transform.rotation.x;
       pose.orientation.y = transform.transform.rotation.y;
       pose.orientation.z = transform.transform.rotation.z;
-      pose.orientation.w = transform.transform.rotation.z;
+      pose.orientation.w = transform.transform.rotation.w;
       ego_pose_ptr_.reset(new geometry_msgs::Pose(pose));
     }
     catch (tf2::TransformException& ex)
