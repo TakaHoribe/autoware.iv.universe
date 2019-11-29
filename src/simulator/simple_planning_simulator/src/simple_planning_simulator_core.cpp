@@ -38,7 +38,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   timer_tf_ = nh_.createTimer(ros::Duration(0.1 / loop_rate_), &Simulator::timerCallbackPublishTF, this);
 
   bool use_trajectory_for_z_position_source;
-  pnh_.param("use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(false));
+  pnh_.param("use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(true));
   if (use_trajectory_for_z_position_source)
   {
     sub_trajectory_ = nh_.subscribe("base_trajectory", 1, &Simulator::callbackTrajectory, this);
@@ -198,12 +198,10 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   /* update vehicle dynamics */
   vehicle_model_ptr_->update(dt);
 
-  /* update vehicle z position from trajectory */
-  updatePosZ();
-
   /* save current vehicle pose & twist */
   current_pose_.position.x = vehicle_model_ptr_->getX();
   current_pose_.position.y = vehicle_model_ptr_->getY();
+  closest_pos_z_ = getPosZFromTrajectory(current_pose_.position.x, current_pose_.position.y); // update vehicle z position from trajectory
   current_pose_.position.z = closest_pos_z_;
   double roll = 0.0;
   double pitch = 0.0;
@@ -376,13 +374,39 @@ void Simulator::publishTF(const geometry_msgs::Pose &pose)
   tf_broadcaster_.sendTransform(odom_trans);
 }
 
-void Simulator::updatePosZ()
+double Simulator::getPosZFromTrajectory(const double x, const double y)
 {
   // calculae cloest point on trajectory
   /*
          write me...
   */
-  closest_pos_z_ = 0.0;
+  if (current_trajectory_ptr_ != nullptr)
+  {
+    const double max_sqrt_dist = 100.0*100.0;
+    double min_sqrt_dist = max_sqrt_dist;
+    int index;
+    bool found = false;
+    for (size_t i = 0; i < current_trajectory_ptr_->points.size(); ++i)
+    {
+      const double dist_x = (current_trajectory_ptr_->points.at(i).pose.position.x - x);
+      const double dist_y = (current_trajectory_ptr_->points.at(i).pose.position.y - y);
+      double sqrt_dist = dist_x * dist_x + dist_y * dist_y;
+      if (sqrt_dist < min_sqrt_dist)
+      {
+        min_sqrt_dist = sqrt_dist;
+        index = i;
+        found = true;
+      }
+    }
+    if (found)
+      return current_trajectory_ptr_->points.at(index).pose.position.z;
+    else
+      return 0;
+  }
+  else
+  {
+    return 0.0;
+  }
 }
 
 geometry_msgs::Quaternion Simulator::getQuaternionFromRPY(const double &roll, const double &pitch, const double &yaw)

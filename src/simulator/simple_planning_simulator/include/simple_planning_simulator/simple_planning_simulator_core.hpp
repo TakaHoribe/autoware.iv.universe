@@ -197,7 +197,7 @@ private:
   /**
    * @brief update closest pose to calculate pos_z
    */
-  void updatePosZ();
+  double getPosZFromTrajectory(const double x, const double y);
 
   /**
    * @brief convert roll-pitch-yaw Eular angle to ros Quaternion
