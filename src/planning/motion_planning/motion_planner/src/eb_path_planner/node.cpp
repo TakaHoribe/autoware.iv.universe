@@ -120,7 +120,13 @@ namespace motion_planner
         path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
         path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
         path_point_msg.pose.position.z = ego_pose_ptr_->position.z;
-        path_point_msg.pose.orientation = ego_pose_ptr_->orientation;
+        float roll = 0;
+        float pitch = 0;
+        float yaw = reference_trajectory_path.yaw_[i];
+        tf2::Quaternion quaternion;
+        quaternion.setRPY( roll, pitch, yaw );
+        path_point_msg.pose.orientation = tf2::toMsg(quaternion);
+        
         path_point_msg.twist.linear.x = reference_trajectory_path.v_[i];
         path_msg.points.push_back(path_point_msg);
         
