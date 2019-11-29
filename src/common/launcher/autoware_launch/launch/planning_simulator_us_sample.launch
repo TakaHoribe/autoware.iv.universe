@@ -18,10 +18,9 @@
   <!-- Planning -->
   <include file="$(find path_loader)/launch/path_loader.launch">
     <arg name="file_name" default="$(find path_loader)/data/us_sample_path.csv" />
-    <arg name="output_path_topic" default="$(arg path_topic)" />
+    <arg name="output_path_topic" default="/planning/behavior_planning/path" />
   </include>
-  <include file="$(find motion_planner)/launch/motion_planner.launch">
-  </include>
+  
   <include file="$(find planning_launch)/launch/planning.launch" >
   </include>
 

@@ -1,0 +1,7 @@
+<launch> 
+  <arg name="input_path_topic" default="/planning/behavior_planning/path" />
+  <node pkg="motion_planner" type="eb_path_planner_node" name="trajectory_planner" output="screen">
+    <remap from="~input/path" to="$(arg input_path_topic)" />
+    <remap from="~output/path" to="trajectory" />
+  </node>
+</launch>
