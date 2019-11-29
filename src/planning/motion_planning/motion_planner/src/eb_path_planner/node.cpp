@@ -30,20 +30,13 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
-  geometry_msgs::TransformStamped transform;
+  // geometry_msgs::TransformStamped transform;
   std_msgs::Header header;
   header.frame_id = "map";
   header.stamp = ros::Time(0);
-  if (!getSelfPose(transform, header))
-    return;
   geometry_msgs::Pose self_pose;
-  self_pose.position.x = transform.transform.translation.x;
-  self_pose.position.y = transform.transform.translation.y;
-  self_pose.position.z = transform.transform.translation.z;
-  self_pose.orientation.x = transform.transform.rotation.x;
-  self_pose.orientation.y = transform.transform.rotation.y;
-  self_pose.orientation.z = transform.transform.rotation.z;
-  self_pose.orientation.w = transform.transform.rotation.w;
+  if (!getSelfPose(self_pose, header))
+    return;
 
   double min_dist = 999999;
   size_t min_index = 0;
@@ -71,8 +64,9 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   ReferenceTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_v, 0.1);
 
   autoware_planning_msgs::Path path_msg;
-  path_msg.header = transform.header;
-  output_trajectory_msg.header = transform.header;
+  path_msg.header.frame_id = "map";
+  path_msg.header.stamp = ros::Time(0);
+  output_trajectory_msg.header = path_msg.header;
   for (size_t i = 0; i < reference_trajectory_path.x_.size(); i++)
   {
     autoware_planning_msgs::PathPoint path_point_msg;
@@ -102,7 +96,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   // visualize cubic spline point
   visualization_msgs::Marker debug_cubic_spline;
   debug_cubic_spline.lifetime = ros::Duration(1.0);
-  debug_cubic_spline.header = transform.header;
+  debug_cubic_spline.header = path_msg.header;
   debug_cubic_spline.ns = std::string("debug_cubic_spline");
   debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
   debug_cubic_spline.pose.orientation.w = 1.0;

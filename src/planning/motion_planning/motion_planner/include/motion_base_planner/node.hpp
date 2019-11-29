@@ -20,8 +20,8 @@ protected:
   virtual void callback(const autoware_planning_msgs::Path &input_path_msg, autoware_planning_msgs::Trajectory &output_trajectory_msg) = 0;
   void timerCallback(const ros::TimerEvent &e);
   void pathCallback(const autoware_planning_msgs::Path &input_path_msg);
-  bool getSelfPose(geometry_msgs::TransformStamped& self_pose, const std_msgs::Header &header);
-  bool getCurrentSelfPose(geometry_msgs::TransformStamped& self_pose);
+  bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header &header);
+  bool getCurrentSelfPose(geometry_msgs::Pose& self_pose);
 
 public:
   BasePlannerNode();
