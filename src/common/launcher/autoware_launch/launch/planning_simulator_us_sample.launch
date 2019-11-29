@@ -5,31 +5,9 @@
   <arg name="pointcloud_map_path" default=""/>
   <arg name="map_tf_path" default=""/>
 
-  <!-- Vehicle Setting -->
-  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
-
-  <!-- Map -->
-  <include file="$(find map_launch)/launch/map.launch" >
+  <include file="$(find autoware_launch)/launch/planning_simulator.launch" >
     <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
     <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
     <arg name="map_tf_path" value="$(arg map_tf_path)"/>
   </include>
-
-  <!-- Planning Simulator -->
-  <include file="$(find simple_planning_simulator)/launch/simple_planning_simulator.launch" />
-  
-  <!-- Path Loader -->
-  <include file="$(find path_loader)/launch/path_loader.launch">
-    <arg name="file_name" default="$(find path_loader)/data/us_sample_path.csv" />
-    <arg name="output_path_topic" default="/planning/behavior_planning/path" />
-  </include>
-  
-  <!-- Planning -->  
-  <include file="$(find planning_launch)/launch/planning.launch" >
-  </include>
-
-  <!-- Control -->
-  
-  <!-- Rviz -->
-  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />/>
 </launch>
