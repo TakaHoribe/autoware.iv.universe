@@ -51,7 +51,7 @@ bool BasePlannerNode::getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs
   }
 }
 
-bool BasePlannerNode::getCurrentSelfPose(geometry_msgs::Pose &self_pose)
+bool BasePlannerNode::getSelfPoseInMap(geometry_msgs::Pose &self_pose)
 {
   std_msgs::Header header;
   header.frame_id = "map";

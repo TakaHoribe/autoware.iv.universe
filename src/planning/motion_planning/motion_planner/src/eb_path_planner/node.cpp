@@ -30,12 +30,8 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
-  // geometry_msgs::TransformStamped transform;
-  std_msgs::Header header;
-  header.frame_id = "map";
-  header.stamp = ros::Time(0);
   geometry_msgs::Pose self_pose;
-  if (!getSelfPose(self_pose, header))
+  if (!getSelfPoseInMap(self_pose))
     return;
 
   double min_dist = 999999;
@@ -65,7 +61,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
 
   autoware_planning_msgs::Path path_msg;
   path_msg.header.frame_id = "map";
-  path_msg.header.stamp = ros::Time(0);
+  path_msg.header.stamp = ros::Time::now();
   output_trajectory_msg.header = path_msg.header;
   for (size_t i = 0; i < reference_trajectory_path.x_.size(); i++)
   {

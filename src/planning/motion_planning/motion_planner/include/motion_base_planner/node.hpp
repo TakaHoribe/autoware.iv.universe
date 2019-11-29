@@ -21,7 +21,7 @@ protected:
   void timerCallback(const ros::TimerEvent &e);
   void pathCallback(const autoware_planning_msgs::Path &input_path_msg);
   bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header &header);
-  bool getCurrentSelfPose(geometry_msgs::Pose& self_pose);
+  bool getSelfPoseInMap(geometry_msgs::Pose& self_pose);
 
 public:
   BasePlannerNode();
