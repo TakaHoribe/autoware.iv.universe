@@ -195,5 +195,9 @@ autoware_planning_msgs::Route MissionPlanner::planRoute()
     previous_llt = llt;
   }
 
+  route.header.stamp = ros::Time::now();
+  route.header.frame_id = map_frame_;
+  route.goal_pose = goal_pose_.pose;
+
   return route;
 }
