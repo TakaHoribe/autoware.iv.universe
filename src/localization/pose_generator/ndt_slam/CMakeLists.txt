@@ -3,14 +3,6 @@ project(ndt_slam)
 
 find_package(PCL REQUIRED)
 
-IF (NOT (PCL_VERSION VERSION_LESS "1.7.2"))
-    SET(PCL_OPENMP_SOURCES
-            src/pcl_omp_registration/registration.hpp
-            src/pcl_omp_registration/registration.h
-            src/pcl_omp_registration/ndt.hpp
-            src/pcl_omp_registration/ndt.h
-            src/pcl_omp_registration/ndt.cpp)
-ENDIF (NOT (PCL_VERSION VERSION_LESS "1.7.2"))
 
 #find_package(OpenMP)
 #if (OPENMP_FOUND)
@@ -100,7 +92,6 @@ add_executable(ndt_slam
         src/pcl_registration/ndt.hpp
         src/pcl_registration/ndt.h
         src/pcl_registration/ndt.cpp
-        ${PCL_OPENMP_SOURCES}
 )
 
 #if(CUDA_FOUND)
