@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 
 #include <autoware_vector_map/autoware_vector_map.h>
-#include <autoware_vector_map/bridge/boost/boost_geometry_bridge.h>
+#include <autoware_vector_map/bridge/boost/geometry_registration.h>
 #include <autoware_vector_map/bridge/ogr/geometry_converter.h>
 #include <autoware_vector_map/util/to_debug_string.h>
 
@@ -9,7 +9,6 @@ using namespace autoware_vector_map::io::gpkg_loader;
 using namespace autoware_vector_map::data;
 using namespace autoware_vector_map::traits;
 using namespace autoware_vector_map::util;
-using namespace autoware_vector_map::bridge::boost;
 using namespace autoware_vector_map::bridge::ogr;
 
 void example(const std::unique_ptr<GpkgLoader>& gpkg_loader) {
