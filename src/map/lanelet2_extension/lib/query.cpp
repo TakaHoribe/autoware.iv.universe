@@ -294,7 +294,8 @@ std::vector<lanelet::ConstLineString3d> query::stopSignStopLines(const lanelet::
   return stoplines;
 }
 
-ConstLanelets query::getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const lanelet::BasicPoint2d& search_point, const double range)
+ConstLanelets query::getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets,
+                                            const lanelet::BasicPoint2d& search_point, const double range)
 {
   ConstLanelets near_lanelets;
   for (const auto& ll : lanelets)
@@ -309,7 +310,8 @@ ConstLanelets query::getLaneletsWithinRange(const lanelet::ConstLanelets& lanele
   return near_lanelets;
 }
 
-ConstLanelets query::getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const geometry_msgs::Point& search_point, const double range)
+ConstLanelets query::getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets,
+                                            const geometry_msgs::Point& search_point, const double range)
 {
   getLaneletsWithinRange(lanelets, lanelet::BasicPoint2d(search_point.x, search_point.y), range);
 }
@@ -319,18 +321,19 @@ ConstLanelets query::getLaneChangeableNeighbors(const routing::RoutingGraphPtr& 
   return graph->besides(lanelet);
 }
 
-ConstLanelets query::getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets, const geometry_msgs::Point& search_point)
+ConstLanelets query::getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph,
+                                                const ConstLanelets& road_lanelets,
+                                                const geometry_msgs::Point& search_point)
 {
   const auto lanelets = getLaneletsWithinRange(road_lanelets, search_point, std::numeric_limits<double>::epsilon());
   ConstLanelets road_slices;
   for (const auto& llt : lanelets)
   {
     const auto tmp_road_slice = getLaneChangeableNeighbors(graph, llt);
-    road_slices.insert(road_slices.end(), tmp_road_slice.begin(), tmp_road_slice.end()); 
+    road_slices.insert(road_slices.end(), tmp_road_slice.begin(), tmp_road_slice.end());
   }
   return road_slices;
 }
-
 
 ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet)
 {
@@ -347,15 +350,13 @@ ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph, cons
   while (!!left_lane)
   {
     lanelets.push_back(left_lane.get());
-    left_lane =
-        (!!graph->left(left_lane.get())) ? graph->left(left_lane.get()) : graph->adjacentLeft(left_lane.get());
+    left_lane = (!!graph->left(left_lane.get())) ? graph->left(left_lane.get()) : graph->adjacentLeft(left_lane.get());
   }
   return lanelets;
 }
 
-ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph,
-                                                const ConstLanelets& road_lanelets,
-                                                const geometry_msgs::Point& search_point)
+ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets,
+                                     const geometry_msgs::Point& search_point)
 {
   const auto lanelets = getLaneletsWithinRange(road_lanelets, search_point, std::numeric_limits<double>::epsilon());
   ConstLanelets road_slices;
