@@ -22,7 +22,9 @@
   </include>
   <include file="$(find motion_planner)/launch/motion_planner.launch">
   </include>
-  
+  <include file="$(find planning_launch)/launch/planning.launch" >
+  </include>
+
   <!-- Control -->
   
   <!-- Rviz -->

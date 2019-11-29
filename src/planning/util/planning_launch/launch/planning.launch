@@ -1,0 +1,20 @@
+<launch>
+    <!-- planning module -->
+    <group ns="planning">
+        <!-- mission planning module -->
+        <group ns="mission_planning">
+            <include file="$(find planning_launch)/launch/mission_planning/mission_planning.launch">
+            </include>
+        </group>
+        <!-- behavior planning module -->
+        <group ns="behavior_planning">
+            <include file="$(find planning_launch)/launch/behavior_planning/behavior_planning.launch">
+            </include>
+        </group>
+        <!-- motion planning module -->
+        <group ns="motion_planning">
+            <include file="$(find planning_launch)/launch/motion_planning/motion_planning.launch">
+            </include>
+        </group>
+    </group>
+</launch>

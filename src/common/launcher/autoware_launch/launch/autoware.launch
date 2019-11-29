@@ -25,6 +25,9 @@
 
   <!-- Traffic Light Recognition -->
   <!-- Planning -->
+  <include file="$(find planning_launch)/launch/planning.launch" >
+  </include>
+
   <!-- Control -->
 
 </launch>
