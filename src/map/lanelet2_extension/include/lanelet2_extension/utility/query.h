@@ -121,14 +121,18 @@ std::vector<lanelet::ConstLineString3d> stopLinesLanelet(const lanelet::ConstLan
 std::vector<lanelet::ConstLineString3d> stopSignStopLines(const lanelet::ConstLanelets lanelets,
                                                           const std::string& stop_sign_id = "stop_sign");
 
-ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const lanelet::BasicPoint2d& search_point, const double range);
-ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const geometry_msgs::Point& search_point, const double range);
-
-ConstLanelets getNeighboringLanes(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
-ConstLanelets getNeighboringLanes(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets, const geometry_msgs::Point& search_point);
+ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const lanelet::BasicPoint2d& search_point,
+                                     const double range);
+ConstLanelets getLaneletsWithinRange(const lanelet::ConstLanelets& lanelets, const geometry_msgs::Point& search_point,
+                                     const double range);
 
 ConstLanelets getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
-ConstLanelets getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets, const geometry_msgs::Point& search_point);
+ConstLanelets getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets,
+                                         const geometry_msgs::Point& search_point);
+
+ConstLanelets getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
+ConstLanelets getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets,
+                              const geometry_msgs::Point& search_point);
 
 }  // namespace query
 }  // namespace utils
