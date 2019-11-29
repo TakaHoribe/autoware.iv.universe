@@ -251,7 +251,7 @@ Visualization Manager:
               Color Border Vel Max: 10
               Enabled: true
               Name: Path
-              Topic: /behavior_planning/path
+              Topic: /planning/behavior_planning/path
               Unreliable: true
               Value: true
               View Path:
@@ -273,7 +273,7 @@ Visualization Manager:
               Color Border Vel Max: 10
               Enabled: true
               Name: Trajectory
-              Topic: /motion_planning/trajectory
+              Topic: /planning/motion_planning/trajectory
               Unreliable: true
               Value: true
               View Path:
