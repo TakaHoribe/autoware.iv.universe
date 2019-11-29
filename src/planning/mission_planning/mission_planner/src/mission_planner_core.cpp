@@ -31,11 +31,11 @@ MissionPlanner::MissionPlanner() : is_graph_ready_(false), pnh_("~"), tf_listene
   pnh_.param<std::string>("map_frame", map_frame_, "map");
   pnh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
 
-  goal_subscriber_ = nh_.subscribe("move_base_simple/goal", 10, &MissionPlanner::goalPoseCallback, this);
+  goal_subscriber_ = nh_.subscribe("goal_pose", 10, &MissionPlanner::goalPoseCallback, this);
   map_subscriber_ = nh_.subscribe("lanelet_map_bin", 10, &MissionPlanner::mapCallback, this);
 
-  route_publisher_ = nh_.advertise<autoware_planning_msgs::Route>("planning/mission_planning/route", 1, true);
-  marker_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("planning/mission_planning/route_marker", 1, true);
+  route_publisher_ = nh_.advertise<autoware_planning_msgs::Route>("route", 1, true);
+  marker_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("route_marker", 1, true);
 }
 
 void MissionPlanner::mapCallback(const autoware_lanelet2_msgs::MapBin& msg)
