@@ -55,7 +55,7 @@ bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_p
   base_link_origin.pose.orientation.x = 0;
   base_link_origin.pose.orientation.y = 0;
   base_link_origin.pose.orientation.z = 0;
-  base_link_origin.pose.orientation.w = 0;
+  base_link_origin.pose.orientation.w = 1;
 
   //  transform base_link frame origin to map_frame to get vehicle positions
   return transformPose(base_link_origin, ego_vehicle_pose, map_frame_);
@@ -69,6 +69,7 @@ bool MissionPlanner::transformPose(const geometry_msgs::PoseStamped& input_pose,
   {
     transform = tf_buffer_.lookupTransform(target_frame, input_pose.header.frame_id, ros::Time(0));
     tf2::doTransform(input_pose, *output_pose, transform);
+    return true;
   }
   catch (tf2::TransformException& ex)
   {
