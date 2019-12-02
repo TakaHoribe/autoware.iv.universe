@@ -77,7 +77,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
     path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
     path_point_msg.pose.position.z = reference_trajectory_path.z_[i];
-    // path_point_msg.pose.position.z = input_path_msg.points[min_index].pose.position.z;
     float roll = 0;
     float pitch = 0;
     float yaw = reference_trajectory_path.yaw_[i];
