@@ -33,6 +33,11 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   geometry_msgs::Pose self_pose;
   if (!getSelfPoseInMap(self_pose))
     return;
+  
+  if(input_path_msg.points.size()==0)
+  {
+    std::cerr  <<__func__  << "[WARNING] input path size is 0"<< std::endl;
+  }
 
   double min_dist = 999999;
   size_t min_index = 0;
@@ -68,7 +73,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     autoware_planning_msgs::PathPoint path_point_msg;
     path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
     path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
-    path_point_msg.pose.position.z = self_pose.position.z;
+    path_point_msg.pose.position.z = input_path_msg.points.front().pose.position.z;
     float roll = 0;
     float pitch = 0;
     float yaw = reference_trajectory_path.yaw_[i];
