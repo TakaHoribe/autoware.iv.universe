@@ -54,15 +54,18 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   }
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
+  std::vector<double> tmp_z;
   std::vector<double> tmp_v;
   for (size_t i = min_index; i < min_index + 50; i++)
   {
     tmp_x.push_back(input_path_msg.points[i].pose.position.x);
     tmp_y.push_back(input_path_msg.points[i].pose.position.y);
+    tmp_z.push_back(input_path_msg.points[i].pose.position.z);
     tmp_v.push_back(input_path_msg.points[i].twist.linear.x);
   }
   // ReferencePath reference_path(tmp_x, tmp_y, 0.1);
-  ReferenceTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_v, 0.1);
+  // ReferenceTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_v, 0.1);
+  Reference3DTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_z, tmp_v, 0.1);
 
   autoware_planning_msgs::Path path_msg;
   path_msg.header.frame_id = "map";
@@ -73,7 +76,8 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     autoware_planning_msgs::PathPoint path_point_msg;
     path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
     path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
-    path_point_msg.pose.position.z = input_path_msg.points.front().pose.position.z;
+    path_point_msg.pose.position.z = reference_trajectory_path.z_[i];
+    // path_point_msg.pose.position.z = input_path_msg.points[min_index].pose.position.z;
     float roll = 0;
     float pitch = 0;
     float yaw = reference_trajectory_path.yaw_[i];

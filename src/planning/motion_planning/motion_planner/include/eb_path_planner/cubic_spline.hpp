@@ -265,4 +265,65 @@ private:
     };
 };
 
+class Spline4D{
+public:
+    Spline sx;
+    Spline sy;
+    Spline sz;
+    Spline sv;
+    std::vector<double> s;
+    double max_s_value_;
+
+    Spline4D(const std::vector<double>& x, 
+             const std::vector<double>& y,
+             const std::vector<double>& z,
+             const std::vector<double>& v){
+        s = calc_s(x, y);
+        sx = Spline(s, x);
+        sy = Spline(s, y);
+        sz = Spline(s, z);
+        sv = Spline(s, v);
+        max_s_value_ = *std::max_element(s.begin(), s.end());
+    };
+
+    std::array<double, 4> calc_trajectory_point(double s_t){
+        double x = sx.calc(s_t, max_s_value_);
+        double y = sy.calc(s_t, max_s_value_);
+        double z = sz.calc(s_t, max_s_value_);
+        double v = sv.calc(s_t, max_s_value_);
+        return {{x, y, z, v}};
+    };
+
+    double calc_curvature(double s_t){
+        double dx = sx.calc_d(s_t, max_s_value_);
+        double ddx = sx.calc_dd(s_t, max_s_value_);
+        double dy = sy.calc_d(s_t, max_s_value_);
+        double ddy = sy.calc_dd(s_t, max_s_value_);
+        return (ddy * dx - ddx * dy)/(dx * dx + dy * dy);
+    };
+
+    double calc_yaw(double s_t){
+        double dx = sx.calc_d(s_t, max_s_value_);
+        double dy = sy.calc_d(s_t, max_s_value_);
+        return std::atan2(dy, dx);
+    };
+
+
+private:
+    std::vector<double> calc_s(const std::vector<double>& x, const std::vector<double>& y){
+        std::vector<double> ds;
+        std::vector<double> out_s{0};
+        std::vector<double> dx = vec_diff(x);
+        std::vector<double> dy = vec_diff(y);
+
+        for(unsigned int i=0; i<dx.size(); i++){
+            ds.push_back(std::sqrt(dx[i]*dx[i] + dy[i]*dy[i]));
+        }
+
+        std::vector<double> cum_ds = cum_sum(ds);
+        out_s.insert(out_s.end(), cum_ds.begin(), cum_ds.end());
+        return out_s;
+    };
+};
+
 #endif //CUBIC_SPLINE_H
