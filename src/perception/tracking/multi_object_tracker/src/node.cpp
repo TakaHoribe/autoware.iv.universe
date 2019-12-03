@@ -27,8 +27,8 @@
 
 MultiObjectTrackerNode::MultiObjectTrackerNode() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
-    sub_ = nh_.subscribe("input", 1, &MultiObjectTrackerNode::measurementCallback, this);
-    pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
+    sub_ = pnh_.subscribe("input", 1, &MultiObjectTrackerNode::measurementCallback, this);
+    pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
     double publish_rate;
     pnh_.param<double>("publish_rate", publish_rate, double(30.0));
     publish_timer_ = nh_.createTimer(ros::Duration(1.0 / publish_rate), &MultiObjectTrackerNode::publishTimerCallback, this);
