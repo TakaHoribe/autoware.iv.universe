@@ -15,18 +15,21 @@
  */
 
 #include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
+#include <interporation/cubic_spline.hpp>
+
 #include <string>
+#include <memory>
 
 namespace behavior_planning {
 class Route2PathConverterNode
@@ -43,14 +46,19 @@ private:
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber map_sub_;
   ros::Publisher path_pub_;
+  ros::Publisher debug_viz_pub_;
   
-
   std::shared_ptr<autoware_planning_msgs::Route> route_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
   std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
+
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
+
+  std::shared_ptr<Spline4D> spline_ptr_;
+
+  double path_length_;
 
   void timerCallback(const ros::TimerEvent &e);
   void routeCallback(const autoware_planning_msgs::Route &input_route_msg);
@@ -61,5 +69,10 @@ private:
                 const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                 const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                 autoware_planning_msgs::Path &output_path_msg);
+  void publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
+  // void getPathFromRoute(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
+  void filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path);
+  void interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path);
+  
 };
 }
