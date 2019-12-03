@@ -26,8 +26,6 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-#include <interporation/cubic_spline.hpp>
-
 #include <string>
 #include <memory>
 
@@ -38,6 +36,10 @@ public:
   Route2PathConverterNode();
 
 private:
+  /* 
+   * ROS
+   */
+  // publisher and subscriber
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Timer timer_;
@@ -47,18 +49,24 @@ private:
   ros::Subscriber map_sub_;
   ros::Publisher path_pub_;
   ros::Publisher debug_viz_pub_;
-  
+  // tf2_ros::Buffer tf_buffer_;
+  // tf2_ros::TransformListener tf_listener_;
+  //  parameter
+  double path_length_;
+  // topic cache
   std::shared_ptr<autoware_planning_msgs::Route> route_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
   std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
 
+  /* 
+   * Lanelet 
+   */
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
-
-  std::shared_ptr<Spline4D> spline_ptr_;
-
-  double path_length_;
+  /* 
+   * Spline 
+   */
 
   void timerCallback(const ros::TimerEvent &e);
   void routeCallback(const autoware_planning_msgs::Route &input_route_msg);
@@ -70,9 +78,8 @@ private:
                 const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                 autoware_planning_msgs::Path &output_path_msg);
   void publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
-  // void getPathFromRoute(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
   void filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path);
   void interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path);
-  
+  // bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header &header);
 };
 }

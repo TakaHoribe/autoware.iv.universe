@@ -1,13 +1,13 @@
 #include <route2path_converter/node.hpp>
 #include <lanelet2_routing/Route.h>
-
 #include <lanelet2_extension/utility/message_conversion.h>
 // #include <lanelet2_extension/utility/query.h>
 // #include <lanelet2_extension/visualization/visualization.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <goal_path_refiner/goal_path_refiner.hpp>
 #include <visualization_msgs/MarkerArray.h>
+#include <goal_path_refiner/goal_path_refiner.hpp>
+#include <interporation/cubic_spline.hpp>
 
 namespace behavior_planning
 {
@@ -109,7 +109,6 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
         return false;
     }
 
-
     // generate path for goal pose
     autoware_planning_msgs::Path goal_path;
     if (!GoalPathRefiner::getRefinedPath(7.0, 3.14 / 2.0, filtered_path, input_route_msg.goal_pose, goal_path))
@@ -162,19 +161,19 @@ void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path
         z.push_back(path_point.pose.position.z);
         v.push_back(path_point.twist.linear.x);
     }
-    spline_ptr_ = std::make_shared<Spline4D>(x, y, z, v);
-
+    std::shared_ptr<Spline4D> spline_ptr;
+    spline_ptr = std::make_shared<Spline4D>(x, y, z, v);
     // std::cout<<"st:"<<spline_ptr_->s.back() << std::endl;
     // std::cout<<"point size:"<<path.points.size() << std::endl;
-    for (double s_t = 0.0; s_t < std::min(length, spline_ptr_->s.back()); s_t += 1.0)
+    for (double s_t = 0.0; s_t < std::min(length, spline_ptr->s.back()); s_t += 1.0)
     {
         autoware_planning_msgs::PathPoint path_point;
-        std::array<double, 4> state = spline_ptr_->calc_trajectory_point(s_t);
+        std::array<double, 4> state = spline_ptr->calc_trajectory_point(s_t);
         path_point.pose.position.x = state[0];
         path_point.pose.position.y = state[1];
         path_point.pose.position.z = state[2];
         path_point.twist.linear.x = state[3];
-        const double yaw = spline_ptr_->calc_yaw(s_t);
+        const double yaw = spline_ptr->calc_yaw(s_t);
         tf2::Quaternion tf2_quaternion;
         tf2_quaternion.setRPY(0, 0, yaw);
         path_point.pose.orientation = tf2::toMsg(tf2_quaternion);
@@ -186,25 +185,25 @@ void Route2PathConverterNode::publishDebugMarker(const autoware_planning_msgs::P
 {
     if (pub.getNumSubscribers() < 1)
         return;
-        visualization_msgs::MarkerArray output_msg;
-        for (size_t i = 0; i < path.points.size(); ++i)
-        {
-            visualization_msgs::Marker marker;
-            marker.header = path.header;
-            marker.id = i;
-            marker.type = visualization_msgs::Marker::ARROW;
-            marker.pose = path.points.at(i).pose;
-            marker.scale.y = marker.scale.z = 0.05;
-            marker.scale.x = 0.25;
-            marker.action = visualization_msgs::Marker::ADD;
-            marker.lifetime = ros::Duration(0.5);
-            marker.color.a = 1.0; // Don't forget to set the alpha!
-            marker.color.r = 1.0;
-            marker.color.g = 1.0;
-            marker.color.b = 1.0;
-            output_msg.markers.push_back(marker);
-        }
-        pub.publish(output_msg);
+    visualization_msgs::MarkerArray output_msg;
+    for (size_t i = 0; i < path.points.size(); ++i)
+    {
+        visualization_msgs::Marker marker;
+        marker.header = path.header;
+        marker.id = i;
+        marker.type = visualization_msgs::Marker::ARROW;
+        marker.pose = path.points.at(i).pose;
+        marker.scale.y = marker.scale.z = 0.05;
+        marker.scale.x = 0.25;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.lifetime = ros::Duration(0.5);
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 1.0;
+        marker.color.b = 1.0;
+        output_msg.markers.push_back(marker);
+    }
+    pub.publish(output_msg);
 }
 
 } // namespace behavior_planning

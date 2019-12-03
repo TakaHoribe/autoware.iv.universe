@@ -177,7 +177,7 @@ std::vector<lanelet::BasicPoint3d> resamplePoints(const lanelet::ConstLineString
 lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj)
 {
   // Parameter
-  constexpr double point_interval = 1.0;  // [m]
+  constexpr double point_interval = 5.0;  // [m]
 
   // Get length of longer border
   const double left_length = lanelet::geometry::length(lanelet_obj.leftBound());
