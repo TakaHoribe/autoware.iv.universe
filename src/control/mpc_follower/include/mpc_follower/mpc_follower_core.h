@@ -37,6 +37,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 #include <tf2/utils.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
@@ -78,7 +79,6 @@ private:
   ros::Publisher pub_steer_vel_ctrl_cmd_; //!< @brief topic publisher for control command
   ros::Publisher pub_twist_cmd_;          //!< @brief topic publisher for twist command
   ros::Subscriber sub_ref_path_;          //!< @brief topic subscriber for reference waypoints
-  ros::Subscriber sub_pose_;              //!< @brief subscriber for current pose
   ros::Subscriber sub_vehicle_status_;    //!< @brief subscriber for currrent vehicle status
   ros::Timer timer_control_;              //!< @brief timer for control command computation
 
@@ -144,6 +144,9 @@ private:
   bool my_velocity_ok_; //< @brief flag for validity of current velocity
   bool my_steering_ok_; //< @brief flag for validity of steering angle
 
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+
   /**
    * @brief compute and publish control command for path follow with a constant control period
    */
@@ -153,11 +156,6 @@ private:
    * @brief set current_trajectory_ with receved message
    */
   void callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &);
-
-  /**
-   * @brief set vehicle_status_.pose with receved message 
-   */
-  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr &);
 
   /**
    * @brief set vehicle_status_.twist and vehicle_status_.tire_angle_rad with receved message
@@ -197,6 +195,9 @@ private:
    * @param [out] steer_vel_cmd steering rotation speed command
    */
   bool calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd);
+
+  void getCurrentPose(VehicleStatus &vs);
+
 
   /* debug */
   bool show_debug_info_;      //!< @brief flag to display debug info

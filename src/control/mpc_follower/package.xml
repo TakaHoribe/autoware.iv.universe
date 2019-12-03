@@ -15,7 +15,7 @@
   <depend>rosunit</depend>
   <depend>std_msgs</depend>
   <depend>tf2</depend>
-  <depend>tf</depend>
+  <depend>tf2_ros</depend>
   <depend>autoware_planning_msgs</depend>
   <depend>autoware_control_msgs</depend>
   <!-- <depend>qpoases_vendor</depend> -->

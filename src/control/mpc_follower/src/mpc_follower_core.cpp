@@ -22,7 +22,7 @@
 #define RAD2DEG 180.0 / 3.1415926535
 
 MPCFollower::MPCFollower()
-    : nh_(""), pnh_("~"), my_position_ok_(false), my_velocity_ok_(false), my_steering_ok_(false)
+    : nh_(""), pnh_("~"), my_position_ok_(false), my_velocity_ok_(false), my_steering_ok_(false), tf_listener_(tf_buffer_)
 {
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("ctrl_period", ctrl_period_, double(0.03));
@@ -133,7 +133,6 @@ MPCFollower::MPCFollower()
   pub_twist_cmd_ = nh_.advertise<geometry_msgs::TwistStamped>("twist_raw", 1);
   pub_steer_vel_ctrl_cmd_ = nh_.advertise<autoware_control_msgs::ControlCommandStamped>("control_raw", 1);
   sub_ref_path_ = nh_.subscribe("reference_trajectory", 1, &MPCFollower::callbackRefPath, this);
-  sub_pose_ = nh_.subscribe("current_pose", 1, &MPCFollower::callbackPose, this);
   sub_vehicle_status_ = nh_.subscribe("vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
 
   /* for debug */
@@ -628,10 +627,30 @@ void MPCFollower::convertTrajToMarker(const MPCTrajectory &traj, visualization_m
   }
 }
 
-void MPCFollower::callbackPose(const geometry_msgs::PoseStamped::ConstPtr &msg)
+void MPCFollower::getCurrentPose(VehicleStatus &vs)
 {
-  vehicle_status_.header = msg->header;
-  vehicle_status_.pose = msg->pose;
+  geometry_msgs::TransformStamped transform;
+  try
+  {
+    // in order to get base_link position in map frame
+    // need translation matrix from base_link to map
+    transform = tf_buffer_.lookupTransform(
+        "base_link", /* targert */
+        "map",       /* src */
+        ros::Time(0));
+    // std::cerr << "position in map " << transform.transform.translation.x << " " << transform.transform.translation.y << " " << transform.transform.translation.z << std::endl;
+  }
+  catch (tf2::TransformException &ex)
+  {
+    ROS_WARN("[mpc_follower] cannot get map to base_link transform. %s", ex.what());
+    return;
+  }
+
+  vs.header = transform.header;
+  vs.pose.position.x = transform.transform.translation.x;
+  vs.pose.position.y = transform.transform.translation.y;
+  vs.pose.position.z = transform.transform.translation.z;
+  vs.pose.orientation = transform.transform.rotation;
   my_position_ok_ = true;
 };
 

@@ -12,6 +12,7 @@ find_package(
   rosunit
   std_msgs
   tf2
+  tf2_ros
   autoware_planning_msgs
   autoware_control_msgs
 )
@@ -24,6 +25,7 @@ catkin_package(
     roscpp
     std_msgs
     tf2
+    tf2_ros
     autoware_planning_msgs
     autoware_control_msgs
 )
