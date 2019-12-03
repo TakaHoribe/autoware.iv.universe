@@ -26,10 +26,10 @@ include_directories(
 )
 
 add_library(autoware_planning_rviz_plugin
-include/path/display.hpp
-src/path/display.cpp
-include/trajectory/display.hpp
-src/trajectory/display.cpp
+include/path/path_display.hpp
+src/path/path_display.cpp
+include/trajectory/traj_display.hpp
+src/trajectory/traj_display.cpp
 )
 
 target_link_libraries(autoware_planning_rviz_plugin

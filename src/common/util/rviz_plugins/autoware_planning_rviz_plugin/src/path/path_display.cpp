@@ -8,7 +8,7 @@
 
 #include <rviz/validate_floats.h>
 
-#include "trajectory/display.hpp"
+#include "path/path_display.hpp"
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -16,8 +16,8 @@
 namespace rviz_plugins
 {
 
-std::unique_ptr<Ogre::ColourValue> AutowareTrajectoryDisplay::gradation(const QColor &color_min, const QColor &color_max,
-                                                                        const double ratio)
+std::unique_ptr<Ogre::ColourValue> AutowarePathDisplay::gradation(const QColor &color_min, const QColor &color_max,
+                                                                  const double ratio)
 {
   std::unique_ptr<Ogre::ColourValue> color_ptr(new Ogre::ColourValue);
   color_ptr->g = color_max.greenF() * ratio + color_min.greenF() * (1.0 - ratio);
@@ -27,7 +27,7 @@ std::unique_ptr<Ogre::ColourValue> AutowareTrajectoryDisplay::gradation(const QC
   return color_ptr;
 }
 
-std::unique_ptr<Ogre::ColourValue> AutowareTrajectoryDisplay::setColorDependsOnVelocity(const double vel_max, const double cmd_vel)
+std::unique_ptr<Ogre::ColourValue> AutowarePathDisplay::setColorDependsOnVelocity(const double vel_max, const double cmd_vel)
 {
   const double cmd_vel_abs = std::fabs(cmd_vel);
   const double vel_min = 0.0;
@@ -55,7 +55,7 @@ std::unique_ptr<Ogre::ColourValue> AutowareTrajectoryDisplay::setColorDependsOnV
   return color_ptr;
 }
 
-AutowareTrajectoryDisplay::AutowareTrajectoryDisplay()
+AutowarePathDisplay::AutowarePathDisplay()
 {
   property_path_view_ = new rviz::BoolProperty("View Path", true, "", this, SLOT(updateVisualization()));
   property_path_width_ = new rviz::FloatProperty("Width", 2.0, "", property_path_view_, SLOT(updateVisualization()), this);
@@ -77,7 +77,7 @@ AutowareTrajectoryDisplay::AutowareTrajectoryDisplay()
   property_vel_max_->setMin(0.0);
 }
 
-AutowareTrajectoryDisplay::~AutowareTrajectoryDisplay()
+AutowarePathDisplay::~AutowarePathDisplay()
 {
   if (initialized())
   {
@@ -86,7 +86,7 @@ AutowareTrajectoryDisplay::~AutowareTrajectoryDisplay()
   }
 }
 
-void AutowareTrajectoryDisplay::onInitialize()
+void AutowarePathDisplay::onInitialize()
 {
   MFDClass::onInitialize();
 
@@ -98,24 +98,24 @@ void AutowareTrajectoryDisplay::onInitialize()
   scene_node_->attachObject(velocity_manual_object_);
 }
 
-void AutowareTrajectoryDisplay::reset()
+void AutowarePathDisplay::reset()
 {
   MFDClass::reset();
   path_manual_object_->clear();
   velocity_manual_object_->clear();
 }
 
-bool AutowareTrajectoryDisplay::validateFloats(const autoware_planning_msgs::TrajectoryConstPtr &msg_ptr)
+bool AutowarePathDisplay::validateFloats(const autoware_planning_msgs::PathConstPtr &msg_ptr)
 {
-  for (auto &&trajectory_point : msg_ptr->points)
+  for (auto &&path_point : msg_ptr->points)
   {
-    if (!rviz::validateFloats(trajectory_point.pose) && !rviz::validateFloats(trajectory_point.twist))
+    if (!rviz::validateFloats(path_point.pose) && !rviz::validateFloats(path_point.twist))
       return false;
   }
   return true;
 }
 
-void AutowareTrajectoryDisplay::processMessage(const autoware_planning_msgs::TrajectoryConstPtr &msg_ptr)
+void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConstPtr &msg_ptr)
 {
   if (!validateFloats(msg_ptr))
   {
@@ -214,7 +214,7 @@ void AutowareTrajectoryDisplay::processMessage(const autoware_planning_msgs::Tra
   last_msg_ptr_ = msg_ptr;
 }
 
-void AutowareTrajectoryDisplay::updateVisualization()
+void AutowarePathDisplay::updateVisualization()
 {
   if (last_msg_ptr_ != nullptr)
     processMessage(last_msg_ptr_);
@@ -223,4 +223,4 @@ void AutowareTrajectoryDisplay::updateVisualization()
 } // namespace rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_plugins::AutowareTrajectoryDisplay, rviz::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_plugins::AutowarePathDisplay, rviz::Display)
