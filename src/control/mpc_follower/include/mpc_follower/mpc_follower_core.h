@@ -52,7 +52,6 @@
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_dynamics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.h"
-#include "mpc_follower/qp_solver/qp_solver_unconstr.h"
 #include "mpc_follower/qp_solver/qp_solver_unconstr_fast.h"
 // #include "mpc_follower/qp_solver/qp_solver_qpoases.h"
 
@@ -80,13 +79,13 @@ private:
   ros::Publisher pub_twist_cmd_;          //!< @brief topic publisher for twist command
   ros::Subscriber sub_ref_path_;          //!< @brief topic subscriber for reference waypoints
   ros::Subscriber sub_vehicle_status_;    //!< @brief subscriber for currrent vehicle status
+  ros::Subscriber sub_current_vel_;
   ros::Timer timer_control_;              //!< @brief timer for control command computation
 
   MPCTrajectory ref_traj_;                                   //!< @brief reference trajectory to be followed
   Butterworth2dFilter lpf_steering_cmd_;                     //!< @brief lowpass filter for steering command
   Butterworth2dFilter lpf_lateral_error_;                    //!< @brief lowpass filter for lateral error to calculate derivatie
   Butterworth2dFilter lpf_yaw_error_;                        //!< @brief lowpass filter for heading error to calculate derivatie
-  autoware_planning_msgs::Trajectory current_trajectory_;                    //!< @brief current waypoints to be followed
   std::shared_ptr<VehicleModelInterface> vehicle_model_ptr_; //!< @brief vehicle model for MPC
   std::string vehicle_model_type_;                           //!< @brief vehicle model type for MPC
   std::shared_ptr<QPSolverInterface> qpsolver_ptr_;          //!< @brief qp solver for MPC
@@ -126,23 +125,14 @@ private:
   };
   MPCParam mpc_param_; // for mpc design parameter
 
-  struct VehicleStatus
-  {
-    std_msgs::Header header;    //< @brief header
-    geometry_msgs::Pose pose;   //< @brief vehicle pose
-    geometry_msgs::Twist twist; //< @brief vehicle velocity
-    double tire_angle_rad;      //< @brief vehicle tire angle
-  };
-  VehicleStatus vehicle_status_; //< @brief vehicle status
+  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;      //!< @brief current measured pose
+  std::shared_ptr<geometry_msgs::TwistStamped> current_velocity_ptr_; //!< @brief current measured pose
+  std::shared_ptr<double> current_steer_ptr_;                         //!< @brief current measured pose
+  autoware_planning_msgs::Trajectory current_trajectory_;             //!< @brief current waypoints to be followed
 
   double steer_cmd_prev_;     //< @brief steering command calculated in previous period
   double lateral_error_prev_; //< @brief previous lateral error for derivative
   double yaw_error_prev_;     //< @brief previous lateral error for derivative
-
-  /* flags */
-  bool my_position_ok_; //< @brief flag for validity of current pose
-  bool my_velocity_ok_; //< @brief flag for validity of current velocity
-  bool my_steering_ok_; //< @brief flag for validity of steering angle
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
@@ -158,9 +148,19 @@ private:
   void callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &);
 
   /**
-   * @brief set vehicle_status_.twist and vehicle_status_.tire_angle_rad with receved message
+   * @brief update current_pose from tf
    */
-  void callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped &msg);
+  void updateCurrentPose();
+ 
+  /**
+   * @brief set curent_steer with receved message
+   */
+  void callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped::ConstPtr &msg);
+
+  /**
+   * @brief set current_velocity with receved message
+   */
+  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
 
   /**
    * @brief publish control command calculated by MPC
@@ -196,7 +196,6 @@ private:
    */
   bool calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd);
 
-  void getCurrentPose(VehicleStatus &vs);
 
 
   /* debug */
