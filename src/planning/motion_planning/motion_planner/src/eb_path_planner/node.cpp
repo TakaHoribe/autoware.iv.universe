@@ -80,9 +80,9 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     double dx = input_path_msg.points[i].pose.position.x-self_pose.position.x;
     double dy = input_path_msg.points[i].pose.position.y-self_pose.position.y;
     double dist = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
-    double ex = self_pose.position.x + std::cos(yaw);
-    double ey = self_pose.position.y + std::sin(yaw);
-    double inner_product = dx*ex+dy*ey; 
+    double ex = std::cos(yaw);
+    double ey = std::sin(yaw);
+    double inner_product = dx*ex+dy*ey;
     if(std::abs(distance_threshold)<0.1)
     {
       if (dist < min_dist )
