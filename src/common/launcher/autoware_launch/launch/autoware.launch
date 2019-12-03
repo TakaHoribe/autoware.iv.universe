@@ -29,5 +29,7 @@
   </include>
 
   <!-- Control -->
+  <include file="$(find control_launch)/launch/control.launch" >
+  </include>
 
 </launch>
