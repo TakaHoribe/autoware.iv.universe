@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- common parameters -->
+
+    <!-- control module -->
+    <group ns="control">
+        <include file="$(find mpc_follower)/launch/mpc_follower.launch">
+        </include>
+        <include file="$(find vehicle_cmd_gate)/launch/vehicle_cmd_gate.launch">
+        </include>
+    </group>
+</launch>
