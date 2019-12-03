@@ -71,34 +71,34 @@ install(
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
-if(CATKIN_ENABLE_TESTING)
-    find_package(rostest REQUIRED)
+# if(CATKIN_ENABLE_TESTING)
+#     find_package(rostest REQUIRED)
 
-    add_rostest_gtest(
-      test-mpc_utils
-      test/test_mpc_utils.test
-      test/src/test_mpc_utils.cpp
-      ${MPC_FOLLOWER_SRC}
-    )
-    add_dependencies(test-mpc_utils ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(test-mpc_utils ${catkin_LIBRARIES})
+#     add_rostest_gtest(
+#       test-mpc_utils
+#       test/test_mpc_utils.test
+#       test/src/test_mpc_utils.cpp
+#       ${MPC_FOLLOWER_SRC}
+#     )
+#     add_dependencies(test-mpc_utils ${catkin_EXPORTED_TARGETS})
+#     target_link_libraries(test-mpc_utils ${catkin_LIBRARIES})
 
-    add_rostest_gtest(
-      test-mpc_follower
-      test/test_mpc_follower.test
-      test/src/test_mpc_follower.cpp
-      src/mpc_follower_core.cpp
-      ${MPC_FOLLOWER_SRC}
-    )
-    add_dependencies(test-mpc_follower ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(test-mpc_follower ${catkin_LIBRARIES})
+#     add_rostest_gtest(
+#       test-mpc_follower
+#       test/test_mpc_follower.test
+#       test/src/test_mpc_follower.cpp
+#       src/mpc_follower_core.cpp
+#       ${MPC_FOLLOWER_SRC}
+#     )
+#     add_dependencies(test-mpc_follower ${catkin_EXPORTED_TARGETS})
+#     target_link_libraries(test-mpc_follower ${catkin_LIBRARIES})
 
-    add_rostest_gtest(
-      test-mpc_lowpass_filter
-      test/test_mpc_lowpass_filter.test
-      test/src/test_mpc_lowpass_filter.cpp
-      src/lowpass_filter.cpp
-    )
-    add_dependencies(test-mpc_lowpass_filter ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(test-mpc_lowpass_filter ${catkin_LIBRARIES})
-endif()
+#     add_rostest_gtest(
+#       test-mpc_lowpass_filter
+#       test/test_mpc_lowpass_filter.test
+#       test/src/test_mpc_lowpass_filter.cpp
+#       src/lowpass_filter.cpp
+#     )
+#     add_dependencies(test-mpc_lowpass_filter ${catkin_EXPORTED_TARGETS})
+#     target_link_libraries(test-mpc_lowpass_filter ${catkin_LIBRARIES})
+# endif()
