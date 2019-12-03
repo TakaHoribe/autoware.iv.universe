@@ -1,7 +1,13 @@
 <launch> 
   <arg name="input_path_topic" default="/planning/behavior_planning/path" />
+  <arg name="enable_velocity_based_cropping" default="false"/>
+  <arg name="time_for_calculating_velocity_based_distance" default="5"/>
+  <arg name="distance_for_cropping" default="-3"/>
   <node pkg="motion_planner" type="eb_path_planner_node" name="trajectory_planner" output="screen">
     <remap from="~input/path" to="$(arg input_path_topic)" />
     <remap from="~output/path" to="trajectory" />
+    <param name="enable_velocity_based_cropping" value="$(arg enable_velocity_based_cropping)" />
+    <param name="time_for_calculating_velocity_based_distance" value="$(arg time_for_calculating_velocity_based_distance)" />
+    <param name="distance_for_cropping" value="$(arg distance_for_cropping)" />
   </node>
 </launch>

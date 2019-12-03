@@ -1,5 +1,6 @@
 
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
@@ -16,6 +17,12 @@
 
 namespace motion_planner
 {
+  
+double sign(double a){
+  if(a>0) return 1;
+  else if(a<0) return -1;
+  else return 0;
+}
 
 EBPathPlannerNode::EBPathPlannerNode()
     : nh_(),
@@ -23,6 +30,16 @@ EBPathPlannerNode::EBPathPlannerNode()
 {
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_planner_debug_markes", 1, true);
   path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/motion_planning/avoiding_path", 1, true);
+  
+  twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
+                           &EBPathPlannerNode::currentVelocityCallback, this);
+  private_nh_.param<bool>("enable_velocity_based_cropping", 
+                         enable_velocity_based_cropping_,false);
+  private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
+                    time_for_calculating_velocity_based_distance_, 5);
+  private_nh_.param<double>("distance_for_cropping", 
+                             distance_for_cropping_, -3);
+  
 }
 
 EBPathPlannerNode::~EBPathPlannerNode() {}
@@ -36,22 +53,56 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   
   if(input_path_msg.points.size()==0)
   {
-    std::cerr  <<__func__  << "[WARNING] input path size is 0"<< std::endl;
+    std::cerr  <<"[WARNING] input path size is 0"<< std::endl;
   }
 
+  double distance_threshold = 0;
+  if(enable_velocity_based_cropping_)
+  {
+    if(!in_twist_ptr_)
+    {
+      std::cerr << "[WARNING] current velocity has not been subscribed"  << std::endl;
+      return;
+    }
+    distance_threshold = in_twist_ptr_->twist.linear.x*
+                          time_for_calculating_velocity_based_distance_;
+  }
+  else
+  {
+    distance_threshold = distance_for_cropping_;
+  }
+  
+  double yaw = tf2::getYaw(self_pose.orientation);
   double min_dist = 999999;
   size_t min_index = 0;
   for (size_t i = 0; i < input_path_msg.points.size(); i++)
   {
-    double dx = self_pose.position.x - input_path_msg.points[i].pose.position.x;
-    double dy = self_pose.position.y - input_path_msg.points[i].pose.position.y;
+    double dx = input_path_msg.points[i].pose.position.x-self_pose.position.x;
+    double dy = input_path_msg.points[i].pose.position.y-self_pose.position.y;
     double dist = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
-    if (dist < min_dist)
+    double ex = self_pose.position.x + std::cos(yaw);
+    double ey = self_pose.position.y + std::sin(yaw);
+    double inner_product = dx*ex+dy*ey; 
+    if(std::abs(distance_threshold)<0.1)
     {
-      min_dist = dist;
-      min_index = i;
+      if (dist < min_dist )
+      {
+        min_dist = dist;
+        min_index = i;
+      }
+    }
+    else
+    {
+      if (dist < min_dist && 
+          dist > std::abs(distance_threshold) &&
+         sign(distance_threshold)*inner_product > 0)
+      {
+        min_dist = dist;
+        min_index = i;
+      }
     }
   }
+
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
   std::vector<double> tmp_z;
@@ -123,5 +174,10 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   unique_id++;
 
   markers_pub_.publish(marker_array);
+}
+
+void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStamped& msg)
+{
+  in_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(msg);
 }
 } // namespace motion_planner

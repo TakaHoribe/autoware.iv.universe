@@ -43,9 +43,10 @@ private:
   // ros::Publisher traj_pub_;
   ros::Publisher markers_pub_;
   // ros::Subscriber bin_map_sub_;
-  // ros::Subscriber path_sub_;
-  
-  
+  ros::Subscriber twist_sub_;
+  bool enable_velocity_based_cropping_; 
+  double time_for_calculating_velocity_based_distance_;
+  double distance_for_cropping_;
   // ros::Timer timer_;
   
   // std::shared_ptr<lanelet::LaneletMap> kept_lanelet_map_;
@@ -63,13 +64,13 @@ private:
   // std::shared_ptr<autoware_msgs::Lane> in_waypoints_ptr_;
   // geometry_msgs::PoseStamped in_pose_ptr_;
   // std::shared_ptr<geometry_msgs::PoseStamped> in_pose_ptr_;
-  // std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
+  std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
   // std::shared_ptr<autoware_planning_msgs::Path> in_path_ptr_;
   // std::shared_ptr<autoware_msgs::DetectedObjectArray> in_objects_ptr_;
   
   // void waypointsCallback(const autoware_msgs::Lane& msg);
-  // void currentPoseCallback(const geometry_msgs::PoseStamped& msg);
-  // void currentVelocityCallback(const geometry_msgs::TwistStamped& msg);
+  // void currentPoseCallback(const geometry_msgs::PoseStamped& msg);j
+  void currentVelocityCallback(const geometry_msgs::TwistStamped& msg);
   // void objectsCallback(const autoware_msgs::DetectedObjectArray& msg);
   // void pathCallback(const autoware_planning_msgs::Path &msg);
   // void timerCallback(const ros::TimerEvent &e);
