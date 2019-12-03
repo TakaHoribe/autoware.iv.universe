@@ -18,9 +18,9 @@
 namespace motion_planner
 {
   
-double sign(double A){
-  if(A>0) return 1;
-  else if(A<0) return -1;
+double sign(double a){
+  if(a>0) return 1;
+  else if(a<0) return -1;
   else return 0;
 }
 
@@ -38,7 +38,7 @@ EBPathPlannerNode::EBPathPlannerNode()
   private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
                     time_for_calculating_velocity_based_distance_, 5);
   private_nh_.param<double>("distance_for_cropping", 
-                             distance_for_cropping_, -5);
+                             distance_for_cropping_, -3);
   
 }
 
@@ -53,7 +53,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   
   if(input_path_msg.points.size()==0)
   {
-    std::cerr  <<__func__  << "[WARNING] input path size is 0"<< std::endl;
+    std::cerr  <<"[WARNING] input path size is 0"<< std::endl;
   }
 
   double distance_threshold = 0;
