@@ -7,6 +7,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <goal_path_refiner/goal_path_refiner.hpp>
+#include <visualization_msgs/MarkerArray.h>
 
 namespace behavior_planning
 {
@@ -18,6 +19,8 @@ Route2PathConverterNode::Route2PathConverterNode() : nh_(), pnh_("~")
     pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &Route2PathConverterNode::pointcloudCallback, this);
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &Route2PathConverterNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
+    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
+    pnh_.param("path_length", path_length_, 100.0);
 };
 
 void Route2PathConverterNode::timerCallback(const ros::TimerEvent &e)
@@ -35,6 +38,7 @@ void Route2PathConverterNode::timerCallback(const ros::TimerEvent &e)
         output_path_msg.header.frame_id = "map";
         output_path_msg.header.stamp = ros::Time::now();
         path_pub_.publish(output_path_msg);
+        publishDebugMarker(output_path_msg, debug_viz_pub_);
     }
 }
 
@@ -72,7 +76,8 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
                                        const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                                        autoware_planning_msgs::Path &output_path_msg)
 {
-    // test
+    autoware_planning_msgs::Path path;
+    // generate
     lanelet::ConstLanelets route_lanelets;
     for (const auto &route_section : input_route_msg.route_sections)
     {
@@ -80,57 +85,126 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
         {
             lanelet::ConstLineString3d center_line = (lanelet_map_ptr_->laneletLayer.get(lane_id)).centerline();
             lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(lanelet_map_ptr_->laneletLayer.get(lane_id));
-            for (const auto &center_point : center_line)
+            for (size_t i = 0; i < center_line.size(); ++i)
+            // for (const auto &center_point : center_line)
             {
                 autoware_planning_msgs::PathPoint point;
-                point.pose.position.x = center_point.x();
-                point.pose.position.y = center_point.y();
-                point.pose.position.z = center_point.z();
+                point.pose.position.x = center_line[i].x();
+                point.pose.position.y = center_line[i].y();
+                point.pose.position.z = center_line[i].z();
                 point.twist.linear.x = limit.speedLimit.value();
-
-                output_path_msg.points.push_back(point);
-
+                path.points.push_back(point);
             }
         }
     }
-    if (output_path_msg.points.size() < 3)
+
+    // screening path
+    autoware_planning_msgs::Path filtered_path;
+    filterPath(path, filtered_path);
+
+    // check
+    if (filtered_path.points.size() < 3)
     {
         ROS_ERROR("minimum points size is 2");
         return false;
     }
-     // orientation
-    for (size_t i = 0; i < output_path_msg.points.size(); ++i)
-    {
-        tf2::Quaternion tf2_quaternion;
-        double yaw = 0.0;
-        if (i == 0)
-        {
-            yaw = std::atan2(output_path_msg.points.at(i + 1).pose.position.y - output_path_msg.points.at(i).pose.position.y,
-                             output_path_msg.points.at(i + 1).pose.position.x - output_path_msg.points.at(i).pose.position.x);
-        }
-        else if (i + 1 == output_path_msg.points.size())
-        {
-            yaw = std::atan2(output_path_msg.points.at(i).pose.position.y - output_path_msg.points.at(i - 1).pose.position.y,
-                             output_path_msg.points.at(i).pose.position.x - output_path_msg.points.at(i - 1).pose.position.x);
-        }
-        else
-        {
-            yaw = (std::atan2(output_path_msg.points.at(i + 1).pose.position.y - output_path_msg.points.at(i).pose.position.y,
-                              output_path_msg.points.at(i + 1).pose.position.x - output_path_msg.points.at(i).pose.position.x) +
-                   std::atan2(output_path_msg.points.at(i).pose.position.y - output_path_msg.points.at(i - 1).pose.position.y,
-                              output_path_msg.points.at(i).pose.position.x - output_path_msg.points.at(i - 1).pose.position.x)) /
-                  2.0;
-        }
-        std::cout << "yaw" << yaw<<std::endl;
-        tf2_quaternion.setRPY(0, 0, yaw);
-        output_path_msg.points.at(i).pose.orientation = tf2::toMsg(tf2_quaternion);
-    }
 
-    if (!GoalPathRefiner::getRefinedPath(1.0, 3.14 / 2.0, output_path_msg, input_route_msg.goal_pose, output_path_msg)) {
+
+    // generate path for goal pose
+    autoware_planning_msgs::Path goal_path;
+    if (!GoalPathRefiner::getRefinedPath(7.0, 3.14 / 2.0, filtered_path, input_route_msg.goal_pose, goal_path))
+    {
         ROS_ERROR("Cannot find goal position");
         return false;
     }
+
+    // interporation
+    autoware_planning_msgs::Path interporated_path;
+    interporatePath(goal_path, path_length_, interporated_path);
+
+    output_path_msg.points = interporated_path.points;
     return true;
+}
+
+void Route2PathConverterNode::filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path)
+{
+    const double epsilon = 0.1;
+    size_t latest_id = 0;
+    for (size_t i = 0; i < path.points.size(); ++i)
+    {
+        double dist;
+        if (i != 0)
+        {
+            const double x = path.points.at(i).pose.position.x - path.points.at(latest_id).pose.position.x;
+            const double y = path.points.at(i).pose.position.y - path.points.at(latest_id).pose.position.y;
+            dist = std::sqrt(x * x + y * y);
+        }
+        if (epsilon < dist || i == 0 /*init*/)
+        {
+            latest_id = i;
+            filtered_path.points.push_back(path.points.at(latest_id));
+        }
+    }
+}
+
+void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path)
+{
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<double> z;
+    std::vector<double> v;
+    if (50 < path.points.size())
+        ROS_WARN("because path size is too large, calculation cost is high. size is %d.", (int)path.points.size());
+    for (const auto &path_point : path.points)
+    {
+        x.push_back(path_point.pose.position.x);
+        y.push_back(path_point.pose.position.y);
+        z.push_back(path_point.pose.position.z);
+        v.push_back(path_point.twist.linear.x);
+    }
+    spline_ptr_ = std::make_shared<Spline4D>(x, y, z, v);
+
+    // std::cout<<"st:"<<spline_ptr_->s.back() << std::endl;
+    // std::cout<<"point size:"<<path.points.size() << std::endl;
+    for (double s_t = 0.0; s_t < std::min(length, spline_ptr_->s.back()); s_t += 1.0)
+    {
+        autoware_planning_msgs::PathPoint path_point;
+        std::array<double, 4> state = spline_ptr_->calc_trajectory_point(s_t);
+        path_point.pose.position.x = state[0];
+        path_point.pose.position.y = state[1];
+        path_point.pose.position.z = state[2];
+        path_point.twist.linear.x = state[3];
+        const double yaw = spline_ptr_->calc_yaw(s_t);
+        tf2::Quaternion tf2_quaternion;
+        tf2_quaternion.setRPY(0, 0, yaw);
+        path_point.pose.orientation = tf2::toMsg(tf2_quaternion);
+        interporated_path.points.push_back(path_point);
+    }
+}
+
+void Route2PathConverterNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
+{
+    if (pub.getNumSubscribers() < 1)
+        return;
+        visualization_msgs::MarkerArray output_msg;
+        for (size_t i = 0; i < path.points.size(); ++i)
+        {
+            visualization_msgs::Marker marker;
+            marker.header = path.header;
+            marker.id = i;
+            marker.type = visualization_msgs::Marker::ARROW;
+            marker.pose = path.points.at(i).pose;
+            marker.scale.y = marker.scale.z = 0.05;
+            marker.scale.x = 0.25;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.lifetime = ros::Duration(0.5);
+            marker.color.a = 1.0; // Don't forget to set the alpha!
+            marker.color.r = 1.0;
+            marker.color.g = 1.0;
+            marker.color.b = 1.0;
+            output_msg.markers.push_back(marker);
+        }
+        pub.publish(output_msg);
 }
 
 } // namespace behavior_planning

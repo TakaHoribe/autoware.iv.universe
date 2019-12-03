@@ -3,6 +3,9 @@
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 namespace behavior_planning
 {
 GoalPathRefiner::GoalPathRefiner(const double search_radius_range,
@@ -28,28 +31,66 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
                                      const geometry_msgs::Pose &goal,
                                      autoware_planning_msgs::Path &output)
 {
-    bool found = false;
     size_t min_dist_index;
     double min_dist;
-    for (size_t i = 0; i < input.points.size(); ++i)
     {
-        const double x = input.points.at(i).pose.position.x - goal.position.x;
-        const double y = input.points.at(i).pose.position.y - goal.position.y;
-        const double z = input.points.at(i).pose.position.z - goal.position.z;
-        const double dist = sqrt(x * x + y * y + z * z);
-        if (dist < min_dist || i == 0 /*init*/)
+        bool found = false;
+        for (size_t i = 0; i < input.points.size(); ++i)
         {
-            min_dist_index = i;
-            min_dist = dist;
-            found = true;
+            const double x = input.points.at(i).pose.position.x - goal.position.x;
+            const double y = input.points.at(i).pose.position.y - goal.position.y;
+            const double z = input.points.at(i).pose.position.z - goal.position.z;
+            const double dist = sqrt(x * x + y * y + z * z);
+            if ((dist < search_radius_range) && (dist < min_dist || !found /*init*/))
+            {
+                min_dist_index = i;
+                min_dist = dist;
+                found = true;
+            }
         }
+        if (!found)
+            return false;
     }
+
+    size_t min_dist_out_of_range_index;
+    {
+        bool found = false;
+        for (size_t i = min_dist_index; 0 <= i; --i)
+        {
+            const double x = input.points.at(i).pose.position.x - goal.position.x;
+            const double y = input.points.at(i).pose.position.y - goal.position.y;
+            const double z = input.points.at(i).pose.position.z - goal.position.z;
+            const double dist = sqrt(x * x + y * y + z * z);
+            if (search_radius_range < dist)
+            {
+                min_dist_out_of_range_index = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            return false;
+    }
+
     autoware_planning_msgs::PathPoint refined_goal;
     refined_goal.pose = goal;
     refined_goal.twist.linear.x = 0.0;
-    if (!found)
-        return false;
-    output.points.erase(output.points.begin() + min_dist_index, output.points.end());
+
+    autoware_planning_msgs::PathPoint pre_refined_goal;
+    double roll, pitch, yaw;
+    pre_refined_goal.pose = goal;
+    tf2::Quaternion tf2_quaternion(goal.orientation.x, goal.orientation.y, goal.orientation.z, goal.orientation.w);
+    tf2::Matrix3x3 tf2_matrix(tf2_quaternion);
+    tf2_matrix.getRPY(roll, pitch, yaw);
+    pre_refined_goal.pose.position.x -= std::cos(yaw);
+    pre_refined_goal.pose.position.y -= std::sin(yaw);
+    pre_refined_goal.twist.linear.x = 1.0; // 3.6kmph
+
+    for (size_t i = 0; i <= min_dist_out_of_range_index; ++i)
+    {
+        output.points.push_back(input.points.at(i));
+    }
+    output.points.push_back(pre_refined_goal);
     output.points.push_back(refined_goal);
     return true;
 }
