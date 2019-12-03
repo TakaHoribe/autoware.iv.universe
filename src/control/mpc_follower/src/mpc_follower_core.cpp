@@ -22,7 +22,7 @@
 #define RAD2DEG 180.0 / 3.1415926535
 
 MPCFollower::MPCFollower()
-    : nh_(""), pnh_("~"), my_position_ok_(false), my_velocity_ok_(false), my_steering_ok_(false), tf_listener_(tf_buffer_)
+    : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("ctrl_period", ctrl_period_, double(0.03));
@@ -89,12 +89,7 @@ MPCFollower::MPCFollower()
   /* QP solver setup */
   std::string qp_solver_type_;
   pnh_.param("qp_solver_type", qp_solver_type_, std::string("unconstraint_fast"));
-  if (qp_solver_type_ == "unconstraint")
-  {
-    qpsolver_ptr_ = std::make_shared<QPSolverEigenLeastSquare>();
-    ROS_INFO("[MPC] set qp solver = unconstraint");
-  }
-  else if (qp_solver_type_ == "unconstraint_fast")
+  if (qp_solver_type_ == "unconstraint_fast")
   {
     qpsolver_ptr_ = std::make_shared<QPSolverEigenLeastSquareLLT>();
     ROS_INFO("[MPC] set qp solver = unconstraint_fast");
@@ -133,6 +128,7 @@ MPCFollower::MPCFollower()
   pub_twist_cmd_ = nh_.advertise<geometry_msgs::TwistStamped>("twist_raw", 1);
   pub_steer_vel_ctrl_cmd_ = nh_.advertise<autoware_control_msgs::ControlCommandStamped>("control_raw", 1);
   sub_ref_path_ = nh_.subscribe("reference_trajectory", 1, &MPCFollower::callbackRefPath, this);
+  sub_current_vel_ = nh_.subscribe("/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
   sub_vehicle_status_ = nh_.subscribe("vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
 
   /* for debug */
@@ -146,7 +142,9 @@ MPCFollower::MPCFollower()
 
 void MPCFollower::timerCallback(const ros::TimerEvent &te)
 {
+  updateCurrentPose();
 
+printf("line : %d\n", __LINE__);
   /* guard */
   if (vehicle_model_ptr_ == nullptr || qpsolver_ptr_ == nullptr)
   {
@@ -155,30 +153,54 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     return;
   }
 
-  if (ref_traj_.size() == 0 || !my_position_ok_ || !my_velocity_ok_ || !my_steering_ok_)
+
+printf("line : %d\n", __LINE__);
+ROS_INFO("traj size = %ul", ref_traj_.size());
+
+
+
+printf("line : %d\n", __LINE__);
+ROS_INFO("current_pose_ptr_ = %d", current_pose_ptr_ != nullptr);
+
+printf("line : %d\n", __LINE__);
+ROS_INFO("current_velocity_ptr_ = %d", current_velocity_ptr_ != nullptr);
+
+printf("line : %d\n", __LINE__);
+ROS_INFO("current_steer_ptr_ = %d", current_steer_ptr_ != nullptr);
+
+printf("line : %d\n", __LINE__);
+
+
+  if (ref_traj_.size() == 0 || current_pose_ptr_ == nullptr || current_velocity_ptr_ == nullptr || current_steer_ptr_ == nullptr)
   {
-    DEBUG_INFO("[MPC] MPC is not solved. ref_traj_.size() = %d, my_position_ok_ = %d,  my_velocity_ok_ = %d,  my_steering_ok_ = %d",
-               ref_traj_.size(), my_position_ok_, my_velocity_ok_, my_steering_ok_);
+    DEBUG_INFO("[MPC] MPC is not solved. ref_traj_.size() = %d, pose = %d,  velocity = %d,  steer = %d",
+               ref_traj_.size(), current_pose_ptr_ != nullptr, current_velocity_ptr_ != nullptr, current_steer_ptr_ != nullptr);
+printf("line : %d\n", __LINE__);
+
     publishControlCommands(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
+printf("line : %d\n", __LINE__);
   /* control command */
   double vel_cmd = 0.0;
   double acc_cmd = 0.0;
   double steer_cmd = 0.0;
   double steer_vel_cmd = 0.0;
+printf("line : %d\n", __LINE__);
 
   /* solve MPC */
   auto start = std::chrono::system_clock::now();
   const bool mpc_solved = calculateMPC(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
   double elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
   DEBUG_INFO("[MPC] timerCallback: MPC calculating time = %f [ms]\n", elapsed_ms);
+printf("line : %d\n", __LINE__);
 
   /* publish computing time */
   std_msgs::Float32 mpc_calc_time_msg;
   mpc_calc_time_msg.data = elapsed_ms;
   pub_debug_mpc_calc_time_.publish(mpc_calc_time_msg);
+printf("line : %d\n", __LINE__);
 
   if (!mpc_solved)
   {
@@ -188,8 +210,11 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     steer_cmd = steer_cmd_prev_;
     steer_vel_cmd = 0.0;
   }
+printf("line : %d\n", __LINE__);
 
   publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
+printf("line : %d\n", __LINE__);
+
 };
 
 bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd)
@@ -200,17 +225,18 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   const int DIM_U = vehicle_model_ptr_->getDimU();
   const int DIM_Y = vehicle_model_ptr_->getDimY();
 
-  const double current_yaw = tf2::getYaw(vehicle_status_.pose.orientation);
+  const double current_yaw = tf2::getYaw(current_pose_ptr_->pose.orientation);
 
   /* calculate nearest point on reference trajectory (used as initial state) */
   unsigned int nearest_index = 0;
   double yaw_err, dist_err, nearest_traj_time;
   geometry_msgs::Pose nearest_pose;
-  if (!MPCUtils::calcNearestPoseInterp(ref_traj_, vehicle_status_.pose, nearest_pose, nearest_index, dist_err, yaw_err, nearest_traj_time))
+  if (!MPCUtils::calcNearestPoseInterp(ref_traj_, current_pose_ptr_->pose, nearest_pose, nearest_index, dist_err, yaw_err, nearest_traj_time))
   {
     ROS_WARN("[MPC] calculateMPC: error in calculating nearest pose. stop mpc.");
     return false;
   };
+printf("line : %d\n", __LINE__);
 
   /* check if lateral error is not too large */
   if (dist_err > admisible_position_error_ || std::fabs(yaw_err) > DEG2RAD * admisible_yaw_error_deg_ )
@@ -219,9 +245,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
              dist_err, admisible_position_error_, RAD2DEG * (yaw_err), admisible_yaw_error_deg_);
     return false;
   }
+printf("line : %d\n", __LINE__);
 
   /* set mpc initial time */
   const double mpc_start_time = nearest_traj_time;
+printf("line : %d\n", __LINE__);
 
   /* check trajectory length */
   const double mpc_end_time = mpc_start_time + (N - 1) * DT + mpc_param_.delay_compensation_time + ctrl_period_;
@@ -230,15 +258,16 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     ROS_WARN("[MPC] path is too short for prediction. path end: %f[s], mpc end time: %f[s]", ref_traj_.relative_time.back(), mpc_end_time);
     return false;
   }
+printf("line : %d\n", __LINE__);
 
   /* convert tracking x,y error to lat error */
-  const double err_x = vehicle_status_.pose.position.x - nearest_pose.position.x;
-  const double err_y = vehicle_status_.pose.position.y - nearest_pose.position.y;
+  const double err_x = current_pose_ptr_->pose.position.x - nearest_pose.position.x;
+  const double err_y = current_pose_ptr_->pose.position.y - nearest_pose.position.y;
   const double sp_yaw = tf2::getYaw(nearest_pose.orientation);
   const double err_lat = -sin(sp_yaw) * err_x + cos(sp_yaw) * err_y;
 
   /* get steering angle */
-  const double steer = vehicle_status_.tire_angle_rad;
+  const double steer = *current_steer_ptr_;
 
   /* define initial state for error dynamics */
   Eigen::VectorXd x0 = Eigen::VectorXd::Zero(DIM_X);
@@ -267,10 +296,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     ROS_ERROR("vehicle_model_type is undefined");
     return false;
   }
-  DEBUG_INFO("[MPC] selfpose.x = %f, y = %f, yaw = %f", vehicle_status_.pose.position.x, vehicle_status_.pose.position.y, current_yaw);
+  DEBUG_INFO("[MPC] selfpose.x = %f, y = %f, yaw = %f", current_pose_ptr_->pose.position.x, current_pose_ptr_->pose.position.y, current_yaw);
   DEBUG_INFO("[MPC] nearpose.x = %f, y = %f, yaw = %f", nearest_pose.position.x, nearest_pose.position.y, tf2::getYaw(nearest_pose.orientation));
   DEBUG_INFO("[MPC] nearest_index = %d, nearest_traj_time = %f", nearest_index, nearest_traj_time);
   DEBUG_INFO("[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", err_lat, yaw_err, steer, sp_yaw, current_yaw);
+printf("line : %d\n", __LINE__);
 
 
   /////////////// delay compensation  ///////////////
@@ -303,6 +333,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     mpc_curr_time += ctrl_period_;
   }
   x0 = x_curr; // set delay compensated initial state
+printf("line : %d\n", __LINE__);
 
 
   /////////////// generate mpc matrix  ///////////////
@@ -328,6 +359,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   Q(0, 0) = mpc_param_.weight_lat_error;
   Q(1, 1) = mpc_param_.weight_heading_error;
   R(0, 0) = mpc_param_.weight_steering_input;
+printf("line : %d\n", __LINE__);
 
   /* resample ref_traj with mpc sampling time */
   std::vector<double> mpc_time_v;
@@ -419,6 +451,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     ROS_WARN("[MPC] calculateMPC: model matrix includes NaN, stop MPC.");
     return false;
   }
+printf("line : %d\n", __LINE__);
 
   /////////////// optimization ///////////////
   /*
@@ -440,6 +473,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
   Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim); // min steering angle
   Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);  // max steering angle
+printf("line : %d\n", __LINE__);
 
   auto start = std::chrono::system_clock::now();
   Eigen::VectorXd Uex;
@@ -462,6 +496,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
   /* filtering */
   const double u_filtered = lpf_steering_cmd_.filter(u_sat);
+printf("line : %d\n", __LINE__);
 
   /* set steering command */
   steer_cmd = u_filtered;
@@ -499,10 +534,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   visualization_msgs::Marker marker;
   convertTrajToMarker(debug_mpc_predicted_traj, marker, "predicted_traj", 0.99, 0.99, 0.99, 0.2);
   pub_debug_predicted_traj_.publish(marker);
+printf("line : %d\n", __LINE__);
 
   /* publish debug values */
   {
-    double curr_v = vehicle_status_.twist.linear.x;
+    double curr_v = current_velocity_ptr_->twist.linear.x;
     double nearest_k = 0.0;
     MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.k, nearest_traj_time, nearest_k);
 
@@ -513,11 +549,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     debug_values.data.push_back(std::atan(nearest_k * wheelbase_));              // [3] feedforward steering value raw
     debug_values.data.push_back(steer);                                          // [4] current steering angle
     debug_values.data.push_back(err_lat);                                        // [5] lateral error
-    debug_values.data.push_back(tf2::getYaw(vehicle_status_.pose.orientation));  // [6] current_pose yaw
+    debug_values.data.push_back(tf2::getYaw(current_pose_ptr_->pose.orientation));  // [6] current_pose yaw
     debug_values.data.push_back(tf2::getYaw(nearest_pose.orientation));          // [7] nearest_pose yaw
     debug_values.data.push_back(yaw_err);                                        // [8] yaw error
     debug_values.data.push_back(vel_cmd);                                        // [9] command velocitys
-    debug_values.data.push_back(vehicle_status_.twist.linear.x);                 // [10] measured velocity
+    debug_values.data.push_back(current_velocity_ptr_->twist.linear.x);                 // [10] measured velocity
     debug_values.data.push_back(curr_v * tan(steer_cmd) / wheelbase_);  // [11] angvel from steer comand (MPC assumes)
     debug_values.data.push_back(curr_v * tan(steer) / wheelbase_);      // [12] angvel from measured steer
     debug_values.data.push_back(curr_v * nearest_k);                    // [13] angvel from path curvature (Path angvel)
@@ -542,11 +578,13 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
   MPCUtils::calcPathRelativeTime(current_trajectory_, relative_time);
   DEBUG_INFO("[MPC] path callback: relative_time.size() = %lu, front() = %f, back() = %f",
              relative_time.size(), relative_time.front(), relative_time.back());
+printf("line : %d\n", __LINE__);
 
   /* resampling */
   MPCUtils::convertWaypointsToMPCTrajWithDistanceResample(current_trajectory_, relative_time, traj_resample_dist_, traj);
   MPCUtils::convertEulerAngleToMonotonic(traj.yaw);
   DEBUG_INFO("[MPC] path callback: resampled traj size() = %lu", traj.relative_time.size());
+printf("line : %d\n", __LINE__);
 
   /* path smoothing */
   if (enable_path_smoothing_)
@@ -563,6 +601,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
       }
     }
   }
+printf("line : %d\n", __LINE__);
 
   /* calculate yaw angle */
   if (enable_yaw_recalculation_)
@@ -583,6 +622,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
   traj.vx.back() = end_velocity; // also for end point
   traj.push_back(traj.x.back(), traj.y.back(), traj.z.back(), traj.yaw.back(),
                  end_velocity, traj.k.back(), traj.relative_time.back() + mpc_predict_time_length);
+printf("line : %d\n", __LINE__);
 
   if (!traj.size())
   {
@@ -591,6 +631,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
                traj.z.size(), traj.yaw.size(), traj.vx.size(), traj.k.size(), traj.relative_time.size());
     return;
   }
+printf("line : %d\n", __LINE__);
 
   ref_traj_ = traj;
 
@@ -627,8 +668,10 @@ void MPCFollower::convertTrajToMarker(const MPCTrajectory &traj, visualization_m
   }
 }
 
-void MPCFollower::getCurrentPose(VehicleStatus &vs)
+void MPCFollower::updateCurrentPose()
 {
+printf("line : %d\n", __LINE__);
+
   geometry_msgs::TransformStamped transform;
   try
   {
@@ -645,27 +688,39 @@ void MPCFollower::getCurrentPose(VehicleStatus &vs)
     ROS_WARN("[mpc_follower] cannot get map to base_link transform. %s", ex.what());
     return;
   }
+printf("line : %d\n", __LINE__);
 
-  vs.header = transform.header;
-  vs.pose.position.x = transform.transform.translation.x;
-  vs.pose.position.y = transform.transform.translation.y;
-  vs.pose.position.z = transform.transform.translation.z;
-  vs.pose.orientation = transform.transform.rotation;
-  my_position_ok_ = true;
+  geometry_msgs::PoseStamped ps;
+  ps.header = transform.header;
+  ps.pose.position.x = transform.transform.translation.x;
+  ps.pose.position.y = transform.transform.translation.y;
+  ps.pose.position.z = transform.transform.translation.z;
+  ps.pose.orientation = transform.transform.rotation;
+  current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(ps);
 };
 
-void MPCFollower::callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped &msg)
+void MPCFollower::callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped::ConstPtr &msg)
 {
-  vehicle_status_.tire_angle_rad = msg.status.steering_angle; // [rad]
-  vehicle_status_.twist.linear.x = msg.status.speed; // [m/s]
-  my_steering_ok_ = true;
-  my_velocity_ok_ = true;
+printf("line : %d\n", __LINE__);
+
+  current_steer_ptr_ = std::make_shared<double>(msg->status.speed);
+printf("line : %d\n", __LINE__);
+
+};
+
+void MPCFollower::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg)
+{
+printf("line : %d\n", __LINE__);
+
+  current_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
+printf("line : %d\n", __LINE__);
+
 };
 
 void MPCFollower::publishControlCommands(const double &vel_cmd, const double &acc_cmd,
                                          const double &steer_cmd, const double &steer_vel_cmd)
 {
-  const double omega_cmd = vehicle_status_.twist.linear.x * std::tan(steer_cmd) / wheelbase_;
+  const double omega_cmd = vel_cmd * std::tan(steer_cmd) / wheelbase_;
   if (output_interface_ == "twist")
   {
     publishTwist(vel_cmd, omega_cmd);
@@ -710,12 +765,16 @@ void MPCFollower::publishCtrlCmd(const double &vel_cmd, const double &acc_cmd, c
 
 MPCFollower::~MPCFollower()
 {
+printf("line : %d\n", __LINE__);
+
   ROS_INFO("Publish 0 twist before I died.");
   double vel_cmd = 0.0;
   double acc_cmd = 0.0;
   double steer_cmd = 0.0;
   double steer_vel_cmd = 0.0;
-  if (my_steering_ok_)
-    steer_cmd = vehicle_status_.tire_angle_rad;
+  if (current_steer_ptr_ != nullptr)
+    steer_cmd = *current_steer_ptr_;
+printf("line : %d\n", __LINE__);
+
   publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 };

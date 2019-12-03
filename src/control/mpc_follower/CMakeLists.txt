@@ -47,7 +47,6 @@ set(
     src/vehicle_model/vehicle_model_bicycle_kinematics.cpp
     src/vehicle_model/vehicle_model_bicycle_dynamics.cpp
     src/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.cpp
-    src/qp_solver/qp_solver_unconstr.cpp
     src/qp_solver/qp_solver_unconstr_fast.cpp
     # src/qp_solver/qp_solver_qpoases.cpp
 )
