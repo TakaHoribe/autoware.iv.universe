@@ -1,13 +1,3 @@
-#include <OgreSceneNode.h>
-#include <OgreSceneManager.h>
-#include <OgreManualObject.h>
-#include <OgreBillboardSet.h>
-
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-
-#include <rviz/validate_floats.h>
-
 #include "trajectory/display.hpp"
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>

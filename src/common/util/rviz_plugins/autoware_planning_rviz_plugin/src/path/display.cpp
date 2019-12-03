@@ -1,13 +1,3 @@
-#include <OgreSceneNode.h>
-#include <OgreSceneManager.h>
-#include <OgreManualObject.h>
-#include <OgreBillboardSet.h>
-
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-
-#include <rviz/validate_floats.h>
-
 #include "path/display.hpp"
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -146,6 +136,7 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
     path_manual_object_->estimateVertexCount(msg_ptr->points.size() * 2);
     velocity_manual_object_->estimateVertexCount(msg_ptr->points.size());
     path_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_STRIP);
+    // path_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_STRIP);
     velocity_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
 
     for (auto &&path_point : msg_ptr->points)

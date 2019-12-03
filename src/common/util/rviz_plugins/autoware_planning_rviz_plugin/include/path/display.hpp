@@ -5,6 +5,13 @@
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/color_property.h>
+#include <rviz/display_context.h>
+#include <rviz/frame_manager.h>
+#include <rviz/validate_floats.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreManualObject.h>
+#include <OgreBillboardSet.h>
 
 #include <deque>
 #include <memory>
