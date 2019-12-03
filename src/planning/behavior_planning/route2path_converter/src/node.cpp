@@ -40,8 +40,8 @@ void Route2PathConverterNode::timerCallback(const ros::TimerEvent &e)
 
 void Route2PathConverterNode::routeCallback(const autoware_planning_msgs::Route &input_route_msg)
 {
-    //   if (input_route_msg.points.empty())
-    // ROS_WARN("route is empty");
+    if (input_route_msg.route_sections.empty())
+        ROS_WARN("route is empty");
     route_ptr_ = std::make_shared<autoware_planning_msgs::Route>(input_route_msg);
 
     return;
@@ -49,8 +49,6 @@ void Route2PathConverterNode::routeCallback(const autoware_planning_msgs::Route 
 
 void Route2PathConverterNode::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
 {
-    //   if (input_route_msg.points.empty())
-    // ROS_WARN("route is empty");
     perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
 
     return;
@@ -58,8 +56,6 @@ void Route2PathConverterNode::perceptionCallback(const autoware_perception_msgs:
 
 void Route2PathConverterNode::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
 {
-    //   if (input_route_msg.points.empty())
-    // ROS_WARN("route is empty");
     pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
 
     return;
@@ -125,12 +121,15 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
                               output_path_msg.points.at(i).pose.position.x - output_path_msg.points.at(i - 1).pose.position.x)) /
                   2.0;
         }
+        std::cout << "yaw" << yaw<<std::endl;
         tf2_quaternion.setRPY(0, 0, yaw);
         output_path_msg.points.at(i).pose.orientation = tf2::toMsg(tf2_quaternion);
     }
 
-    if (!GoalPathRefiner::getRefinedPath(1.0, 3.14 / 2.0, output_path_msg, input_route_msg.goal_pose, output_path_msg))
+    if (!GoalPathRefiner::getRefinedPath(1.0, 3.14 / 2.0, output_path_msg, input_route_msg.goal_pose, output_path_msg)) {
+        ROS_ERROR("Cannot find goal position");
         return false;
+    }
     return true;
 }
 
