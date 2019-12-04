@@ -27,5 +27,12 @@
   </include>
   
   <!-- Rviz -->
-  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />/>
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
+
+  <!-- Web Controller -->
+  <include file="$(find roswww)/launch/roswww.launch" >
+    <arg name="cached" default="false"/>
+  </include>
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
+
 </launch>

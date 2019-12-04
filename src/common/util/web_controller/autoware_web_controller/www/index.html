@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+    <style type="text/css">
+    <!--
+      *{ padding:0px; margin:0px;}
+    -->
+    </style>
+    <title>ROS WEB Publisher</title>
+    <script src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+    <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+  </head>
+
+  <body>
+    <script type="text/javascript">
+        <!--
+if(!EngagePublisher){
+    var EngagePublisher = {
+        ros : null,
+        name : "",
+        init : function(){
+            this.ros = new ROSLIB.Ros();
+            this.ros.on('error', function(error) {
+                document.getElementById('state').innerHTML = "Error";
+            });
+            this.ros.on('connection', function(error) {
+                document.getElementById('state').innerHTML = "Connected";
+            });
+            this.ros.on('close', function(error) {
+                document.getElementById('state').innerHTML = "Closed";
+            });
+            this.ros.connect('ws://' + location.hostname + ':9090');
+        },
+        send : function(){
+            var pub = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/vehicle/engage',
+                messageType : 'std_msgs/Bool'
+            });
+
+            var str = new ROSLIB.Message({data : true});
+            pub.publish(str);
+        }
+    }
+    EngagePublisher.init();
+
+    window.onload = function(){
+    };
+    window.onunload = function(){
+        EngagePublisher.ros.close();
+    };
+}
+        //-->
+    </script>
+
+    <script type="text/javascript">
+        <!--
+if(!DisengagePublisher){
+    var DisengagePublisher = {
+        ros : null,
+        name : "",
+        init : function(){
+            this.ros = new ROSLIB.Ros();
+            this.ros.on('error', function(error) {
+                document.getElementById('state').innerHTML = "Error";
+            });
+            this.ros.on('connection', function(error) {
+                document.getElementById('state').innerHTML = "Connected";
+            });
+            this.ros.on('close', function(error) {
+                document.getElementById('state').innerHTML = "Closed";
+            });
+            this.ros.connect('ws://' + location.hostname + ':9090');
+        },
+        send : function(){
+            var pub = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/vehicle/engage',
+                messageType : 'std_msgs/Bool'
+            });
+
+            var str = new ROSLIB.Message({data : false});
+            pub.publish(str);
+        }
+    }
+    DisengagePublisher.init();
+
+    window.onload = function(){
+    };
+    window.onunload = function(){
+        DisengagePublisher.ros.close();
+    };
+}
+        //-->
+    </script>
+
+
+    <p>status： <label id="state">Disconnect</label></p>
+
+    <form action="javascript:EngagePublisher.send();" id="ui">
+      <input type="submit" value="Engage" id="btn" /><br/>
+    </form>
+    <form action="javascript:DisengagePublisher.send();" id="ui">
+      <input type="submit" value="Disengage" id="btn" /><br/>
+    </form>
+  </body>
+</html>
