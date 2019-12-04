@@ -16,7 +16,7 @@
 	<arg name="vehicle_model_type" default="kinematics" doc="vehicle model type for mpc prediction. option is kinematics, kinematics_no_delay, and dynamics"/>
 
 	<!-- MPC design parameters -->
-	<arg name="mpc_prediction_horizon" default="70" doc="prediction horizon step"/>
+	<arg name="mpc_prediction_horizon" default="50" doc="prediction horizon step"/>
 	<arg name="mpc_prediction_sampling_time" default="0.1" doc="prediction horizon period [s]"/>
 	<arg name="mpc_weight_lat_error" default="0.1" doc="lateral error weight in matrix Q"/>
 	<arg name="mpc_weight_heading_error" default="0.0" doc="heading error weight in matrix Q"/>

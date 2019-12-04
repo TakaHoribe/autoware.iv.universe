@@ -34,7 +34,7 @@ MPCFollower::MPCFollower()
   pnh_.param("traj_resample_dist", traj_resample_dist_, double(0.1)); // [m]
   pnh_.param("admisible_position_error", admisible_position_error_, double(5.0));
   pnh_.param("admisible_yaw_error_deg", admisible_yaw_error_deg_, double(90.0));
-  pnh_.param("output_interface", output_interface_, std::string("all"));
+  pnh_.param("output_interface", output_interface_, std::string("control"));
 
   /* mpc parameters */
   pnh_.param("mpc_prediction_horizon", mpc_param_.prediction_horizon, int(70));
@@ -672,7 +672,7 @@ void MPCFollower::publishControlCommands(const double &vel_cmd, const double &ac
   {
     publishTwist(vel_cmd, omega_cmd);
   }
-  else if (output_interface_ == "ctrl_raw")
+  else if (output_interface_ == "control")
   {
     publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
   }
