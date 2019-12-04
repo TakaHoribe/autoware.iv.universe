@@ -27,7 +27,7 @@
   command: rosdep update
   become: no
 
-- name: ROS (Add path >> bashrc)
+- name: ROS (add path >> bashrc)
   lineinfile:
     dest: ~/.bashrc
     line: source /opt/ros/{{ release }}/setup.bash
