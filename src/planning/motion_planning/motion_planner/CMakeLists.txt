@@ -48,3 +48,14 @@ target_link_libraries(eb_path_planner_node
   ${catkin_LIBRARIES}
   motion_base_planner
 )
+
+add_executable(path2trajectory_converter_node 
+src/path2trajectory_converter/node.cpp
+src/path2trajectory_converter/main.cpp)
+
+add_dependencies(path2trajectory_converter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(path2trajectory_converter_node
+  ${catkin_LIBRARIES}
+  motion_base_planner
+)
