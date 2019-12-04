@@ -120,7 +120,7 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
     // interporation
     autoware_planning_msgs::Path interporated_path;
     interporatePath(goal_path, path_length_, interporated_path);
-
+    // std::cout <<  output_path_msg.points.size() << std::endl;
     output_path_msg.points = interporated_path.points;
     return true;
 }
@@ -165,7 +165,7 @@ void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path
     spline_ptr = std::make_shared<Spline4D>(x, y, z, v);
     // std::cout<<"st:"<<spline_ptr_->s.back() << std::endl;
     // std::cout<<"point size:"<<path.points.size() << std::endl;
-    double s_t:
+    double s_t;
     for (s_t = 0.0; s_t < std::min(length, spline_ptr->s.back()); s_t += 1.0)
     {
         autoware_planning_msgs::PathPoint path_point;
