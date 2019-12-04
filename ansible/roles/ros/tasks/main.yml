@@ -13,7 +13,7 @@
 - name: ROS (install packages)
   apt:
     name: "ros-{{ release }}-{{ package }}"
-    state: present
+    state: latest
 - name: ROS (check rosdep file)
   stat:
     path: /etc/ros/rosdep/sources.list.d/20-default.list
@@ -39,6 +39,7 @@
     name: "{{ item }}"
     state: latest
     update_cache: yes
+  become: yes
   with_items:
     - "ros-{{ release }}-velodyne-pointcloud"
     - "ros-{{ release }}-roswww"

@@ -1,0 +1,6 @@
+- name: Autoware (update rosdep)
+  command: rosdep update
+  become: yes
+- name: Autoware (install dependencies)
+  command: "rosdep install -y --from-paths {{ AUTOWARE_DIR }}/src --ignore-src --rosdistro {{ release }}"
+  become: yes

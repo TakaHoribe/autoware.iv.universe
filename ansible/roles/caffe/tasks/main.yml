@@ -4,6 +4,7 @@
     name: "{{ item }}"
     state: latest
     update_cache: yes
+  become: yes
   with_items:
     - libhdf5-serial-dev
     - libgflags-dev

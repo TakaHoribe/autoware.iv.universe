@@ -1,9 +1,10 @@
 ---
 - hosts: localhost
   connection: local
-  become: yes
+  become: no
   roles:
     - lanelet2
     - {role: ros, release: melodic}
     - caffe
+    - {role: autoware, release: melodic}
     - us_sample #could be deprecated in the future
