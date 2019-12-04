@@ -16,12 +16,6 @@
 ```
 **if you got cmake error in caffe build, please see [this](https://github.com/tier4/Autoware-T4B/wiki/Trouble-shooting)**.
 
-3. install dependency
-```
-rosdep install  --from-paths src --ignore-src
-```
-
-
 ### Set hardware configuration
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
 ```
