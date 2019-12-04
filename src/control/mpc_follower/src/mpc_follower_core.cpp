@@ -125,11 +125,11 @@ MPCFollower::MPCFollower()
 
   /* set up ros system */
   timer_control_ = nh_.createTimer(ros::Duration(ctrl_period_), &MPCFollower::timerCallback, this);
-  pub_twist_cmd_ = nh_.advertise<geometry_msgs::TwistStamped>("twist_raw", 1);
-  pub_steer_vel_ctrl_cmd_ = nh_.advertise<autoware_control_msgs::ControlCommandStamped>("control_raw", 1);
-  sub_ref_path_ = nh_.subscribe("reference_trajectory", 1, &MPCFollower::callbackRefPath, this);
-  sub_current_vel_ = nh_.subscribe("/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
-  sub_vehicle_status_ = nh_.subscribe("vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
+  pub_twist_cmd_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/twist_raw", 1);
+  pub_steer_vel_ctrl_cmd_ = pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
+  sub_ref_path_ = pnh_.subscribe("input/reference_trajectory", 1, &MPCFollower::callbackRefPath, this);
+  sub_current_vel_ = pnh_.subscribe("input/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
+  sub_vehicle_status_ = pnh_.subscribe("input/vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
 
   /* for debug */
   pub_debug_filtered_traj_ = pnh_.advertise<visualization_msgs::Marker>("debug/filtered_reference_trajectory", 1);

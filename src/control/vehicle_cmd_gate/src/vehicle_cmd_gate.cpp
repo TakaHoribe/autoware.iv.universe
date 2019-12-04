@@ -34,11 +34,11 @@
 
 VehicleCmdGate::VehicleCmdGate()
   : nh_("")
-  , private_nh_("~")
+  , pnh_("~")
 {
 
-  vehicle_cmd_pub_ = nh_.advertise<autoware_control_msgs::VehicleCommandStamped>("/vehicle_cmd", 1, true);
-  control_cmd_sub_ = nh_.subscribe("/control_raw", 1, &VehicleCmdGate::ctrlCmdCallback, this);
+  vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
+  control_cmd_sub_ = pnh_.subscribe("input/control_raw", 1, &VehicleCmdGate::ctrlCmdCallback, this);
 }
 
 

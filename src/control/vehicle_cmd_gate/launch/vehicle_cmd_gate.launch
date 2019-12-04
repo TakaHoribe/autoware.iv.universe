@@ -1,12 +1,10 @@
 <launch>
 
-	<arg name="ns" default="/"/>
+	<node pkg="vehicle_cmd_gate" type="vehicle_cmd_gate" name="vehicle_cmd_gate" output="screen">
+		<remap from="~input/vehicle_status" to="/vehicle/status"/>
+		<remap from="~input/control_raw" to="control_raw"/>
+		<remap from="~output/vehicle_cmd" to="vehicle_cmd"/>
 
-	<group ns="$(arg ns)">
-
-		<node pkg="vehicle_cmd_gate" type="vehicle_cmd_gate" name="vehicle_cmd_gate" output="screen">
-		</node>
-
-	</group>
+	</node>
 
 </launch>

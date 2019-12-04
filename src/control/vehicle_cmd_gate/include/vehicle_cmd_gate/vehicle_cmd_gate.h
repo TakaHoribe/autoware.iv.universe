@@ -36,7 +36,7 @@ private:
   void ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
 
   ros::NodeHandle nh_;
-  ros::NodeHandle private_nh_;
+  ros::NodeHandle pnh_;
   ros::Publisher vehicle_cmd_pub_;
   ros::Subscriber control_cmd_sub_;
 

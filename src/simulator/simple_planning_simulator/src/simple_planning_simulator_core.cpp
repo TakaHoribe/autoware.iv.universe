@@ -30,10 +30,10 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pnh_.param("add_measurement_noise", add_measurement_noise_, bool(true));
 
   /* set pub sub topic name */
-  pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("current_pose", 1);
-  pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("current_velocity", 1);
-  pub_vehicle_status_ = nh_.advertise<autoware_control_msgs::VehicleStatusStamped>("vehicle_status", 1);
-  sub_vehicle_cmd_ = nh_.subscribe("vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
+  pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/current_pose", 1);
+  pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_velocity", 1);
+  pub_vehicle_status_ = pnh_.advertise<autoware_control_msgs::VehicleStatusStamped>("output/status", 1);
+  sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
   timer_tf_ = nh_.createTimer(ros::Duration(0.1 / loop_rate_), &Simulator::timerCallbackPublishTF, this);
 
