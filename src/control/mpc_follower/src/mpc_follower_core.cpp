@@ -467,8 +467,8 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   steer_vel_cmd = (Uex(1) - Uex(0)) / DT;
 
   /* Velocity control: for simplicity, now we calculate steer and speed separately */
-  vel_cmd = ref_traj_.vx[0];
-  acc_cmd = (ref_traj_.vx[1] - ref_traj_.vx[0]) / DT;
+  vel_cmd = ref_traj_.vx[nearest_index];
+  acc_cmd = (ref_traj_.vx[nearest_index] - ref_traj_.vx[std::max(0, (int)nearest_index - 1)]) / DT;
 
   steer_cmd_prev_ = steer_cmd;
 
