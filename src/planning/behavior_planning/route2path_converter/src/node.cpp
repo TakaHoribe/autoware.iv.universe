@@ -120,7 +120,6 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
     // interporation
     autoware_planning_msgs::Path interporated_path;
     interporatePath(goal_path, path_length_, interporated_path);
-    // std::cout <<  output_path_msg.points.size() << std::endl;
     output_path_msg.points = interporated_path.points;
     return true;
 }
