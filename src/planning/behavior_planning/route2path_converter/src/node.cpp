@@ -165,7 +165,8 @@ void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path
     spline_ptr = std::make_shared<Spline4D>(x, y, z, v);
     // std::cout<<"st:"<<spline_ptr_->s.back() << std::endl;
     // std::cout<<"point size:"<<path.points.size() << std::endl;
-    for (double s_t = 0.0; s_t < std::min(length, spline_ptr->s.back()); s_t += 1.0)
+    double s_t:
+    for (s_t = 0.0; s_t < std::min(length, spline_ptr->s.back()); s_t += 1.0)
     {
         autoware_planning_msgs::PathPoint path_point;
         std::array<double, 4> state = spline_ptr->calc_trajectory_point(s_t);
@@ -179,6 +180,8 @@ void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path
         path_point.pose.orientation = tf2::toMsg(tf2_quaternion);
         interporated_path.points.push_back(path_point);
     }
+    if (spline_ptr->s.back() <= s_t)
+        interporated_path.points.push_back(path.points.back());
 }
 
 void Route2PathConverterNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
