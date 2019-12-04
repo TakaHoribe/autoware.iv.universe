@@ -42,5 +42,5 @@
   with_items:
     - "ros-{{ release }}-velodyne-pointcloud"
     - "ros-{{ release }}-roswww"
-    - "ros-{{ release }}-rosbridge_server"
+    - "ros-{{ release }}-rosbridge-server"
     - build-essential
