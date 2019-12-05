@@ -231,7 +231,7 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   autoware_control_msgs::VehicleStatusStamped vs;
   vs.header.stamp = ros::Time::now();
   vs.header.frame_id = simulation_frame_id_;
-  vs.status.speed = current_twist_.linear.x;
+  vs.status.speed = vehicle_model_ptr_->getVx();
   vs.status.steering_angle = vehicle_model_ptr_->getSteer();
   if (add_measurement_noise_)
   {
