@@ -90,7 +90,6 @@ private:
                 const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                 autoware_planning_msgs::PathWithLaneId &output_path_msg);
   void filterPath(const autoware_planning_msgs::PathWithLaneId &path, autoware_planning_msgs::PathWithLaneId &filtered_path);
-  void interporatePath(const autoware_planning_msgs::PathWithLaneId &path, const double length, autoware_planning_msgs::PathWithLaneId &interporated_path);
   void publishDebugMarker(const autoware_planning_msgs::PathWithLaneId &path, const ros::Publisher &pub);
 };
 } // namespace behavior_planning

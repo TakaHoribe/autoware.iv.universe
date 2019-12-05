@@ -8,7 +8,6 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <goal_path_refiner/goal_path_refiner.hpp>
-#include <interporation/cubic_spline.hpp>
 
 namespace behavior_planning
 {
