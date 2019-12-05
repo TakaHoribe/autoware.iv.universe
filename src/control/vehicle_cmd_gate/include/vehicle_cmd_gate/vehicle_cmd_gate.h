@@ -33,12 +33,17 @@ public:
 
 private:
 
-  void ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
+  void latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
+  void lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
 
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher vehicle_cmd_pub_;
-  ros::Subscriber control_cmd_sub_;
+  ros::Subscriber lat_control_cmd_sub_;
+  ros::Subscriber lon_control_cmd_sub_;
+
+  autoware_control_msgs::VehicleCommandStamped current_vehicle_cmd_;
+
 
 
 };
