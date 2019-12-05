@@ -1,6 +1,7 @@
 #include <behavior_path_planner/node.hpp>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
 // #include <lanelet2_extension/utility/query.h>
 // #include <lanelet2_extension/visualization/visualization.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -83,7 +84,7 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
     {
         for (const auto &lane_id : route_section.lane_ids)
         {
-            lanelet::ConstLineString3d center_line = (lanelet_map_ptr_->laneletLayer.get(lane_id)).centerline();
+            lanelet::ConstLineString3d center_line = lanelet::utils::generateFineCenterline(lanelet_map_ptr_->laneletLayer.get(lane_id), 5.0);
             lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(lanelet_map_ptr_->laneletLayer.get(lane_id));
             for (size_t i = 0; i < center_line.size(); ++i)
             // for (const auto &center_point : center_line)
