@@ -40,7 +40,7 @@ public:
   {
     nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, double(0.341));
     timer_ = nh_.createTimer(ros::Duration(0.03), &PacmodSimInterface::timerCallback, this);
-    sim_vehicle_cmd_pub_ = pnh_.advertise<geometry_msgs::TwistStamped>("/sim/vehicle_cmd", 1);
+    sim_vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("/sim/vehicle_cmd", 1);
     steer_rpt_pub_ = pnh_.advertise<pacmod_msgs::SystemRptFloat>("/pacmod/parsed_tx/steer_rpt", 1);
     wheel_speed_rpt_pub_ = pnh_.advertise<pacmod_msgs::WheelSpeedRpt>("/pacmod/parsed_tx/wheel_speed_rpt", 1);
     sim_status_sub_ = pnh_.subscribe("/sim/status", 1, &PacmodSimInterface::callbackSimStatus, this);
@@ -87,6 +87,7 @@ private:
   {
     if (!current_accel_cmd_.enable || !current_brake_cmd_.enable || !current_steer_cmd_.enable)
     {
+      ROS_INFO("[pacmod_sim_interface] enable accel: %d, brake: %d, steer: %d", current_accel_cmd_.enable, current_brake_cmd_.enable, current_steer_cmd_.enable);
       return;
     }
 
@@ -99,11 +100,12 @@ private:
     current_vehicle_cmd_.command.control.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
     current_vehicle_cmd_.command.control.control.steering_angle_velocity = 0.0;
     current_vehicle_cmd_.command.control.control.speed = 0.0;
-    const double temp_coeff = 10.0;
+    const double temp_coeff = 1.0;
     current_vehicle_cmd_.command.control.control.acceleration = (current_accel_cmd_.command - current_brake_cmd_.command) / 2.0 * temp_coeff;
     current_vehicle_cmd_.command.emergency = false;
 
     sim_vehicle_cmd_pub_.publish(current_vehicle_cmd_);
+    return;
   };
 
   void callbackSimStatus(const autoware_control_msgs::VehicleStatusStamped &msg)

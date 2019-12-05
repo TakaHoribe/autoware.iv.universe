@@ -136,15 +136,17 @@ void LexusConverter::publishCommand()
 
   double desired_throttle = 0;
   double desired_brake = 0;
+
+  ROS_INFO("wheel_speed_ = %f, desired_acc = %f", wheel_speed_, desired_acc);
   // throttle mode
-  if (!accel_map_.getThrottle(desired_acc, wheel_speed_, desired_throttle))
+  if (!accel_map_.getThrottle(desired_acc, std::max(wheel_speed_, 0.0), desired_throttle))
   {
     // brake mode
-    if (!brake_map_.getBrake(desired_acc, wheel_speed_, desired_brake))
+    if (!brake_map_.getBrake(desired_acc, std::max(wheel_speed_, 0.0), desired_brake))
     {
       // emergency mode
       desired_throttle = 0;
-      brake_map_.getBrake(acc_emergency_, wheel_speed_, desired_brake);
+      brake_map_.getBrake(acc_emergency_, std::max(wheel_speed_, 0.0), desired_brake);
       ROS_ERROR("[Converter] Emergency Stopping, desired_acc = %lf, acc_emergency = %lf", desired_acc, acc_emergency_);
     }
   }

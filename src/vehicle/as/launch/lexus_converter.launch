@@ -12,8 +12,8 @@
 	<arg name="agr_coef_c" default="0.042"/>
 	<!-- <arg name="csv_path_accel_map" default="/home/autoware/.autoware/data/lexus/accel_map.csv"/>
 	<arg name="csv_path_brake_map" default="/home/autoware/.autoware/data/lexus/brake_map_fix_low_speed.csv"/> -->
-	<arg name="csv_path_accel_map" default="$(find as)/data/lexus/accel_map.csv"/>
-	<arg name="csv_path_brake_map" default="$(find as)/data/lexus/brake_map.csv"/>
+	<arg name="csv_path_accel_map" default="$(find as)/data/lexus/dummy_accel_map.csv"/>
+	<arg name="csv_path_brake_map" default="$(find as)/data/lexus/dummy_brake_map.csv"/>
 	<arg name="acc_emergency" default="-2.0"/>
 	<arg name="max_throttle" default="0.2"/>
 	<arg name="min_throttle" default="0.0"/>
