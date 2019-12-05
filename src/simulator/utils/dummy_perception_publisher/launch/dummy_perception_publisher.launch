@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+    <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
+        <remap from="~output/dynamic_object" to="/perception/detection/objects"/>
+        <remap from="~output/objects_pose" to="debug/object_pose"/>
+        <remap from="~output/points_raw" to="/points_raw/outlier/filtered"/>
+        <remap from="~input/pose" to="initial_object_pose"/>
+    </node>
+</launch>
