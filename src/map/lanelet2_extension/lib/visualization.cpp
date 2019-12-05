@@ -89,6 +89,10 @@ void lightAsMarker(lanelet::ConstPoint3d p, visualization_msgs::Marker* marker, 
   marker->pose.position.x = p.x();
   marker->pose.position.y = p.y();
   marker->pose.position.z = p.z();
+  marker->pose.orientation.x = 0.0;
+  marker->pose.orientation.y = 0.0;
+  marker->pose.orientation.z = 0.0;
+  marker->pose.orientation.w = 1.0;
 
   float s = 0.3;
 
@@ -155,6 +159,10 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
   marker->pose.position.x = 0.0;  // p.x();
   marker->pose.position.y = 0.0;  // p.y();
   marker->pose.position.z = 0.0;  // p.z();
+  marker->pose.orientation.x = 0.0;
+  marker->pose.orientation.y = 0.0;
+  marker->pose.orientation.z = 0.0;
+  marker->pose.orientation.w = 1.0;
   marker->scale.x = s;
   marker->scale.y = s;
   marker->scale.z = s;
@@ -225,17 +233,18 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
 // https://qiita.com/fujii-kotaro/items/a411f2a45627ed2f156e
 bool isAcuteAngle(const geometry_msgs::Point32& a, const geometry_msgs::Point32& o, const geometry_msgs::Point32& b)
 {
-    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) >= 0;
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) >= 0;
 }
 
 // https://qiita.com/fujii-kotaro/items/a411f2a45627ed2f156e
-bool isWithinTriangle(const geometry_msgs::Point32& a, const geometry_msgs::Point32& b, const geometry_msgs::Point32& c, const geometry_msgs::Point32& p)
+bool isWithinTriangle(const geometry_msgs::Point32& a, const geometry_msgs::Point32& b, const geometry_msgs::Point32& c,
+                      const geometry_msgs::Point32& p)
 {
   double c1 = (b.x - a.x) * (p.y - b.y) - (b.y - a.y) * (p.x - b.x);
   double c2 = (c.x - b.x) * (p.y - c.y) - (c.y - b.y) * (p.x - c.x);
   double c3 = (a.x - c.x) * (p.y - a.y) - (a.y - c.y) * (p.x - a.x);
 
-  return c1 > 0.0 && c2 > 0.0 && c3 >0.0 || c1 < 0.0 && c2 < 0.0 && c3 < 0.0;
+  return c1 > 0.0 && c2 > 0.0 && c3 > 0.0 || c1 < 0.0 && c2 < 0.0 && c3 < 0.0;
 }
 }  // anonymous namespace
 
@@ -289,16 +298,16 @@ void visualization::polygon2Triangle(const geometry_msgs::Polygon& polygon,
         int j_begin = (i + 2) % N;
         int j_end = (i - 1 + N) % N;
         bool is_ear = true;
-        for (int j = j_begin;j != j_end; j = (j+1) % N)
+        for (int j = j_begin; j != j_end; j = (j + 1) % N)
         {
-          if(isWithinTriangle(p0, p1, p2, poly.points.at(j)))
+          if (isWithinTriangle(p0, p1, p2, poly.points.at(j)))
           {
             is_ear = false;
             break;
           }
         }
 
-        if(is_ear)
+        if (is_ear)
         {
           clipped_vertex = i;
           break;
@@ -455,6 +464,10 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
   marker.pose.position.x = 0.0;  // p.x();
   marker.pose.position.y = 0.0;  // p.y();
   marker.pose.position.z = 0.0;  // p.z();
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
   marker.scale.x = 1.0;
   marker.scale.y = 1.0;
   marker.scale.z = 1.0;
@@ -491,7 +504,7 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
           marker.colors.push_back(c);
         }
       }  // for triangles0
-    }  // for detection areas
+    }    // for detection areas
     marker_array.markers.push_back(marker);
 
     // stop line visualization
@@ -610,6 +623,10 @@ visualization_msgs::MarkerArray visualization::laneletsAsTriangleMarkerArray(con
   marker.pose.position.x = 0.0;  // p.x();
   marker.pose.position.y = 0.0;  // p.y();
   marker.pose.position.z = 0.0;  // p.z();
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
   marker.scale.x = 1.0;
   marker.scale.y = 1.0;
   marker.scale.z = 1.0;
@@ -664,6 +681,10 @@ void visualization::trafficLight2TriangleMarker(const lanelet::ConstLineString3d
   marker->pose.position.x = 0.0;  // p.x();
   marker->pose.position.y = 0.0;  // p.y();
   marker->pose.position.z = 0.0;  // p.z();
+  marker->pose.orientation.x = 0.0;
+  marker->pose.orientation.y = 0.0;
+  marker->pose.orientation.z = 0.0;
+  marker->pose.orientation.w = 1.0;
   marker->scale.x = 1.0;
   marker->scale.y = 1.0;
   marker->scale.z = 1.0;
