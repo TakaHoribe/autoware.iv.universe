@@ -47,7 +47,7 @@ void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommand
 {
   autoware_control_msgs::VehicleCommandStamped vc;
   vc.header = input_msg->header;
-  vc.command.gear.gear = autoware_control_msgs::Gear::FWD;
+  vc.command.gear.gear = autoware_control_msgs::Gear::DRIVE;
   vc.command.control = *input_msg;
   vehicle_cmd_pub_.publish(vc);
 }
