@@ -31,9 +31,13 @@ vehicle_height: 2.0
 ```
 
 ### Run
+1. launch Autoware
 ```
 $ roslaunch autoware_launch autoware.launch
 ```
+2. set goal pose
+3. push engage button.
+[http://localhost:8085/autoware_web_controller/index.html](http://localhost:8085/autoware_web_controller/index.html)
 
 # for developper (temporary)
 ## rule
