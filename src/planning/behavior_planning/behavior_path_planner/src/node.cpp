@@ -39,6 +39,7 @@ void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)
         output_path_with_lane_id_msg.header.frame_id = "map";
         output_path_with_lane_id_msg.header.stamp = ros::Time::now();
         path_with_lane_id_pub_.publish(output_path_with_lane_id_msg);
+        publishDebugMarker(output_path_with_lane_id_msg, debug_viz_pub_);
     }
 }
 
@@ -137,6 +138,63 @@ void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::PathWithL
             filtered_path.points.back().lane_ids.push_back(path.points.at(i).lane_ids.at(0));
         }
     }
+}
+
+void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::PathWithLaneId &path, const ros::Publisher &pub)
+{
+    if (pub.getNumSubscribers() < 1)
+        return;
+    visualization_msgs::MarkerArray output_msg;
+    {
+        visualization_msgs::Marker marker;
+        marker.header = path.header;
+        marker.ns = "points";
+        marker.id = 0;
+        marker.type = visualization_msgs::Marker::POINTS;
+        marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.lifetime = ros::Duration(0.5);
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 1.0;
+        marker.color.b = 1.0;
+        for (size_t i = 0; i < path.points.size(); ++i)
+        {
+            marker.points.push_back(path.points.at(i).point.pose.position);
+        }
+        output_msg.markers.push_back(marker);
+    }
+
+    {
+        for (size_t i = 0; i < path.points.size(); ++i)
+        {
+            visualization_msgs::Marker marker;
+            marker.header = path.header;
+            marker.ns = "lane_id";
+            marker.id = i;
+            marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+            marker.scale.z = 0.25;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.pose = path.points.at(i).point.pose;
+            std::string text;
+            if (path.points.at(i).lane_ids.empty())
+                continue;
+            for (size_t j = 0; j < path.points.at(i).lane_ids.size(); ++j)
+            {
+                text = text + std::string(std::to_string(path.points.at(i).lane_ids.at(j))) + std::string(",");
+            }
+            text.pop_back();
+            marker.text = text;
+            marker.lifetime = ros::Duration(0.5);
+            marker.color.a = 1.0; // Don't forget to set the alpha!
+            marker.color.r = 1.0;
+            marker.color.g = 1.0;
+            marker.color.b = 1.0;
+            output_msg.markers.push_back(marker);
+        }
+    }
+
+    pub.publish(output_msg);
 }
 
 SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
