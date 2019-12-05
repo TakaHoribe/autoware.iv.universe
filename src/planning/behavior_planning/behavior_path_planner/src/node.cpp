@@ -166,6 +166,26 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
     }
 
     {
+        visualization_msgs::Marker marker;
+        marker.header = path.header;
+        marker.ns = "line";
+        marker.id = 0;
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.scale.x = marker.scale.y = 0.05;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.lifetime = ros::Duration(0.5);
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 1.0;
+        marker.color.b = 1.0;
+        for (size_t i = 0; i < path.points.size(); ++i)
+        {
+            marker.points.push_back(path.points.at(i).point.pose.position);
+        }
+        output_msg.markers.push_back(marker);
+    }
+
+    {
         for (size_t i = 0; i < path.points.size(); ++i)
         {
             visualization_msgs::Marker marker;
