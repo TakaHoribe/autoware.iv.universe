@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 
 #include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
@@ -23,7 +24,7 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 #include <tf2_ros/transform_listener.h>
-
+#include <behavior_velocity_planner/node.hpp>
 #include <memory>
 
 namespace behavior_planning
@@ -50,12 +51,13 @@ public:
     SingletonDataManager &operator=(const SingletonDataManager &) = delete;
     SingletonDataManager(SingletonDataManager &&) = delete;
     SingletonDataManager &operator=(SingletonDataManager &&) = delete;
-
     static SingletonDataManager &getInstance()
     {
         static SingletonDataManager instance;
         return instance;
     }
+
+    friend class BehaviorVelocityPlannerNode;
 
 private:
     /* 
@@ -71,7 +73,6 @@ private:
      * SelfPoseLinstener
      */
     std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
-public:
     void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg);
     void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);

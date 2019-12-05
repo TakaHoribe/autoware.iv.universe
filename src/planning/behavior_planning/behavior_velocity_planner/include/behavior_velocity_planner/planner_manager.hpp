@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 
 #include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>

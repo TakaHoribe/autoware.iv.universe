@@ -1,3 +1,4 @@
+#pragma once
 #include <path_utils/interporation/cubic_spline.hpp>
 #include <autoware_planning_msgs/Path.h>
 namespace behavior_planning
