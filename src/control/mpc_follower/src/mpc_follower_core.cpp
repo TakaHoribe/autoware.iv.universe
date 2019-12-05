@@ -131,6 +131,22 @@ MPCFollower::MPCFollower()
   sub_current_vel_ = pnh_.subscribe("input/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
   sub_vehicle_status_ = pnh_.subscribe("input/vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
 
+  /* wait to get vehicle position */
+  while(true){
+    try
+    {
+      tf_buffer_.lookupTransform("map",       /* targert */
+                                 "base_link", /* src */
+                                 ros::Time::now(), ros::Duration(5.0));
+      break;
+    }
+    catch (tf2::TransformException &ex)
+    {
+      ROS_INFO("[mpc_follower] is waitting to get map to base_link transform. %s", ex.what());
+      continue;
+    }
+  }
+
   /* for debug */
   pub_debug_filtered_traj_ = pnh_.advertise<visualization_msgs::Marker>("debug/filtered_reference_trajectory", 1);
   pub_debug_predicted_traj_ = pnh_.advertise<visualization_msgs::Marker>("debug/predicted_trajectory", 1);
