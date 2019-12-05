@@ -140,6 +140,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(behavior_velocity_planner_node 
+src/data_manager.cpp
+src/utilization.cpp
+src/planner_manager.cpp
 src/node.cpp
 src/main.cpp)
 

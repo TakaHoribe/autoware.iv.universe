@@ -20,43 +20,25 @@
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/transform_listener.h>
 
-#include <behavior_velocity_planner/planner_manager.hpp>
-#include <behavior_velocity_planner/data_manager.hpp>
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 #include <string>
 #include <memory>
 
 namespace behavior_planning {
 
-class BehaviorVelocityPlannerNode
+class BehaviorVelocityPlannerManager
 {
 public:
-  BehaviorVelocityPlannerNode();
+  BehaviorVelocityPlannerManager();
+  bool callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
+                autoware_planning_msgs::Path &output_path_msg);
 
 private:
-  /* 
-   * ROS
-   */
-  // publisher and subscriber
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Subscriber path_with_lane_id_sub_;
-  ros::Subscriber perception_sub_;
-  ros::Subscriber pointcloud_sub_;
-  ros::Subscriber map_sub_;
-  ros::Publisher path_pub_;
-  ros::Publisher debug_viz_pub_;
-  //  parameter
-  double foward_path_length_;
-  double backward_path_length_;
 
-  /* 
-   * Manager 
-   */
-  std::shared_ptr<BehaviorVelocityPlannerManager> planner_manager_ptr_;
-
-  void pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId &input_path_msg);
-  void publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
 };
 }
