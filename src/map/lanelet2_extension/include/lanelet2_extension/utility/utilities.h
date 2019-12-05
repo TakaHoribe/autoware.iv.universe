@@ -31,6 +31,8 @@ namespace lanelet
 namespace utils
 {
 
+lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj, const double resolution = 5.0);
+
 /**
  * @brief  Apply a patch for centerline because the original implementation
  * doesn't have enough quality
