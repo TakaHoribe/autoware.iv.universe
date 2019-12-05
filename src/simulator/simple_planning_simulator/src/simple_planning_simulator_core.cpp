@@ -95,6 +95,11 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     vehicle_model_type_ = VehicleModelType::CONST_ACCEL_TWIST;
     vehicle_model_ptr_ = std::make_shared<SimModelConstantAccelTwist>(vel_lim, angvel_lim, accel_rate, angvel_rate);
   }
+  else if (vehicle_model_type_str == "IDEAL_ACCEL")
+  {
+    vehicle_model_type_ = VehicleModelType::IDEAL_ACCEL;
+    vehicle_model_ptr_ = std::make_shared<SimModelIdealAccel>(wheelbase_);
+  }
   else
   {
     ROS_ERROR("Invalid vehicle_model_type. Initialization failed.");
@@ -257,6 +262,12 @@ void Simulator::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandSt
     input << msg->command.control.control.speed, msg->command.control.control.steering_angle;
     vehicle_model_ptr_->setInput(input);
   }
+  else if (vehicle_model_type_ == VehicleModelType::IDEAL_ACCEL)
+  {
+    Eigen::VectorXd input(2);
+    input << msg->command.control.control.acceleration, msg->command.control.control.steering_angle;
+    vehicle_model_ptr_->setInput(input);
+  }
   else
   {
     ROS_WARN("[%s] : invalid vehicle_model_type_  error.", __func__);
@@ -311,6 +322,12 @@ void Simulator::setInitialState(const geometry_msgs::Pose &pose, const geometry_
   {
     Eigen::VectorXd state(5);
     state << x, y, yaw, vx, steer;
+    vehicle_model_ptr_->setState(state);
+  }
+  else if (vehicle_model_type_ == VehicleModelType::IDEAL_ACCEL)
+  {
+    Eigen::VectorXd state(4);
+    state << x, y, yaw, vx;
     vehicle_model_ptr_->setState(state);
   }
   else

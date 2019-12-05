@@ -7,7 +7,7 @@
   <arg name="use_waypoints_for_z_position_source" default="true"/>
 
   <!-- model parameters -->
-  <arg name="vehicle_model_type" default="IDEAL_STEER"/>
+  <arg name="vehicle_model_type" default="IDEAL_ACCEL"/>
 
   <arg name="tread_length" default="1.0"/>
   <arg name="angvel_lim" default="3.0"/>
