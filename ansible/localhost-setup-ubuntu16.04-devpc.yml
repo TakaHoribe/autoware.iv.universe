@@ -4,6 +4,9 @@
   become: no
   roles:
     - lanelet2
+    - cuda
+    - cudnn
+    - tensorrt
     - {role: ros, release: kinetic}
     - caffe
     - autoware

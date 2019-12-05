@@ -1,0 +1,15 @@
+- name: TensorRT (install TensorRT 5.1GA repository)
+  become: yes
+  apt:
+    deb: "{{ item }}"
+  with_items:
+    - https://developer.nvidia.com/compute/machine-learning/tensorrt/5.1/ga/local_repos/nv-tensorrt-repo-ubuntu1804-cuda10.1-trt5.1.5.0-ga-20190427_1-1_amd64.deb
+
+- name: TensorRT (install nvinfer5)
+  become: yes
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - libnvinfer5
+    - libnvinfer-dev
