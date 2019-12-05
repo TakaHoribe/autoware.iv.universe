@@ -151,7 +151,7 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
         marker.ns = "points";
         marker.id = 0;
         marker.type = visualization_msgs::Marker::POINTS;
-        marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
+        marker.scale.x = marker.scale.y = 0.1;
         marker.action = visualization_msgs::Marker::ADD;
         marker.lifetime = ros::Duration(0.5);
         marker.color.a = 1.0; // Don't forget to set the alpha!
