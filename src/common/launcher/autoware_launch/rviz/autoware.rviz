@@ -282,7 +282,9 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                {}
+                left_lane_bound: true
+                right_lane_bound: true
+                route_lanelets: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -309,10 +311,19 @@ Visualization Manager:
                 Value: true
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /planning/behavior_planning/route2path_converter/output/debug/path
+              Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
-                {}
+                "": true
+              Queue Size: 100
+              Value: true
+            - Class: rviz/MarkerArray
+              Enabled: true
+              Marker Topic: /planning/behavior_planning/behavior_path_planner/output/debug/path
+              Name: PathWithLaneId
+              Namespaces:
+                lane_id: true
+                points: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -378,7 +389,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 53.221736907958984
+      Scale: 62.09098434448242
       Target Frame: world
       Value: TopDownOrtho (rviz)
       X: -202.55322265625
