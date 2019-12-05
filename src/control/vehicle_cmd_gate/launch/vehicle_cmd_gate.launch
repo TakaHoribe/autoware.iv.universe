@@ -2,7 +2,8 @@
 
 	<node pkg="vehicle_cmd_gate" type="vehicle_cmd_gate" name="vehicle_cmd_gate" output="screen">
 		<remap from="~input/vehicle_status" to="/vehicle/status"/>
-		<remap from="~input/control_raw" to="control_raw"/>
+		<remap from="~input/lateral/control_cmd" to="lateral/control_cmd"/>
+		<remap from="~input/longitudinal/control_cmd" to="longitudinal/control_cmd"/>
 		<remap from="~output/vehicle_cmd" to="vehicle_cmd"/>
 
 	</node>
