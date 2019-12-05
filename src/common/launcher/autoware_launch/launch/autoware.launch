@@ -24,6 +24,7 @@
   </include>
 
   <!-- Traffic Light Recognition -->
+
   <!-- Planning -->
   <include file="$(find planning_launch)/launch/planning.launch" >
   </include>
@@ -31,5 +32,11 @@
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch" >
   </include>
+
+  <!-- Web Controller -->
+  <include file="$(find roswww)/launch/roswww.launch" >
+    <arg name="cached" default="false"/>
+  </include>
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
 
 </launch>
