@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>route2path_converter</name>
+  <name>behavior_path_planner</name>
   <version>0.0.0</version>
-  <description>The route2path_converter package</description>
+  <description>The behavior_path_planner package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

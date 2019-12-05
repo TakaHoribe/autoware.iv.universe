@@ -15,13 +15,13 @@
  */
 
 #include <ros/ros.h>
-#include <route2path_converter/node.hpp>
+#include <behavior_path_planner/node.hpp>
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "route2path_converter_node");
+    ros::init(argc, argv, "behavior_path_planner_node");
 
-    behavior_planning::Route2PathConverterNode node;
+    behavior_planning::BehaviorPathPlannerNode node;
 
     ros::spin();
 

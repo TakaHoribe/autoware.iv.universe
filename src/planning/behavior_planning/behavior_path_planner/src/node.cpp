@@ -1,4 +1,4 @@
-#include <route2path_converter/node.hpp>
+#include <behavior_path_planner/node.hpp>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 // #include <lanelet2_extension/utility/query.h>
@@ -11,19 +11,19 @@
 
 namespace behavior_planning
 {
-Route2PathConverterNode::Route2PathConverterNode() : nh_(), pnh_("~")
+BehaviorPathPlannerNode::BehaviorPathPlannerNode() : nh_(), pnh_("~")
 {
-    timer_ = nh_.createTimer(ros::Duration(0.1), &Route2PathConverterNode::timerCallback, this);
-    route_sub_ = pnh_.subscribe("input/route", 1, &Route2PathConverterNode::routeCallback, this);
-    perception_pub_ = pnh_.subscribe("input/perception", 1, &Route2PathConverterNode::perceptionCallback, this);
-    pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &Route2PathConverterNode::pointcloudCallback, this);
-    map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &Route2PathConverterNode::mapCallback, this);
+    timer_ = nh_.createTimer(ros::Duration(0.1), &BehaviorPathPlannerNode::timerCallback, this);
+    route_sub_ = pnh_.subscribe("input/route", 1, &BehaviorPathPlannerNode::routeCallback, this);
+    perception_pub_ = pnh_.subscribe("input/perception", 1, &BehaviorPathPlannerNode::perceptionCallback, this);
+    pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorPathPlannerNode::pointcloudCallback, this);
+    map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorPathPlannerNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
     pnh_.param("path_length", path_length_, 100.0);
 };
 
-void Route2PathConverterNode::timerCallback(const ros::TimerEvent &e)
+void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)
 {
     // if (path_pub_.getNumSubscribers() < 1)
     //     return;
@@ -42,7 +42,7 @@ void Route2PathConverterNode::timerCallback(const ros::TimerEvent &e)
     }
 }
 
-void Route2PathConverterNode::routeCallback(const autoware_planning_msgs::Route &input_route_msg)
+void BehaviorPathPlannerNode::routeCallback(const autoware_planning_msgs::Route &input_route_msg)
 {
     if (input_route_msg.route_sections.empty())
         ROS_WARN("route is empty");
@@ -51,27 +51,27 @@ void Route2PathConverterNode::routeCallback(const autoware_planning_msgs::Route 
     return;
 };
 
-void Route2PathConverterNode::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
+void BehaviorPathPlannerNode::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
 {
     perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
 
     return;
 };
 
-void Route2PathConverterNode::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
+void BehaviorPathPlannerNode::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
 {
     pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
 
     return;
 };
 
-void Route2PathConverterNode::mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg)
+void BehaviorPathPlannerNode::mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg)
 {
     lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
-bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &input_route_msg,
+bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &input_route_msg,
                                        const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                                        const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                                        autoware_planning_msgs::Path &output_path_msg)
@@ -124,7 +124,7 @@ bool Route2PathConverterNode::callback(const autoware_planning_msgs::Route &inpu
     return true;
 }
 
-void Route2PathConverterNode::filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path)
+void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path)
 {
     const double epsilon = 0.1;
     size_t latest_id = 0;
@@ -145,7 +145,7 @@ void Route2PathConverterNode::filterPath(const autoware_planning_msgs::Path &pat
     }
 }
 
-void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path)
+void BehaviorPathPlannerNode::interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path)
 {
     std::vector<double> x;
     std::vector<double> y;
@@ -183,7 +183,7 @@ void Route2PathConverterNode::interporatePath(const autoware_planning_msgs::Path
         interporated_path.points.push_back(path.points.back());
 }
 
-void Route2PathConverterNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
+void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
 {
     if (pub.getNumSubscribers() < 1)
         return;

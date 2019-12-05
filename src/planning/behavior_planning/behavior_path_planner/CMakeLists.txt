@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(route2path_converter)
+project(behavior_path_planner)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++14)
@@ -110,7 +110,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES route2path_converter
+#  LIBRARIES behavior_path_planner
   CATKIN_DEPENDS autoware_planning_msgs autoware_perception_msgs sensor_msgs geometry_msgs lanelet2_extension roscpp tf2 tf2_ros tf2_geometry_msgs
 #  DEPENDS system_lib
 )
@@ -139,7 +139,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(route2path_converter_node 
+add_executable(behavior_path_planner_node 
 src/goal_path_refiner.cpp
 src/node.cpp
 src/main.cpp)
@@ -152,10 +152,10 @@ src/main.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(route2path_converter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(behavior_path_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(route2path_converter_node
+target_link_libraries(behavior_path_planner_node
   ${catkin_LIBRARIES}
 )
 

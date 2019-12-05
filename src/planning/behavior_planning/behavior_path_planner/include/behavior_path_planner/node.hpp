@@ -30,10 +30,10 @@
 #include <memory>
 
 namespace behavior_planning {
-class Route2PathConverterNode
+class BehaviorPathPlannerNode
 {
 public:
-  Route2PathConverterNode();
+  BehaviorPathPlannerNode();
 
 private:
   /* 
