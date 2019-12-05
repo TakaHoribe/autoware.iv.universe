@@ -7,7 +7,7 @@
       *{ padding:0px; margin:0px;}
     -->
     </style>
-    <title>ROS WEB Publisher</title>
+    <title>Autoware WEB Controller</title>
     <script src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
     <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
   </head>
@@ -96,6 +96,49 @@ if(!DisengagePublisher){
     </script>
 
 
+    <script type="text/javascript">
+        <!--
+if(!EngageStatusSubscriber){
+    var EngageStatusSubscriber = {
+        ros : null,
+        name : "",
+        init : function(){
+            this.ros = new ROSLIB.Ros();
+            this.ros.on('error', function(error) {
+                document.getElementById('state').innerHTML = "Error";
+            });
+            this.ros.on('connection', function(error) {
+                document.getElementById('state').innerHTML = "Connect";
+            });
+            this.ros.on('close', function(error) {
+                document.getElementById('state').innerHTML = "Close";
+            });
+            this.ros.connect('ws://' + location.hostname + ':9090');
+
+            var sub = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/vehicle/engage',
+                messageType : 'std_msgs/Bool'
+            });
+            sub.subscribe(function(message) {
+                var res = message.data;
+                var el = document.createElement("p");
+                el.innerHTML = res
+                document.getElementById("engage_status").appendChild(el);
+            });
+        }
+    }
+    EngageStatusSubscriber.init();
+
+    window.onload = function(){
+    };
+    window.onunload = function(){
+        EngageStatusSubscriber.ros.close();
+    };
+}
+        //-->
+    </script>
+
     <p>status： <label id="state">Disconnect</label></p>
 
     <form action="javascript:EngagePublisher.send();" id="ui">
@@ -104,5 +147,6 @@ if(!DisengagePublisher){
     <form action="javascript:DisengagePublisher.send();" id="ui">
       <input type="submit" value="Disengage" id="btn" /><br/>
     </form>
+    <div id="engage_status"><p></p></div>
   </body>
 </html>
