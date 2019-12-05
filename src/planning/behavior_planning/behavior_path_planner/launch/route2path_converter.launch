@@ -1,9 +1,0 @@
-<launch>
-    <arg name="intput_route_topic_name" default="/planning/mission_planning/route"/>
-    <arg name="map_topic_name" default="/lanelet_map_bin"/>
-    <node pkg="behavior_path_planner" type="behavior_path_planner_node" name="behavior_path_planner" output="screen">
-      <remap from="~input/route" to="$(arg intput_route_topic_name)"/>
-      <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
-    </node>
-  </launch>
-  

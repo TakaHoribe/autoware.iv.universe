@@ -17,6 +17,7 @@
 #include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_planning_msgs/Path.h>
+#include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_listener.h>
@@ -53,7 +54,7 @@ private:
   // publisher and subscriber
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  ros::Subscriber path_sub_;
+  ros::Subscriber path_with_lane_id_sub_;
   ros::Subscriber perception_sub_;
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber map_sub_;
@@ -75,11 +76,11 @@ private:
    * Spline 
    */
 
-  void pathCallback(const autoware_planning_msgs::Path &input_path_msg);
+  void pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId &input_path_msg);
   void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg);
   void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
-  bool callback(const autoware_planning_msgs::Path &input_path_msg,
+  bool callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
                 const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                 const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                 autoware_planning_msgs::Path &output_path_msg);

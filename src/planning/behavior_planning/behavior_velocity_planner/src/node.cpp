@@ -12,7 +12,7 @@ namespace behavior_planning
 {
 BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
 {
-    path_sub_ = pnh_.subscribe("input/path", 1, &BehaviorVelocityPlannerNode::pathCallback, this);
+    path_with_lane_id_sub_ = pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorVelocityPlannerNode::pathWithLaneIdCallback, this);
     perception_sub_ = pnh_.subscribe("input/perception", 1, &BehaviorVelocityPlannerNode::perceptionCallback, this);
     pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorVelocityPlannerNode::pointcloudCallback, this);
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorVelocityPlannerNode::mapCallback, this);
@@ -21,7 +21,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
     pnh_.param("path_length", path_length_, 100.0);
 };
 
-void BehaviorVelocityPlannerNode::pathCallback(const autoware_planning_msgs::Path &input_path_msg)
+void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId &input_path_msg)
 {
     // if (path_pub_.getNumSubscribers() < 1)
     autoware_planning_msgs::Path output_path_msg;
@@ -56,12 +56,16 @@ void BehaviorVelocityPlannerNode::mapCallback(const autoware_lanelet2_msgs::MapB
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
-bool BehaviorVelocityPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
+bool BehaviorVelocityPlannerNode::callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
                                        const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                                        const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                                        autoware_planning_msgs::Path &output_path_msg)
 {
-    output_path_msg = input_path_msg;
+    autoware_planning_msgs::Path path;
+    for(const auto & path_point: input_path_msg.points){
+        path.points.push_back(path_point.point);
+    }
+    interporatePath(path, path_length_, output_path_msg);
     return true;
 }
 

@@ -60,6 +60,7 @@ private:
   ros::Subscriber perception_sub_;
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber map_sub_;
+  ros::Publisher path_pub_;
   ros::Publisher path_with_lane_id_pub_;
   ros::Publisher debug_viz_pub_;
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
@@ -91,5 +92,13 @@ private:
                 autoware_planning_msgs::PathWithLaneId &output_path_msg);
   void filterPath(const autoware_planning_msgs::PathWithLaneId &path, autoware_planning_msgs::PathWithLaneId &filtered_path);
   void interporatePath(const autoware_planning_msgs::PathWithLaneId &path, const double length, autoware_planning_msgs::PathWithLaneId &interporated_path);
+
+  bool callback(const autoware_planning_msgs::Route &input_route_msg,
+                const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
+                const sensor_msgs::PointCloud2 &input_pointcloud_msg,
+                autoware_planning_msgs::Path &output_path_msg);
+  void publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
+  void filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path);
+  void interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path);
 };
 } // namespace behavior_planning
