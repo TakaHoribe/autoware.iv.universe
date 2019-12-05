@@ -64,7 +64,8 @@ private:
   ros::Publisher debug_viz_pub_;
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
   //  parameter
-  double path_length_;
+  double foward_path_length_;
+  double backward_path_length_;
   // topic cache
   std::shared_ptr<autoware_planning_msgs::Route> route_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;

@@ -61,7 +61,8 @@ private:
   ros::Publisher path_pub_;
   ros::Publisher debug_viz_pub_;
   //  parameter
-  double path_length_;
+  double foward_path_length_;
+  double backward_path_length_;
   // topic cache
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
   std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
@@ -87,5 +88,10 @@ private:
   void publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub);
   void filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path);
   void interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path);
+  bool cropPath(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
+                const geometry_msgs::Pose &base_pose,
+                const double &min_foward_path_length,
+                const double &min_backward_path_length,
+                autoware_planning_msgs::Path &output_path_msg);
 };
 }

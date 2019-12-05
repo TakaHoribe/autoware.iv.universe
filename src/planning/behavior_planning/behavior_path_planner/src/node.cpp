@@ -20,7 +20,8 @@ BehaviorPathPlannerNode::BehaviorPathPlannerNode() : nh_(), pnh_("~")
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorPathPlannerNode::mapCallback, this);
     path_with_lane_id_pub_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/path_with_lane_id", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
-    pnh_.param("path_length", path_length_, 1000.0);
+    pnh_.param("foward_path_length", foward_path_length_, 1000.0);
+    pnh_.param("backward_path_length", backward_path_length_, 5.0);
 };
 
 void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)

@@ -18,7 +18,8 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorVelocityPlannerNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
-    pnh_.param("path_length", path_length_, 100.0);
+    pnh_.param("foward_path_length", foward_path_length_, 1000.0);
+    pnh_.param("backward_path_length", backward_path_length_, 5.0);
 };
 
 void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId &input_path_msg)
@@ -65,7 +66,7 @@ bool BehaviorVelocityPlannerNode::callback(const autoware_planning_msgs::PathWit
     for(const auto & path_point: input_path_msg.points){
         path.points.push_back(path_point.point);
     }
-    interporatePath(path, path_length_, output_path_msg);
+    interporatePath(path, foward_path_length_, output_path_msg);
     return true;
 }
 
