@@ -1,4 +1,4 @@
-#include <behavior_path_planner/node.hpp>
+#include <behavior_velocity_planner/node.hpp>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 // #include <lanelet2_extension/utility/query.h>
@@ -6,127 +6,68 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <goal_path_refiner/goal_path_refiner.hpp>
 #include <interporation/cubic_spline.hpp>
 
 namespace behavior_planning
 {
-BehaviorPathPlannerNode::BehaviorPathPlannerNode() : nh_(), pnh_("~")
+BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
 {
-    timer_ = nh_.createTimer(ros::Duration(0.1), &BehaviorPathPlannerNode::timerCallback, this);
-    route_sub_ = pnh_.subscribe("input/route", 1, &BehaviorPathPlannerNode::routeCallback, this);
-    perception_pub_ = pnh_.subscribe("input/perception", 1, &BehaviorPathPlannerNode::perceptionCallback, this);
-    pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorPathPlannerNode::pointcloudCallback, this);
-    map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorPathPlannerNode::mapCallback, this);
+    path_sub_ = pnh_.subscribe("input/path", 1, &BehaviorVelocityPlannerNode::pathCallback, this);
+    perception_sub_ = pnh_.subscribe("input/perception", 1, &BehaviorVelocityPlannerNode::perceptionCallback, this);
+    pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorVelocityPlannerNode::pointcloudCallback, this);
+    map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorVelocityPlannerNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
     pnh_.param("path_length", path_length_, 100.0);
 };
 
-void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)
+void BehaviorVelocityPlannerNode::pathCallback(const autoware_planning_msgs::Path &input_path_msg)
 {
     // if (path_pub_.getNumSubscribers() < 1)
-    //     return;
-    if (route_ptr_ == nullptr)
-        return;
-    //   if(route_ptr_ == nullptr || perception_ptr_ == nullptr || pointcloud_ptr_ == nullptr)
-    //     return;
     autoware_planning_msgs::Path output_path_msg;
-
-    if (callback(*route_ptr_, *perception_ptr_, *pointcloud_ptr_, output_path_msg))
+    if (callback(input_path_msg, *perception_ptr_, *pointcloud_ptr_, output_path_msg))
     {
         output_path_msg.header.frame_id = "map";
         output_path_msg.header.stamp = ros::Time::now();
         path_pub_.publish(output_path_msg);
         publishDebugMarker(output_path_msg, debug_viz_pub_);
     }
-}
-
-void BehaviorPathPlannerNode::routeCallback(const autoware_planning_msgs::Route &input_route_msg)
-{
-    if (input_route_msg.route_sections.empty())
-        ROS_WARN("route is empty");
-    route_ptr_ = std::make_shared<autoware_planning_msgs::Route>(input_route_msg);
 
     return;
 };
 
-void BehaviorPathPlannerNode::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
+void BehaviorVelocityPlannerNode::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
 {
     perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
 
     return;
 };
 
-void BehaviorPathPlannerNode::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
+void BehaviorVelocityPlannerNode::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
 {
     pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
 
     return;
 };
 
-void BehaviorPathPlannerNode::mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg)
+void BehaviorVelocityPlannerNode::mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg)
 {
     lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
-bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &input_route_msg,
+bool BehaviorVelocityPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                        const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                                        const sensor_msgs::PointCloud2 &input_pointcloud_msg,
                                        autoware_planning_msgs::Path &output_path_msg)
 {
-    autoware_planning_msgs::Path path;
-    // generate
-    lanelet::ConstLanelets route_lanelets;
-    for (const auto &route_section : input_route_msg.route_sections)
-    {
-        for (const auto &lane_id : route_section.lane_ids)
-        {
-            lanelet::ConstLineString3d center_line = (lanelet_map_ptr_->laneletLayer.get(lane_id)).centerline();
-            lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(lanelet_map_ptr_->laneletLayer.get(lane_id));
-            for (size_t i = 0; i < center_line.size(); ++i)
-            // for (const auto &center_point : center_line)
-            {
-                autoware_planning_msgs::PathPoint point;
-                point.pose.position.x = center_line[i].x();
-                point.pose.position.y = center_line[i].y();
-                point.pose.position.z = center_line[i].z();
-                point.twist.linear.x = limit.speedLimit.value();
-                path.points.push_back(point);
-            }
-        }
-    }
-
-    // screening path
-    autoware_planning_msgs::Path filtered_path;
-    filterPath(path, filtered_path);
-
-    // check
-    if (filtered_path.points.size() < 3)
-    {
-        ROS_ERROR("minimum points size is 2");
-        return false;
-    }
-
-    // generate path for goal pose
-    autoware_planning_msgs::Path goal_path;
-    if (!GoalPathRefiner::getRefinedPath(7.0, 3.14 / 2.0, filtered_path, input_route_msg.goal_pose, goal_path))
-    {
-        ROS_ERROR("Cannot find goal position");
-        return false;
-    }
-
-    // interporation
-    autoware_planning_msgs::Path interporated_path;
-    interporatePath(goal_path, path_length_, interporated_path);
-    output_path_msg.points = interporated_path.points;
+    output_path_msg = input_path_msg;
     return true;
 }
 
-void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path)
+void BehaviorVelocityPlannerNode::filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs::Path &filtered_path)
 {
-    const double epsilon = 0.1;
+    const double epsilon = 0.01;
     size_t latest_id = 0;
     for (size_t i = 0; i < path.points.size(); ++i)
     {
@@ -145,7 +86,7 @@ void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::Path &pat
     }
 }
 
-void BehaviorPathPlannerNode::interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path)
+void BehaviorVelocityPlannerNode::interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path)
 {
     std::vector<double> x;
     std::vector<double> y;
@@ -183,7 +124,7 @@ void BehaviorPathPlannerNode::interporatePath(const autoware_planning_msgs::Path
         interporated_path.points.push_back(path.points.back());
 }
 
-void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
+void BehaviorVelocityPlannerNode::publishDebugMarker(const autoware_planning_msgs::Path &path, const ros::Publisher &pub)
 {
     if (pub.getNumSubscribers() < 1)
         return;
@@ -208,4 +149,26 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
     pub.publish(output_msg);
 }
 
+SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
+bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs::Header &header)
+{
+    try
+    {
+        geometry_msgs::TransformStamped transform;
+        transform = tf_buffer_.lookupTransform(header.frame_id, "base_link",
+                                               header.stamp, ros::Duration(0.1));
+        self_pose.position.x = transform.transform.translation.x;
+        self_pose.position.y = transform.transform.translation.y;
+        self_pose.position.z = transform.transform.translation.z;
+        self_pose.orientation.x = transform.transform.rotation.x;
+        self_pose.orientation.y = transform.transform.rotation.y;
+        self_pose.orientation.z = transform.transform.rotation.z;
+        self_pose.orientation.w = transform.transform.rotation.w;
+        return true;
+    }
+    catch (tf2::TransformException &ex)
+    {
+        return false;
+    }
+}
 } // namespace behavior_planning

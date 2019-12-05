@@ -4,6 +4,11 @@
     <node pkg="behavior_path_planner" type="behavior_path_planner_node" name="behavior_path_planner" output="screen">
       <remap from="~input/route" to="$(arg intput_route_topic_name)"/>
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
+      <remap from="~output/path" to="path_with_lane_id"/>
+    </node>
+    <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
+      <remap from="~input/path" to="path_with_lane_id"/>
+      <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
       <remap from="~output/path" to="path"/>
     </node>
   </launch>
