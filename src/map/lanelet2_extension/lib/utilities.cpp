@@ -173,17 +173,15 @@ std::vector<lanelet::BasicPoint3d> resamplePoints(const lanelet::ConstLineString
 
   return resampled_points;
 }
+}  // namespace
 
-lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj)
+lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj, const double resolution)
 {
-  // Parameter
-  constexpr double point_interval = 5.0;  // [m]
-
   // Get length of longer border
   const double left_length = lanelet::geometry::length(lanelet_obj.leftBound());
   const double right_length = lanelet::geometry::length(lanelet_obj.rightBound());
   const double longer_distance = (left_length > right_length) ? left_length : right_length;
-  const int num_segments = std::max(static_cast<int>(ceil(longer_distance / point_interval)), 1);
+  const int num_segments = std::max(static_cast<int>(ceil(longer_distance / resolution)), 1);
 
   // Resample points
   const auto left_points = resamplePoints(lanelet_obj.leftBound(), num_segments);
@@ -201,8 +199,6 @@ lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanele
   }
   return centerline;
 }
-
-}  // namespace
 
 void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool force_overwrite)
 {
