@@ -112,7 +112,6 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
         return false;
     }
 
-    // interporation
     output_path_msg.points = goal_path.points;
     return true;
 }
