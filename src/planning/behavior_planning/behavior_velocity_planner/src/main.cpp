@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "behavior_velocity_planner_node");
 
-    behavior_planning::VelocityBehaviorPlannerNode node;
+    behavior_planning::BehaviorVelocityPlannerNode node;
 
     ros::spin();
 
