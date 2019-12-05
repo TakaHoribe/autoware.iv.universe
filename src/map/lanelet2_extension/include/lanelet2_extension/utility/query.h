@@ -131,6 +131,8 @@ ConstLanelets getLaneChangeableNeighbors(const routing::RoutingGraphPtr& graph, 
                                          const geometry_msgs::Point& search_point);
 
 ConstLanelets getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
+ConstLanelets getAllNeighborsLeft(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
+ConstLanelets getAllNeighborsRight(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
 ConstLanelets getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets,
                               const geometry_msgs::Point& search_point);
 
