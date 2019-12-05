@@ -121,6 +121,19 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
     printf("%d, %d, %d, %d\n", b1, b3, b4, b5);
     printf("base_index = [%f, %f]\n", base_index.front(), base_index.back());
     printf("base_index.size() = %lu, base_value.size() = %lu\n", base_index.size(), base_value.size());
+    printf("base_index: [");
+    for (int i = 0; i < base_index.size(); ++i)
+    {
+      printf("%f, ", base_index.at(i));
+    }
+    printf("]\n");
+    printf("base_value: [");
+    for (int i = 0; i < base_value.size(); ++i)
+    {
+      printf("%f, ", base_value.at(i));
+    }
+    printf("]\n");
+    printf("return_index = %f\n", return_index);
     return false;
   }
 
