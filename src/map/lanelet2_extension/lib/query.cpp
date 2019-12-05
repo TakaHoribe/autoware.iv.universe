@@ -338,7 +338,21 @@ ConstLanelets query::getLaneChangeableNeighbors(const routing::RoutingGraphPtr& 
 ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet)
 {
   ConstLanelets lanelets;
+
+  ConstLanelets left_lanelets = getAllNeighborsLeft(graph, lanelet);
+  ConstLanelets right_lanelets = getAllNeighborsRight(graph, lanelet);
+
+  std::reverse(left_lanelets.begin(), left_lanelets.end());
+  lanelets.insert(lanelets.end(), left_lanelets.begin(), left_lanelets.end());
   lanelets.push_back(lanelet);
+  lanelets.insert(lanelets.end(), right_lanelets.begin(), right_lanelets.end());
+
+  return lanelets;
+}
+
+ConstLanelets query::getAllNeighborsRight(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet)
+{
+  ConstLanelets lanelets;
   auto right_lane = (!!graph->right(lanelet)) ? graph->right(lanelet) : graph->adjacentRight(lanelet);
   while (!!right_lane)
   {
@@ -346,6 +360,12 @@ ConstLanelets query::getAllNeighbors(const routing::RoutingGraphPtr& graph, cons
     right_lane =
         (!!graph->right(right_lane.get())) ? graph->right(right_lane.get()) : graph->adjacentRight(right_lane.get());
   }
+  return lanelets;
+}
+
+ConstLanelets query::getAllNeighborsLeft(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet)
+{
+  ConstLanelets lanelets;
   auto left_lane = (!!graph->left(lanelet)) ? graph->left(lanelet) : graph->adjacentLeft(lanelet);
   while (!!left_lane)
   {
