@@ -20,6 +20,7 @@ BehaviorPathPlannerNode::BehaviorPathPlannerNode() : nh_(), pnh_("~")
     pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorPathPlannerNode::pointcloudCallback, this);
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorPathPlannerNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
+    path_with_lane_id_pub_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/path_with_lane_id", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
     pnh_.param("path_length", path_length_, 1000.0);
 };
@@ -32,14 +33,22 @@ void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)
         return;
     //   if(route_ptr_ == nullptr || perception_ptr_ == nullptr || pointcloud_ptr_ == nullptr)
     //     return;
-    autoware_planning_msgs::Path output_path_msg;
 
+    autoware_planning_msgs::Path output_path_msg;
     if (callback(*route_ptr_, *perception_ptr_, *pointcloud_ptr_, output_path_msg))
     {
         output_path_msg.header.frame_id = "map";
         output_path_msg.header.stamp = ros::Time::now();
         path_pub_.publish(output_path_msg);
         publishDebugMarker(output_path_msg, debug_viz_pub_);
+    }
+
+    autoware_planning_msgs::PathWithLaneId output_path_with_lane_id_msg;
+    if (callback(*route_ptr_, *perception_ptr_, *pointcloud_ptr_, output_path_with_lane_id_msg))
+    {
+        output_path_with_lane_id_msg.header.frame_id = "map";
+        output_path_with_lane_id_msg.header.stamp = ros::Time::now();
+        path_with_lane_id_pub_.publish(output_path_with_lane_id_msg);
     }
 }
 
@@ -103,13 +112,6 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
     autoware_planning_msgs::Path filtered_path;
     filterPath(path, filtered_path);
 
-    // check
-    if (filtered_path.points.size() < 3)
-    {
-        ROS_ERROR("minimum points size is 2");
-        return false;
-    }
-
     // generate path for goal pose
     autoware_planning_msgs::Path goal_path;
     if (!GoalPathRefiner::getRefinedPath(7.0, 3.14 / 2.0, filtered_path, input_route_msg.goal_pose, goal_path))
@@ -122,6 +124,51 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
     autoware_planning_msgs::Path interporated_path;
     interporatePath(goal_path, path_length_, interporated_path);
     output_path_msg.points = interporated_path.points;
+    return true;
+}
+
+bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &input_route_msg,
+                                       const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
+                                       const sensor_msgs::PointCloud2 &input_pointcloud_msg,
+                                       autoware_planning_msgs::PathWithLaneId &output_path_msg)
+{
+    autoware_planning_msgs::PathWithLaneId path;
+    // generate
+    lanelet::ConstLanelets route_lanelets;
+    for (const auto &route_section : input_route_msg.route_sections)
+    {
+        for (const auto &lane_id : route_section.lane_ids)
+        {
+            lanelet::ConstLineString3d center_line = lanelet::utils::generateFineCenterline(lanelet_map_ptr_->laneletLayer.get(lane_id), 5.0);
+            lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(lanelet_map_ptr_->laneletLayer.get(lane_id));
+            for (size_t i = 0; i < center_line.size(); ++i)
+            // for (const auto &center_point : center_line)
+            {
+                autoware_planning_msgs::PathPointWithLaneId path_point;
+                path_point.point.pose.position.x = center_line[i].x();
+                path_point.point.pose.position.y = center_line[i].y();
+                path_point.point.pose.position.z = center_line[i].z();
+                path_point.point.twist.linear.x = limit.speedLimit.value();
+                path_point.lane_ids.push_back(lane_id);
+                path.points.push_back(path_point);
+            }
+        }
+    }
+
+    // screening path
+    autoware_planning_msgs::PathWithLaneId filtered_path;
+    filterPath(path, filtered_path);
+
+    // generate path for goal pose
+    autoware_planning_msgs::PathWithLaneId goal_path;
+    if (!GoalPathRefiner::getRefinedPath(7.0, 3.14 / 2.0, filtered_path, input_route_msg.goal_pose, goal_path))
+    {
+        ROS_ERROR("Cannot find goal position");
+        return false;
+    }
+
+    // interporation
+    output_path_msg.points = goal_path.points;
     return true;
 }
 
@@ -142,6 +189,29 @@ void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::Path &pat
         {
             latest_id = i;
             filtered_path.points.push_back(path.points.at(latest_id));
+        }
+    }
+}
+
+void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::PathWithLaneId &path, autoware_planning_msgs::PathWithLaneId &filtered_path)
+{
+    const double epsilon = 0.01;
+    size_t latest_id = 0;
+    for (size_t i = 0; i < path.points.size(); ++i)
+    {
+        double dist;
+        if (i != 0)
+        {
+            const double x = path.points.at(i).point.pose.position.x - path.points.at(latest_id).point.pose.position.x;
+            const double y = path.points.at(i).point.pose.position.y - path.points.at(latest_id).point.pose.position.y;
+            dist = std::sqrt(x * x + y * y);
+        }
+        if (epsilon < dist || i == 0 /*init*/)
+        {
+            latest_id = i;
+            filtered_path.points.push_back(path.points.at(latest_id));
+        }else {
+            filtered_path.points.back().lane_ids.push_back(path.points.at(i).lane_ids.at(0));
         }
     }
 }
