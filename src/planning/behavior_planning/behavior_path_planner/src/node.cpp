@@ -15,12 +15,12 @@ BehaviorPathPlannerNode::BehaviorPathPlannerNode() : nh_(), pnh_("~")
 {
     timer_ = nh_.createTimer(ros::Duration(0.1), &BehaviorPathPlannerNode::timerCallback, this);
     route_sub_ = pnh_.subscribe("input/route", 1, &BehaviorPathPlannerNode::routeCallback, this);
-    perception_pub_ = pnh_.subscribe("input/perception", 1, &BehaviorPathPlannerNode::perceptionCallback, this);
+    perception_sub_ = pnh_.subscribe("input/perception", 1, &BehaviorPathPlannerNode::perceptionCallback, this);
     pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorPathPlannerNode::pointcloudCallback, this);
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorPathPlannerNode::mapCallback, this);
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
-    pnh_.param("path_length", path_length_, 100.0);
+    pnh_.param("path_length", path_length_, 1000.0);
 };
 
 void BehaviorPathPlannerNode::timerCallback(const ros::TimerEvent &e)
@@ -206,6 +206,29 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
         output_msg.markers.push_back(marker);
     }
     pub.publish(output_msg);
+}
+
+SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
+bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs::Header &header)
+{
+    try
+    {
+        geometry_msgs::TransformStamped transform;
+        transform = tf_buffer_.lookupTransform(header.frame_id, "base_link",
+                                               header.stamp, ros::Duration(0.1));
+        self_pose.position.x = transform.transform.translation.x;
+        self_pose.position.y = transform.transform.translation.y;
+        self_pose.position.z = transform.transform.translation.z;
+        self_pose.orientation.x = transform.transform.rotation.x;
+        self_pose.orientation.y = transform.transform.rotation.y;
+        self_pose.orientation.z = transform.transform.rotation.z;
+        self_pose.orientation.w = transform.transform.rotation.w;
+        return true;
+    }
+    catch (tf2::TransformException &ex)
+    {
+        return false;
+    }
 }
 
 } // namespace behavior_planning

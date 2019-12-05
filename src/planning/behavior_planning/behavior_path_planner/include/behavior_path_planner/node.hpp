@@ -29,7 +29,19 @@
 #include <string>
 #include <memory>
 
-namespace behavior_planning {
+namespace behavior_planning
+{
+class SelfPoseLinstener
+{
+public:
+  SelfPoseLinstener();
+  bool getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs::Header &header);
+
+private:
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+};
+
 class BehaviorPathPlannerNode
 {
 public:
@@ -44,13 +56,14 @@ private:
   ros::NodeHandle pnh_;
   ros::Timer timer_;
   ros::Subscriber route_sub_;
-  ros::Subscriber perception_pub_;
+  ros::Subscriber perception_sub_;
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber map_sub_;
   ros::Publisher path_pub_;
   ros::Publisher debug_viz_pub_;
   // tf2_ros::Buffer tf_buffer_;
   // tf2_ros::TransformListener tf_listener_;
+  std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
   //  parameter
   double path_length_;
   // topic cache
@@ -72,7 +85,7 @@ private:
   void routeCallback(const autoware_planning_msgs::Route &input_route_msg);
   void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg);
   void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
+  void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
   bool callback(const autoware_planning_msgs::Route &input_route_msg,
                 const autoware_perception_msgs::DynamicObjectArray &input_perception_msg,
                 const sensor_msgs::PointCloud2 &input_pointcloud_msg,
@@ -82,4 +95,4 @@ private:
   void interporatePath(const autoware_planning_msgs::Path &path, const double length, autoware_planning_msgs::Path &interporated_path);
   // bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header &header);
 };
-}
+} // namespace behavior_planning
