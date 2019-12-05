@@ -9,5 +9,7 @@
         </include>
         <include file="$(find vehicle_cmd_gate)/launch/vehicle_cmd_gate.launch">
         </include>
+        <include file="$(find velocity_controller)/launch/velocity_controller.launch">
+        </include>
     </group>
 </launch>

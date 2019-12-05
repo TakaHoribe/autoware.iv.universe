@@ -38,12 +38,12 @@
 		
 
 		<!-- system -->
-		<param name="ctrl_cmd_interface" value="all"/>
+		<param name="output_interface" value="control"/>
 		<remap from="~input/reference_trajectory" to="/planning/motion_planning/trajectory"/>
 		<remap from="~input/current_velocity" to="/vehicle/velocity"/>
 		<remap from="~input/vehicle_status" to="/vehicle/status"/>
-		<remap from="~output/twist_raw" to="twist_raw"/>
-		<remap from="~output/control_raw" to="control_raw"/>
+		<remap from="~output/twist_raw" to="lateral/twist_raw"/>
+		<remap from="~output/control_raw" to="lateral/control_cmd"/>
 
 		<!-- paramters -->
 		<param name="ctrl_period" value="$(arg ctrl_period)"/>

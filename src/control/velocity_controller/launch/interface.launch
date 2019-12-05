@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ***************************************************************************************************** -->
+  <!-- ssc -->
+  <arg name="controller_json" default="veh_controller.json" />
+  <arg name="interface_json" default="veh_interface.json" />
+  <arg name="speed_json" default="speed_model.json" />
+  <arg name="steering_json" default="steering_model.json" />
+
+  <remap from="/as/enable_cmd" to="/pacmod/as_rx/enable" />
+  <remap from="/as/throttle_cmd" to="/pacmod/as_rx/accel_cmd/UNUSE"/>
+  <remap from="/as/brake_cmd" to="/pacmod/as_rx/brake_cmd/UNUSE"/>
+  <remap from="/as/steering_cmd" to="/pacmod/as_rx/steer_cmd"/>
+  <remap from="/as/transmission_cmd" to="/pacmod/as_rx/shift_cmd"/>
+  <remap from="/as/turn_signal_cmd" to="/pacmod/as_rx/turn_cmd"/>
+  <remap from="/as/global_report" to="/pacmod/parsed_tx/global_rpt"/>
+  <remap from="/as/throttle_report" to="/pacmod/parsed_tx/accel_rpt"/>
+  <remap from="/as/brake_report" to="/pacmod/parsed_tx/brake_rpt"/>
+  <remap from="/as/steering_report" to="/pacmod/parsed_tx/steer_rpt"/>
+  <remap from="/as/speed" to="/pacmod/parsed_tx/vehicle_speed_rpt" />
+  <remap from="/as/wheel_speed" to="/pacmod/parsed_tx/wheel_speed_rpt" />
+  <remap from="/as/transmission_report" to="/pacmod/parsed_tx/shift_rpt" />
+
+  <group ns="as">
+    <node name="pacmod3_veh_controller" pkg="pacmod3_veh_controller" type="pacmod3_veh_controller" args="-f $(arg controller_json)" />
+    <node name="pacmod3_veh_interface" pkg="pacmod3_veh_controller" type="pacmod3_veh_interface" args="-f $(arg interface_json)" />
+    <node name="speed_model" pkg="speed_model" type="speed_model" args="-f $(arg speed_json)" />
+    <node name="steering_model" pkg="steering_model" type="steering_model" args="-f $(arg steering_json)" />
+  </group>
+
+  <!-- ***************************************************************************************************** -->
+  <!-- ssc_interface -->
+	<arg name="use_rear_wheel_speed" default="true"/>
+	<arg name="use_adaptive_gear_ratio" default="true"/>
+	<arg name="command_timeout" default="1000"/>
+	<arg name="loop_rate" default="30.0"/>
+	<arg name="wheel_base" default="2.79"/>
+	<arg name="tire_radius" default="0.39"/>
+	<arg name="acceleration_limit" default="3.0"/>
+	<arg name="deceleration_limit" default="3.0"/>
+	<arg name="max_curvature_rate" default="0.75"/>
+
+	<node pkg="as" type="ssc_interface" name="ssc_interface" output="screen">
+		<param name="use_rear_wheel_speed" value="$(arg use_rear_wheel_speed)" />
+		<param name="use_adaptive_gear_ratio" value="$(arg use_adaptive_gear_ratio)" />
+		<param name="command_timeout" value="$(arg command_timeout)" />
+		<param name="loop_rate" value="$(arg loop_rate)" />
+		<param name="wheel_base" value="$(arg wheel_base)" />
+		<param name="tire_radius" value="$(arg tire_radius)" />
+		<param name="acceleration_limit" value="$(arg acceleration_limit)" />
+		<param name="deceleration_limit" value="$(arg deceleration_limit)" />
+		<param name="max_curvature_rate" value="$(arg max_curvature_rate)" />
+	</node>
+
+  <!-- ***************************************************************************************************** -->
+  <!-- pacmod3 -->
+  <!-- The vehicle types available for the vehicle_type parameter are:
+       POLARIS_GEM: The Polaris GEM e2, e4, e6, and eLXD.
+       POLARIS_RANGER: The Polaris Ranger series of off-road vehicles.
+       INTERNATIONAL_PROSTAR_122: The International PROSTAR+ 122 semi-tractor trailer.
+       LEXUS_RX_450H: The hybrid version of the Lexus RX-450 SUV. -->
+  <arg name="pacmod_vehicle_type" default="LEXUS_RX_450H" />
+  <arg name="use_kvaser" default="true" />
+  <arg name="kvaser_hardware_id" default="27733" />
+  <arg name="kvaser_circuit_id" default="0" />
+  <arg name="use_socketcan" default="false" />
+  <arg name="socketcan_device" default="can0" />
+
+  <group ns="pacmod">
+    <include file="$(find kvaser_interface)/launch/kvaser_can_bridge.launch" if="$(arg use_kvaser)">
+      <arg name="can_hardware_id" value="$(arg kvaser_hardware_id)" />
+      <arg name="can_circuit_id" value="$(arg kvaser_circuit_id)" />
+      <arg name="can_bit_rate" value="500000" />
+    </include>
+
+    <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge" if="$(arg use_socketcan)">
+      <param name="can_device" value="$(arg socketcan_device)" />
+      <remap from="received_messages" to="can_tx" />
+      <remap from="sent_messages" to="can_rx" />
+    </node>
+
+    <node pkg="pacmod3" type="pacmod3" name="pacmod">
+      <param name="vehicle_type" value="$(arg pacmod_vehicle_type)" />
+    </node>
+  </group>
+
+</launch>

@@ -1,0 +1,169 @@
+<launch>
+
+
+  <!-- system -->
+  <arg name="control_rate" default="30" doc="controller execution rate [Hz]" />
+
+  <!-- enable flags -->
+  <arg name="use_sudden_stop" default="true" />
+  <arg name="use_smooth_stop" default="true" />
+  <arg name="use_delay_compensation" default="true" />
+  <arg name="use_velocity_feedback" default="true" />
+  <arg name="use_acceleration_limit" default="true" />
+  <arg name="use_jerk_limit" default="true" />
+  <arg name="use_slope_compensation" default="false" />
+  <arg name="show_debug_info" default="false" />
+  <arg name="use_pub_debug" default="true" />
+
+  <!-- calculating dt -->
+  <arg name="max_dt" default="0.0667" />
+  <arg name="min_dt" default="0.0167" />
+
+  <!-- finding a closet waypoint -->
+  <arg name="distance_threshold_closest_waypoint" default="3.0" />
+  <arg name="angle_threshold_closest_waypoint" default="0.7854" />
+   
+  <!-- stop state -->
+  <arg name="stop_state_velocity" default="0.0" />
+  <arg name="stop_state_acceleration" default="-3.4" />
+  <arg name="current_velocity_threshold_stop_state" default="0.2" />
+  <arg name="target_velocity_threshold_stop_state" default="0.1" />
+
+  <!-- sudden state -->
+  <arg name="sudden_stop_velocity" default="0.0" />
+  <arg name="sudden_stop_acceleration" default="-3.4" />
+  <arg name="max_jerk_sudden_stop" default="0.0" />
+  <arg name="min_jerk_sudden_stop" default="-1.5" />
+
+  <!-- delay compensation -->
+  <arg name="delay_compensation_time" default="0.17" />
+
+  <!-- emergency stop by this controller -->
+  <arg name="emergency_stop_velocity" default="0.0" />
+  <arg name="emergency_stop_acceleration" default="-2.0" />
+  <arg name="max_jerk_emergency_stop" default="0.0" />
+  <arg name="min_jerk_emergency_stop" default="-1.5" />
+
+  <!-- smooth stop -->
+  <arg name="velocity_threshold_drive" default="0.5" />
+  <arg name="current_velocity_threshold_high_smooth_stop" default="0.6" />
+  <arg name="current_velocity_threshold_low_smooth_stop" default="0.5" />
+  <arg name="target_velocity_threshold_high_smooth_stop" default="0.6" />
+  <arg name="target_velocity_threshold_low_smooth_stop" default="0.5" />
+  <arg name="weak_brake_time" default="3.0" />
+  <arg name="increasing_brake_time" default="3.0" />
+  <arg name="stop_brake_time" default="2.0" />
+  <arg name="weak_brake_acceleration" default="-0.4" />
+  <arg name="increasing_brake_gradient" default="-0.05" />
+  <arg name="stop_brake_acceleration" default="-1.7" />
+
+  <!-- acceleration limit -->
+  <arg name="max_acceleration" default="2.0" />
+  <arg name="min_acceleration" default="-5.0" />
+
+  <!-- jerk limit -->
+  <arg name="max_jerk" default="2.0" />
+  <arg name="min_jerk" default="-5.0" />
+
+  <!-- slope compensation -->
+  <arg name="max_pitch_rad" default="0.1" />
+  <arg name="min_pitch_rad" default="-0.1" />
+  <arg name="lpf_pitch_gain" default="0.95" />
+
+  <!-- velocity feedback -->
+  <arg name="kp_pid_velocity" default="0.5" />
+  <arg name="ki_pid_velocity" default="0.1" />
+  <arg name="kd_pid_velocity" default="0" />
+  <arg name="lpf_velocity_error_gain" default="0.9" />
+
+
+
+  <node pkg="velocity_controller" type="velocity_controller" name="velocity_controller" output="screen">
+
+    <remap from="~current_velocity" to="/vehicle/velocity"/>
+    <remap from="~control_cmd" to="longitudinal/control_cmd"/>
+    <remap from="~current_trajectory" to="/planning/motion_planning/trajectory"/>
+    <remap from="~is_sudden_stop" to="/planning/motion_planning/is_sudden_stop"/>
+
+    <!-- system -->
+    <param name="control_rate" value="$(arg control_rate)"/>
+
+
+    <!-- enable flags -->
+    <param name="use_sudden_stop" value="$(arg use_sudden_stop)" />
+    <param name="use_smooth_stop" value="$(arg use_smooth_stop)" />
+    <param name="use_delay_compensation" value="$(arg use_delay_compensation)" />
+    <param name="use_velocity_feedback" value="$(arg use_velocity_feedback)" />
+    <param name="use_acceleration_limit" value="$(arg use_acceleration_limit)" />
+    <param name="use_jerk_limit" value="$(arg use_jerk_limit)" />
+    <param name="use_slope_compensation" value="$(arg use_slope_compensation)" />
+    <param name="show_debug_info" value="$(arg show_debug_info)" />
+    <param name="use_pub_debug" value="$(arg use_pub_debug)" />
+
+    <!-- calculating dt -->
+    <param name="max_dt" value="$(arg max_dt)" />
+    <param name="min_dt" value="$(arg min_dt)" />
+
+    <!-- finding a closet waypoint -->
+    <param name="distance_threshold_closest_waypoint" value="$(arg distance_threshold_closest_waypoint)" />
+    <param name="angle_threshold_closest_waypoint" value="$(arg angle_threshold_closest_waypoint)" />
+    
+    <!-- stop state -->
+    <param name="stop_state_velocity" value="$(arg stop_state_velocity)" />
+    <param name="stop_state_acceleration" value="$(arg stop_state_acceleration)" />
+    <param name="current_velocity_threshold_stop_state" value="$(arg current_velocity_threshold_stop_state)" />
+    <param name="target_velocity_threshold_stop_state" value="$(arg target_velocity_threshold_stop_state)" />
+
+    <!-- sudden state -->
+    <param name="sudden_stop_velocity" value="$(arg sudden_stop_velocity)" />
+    <param name="sudden_stop_acceleration" value="$(arg sudden_stop_acceleration)" />
+    <param name="max_jerk_sudden_stop" value="$(arg max_jerk_sudden_stop)" />
+    <param name="min_jerk_sudden_stop" value="$(arg min_jerk_sudden_stop)" />
+
+    <!-- delay compensation -->
+    <param name="delay_compensation_time" value="$(arg delay_compensation_time)" />
+
+    <!-- emergency stop by this controller -->
+    <param name="emergency_stop_velocity" value="$(arg emergency_stop_velocity)" />
+    <param name="emergency_stop_acceleration" value="$(arg emergency_stop_acceleration)" />
+    <param name="max_jerk_emergency_stop" value="$(arg max_jerk_emergency_stop)" />
+    <param name="min_jerk_emergency_stop" value="$(arg min_jerk_emergency_stop)" />
+
+    <!-- smooth stop -->
+    <param name="velocity_threshold_drive" value="$(arg velocity_threshold_drive)" />
+    <param name="current_velocity_threshold_high_smooth_stop" value="$(arg current_velocity_threshold_high_smooth_stop)" />
+    <param name="current_velocity_threshold_low_smooth_stop" value="$(arg current_velocity_threshold_low_smooth_stop)" />
+    <param name="target_velocity_threshold_high_smooth_stop" value="$(arg target_velocity_threshold_high_smooth_stop)" />
+    <param name="target_velocity_threshold_low_smooth_stop" value="$(arg target_velocity_threshold_low_smooth_stop)" />
+    <param name="weak_brake_time" value="$(arg weak_brake_time)" />
+    <param name="increasing_brake_time" value="$(arg increasing_brake_time)" />
+    <param name="stop_brake_time" value="$(arg stop_brake_time)" />
+    <param name="weak_brake_acceleration" value="$(arg weak_brake_acceleration)" />
+    <param name="increasing_brake_gradient" value="$(arg increasing_brake_gradient)" />
+    <param name="stop_brake_acceleration" value="$(arg stop_brake_acceleration)" />
+
+    <!-- acceleration limit -->
+    <param name="max_acceleration" value="$(arg max_acceleration)" />
+    <param name="min_acceleration" value="$(arg min_acceleration)" />
+
+    <!-- jerk limit -->
+    <param name="max_jerk" value="$(arg max_jerk)" />
+    <param name="min_jerk" value="$(arg min_jerk)" />
+
+    <!-- slope compensation -->
+    <param name="max_pitch_rad" value="$(arg max_pitch_rad)" />
+    <param name="min_pitch_rad" value="$(arg min_pitch_rad)" />
+    <param name="lpf_pitch_gain" value="$(arg lpf_pitch_gain)" />
+
+    <!-- velocity feedback -->
+    <param name="kp_pid_velocity" value="$(arg kp_pid_velocity)" />
+    <param name="ki_pid_velocity" value="$(arg ki_pid_velocity)" />
+    <param name="kd_pid_velocity" value="$(arg kd_pid_velocity)" />
+    <param name="lpf_velocity_error_gain" value="$(arg lpf_velocity_error_gain)" />
+
+
+
+  </node>
+
+
+</launch>

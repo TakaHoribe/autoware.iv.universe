@@ -38,16 +38,35 @@ VehicleCmdGate::VehicleCmdGate()
 {
 
   vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
-  control_cmd_sub_ = pnh_.subscribe("input/control_raw", 1, &VehicleCmdGate::ctrlCmdCallback, this);
+  lat_control_cmd_sub_ = pnh_.subscribe("input/lateral/control_cmd", 1, &VehicleCmdGate::latCtrlCmdCallback, this);
+  lon_control_cmd_sub_ = pnh_.subscribe("input/longitudinal/control_cmd", 1, &VehicleCmdGate::lonCtrlCmdCallback, this);
 }
 
-
-
-void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& input_msg)
+void VehicleCmdGate::latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& input_msg)
 {
-  autoware_control_msgs::VehicleCommandStamped vc;
-  vc.header = input_msg->header;
-  vc.command.gear.gear = autoware_control_msgs::Gear::FWD;
-  vc.command.control = *input_msg;
-  vehicle_cmd_pub_.publish(vc);
+  current_vehicle_cmd_.header = input_msg->header;
+  current_vehicle_cmd_.command.control.control.steering_angle = input_msg->control.steering_angle;
+  current_vehicle_cmd_.command.control.control.steering_angle_velocity = input_msg->control.steering_angle_velocity;
+  vehicle_cmd_pub_.publish(current_vehicle_cmd_);
 }
+
+void VehicleCmdGate::lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& input_msg)
+{
+  const double vel =  input_msg->control.speed;
+  current_vehicle_cmd_.header = input_msg->header;
+  current_vehicle_cmd_.command.control.control.speed = vel;
+  current_vehicle_cmd_.command.control.control.acceleration = input_msg->control.acceleration;
+
+  if (vel > 0.0)
+  {
+    current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::FWD;
+  }
+  else if (vel < 0.0)
+  {
+    current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::REV;
+  }
+  
+  vehicle_cmd_pub_.publish(current_vehicle_cmd_);
+}
+
+
