@@ -1,3 +1,4 @@
+#pragma once
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 #include <memory>

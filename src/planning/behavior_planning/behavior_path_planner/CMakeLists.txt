@@ -140,6 +140,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(behavior_path_planner_node 
+src/cache_path_manager.cpp
 src/goal_path_refiner.cpp
 src/node.cpp
 src/main.cpp)

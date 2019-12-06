@@ -48,7 +48,7 @@ void BehaviorPathPlannerNode::routeCallback(const autoware_planning_msgs::Route 
     if (input_route_msg.route_sections.empty())
         ROS_WARN("route is empty");
     route_ptr_ = std::make_shared<autoware_planning_msgs::Route>(input_route_msg);
-
+    cache_path_manager_.reset();
     return;
 };
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 
 #include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
@@ -22,7 +23,7 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_listener.h>
-
+#include <behavior_path_planner/cache_path_manager.hpp>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
@@ -70,6 +71,7 @@ private:
   std::shared_ptr<autoware_planning_msgs::Route> route_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
   std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
+  CachePathManager cache_path_manager_;
 
   /* 
    * Lanelet 
