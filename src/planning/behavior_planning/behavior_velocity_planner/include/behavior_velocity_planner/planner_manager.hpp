@@ -27,6 +27,8 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
+#include <behavior_velocity_planner/scene_module_interface.hpp>
+
 #include <string>
 #include <memory>
 
@@ -37,9 +39,10 @@ class BehaviorVelocityPlannerManager
 public:
   BehaviorVelocityPlannerManager();
   bool callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
-                autoware_planning_msgs::Path &output_path_msg);
+                autoware_planning_msgs::PathWithLaneId &output_path_msg);
 
 private:
-
+  std::vector<std::shared_ptr<SceneConditionInterface>> v_scene_condition_;
+  std::vector<std::shared_ptr<SceneModuleInterface>> v_scene_module_;
 };
 }

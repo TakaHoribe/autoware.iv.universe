@@ -23,11 +23,19 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
 void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId &input_path_msg)
 {
     // if (path_pub_.getNumSubscribers() < 1)
-    autoware_planning_msgs::Path veloctiy_planed_path;
+    autoware_planning_msgs::PathWithLaneId veloctiy_planed_path;
     if (planner_manager_ptr_->callback(input_path_msg, veloctiy_planed_path))
     {
+        // convert
+        autoware_planning_msgs::Path path;
+        for (const auto &path_point : veloctiy_planed_path.points)
+        {
+            path.points.push_back(path_point.point);
+        }
+        // screening
         autoware_planning_msgs::Path filtered_path;
-        filterPath(veloctiy_planed_path, filtered_path);
+        filterPath(path, filtered_path);
+        // interporation
         autoware_planning_msgs::Path output_path_msg;
         interporatePath(filtered_path, foward_path_length_, output_path_msg);
         output_path_msg.header.frame_id = "map";

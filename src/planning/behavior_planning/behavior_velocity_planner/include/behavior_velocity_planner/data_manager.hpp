@@ -19,6 +19,7 @@
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -76,6 +77,11 @@ private:
     void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg);
     void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
+
+public:
+    bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects);
+    bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> pointcloud);
+    bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
 };
 
 } // namespace behavior_planning
