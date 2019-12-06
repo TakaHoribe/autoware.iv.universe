@@ -22,6 +22,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <ros/ros.h>
+
 #include "csv.h"
 #include "interpolate.h"
 
