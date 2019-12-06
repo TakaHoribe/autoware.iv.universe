@@ -59,7 +59,7 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
             const double x = input.points.at(i).point.pose.position.x - goal.position.x;
             const double y = input.points.at(i).point.pose.position.y - goal.position.y;
             const double z = input.points.at(i).point.pose.position.z - goal.position.z;
-            const double dist = sqrt(x * x + y * y + z * z);
+            const double dist = sqrt(x * x + y * y);
             if (search_radius_range < dist)
             {
                 min_dist_out_of_range_index = i;
