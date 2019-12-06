@@ -118,7 +118,7 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
 
 void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::PathWithLaneId &path, autoware_planning_msgs::PathWithLaneId &filtered_path)
 {
-    const double epsilon = 0.01;
+    const double epsilon = 0.1;
     size_t latest_id = 0;
     for (size_t i = 0; i < path.points.size(); ++i)
     {
