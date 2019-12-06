@@ -35,11 +35,18 @@
 VehicleCmdGate::VehicleCmdGate()
   : nh_("")
   , pnh_("~")
+  , is_engaged_(false)
 {
 
   vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
   lat_control_cmd_sub_ = pnh_.subscribe("input/lateral/control_cmd", 1, &VehicleCmdGate::latCtrlCmdCallback, this);
   lon_control_cmd_sub_ = pnh_.subscribe("input/longitudinal/control_cmd", 1, &VehicleCmdGate::lonCtrlCmdCallback, this);
+  engage_sub_ = pnh_.subscribe("input/engage", 1, &VehicleCmdGate::engageCallback, this);
+}
+
+void VehicleCmdGate::engageCallback(const std_msgs::Bool msg)
+{
+  is_engaged_ = msg.data;
 }
 
 void VehicleCmdGate::latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& input_msg)
@@ -54,8 +61,18 @@ void VehicleCmdGate::lonCtrlCmdCallback(const autoware_control_msgs::ControlComm
 {
   const double vel =  input_msg->control.speed;
   current_vehicle_cmd_.header = input_msg->header;
-  current_vehicle_cmd_.command.control.control.speed = vel;
-  current_vehicle_cmd_.command.control.control.acceleration = input_msg->control.acceleration;
+  if(is_engaged_)
+  {
+    current_vehicle_cmd_.command.control.control.speed = vel;
+    current_vehicle_cmd_.command.control.control.acceleration = input_msg->control.acceleration;
+  }
+  else
+  {
+    current_vehicle_cmd_.command.control.control.speed = 0.0;
+    current_vehicle_cmd_.command.control.control.acceleration = -1.5;
+  }
+  
+
 
   if (vel > 0.0)
   {
