@@ -10,6 +10,7 @@ class SceneModuleInterface
 public:
     SceneModuleInterface(){};
     virtual bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) = 0;
+    virtual bool endOfLife(const autoware_planning_msgs::PathWithLaneId &input) = 0;
     virtual ~SceneModuleInterface(){};
 };
 
