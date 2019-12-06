@@ -139,10 +139,10 @@ void LexusConverter::publishCommand()
 
   ROS_INFO("wheel_speed_ = %f, desired_acc = %f", wheel_speed_, desired_acc);
   // throttle mode
-  if (!accel_map_.getThrottle(desired_acc, std::max(wheel_speed_, 0.0), desired_throttle))
+  if (!accel_map_.getThrottle(desired_acc, std::abs(wheel_speed_), desired_throttle))
   {
     // brake mode
-    brake_map_.getBrake(desired_acc, std::max(wheel_speed_, 0.0), desired_brake);
+    brake_map_.getBrake(desired_acc, std::abs(wheel_speed_), desired_brake);
   }
   desired_throttle = std::min(std::max(desired_throttle, min_throttle_), max_throttle_);
   desired_brake = std::min(std::max(desired_brake, min_brake_), max_brake_);
