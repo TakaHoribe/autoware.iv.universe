@@ -3,8 +3,11 @@
 
 namespace behavior_planning
 {
-MomentaryStopModule::MomentaryStopModule(const lanelet::ConstLineString3d &stop_line) : state_(State::APPROARCH), stop_line_(stop_line),
-                                                                                        task_id_(boost::uuids::random_generator()())
+MomentaryStopModule::MomentaryStopModule(const lanelet::ConstLineString3d &stop_line, const int lane_id)
+    : state_(State::APPROARCH),
+      stop_line_(stop_line),
+      lane_id_(lane_id),
+      task_id_(boost::uuids::random_generator()())
 {
     MomentaryStopCondition::registerTask(stop_line, task_id_);
 };
@@ -65,6 +68,18 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
     // if (state_ == State::START && 5.0 < dist)
     //     is_end_of_life = true;
 
+    bool found = false;
+    for (size_t i = 0; i < input.points.size(); ++i)
+    {
+        for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j)
+        {
+
+            if (lane_id_ == input.points.at(i).lane_ids.at(j))
+                found = true;
+        }
+    }
+
+    is_end_of_life = !found;
     if (is_end_of_life)
         MomentaryStopCondition::unregisterTask(task_id_);
     return is_end_of_life;
@@ -95,7 +110,7 @@ bool MomentaryStopCondition::startCondition(const autoware_planning_msgs::PathWi
                 {
                     if (!isRunning(traffic_sign_stopline))
                     {
-                        v_module_ptr.push_back(std::make_shared<MomentaryStopModule>(traffic_sign_stopline));
+                        v_module_ptr.push_back(std::make_shared<MomentaryStopModule>(traffic_sign_stopline, input.points.at(i).lane_ids.at(j)));
                     }
                 }
             }
@@ -113,12 +128,14 @@ bool MomentaryStopCondition::isRunning(const lanelet::ConstLineString3d &stop_li
 
 bool MomentaryStopCondition::registerTask(const lanelet::ConstLineString3d &stop_line, const boost::uuids::uuid &uuid)
 {
+    ROS_INFO("Registered Momentary Stop Task");
     task_id_direct_map_.emplace(stop_line, boost::lexical_cast<std::string>(uuid));
     task_id_reverse_map_.emplace(boost::lexical_cast<std::string>(uuid), stop_line);
     return true;
 }
 bool MomentaryStopCondition::unregisterTask(const boost::uuids::uuid &uuid)
 {
+    ROS_INFO("Unregistered Momentary Stop Task");
     task_id_direct_map_.erase(task_id_reverse_map_.at(boost::lexical_cast<std::string>(uuid)));
     task_id_reverse_map_.erase(boost::lexical_cast<std::string>(uuid));
     return true;

@@ -16,7 +16,7 @@ namespace behavior_planning
 class MomentaryStopModule : public SceneModuleInterface
 {
 public:
-    MomentaryStopModule(const lanelet::ConstLineString3d &stop_line);
+    MomentaryStopModule(const lanelet::ConstLineString3d &stop_line, const int lane_id);
     bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) override;
     bool endOfLife(const autoware_planning_msgs::PathWithLaneId &input) override;
     ~MomentaryStopModule(){};
@@ -29,6 +29,7 @@ private:
         START
     };
     State state_;
+    int lane_id_;
     lanelet::ConstLineString3d stop_line_;
     boost::uuids::uuid task_id_;
 };
