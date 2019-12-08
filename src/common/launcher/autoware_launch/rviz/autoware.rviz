@@ -323,6 +323,7 @@ Visualization Manager:
               Name: PathWithLaneId
               Namespaces:
                 lane_id: true
+                line: true
                 points: true
               Queue Size: 100
               Value: true
@@ -352,6 +353,18 @@ Visualization Manager:
           Name: MotionPlanning
       Enabled: true
       Name: Planning
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /control/mpc_follower/debug/predicted_trajectory
+          Name: Debug/MPC
+          Namespaces:
+            predicted_traj: true
+          Queue Size: 100
+          Value: true
+      Enabled: true
+      Name: Control
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -389,11 +402,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 62.09098434448242
+      Scale: 30.192325592041016
       Target Frame: world
       Value: TopDownOrtho (rviz)
-      X: -202.55322265625
-      Y: -106.88190460205078
+      X: -43.9259033203125
+      Y: -315.04766845703125
     Saved: ~
 Window Geometry:
   Displays:
