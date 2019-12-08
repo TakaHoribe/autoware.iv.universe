@@ -12,6 +12,6 @@
   </node> -->
   <node pkg="motion_planner" type="path2trajectory_converter_node" name="path2trajecotry_converter_node" output="screen">
     <remap from="~input/path" to="$(arg input_path_topic)" />
-    <remap from="~output/path" to="path_planner/trajectory" />
+    <remap from="~output/path" to="trajectory" />
   </node>
 </launch>
