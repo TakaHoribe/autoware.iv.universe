@@ -27,7 +27,7 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-#include <behavior_velocity_planner/scene_module_interface.hpp>
+#include <scene_module/scene_module_interface.hpp>
 
 #include <string>
 #include <memory>

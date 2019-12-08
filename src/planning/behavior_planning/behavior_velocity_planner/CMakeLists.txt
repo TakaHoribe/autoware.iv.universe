@@ -144,7 +144,9 @@ src/data_manager.cpp
 src/utilization.cpp
 src/planner_manager.cpp
 src/node.cpp
-src/main.cpp)
+src/main.cpp
+src/scene_module/momentary_stop.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

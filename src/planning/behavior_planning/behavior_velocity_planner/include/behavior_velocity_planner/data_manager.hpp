@@ -20,6 +20,7 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -44,7 +45,7 @@ private:
 class SingletonDataManager
 {
 private:
-    SingletonDataManager() = default;
+    explicit SingletonDataManager();
     ~SingletonDataManager() = default;
 
 public:
@@ -66,6 +67,7 @@ private:
      */ 
     std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
     std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
+    std::shared_ptr<geometry_msgs::TwistStamped> vehicle_velocity_ptr_;
     lanelet::LaneletMapPtr lanelet_map_ptr_;
     lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
     lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
@@ -76,12 +78,16 @@ private:
     std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
     void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg);
     void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
+    void velocityCallback(const geometry_msgs::TwistStamped &input_twist_msg);
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
 
 public:
     bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects);
     bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> pointcloud);
     bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
+    bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist);
+    bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_ptr,
+                       lanelet::routing::RoutingGraphConstPtr &routing_graph_ptr);
 };
 
 } // namespace behavior_planning

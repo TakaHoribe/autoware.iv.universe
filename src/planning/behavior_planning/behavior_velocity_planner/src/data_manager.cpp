@@ -4,6 +4,11 @@
 
 namespace behavior_planning
 {
+SingletonDataManager::SingletonDataManager()
+{
+    self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
+}
+
 void SingletonDataManager::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray &input_perception_msg)
 {
     perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
@@ -12,6 +17,11 @@ void SingletonDataManager::perceptionCallback(const autoware_perception_msgs::Dy
 void SingletonDataManager::pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg)
 {
     pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
+}
+
+void SingletonDataManager::velocityCallback(const geometry_msgs::TwistStamped &input_twist_msg)
+{
+    vehicle_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(input_twist_msg);
 }
 
 void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg)
@@ -36,13 +46,33 @@ bool SingletonDataManager::getNoGroundPointcloud(std::shared_ptr<sensor_msgs::Po
     return true;
 }
 
+bool SingletonDataManager::getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist)
+{
+    if (vehicle_velocity_ptr_ == nullptr)
+        return false;
+    twist = vehicle_velocity_ptr_;
+    return true;
+}
+
 bool SingletonDataManager::getCurrentSelfPose(geometry_msgs::PoseStamped &pose)
 {
+    if (self_pose_listener_ptr_ == nullptr)
+        return false;
     std_msgs::Header header;
     header.frame_id = "map";
     header.stamp = ros::Time(0);
     pose.header = header;
     return self_pose_listener_ptr_->getSelfPose(pose.pose, header);
+}
+
+bool SingletonDataManager::getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_ptr,
+                                         lanelet::routing::RoutingGraphConstPtr &routing_graph_ptr)
+{
+    if (lanelet_map_ptr_ == nullptr || routing_graph_ptr_ == nullptr)
+        return false;
+    lanelet_map_ptr = lanelet_map_ptr_;
+    routing_graph_ptr = routing_graph_ptr_;
+    return true;
 }
 
 SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};

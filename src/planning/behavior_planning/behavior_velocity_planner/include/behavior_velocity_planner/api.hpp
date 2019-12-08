@@ -17,8 +17,27 @@ bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> point
 {
     return SingletonDataManager::getInstance().getNoGroundPointcloud(pointcloud);
 }
+
+bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist){
+    return SingletonDataManager::getInstance().getCurrentSelfVelocity(twist);
+}
+
+bool isVehicleStopping(){
+    std::shared_ptr<geometry_msgs::TwistStamped const> twist_ptr;
+    getCurrentSelfVelocity(twist_ptr);
+    if (twist_ptr == nullptr)
+    return false;
+    return twist_ptr->twist.linear.x < 0.1 ? true : false;
+}
+
 bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose)
 {
     return SingletonDataManager::getInstance().getCurrentSelfPose(pose);
+}
+
+bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_pt,
+                   lanelet::routing::RoutingGraphConstPtr &routing_graph_ptr)
+{
+    return SingletonDataManager::getInstance().getLaneletMap(lanelet_map_pt, routing_graph_ptr);
 }
 }

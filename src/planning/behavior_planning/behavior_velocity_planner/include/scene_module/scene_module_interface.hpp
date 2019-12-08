@@ -18,7 +18,7 @@ class SceneConditionInterface
 {
 public:
     SceneConditionInterface(){};
-    virtual bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::shared_ptr<SceneModuleInterface> &module_ptr) = 0;
+    virtual bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr) = 0;
     virtual ~SceneConditionInterface(){};
 };
 
