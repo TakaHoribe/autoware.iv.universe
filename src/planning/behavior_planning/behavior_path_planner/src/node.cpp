@@ -84,6 +84,10 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
     {
         for (const auto &lane_id : route_section.lane_ids)
         {
+            if (lane_id != route_section.preferred_lane_id)
+            {
+              continue;
+            }
             lanelet::ConstLineString3d center_line = lanelet::utils::generateFineCenterline(lanelet_map_ptr_->laneletLayer.get(lane_id), 5.0);
             lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(lanelet_map_ptr_->laneletLayer.get(lane_id));
             for (size_t i = 0; i < center_line.size(); ++i)

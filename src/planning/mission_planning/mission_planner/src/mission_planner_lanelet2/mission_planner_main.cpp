@@ -15,15 +15,15 @@
  */
 
 #include <ros/ros.h>
-#include <mission_planner/mission_planner.h>
+#include <mission_planner/lanelet2_impl/mission_planner_lanelet2.h>
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "mission_planner_node");
+  ros::init(argc, argv, "mission_planner_node");
 
-    MissionPlanner mission_planner;
+  mission_planner::MissionPlannerLanelet2 mission_planner;
 
-    ros::spin();
+  ros::spin();
 
-    return 0;
+  return 0;
 }
