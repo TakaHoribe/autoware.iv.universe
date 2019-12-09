@@ -61,6 +61,9 @@ void filterPath(const autoware_planning_msgs::Path &path, autoware_planning_msgs
         {
             latest_id = i;
             filtered_path.points.push_back(path.points.at(latest_id));
+        } else {
+            filtered_path.points.back().twist.linear.x = std::min(filtered_path.points.back().twist.linear.x,
+                                                                  path.points.at(i).twist.linear.x);
         }
     }
 }

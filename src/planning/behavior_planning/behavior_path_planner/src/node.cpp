@@ -135,6 +135,8 @@ void BehaviorPathPlannerNode::filterPath(const autoware_planning_msgs::PathWithL
             filtered_path.points.push_back(path.points.at(latest_id));
         }else {
             filtered_path.points.back().lane_ids.push_back(path.points.at(i).lane_ids.at(0));
+            filtered_path.points.back().twist.linear.x = std::min(filtered_path.points.back().twist.linear.x,
+                                                                  path.points.at(i).twist.linear.x);
         }
     }
 }
