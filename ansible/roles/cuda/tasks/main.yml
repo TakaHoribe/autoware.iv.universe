@@ -3,20 +3,20 @@
   apt_key:
     url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
 
-- name: CUDA (install CUDA 10.1 repository)
+- name: CUDA (install CUDA 10.0 repository)
   become: yes
   apt:
     deb: "{{ item }}"
   with_items:
-    - http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.105-1_amd64.deb
+    - http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
 
-- name: CUDA (install CUDA 10.1)
+- name: CUDA (install CUDA 10.0)
   become: yes
   apt:
     name: "{{ item }}"
     update_cache: yes
   with_items:
-    - cuda-10-1
+    - cuda-10-0
 
 - name: CUDA (add path >> bashrc)
   lineinfile:
