@@ -57,14 +57,14 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &inpu
 bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &input)
 {
     bool is_end_of_life = false;
-    geometry_msgs::PoseStamped self_pose;
-    if (!getCurrentSelfPose(self_pose))
-        return false;
-    const double stop_point_x = (stop_line_[0].x() + stop_line_[1].x()) / 2.0;
-    const double stop_point_y = (stop_line_[0].y() + stop_line_[1].y()) / 2.0;
-    const double x = stop_point_x - self_pose.pose.position.x;
-    const double y = stop_point_y - self_pose.pose.position.y;
-    const double dist = std::sqrt(x * x + y * y);
+    // geometry_msgs::PoseStamped self_pose;
+    // if (!getCurrentSelfPose(self_pose))
+    //     return false;
+    // const double stop_point_x = (stop_line_[0].x() + stop_line_[1].x()) / 2.0;
+    // const double stop_point_y = (stop_line_[0].y() + stop_line_[1].y()) / 2.0;
+    // const double x = stop_point_x - self_pose.pose.position.x;
+    // const double y = stop_point_y - self_pose.pose.position.y;
+    // const double dist = std::sqrt(x * x + y * y);
     // if (state_ == State::START && 5.0 < dist)
     //     is_end_of_life = true;
 
@@ -79,7 +79,7 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
         }
     }
 
-    is_end_of_life = !found;
+    is_end_of_life = (!found && state_ == State::START);
     if (is_end_of_life)
         MomentaryStopCondition::unregisterTask(task_id_);
     return is_end_of_life;
