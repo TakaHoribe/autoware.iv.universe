@@ -14,56 +14,59 @@
  * limitations under the License.
  */
 
+#ifndef MISSION_PLANNER_LANELET2_IMPL_MISSION_PLANNER_LANELET2_H
+#define MISSION_PLANNER_LANELET2_IMPL_MISSION_PLANNER_LANELET2_H
+
+// ROS
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
 
+// Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
-#include <autoware_planning_msgs/Route.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <mission_planner/mission_planner_base.h>
+#include <mission_planner/lanelet2_impl/route_handler.h>
 
+// lanelet
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
+// others
 #include <string>
+#include <unordered_map>
 
-class MissionPlanner
+using LaneletToManuever = std::unordered_map<lanelet::Id, unsigned char>;
+
+namespace mission_planner
+{
+class MissionPlannerLanelet2 : public MissionPlanner
 {
 public:
-  MissionPlanner();
+  MissionPlannerLanelet2();
 
 private:
   bool is_graph_ready_;
-
-  geometry_msgs::PoseStamped goal_pose_;
-  geometry_msgs::PoseStamped start_pose_;
-
-  std::string base_link_frame_;
-  std::string map_frame_;
 
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
 
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Publisher marker_publisher_;
-  ros::Publisher route_publisher_;
-  ros::Subscriber goal_subscriber_;
   ros::Subscriber map_subscriber_;
 
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;
-
-  bool getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose);
-  void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
 
-  bool transformPose(const geometry_msgs::PoseStamped& input_pose, geometry_msgs::PoseStamped* output_pose,
-                     const std::string target_frame);
-
+  // virtual functions
   bool isRoutingGraphReady();
   autoware_planning_msgs::Route planRoute();
   void visualizeRoute(const autoware_planning_msgs::Route& route);
+
+  // routing
+  lanelet::ConstLanelets getMainLanelets(lanelet::routing::Route& route, RouteHandler& lanelet_sequence_finder);
+  autoware_planning_msgs::Route createRouteMessage(lanelet::ConstLanelets main_path,
+                                                   const RouteHandler& route_handler,
+                                                   const LaneletToManuever& lane2maneuver);
+  LaneletToManuever setManeuversToLanes(const lanelet::routing::Route& route, const lanelet::ConstLanelets main_lanes);
 };
+}  // namespace mission_planner
+
+#endif  // MISSION_PLANNER_LANELET2_IMPL_MISSION_PLANNER_LANELET2_H

@@ -15,8 +15,14 @@
  */
 
 #include <ros/ros.h>
-#include <mission_planner/utility_functions.h>
+#include <mission_planner/lanelet2_impl/utility_functions.h>
 #include <lanelet2_core/geometry/Lanelet.h>
+
+bool exists(const std::unordered_set<lanelet::Id>& set, const lanelet::Id& id)
+{
+  return set.find(id) != set.end();
+}
+
 
 std::string toString(const geometry_msgs::Pose& pose)
 {
