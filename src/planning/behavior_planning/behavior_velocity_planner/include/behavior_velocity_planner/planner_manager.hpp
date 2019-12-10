@@ -42,7 +42,6 @@ public:
                 autoware_planning_msgs::PathWithLaneId &output_path_msg);
 
 private:
-  std::vector<std::shared_ptr<SceneConditionInterface>> v_scene_condition_;
-  std::vector<std::shared_ptr<SceneModuleInterface>> v_scene_module_;
+  std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_managers_ptr_;
 };
 }

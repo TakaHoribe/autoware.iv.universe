@@ -13,10 +13,14 @@
 
 namespace behavior_planning
 {
+class MomentaryStopModuleManager;
+
 class MomentaryStopModule : public SceneModuleInterface
 {
 public:
-    MomentaryStopModule(const lanelet::ConstLineString3d &stop_line, const int lane_id);
+    MomentaryStopModule(MomentaryStopModuleManager* manager_ptr,
+                        const lanelet::ConstLineString3d &stop_line,
+                        const int lane_id);
     bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) override;
     bool endOfLife(const autoware_planning_msgs::PathWithLaneId &input) override;
     ~MomentaryStopModule(){};
@@ -28,25 +32,26 @@ private:
         STOP,
         START
     };
+    MomentaryStopModuleManager* manager_ptr_;
     State state_;
     int lane_id_;
     lanelet::ConstLineString3d stop_line_;
     boost::uuids::uuid task_id_;
 };
 
-class MomentaryStopCondition : public SceneConditionInterface
+class MomentaryStopModuleManager : public SceneModuleManagerInterface
 {
 public:
-    MomentaryStopCondition(){};
-    ~MomentaryStopCondition(){};
+    MomentaryStopModuleManager(){};
+    ~MomentaryStopModuleManager(){};
     bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr) override;
     bool isRunning(const lanelet::ConstLineString3d &stop_line);
-    static bool registerTask(const lanelet::ConstLineString3d &stop_line, const boost::uuids::uuid &uuid);
-    static bool unregisterTask(const boost::uuids::uuid &uuid);
+    bool registerTask(const lanelet::ConstLineString3d &stop_line, const boost::uuids::uuid &uuid);
+    bool unregisterTask(const boost::uuids::uuid &uuid);
 
 private:
-    static std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;
-    static std::unordered_map<std::string, lanelet::ConstLineString3d> task_id_reverse_map_;
+    std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;
+    std::unordered_map<std::string, lanelet::ConstLineString3d> task_id_reverse_map_;
 };
 
 

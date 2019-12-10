@@ -3,13 +3,17 @@
 
 namespace behavior_planning
 {
-MomentaryStopModule::MomentaryStopModule(const lanelet::ConstLineString3d &stop_line, const int lane_id)
-    : state_(State::APPROARCH),
+MomentaryStopModule::MomentaryStopModule(MomentaryStopModuleManager *manager_ptr,
+                                         const lanelet::ConstLineString3d &stop_line,
+                                         const int lane_id)
+    : manager_ptr_(manager_ptr),
+      state_(State::APPROARCH),
       stop_line_(stop_line),
       lane_id_(lane_id),
       task_id_(boost::uuids::random_generator()())
 {
-    MomentaryStopCondition::registerTask(stop_line, task_id_);
+    if (manager_ptr_ != nullptr)
+        manager_ptr_->registerTask(stop_line, task_id_);
 };
 
 bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output)
@@ -81,11 +85,12 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
 
     is_end_of_life = (!found && state_ == State::START);
     if (is_end_of_life)
-        MomentaryStopCondition::unregisterTask(task_id_);
+        if (manager_ptr_ != nullptr)
+            manager_ptr_->unregisterTask(task_id_);
     return is_end_of_life;
 }
-bool MomentaryStopCondition::startCondition(const autoware_planning_msgs::PathWithLaneId &input,
-                                            std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr)
+bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId &input,
+                                                std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr)
 {
     geometry_msgs::PoseStamped self_pose;
     if (!getCurrentSelfPose(self_pose))
@@ -110,7 +115,7 @@ bool MomentaryStopCondition::startCondition(const autoware_planning_msgs::PathWi
                 {
                     if (!isRunning(traffic_sign_stopline))
                     {
-                        v_module_ptr.push_back(std::make_shared<MomentaryStopModule>(traffic_sign_stopline, input.points.at(i).lane_ids.at(j)));
+                        v_module_ptr.push_back(std::make_shared<MomentaryStopModule>(this, traffic_sign_stopline, input.points.at(i).lane_ids.at(j)));
                     }
                 }
             }
@@ -119,29 +124,26 @@ bool MomentaryStopCondition::startCondition(const autoware_planning_msgs::PathWi
     return true;
 }
 
-bool MomentaryStopCondition::isRunning(const lanelet::ConstLineString3d &stop_line)
+bool MomentaryStopModuleManager::isRunning(const lanelet::ConstLineString3d &stop_line)
 {
     if (task_id_direct_map_.count(stop_line) == 0)
         return false;
     return true;
 }
 
-bool MomentaryStopCondition::registerTask(const lanelet::ConstLineString3d &stop_line, const boost::uuids::uuid &uuid)
+bool MomentaryStopModuleManager::registerTask(const lanelet::ConstLineString3d &stop_line, const boost::uuids::uuid &uuid)
 {
     ROS_INFO("Registered Momentary Stop Task");
     task_id_direct_map_.emplace(stop_line, boost::lexical_cast<std::string>(uuid));
     task_id_reverse_map_.emplace(boost::lexical_cast<std::string>(uuid), stop_line);
     return true;
 }
-bool MomentaryStopCondition::unregisterTask(const boost::uuids::uuid &uuid)
+bool MomentaryStopModuleManager::unregisterTask(const boost::uuids::uuid &uuid)
 {
     ROS_INFO("Unregistered Momentary Stop Task");
     task_id_direct_map_.erase(task_id_reverse_map_.at(boost::lexical_cast<std::string>(uuid)));
     task_id_reverse_map_.erase(boost::lexical_cast<std::string>(uuid));
     return true;
 }
-
-std::unordered_map<lanelet::ConstLineString3d, std::string> MomentaryStopCondition::task_id_direct_map_;
-std::unordered_map<std::string, lanelet::ConstLineString3d> MomentaryStopCondition::task_id_reverse_map_;
 
 } // namespace behavior_planning
