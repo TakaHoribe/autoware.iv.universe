@@ -99,18 +99,6 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("min_pitch_rad", min_pitch_rad_, double(-0.1)); // [rad]
   pnh_.param("lpf_pitch_gain", lpf_pitch_gain_, double(0.95));
 
-  // parameters for velocity feedback
-  pnh_.param("kp_pid_velocity", kp_pid_velocity_, double(0.0));
-  pnh_.param("ki_pid_velocity", ki_pid_velocity_, double(0.0));
-  pnh_.param("kd_pid_velocity", kd_pid_velocity_, double(0.0));
-  pnh_.param("max_ret_pid_velocity", max_ret_pid_velocity_, double(0.0));  // [m/s^2]
-  pnh_.param("min_ret_pid_velocity", min_ret_pid_velocity_, double(0.0));  // [m/s^2]
-  pnh_.param("max_p_pid_velocity", max_p_pid_velocity_, double(0.0));      // [m/s^2]
-  pnh_.param("min_p_pid_velocity", min_p_pid_velocity_, double(0.0));      // [m/s^2]
-  pnh_.param("max_i_pid_velocity", max_i_pid_velocity_, double(0.0));      // [m/s^2]
-  pnh_.param("min_i_pid_velocity", min_i_pid_velocity_, double(0.0));      // [m/s^2]
-  pnh_.param("max_d_pid_velocity", max_d_pid_velocity_, double(0.0));      // [m/s^2]
-  pnh_.param("min_d_pid_velocity", min_d_pid_velocity_, double(0.0));      // [m/s^2]
   pnh_.param("current_velocity_threshold_pid_integrate", current_velocity_threshold_pid_integrate_, double(0.5));  // [m/s]
   pnh_.param("lpf_velocity_error_gain", lpf_velocity_error_gain_, double(0.9));
 
@@ -122,10 +110,24 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pub_debug_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug_values", 1);
   timer_control_ = nh_.createTimer(ros::Duration(1.0 / control_rate_), &VelocityController::callbackTimerControl, this);
 
-  // initialize
-  pid_velocity_.setGains(kp_pid_velocity_, ki_pid_velocity_, kd_pid_velocity_);
-  pid_velocity_.setLimits(max_ret_pid_velocity_, min_ret_pid_velocity_, max_p_pid_velocity_, min_p_pid_velocity_,
-                          max_i_pid_velocity_, min_i_pid_velocity_, max_d_pid_velocity_, min_d_pid_velocity_);
+  // initialize PID gain
+  double kp, ki, kd;
+  pnh_.param("kp_pid_velocity", kp, double(0.0));
+  pnh_.param("ki_pid_velocity", ki, double(0.0));
+  pnh_.param("kd_pid_velocity", kd, double(0.0));
+  pid_velocity_.setGains(kp, ki, kd);
+
+  // initialize PID limits
+  double max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d;
+  pnh_.param("max_ret_pid_velocity", max_pid, double(0.0));  // [m/s^2]
+  pnh_.param("min_ret_pid_velocity", min_pid, double(0.0));  // [m/s^2]
+  pnh_.param("max_p_pid_velocity", max_p, double(0.0));      // [m/s^2]
+  pnh_.param("min_p_pid_velocity", min_p, double(0.0));      // [m/s^2]
+  pnh_.param("max_i_pid_velocity", max_i, double(0.0));      // [m/s^2]
+  pnh_.param("min_i_pid_velocity", min_i, double(0.0));      // [m/s^2]
+  pnh_.param("max_d_pid_velocity", max_d, double(0.0));      // [m/s^2]
+  pnh_.param("min_d_pid_velocity", min_d, double(0.0));      // [m/s^2]
+  pid_velocity_.setLimits(max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d);
 
   lpf_pitch.init(lpf_pitch_gain_);
   lpf_velocity_error.init(lpf_velocity_error_gain_);

@@ -106,17 +106,6 @@ private:
   double lpf_pitch_gain_;
 
   // velocity feedback
-  double kp_pid_velocity_;
-  double ki_pid_velocity_;
-  double kd_pid_velocity_;
-  double max_ret_pid_velocity_;
-  double min_ret_pid_velocity_;
-  double max_p_pid_velocity_;
-  double min_p_pid_velocity_;
-  double max_d_pid_velocity_;
-  double min_d_pid_velocity_;
-  double max_i_pid_velocity_;
-  double min_i_pid_velocity_;
   double current_velocity_threshold_pid_integrate_;
   double lpf_velocity_error_gain_;
 
