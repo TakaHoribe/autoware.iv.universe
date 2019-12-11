@@ -555,10 +555,16 @@ double VelocityController::applyVelocityFeedback(const double target_acceleratio
 {
   if (use_velocity_feedback_)
   {
-    double feedbacked_acceleration = target_acceleration + pid_velocity_.calculate(error_velocity, dt, is_integrated);
+    std::vector<double> pid_contributions(3);
+    double feedbacked_acceleration =
+        target_acceleration + pid_velocity_.calculate(error_velocity, dt, is_integrated, pid_contributions);
+
     if (use_pub_debug_)
     {
       debug_values_.data.at(8) = feedbacked_acceleration;
+      debug_values_.data.at(18) = pid_contributions.at(0);
+      debug_values_.data.at(19) = pid_contributions.at(1);
+      debug_values_.data.at(20) = pid_contributions.at(2);
     }
 
     return feedbacked_acceleration;

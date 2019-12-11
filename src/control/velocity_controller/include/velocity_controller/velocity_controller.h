@@ -156,7 +156,7 @@ private:
 
   // debug topic
   std_msgs::Float32MultiArray debug_values_;
-  unsigned int num_debug_values_ = 18;
+  unsigned int num_debug_values_ = 21;
 
   /**
    * [0]: dt
