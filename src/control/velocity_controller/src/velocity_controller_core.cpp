@@ -284,7 +284,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
 
   // stop state
   if (current_velocity < current_velocity_threshold_stop_state_ &&
-      target_velocity < target_velocity_threshold_stop_state_)
+      target_velocity < target_velocity_threshold_stop_state_ && !is_smooth_stop_)
   {
     double cmd_acceleration = applyAccelerationLimitFilter(stop_state_acceleration_, max_acceleration_, min_acceleration_);
     cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
