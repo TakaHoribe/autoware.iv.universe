@@ -30,13 +30,13 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("control_rate", control_rate_, double(30.0));
 
   // parameters to enable functions
-  pnh_.param("use_sudden_stop_", use_sudden_stop_, bool(true));
-  pnh_.param("use_smooth_stop_", use_smooth_stop_, bool(true));
-  pnh_.param("use_delay_compensation_", use_delay_compensation_, bool(true));
-  pnh_.param("use_velocity_feedback_", use_velocity_feedback_, bool(true));
-  pnh_.param("use_acceleration_limit_", use_acceleration_limit_, bool(true));
-  pnh_.param("use_jerk_limit_", use_jerk_limit_, bool(true));
-  pnh_.param("use_slope_compensation_", use_slope_compensation_, bool(true));
+  pnh_.param("use_sudden_stop", use_sudden_stop_, bool(true));
+  pnh_.param("use_smooth_stop", use_smooth_stop_, bool(true));
+  pnh_.param("use_delay_compensation", use_delay_compensation_, bool(true));
+  pnh_.param("use_velocity_feedback", use_velocity_feedback_, bool(true));
+  pnh_.param("use_acceleration_limit", use_acceleration_limit_, bool(true));
+  pnh_.param("use_jerk_limit", use_jerk_limit_, bool(true));
+  pnh_.param("use_slope_compensation", use_slope_compensation_, bool(true));
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("use_pub_debug", use_pub_debug_, bool(false));
 
@@ -99,10 +99,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("min_pitch_rad", min_pitch_rad_, double(-0.1)); // [rad]
   pnh_.param("lpf_pitch_gain", lpf_pitch_gain_, double(0.95));
 
-  // parameters for velocity feedback
-  pnh_.param("kp_pid_velocity", kp_pid_velocity_, double(0.0));
-  pnh_.param("ki_pid_velocity", ki_pid_velocity_, double(0.0));
-  pnh_.param("kd_pid_velocity", kd_pid_velocity_, double(0.0));
+  pnh_.param("current_velocity_threshold_pid_integrate", current_velocity_threshold_pid_integrate_, double(0.5));  // [m/s]
   pnh_.param("lpf_velocity_error_gain", lpf_velocity_error_gain_, double(0.9));
 
   // subscriber, publisher and timer
@@ -113,8 +110,25 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pub_debug_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug_values", 1);
   timer_control_ = nh_.createTimer(ros::Duration(1.0 / control_rate_), &VelocityController::callbackTimerControl, this);
 
-  // initialize
-  pid_velocity_.init(kp_pid_velocity_, ki_pid_velocity_, kd_pid_velocity_);
+  // initialize PID gain
+  double kp, ki, kd;
+  pnh_.param("kp_pid_velocity", kp, double(0.0));
+  pnh_.param("ki_pid_velocity", ki, double(0.0));
+  pnh_.param("kd_pid_velocity", kd, double(0.0));
+  pid_velocity_.setGains(kp, ki, kd);
+
+  // initialize PID limits
+  double max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d;
+  pnh_.param("max_ret_pid_velocity", max_pid, double(0.0));  // [m/s^2]
+  pnh_.param("min_ret_pid_velocity", min_pid, double(0.0));  // [m/s^2]
+  pnh_.param("max_p_pid_velocity", max_p, double(0.0));      // [m/s^2]
+  pnh_.param("min_p_pid_velocity", min_p, double(0.0));      // [m/s^2]
+  pnh_.param("max_i_pid_velocity", max_i, double(0.0));      // [m/s^2]
+  pnh_.param("min_i_pid_velocity", min_i, double(0.0));      // [m/s^2]
+  pnh_.param("max_d_pid_velocity", max_d, double(0.0));      // [m/s^2]
+  pnh_.param("min_d_pid_velocity", min_d, double(0.0));      // [m/s^2]
+  pid_velocity_.setLimits(max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d);
+
   lpf_pitch.init(lpf_pitch_gain_);
   lpf_velocity_error.init(lpf_velocity_error_gain_);
 
@@ -249,8 +263,11 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   prev_shift_ = shift;
   const double pitch = lpf_pitch.filter(getPitch(current_pose_ptr_->pose.orientation));
   const double error_velocity = lpf_velocity_error.filter(target_velocity - current_velocity);
-  DEBUG_INFO("[VC Init params] current_vel = %f, target_vel = %f, target_acc = %f, pitch = %f, error_velocity = %f", current_velocity,
-             target_velocity, target_acceleration, pitch, error_velocity);
+  DEBUG_INFO("[VC Init params] current_vel = %f, target_vel = %f, target_acc = %f, pitch = %f, error_velocity = %f",
+             current_velocity, target_velocity, target_acceleration, pitch, error_velocity);
+  writeDebugValuesParameters(dt, current_velocity, target_velocity, target_acceleration, shift, pitch, error_velocity,
+                             closest_idx);
+
 
   // sudden stop
   if (use_sudden_stop_ && is_sudden_stop_)
@@ -269,7 +286,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
 
   // stop state
   if (current_velocity < current_velocity_threshold_stop_state_ &&
-      target_velocity < target_velocity_threshold_stop_state_)
+      target_velocity < target_velocity_threshold_stop_state_ && !is_smooth_stop_)
   {
     double cmd_acceleration = applyAccelerationLimitFilter(stop_state_acceleration_, max_acceleration_, min_acceleration_);
     cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
@@ -288,7 +305,8 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   // emergency stop by this controller
   if (is_emergency_stop_smooth_stop_)
   {
-    double cmd_acceleration = applyJerkLimitFilter(emergency_stop_acceleration_, dt, max_jerk_emergency_stop_, min_jerk_emergency_stop_);
+    double cmd_acceleration =
+        applyJerkLimitFilter(emergency_stop_acceleration_, dt, max_jerk_emergency_stop_, min_jerk_emergency_stop_);
     publishControlCommandStamped(emergency_stop_velocity_, cmd_acceleration);
     pid_velocity_.reset();
     resetSmoothStop();
@@ -331,6 +349,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
       cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
       publishControlCommandStamped(target_velocity, cmd_acceleration);
       pid_velocity_.reset();
+      DEBUG_INFO("[VC Smooth stop] Smooth stopping. cmd_acc = %f", cmd_acceleration);
       writeDebugValuesCmdAcceleration(cmd_acceleration, 4.0);
       publishDebugValues();
       return;
@@ -353,8 +372,9 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
     }
     DEBUG_INFO("[VC Velocity Feedback] current_vel = %f, target_vel = %f, target_acc = %f", current_velocity,
                target_velocity, target_acceleration);
+    const bool is_integrated = current_velocity < current_velocity_threshold_pid_integrate_ ? false : true;
 
-    double cmd_acceleration = applyVelocityFeedback(target_acceleration, error_velocity, dt);
+    double cmd_acceleration = applyVelocityFeedback(target_acceleration, error_velocity, dt, is_integrated);
     cmd_acceleration = applySlopeCompensation(cmd_acceleration, pitch, shift);
     cmd_acceleration = applyAccelerationLimitFilter(cmd_acceleration, max_acceleration_, min_acceleration_);
     cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
@@ -532,14 +552,21 @@ double VelocityController::applySlopeCompensation(const double acceleration, con
   }
 }
 
-double VelocityController::applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt)
+double VelocityController::applyVelocityFeedback(const double target_acceleration, const double error_velocity,
+                                                 const double dt, const bool is_integrated)
 {
   if (use_velocity_feedback_)
   {
-    double feedbacked_acceleration = target_acceleration + pid_velocity_.calculate(error_velocity, dt);
+    std::vector<double> pid_contributions(3);
+    double feedbacked_acceleration =
+        target_acceleration + pid_velocity_.calculate(error_velocity, dt, is_integrated, pid_contributions);
+
     if (use_pub_debug_)
     {
       debug_values_.data.at(8) = feedbacked_acceleration;
+      debug_values_.data.at(18) = pid_contributions.at(0);
+      debug_values_.data.at(19) = pid_contributions.at(1);
+      debug_values_.data.at(20) = pid_contributions.at(2);
     }
 
     return feedbacked_acceleration;
@@ -561,9 +588,10 @@ void VelocityController::resetEmergencyStop()
   is_emergency_stop_smooth_stop_ = false;
 }
 
-void VelocityController::writeDebugValuesParameters(const double dt, const double current_velocity, const double target_velocity,
-                                                    const double target_acceleration, const Shift shift, const double pitch, 
-                                                    const double error_velocity, const int32_t closest_waypoint_index)
+void VelocityController::writeDebugValuesParameters(const double dt, const double current_velocity,
+                                                    const double target_velocity, const double target_acceleration,
+                                                    const Shift shift, const double pitch, const double error_velocity,
+                                                    const int32_t closest_waypoint_index)
 {
   if (use_pub_debug_)
   {

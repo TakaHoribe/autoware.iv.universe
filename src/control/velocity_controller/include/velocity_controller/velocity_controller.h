@@ -51,21 +51,21 @@ private:
   ros::Timer timer_control_;
 
   tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+  tf2_ros::TransformListener tf_listener_; //!< @brief tf listener
 
   // parameters
   // enabled flags
   bool use_sudden_stop_, use_smooth_stop_, use_delay_compensation_, use_velocity_feedback_, use_acceleration_limit_,
       use_jerk_limit_, use_slope_compensation_;
-  bool show_debug_info_;  //!< @brief flag to show debug info
+  bool show_debug_info_; //!< @brief flag to show debug info
   bool use_pub_debug_;
 
   // timer callback
   double control_rate_;
 
   // dt
-  double max_dt_;  //!< @brief max value of dt
-  double min_dt_;  //!< @brief min value of dt
+  double max_dt_; //!< @brief max value of dt
+  double min_dt_; //!< @brief min value of dt
 
   // closest waypoint
   double distance_threshold_closest_, angle_threshold_closest_;
@@ -106,7 +106,7 @@ private:
   double lpf_pitch_gain_;
 
   // velocity feedback
-  double kp_pid_velocity_, ki_pid_velocity_, kd_pid_velocity_;
+  double current_velocity_threshold_pid_integrate_;
   double lpf_velocity_error_gain_;
 
   // variables
@@ -145,7 +145,7 @@ private:
 
   // debug topic
   std_msgs::Float32MultiArray debug_values_;
-  unsigned int num_debug_values_ = 18;
+  unsigned int num_debug_values_ = 21;
 
   /**
    * [0]: dt
@@ -155,7 +155,7 @@ private:
    * [4]: shift
    * [5]: pitch after LPF [rad]
    * [6]: error velocity after LPF
-   * [7]: mode (0: init check, 1: PID, 2: Stop, 3: Sudden stop, 4: Smooth stop, 5: Closest waypoint error, 6: Emergency stop)
+   * [7]: mode (0: init check, 1: PID, 2: Stop, 3: Sudden stop, 4: Smooth stop, 5: Closest waypoint error, 6: Emergency stop) 
    * [8]: acceleration after PID
    * [9]: acceleration after acceleration limit
    * [10]: acceleration after jerk limit
@@ -169,10 +169,10 @@ private:
    **/
 
   // methods
-  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
-  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr& msg);
+  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
+  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr &msg);
   void callbackIsSuddenStop(const std_msgs::Bool msg);
-  void callbackTimerControl(const ros::TimerEvent& event);
+  void callbackTimerControl(const ros::TimerEvent &event);
 
   void publishControlCommandStamped(const double velocity, const double acceleration);
   void publishDebugValues();
@@ -182,19 +182,21 @@ private:
   bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps);
 
   enum Shift getCurrentShiftMode(const double target_velocity, const double target_acceleration);
-  double getPitch(const geometry_msgs::Quaternion& quaternion) const;
+  double getPitch(const geometry_msgs::Quaternion &quaternion) const;
   double calculateAccelerationSmoothStop();
   double applyAccelerationLimitFilter(const double acceleration, const double max_acceleration,
                                       const double min_acceleration);
-  double applyJerkLimitFilter(const double acceleration, const double dt, const double max_jerk,
-                              const double min_jerk);
+  double applyJerkLimitFilter(const double acceleration, const double dt, const double max_jerk, const double min_jerk);
   double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
-  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt);
+  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt,
+                               const bool is_integrated);
   void resetSmoothStop();
   void resetEmergencyStop();
 
   void writeDebugValuesParameters(const double dt, const double current_velocity, const double target_velocity,
-      const double target_acceleration, const Shift shift, const double pitch, const double error_velocity, const int32_t closest_waypoint_index);
+                                  const double target_acceleration, const Shift shift, const double pitch,
+                                  const double error_velocity, const int32_t closest_waypoint_index);
+
   void writeDebugValuesCmdAcceleration(const double cmd_acceleration, const double mode);
   void resetDebugValues();
 };
