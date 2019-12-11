@@ -1,5 +1,5 @@
 # vehicle velocity [m/s]
-float64 speed
+float64 velocity
 
 # vehicle steering (tire) angle [rad]
 float64 steering_angle 

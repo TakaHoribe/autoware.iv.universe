@@ -372,7 +372,7 @@ void VelocityController::publishControlCommandStamped(const double velocity, con
 
   autoware_control_msgs::ControlCommandStamped cmd;
   cmd.header.stamp = ros::Time::now();
-  cmd.control.speed = velocity;
+  cmd.control.velocity = velocity;
   cmd.control.acceleration = acceleration;
   pub_control_cmd_.publish(cmd);
 }

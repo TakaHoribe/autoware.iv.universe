@@ -66,22 +66,10 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   std::string vehicle_model_type_str;
   pnh_.param("vehicle_model_type", vehicle_model_type_str, std::string("IDEAL_TWIST"));
   ROS_INFO("vehicle_model_type = %s", vehicle_model_type_str.c_str());
-  if (vehicle_model_type_str == "IDEAL_TWIST")
-  {
-    vehicle_model_type_ = VehicleModelType::IDEAL_TWIST;
-    vehicle_model_ptr_ = std::make_shared<SimModelIdealTwist>();
-  }
-  else if (vehicle_model_type_str == "IDEAL_STEER")
+  if (vehicle_model_type_str == "IDEAL_STEER")
   {
     vehicle_model_type_ = VehicleModelType::IDEAL_STEER;
     vehicle_model_ptr_ = std::make_shared<SimModelIdealSteer>(wheelbase_);
-  }
-  else if (vehicle_model_type_str == "DELAY_TWIST")
-  {
-    vehicle_model_type_ = VehicleModelType::DELAY_TWIST;
-    vehicle_model_ptr_ =
-        std::make_shared<SimModelTimeDelayTwist>(vel_lim, angvel_lim, accel_rate, angvel_rate, dt, vel_time_delay,
-                                                 vel_time_constant, angvel_time_delay, angvel_time_constant);
   }
   else if (vehicle_model_type_str == "DELAY_STEER")
   {
@@ -89,11 +77,6 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteer>(vel_lim, steer_lim, accel_rate, steer_rate_lim,
                                                                   wheelbase_, dt, vel_time_delay, vel_time_constant,
                                                                   steer_time_delay, steer_time_constant);
-  }
-  else if (vehicle_model_type_str == "CONST_ACCEL_TWIST")
-  {
-    vehicle_model_type_ = VehicleModelType::CONST_ACCEL_TWIST;
-    vehicle_model_ptr_ = std::make_shared<SimModelConstantAccelTwist>(vel_lim, angvel_lim, accel_rate, angvel_rate);
   }
   else
   {
@@ -231,11 +214,11 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   autoware_control_msgs::VehicleStatusStamped vs;
   vs.header.stamp = ros::Time::now();
   vs.header.frame_id = simulation_frame_id_;
-  vs.status.speed = vehicle_model_ptr_->getVx();
+  vs.status.velocity = vehicle_model_ptr_->getVx();
   vs.status.steering_angle = vehicle_model_ptr_->getSteer();
   if (add_measurement_noise_)
   {
-    vs.status.speed += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
+    vs.status.velocity += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
     vs.status.steering_angle += (*steer_norm_dist_ptr_)(*rand_engine_ptr_);
   }
   pub_vehicle_status_.publish(vs);
@@ -244,17 +227,11 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
 void Simulator::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStampedConstPtr &msg)
 {
   current_vehicle_cmd_ptr_ = std::make_shared<autoware_control_msgs::VehicleCommandStamped>(*msg);
-  if (vehicle_model_type_ == VehicleModelType::IDEAL_TWIST || vehicle_model_type_ == VehicleModelType::DELAY_TWIST ||
-      vehicle_model_type_ == VehicleModelType::CONST_ACCEL_TWIST)
+
+  if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER || vehicle_model_type_ == VehicleModelType::DELAY_STEER)
   {
     Eigen::VectorXd input(2);
-    input << msg->command.twist.twist.linear.x, msg->command.twist.twist.angular.z;
-    vehicle_model_ptr_->setInput(input);
-  }
-  else if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER || vehicle_model_type_ == VehicleModelType::DELAY_STEER)
-  {
-    Eigen::VectorXd input(2);
-    input << msg->command.control.control.speed, msg->command.control.control.steering_angle;
+    input << msg->command.control.velocity, msg->command.control.steering_angle;
     vehicle_model_ptr_->setInput(input);
   }
   else
@@ -291,20 +268,12 @@ void Simulator::setInitialState(const geometry_msgs::Pose &pose, const geometry_
   const double y = pose.position.y;
   const double yaw = tf2::getYaw(pose.orientation);
   const double vx = twist.linear.x;
-  const double wz = twist.angular.z;
   const double steer = 0.0;
 
-  if (vehicle_model_type_ == VehicleModelType::IDEAL_TWIST || vehicle_model_type_ == VehicleModelType::IDEAL_STEER)
+  if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER)
   {
     Eigen::VectorXd state(3);
     state << x, y, yaw;
-    vehicle_model_ptr_->setState(state);
-  }
-  else if (vehicle_model_type_ == VehicleModelType::DELAY_TWIST ||
-           vehicle_model_type_ == VehicleModelType::CONST_ACCEL_TWIST)
-  {
-    Eigen::VectorXd state(5);
-    state << x, y, yaw, vx, wz;
     vehicle_model_ptr_->setState(state);
   }
   else if (vehicle_model_type_ == VehicleModelType::DELAY_STEER)
