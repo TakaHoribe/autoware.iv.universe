@@ -18,106 +18,70 @@
 #ifndef MAP_BASED_PREDICTION_H
 #define MAP_BASED_PREDICTION_H
 
-// // headers in STL
-#include <iostream>
-#include <cmath>
 
-// headers in ROS
-// #include <ros/ros.h>
-// #include <sensor_msgs/PointCloud2.h>
-// #include <tf2_ros/transform_listener.h>
-// #include <tf2_ros/buffer.h>
-// #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-//headers in ROS
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Quaternion.h>
-#include <unique_id/unique_id.h>
+namespace autoware_perception_msgs
+{
+  ROS_DECLARE_MESSAGE(DynamicObjectArray);
+  ROS_DECLARE_MESSAGE(DynamicObject);
+  ROS_DECLARE_MESSAGE(PredictedPath);
+}
 
-// headers in PCL
-// #include <pcl/io/pcd_io.h>
+namespace geometry_msgs
+{
+  ROS_DECLARE_MESSAGE(Point);
+  ROS_DECLARE_MESSAGE(Pose);
+}
 
-//headers in Eigen
-#include <Eigen/Core>
-#include <Eigen/Dense>
+struct DynamicObjectWithLanes
+{
+  autoware_perception_msgs::DynamicObject object;
+  std::vector<std::vector<geometry_msgs::Pose>> lanes;
+};
 
-// headers in local files
-#include "vectormap_struct.h"
-#include "autoware_perception_msgs/DynamicObjectArray.h"
+struct DynamicObjectWithLanesArray
+{
+  std_msgs::Header header;
+  std::vector<DynamicObjectWithLanes> objects;
+};
 
-// #include "lidar_point_pillars/point_pillars.h"
+class Spline2D;
 
 class MapBasedPrediction
 {
 private:
-
-  // rosparam
-  // bool has_subscribed_map_;
-  // bool baselink_support_;
-  // bool reproduce_result_mode_;
-  // float score_threshold_;
-  // float nms_overlap_threshold_;
-  // std::string pfe_onnx_file_;
-  // std::string rpn_onnx_file_;
-  // end rosparam
-
-  // ros::NodeHandle nh_;
-  // ros::NodeHandle pnh_;
-  // ros::Subscriber sub_objects_;
-  // ros::Publisher pub_objects_;
-
-  // tf2_ros::Buffer tf_buffer_;
-  // tf2_ros::TransformListener tf_listener_;
-
-  // VectorMap vectormap_;
-
-  // void objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& msg);
+  double interpolating_resolution_;  
+  
+  
   bool getPredictedPath(
-    const std::vector<LanePoint>& goal_path,
-    const double current_yaw,
-    const double current_height,
+    const double height,
     const double current_d_position,
     const double current_d_velocity,
     const double current_s_position,
     const double current_s_velocity,
     const double target_s_position, 
+    const std_msgs::Header& origin_header,
+    Spline2D& spline2d,
     autoware_perception_msgs::PredictedPath& path);
+  
+  bool getLinearPredictedPath(
+        const geometry_msgs::Pose& object_pose,
+        const double linear_velocity,
+        const std_msgs::Header& origin_header,
+        autoware_perception_msgs::PredictedPath& path);
 
-  bool getNearestLane(const std::vector<LanePoint>& lane_points, 
-  const geometry_msgs::Pose object_pose,
-  LanePoint& nearest_lane_point);
-
-  bool calculateCartesianPositionUsingLanePoints(const std::vector<LanePoint>& goal_path, 
-                           const double target_s,
-                           const double target_d,
-                           geometry_msgs::PoseWithCovarianceStamped& converted_position);
-  bool convertFrenetPosition2CartesianPosition(
-                           const double target_s,
-                           const double target_d,
-                           const geometry_msgs::Point& cumulated_s_position,
-                           const double delta_s,
-                           const double delta_yaw,
-                           geometry_msgs::PoseWithCovarianceStamped& converted_position);
-                           
-  double calculateLikelyhood(const double desired_yaw, const double current_d, const double current_yaw);
+  // double calculateLikelyhood(const double desired_yaw, const double current_d, const double current_yaw);
+  double calculateLikelyhood(const double current_d);
   
   bool normalizeLikelyhood(std::vector<autoware_perception_msgs::PredictedPath>& paths);
 
-  void toEulerAngle(const geometry_msgs::Quaternion& q, 
-                    double& roll, double& pitch, double& yaw);
 public:
-  MapBasedPrediction();
+  MapBasedPrediction(double interpolating_resolution);
   
-  bool doPrediction(const autoware_perception_msgs::DynamicObjectArray& in_objects,
-                    const std::vector<LanePoint>& lane_poitns,
-                    autoware_perception_msgs::DynamicObjectArray& out_objects);
+  bool doPrediction(const DynamicObjectWithLanesArray& in_objects, 
+                          std::vector<autoware_perception_msgs::DynamicObject>& out_objects,
+                          std::vector<geometry_msgs::Point>& debug_interpolated_points);
                     
   
-  /**
-  * @brief Create ROS pub/sub obejct
-
-  * @details Create/Initializing ros pub/sub object
-  */
-  // void createROSPubSub();
 };
 
 #endif  // MAP_BASED_PREDICTION_H
