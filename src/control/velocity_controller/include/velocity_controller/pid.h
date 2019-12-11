@@ -17,20 +17,37 @@
 #ifndef VELOCITY_CONTROLLER_PID
 #define VELOCITY_CONTROLLER_PID
 
+#include <algorithm>
+
 class PIDController
 {
 public:
   PIDController();
   ~PIDController() = default;
 
-  double calculate(double error, double dt);
-  void init(double kp, double ki, double kd);
+  double calculate(double error, double dt, bool is_integrated);
+  void setGains(double kp, double ki, double kd);
+  void setLimits(double max_ret, double min_ret, double max_ret_p, double min_ret_p, double max_ret_i, double min_ret_i,
+                 double max_ret_d, double min_ret_d);
   void reset();
 
 private:
-  double kp_, ki_, kd_;
-  double error_integral_, prev_error_;
-  bool first_time_;
+  // parameters
+  double kp_;
+  double ki_;
+  double kd_;
+  double max_ret_p_;
+  double min_ret_p_;
+  double max_ret_i_;
+  double min_ret_i_;
+  double max_ret_d_;
+  double min_ret_d_;
+  double max_ret_;
+  double min_ret_;
+  // states
+  double error_integral_;
+  double prev_error_;
+  bool is_first_time_;
 };
 
 #endif
