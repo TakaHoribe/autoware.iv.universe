@@ -74,6 +74,15 @@
   <arg name="kp_pid_velocity" default="0.5" />
   <arg name="ki_pid_velocity" default="0.1" />
   <arg name="kd_pid_velocity" default="0" />
+  <arg name="max_ret_pid_velocity" default="1.0" />
+  <arg name="min_ret_pid_velocity" default="-1.0" />
+  <arg name="max_p_pid_velocity" default="1.0" />
+  <arg name="min_p_pid_velocity" default="-1.0" />
+  <arg name="max_i_pid_velocity" default="0.3" />
+  <arg name="min_i_pid_velocity" default="-0.3" />
+  <arg name="max_d_pid_velocity" default="0" />
+  <arg name="min_d_pid_velocity" default="0" />
+  <arg name="current_velocity_threshold_pid_integrate" default="0.5" />
   <arg name="lpf_velocity_error_gain" default="0.9" />
 
 
@@ -159,6 +168,12 @@
     <param name="kp_pid_velocity" value="$(arg kp_pid_velocity)" />
     <param name="ki_pid_velocity" value="$(arg ki_pid_velocity)" />
     <param name="kd_pid_velocity" value="$(arg kd_pid_velocity)" />
+    <param name="max_ret_pid_velocity" value="$(arg max_ret_pid_velocity)"/>
+    <param name="min_ret_pid_velocity" value="$(arg min_ret_pid_velocity)"/>
+    <param name="max_p_pid_velocity" value="$(arg max_p_pid_velocity)"/>
+    <param name="min_p_pid_velocity" value="$(arg min_p_pid_velocity)"/>
+    <param name="max_i_pid_velocity" value="$(arg max_i_pid_velocity)"/>
+    <param name="min_i_pid_velocity" value="$(arg min_i_pid_velocity)"/>
     <param name="lpf_velocity_error_gain" value="$(arg lpf_velocity_error_gain)" />
 
 

@@ -18,7 +18,6 @@
 #include <cmath>
 #include <gtest/gtest.h>
 #include <iostream>
-#include <amathutils_lib/amathutils.hpp>
 
 #include "simple_planning_simulator/simple_planning_simulator_core.hpp"
 

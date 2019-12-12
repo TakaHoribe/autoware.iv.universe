@@ -29,7 +29,7 @@
     <arg name="points_raw6" default=""/>
     <arg name="points_raw7" default=""/>
     <arg name="points_number" default="1"/>
-    <arg name="use_vector_map" default="false"/>
+    <arg name="use_vector_map" default="true"/>
 
     <!-- preception module -->
     <group ns="perception">
@@ -54,7 +54,7 @@
                 <arg name="image_raw7" default="$(arg image_raw7)"/>
                 <arg name="camera_info7" default="$(arg camera_info7)"/>
                 <arg name="image_number" default="$(arg image_number)"/>
-                <arg name="use_vector_map" default="$(arg use_vector_map)"/>
+                <arg name="use_vector_map" default="false"/>
             </include>
         </group>
         <!-- tracking module -->

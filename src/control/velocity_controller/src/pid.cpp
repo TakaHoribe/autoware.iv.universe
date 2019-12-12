@@ -20,39 +20,69 @@ PIDController::PIDController()
 {
   error_integral_ = 0;
   prev_error_ = 0;
-  first_time_ = true;
+  is_first_time_ = true;
 }
 
-double PIDController::calculate(double error, double dt)
+double PIDController::calculate(double error, double dt, bool is_integrated, std::vector<double>& pid_contributions)
 {
-  error_integral_ += error * dt;
-  
+  double ret_p = kp_ * error;
+  ret_p = std::min(std::max(ret_p, min_ret_p_), max_ret_p_);
+
+  if (is_integrated)
+  {
+    error_integral_ += error * dt;
+    error_integral_ = std::min(std::max(error_integral_, min_ret_i_ / ki_), max_ret_i_ / ki_);
+  }
+  double ret_i = ki_ * error_integral_;
+
   double error_differential;
-  if (first_time_)
+  if (is_first_time_)
   {
     error_differential = 0;
-    first_time_ = false;
+    is_first_time_ = false;
   }
   else
   {
     error_differential = (error - prev_error_) / dt;
   }
+  double ret_d = kd_ * error_differential;
+  ret_d = std::min(std::max(ret_d, min_ret_d_), max_ret_d_);
 
   prev_error_ = error;
 
-  return kp_ * error + ki_ * error_integral_ + kd_ * error_differential;
+  pid_contributions.at(0) = ret_p;
+  pid_contributions.at(1) = ret_i;
+  pid_contributions.at(2) = ret_d;
+
+  double ret = ret_p + ret_i + ret_d;
+  ret = std::min(std::max(ret, min_ret_), max_ret_);
+
+  return ret;
 }
 
-void PIDController::init(double kp, double ki, double kd)
+void PIDController::setGains(double kp, double ki, double kd)
 {
   kp_ = kp;
   ki_ = ki;
   kd_ = kd;
 }
 
+void PIDController::setLimits(double max_ret, double min_ret, double max_ret_p, double min_ret_p, double max_ret_i,
+                              double min_ret_i, double max_ret_d, double min_ret_d)
+{
+  max_ret_ = max_ret;
+  min_ret_ = min_ret;
+  max_ret_p_ = max_ret_p;
+  min_ret_p_ = min_ret_p;
+  max_ret_d_ = max_ret_d;
+  min_ret_d_ = min_ret_d;
+  max_ret_i_ = max_ret_i;
+  min_ret_i_ = min_ret_i;
+}
+
 void PIDController::reset()
 {
   error_integral_ = 0;
   prev_error_ = 0;
-  first_time_ = true;
+  is_first_time_ = true;
 }

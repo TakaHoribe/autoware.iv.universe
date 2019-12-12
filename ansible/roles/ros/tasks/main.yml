@@ -11,6 +11,7 @@
     update_cache: yes
 
 - name: ROS (install packages)
+  become: yes
   apt:
     name: "ros-{{ release }}-{{ package }}"
     state: latest

@@ -34,7 +34,6 @@ MPCFollower::MPCFollower()
   pnh_.param("traj_resample_dist", traj_resample_dist_, double(0.1)); // [m]
   pnh_.param("admisible_position_error", admisible_position_error_, double(5.0));
   pnh_.param("admisible_yaw_error_deg", admisible_yaw_error_deg_, double(90.0));
-  pnh_.param("output_interface", output_interface_, std::string("control"));
 
   /* mpc parameters */
   pnh_.param("mpc_prediction_horizon", mpc_param_.prediction_horizon, int(70));
@@ -164,7 +163,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
   if (vehicle_model_ptr_ == nullptr || qpsolver_ptr_ == nullptr)
   {
     DEBUG_INFO("[MPC] vehicle_model = %d, qp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
-    publishControlCommands(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
+    publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
@@ -173,7 +172,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     DEBUG_INFO("[MPC] MPC is not solved. ref_traj_.size() = %d, pose = %d,  velocity = %d,  steer = %d",
                ref_traj_.size(), current_pose_ptr_ != nullptr, current_velocity_ptr_ != nullptr, current_steer_ptr_ != nullptr);
 
-    publishControlCommands(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
+    publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
@@ -203,7 +202,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     steer_vel_cmd = 0.0;
   }
 
-  publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
+  publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 
 };
 
@@ -680,46 +679,12 @@ void MPCFollower::callbackCurrentVelocity(const geometry_msgs::TwistStamped::Con
   current_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
 };
 
-void MPCFollower::publishControlCommands(const double &vel_cmd, const double &acc_cmd,
-                                         const double &steer_cmd, const double &steer_vel_cmd)
-{
-  const double omega_cmd = vel_cmd * std::tan(steer_cmd) / wheelbase_;
-  if (output_interface_ == "twist")
-  {
-    publishTwist(vel_cmd, omega_cmd);
-  }
-  else if (output_interface_ == "control")
-  {
-    publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
-  }
-  else if (output_interface_ == "all")
-  {
-    publishTwist(vel_cmd, omega_cmd);
-    publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
-  }
-  else
-  {
-    ROS_WARN("[MPC] control command interface is not appropriate");
-  }
-}
-
-void MPCFollower::publishTwist(const double &vel_cmd, const double &omega_cmd)
-{
-  /* convert steering to twist */
-  geometry_msgs::TwistStamped twist;
-  twist.header.frame_id = "/base_link";
-  twist.header.stamp = ros::Time::now();
-  twist.twist.linear.x = vel_cmd;
-  twist.twist.angular.z = omega_cmd;
-  pub_twist_cmd_.publish(twist);
-}
-
 void MPCFollower::publishCtrlCmd(const double &vel_cmd, const double &acc_cmd, const double &steer_cmd, const double &steer_vel_cmd)
 {
   autoware_control_msgs::ControlCommandStamped cmd;
   cmd.header.frame_id = "/base_link";
   cmd.header.stamp = ros::Time::now();
-  cmd.control.speed = vel_cmd;
+  cmd.control.velocity = vel_cmd;
   cmd.control.acceleration = acc_cmd;
   cmd.control.steering_angle = steer_cmd;
   cmd.control.steering_angle_velocity = steer_vel_cmd;
@@ -735,5 +700,5 @@ MPCFollower::~MPCFollower()
   double steer_vel_cmd = 0.0;
   if (current_steer_ptr_ != nullptr)
     steer_cmd = *current_steer_ptr_;
-  publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
+  publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 };

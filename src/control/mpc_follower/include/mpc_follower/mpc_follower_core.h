@@ -163,23 +163,6 @@ private:
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
 
   /**
-   * @brief publish control command calculated by MPC
-   * @param [in] vel_cmd velocity command [m/s] for vehicle control
-   * @param [in] acc_cmd acceleration command [m/s2] for vehicle control
-   * @param [in] steer_cmd steering angle command [rad] for vehicle control
-   * @param [in] steer_vel_cmd steering angle speed [rad/s] for vehicle control
-   */
-  void publishControlCommands(const double &vel_cmd, const double &acc_cmd,
-                              const double &steer_cmd, const double &steer_vel_cmd);
-
-  /**
-   * @brief publish control command as geometry_msgs/TwistStamped type
-   * @param [in] vel_cmd velocity command [m/s] for vehicle control
-   * @param [in] omega_cmd angular velocity command [rad/s] for vehicle control
-   */
-  void publishTwist(const double &vel_cmd, const double &omega_cmd);
-
-  /**
    * @brief publish control command as autoware_msgs/ControlCommand type
    * @param [in] vel_cmd velocity command [m/s] for vehicle control
    * @param [in] acc_cmd acceleration command [m/s2] for vehicle control
