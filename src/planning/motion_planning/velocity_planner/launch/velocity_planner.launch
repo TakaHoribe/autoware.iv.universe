@@ -1,0 +1,65 @@
+<launch>
+  <arg name="ns" default="/"/>
+  <arg name="output" default="log"/>
+
+  <!-- debug flags -->
+  <arg name="show_debug_info" default="False"/>
+  <arg name="show_debug_info_all" default="False"/>
+  <arg name="show_figure" default="False"/>
+
+
+  <!-- planning parameters -->
+  <arg name="max_velocity" default="11.11"/>
+  <arg name="max_accel" default="0.3"/>
+  <arg name="min_decel" default="-1.0"/>
+  <arg name="max_acc_jerk" default="0.1"/>
+  <arg name="min_dec_jerk_nominal" default="-0.1"/>
+  <arg name="min_dec_jerk_urgent" default="-1.5"/>
+  <arg name="replan_vel_deviation" default="5.53"/>
+  <arg name="engage_velocity" default="0.35"/>
+  <arg name="jerk_planning_span" default="0.1"/>
+  <arg name="stop_dist_mergin" default="0.55"/>
+  <!-- use this velocity as command to engage vehicle speed when stopping -->
+  <arg name="engage_acceleration" default="0.0"/>
+  <!-- use this acceleration as command to engage vehicle speed when stopping -->
+  <arg name="stopping_speed" default="0.0"/>
+  <!-- planning assuming this speed is stop speed -->
+  <arg name="extract_ahead_dist" default="50.0"/>
+  <arg name="extract_behind_dist" default="3.0"/>
+  <arg name="resample_num" default="10"/>
+
+  <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>
+  <arg name="enable_to_publish_emergency" default="true"/>
+
+  <arg name="emergency_flag_vel_thr_kmph" default="3.0"/>
+  <arg name="large_jerk_report" default="-1.4"/>
+
+
+  <node pkg="velocity_planner" type="velocity_planner_node" name="velocity_planner" output="$(arg output)">
+
+    <param name="show_debug_info" value="$(arg show_debug_info)"/>
+    <param name="show_debug_info_all" value="$(arg show_debug_info_all)"/>
+    <param name="show_figure" value="$(arg show_figure)"/>
+
+    <param name="max_velocity" value="$(arg max_velocity)"/>
+    <param name="max_accel" value="$(arg max_accel)"/>
+    <param name="min_decel" value="$(arg min_decel)"/>
+    <param name="max_acc_jerk" value="$(arg max_acc_jerk)"/>
+    <param name="min_dec_jerk_nominal" value="$(arg min_dec_jerk_nominal)"/>
+    <param name="min_dec_jerk_urgent" value="$(arg min_dec_jerk_urgent)"/>
+    <param name="replan_vel_deviation" value="$(arg replan_vel_deviation)"/>
+    <param name="engage_velocity" value="$(arg engage_velocity)"/>
+    <param name="stopping_speed" value="$(arg stopping_speed)"/>
+    <param name="extract_ahead_dist" value="$(arg extract_ahead_dist)"/>
+    <param name="extract_behind_dist" value="$(arg extract_behind_dist)"/>
+    <param name="resample_num" value="$(arg resample_num)"/>
+    <param name="jerk_planning_span" value="$(arg jerk_planning_span)"/>
+    <param name="stop_dist_mergin" value="$(arg stop_dist_mergin)"/>
+    <param name="emergency_flag_vel_thr_kmph" value="$(arg emergency_flag_vel_thr_kmph)"/>
+    <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
+    <param name="enable_to_publish_emergency" value="$(arg enable_to_publish_emergency)"/>
+    <param name="large_jerk_report" value="$(arg large_jerk_report)"/>
+  </node>
+
+
+</launch>
