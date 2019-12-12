@@ -50,7 +50,7 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
     }
 
     if (!pedestrian_found)
-        return true;
+        return false;
 
     // insert stop point
     for (size_t i = 0; i < output.points.size() - 1; ++i)
@@ -361,6 +361,7 @@ void CrosswalkDebugMarkersManager::publish()
     }
 
     // Collision point
+    if (!collision_points_.empty())
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = "map";
@@ -378,6 +379,7 @@ void CrosswalkDebugMarkersManager::publish()
         marker.pose.orientation.z = 0.0;
         marker.pose.orientation.w = 1.0;
         marker.scale.x = 0.25;
+        marker.scale.y = 0.25;
         marker.color.a = 1.0; // Don't forget to set the alpha!
         marker.color.r = 0.0;
         marker.color.g = 1.0;
