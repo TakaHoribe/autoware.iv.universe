@@ -2,12 +2,12 @@
 
 namespace behavior_planning
 {
-bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects)
+bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects)
 {
     return SingletonDataManager::getInstance().getDynemicObjects(objects);
 }
 
-bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> pointcloud)
+bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud)
 {
     return SingletonDataManager::getInstance().getNoGroundPointcloud(pointcloud);
 }

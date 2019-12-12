@@ -82,8 +82,8 @@ private:
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
 
 public:
-    bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects);
-    bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> pointcloud);
+    bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects);
+    bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud);
     bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
     bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist);
     bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_ptr,

@@ -34,18 +34,21 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
     Polygon2d polygon(points);
 
     // check person in polygon
-    std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> objects_ptr = std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
+    std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr = std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
     if (!getDynemicObjects(objects_ptr))
+    {
         return false;
-        bool pedestrian_found = false;
+    }
+    bool pedestrian_found = false;
     for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
     {
         if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
         {
             Eigen::Vector2d point;
             point << objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y;
-            if (polygon.isInPolygon(point))
+            if (polygon.isInPolygon(point)){
                 pedestrian_found = true;
+            }
         }
     }
 
@@ -64,7 +67,7 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
         std::vector<Eigen::Vector2d> collision_points;
         if (polygon.getCollisionPoints(line, collision_points))
         {
-            for (size_t j = i + 1; j < output.points.size(); ++j)
+            for (size_t j = i; j < output.points.size(); ++j)
                 output.points.at(j).point.twist.linear.x = 0;
             // -- debug code --
             for (const auto &collision_point : collision_points)
