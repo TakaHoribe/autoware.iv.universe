@@ -40,11 +40,13 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
         bool pedestrian_found = false;
     for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
     {
-        if ( objects_ptr->objects.at(i).semantic.type == <autoware_perception_msgs::Semantic::PEDESTRIAN)
-        Eigen::Vector2d point;
-        point << objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y;
-        if(polygon.isInPolygon(point))
-            pedestrian_found = true;
+        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+        {
+            Eigen::Vector2d point;
+            point << objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y;
+            if (polygon.isInPolygon(point))
+                pedestrian_found = true;
+        }
     }
 
     if (!pedestrian_found)
