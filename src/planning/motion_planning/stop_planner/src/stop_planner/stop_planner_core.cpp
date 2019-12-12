@@ -21,7 +21,7 @@ StopPlanner::StopPlanner()
     : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   trajectory_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
-  marker_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/stop_trajectory_marker", 1);
+  marker_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
 
   trajectory_sub_ = pnh_.subscribe("input/trajectory", 1, &StopPlanner::callbackTrajectory, this);
   obstacle_pcd_sub_ = pnh_.subscribe("input/point_cloud", 1, &StopPlanner::callbackPointCloud, this);

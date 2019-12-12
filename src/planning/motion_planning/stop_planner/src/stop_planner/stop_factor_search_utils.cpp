@@ -160,7 +160,7 @@ visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t k
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
+  marker.header.stamp = ros::Time::now();
   marker.id = id;
   marker.ns = "stop_factor_wall";
   marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -171,11 +171,14 @@ visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t k
   else
   {
     marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.1;
-    marker.frame_locked = true;
     marker.points = createLattice(pose, 2.0, 8.0, 6);
-    marker.color = *setColorDependsOnObstacleKind(kind);
+
   }
+  marker.lifetime = ros::Duration(10.0);
+  marker.scale.x = 0.1;
+  marker.frame_locked = true;
+  marker.color = *setColorDependsOnObstacleKind(kind);
+  
   return marker;
 }
 
