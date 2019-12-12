@@ -29,7 +29,8 @@ void interporatePath(const autoware_planning_msgs::Path &path, const double leng
     size_t checkpoint_idx = 0;
     int reference_velocity_idx = 0;
     double reference_velocity;
-    for (s_t = 0.0; s_t < std::min(length, spline_ptr->s.back()); s_t += 1.0)
+    const double interporation_interval = 1.0;
+    for (s_t = interporation_interval; s_t < std::min(length, spline_ptr->s.back()); s_t += interporation_interval)
     {
         while (reference_velocity_idx < spline_ptr->s.size() && spline_ptr->s.at(reference_velocity_idx) < s_t)
         {
@@ -38,7 +39,7 @@ void interporatePath(const autoware_planning_msgs::Path &path, const double leng
         reference_velocity = spline_ptr->calc_trajectory_point(spline_ptr->s.at(std::max(0, reference_velocity_idx - 1)))[3];
 
         // insert check point before interporated point
-        while ( checkpoint_idx < spline_ptr->s.size() && spline_ptr->s.at(checkpoint_idx) < s_t)
+        while (checkpoint_idx < spline_ptr->s.size() && spline_ptr->s.at(checkpoint_idx) < s_t)
         {
             autoware_planning_msgs::PathPoint path_point;
             std::array<double, 4> state = spline_ptr->calc_trajectory_point(spline_ptr->s.at(checkpoint_idx));
