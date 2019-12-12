@@ -1,10 +1,9 @@
 #include <behavior_velocity_planner/node.hpp>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_extension/utility/message_conversion.h>
-// #include <lanelet2_extension/utility/query.h>
-// #include <lanelet2_extension/visualization/visualization.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <path_utils/utilization.hpp>
+#include <utilization/path_utilization.hpp>
+
 namespace behavior_planning
 {
 BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
@@ -35,10 +34,14 @@ void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning
         }
         // screening
         autoware_planning_msgs::Path filtered_path;
-        filterPath(path, filtered_path);
+        filterLitterPathPoint(path, filtered_path);
         // interporation
+        autoware_planning_msgs::Path interporated_path_msg;
+        interporatePath(filtered_path, foward_path_length_, interporated_path_msg);
+        // check stop point
         autoware_planning_msgs::Path output_path_msg;
-        interporatePath(filtered_path, foward_path_length_, output_path_msg);
+        filterStopPathPoint(interporated_path_msg, output_path_msg);
+
         output_path_msg.header.frame_id = "map";
         output_path_msg.header.stamp = ros::Time::now();
         path_pub_.publish(output_path_msg);
