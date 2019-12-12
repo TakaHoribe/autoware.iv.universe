@@ -1,10 +1,29 @@
-<?xml version="1.0"?>
+<?xml version="1.0" ?>
 
 <launch>
+    <!-- dummy detection and sensor data -->
     <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
-        <remap from="~output/dynamic_object" to="/perception/detection/objects"/>
-        <remap from="~output/objects_pose" to="debug/object_pose"/>
-        <remap from="~output/points_raw" to="/points_raw/outlier/filtered"/>
-        <remap from="~input/pose" to="initial_object_pose"/>
+        <remap from="~output/dynamic_object" to="/perception/detection/objects" />
+        <remap from="~output/objects_pose" to="debug/object_pose" />
+        <remap from="~output/points_raw" to="/points_raw/outlier/filtered" />
+        <remap from="~input/pose" to="initial_object_pose" />
     </node>
+    <include file="$(find dynamic_object_visualization)/launch/dynamic_object_visualizer.launch">
+        <arg name="input" value="/perception/detection/objects" />
+        <arg name="with_feature" value="true" />
+        <arg name="only_known_objects" default="false" />
+    </include>
+
+    <!-- preception module -->
+    <group ns="perception">
+        <group ns="tracking">
+            <include file="$(find perception_launch)/launch/tracking/tracking.launch"></include>
+        </group>
+        <!-- prediction module -->
+        <group ns="prediction">
+            <include file="$(find perception_launch)/launch/prediction/prediction.launch">
+                <arg name="use_vector_map" default="false" />
+            </include>
+        </group>
+    </group>
 </launch>

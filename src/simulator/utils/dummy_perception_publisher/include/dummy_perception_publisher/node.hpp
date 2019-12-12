@@ -1,6 +1,7 @@
 #pragma once
 #include <ros/ros.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
 #include <tf2/transform_datatypes.h>
