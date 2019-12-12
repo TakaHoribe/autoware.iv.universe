@@ -209,12 +209,15 @@ void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory &traj)
 
 void MPCUtils::calcTrajectoryCurvature(MPCTrajectory &traj, int curvature_smoothing_num)
 {
-  unsigned int traj_k_size = traj.x.size();
-  traj.k.clear();
+  int traj_size = (int)traj.x.size();
+  for (int i = 0; i < traj_size; ++i)
+  {
+    traj.k[i] = 0.0;
+  }
 
   /* calculate curvature by circle fitting from three points */
   geometry_msgs::Point p1, p2, p3;
-  for (unsigned int i = curvature_smoothing_num; i < traj_k_size - curvature_smoothing_num; ++i)
+  for (int i = curvature_smoothing_num; i < traj_size - curvature_smoothing_num; ++i)
   {
     p1.x = traj.x[i - curvature_smoothing_num];
     p2.x = traj.x[i];
@@ -224,14 +227,14 @@ void MPCUtils::calcTrajectoryCurvature(MPCTrajectory &traj, int curvature_smooth
     p3.y = traj.y[i + curvature_smoothing_num];
     double den = std::max(calcDist2d(p1, p2) * calcDist2d(p2, p3) * calcDist2d(p3, p1), 0.0001);
     const double curvature = 2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / den;
-    traj.k.push_back(curvature);
+    traj.k.at(i) = curvature;
   }
 
   /* first and last curvature is copied from next value */
-  for (int i = 0; i < curvature_smoothing_num; ++i)
+  for (int i = 0; i < std::min(curvature_smoothing_num, traj_size); ++i)
   {
-    traj.k.insert(traj.k.begin(), traj.k.front());
-    traj.k.push_back(traj.k.back());
+    traj.k.at(i) = traj.k.at(std::min(curvature_smoothing_num, traj_size - 1));
+    traj.k.at(traj_size - i - 1) = traj.k.at(std::max(traj_size - curvature_smoothing_num - 1, 0));
   }
 }
 
