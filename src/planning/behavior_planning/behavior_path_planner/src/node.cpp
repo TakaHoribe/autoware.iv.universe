@@ -158,6 +158,7 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
         marker.type = visualization_msgs::Marker::POINTS;
         marker.scale.x = marker.scale.y = 0.1;
         marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.orientation.w = 1.0;
         marker.lifetime = ros::Duration(0.5);
         marker.color.a = 1.0; // Don't forget to set the alpha!
         marker.color.r = 1.0;
@@ -176,8 +177,9 @@ void BehaviorPathPlannerNode::publishDebugMarker(const autoware_planning_msgs::P
         marker.ns = "line";
         marker.id = 0;
         marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.scale.x = marker.scale.y = 0.05;
+        marker.scale.x = 0.05;
         marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.orientation.w = 1.0;
         marker.lifetime = ros::Duration(0.5);
         marker.color.a = 1.0; // Don't forget to set the alpha!
         marker.color.r = 1.0;
