@@ -92,7 +92,7 @@ std::vector<double> calculateSegmentDistances(const lanelet::ConstLineString3d& 
 
   for (size_t i = 1; i < line_string.size(); ++i)
   {
-    const auto distance = lanelet::geometry::distance2d(line_string[i], line_string[i - 1]);
+    const auto distance = lanelet::geometry::distance(line_string[i], line_string[i - 1]);
     segment_distances.push_back(distance);
   }
 
