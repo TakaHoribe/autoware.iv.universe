@@ -123,6 +123,11 @@ void VelocityPlanner::timerReplanCallback(const ros::TimerEvent &e)
 
   /* (1) Find the nearest point to base_waypoints. This is not severe so, could read closest topic by callback. */
   int base_raw_closest = vpu::calcClosestWaypoint(*base_traj_raw_ptr_, current_pose_ptr_->pose);
+  if (base_raw_closest < 0)
+  {
+    ROS_WARN("[velocity planner] cannot find closest waypoint for base raw trajectory");
+    return;
+  }
 
   /* (2) extruct the route surrounding the self-position from base_waypoints */
   autoware_planning_msgs::Trajectory base_traj_extracted;
