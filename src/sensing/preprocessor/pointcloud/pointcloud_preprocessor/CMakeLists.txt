@@ -21,6 +21,7 @@ generate_dynamic_reconfigure_options(cfg/CompareMapFilter.cfg
                                      cfg/PointcloudAccumulator.cfg
                                      cfg/PassThroughFilter.cfg
                                      cfg/RayGroundFilter.cfg
+                                     cfg/CropBoxFilter.cfg
                                      )
 find_package(OpenCV REQUIRED)
 find_package (Eigen3 REQUIRED)
@@ -313,6 +314,27 @@ target_link_libraries(ray_ground_filter_node
 add_dependencies(ray_ground_filter_node ${catkin_EXPORTED_TARGETS})
 
 
+# CropBox
+add_library(
+  crop_box_filter
+  src/crop_box_filter/crop_box_filter_nodelet.cpp
+  src/filter.cpp # copy from pcl_ros https://github.com/ros-
+                 # perception/perception_pcl/issues/9
+  )
+target_link_libraries(crop_box_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(crop_box_filter ${catkin_EXPORTED_TARGETS})
+add_executable(
+  crop_box_filter_node
+  src/crop_box_filter/crop_box_filter_node.cpp)
+target_link_libraries(crop_box_filter_node
+                      crop_box_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(crop_box_filter_node ${catkin_EXPORTED_TARGETS})
 #############
 ## Install ##
 #############
