@@ -179,7 +179,7 @@ bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_
   }
   catch (tf2::TransformException &ex)
   {
-    ROS_WARN("[velocity_controller] cannot get map to base_link transform. %s", ex.what());
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[velocity_controller] cannot get map to base_link transform. %s", ex.what());
     return false;
   }
   ps.header = transform.header;
@@ -311,7 +311,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
     pid_velocity_.reset();
     resetSmoothStop();
 
-    ROS_ERROR("[VC Emergency Stop] STOP!");
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[VC Emergency Stop] STOP!");
     writeDebugValuesCmdAcceleration(cmd_acceleration, 6.0);
     publishDebugValues();
     return;

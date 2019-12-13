@@ -45,16 +45,18 @@ std::pair<bool, autoware_planning_msgs::Trajectory> ObstacleConsideredLane::repl
   ROS_DEBUG_STREAM(__func__);
   autoware_planning_msgs::Trajectory out = lane_in_;
 
-  auto NotReplan = [&out, this]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
+  auto NotReplan = [&out, &is_obstacle_detected, this]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
     stop_factor_pose_ = geometry_msgs::Pose();
     actual_stop_pose_ = geometry_msgs::Pose();
     wall_pose_ = geometry_msgs::Pose();
     out.header.stamp = ros::Time::now();
+    is_obstacle_detected = false;
     return std::make_pair(false, out);
   };
 
-  auto Replan = [&out]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
+  auto Replan = [&out, &is_obstacle_detected]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
     out.header.stamp = ros::Time::now();
+    is_obstacle_detected = true;
     return std::make_pair(true, out);
   };
 
@@ -303,7 +305,7 @@ visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
+  marker.header.stamp = ros::Time::now();
   marker.ns = "obstacle_perpendicular_point";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::CUBE;
@@ -314,14 +316,15 @@ visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs
   else
   {
     marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.3;
-    marker.scale.y = 0.3;
-    marker.scale.z = 2.0;
-    marker.frame_locked = true;
-    marker.pose = pose;
-    marker.pose.position.z += marker.scale.z / 2;
-    marker.color = setColorWhite();
   }
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.3;
+  marker.scale.z = 2.0;
+  marker.frame_locked = true;
+  marker.pose = pose;
+  marker.pose.position.z += marker.scale.z / 2;
+  marker.color = setColorWhite();
+  
   return marker;
 }
 
@@ -330,7 +333,7 @@ visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose,
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
+  marker.header.stamp = ros::Time::now();
   marker.ns = "obstacle_point";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::SPHERE;
@@ -341,13 +344,14 @@ visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose,
   else
   {
     marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.3;
-    marker.scale.y = 0.3;
-    marker.scale.z = 0.3;
-    marker.frame_locked = true;
-    marker.pose = pose;
-    marker.color = setColorWhite();
   }
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.3;
+  marker.scale.z = 0.3;
+  marker.frame_locked = true;
+  marker.pose = pose;
+  marker.color = setColorWhite();
+
   return marker;
 }
 

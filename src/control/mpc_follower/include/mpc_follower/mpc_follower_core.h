@@ -184,8 +184,7 @@ private:
   /* debug */
   bool show_debug_info_;      //!< @brief flag to display debug info
 
-  ros::Publisher pub_debug_filtered_traj_;        //!< @brief publisher for debug info
-  ros::Publisher pub_debug_predicted_traj_;       //!< @brief publisher for debug info
+  ros::Publisher pub_debug_marker_;
   ros::Publisher pub_debug_values_;               //!< @brief publisher for debug info
   ros::Publisher pub_debug_mpc_calc_time_;        //!< @brief publisher for debug info
 

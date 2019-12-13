@@ -21,7 +21,7 @@
 
 int main(int argc, char **argv)
 { 
-  ros::init(argc, argv, "eb_path_planner");
+  ros::init(argc, argv, "stop_planner");
   StopPlanner node;
 
   ros::spin();
