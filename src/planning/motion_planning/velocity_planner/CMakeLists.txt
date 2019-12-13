@@ -20,7 +20,7 @@ generate_dynamic_reconfigure_options(cfg/VelocityPlanner.cfg)
 
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
-# find_package(PythonLibs REQUIRED)
+find_package(PythonLibs REQUIRED) # for matplotlib
 
 
 catkin_package(
@@ -38,7 +38,7 @@ include_directories(
 include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
-  ${PYTHON_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}  # for matplotlib
 )
 
 add_executable(velocity_planner src/velocity_planner.cpp src/velocity_planner_utils.cpp src/interpolate.cpp)

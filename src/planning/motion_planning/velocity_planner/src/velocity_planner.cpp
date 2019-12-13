@@ -381,7 +381,7 @@ void VelocityPlanner::replanVelocity(const autoware_planning_msgs::Trajectory &i
       {
         stop_planning_jerk = -88.8; // for debug
         double dist_tmp = vpu::calcLengthOnWaypoints(jerk_filtered_traj, stop_idx_zero_vel, input_closest);
-        DEBUG_WARN("[replan] : could not plan under given jerk constraint. stop_idx = %d, self_idx = %d, dist = %f, v0 = %f, a0 "
+        ROS_WARN_DELAYED_THROTTLE(5.0, "[replan] : could not plan under given jerk constraint. stop_idx = %d, self_idx = %d, dist = %f, v0 = %f, a0 "
                   "= %f",
                   stop_idx_zero_vel, input_closest, dist_tmp, init_m.vel, init_m.acc);
         emergency_stop_manager_ptr_->setEmergencyFlagTrue(); // EMERGENCY
@@ -709,7 +709,7 @@ bool VelocityPlanner::stopVelocityFilterWithJerkRange(const double &jerk_max, co
   }
 
   planning_jerk = jerk_max;
-  ROS_WARN("[stopVelocityFilterWithJerkRange] could not plan under jerk constraint");
+  ROS_WARN_DELAYED_THROTTLE(5.0, "[stopVelocityFilterWithJerkRange] could not plan under jerk constraint");
   return true;
 }
 
@@ -747,11 +747,11 @@ bool VelocityPlanner::stopVelocityFilterWithMergin(const double &stop_mergin, co
     if (is_stop_ok)
     {
       double mergin = vpu::calcLengthOnWaypoints(input, i, input_stop_idx);
-      ROS_WARN("[stopVelocityFilterWithMergin] plan successed, planning_jerk = %f, mergin = %f", planning_jerk, mergin);
+      DEBUG_INFO("[stopVelocityFilterWithMergin] plan successed, planning_jerk = %f, mergin = %f", planning_jerk, mergin);
       return true; // velocity plan successed under given constraint.
     }
   }
-  ROS_WARN("[stopVelocityFilterWithMergin] could not plan under jerk constraint");
+  ROS_WARN_DELAYED_THROTTLE(5.0, "[stopVelocityFilterWithMergin] could not plan under jerk constraint");
 
   is_stop_ok = false; // couldn't plan velocity under given constraint.
   return true; // no error, return true.
@@ -796,7 +796,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
   dist_to_stop_arr.push_back(dist);
   for (int i = input_stop_idx; i > 0; --i)
   {
-    dist += vpu::calcSquaredDist2d(input.points.at(i).pose, input.points.at(i - 1).pose);
+    dist += std::sqrt(vpu::calcSquaredDist2d(input.points.at(i).pose, input.points.at(i - 1).pose));
     dist_to_stop_arr.insert(dist_to_stop_arr.begin(), dist);
   }
 
@@ -818,7 +818,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
     is_stop_ok = false;
     return true;
   }
-  DEBUG_INFO("[stopVelocityFilter]: plan_jerk = %3.3f, v0 = %3.3f, a0 = %3.3f, plan_dist = %3.3f, stop_dist = %3.3f, input_stop_idx = %d, input_closest = %d",
+  DEBUG_INFO("[stopVelocityFilter]: check if distance is enough : jerk = %3.3f, v0 = %3.3f, a0 = %3.3f, needed_dist = %3.3f, dist_to_stopline = %3.3f, stop_idx = %d, closest = %d",
              planning_jerk, v0_s, a0_s, brake_dist_s, dist_to_stop_arr.at(input_closest), input_stop_idx, input_closest);
 
   /* Check if stop_distance under jerk constriant is enough */
@@ -852,6 +852,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
     double brake_dist;
     if(vpu::calcStopDistWithConstantJerk(v0, a0, planning_jerk, v_end_s, t_neg, t_pos, brake_dist))
     {
+      printf("[stopVelocityFilter]: searching start idx for stop planning : i = %d, v = %3.3f, a = %3.3f, brake_dist = %3.3f, \n", i, v0, a0, brake_dist);
       start_point_found = (0.0 <= brake_dist && brake_dist < dist_to_stop_arr.at(i));
       if (start_point_found)
       {
@@ -861,8 +862,8 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
           ROS_ERROR("cannot find stop point!!!! Something wrong.bbb");
           return false;
         }
-        DEBUG_INFO("[stopVelocityFilter]: stop planning : planning_jerk = %3.3f, plan_start_index = %d"
-                  " (v = %3.3f, a = %3.3f), brake_dist = %3.3f, input_stop_idx = %d (debug_type:%d)",
+        DEBUG_INFO("[stopVelocityFilter]: stop planning start point found : jerk = %3.3f, start_idx = %d"
+                  " (v = %3.3f, a = %3.3f), brake_dist = %3.3f, stop_idx = %d (debug_type:%d)",
                   planning_jerk, plan_start_index, v0, a0, brake_dist, input_stop_idx, debug_type);
         break;
       }
@@ -874,6 +875,8 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
     ROS_ERROR("stop_dist is enough, but could not find stop point. Something wrong. (planning_jerk = %f)", planning_jerk);
     return false;
   }
+
+
 
   /* copy stop plan result to outputs */
   for (int i = plan_start_index; i < (int)output_motion.size(); ++i)
@@ -889,6 +892,13 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
   {
     output_motion.at(i).acc = 0.0;
     output_motion.at(i).jerk = 0.0;
+  }
+
+printf("out.size() = %d, outmotion.size() = %d\n", output.points.size(), output_motion.size());
+
+  for (int i = 0; i < output.points.size(); ++i)
+  {
+    printf("output vel : i = %d, v = %3.3f,   motion vel = %3.3f\n", i, output.points.at(i).twist.linear.x, output_motion.at(i).vel);
   }
   return true;
 }
@@ -950,7 +960,7 @@ void VelocityPlanner::plotAll(const int &stop_idx_zero_vel, const int &input_clo
   /* stop line */
   int stop_idx_plot[] = { stop_idx_zero_vel, stop_idx_zero_vel };
   int closest_idx_plot[] = { input_closest, input_closest };
-  double y_plot1[] = { 0.0, 6.0 };
+  double y_plot1[] = { 0.0, 10.0 };
   matplotlibcpp::subplot(3, 1, 1);
   matplotlibcpp::plot(stop_idx_plot, y_plot1, "k--");
   matplotlibcpp::plot(closest_idx_plot, y_plot1, "k");
@@ -989,6 +999,9 @@ void VelocityPlanner::plotAll(const int &stop_idx_zero_vel, const int &input_clo
 void VelocityPlanner::plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str,
                                    const std::string &label_str) const
 {
+  // std::vector<double> dist;
+  // calcWaypointsArclength(trajectory, dist);
+  
   std::vector<double> vec;
   for (const auto &wp : trajectory.points)
   {

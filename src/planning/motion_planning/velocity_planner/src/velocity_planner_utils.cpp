@@ -311,7 +311,7 @@ void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &path, std:
   {
     const autoware_planning_msgs::TrajectoryPoint tp = path.points.at(i);
     const autoware_planning_msgs::TrajectoryPoint tp_prev = path.points.at(i - 1);
-    dist += calcSquaredDist2d(tp.pose, tp_prev.pose);
+    dist += std::sqrt(calcSquaredDist2d(tp.pose, tp_prev.pose));
     arclength.push_back(dist);
   }
 }
@@ -467,7 +467,7 @@ bool calcStopVelocityWithConstantJerk(const double &v0, const double &a0, const 
   {
     const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
     const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
-    dist += calcSquaredDist2d(tp.pose, tp_prev.pose);
+    dist += std::sqrt(calcSquaredDist2d(tp.pose, tp_prev.pose));
     if (dist > x_arr.back())
       break;
     arclength.push_back(dist);
