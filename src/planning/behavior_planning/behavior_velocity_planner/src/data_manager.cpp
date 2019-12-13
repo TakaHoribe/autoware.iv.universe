@@ -30,7 +30,7 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin &inp
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
-bool SingletonDataManager::getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects)
+bool SingletonDataManager::getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects)
 {
     if (perception_ptr_ == nullptr)
         return false;
@@ -38,7 +38,7 @@ bool SingletonDataManager::getDynemicObjects(std::shared_ptr<autoware_perception
     return true;
 }
 
-bool SingletonDataManager::getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> pointcloud)
+bool SingletonDataManager::getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud)
 {
     if (pointcloud_ptr_ == nullptr)
         return false;

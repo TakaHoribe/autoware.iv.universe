@@ -83,7 +83,8 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
         }
     }
 
-    is_end_of_life = (!found && state_ == State::START);
+    // is_end_of_life = (!found && state_ == State::START);
+    is_end_of_life = !found;
     if (is_end_of_life)
         if (manager_ptr_ != nullptr)
             manager_ptr_->unregisterTask(task_id_);
