@@ -505,6 +505,7 @@ void CrosswalkDebugMarkersManager::publish()
 
     debug_viz_pub_.publish(msg);
     collision_points_.clear();
+    stop_points_.clear();
     collision_lines_.clear();
     crosswalk_polygons_.clear();
     return;
