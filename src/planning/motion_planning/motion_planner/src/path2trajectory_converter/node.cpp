@@ -93,7 +93,7 @@ void Path2Trajectory::callback(
     std::array<double, 2> point = spline2d.calc_position(s);
     traj_point.pose.position.x = point[0]; 
     traj_point.pose.position.y = point[1]; 
-    if(isnan(point[0]) || isnan(point[1]))
+    if(std::isnan(point[0]) || std::isnan(point[1]))
     {
       ROS_ERROR("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
       msgConversionFromPath2Trajectory(input_path_msg, output_trajectory_msg); 
