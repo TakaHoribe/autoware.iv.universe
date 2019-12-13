@@ -76,7 +76,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
   pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
-  sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
+  sub_initialpose_ = nh_.subscribe("initialpose3d", 1, &EKFLocalizer::callbackInitialPose, this);
   sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
   sub_twist_with_cov_ = nh_.subscribe("in_twist_with_covariance", 1, &EKFLocalizer::callbackTwistWithCovariance, this);
@@ -168,9 +168,9 @@ void EKFLocalizer::setCurrentResult()
   }
   else
   {
-    current_ekf_pose_.pose.position.z = 0.0;
-    roll = 0;
-    pitch = 0;
+    // current_ekf_pose_.pose.position.z = 0.0;
+    // roll = 0;
+    // pitch = 0;
   }
   yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
   q_tf.setRPY(roll, pitch, yaw);
@@ -193,7 +193,7 @@ void EKFLocalizer::timerTFCallback(const ros::TimerEvent& e)
   geometry_msgs::TransformStamped transformStamped;
   transformStamped.header.stamp = ros::Time::now();
   transformStamped.header.frame_id = current_ekf_pose_.header.frame_id;
-  transformStamped.child_frame_id = "ekf_pose";
+  transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = current_ekf_pose_.pose.position.x;
   transformStamped.transform.translation.y = current_ekf_pose_.pose.position.y;
   transformStamped.transform.translation.z = current_ekf_pose_.pose.position.z;
@@ -251,8 +251,11 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
   Eigen::MatrixXd X(dim_x_, 1);
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(dim_x_, dim_x_);
 
+  // TODO need mutex
+
   X(IDX::X) = initialpose.pose.pose.position.x + transform.transform.translation.x;
   X(IDX::Y) = initialpose.pose.pose.position.y + transform.transform.translation.y;
+  current_ekf_pose_.pose.position.z = initialpose.pose.pose.position.z + transform.transform.translation.z;
   X(IDX::YAW) = tf2::getYaw(initialpose.pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
   X(IDX::YAWB) = 0.0;
   X(IDX::VX) = 0.0;
@@ -266,6 +269,8 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
   P(IDX::WZ, IDX::WZ) = 0.01;
 
   ekf_.init(X, P, extend_state_step_);
+
+  current_pose_ptr_ = nullptr;
 };
 
 /*
