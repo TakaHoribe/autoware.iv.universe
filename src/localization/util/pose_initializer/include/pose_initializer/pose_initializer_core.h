@@ -24,8 +24,12 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <sensor_msgs/PointCloud2.h>
 
 #include <dynamic_reconfigure/server.h>
+
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 #include "ndt_scan_matcher/NDTAlign.h"
 
@@ -38,11 +42,14 @@ public:
 private:
 
   void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
+  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
   ros::Subscriber initial_pose_sub_;
+  ros::Subscriber map_points_sub_;
+
   ros::Publisher initial_pose_pub_;
 
   ros::ServiceClient ndt_client_;
@@ -53,5 +60,8 @@ private:
 
   tf2_ros::Buffer tf2_buffer_;
   tf2_ros::TransformListener tf2_listener_;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr map_ptr_;
+  std::string map_frame_;
 
 };
