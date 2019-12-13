@@ -226,7 +226,7 @@ public:
         max_s_value_ = *std::max_element(s.begin(), s.end());
     };
 
-    std::array<double, 3> calc_trajectory_point(double s_t){
+    std::array<double, 3> calc_point(double s_t){
         double x = sx.calc(s_t, max_s_value_);
         double y = sy.calc(s_t, max_s_value_);
         double v = sv.calc(s_t, max_s_value_);

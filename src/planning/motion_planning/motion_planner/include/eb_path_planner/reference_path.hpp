@@ -45,7 +45,7 @@ public:
 
         for(float s=0; s<spline_.s.back(); s+=ds)
         {
-            std::array<double, 3> point = spline_.calc_trajectory_point(s);
+            std::array<double, 3> point = spline_.calc_point(s);
 
             x_.push_back(point[0]);
             y_.push_back(point[1]);
