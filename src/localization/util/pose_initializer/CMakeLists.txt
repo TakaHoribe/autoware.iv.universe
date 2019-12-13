@@ -39,7 +39,7 @@ add_executable(pose_initializer
         src/pose_initializer_core.cpp
 )
 
-#add_dependencies(pose_initializer pose_initializer_gencfg)
+add_dependencies(pose_initializer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(pose_initializer ${catkin_LIBRARIES})
 
