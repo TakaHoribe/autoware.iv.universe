@@ -1,9 +1,9 @@
 #ifndef PATH2TRAJECTORY_CONVERTER_H
 #define PATH2TRAJECTORY_CONVERTER_H
-#include "motion_base_planner/node.hpp"
+#include "path_base_planner/node.hpp"
 
 
-namespace motion_planner
+namespace path_planner
 {
 class Path2Trajectory : public  BasePlannerNode
 {

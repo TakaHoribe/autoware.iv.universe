@@ -1,6 +1,6 @@
 #ifndef EB_PATH_PLANNER_H
 #define EB_PATH_PLANNER_H
-#include "motion_base_planner/node.hpp"
+#include "path_base_planner/node.hpp"
 
 // namespace autoware_lanelet2_msgs
 // {
@@ -29,7 +29,7 @@ namespace geometry_msgs
 
 
 
-namespace motion_planner
+namespace path_planner
 {
 class EBPathPlannerNode : public  BasePlannerNode
 {

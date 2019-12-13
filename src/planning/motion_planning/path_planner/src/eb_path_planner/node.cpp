@@ -15,7 +15,7 @@
 
 #include "eb_path_planner/node.hpp"
 
-namespace motion_planner
+namespace path_planner
 {
   
 double sign(double a){
@@ -180,4 +180,4 @@ void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStampe
 {
   in_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(msg);
 }
-} // namespace motion_planner
+} // namespace path_planner

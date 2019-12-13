@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 { 
   ros::init(argc, argv, "path2trajectory_converter");
-  motion_planner::Path2Trajectory node;
+  path_planner::Path2Trajectory node;
 
   ros::spin();
 

@@ -1,6 +1,6 @@
-#include "motion_base_planner/node.hpp"
+#include "path_base_planner/node.hpp"
 
-namespace motion_planner
+namespace path_planner
 {
 BasePlannerNode::BasePlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 {
@@ -59,4 +59,4 @@ bool BasePlannerNode::getSelfPoseInMap(geometry_msgs::Pose &self_pose)
   return getSelfPose(self_pose, header);
 }
 
-} // namespace motion_planner
+} // namespace path_planner

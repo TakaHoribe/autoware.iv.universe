@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 { 
   ros::init(argc, argv, "eb_path_planner");
-  motion_planner::EBPathPlannerNode node;
+  path_planner::EBPathPlannerNode node;
 
   ros::spin();
 

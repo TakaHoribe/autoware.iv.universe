@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(motion_planner)
+project(path_planner)
 
 add_compile_options(-std=c++14)
 
@@ -28,15 +28,15 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-add_library(motion_base_planner
-  src/motion_base_planner/node.cpp
+add_library(path_base_planner
+  src/path_base_planner/node.cpp
 )
 
-target_link_libraries(motion_base_planner
+target_link_libraries(path_base_planner
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(motion_base_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(path_base_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(eb_path_planner_node 
 src/eb_path_planner/node.cpp
@@ -46,7 +46,7 @@ add_dependencies(eb_path_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 
 target_link_libraries(eb_path_planner_node
   ${catkin_LIBRARIES}
-  motion_base_planner
+  path_base_planner
 )
 
 add_executable(path2trajectory_converter_node 
@@ -57,5 +57,5 @@ add_dependencies(path2trajectory_converter_node ${${PROJECT_NAME}_EXPORTED_TARGE
 
 target_link_libraries(path2trajectory_converter_node
   ${catkin_LIBRARIES}
-  motion_base_planner
+  path_base_planner
 )

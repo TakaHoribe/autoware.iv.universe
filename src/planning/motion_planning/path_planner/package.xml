@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>motion_planner</name>
+  <name>path_planner</name>
   <version>0.0.0</version>
-  <description>The motion_base_planner package</description>
+  <description>The path_planner package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

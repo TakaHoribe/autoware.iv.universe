@@ -5,7 +5,7 @@
 #include <memory>
 #include <tf2_ros/transform_listener.h>
 
-namespace motion_planner
+namespace path_planner
 {
 class BasePlannerNode
 {
@@ -27,4 +27,4 @@ public:
   BasePlannerNode();
   virtual ~BasePlannerNode(){};
 };
-} // namespace motion_planner
+} // namespace path_planner

@@ -8,7 +8,7 @@
 
 #include "eb_path_planner/reference_path.hpp"
 
-namespace motion_planner
+namespace path_planner
 {
 
 Path2Trajectory::Path2Trajectory()
@@ -137,4 +137,4 @@ void Path2Trajectory::msgConversionFromPath2Trajectory(
     traj.points.push_back(traj_point);
   }
 }
-} // namespace motion_planner
+} // namespace path_planner
