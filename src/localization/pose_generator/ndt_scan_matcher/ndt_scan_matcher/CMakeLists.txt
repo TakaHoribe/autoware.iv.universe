@@ -38,7 +38,7 @@ generate_messages(
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-   INCLUDE_DIRS include
+  INCLUDE_DIRS include
 )
 
 ###########
@@ -53,7 +53,10 @@ add_executable(ndt_scan_matcher
         src/ndt_scan_matcher_core.cpp
 )
 
-add_dependencies(ndt_scan_matcher ndt_scan_matcher_gencfg)
+add_dependencies(ndt_scan_matcher ${${PROJECT_NAME}_EXPORTED_TARGETS}
+                                  ${catkin_EXPORTED_TARGETS}
+                                  ndt_scan_matcher_generate_messages_cpp
+)
 
 target_link_libraries(ndt_scan_matcher ${catkin_LIBRARIES})
 
