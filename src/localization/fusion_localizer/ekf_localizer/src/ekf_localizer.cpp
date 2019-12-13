@@ -76,7 +76,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
   pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
-  sub_initialpose_ = nh_.subscribe("initialpose3d", 1, &EKFLocalizer::callbackInitialPose, this);
+  sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
   sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
   sub_twist_with_cov_ = nh_.subscribe("in_twist_with_covariance", 1, &EKFLocalizer::callbackTwistWithCovariance, this);
