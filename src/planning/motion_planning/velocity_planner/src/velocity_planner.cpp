@@ -702,7 +702,7 @@ bool VelocityPlanner::stopVelocityFilterWithJerkRange(const double &jerk_max, co
     }
     if (is_stop_ok == true)  // it can stop at stop point with given jerk constraint
     {
-      ROS_WARN("[stopVelocityFilterWithJerkRange] plan successed, jerk = %f", stop_planning_jerk);
+      DEBUG_INFO("[stopVelocityFilterWithJerkRange] plan successed, jerk = %f", stop_planning_jerk);
       planning_jerk = stop_planning_jerk;
       return true;
     }
@@ -852,7 +852,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
     double brake_dist;
     if(vpu::calcStopDistWithConstantJerk(v0, a0, planning_jerk, v_end_s, t_neg, t_pos, brake_dist))
     {
-      printf("[stopVelocityFilter]: searching start idx for stop planning : i = %d, v = %3.3f, a = %3.3f, brake_dist = %3.3f, \n", i, v0, a0, brake_dist);
+      // printf("[stopVelocityFilter]: searching start idx for stop planning : i = %d, v = %3.3f, a = %3.3f, brake_dist = %3.3f, \n", i, v0, a0, brake_dist);
       start_point_found = (0.0 <= brake_dist && brake_dist < dist_to_stop_arr.at(i));
       if (start_point_found)
       {
@@ -892,13 +892,6 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
   {
     output_motion.at(i).acc = 0.0;
     output_motion.at(i).jerk = 0.0;
-  }
-
-printf("out.size() = %d, outmotion.size() = %d\n", output.points.size(), output_motion.size());
-
-  for (int i = 0; i < output.points.size(); ++i)
-  {
-    printf("output vel : i = %d, v = %3.3f,   motion vel = %3.3f\n", i, output.points.at(i).twist.linear.x, output_motion.at(i).vel);
   }
   return true;
 }
