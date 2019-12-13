@@ -73,7 +73,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   exe_time_pub_ = nh.advertise<std_msgs::Float32>("exe_time_ms", 10);
   transform_probability_pub_ = nh.advertise<std_msgs::Float32>("transform_probability", 10);
   iteration_num_pub_ = nh.advertise<std_msgs::Float32>("iteration_num", 10);
-  ndt_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/ndt_marker", 10);
+  ndt_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
 
   service_ = nh.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
   // setup dynamic reconfigure server

@@ -102,7 +102,7 @@ ndt_slam)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES localization_launch
-   CATKIN_DEPENDS ndt_slam
+#  CATKIN_DEPENDS ndt_slam
 #  DEPENDS system_lib
 )
 
