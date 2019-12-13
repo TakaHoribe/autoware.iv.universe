@@ -61,11 +61,11 @@ struct CSC_Matrix
 };
 
 // Converts a 'Eigen matrix A' into a 'CSC matrix' struct.
-CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXf A);
+CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXf& A);
 
 // Converts a 'Eigen vector matrix x' into a 'dynamic float array'.
-c_float* convEigenVecToDynFloatArray(const Eigen::MatrixXf x);
+c_float *convEigenVecToDynFloatArray(const Eigen::MatrixXf &x);
 
-}  // namespace osqp
+} // namespace osqp
 
-#endif  // OSQP_INTERFACE_H
+#endif // OSQP_INTERFACE_H

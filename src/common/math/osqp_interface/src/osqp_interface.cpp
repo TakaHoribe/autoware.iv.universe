@@ -117,7 +117,7 @@ std::tuple<std::vector<float>, std::vector<float>> optimize(const Eigen::MatrixX
   return result;
 }
 
-CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXf A)
+CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXf& A)
 {
   // Input dense matrix dimensions
   int A_rows = A.rows();
