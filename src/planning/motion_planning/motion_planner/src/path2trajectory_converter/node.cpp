@@ -86,15 +86,14 @@ void Path2Trajectory::callback(
     tmp_v.push_back(input_path_msg.points[i].twist.linear.x);
   }
   
-  Spline3D spline3d(tmp_x, tmp_y, tmp_z);
-  for(double s = 0.1; s < spline3d.s.back(); s+=0.1)
+  Spline2D spline2d(tmp_x, tmp_y);
+  for(double s = 0.1; s < spline2d.s.back(); s+=0.1)
   {
     autoware_planning_msgs::TrajectoryPoint traj_point;
-    std::array<double, 3> point = spline3d.calc_point(s);
+    std::array<double, 2> point = spline2d.calc_position(s);
     traj_point.pose.position.x = point[0]; 
     traj_point.pose.position.y = point[1]; 
-    traj_point.pose.position.z = point[2];
-    if(std::isnan(point[0]) || std::isnan(point[1]) || std::isnan(point[2]))
+    if(isnan(point[0]) || isnan(point[1]))
     {
       ROS_ERROR("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
       msgConversionFromPath2Trajectory(input_path_msg, output_trajectory_msg); 
@@ -102,15 +101,16 @@ void Path2Trajectory::callback(
     }
     float roll = 0;
     float pitch = 0;
-    float yaw = spline3d.calc_yaw(s);
+    float yaw = spline2d.calc_yaw(s);
     tf2::Quaternion quaternion;
     quaternion.setRPY( roll, pitch, yaw );
     traj_point.pose.orientation = tf2::toMsg(quaternion);
-    auto it = std::lower_bound(spline3d.s.begin(), 
-                               spline3d.s.end(),
+    auto it = std::lower_bound(spline2d.s.begin(), 
+                               spline2d.s.end(),
                                s);
-    size_t ind = std::distance(spline3d.s.begin(), it);
+    size_t ind = std::distance(spline2d.s.begin(), it);
     traj_point.twist.linear.x = tmp_v[ind];
+    traj_point.pose.position.z = tmp_z[ind];
     output_trajectory_msg.points.push_back(traj_point); 
   }
   
