@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-    <include file="$(find ndt_slam)/launch/ndt_slam.launch">
+    <include file="$(find ndt_scan_matcher)/launch/ndt_scan_matcher.launch">
+      <arg name="input_map_points_topic" default="/pointcloud_map"/>
+      <arg name="input_sensor_points_topic" default="/localization/util/downsample"/>
+      <arg name="input_initial_pose_topic" default="/localization/fusion_localizer/ekf_pose_with_covariance"/>
     </include>
 </launch>
