@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   dynamic_reconfigure
   stop_planner
+  osqp_interface
 )
 
 generate_dynamic_reconfigure_options(cfg/VelocityPlanner.cfg)
@@ -32,6 +33,7 @@ catkin_package(
       geometry_msgs
       tf2
       stop_planner
+      osqp_interface
 )
 
 include_directories(
@@ -40,10 +42,13 @@ include
   ${EIGEN3_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}  # for matplotlib
 )
+message("\n\n\n\n\n velocity planner : catkin_INCLUDE_DIRS\n")
+message("${catkin_INCLUDE_DIRS}")
 
 add_executable(velocity_planner src/velocity_planner.cpp src/velocity_planner_utils.cpp src/interpolate.cpp)
-
 add_dependencies(velocity_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} velocity_planner_gencfg)
-
 target_link_libraries(velocity_planner ${catkin_LIBRARIES} ${PYTHON_LIBRARIES})
 
+add_executable(velocity_planner_osqp src/velocity_planner_osqp.cpp src/velocity_planner_utils.cpp src/interpolate.cpp)
+add_dependencies(velocity_planner_osqp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} velocity_planner_gencfg)
+target_link_libraries(velocity_planner_osqp ${catkin_LIBRARIES} ${PYTHON_LIBRARIES})
