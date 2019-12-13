@@ -569,7 +569,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
 
 
   /* path smoothing */
-  if (enable_path_smoothing_ && traj.size() > 2 * path_filter_moving_ave_num_)
+  if (enable_path_smoothing_ && (int)traj.size() > 2 * path_filter_moving_ave_num_)
   {
     MPCTrajectory traj_smoothed = traj;
     for (int i = 0; i < path_smoothing_times_; ++i)
