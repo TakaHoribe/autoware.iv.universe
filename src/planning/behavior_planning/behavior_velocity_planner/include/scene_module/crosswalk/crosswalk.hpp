@@ -38,6 +38,7 @@ private:
     State state_;
     int lane_id_;
     lanelet::ConstLanelet crosswalk_;
+    double stop_margin_;
     boost::uuids::uuid task_id_;
 };
 
@@ -50,6 +51,8 @@ public:
     void pushCollisionLine(const std::vector<Eigen::Vector2d> &line);
     void pushCollisionPoint(const Eigen::Vector3d &point);
     void pushCollisionPoint(const Eigen::Vector2d &point);
+    void pushStopPoint(const Eigen::Vector3d &point);
+    void pushStopPoint(const Eigen::Vector2d &point);
     void pushCrosswalkPolygon(const std::vector<Eigen::Vector3d> &polygon);
     void pushCrosswalkPolygon(const std::vector<Eigen::Vector2d> &polygon);
 
@@ -60,6 +63,7 @@ private:
     ros::NodeHandle pnh_;
     ros::Publisher debug_viz_pub_;
     std::vector<Eigen::Vector3d> collision_points_;
+    std::vector<Eigen::Vector3d> stop_points_;
     std::vector<std::vector<Eigen::Vector3d>> collision_lines_;
     std::vector<std::vector<Eigen::Vector3d>> crosswalk_polygons_;
 };

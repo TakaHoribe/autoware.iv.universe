@@ -16,6 +16,16 @@ bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &
     return SingletonDataManager::getInstance().getCurrentSelfVelocity(twist);
 }
 
+bool getBaselink2FrontLength(double &length){
+    double front_overhang;
+    double wheel_base;
+    if (!SingletonDataManager::getInstance().getWheelBase(wheel_base) ||
+        !SingletonDataManager::getInstance().getFrontOverhang(front_overhang))
+        return false;
+    length = front_overhang + wheel_base;
+    return true;
+}
+
 bool isVehicleStopping(){
     std::shared_ptr<geometry_msgs::TwistStamped const> twist_ptr;
     getCurrentSelfVelocity(twist_ptr);

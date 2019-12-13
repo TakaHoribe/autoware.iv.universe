@@ -30,6 +30,16 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin &inp
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
+void SingletonDataManager::setWheelBase(const double &wheel_base)
+{
+    wheel_base_ptr_ = std::make_shared<double>(wheel_base);
+}
+
+void SingletonDataManager::setFrontOverhang(const double &front_overhang)
+{
+    front_overhang_ptr_ = std::make_shared<double>(front_overhang);
+}
+
 bool SingletonDataManager::getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects)
 {
     if (perception_ptr_ == nullptr)
@@ -72,6 +82,22 @@ bool SingletonDataManager::getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_ma
         return false;
     lanelet_map_ptr = lanelet_map_ptr_;
     routing_graph_ptr = routing_graph_ptr_;
+    return true;
+}
+
+bool SingletonDataManager::getWheelBase(double &wheel_base)
+{
+    if (wheel_base_ptr_ == nullptr)
+        return false;
+    wheel_base = *wheel_base_ptr_;
+    return true;
+}
+
+bool SingletonDataManager::getFrontOverhang(double &front_overhang)
+{
+    if (front_overhang_ptr_ == nullptr)
+        return false;
+    front_overhang = *front_overhang_ptr_;
     return true;
 }
 

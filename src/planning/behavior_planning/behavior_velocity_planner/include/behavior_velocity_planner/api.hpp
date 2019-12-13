@@ -11,6 +11,7 @@ namespace behavior_planning
 bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects);
 bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud);
 bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist);
+bool getBaselink2FrontLength(double &length);
 bool isVehicleStopping();
 bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
 bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_pt,

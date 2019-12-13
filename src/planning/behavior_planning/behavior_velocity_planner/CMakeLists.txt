@@ -149,6 +149,7 @@ add_executable(behavior_velocity_planner_node
 src/api.cpp
 src/data_manager.cpp
 src/utilization/path_utilization.cpp
+src/utilization/geometry/line2d.cpp
 src/utilization/geometry/polygon2d.cpp
 src/planner_manager.cpp
 src/node.cpp

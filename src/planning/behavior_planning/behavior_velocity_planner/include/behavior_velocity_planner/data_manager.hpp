@@ -71,6 +71,8 @@ private:
     lanelet::LaneletMapPtr lanelet_map_ptr_;
     lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
     lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
+    std::shared_ptr<double> wheel_base_ptr_;
+    std::shared_ptr<double> front_overhang_ptr_;
 
     /*
      * SelfPoseLinstener
@@ -82,12 +84,18 @@ private:
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
 
 public:
+    // setter
+    void setWheelBase(const double &wheel_base);
+    void setFrontOverhang(const double &front_overhang);
+    // getter
     bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects);
     bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud);
     bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
     bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist);
     bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_ptr,
                        lanelet::routing::RoutingGraphConstPtr &routing_graph_ptr);
+    bool getWheelBase(double &wheel_base);
+    bool getFrontOverhang(double &front_overhang);
 };
 
 } // namespace behavior_planning
