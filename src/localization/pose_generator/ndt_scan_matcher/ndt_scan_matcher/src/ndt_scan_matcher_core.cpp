@@ -35,6 +35,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   , tf2_listener_(tf2_buffer_)
   , base_frame_("base_link")
   , map_frame_("map")
+  , converged_param_transform_probability_(4.5)
 {
   ROS_INFO("use NDT SLAM PCL GENERIC version");
   ndt_ptr_.reset(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>);
@@ -62,6 +63,9 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   ROS_INFO("trans_epsilon: %lf, step_size: %lf, resolution: %lf, max_iterations: %d",
             trans_epsilon, step_size, resolution, max_iterations);
 
+  private_nh_.getParam("converged_param_transform_probability", converged_param_transform_probability_);
+
+
   initial_pose_sub_ = nh_.subscribe("ekf_pose_with_covariance", 100, &NDTScanMatcher::callbackInitialPose, this);
   map_points_sub_ = nh_.subscribe("pointcloud_map", 1, &NDTScanMatcher::callbackMapPoints, this);
   sensor_points_sub_ = nh_.subscribe("points_raw", 1, &NDTScanMatcher::callbackSensorPoints, this);
@@ -73,6 +77,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   exe_time_pub_ = nh.advertise<std_msgs::Float32>("exe_time_ms", 10);
   transform_probability_pub_ = nh.advertise<std_msgs::Float32>("transform_probability", 10);
   iteration_num_pub_ = nh.advertise<std_msgs::Float32>("iteration_num", 10);
+  initial_to_result_distance_pub_ = nh.advertise<std_msgs::Float32>("initial_to_result_distance", 10);
   ndt_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
 
   service_ = nh.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
@@ -118,7 +123,7 @@ bool NDTScanMatcher::serviceNDTAlign(ndt_scan_matcher::NDTAlign::Request &req, n
   const geometry_msgs::Pose result_pose_msg =  tf2::toMsg(result_pose_affine);
 
   res.converged = true;
-  res.result_pose_with_cov.header = res.result_pose_with_cov.header;
+  res.result_pose_with_cov = res.result_pose_with_cov;
   res.result_pose_with_cov.pose.pose = result_pose_msg;
   return true;
 }
@@ -239,7 +244,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   const size_t iteration_num = ndt_ptr_->getFinalNumIteration();
 
   bool is_converged = true;
-  if (iteration_num >= 32 || transform_probability < 4.5) {
+  if (iteration_num >= ndt_ptr_->getMaximumIterations()+2 || transform_probability < converged_param_transform_probability_) {
     is_converged = false;
     std::cout << "Not Converged" << std::endl;
     std::cout << "F**********************************************************************************************K" << std::endl;
@@ -292,7 +297,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
     marker.color = ExchangeColorCrc((1.0*i)/15.0);
     marker_array.markers.push_back(marker);
   }
-  for ( ; i < 32;)
+  for ( ; i < ndt_ptr_->getMaximumIterations()+2;)
   {
     marker.id = i++;
     marker.pose = geometry_msgs::Pose();
@@ -313,6 +318,12 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   std_msgs::Float32 iteration_num_msg;
   iteration_num_msg.data = iteration_num;
   iteration_num_pub_.publish(iteration_num_msg);
+
+  std_msgs::Float32 initial_to_result_distance_msg;
+  initial_to_result_distance_msg.data = std::sqrt(std::pow(initial_pose_cov_msg.pose.pose.position.x - result_pose_with_cov_msg.pose.pose.position.x, 2.0)
+                                                + std::pow(initial_pose_cov_msg.pose.pose.position.y - result_pose_with_cov_msg.pose.pose.position.y, 2.0)
+                                                + std::pow(initial_pose_cov_msg.pose.pose.position.z - result_pose_with_cov_msg.pose.pose.position.z, 2.0));
+  initial_to_result_distance_pub_.publish(initial_to_result_distance_msg);
   
   std::cout << "------------------------------------------------" << std::endl;
   std::cout << "align_time: " << align_time << "ms" << std::endl;

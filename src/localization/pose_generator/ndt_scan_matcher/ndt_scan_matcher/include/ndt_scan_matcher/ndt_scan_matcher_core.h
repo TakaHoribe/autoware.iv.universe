@@ -87,6 +87,7 @@ private:
   ros::Publisher exe_time_pub_;
   ros::Publisher transform_probability_pub_;
   ros::Publisher iteration_num_pub_;
+  ros::Publisher initial_to_result_distance_pub_;
   ros::Publisher ndt_marker_pub_;
 
   // dynamic_reconfigure::Server<ndt_slam::NDTScanMatcherConfig> server_;
@@ -103,6 +104,7 @@ private:
   Eigen::Matrix4f base_to_sensor_matrix_;
   std::string base_frame_;
   std::string map_frame_;
+  double converged_param_transform_probability_;
 
   std::deque<boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped>> initial_pose_msg_ptr_array_;
   ros::Time current_scan_time_;

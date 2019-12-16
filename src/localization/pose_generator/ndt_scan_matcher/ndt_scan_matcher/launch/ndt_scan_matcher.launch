@@ -24,6 +24,8 @@
   <arg name="node_name" value="ndt_scan_matcher" unless="$(arg use_anonymous_node_name)" doc="Not use anonymous option" />
   <arg name="node_name" value="$(anon ndt_scan_matcher)" if="$(arg use_anonymous_node_name)" doc="Use anonymous option" />
 
+  <arg name="converged_param_transform_probability" default="4.5" doc="" />
+
   <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="log">
 
     <remap from="points_raw" to="$(arg input_sensor_points_topic)" />
@@ -39,6 +41,7 @@
     <param name="resolution" value="$(arg resolution)" />
     <param name="max_iterations" value="$(arg max_iterations)" />
 
+    <param name="converged_param_transform_probability" value="$(arg converged_param_transform_probability)" />
   </node>
 
 </launch>
