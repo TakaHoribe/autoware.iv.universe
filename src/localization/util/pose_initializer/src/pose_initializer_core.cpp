@@ -103,6 +103,13 @@ void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianc
   if(ndt_client_.call(srv))
   {
     ROS_INFO("[pose_initializer] called NDT Align Server");
+    // NOTE temporary cov
+    srv.response.result_pose_with_cov.pose.covariance[0] = 10.0;
+    srv.response.result_pose_with_cov.pose.covariance[1*6*1] = 10.0;
+    srv.response.result_pose_with_cov.pose.covariance[2*6+2] = 0.01;
+    srv.response.result_pose_with_cov.pose.covariance[3*6*3] = 0.01;
+    srv.response.result_pose_with_cov.pose.covariance[4*6*4] = 0.01;
+    srv.response.result_pose_with_cov.pose.covariance[5*6*5] = 1.0;
     initial_pose_pub_.publish(srv.response.result_pose_with_cov);
   }
   else
