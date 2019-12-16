@@ -31,13 +31,13 @@ bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
 
   if (!csv.readCsv(table))
   {
-    std::cout << "[Error] Cannot read " << csv_path << std::endl;
+    ROS_ERROR("[Brake Map] Cannot open %s", csv_path);
     return false;
   }
 
   if (table[0].size() < 2)
   {
-    std::cout << "[Error] CSV file should have at least 2 column" << std::endl;
+    ROS_ERROR("[Brake Map] Cannot read %s. CSV file should have at least 2 column", csv_path);
     return false;
   }
 
@@ -51,7 +51,7 @@ bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
   {
     if (table[0].size() != table[i].size())
     {
-      std::cout << "[Error] Each row should have a same number of columns" << std::endl;
+      ROS_ERROR("[Brake Map] Cannot read %s. Each row should have a same number of columns", csv_path);
       return false;
     }
     brake_index_.push_back(std::stod(table[i][0]));
@@ -83,11 +83,13 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake)
   }
 
   // calculate brake
-  // When the desired acceleration is smaller than the throttle area, return false => emergency sequence
-  // When the desired acceleration is greater than the throttle area, return max brake on the map
+  // When the desired acceleration is smaller than the brake area, return max brake on the map
+  // When the desired acceleration is greater than the brake area, return min brake on the map
   if (acc < accs_interpolated.back())
   {
-    return false;
+    ROS_INFO("[Brake Map] Exceeding the acc range defined by csv. acc: %f < csv limit: %f", acc, accs_interpolated.back());
+    brake = brake_index_.back();
+    return true;
   }
   else if (accs_interpolated.front() < acc)
   {

@@ -31,13 +31,13 @@ bool AccelMap::readAccelMapFromCSV(std::string csv_path)
 
   if (!csv.readCsv(table))
   {
-    std::cout << "[Error] Cannot read " << csv_path << std::endl;
+    ROS_ERROR("[Accel Map] Cannot open %s", csv_path);
     return false;
   }
 
   if (table[0].size() < 2)
   {
-    std::cout << "[Error] CSV file should have at least 2 column" << std::endl;
+    ROS_ERROR("[Accel Map] Cannot read %s. CSV file should have at least 2 column", csv_path);
     return false;
   }
   vehicle_name_ = table[0][0];
@@ -50,7 +50,7 @@ bool AccelMap::readAccelMapFromCSV(std::string csv_path)
   {
     if (table[0].size() != table[i].size())
     {
-      std::cout << "[Error] Each row should have a same number of columns" << std::endl;
+      ROS_ERROR("[Accel Map] Cannot read %s. Each row should have a same number of columns", csv_path);
       return false;
     }
     throttle_index_.push_back(std::stod(table[i][0]));
