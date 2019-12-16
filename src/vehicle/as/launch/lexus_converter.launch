@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="base_frame_id" default="base_link"/>
+	<arg name="command_timeout" default="1000"/>
+	<arg name="loop_rate" default="30.0"/>
+	<arg name="topic_current_velocity" default="/current_velocity"/>
+	<arg name="topic_vehicle_cmd" default="/vehicle_cmd"/>
+	<arg name="tire_radius" default="0.39"/>
+	<arg name="wheel_base" default="2.79"/>
+	<arg name="agr_coef_a" default="15.713"/>
+	<arg name="agr_coef_b" default="0.053"/>
+	<arg name="agr_coef_c" default="0.042"/>
+	<!-- <arg name="csv_path_accel_map" default="/home/autoware/.autoware/data/lexus/accel_map.csv"/>
+	<arg name="csv_path_brake_map" default="/home/autoware/.autoware/data/lexus/brake_map_fix_low_speed.csv"/> -->
+	<arg name="csv_path_accel_map" default="$(find as)/data/lexus/dummy_accel_map.csv"/>
+	<arg name="csv_path_brake_map" default="$(find as)/data/lexus/dummy_brake_map.csv"/>
+	<arg name="acc_emergency" default="-2.0"/>
+	<arg name="max_throttle" default="0.2"/>
+	<arg name="min_throttle" default="0.0"/>
+	<arg name="max_brake" default="0.8"/>
+	<arg name="min_brake" default="0.0"/>
+	<arg name="max_steering_wheel" default="8.48230"/>
+	<arg name="min_steering_wheel" default="-8.48230"/>
+
+	<node pkg="as" type="lexus_converter" name="pacmod_interface" output="screen">
+		<param name="base_frame_id" value="$(arg base_frame_id)" />
+		<param name="command_timeout" value="$(arg command_timeout)" />
+		<param name="loop_rate" value="$(arg loop_rate)" />
+		<param name="topic_current_velocity" value="$(arg topic_current_velocity)" />
+		<param name="topic_vehicle_cmd" value="$(arg topic_vehicle_cmd)" />
+		<param name="tire_radius" value="$(arg tire_radius)" />
+		<param name="wheel_base" value="$(arg wheel_base)" />
+		<param name="agr_coef_a" value="$(arg agr_coef_a)" />
+		<param name="agr_coef_b" value="$(arg agr_coef_b)" />
+		<param name="agr_coef_c" value="$(arg agr_coef_c)" />
+		<param name="csv_path_accel_map" value="$(arg csv_path_accel_map)" />
+		<param name="csv_path_brake_map" value="$(arg csv_path_brake_map)" />
+		<param name="acc_emergency" value="$(arg acc_emergency)" />
+		<param name="max_throttle" value="$(arg max_throttle)" />
+		<param name="min_throttle" value="$(arg min_throttle)" />
+		<param name="max_brake" value="$(arg max_brake)" />
+		<param name="min_brake" value="$(arg min_brake)" />
+		<param name="max_steering_wheel" value="$(arg max_steering_wheel)" />
+		<param name="min_steering_wheel" value="$(arg min_steering_wheel)" />
+	</node>
+</launch>

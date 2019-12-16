@@ -110,6 +110,7 @@ private:
     CONST_ACCEL_TWIST = 4,
     IDEAL_FORKLIFT_RLS = 5,
     DELAY_FORKLIFT_RLS = 6,
+    IDEAL_ACCEL = 7,
   } vehicle_model_type_;                                 //!< @brief vehicle model type to decide the model dynamics
   std::shared_ptr<SimModelInterface> vehicle_model_ptr_; //!< @brief vehicle model pointer
 
