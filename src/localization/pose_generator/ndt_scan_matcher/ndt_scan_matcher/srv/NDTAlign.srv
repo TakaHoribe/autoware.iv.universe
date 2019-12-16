@@ -1,0 +1,4 @@
+geometry_msgs/PoseWithCovarianceStamped initial_pose_with_cov
+---
+bool converged
+geometry_msgs/PoseWithCovarianceStamped result_pose_with_cov

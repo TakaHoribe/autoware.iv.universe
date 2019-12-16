@@ -87,7 +87,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/vehicle_cmd</topic>
-                                    <type>autoware_msgs/VehicleCmd</type>
+                                    <type>autoware_control_msgs/VehicleCommandStamped</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>ctrl_cmd/linear_velocity</field>
@@ -100,7 +100,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/vehicle_cmd</topic>
-                                    <type>autoware_msgs/VehicleCmd</type>
+                                    <type>autoware_control_msgs/VehicleCommandStamped</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -214,7 +214,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/vehicle_cmd</topic>
-                                    <type>autoware_msgs/VehicleCmd</type>
+                                    <type>autoware_control_msgs/VehicleCommandStamped</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>ctrl_cmd/steering_angle</field>
@@ -227,7 +227,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/vehicle_cmd</topic>
-                                    <type>autoware_msgs/VehicleCmd</type>
+                                    <type>autoware_control_msgs/VehicleCommandStamped</type>
                                 </y_axis>
                             </axes>
                             <color>

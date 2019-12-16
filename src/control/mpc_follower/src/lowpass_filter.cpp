@@ -107,7 +107,7 @@ bool MoveAverageFilter::filt_vector(const int num, std::vector<double> &u)
 {
   if ((int)u.size() < num)
   {
-    std::cout << "[MovingAverageFilter] vector size is lower than moving average number" << std::endl;
+    // std::cout << "[MovingAverageFilter] vector size is lower than moving average number" << std::endl;
     return false;
   }
   std::vector<double> filtered_u(u);

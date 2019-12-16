@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="ndt_align_server_name" default="ndt_align_srv"/>
+  <node pkg="pose_initializer" type="pose_initializer" name="pose_initializer" output="log">
+    <remap from="initialpose" to="/initialpose" />
+    <remap from="initialpose3d" to="/initialpose3d" />
+    <remap from="ndt_align_srv" to="/localization/pose_generator/ndt_align_srv" />
+  </node>
+
+</launch>

@@ -34,7 +34,6 @@ MPCFollower::MPCFollower()
   pnh_.param("traj_resample_dist", traj_resample_dist_, double(0.1)); // [m]
   pnh_.param("admisible_position_error", admisible_position_error_, double(5.0));
   pnh_.param("admisible_yaw_error_deg", admisible_yaw_error_deg_, double(90.0));
-  pnh_.param("output_interface", output_interface_, std::string("control"));
 
   /* mpc parameters */
   pnh_.param("mpc_prediction_horizon", mpc_param_.prediction_horizon, int(70));
@@ -148,8 +147,7 @@ MPCFollower::MPCFollower()
   }
 
   /* for debug */
-  pub_debug_filtered_traj_ = pnh_.advertise<visualization_msgs::Marker>("debug/filtered_reference_trajectory", 1);
-  pub_debug_predicted_traj_ = pnh_.advertise<visualization_msgs::Marker>("debug/predicted_trajectory", 1);
+  pub_debug_marker_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
   pub_debug_mpc_calc_time_ = pnh_.advertise<std_msgs::Float32>("debug/mpc_calc_time", 1);
 
   pub_debug_values_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug/debug_values", 1);
@@ -164,7 +162,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
   if (vehicle_model_ptr_ == nullptr || qpsolver_ptr_ == nullptr)
   {
     DEBUG_INFO("[MPC] vehicle_model = %d, qp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
-    publishControlCommands(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
+    publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
@@ -173,7 +171,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     DEBUG_INFO("[MPC] MPC is not solved. ref_traj_.size() = %d, pose = %d,  velocity = %d,  steer = %d",
                ref_traj_.size(), current_pose_ptr_ != nullptr, current_velocity_ptr_ != nullptr, current_steer_ptr_ != nullptr);
 
-    publishControlCommands(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
+    publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
@@ -203,7 +201,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
     steer_vel_cmd = 0.0;
   }
 
-  publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
+  publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 
 };
 
@@ -512,8 +510,8 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
   /* publish for visualization */
   visualization_msgs::Marker marker;
-  convertTrajToMarker(debug_mpc_predicted_traj, marker, "predicted_traj", 0.99, 0.99, 0.99, 0.2);
-  pub_debug_predicted_traj_.publish(marker);
+  convertTrajToMarker(debug_mpc_predicted_traj, marker, "predicted_trajectory", 0.99, 0.99, 0.99, 0.2);
+  pub_debug_marker_.publish(marker);
 
   /* publish debug values */
   {
@@ -547,6 +545,12 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
 void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &msg)
 {
+  if (msg->points.size() < 3)
+  {
+    DEBUG_INFO("[MPC] received path size is < 3, not enough.");
+    return;
+  }
+
   current_trajectory_ = *msg;
   DEBUG_INFO("[MPC] trajectory callback: received trajectory size = %lu", current_trajectory_.points.size());
 
@@ -563,21 +567,28 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
   MPCUtils::convertEulerAngleToMonotonic(traj.yaw);
   DEBUG_INFO("[MPC] path callback: resampled traj size() = %lu", traj.relative_time.size());
 
+
   /* path smoothing */
-  if (enable_path_smoothing_)
+  if (enable_path_smoothing_ && (int)traj.size() > 2 * path_filter_moving_ave_num_)
   {
+    MPCTrajectory traj_smoothed = traj;
     for (int i = 0; i < path_smoothing_times_; ++i)
     {
-      if (!MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj.x) ||
-          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj.y) ||
-          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj.yaw) ||
-          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj.vx))
+      if (!MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.x) ||
+          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.y) ||
+          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.yaw) ||
+          !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.vx))
       {
-        ROS_WARN("[MPC] path callback: filtering error. stop filtering");
-        return;
+        DEBUG_INFO("[MPC] path callback: filtering error. ignore this trajectory");
+        break;
+      }
+      else
+      {
+        traj = traj_smoothed;
       }
     }
   }
+
 
   /* calculate yaw angle */
   if (enable_yaw_recalculation_)
@@ -585,13 +596,11 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
     MPCUtils::calcTrajectoryYawFromXY(traj);
     MPCUtils::convertEulerAngleToMonotonic(traj.yaw);
   }
-
   /* calculate curvature */
   MPCUtils::calcTrajectoryCurvature(traj, curvature_smoothing_num_);
   const double max_k = *max_element(traj.k.begin(), traj.k.end());
   const double min_k = *min_element(traj.k.begin(), traj.k.end());
   DEBUG_INFO("[MPC] path callback: trajectory curvature : max_k = %f, min_k = %f", max_k, min_k);
-
   /* add end point with vel=0 on traj for mpc prediction */
   const double mpc_predict_time_length = (mpc_param_.prediction_horizon + 1) * mpc_param_.prediction_sampling_time + mpc_param_.delay_compensation_time + ctrl_period_;
   const double end_velocity = 0.0;
@@ -601,7 +610,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
 
   if (!traj.size())
   {
-    ROS_ERROR("[MPC] path callback: trajectory size is undesired.");
+    DEBUG_INFO("[MPC] path callback: trajectory size is undesired.");
     DEBUG_INFO("size: x=%lu, y=%lu, z=%lu, yaw=%lu, v=%lu,k=%lu,t=%lu", traj.x.size(), traj.y.size(),
                traj.z.size(), traj.yaw.size(), traj.vx.size(), traj.k.size(), traj.relative_time.size());
     return;
@@ -611,8 +620,8 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
 
   /* publish trajectory for visualize */
   visualization_msgs::Marker markers;
-  convertTrajToMarker(ref_traj_, markers, "ref_traj", 0.0, 0.5, 1.0, 0.05);
-  pub_debug_filtered_traj_.publish(markers);
+  convertTrajToMarker(ref_traj_, markers, "filtered_reference_trajectory", 0.0, 0.5, 1.0, 0.05);
+  pub_debug_marker_.publish(markers);
 };
 
 void MPCFollower::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::Marker &marker,
@@ -680,46 +689,12 @@ void MPCFollower::callbackCurrentVelocity(const geometry_msgs::TwistStamped::Con
   current_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
 };
 
-void MPCFollower::publishControlCommands(const double &vel_cmd, const double &acc_cmd,
-                                         const double &steer_cmd, const double &steer_vel_cmd)
-{
-  const double omega_cmd = vel_cmd * std::tan(steer_cmd) / wheelbase_;
-  if (output_interface_ == "twist")
-  {
-    publishTwist(vel_cmd, omega_cmd);
-  }
-  else if (output_interface_ == "control")
-  {
-    publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
-  }
-  else if (output_interface_ == "all")
-  {
-    publishTwist(vel_cmd, omega_cmd);
-    publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
-  }
-  else
-  {
-    ROS_WARN("[MPC] control command interface is not appropriate");
-  }
-}
-
-void MPCFollower::publishTwist(const double &vel_cmd, const double &omega_cmd)
-{
-  /* convert steering to twist */
-  geometry_msgs::TwistStamped twist;
-  twist.header.frame_id = "/base_link";
-  twist.header.stamp = ros::Time::now();
-  twist.twist.linear.x = vel_cmd;
-  twist.twist.angular.z = omega_cmd;
-  pub_twist_cmd_.publish(twist);
-}
-
 void MPCFollower::publishCtrlCmd(const double &vel_cmd, const double &acc_cmd, const double &steer_cmd, const double &steer_vel_cmd)
 {
   autoware_control_msgs::ControlCommandStamped cmd;
   cmd.header.frame_id = "/base_link";
   cmd.header.stamp = ros::Time::now();
-  cmd.control.speed = vel_cmd;
+  cmd.control.velocity = vel_cmd;
   cmd.control.acceleration = acc_cmd;
   cmd.control.steering_angle = steer_cmd;
   cmd.control.steering_angle_velocity = steer_vel_cmd;
@@ -735,5 +710,5 @@ MPCFollower::~MPCFollower()
   double steer_vel_cmd = 0.0;
   if (current_steer_ptr_ != nullptr)
     steer_cmd = *current_steer_ptr_;
-  publishControlCommands(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
+  publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 };

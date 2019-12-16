@@ -5,7 +5,7 @@
 
 DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 {
-    dynamic_object_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output/dynamic_object", 1, true);
+    dynamic_object_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output/dynamic_object", 1, true);
     pose_pub_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/objects_pose", 1, true);
     pointcloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("output/points_raw", 1, true);
     pose_sub_ = pnh_.subscribe("input/pose", 1, &DummyPerceptionPublisherNode::poseCallback, this);
@@ -17,7 +17,7 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
 {
     if (pose_ptr_ == nullptr)
         return;
-    autoware_perception_msgs::DynamicObjectArray output_dynamic_object_msg;
+    autoware_perception_msgs::DynamicObjectWithFeatureArray output_dynamic_object_msg;
     geometry_msgs::PoseStamped output_moved_object_pose;
     sensor_msgs::PointCloud2 output_pointcloud_msg;
     std_msgs::Header header;
@@ -43,8 +43,9 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
 
     const double epsilon = 0.001;
     const double width = 1.0;
-    const double length = 2.0;
+    const double length = 1.0;
 
+    // pointcloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += 0.25)
     {
@@ -78,10 +79,29 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
     }
     pcl::toROSMsg(*pointcloud_ptr, output_pointcloud_msg);
 
+    // dynamic object
+    autoware_perception_msgs::DynamicObjectWithFeature feature_object;
+    feature_object.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
+    feature_object.object.semantic.confidence = 1.0;
+    feature_object.object.state.pose_covariance.pose = output_moved_object_pose.pose;
+    feature_object.object.state.orientation_reliable = false;
+    feature_object.object.state.twist_covariance.twist.linear.x = velocity_;
+    feature_object.object.state.twist_reliable = true;
+    feature_object.object.state.acceleration_reliable = true;
+    feature_object.object.shape.type = autoware_perception_msgs::Shape::CYLINDER;
+    feature_object.object.shape.dimensions.x = std::max(width, length);
+    feature_object.object.shape.dimensions.y = std::max(width, length);
+    feature_object.object.shape.dimensions.z = 2.0;
+    output_dynamic_object_msg.feature_objects.push_back(feature_object);
+
+
+    // create output header
     output_moved_object_pose.header = header;
     output_dynamic_object_msg.header = header;
     output_pointcloud_msg.header.frame_id = "base_link";
     output_pointcloud_msg.header.stamp = header.stamp;
+
+    // publish
     pointcloud_pub_.publish(output_pointcloud_msg);
     dynamic_object_pub_.publish(output_dynamic_object_msg);
     pose_pub_.publish(output_moved_object_pose);

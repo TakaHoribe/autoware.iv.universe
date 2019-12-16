@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(behavior_velocity_planner)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -18,6 +18,10 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
 )
+find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -124,6 +128,8 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -140,8 +146,17 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(behavior_velocity_planner_node 
+src/api.cpp
+src/data_manager.cpp
+src/utilization/path_utilization.cpp
+src/utilization/geometry/line2d.cpp
+src/utilization/geometry/polygon2d.cpp
+src/planner_manager.cpp
 src/node.cpp
-src/main.cpp)
+src/main.cpp
+src/scene_module/momentary_stop.cpp
+src/scene_module/crosswalk.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +171,7 @@ add_dependencies(behavior_velocity_planner_node ${${PROJECT_NAME}_EXPORTED_TARGE
 ## Specify libraries to link a library or executable target against
 target_link_libraries(behavior_velocity_planner_node
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 #############

@@ -168,9 +168,9 @@ void EKFLocalizer::setCurrentResult()
   }
   else
   {
-    current_ekf_pose_.pose.position.z = 0.0;
-    roll = 0;
-    pitch = 0;
+    // current_ekf_pose_.pose.position.z = 0.0;
+    // roll = 0;
+    // pitch = 0;
   }
   yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
   q_tf.setRPY(roll, pitch, yaw);
@@ -193,7 +193,7 @@ void EKFLocalizer::timerTFCallback(const ros::TimerEvent& e)
   geometry_msgs::TransformStamped transformStamped;
   transformStamped.header.stamp = ros::Time::now();
   transformStamped.header.frame_id = current_ekf_pose_.header.frame_id;
-  transformStamped.child_frame_id = "ekf_pose";
+  transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = current_ekf_pose_.pose.position.x;
   transformStamped.transform.translation.y = current_ekf_pose_.pose.position.y;
   transformStamped.transform.translation.z = current_ekf_pose_.pose.position.z;
@@ -251,8 +251,11 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
   Eigen::MatrixXd X(dim_x_, 1);
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(dim_x_, dim_x_);
 
+  // TODO need mutex
+
   X(IDX::X) = initialpose.pose.pose.position.x + transform.transform.translation.x;
   X(IDX::Y) = initialpose.pose.pose.position.y + transform.transform.translation.y;
+  current_ekf_pose_.pose.position.z = initialpose.pose.pose.position.z + transform.transform.translation.z;
   X(IDX::YAW) = tf2::getYaw(initialpose.pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
   X(IDX::YAWB) = 0.0;
   X(IDX::VX) = 0.0;
@@ -266,6 +269,8 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
   P(IDX::WZ, IDX::WZ) = 0.01;
 
   ekf_.init(X, P, extend_state_step_);
+
+  current_pose_ptr_ = nullptr;
 };
 
 /*

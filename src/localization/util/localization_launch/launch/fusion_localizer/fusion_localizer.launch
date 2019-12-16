@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
 <launch>
     <include file="$(find ekf_localizer)/launch/ekf_localizer.launch">
+      <arg name="tf_rate" default="50.0"/>
+      <arg name="input_initial_pose_name" default="/initialpose3d"/>
+      <arg name="input_pose_name" default="/localization/pose_generator/ndt_pose"/>
+      <arg name="input_twist_name" default="/vehicle/twist"/>
+      <arg name="twist_stddev_wz" default="0.03"/>
+      <arg name="pose_stddev_yaw" default="0.01"/>
     </include>
 </launch>
