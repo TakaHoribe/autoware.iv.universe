@@ -16,7 +16,7 @@
   </include>
 
   <!-- Planning Simulator -->
-  <include file="$(find simple_planning_simulator)/launch/simple_planning_simulator_dummy_pacmod.launch" />
+  <include file="$(find simple_planning_simulator)/launch/simple_planning_simulator.launch" />
   <include file="$(find dummy_perception_publisher)/launch/dummy_perception_publisher.launch" />
 
   <!-- Planning -->  
@@ -25,10 +25,6 @@
 
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch" >
-  </include>
-
-  <!-- Vehicle Interfaces -->
-  <include file="$(find as)/launch/pacmod_interface.launch" >
   </include>
   
   <!-- Rviz -->
