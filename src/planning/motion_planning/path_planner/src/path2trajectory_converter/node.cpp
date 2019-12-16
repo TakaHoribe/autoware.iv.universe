@@ -6,6 +6,7 @@
 #include <autoware_planning_msgs/Trajectory.h>
 #include "path2trajectory_converter/node.hpp"
 
+#include "path2trajectory_converter/horibe_interpolate.h"
 #include "eb_path_planner/reference_path.hpp"
 
 namespace path_planner
@@ -21,11 +22,6 @@ void Path2Trajectory::callback(
   const autoware_planning_msgs::Path &input_path_msg,
         autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
-  if(input_path_msg.points.size()>200)
-  {
-    ROS_WARN("[Path2Trajectory] Path size <%zu> is large. Interpolation could take some time.", 
-              input_path_msg.points.size());
-  }
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
   std::vector<double> tmp_z;
@@ -86,29 +82,52 @@ void Path2Trajectory::callback(
     tmp_v.push_back(input_path_msg.points[i].twist.linear.x);
   }
   
-  Spline2D spline2d(tmp_x, tmp_y);
-  for(double s = 0.1; s < spline2d.s.back(); s+=0.1)
+  std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+  std::vector<double> new_s;
+  for(double i = 0.1; 
+      i <= base_s.back();
+      i += 0.1)
+  {
+    new_s.push_back(i);
+  }
+  horibe_spline::SplineInterpolate spline;
+  std::vector<double> new_x;
+  std::vector<double> new_y;
+  spline.interpolate(base_s, tmp_x, new_s, new_x);
+  spline.interpolate(base_s, tmp_y, new_s, new_y);
+  for(size_t i = 0; i < new_s.size(); i++)
   {
     autoware_planning_msgs::TrajectoryPoint traj_point;
-    std::array<double, 2> point = spline2d.calc_position(s);
-    traj_point.pose.position.x = point[0]; 
-    traj_point.pose.position.y = point[1]; 
-    if(std::isnan(point[0]) || std::isnan(point[1]))
+    traj_point.pose.position.x = new_x[i]; 
+    traj_point.pose.position.y = new_y[i]; 
+    if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
     {
       ROS_ERROR("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
       msgConversionFromPath2Trajectory(input_path_msg, output_trajectory_msg); 
       return;
     }
-    float roll = 0;
-    float pitch = 0;
-    float yaw = spline2d.calc_yaw(s);
+    double roll = 0;
+    double pitch = 0;
+    double yaw = 0;
+    if(i==new_s.size()-1)
+    {
+      double dx = new_x[i] - new_x[i-1]; 
+      double dy = new_y[i] - new_y[i-1]; 
+      yaw = std::atan2(dy, dx);
+    }
+    else
+    {
+      double dx = new_x[i+1] - new_x[i]; 
+      double dy = new_y[i+1] - new_y[i]; 
+      yaw = std::atan2(dy, dx);
+    }
     tf2::Quaternion quaternion;
     quaternion.setRPY( roll, pitch, yaw );
     traj_point.pose.orientation = tf2::toMsg(quaternion);
-    auto it = std::lower_bound(spline2d.s.begin(), 
-                               spline2d.s.end(),
-                               s);
-    size_t ind = std::distance(spline2d.s.begin(), it);
+    auto it = std::lower_bound(base_s.begin(), 
+                               base_s.end(),
+                               new_s[i]);
+    size_t ind = std::distance(base_s.begin(), it);
     traj_point.twist.linear.x = tmp_v[ind];
     traj_point.pose.position.z = tmp_z[ind];
     output_trajectory_msg.points.push_back(traj_point); 

@@ -50,6 +50,7 @@ target_link_libraries(eb_path_planner_node
 )
 
 add_executable(path2trajectory_converter_node 
+src/path2trajectory_converter/horibe_interpolate.cpp
 src/path2trajectory_converter/node.cpp
 src/path2trajectory_converter/main.cpp)
 
