@@ -123,7 +123,7 @@ void LexusConverter::publishCommand()
     return;
   }
 
-  double desired_acc = vehicle_cmd_ptr_->command.control.control.acceleration;
+  double desired_acc = vehicle_cmd_ptr_->command.control.acceleration;
 
   ros::Time stamp = ros::Time::now();
   bool emergency = (vehicle_cmd_.command.emergency == 1);
@@ -178,7 +178,7 @@ void LexusConverter::publishCommand()
 
   double adaptive_gear_ratio =
       std::max(1e-5, agr_coef_a_ + agr_coef_b_ * wheel_speed_ * wheel_speed_ - agr_coef_c_ * steer_wheel_);
-  double desired_steer = vehicle_cmd_ptr_->command.control.control.steering_angle;
+  double desired_steer = vehicle_cmd_ptr_->command.control.steering_angle;
   double desired_steer_wheel = desired_steer * adaptive_gear_ratio;
   desired_steer_wheel = std::min(std::max(desired_steer_wheel, min_steering_wheel_), max_steering_wheel_);
 

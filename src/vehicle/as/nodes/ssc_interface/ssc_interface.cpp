@@ -149,7 +149,7 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
                                                                   autoware_control_msgs::ControlMode::MANUAL;
 
   // speed [km/h]
-  vehicle_status.status.speed = speed;
+  vehicle_status.status.velocity = speed;
 
   // drive/brake pedal [0,1000] (TODO: Scaling)
   // vehicle_status.drivepedal = (int)(1000 * msg_throttle->throttle_pedal);
@@ -201,12 +201,12 @@ void SSCInterface::publishCommand()
   unsigned char desired_mode = engage_ ? 1 : 0;
 
   // Speed for SSC speed_model
-  double desired_speed = vehicle_cmd_.command.control.control.speed;
+  double desired_speed = vehicle_cmd_.command.control.velocity;
 
   // Curvature for SSC steer_model
   double desired_steering_angle = !use_adaptive_gear_ratio_ ?
-                                      vehicle_cmd_.command.control.control.steering_angle :
-                                      vehicle_cmd_.command.control.control.steering_angle * ssc_gear_ratio_ / adaptive_gear_ratio_;
+                                      vehicle_cmd_.command.control.steering_angle :
+                                      vehicle_cmd_.command.control.steering_angle * ssc_gear_ratio_ / adaptive_gear_ratio_;
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)

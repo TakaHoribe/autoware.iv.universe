@@ -95,13 +95,11 @@ private:
     current_vehicle_cmd_.header.stamp = ros::Time::now();
     current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::DRIVE;
     current_vehicle_cmd_.command.turn_signal.signal = autoware_control_msgs::TurnSignal::NONE;
-    current_vehicle_cmd_.command.control.header.frame_id = "/base_link";
-    current_vehicle_cmd_.command.control.header.stamp = ros::Time::now();
-    current_vehicle_cmd_.command.control.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
-    current_vehicle_cmd_.command.control.control.steering_angle_velocity = 0.0;
-    current_vehicle_cmd_.command.control.control.speed = 0.0;
+    current_vehicle_cmd_.command.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
+    current_vehicle_cmd_.command.control.steering_angle_velocity = 0.0;
+    current_vehicle_cmd_.command.control.velocity = 0.0;
     const double temp_coeff = 1.0;
-    current_vehicle_cmd_.command.control.control.acceleration = (current_accel_cmd_.command - current_brake_cmd_.command) / 2.0 * temp_coeff;
+    current_vehicle_cmd_.command.control.acceleration = (current_accel_cmd_.command - current_brake_cmd_.command) / 2.0 * temp_coeff;
     current_vehicle_cmd_.command.emergency = false;
 
     sim_vehicle_cmd_pub_.publish(current_vehicle_cmd_);
@@ -113,7 +111,7 @@ private:
     /* wheel ratation speed [rad/s] */
     pacmod_msgs::WheelSpeedRpt wheel_speed;
     wheel_speed.header = msg.header;
-    double rotation_speed = msg.status.speed / tire_radius_;
+    double rotation_speed = msg.status.velocity / tire_radius_;
     wheel_speed.front_left_wheel_speed = rotation_speed;
     wheel_speed.front_right_wheel_speed = rotation_speed;
     wheel_speed.rear_left_wheel_speed = rotation_speed;
