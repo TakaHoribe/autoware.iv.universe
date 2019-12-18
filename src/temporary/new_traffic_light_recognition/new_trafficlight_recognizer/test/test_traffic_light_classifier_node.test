@@ -1,0 +1,53 @@
+<launch>
+
+  <arg name="template_path" default="$(find new_trafficlight_recognizer)/data/arrow_template.jpg" />
+
+  <node name="dummy_image_publisher"
+        pkg="jsk_perception" type="image_publisher.py"
+        clear_params="true">
+    <rosparam subst_value="true">
+      file_name: $(find new_trafficlight_recognizer)/sample_images/test_trafficlight.jpg
+      rate: 30
+    </rosparam>
+  </node>
+
+  <node name="dummy_stamped_roi_publisher"
+        pkg="new_trafficlight_recognizer" type="dummy_stamped_roi_publisher.py"
+        output="screen">
+    <rosparam subst_value="true">
+      rate: 30
+      roi: [[270,180,324,244], [860,573,200,133]]
+    </rosparam>
+  </node>
+
+  <node name="tlr_classifier"
+        pkg="new_trafficlight_recognizer" type="tlr_classifier"
+        output="screen">
+    <remap from="~input_image" to="dummy_image_publisher/output" />
+    <remap from="~input_stamped_roi" to="dummy_stamped_roi_publisher/output" />
+    <rosparam subst_value="true">
+      template_path: $(arg template_path)
+      green_max    : [234, 255, 255]
+      green_min    : [90,  125, 80 ]
+
+      yellow_max   : [170, 255, 255]
+      yellow_min   : [80,  200, 200]
+
+      red_max      : [360, 255, 255]
+      red_min      : [0,   95,  215]
+      buffer_size  : 5
+      ratios_thresh: 0.02
+    </rosparam>
+  </node>
+
+  <test test-name="test-traffic_light_classifier"
+        name="test-traffic_light_classifier"
+        pkg="jsk_tools" type="test_topic_published.py"
+        time-limit="30" retry="3">
+    <rosparam>
+      topic_0: /tlr_classifier/output_light_states
+      timeout_0: 30
+    </rosparam>
+  </test>
+
+</launch>

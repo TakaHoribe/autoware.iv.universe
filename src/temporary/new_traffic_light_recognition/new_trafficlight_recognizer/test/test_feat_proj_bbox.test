@@ -1,0 +1,8 @@
+<launch>
+
+  <test test-name="test-feat_proj_bbox"
+        name="test"
+        pkg="new_trafficlight_recognizer" type="test-feat_proj_bbox">
+  </test>
+
+</launch>

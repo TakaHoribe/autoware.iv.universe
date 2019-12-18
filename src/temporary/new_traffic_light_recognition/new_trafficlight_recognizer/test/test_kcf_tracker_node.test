@@ -1,0 +1,8 @@
+<launch>
+
+  <test test-name="test-kcf_tracker_node"
+        name="test"
+        pkg="new_trafficlight_recognizer" type="test-kcf_tracker_node">
+  </test>
+
+</launch>

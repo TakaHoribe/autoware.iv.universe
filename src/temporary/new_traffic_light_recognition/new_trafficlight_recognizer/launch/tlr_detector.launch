@@ -1,0 +1,12 @@
+<launch>
+
+  <arg name="onnx_file" default="$(find new_trafficlight_recognizer)/data/yolov3-tlr.onnx"/>
+  <arg name="input_topic" default="/image_raw"/>
+  <arg name="input_stamped_roi" default="/feat_proj_bbox/output_projected_roi" />
+  <node pkg="new_trafficlight_recognizer" type="tlr_detector"
+    name="tlr_detector" output="screen" >
+    <remap from="~input_image" to="$(arg input_topic)" />
+    <remap from="~input_stamped_roi" to="$(arg input_stamped_roi)" />
+    <param name="onnx_file" type="str" value="$(arg onnx_file)"/>
+  </node>
+</launch>

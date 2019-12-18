@@ -1,0 +1,20 @@
+<launch>
+
+  <arg name="gpu" default="0" />
+  <arg name="input_image" default="/image_raw" />
+  <arg name="input_stamped_roi" default="/feat_proj_bbox/output_projected_roi" />
+
+  <node name="tlr_ssd_detector"
+        pkg="new_trafficlight_recognizer" type="chainer_ssd_tlr_detector.py"
+        output="screen">
+    <remap from="~input_image" to="$(arg input_image)" />
+    <remap from="~input_stamped_roi" to="$(arg input_stamped_roi)" />
+    <rosparam subst_value="true">
+      gpu: $(arg gpu)
+      approximate_sync: false
+    </rosparam>
+    <param name="model_path"
+           value="$(find new_trafficlight_recognizer)/data/trafficlight_ssd300.npz" />
+  </node>
+
+</launch>

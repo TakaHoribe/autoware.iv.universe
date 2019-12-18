@@ -1,0 +1,26 @@
+<launch>
+
+  <arg name="input_image" default="/image_raw" />
+  <arg name="input_stamped_roi" default="/tlr_kcf_tracker/output_rois" />
+  <arg name="template_path" default="$(find new_trafficlight_recognizer)/data/arrow_template.jpg" />
+
+  <node name="tlr_classifier"
+        pkg="new_trafficlight_recognizer" type="tlr_classifier"
+        output="screen">
+    <remap from="~input_image" to="$(arg input_image)" />
+    <remap from="~input_stamped_roi" to="$(arg input_stamped_roi)" />
+    <rosparam subst_value="true">
+      template_path: $(arg template_path)
+      green_max        : [234, 255, 255]
+      green_min        : [90,  125, 80 ]
+      yellow_max       : [255, 255, 255]
+      yellow_min       : [255, 255, 255]
+      red_max          : [360, 255, 255]
+      red_min          : [0  , 95 , 215]
+      buffer_size      : 5
+      ratios_thresh    : 0.02
+      approximate_sync : false
+    </rosparam>
+  </node>
+
+</launch>

@@ -1,0 +1,3 @@
+std_msgs/Header header
+autoware_traffic_light_msgs/StampedRoi[] stamped_rois
+int32 signal_id
