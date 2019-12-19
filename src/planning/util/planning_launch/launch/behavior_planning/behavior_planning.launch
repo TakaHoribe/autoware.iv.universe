@@ -9,7 +9,7 @@
     <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
       <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
-      <remap from="~input/vehicle/velocity" to="/vehicle/velocity"/>
+      <remap from="~input/vehicle/velocity" to="/vehicle/twist"/>
       <remap from="~input/perception" to="/perception/prediction/objects"/>
       <remap from="~output/path" to="path"/>
     </node>

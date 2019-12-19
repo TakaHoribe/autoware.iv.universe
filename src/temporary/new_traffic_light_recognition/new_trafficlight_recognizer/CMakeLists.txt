@@ -108,10 +108,9 @@ include_directories(
   ${Eigen3_INCLUDE_DIRS}
   ${Opencv_INCLUDE_DIRS}
   ${CUDA_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/nodes/tlr_detector/lib/include
-  ${CMAKE_SOURCE_DIR}/nodes/tlr_tracker/libs/src/
-  ${CMAKE_SOURCE_DIR}/nodes/tlr_tracker/libs/src/piotr_fhog
-  ${CMAKE_SOURCE_DIR}/nodes/tlr_tracker/libs/src/cn
+  ${CMAKE_CURRENT_SOURCE_DIR}/nodes/tlr_tracker/libs/src/
+  ${CMAKE_CURRENT_SOURCE_DIR}/nodes/tlr_tracker/libs/src/piotr_fhog
+  ${CMAKE_CURRENT_SOURCE_DIR}/nodes/tlr_tracker/libs/src/cn
   ${catkin_INCLUDE_DIRS}
   )
   
@@ -205,6 +204,10 @@ add_library(libtlrdetector
   nodes/tlr_detector/lib/src/EntropyCalibrator.cpp
   nodes/tlr_detector/lib/src/TrtNet.cpp
   )
+  
+target_include_directories(libtlrdetector PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/nodes/tlr_detector/lib/include
+)
   
 target_link_libraries(libtlrdetector
          ${NVINFER}
