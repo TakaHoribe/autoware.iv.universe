@@ -38,7 +38,6 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("use_jerk_limit", use_jerk_limit_, bool(true));
   pnh_.param("use_slope_compensation", use_slope_compensation_, bool(true));
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
-  pnh_.param("use_pub_debug", use_pub_debug_, bool(false));
 
   // parameters for calculating dt
   pnh_.param("max_dt", max_dt_, double((1.0 / control_rate_) * 2.0)); // [sec]
@@ -97,10 +96,8 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   // parameters for slope compensation
   pnh_.param("max_pitch_rad", max_pitch_rad_, double(0.1));  // [rad]
   pnh_.param("min_pitch_rad", min_pitch_rad_, double(-0.1)); // [rad]
-  pnh_.param("lpf_pitch_gain", lpf_pitch_gain_, double(0.95));
 
-  pnh_.param("current_velocity_threshold_pid_integrate", current_velocity_threshold_pid_integrate_, double(0.5));  // [m/s]
-  pnh_.param("lpf_velocity_error_gain", lpf_velocity_error_gain_, double(0.9));
+  pnh_.param("current_velocity_threshold_pid_integrate", current_velocity_threshold_pid_integrate_, double(0.5)); // [m/s]
 
   // subscriber, publisher and timer
   sub_current_velocity_ = pnh_.subscribe("current_velocity", 1, &VelocityController::callbackCurrentVelocity, this);
@@ -119,18 +116,24 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
 
   // initialize PID limits
   double max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d;
-  pnh_.param("max_ret_pid_velocity", max_pid, double(0.0));  // [m/s^2]
-  pnh_.param("min_ret_pid_velocity", min_pid, double(0.0));  // [m/s^2]
-  pnh_.param("max_p_pid_velocity", max_p, double(0.0));      // [m/s^2]
-  pnh_.param("min_p_pid_velocity", min_p, double(0.0));      // [m/s^2]
-  pnh_.param("max_i_pid_velocity", max_i, double(0.0));      // [m/s^2]
-  pnh_.param("min_i_pid_velocity", min_i, double(0.0));      // [m/s^2]
-  pnh_.param("max_d_pid_velocity", max_d, double(0.0));      // [m/s^2]
-  pnh_.param("min_d_pid_velocity", min_d, double(0.0));      // [m/s^2]
+  pnh_.param("max_ret_pid_velocity", max_pid, double(0.0)); // [m/s^2]
+  pnh_.param("min_ret_pid_velocity", min_pid, double(0.0)); // [m/s^2]
+  pnh_.param("max_p_pid_velocity", max_p, double(0.0));     // [m/s^2]
+  pnh_.param("min_p_pid_velocity", min_p, double(0.0));     // [m/s^2]
+  pnh_.param("max_i_pid_velocity", max_i, double(0.0));     // [m/s^2]
+  pnh_.param("min_i_pid_velocity", min_i, double(0.0));     // [m/s^2]
+  pnh_.param("max_d_pid_velocity", max_d, double(0.0));     // [m/s^2]
+  pnh_.param("min_d_pid_velocity", min_d, double(0.0));     // [m/s^2]
   pid_velocity_.setLimits(max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d);
 
-  lpf_pitch.init(lpf_pitch_gain_);
-  lpf_velocity_error.init(lpf_velocity_error_gain_);
+  // set lowpass filter
+  double lpf_pitch_gain;
+  pnh_.param("lpf_pitch_gain", lpf_pitch_gain, double(0.95));
+  lpf_pitch.init(lpf_pitch_gain);
+
+  double lpf_velocity_error_gain;
+  pnh_.param("lpf_velocity_error_gain", lpf_velocity_error_gain, double(0.9));
+  lpf_velocity_error.init(lpf_velocity_error_gain);
 
   debug_values_.data.clear();
   for (int i = 0; i < num_debug_values_; ++i)
@@ -139,7 +142,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   }
 
   /* wait to get vehicle position */
-  while(true)
+  while (true)
   {
     if (!updateCurrentPose(5.0))
     {
@@ -190,11 +193,10 @@ bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_
   return true;
 }
 
-
 bool VelocityController::updateCurrentPose(const double timeout_sec)
 {
   geometry_msgs::PoseStamped ps;
-  if(!getCurretPoseFromTF(timeout_sec, ps))
+  if (!getCurretPoseFromTF(timeout_sec, ps))
   {
     return false;
   }
@@ -206,7 +208,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
 {
   resetDebugValues();
 
-  if(!updateCurrentPose(0.0))
+  if (!updateCurrentPose(0.0))
   {
     return;
   }
@@ -231,7 +233,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
                                                          angle_threshold_closest_, distance_threshold_closest_, closest_idx))
   {
     ROS_ERROR_DELAYED_THROTTLE(5.0, "[VC Find Closest Waypoint] cannot find closest! Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
-              distance_threshold_closest_, angle_threshold_closest_);
+                               distance_threshold_closest_, angle_threshold_closest_);
     double cmd_acceleration =
         applyJerkLimitFilter(sudden_stop_acceleration_, dt, max_jerk_sudden_stop_, min_jerk_sudden_stop_);
     publishControlCommandStamped(sudden_stop_velocity_, cmd_acceleration);
@@ -267,7 +269,6 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
              current_velocity, target_velocity, target_acceleration, pitch, error_velocity);
   writeDebugValuesParameters(dt, current_velocity, target_velocity, target_acceleration, shift, pitch, error_velocity,
                              closest_idx);
-
 
   // sudden stop
   if (use_sudden_stop_ && is_sudden_stop_)
@@ -400,10 +401,7 @@ void VelocityController::publishControlCommandStamped(const double velocity, con
 
 void VelocityController::publishDebugValues()
 {
-  if (use_pub_debug_)
-  {
-    pub_debug_.publish(debug_values_);
-  }
+  pub_debug_.publish(debug_values_);
 }
 
 double VelocityController::getDt()
@@ -487,10 +485,9 @@ double VelocityController::applyAccelerationLimitFilter(const double acceleratio
   if (use_acceleration_limit_)
   {
     const double filtered_acceleration = std::min(std::max(acceleration, min_acceleration), max_acceleration);
-    if (use_pub_debug_)
-    {
-      debug_values_.data.at(9) = filtered_acceleration;
-    }
+
+    debug_values_.data.at(9) = filtered_acceleration;
+
     return filtered_acceleration;
   }
   else
@@ -507,10 +504,8 @@ double VelocityController::applyJerkLimitFilter(const double acceleration, const
     const double jerk = (acceleration - prev_acceleration_) / dt;
     const double filtered_jerk = std::min(std::max(jerk, min_jerk), max_jerk);
     const double filtered_acceleration = prev_acceleration_ + (filtered_jerk * dt);
-    if (use_pub_debug_)
-    {
-      debug_values_.data.at(10) = filtered_acceleration;
-    }
+
+    debug_values_.data.at(10) = filtered_acceleration;
 
     return filtered_acceleration;
   }
@@ -541,10 +536,8 @@ double VelocityController::applySlopeCompensation(const double acceleration, con
       compensated_acceleration = acceleration;
     }
 
-    if (use_pub_debug_)
-    {
-      debug_values_.data.at(11) = compensated_acceleration;
-    }
+    debug_values_.data.at(11) = compensated_acceleration;
+
     return compensated_acceleration;
   }
   else
@@ -562,13 +555,10 @@ double VelocityController::applyVelocityFeedback(const double target_acceleratio
     double feedbacked_acceleration =
         target_acceleration + pid_velocity_.calculate(error_velocity, dt, is_integrated, pid_contributions);
 
-    if (use_pub_debug_)
-    {
-      debug_values_.data.at(8) = feedbacked_acceleration;
-      debug_values_.data.at(18) = pid_contributions.at(0);
-      debug_values_.data.at(19) = pid_contributions.at(1);
-      debug_values_.data.at(20) = pid_contributions.at(2);
-    }
+    debug_values_.data.at(8) = feedbacked_acceleration;
+    debug_values_.data.at(18) = pid_contributions.at(0);
+    debug_values_.data.at(19) = pid_contributions.at(1);
+    debug_values_.data.at(20) = pid_contributions.at(2);
 
     return feedbacked_acceleration;
   }
@@ -594,40 +584,33 @@ void VelocityController::writeDebugValuesParameters(const double dt, const doubl
                                                     const Shift shift, const double pitch, const double error_velocity,
                                                     const int32_t closest_waypoint_index)
 {
-  if (use_pub_debug_)
-  {
-    const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
-    debug_values_.data.at(0) = dt;
-    debug_values_.data.at(1) = current_velocity;
-    debug_values_.data.at(2) = target_velocity;
-    debug_values_.data.at(3) = target_acceleration;
-    debug_values_.data.at(4) = double(shift);
-    debug_values_.data.at(5) = pitch;
-    debug_values_.data.at(6) = error_velocity;
-    debug_values_.data.at(13) = raw_pitch;
-    debug_values_.data.at(14) = target_velocity - current_velocity;
-    debug_values_.data.at(15) = pitch * 180 / 3.141592;
-    debug_values_.data.at(16) = raw_pitch * 180 / 3.141592;
-    debug_values_.data.at(17) = trajectory_ptr_->points.at(closest_waypoint_index).accel.linear.x;
-  }
+
+  const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
+  debug_values_.data.at(0) = dt;
+  debug_values_.data.at(1) = current_velocity;
+  debug_values_.data.at(2) = target_velocity;
+  debug_values_.data.at(3) = target_acceleration;
+  debug_values_.data.at(4) = double(shift);
+  debug_values_.data.at(5) = pitch;
+  debug_values_.data.at(6) = error_velocity;
+  debug_values_.data.at(13) = raw_pitch;
+  debug_values_.data.at(14) = target_velocity - current_velocity;
+  debug_values_.data.at(15) = pitch * 180 / 3.141592;
+  debug_values_.data.at(16) = raw_pitch * 180 / 3.141592;
+  debug_values_.data.at(17) = trajectory_ptr_->points.at(closest_waypoint_index).accel.linear.x;
 }
 
 void VelocityController::writeDebugValuesCmdAcceleration(const double cmd_acceleration, const double mode)
 {
-  if (use_pub_debug_)
-  {
-    debug_values_.data.at(7) = mode;
-    debug_values_.data.at(12) = cmd_acceleration;
-  }
+
+  debug_values_.data.at(7) = mode;
+  debug_values_.data.at(12) = cmd_acceleration;
 }
 
 void VelocityController::resetDebugValues()
 {
-  if (use_pub_debug_)
+  for (unsigned int i = 0; i < num_debug_values_; i++)
   {
-    for (unsigned int i = 0; i < num_debug_values_; i++)
-    {
-      debug_values_.data.at(i) = 0.0;
-    }
+    debug_values_.data.at(i) = 0.0;
   }
 }
