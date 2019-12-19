@@ -10,7 +10,6 @@
 
     <build_depend>rostest</build_depend>
     <build_depend>cmake_modules</build_depend>
-    <build_depend>runtime_manager</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>autoware_traffic_light_msgs</build_depend>
     <build_depend>geometry_msgs</build_depend>
@@ -27,7 +26,6 @@
     <build_depend>lanelet2_extension</build_depend>
 
     <run_depend>cmake_modules</run_depend>
-    <run_depend>runtime_manager</run_depend>
     <run_depend>std_msgs</run_depend>
     <run_depend>message_runtime</run_depend>
     <run_depend>autoware_traffic_light_msgs</run_depend>
