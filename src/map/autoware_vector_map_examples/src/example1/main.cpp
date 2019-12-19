@@ -5,6 +5,8 @@
 #include <autoware_vector_map/bridge/ogr/geometry_converter.h>
 #include <autoware_vector_map/util/to_debug_string.h>
 
+#include <common.h>
+
 using namespace autoware_vector_map::io::gpkg_loader;
 using namespace autoware_vector_map::data;
 using namespace autoware_vector_map::traits;
