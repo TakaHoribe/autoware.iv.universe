@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include <rosfmt/rosfmt.h>
+#include <fmt/format.h>
 
 #include <ogrsf_frmts.h>
 
@@ -17,7 +17,7 @@ namespace autoware_vector_map {
 namespace io {
 namespace gpkg_loader {
 
-using fmt::v5::literals::operator""_a;
+using fmt::literals::operator""_a;
 
 using autoware_vector_map::bridge::ogr::createFeatureQuery;
 using autoware_vector_map::bridge::ogr::fromOgrFeature;
