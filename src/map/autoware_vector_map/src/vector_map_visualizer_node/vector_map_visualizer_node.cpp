@@ -181,7 +181,7 @@ void VectorMapVisualizerNode::onBinaryGpkgMap(
 }
 
 VectorMapVisualizerNode::VectorMapVisualizerNode() : nh_(""), private_nh_("~") {
-  pub_marker_array_ = nh_.advertise<MarkerArray>("autoware_vector_map_viz", 1, true);
+  pub_marker_array_ = nh_.advertise<MarkerArray>("autoware_vector_map/vizualization", 1, true);
 
   sub_binary_gpkg_map_ = nh_.subscribe("autoware_vector_map/binary_gpkg_map", 1,
                                        &VectorMapVisualizerNode::onBinaryGpkgMap, this);
