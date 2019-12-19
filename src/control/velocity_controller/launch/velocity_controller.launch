@@ -89,7 +89,7 @@
 
   <node pkg="velocity_controller" type="velocity_controller" name="velocity_controller" output="screen">
 
-    <remap from="~current_velocity" to="/vehicle/velocity"/>
+    <remap from="~current_velocity" to="/vehicle/twist"/>
     <remap from="~control_cmd" to="longitudinal/control_cmd"/>
     <remap from="~current_trajectory" to="/planning/motion_planning/trajectory"/>
     <remap from="~is_sudden_stop" to="/planning/motion_planning/is_sudden_stop"/>
