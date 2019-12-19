@@ -310,12 +310,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                end_lanelets: true
-                goal_lanelets: true
-                left_lane_bound: true
-                normal_lanelets: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -345,7 +340,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
-                "": true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -353,9 +348,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_path_planner/output/debug/path
               Name: PathWithLaneId
               Namespaces:
-                lane_id: true
-                line: true
-                points: true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -363,8 +356,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
-                crosswalk polygon line: true
-                crosswalk polygon point: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -394,8 +386,7 @@ Visualization Manager:
               Marker Topic: /planning/motion_planning/stop_planner/debug/markers
               Name: StopDetectionArea
               Namespaces:
-                active_detection_area: true
-                active_detection_area_point: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -430,7 +421,7 @@ Visualization Manager:
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
       Theta std deviation: 0.2617993950843811
-      Topic: initial_object_pose
+      Topic: initialpose
       X std deviation: 0.5
       Y std deviation: 0.5
     - Class: rviz/SetGoal
@@ -441,7 +432,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.07999992370605469
+      Angle: 0.31500017642974854
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
