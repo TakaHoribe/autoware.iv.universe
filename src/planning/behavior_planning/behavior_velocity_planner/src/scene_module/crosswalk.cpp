@@ -1,12 +1,13 @@
 #include <scene_module/crosswalk/crosswalk.hpp>
 #include <behavior_velocity_planner/api.hpp>
 #include <visualization_msgs/MarkerArray.h>
-#include <geometry_msgs/Point.h>
-#include <utilization/geometry/polygon2d.hpp>
-#include <utilization/geometry/line2d.hpp>
 
 namespace behavior_planning
 {
+namespace bg = boost::geometry;
+using Point = bg::model::d2::point_xy<double>;
+using Polygon = bg::model::polygon<Point>;
+
 CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
                                  const lanelet::ConstLanelet &crosswalk,
                                  const int lane_id)
@@ -25,78 +26,98 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
 {
     output = input;
 
+    // create polygon
     lanelet::CompoundPolygon3d lanelet_polygon = crosswalk_.polygon3d();
-    std::vector<Eigen::Vector2d> points;
+    Polygon polygon;
     for (const auto &lanelet_point : lanelet_polygon)
     {
-        Eigen::Vector2d point;
-        point << lanelet_point.x(), lanelet_point.y();
-        points.push_back(point);
+        polygon.outer().push_back(bg::make<Point>(lanelet_point.x(), lanelet_point.y()));
     }
-    Polygon2d polygon(points);
+    polygon.outer().push_back(polygon.outer().front());
 
-    // check person in polygon
-    std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr = std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
-    if (!getDynemicObjects(objects_ptr))
-    {
+    // check state
+    geometry_msgs::PoseStamped self_pose;
+    if (!getCurrentSelfPose(self_pose))
         return false;
-    }
-    bool pedestrian_found = false;
-    for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+    if (bg::within(Point(self_pose.pose.position.x, self_pose.pose.position.y), polygon))
+        state_ = State::INSIDE;
+    else if (state_ == State::INSIDE)
+        state_ = State::GO_OUT;
+
+    if (state_ == State::APPROARCH)
     {
-        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+        // check person in polygon
+        std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr = std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
+        if (!getDynemicObjects(objects_ptr))
         {
-            Eigen::Vector2d point;
-            point << objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y;
-            if (polygon.isInPolygon(point)){
-                pedestrian_found = true;
+            return false;
+        }
+        bool pedestrian_found = false;
+        for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+        {
+            if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+            {
+                Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
+                if (bg::within(point, polygon))
+                {
+                    pedestrian_found = true;
+                }
             }
         }
-    }
 
-    if (!pedestrian_found)
-        return false;
+        if (!pedestrian_found)
+            return false;
 
-    // insert stop point
-    for (size_t i = 0; i < output.points.size() - 1; ++i)
-    {
-        std::vector<Eigen::Vector2d> line;
-        Eigen::Vector2d point;
-        point << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
-        line.push_back(point);
-        point << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y;
-        line.push_back(point);
-        std::vector<Eigen::Vector2d> collision_points;
-        if (polygon.getCollisionPoints(line, collision_points))
+        // insert stop point
+        for (size_t i = 0; i < output.points.size() - 1; ++i)
         {
+            bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+                                                 {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+            std::vector<Point> collision_points;
+            bg::intersection(polygon, line, collision_points);
+
+            if (collision_points.empty())
+                continue;
             // -- debug code --
-            for (const auto &collision_point : collision_points)
-            {
-                manager_ptr_->debuger.pushCollisionPoint(collision_point);
-            }
-            std::vector<Eigen::Vector3d> line3d;
-            Eigen::Vector3d point3d;
-            point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
-            line3d.push_back(point3d);
-            point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
-            line3d.push_back(point3d);
-            manager_ptr_->debuger.pushCollisionLine(line3d);
+            // for (const auto &collision_point : collision_points)
+            // {
+            //     manager_ptr_->debuger.pushCollisionPoint(collision_point);
+            // }
+            // std::vector<Eigen::Vector3d> line3d;
+            // Eigen::Vector3d point3d;
+            // point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
+            // line3d.push_back(point3d);
+            // point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
+            // line3d.push_back(point3d);
+            // manager_ptr_->debuger.pushCollisionLine(line3d);
             // ----------------
 
-            // todo : check nearest collision point
-            // Assumption : first index of collision_points is nearest point 
+            // check nearest collision point
+            Point nearest_collision_point;
+            double min_dist;
+            for (size_t j = 0; j < collision_points.size(); ++j)
+            {
+                double dist = bg::length(Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
+                                         collision_points.at(j));
+                if (j == 0 || dist < min_dist)
+                {
+                    min_dist = dist;
+                    nearest_collision_point = collision_points.at(j);
+                }
+            }
 
             // search stop point index
             size_t insert_stop_point_idx;
             double base_link2front;
             double length_sum = 0;
-            if (!getBaselink2FrontLength(base_link2front)){
+            if (!getBaselink2FrontLength(base_link2front))
+            {
                 ROS_ERROR("cannot get vehicle front to base_link");
                 return false;
             }
             const double stop_length = stop_margin_ + base_link2front;
             Eigen::Vector2d point1, point2;
-            point1 << collision_points.at(0).x(), collision_points.at(0).y();
+            point1 << nearest_collision_point.x(), nearest_collision_point.y();
             point2 << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
             length_sum += (point2 - point1).norm();
             for (size_t j = i; 0 < j; --j)
@@ -114,16 +135,18 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
             // create stop point
             Eigen::Vector2d stop_point;
             autoware_planning_msgs::PathPointWithLaneId stop_point_with_lane_id;
-            Line2d::getBackwordPointFromBasePoint(point2,
+            getBackwordPointFromBasePoint(point2,
                                           point1,
                                           point2,
                                           length_sum - stop_length,
                                           stop_point);
-            manager_ptr_->debuger.pushStopPoint(stop_point);
             stop_point_with_lane_id = output.points.at(insert_stop_point_idx - 1);
             stop_point_with_lane_id.point.pose.position.x = stop_point.x();
             stop_point_with_lane_id.point.pose.position.y = stop_point.y();
             stop_point_with_lane_id.point.twist.linear.x = 0.0;
+            // -- debug code --
+            manager_ptr_->debuger.pushStopPose(stop_point_with_lane_id.point.pose);
+            // ----------------
 
             // insert stop point
             output.points.insert(output.points.begin() + insert_stop_point_idx, stop_point_with_lane_id);
@@ -152,22 +175,23 @@ bool CrosswalkModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &in
         }
     }
 
-    lanelet::CompoundPolygon3d lanelet_polygon = crosswalk_.polygon3d();
-    std::vector<Eigen::Vector2d> points;
-    for (const auto &lanelet_point : lanelet_polygon)
-    {
-        Eigen::Vector2d point;
-        point << lanelet_point.x(), lanelet_point.y();
-        points.push_back(point);
-    }
-    Polygon2d polygon(points);
-
-
     is_end_of_life = !found;
     if (is_end_of_life)
         if (manager_ptr_ != nullptr)
             manager_ptr_->unregisterTask(task_id_);
     return is_end_of_life;
+}
+
+bool CrosswalkModule::getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
+                                                    const Eigen::Vector2d &line_point2,
+                                                    const Eigen::Vector2d &base_point,
+                                                    const double backward_length,
+                                                    Eigen::Vector2d &output_point)
+{
+    Eigen::Vector2d line_vec = line_point2 - line_point1;
+    Eigen::Vector2d backward_vec = backward_length * line_vec.normalized();
+    output_point = base_point + backward_vec;
+    return true;
 }
 
 CrosswalkModuleManager::CrosswalkModuleManager()
@@ -300,16 +324,9 @@ void CrosswalkDebugMarkersManager::pushCollisionPoint(const Eigen::Vector2d &poi
     pushCollisionPoint(point3d);
 }
 
-void CrosswalkDebugMarkersManager::pushStopPoint(const Eigen::Vector3d &point)
+void CrosswalkDebugMarkersManager::pushStopPose(const geometry_msgs::Pose &pose)
 {
-    stop_points_.push_back(Eigen::Vector3d(point));
-}
-
-void CrosswalkDebugMarkersManager::pushStopPoint(const Eigen::Vector2d &point)
-{
-    Eigen::Vector3d point3d;
-    point3d << point.x(), point.y(), 0.0;
-    pushStopPoint(point3d);
+    stop_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
 void CrosswalkDebugMarkersManager::pushCrosswalkPolygon(const std::vector<Eigen::Vector3d> &polygon)
@@ -469,7 +486,7 @@ void CrosswalkDebugMarkersManager::publish()
     }
 
     // Stop point
-    if (!stop_points_.empty())
+    if (!stop_poses_.empty())
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = "map";
@@ -492,20 +509,54 @@ void CrosswalkDebugMarkersManager::publish()
         marker.color.r = 1.0;
         marker.color.g = 0.0;
         marker.color.b = 0.0;
-        for (size_t j = 0; j < stop_points_.size(); ++j)
+        for (size_t j = 0; j < stop_poses_.size(); ++j)
         {
             geometry_msgs::Point point;
-            point.x = stop_points_.at(j).x();
-            point.y = stop_points_.at(j).y();
-            point.z = stop_points_.at(j).z();
+            point.x = stop_poses_.at(j).position.x;
+            point.y = stop_poses_.at(j).position.y;
+            point.z = stop_poses_.at(j).position.z;
             marker.points.push_back(point);
         }
         msg.markers.push_back(marker);
     }
 
+    // Geofence Stop
+    for (size_t j = 0; j < stop_poses_.size(); ++j)
+    {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";
+        marker.header.stamp = current_time;
+        marker.ns = "geofence";
+        marker.id = j;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::CUBE_LIST;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = stop_poses_.at(j).position.x;
+        marker.pose.position.y = stop_poses_.at(j).position.y;
+        marker.pose.position.z = stop_poses_.at(j).position.z;
+        marker.pose.orientation.x = stop_poses_.at(j).orientation.x;
+        marker.pose.orientation.y = stop_poses_.at(j).orientation.y;
+        marker.pose.orientation.z = stop_poses_.at(j).orientation.z;
+        marker.pose.orientation.w = stop_poses_.at(j).orientation.w;
+        marker.scale.x = 0.25;
+        marker.scale.y = 3.0;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+        double base_link2front;
+        getBaselink2FrontLength(base_link2front);
+        geometry_msgs::Point point;
+        point.x = base_link2front;
+        point.y = 0;
+        point.z = 0;
+        marker.points.push_back(point);
+        // msg.markers.push_back(marker);
+    }
+
     debug_viz_pub_.publish(msg);
     collision_points_.clear();
-    stop_points_.clear();
+    stop_poses_.clear();
     collision_lines_.clear();
     crosswalk_polygons_.clear();
     return;
