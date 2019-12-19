@@ -32,6 +32,7 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
 {
     size_t min_dist_index;
     double min_dist;
+    double goal_z;
     {
         bool found = false;
         for (size_t i = 0; i < input.points.size(); ++i)
@@ -59,6 +60,7 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
             const double x = input.points.at(i).point.pose.position.x - goal.position.x;
             const double y = input.points.at(i).point.pose.position.y - goal.position.y;
             const double z = input.points.at(i).point.pose.position.z - goal.position.z;
+            goal_z = input.points.at(i).point.pose.position.z;
             const double dist = sqrt(x * x + y * y);
             if (search_radius_range < dist)
             {
@@ -73,6 +75,7 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
 
     autoware_planning_msgs::PathPointWithLaneId refined_goal;
     refined_goal.point.pose = goal;
+    refined_goal.point.pose.position.z = goal_z;
     refined_goal.point.twist.linear.x = 0.0;
 
     autoware_planning_msgs::PathPointWithLaneId pre_refined_goal;
@@ -83,6 +86,7 @@ bool GoalPathRefiner::getRefinedPath(const double search_radius_range, const dou
     tf2_matrix.getRPY(roll, pitch, yaw);
     pre_refined_goal.point.pose.position.x -= std::cos(yaw);
     pre_refined_goal.point.pose.position.y -= std::sin(yaw);
+    pre_refined_goal.point.pose.position.z = goal_z;
     pre_refined_goal.point.twist.linear.x = 1.0; // 3.6kmph
 
     for (size_t i = 0; i <= min_dist_out_of_range_index; ++i)
