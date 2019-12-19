@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pcl_registration)
+project(ndt_pcl_modified)
 
 add_compile_options(-std=c++14)
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
+set(CMAKE_BUILD_TYPE "RELEASE")
 
 find_package(catkin REQUIRED)
 find_package(PCL REQUIRED)
@@ -23,13 +24,13 @@ include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_library(pcl_registration src/ndt.cpp
+add_library(ndt_pcl_modified src/ndt.cpp
 )
 
-target_link_libraries(pcl_registration ${catkin_LIBRARIES})
+target_link_libraries(ndt_pcl_modified ${catkin_LIBRARIES})
 
 install(TARGETS
-            pcl_registration
+            ndt_pcl_modified
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

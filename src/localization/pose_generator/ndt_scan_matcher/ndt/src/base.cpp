@@ -15,9 +15,7 @@
  */
 
 #include "ndt/base.h"
+#include "ndt/impl/base.hpp"
 
-template <class PointSource, class PointTarget>
-NdtSlamBase<PointSource, PointTarget>::NdtSlamBase() {}
-
-template class NdtSlamBase<pcl::PointXYZ, pcl::PointXYZ>;
-template class NdtSlamBase<pcl::PointXYZI, pcl::PointXYZI>;
+template class NormalDistributionsTransformBase<pcl::PointXYZ, pcl::PointXYZ>;
+template class NormalDistributionsTransformBase<pcl::PointXYZI, pcl::PointXYZI>;

@@ -4,24 +4,35 @@ project(ndt)
 add_compile_options(-std=c++14)
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  ndt_pcl_modified
+  ndt_omp
+)
 find_package(PCL REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
 ###################################
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS include
+)
 
 ###########
 ## Build ##
 ###########
 
-include_directories(include ${PCL_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_library(ndt src/base.cpp
                 src/pcl_generic.cpp
+                src/pcl_modified.cpp
+                src/omp.cpp
+)
+
+add_dependencies(ndt ${${PROJECT_NAME}_EXPORTED_TARGETS}
+                     ${catkin_EXPORTED_TARGETS}
 )
 
 target_link_libraries(ndt ${catkin_LIBRARIES})

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#include "ndt/pcl_generic.h"
-#include "ndt/impl/pcl_generic.hpp"
+ #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
+ #define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
 
-template class NormalDistributionsTransformPCLGeneric<pcl::PointXYZ, pcl::PointXYZ>;
-template class NormalDistributionsTransformPCLGeneric<pcl::PointXYZI, pcl::PointXYZI>;
+template <class PointSource, class PointTarget>
+NormalDistributionsTransformBase<PointSource, PointTarget>::NormalDistributionsTransformBase() {}
+
+#endif

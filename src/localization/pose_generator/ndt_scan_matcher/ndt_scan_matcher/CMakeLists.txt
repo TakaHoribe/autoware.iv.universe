@@ -3,6 +3,8 @@ project(ndt_scan_matcher)
 
 add_compile_options(-std=c++14)
 
+set(CMAKE_BUILD_TYPE "RELEASE")
+
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         tf2
@@ -16,7 +18,9 @@ find_package(catkin REQUIRED COMPONENTS
         pcl_conversions
         pcl_ros
         dynamic_reconfigure
-        pcl_registration
+        ndt_pcl_modified
+        ndt_omp
+        ndt
         message_generation
         )
 

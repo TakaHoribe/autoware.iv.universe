@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_H
-#define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_H
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_H
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_H
 
 #include "ndt/base.h"
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <pcl/registration/ndt.h>
+#include <pclomp/ndt_omp.h>
 
 template <class PointSource, class PointTarget>
-class NormalDistributionsTransformPCLGeneric : public NormalDistributionsTransformBase<PointSource, PointTarget>
+class NormalDistributionsTransformOMP : public NormalDistributionsTransformBase<PointSource, PointTarget>
 {
   public:
-    NormalDistributionsTransformPCLGeneric();
-    ~NormalDistributionsTransformPCLGeneric() = default;
+    NormalDistributionsTransformOMP();
+    ~NormalDistributionsTransformOMP() = default;
 
     void align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) override;
     void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) override;
@@ -56,10 +56,17 @@ class NormalDistributionsTransformPCLGeneric : public NormalDistributionsTransfo
 
     boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const override;
 
+    // only OMP Impl
+    void setNumThreads(int n);
+    void setNeighborhoodSearchMethod(pclomp::NeighborSearchMethod method);
+
+    int getNumThreads() const;
+    pclomp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
+
   private:
-    boost::shared_ptr<pcl::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
+    boost::shared_ptr<pclomp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
 };
 
-#include "ndt/impl/pcl_generic.hpp"
+#include "ndt/impl/omp.hpp"
 
 #endif

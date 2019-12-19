@@ -33,12 +33,49 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   : nh_(nh)
   , private_nh_(private_nh)
   , tf2_listener_(tf2_buffer_)
+  , ndt_implement_type_(NDTImplementType::PCL_GENERIC)
   , base_frame_("base_link")
   , map_frame_("map")
   , converged_param_transform_probability_(4.5)
 {
-  ROS_INFO("use NDT SLAM PCL GENERIC version");
-  ndt_ptr_.reset(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>);
+  int ndt_implement_type_tmp = 0;
+  private_nh_.getParam("ndt_implement_type", ndt_implement_type_tmp);
+  ndt_implement_type_ = static_cast<NDTImplementType>(ndt_implement_type_tmp);
+  if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
+    ROS_INFO("NDT Implement Type is PCL GENERIC");
+    ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
+    ROS_INFO("NDT Implement Type is PCL MODIFIED");
+    ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::OMP) {
+    ROS_INFO("NDT Implement Type is OMP");
+
+    std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
+
+    int search_method = 2;
+    // private_nh_.getParam("omp_neighborhood_search_method", search_method);
+    ndt_omp_ptr->setNeighborhoodSearchMethod(static_cast<pclomp::NeighborSearchMethod>(search_method));
+
+    // bool use_max_threads = false;
+    // int num_threads = ndt_omp_ptr->getMaxThreads();
+    int num_threads = 4;
+    // private_nh_.getParam("omp_use_max_threads", use_max_threads);
+    // if(!use_max_threads) {
+    //   private_nh_.getParam("omp_num_threads", num_threads);
+    //   num_threads = std::min(num_threads, ndt_ptr_->getMaxThreads());
+    // }
+    ndt_omp_ptr->setNumThreads(num_threads);
+
+    ndt_ptr_ = ndt_omp_ptr;
+  }
+  else {
+    ndt_implement_type_ = NDTImplementType::PCL_GENERIC;
+    ROS_INFO("NDT Implement Type is PCL GENERIC");
+    ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+
 
   int points_queue_size = 0;
   private_nh_.getParam("input_sensor_points_queue_size", points_queue_size);
@@ -339,7 +376,27 @@ void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr 
   const auto resolution = ndt_ptr_->getResolution();
   const auto max_iterations = ndt_ptr_->getMaximumIterations();
 
-  std::shared_ptr<pcl::NormalDistributionsTransformModified<PointSource, PointTarget>> new_ndt_ptr_(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>);
+  std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> new_ndt_ptr_;
+
+  if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::OMP) {
+
+    std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
+
+    ndt_omp_ptr->setNeighborhoodSearchMethod(static_cast<pclomp::NeighborSearchMethod>(2));
+    ndt_omp_ptr->setNumThreads(4);
+
+    new_ndt_ptr_ = ndt_omp_ptr;
+  }
+  else {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+
   new_ndt_ptr_->setTransformationEpsilon(trans_epsilon);
   new_ndt_ptr_->setStepSize(step_size);
   new_ndt_ptr_->setResolution(resolution);
