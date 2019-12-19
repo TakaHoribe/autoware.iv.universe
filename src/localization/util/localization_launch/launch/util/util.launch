@@ -36,12 +36,12 @@
       <remap from="~input" to="$(arg output_crop_vehicle_sensor_points_topic)" />
       <remap from="~output" to="$(arg output_crop_far_sensor_points_topic)" />
       <rosparam>
-        min_x: -100.0
-        max_x: 100.0
-        min_y: -100.0
-        max_y: 100.0
-        min_z: -100.0
-        max_z: 100.0
+        min_x: -60.0
+        max_x: 60.0
+        min_y: -60.0
+        max_y: 60.0
+        min_z: -30.0
+        max_z: 50.0
         negative: False
       </rosparam>
       <param name="input_frame" value="$(arg base_frame)" />
