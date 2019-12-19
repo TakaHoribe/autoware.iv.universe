@@ -17,8 +17,6 @@
  #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
  #define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
 
-#include "ndt/base.h"
-
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformBase<PointSource, PointTarget>::NormalDistributionsTransformBase() {}
 

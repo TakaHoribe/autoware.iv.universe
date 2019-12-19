@@ -5,7 +5,7 @@ add_compile_options(-std=c++14)
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
 find_package(catkin REQUIRED COMPONENTS
-  pcl_registration
+  ndt_pcl_modified
 )
 find_package(PCL REQUIRED)
 
@@ -26,7 +26,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_library(ndt src/base.cpp
                 src/pcl_generic.cpp
-                src/pcl_modify.cpp
+                src/pcl_modified.cpp
 )
 
 add_dependencies(ndt ${${PROJECT_NAME}_EXPORTED_TARGETS}

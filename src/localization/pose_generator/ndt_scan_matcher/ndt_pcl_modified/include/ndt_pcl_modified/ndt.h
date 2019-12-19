@@ -110,6 +110,6 @@ namespace pcl
 
 }
 
-#include "pcl_registration/impl/ndt.hpp"
+#include "ndt_pcl_modified/impl/ndt.hpp"
 
 #endif // PCL_REGISTRATION_NDT_MODIFIED_H_

@@ -45,9 +45,9 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
     ROS_INFO("use NDT SLAM PCL GENERIC version");
     ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
   }
-  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFY) {
-    ROS_INFO("use NDT SLAM PCL MODIFY version");
-    ndt_ptr_.reset(new NormalDistributionsTransformPCLModify<PointSource, PointTarget>);
+  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
+    ROS_INFO("use NDT SLAM PCL MODIFIED version");
+    ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
   }
   else {
     ndt_implement_type_ = NDTImplementType::PCL_GENERIC;
@@ -361,8 +361,8 @@ void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr 
   if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
     new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
   }
-  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFY) {
-    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLModify<PointSource, PointTarget>);
+  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
   }
   else {
     ROS_ERROR("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");

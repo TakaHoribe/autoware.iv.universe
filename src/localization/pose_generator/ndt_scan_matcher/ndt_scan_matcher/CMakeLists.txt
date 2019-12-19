@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
         pcl_conversions
         pcl_ros
         dynamic_reconfigure
-        pcl_registration
+        ndt_pcl_modified
         ndt
         message_generation
         )

@@ -17,8 +17,6 @@
  #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
  #define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
 
-#include "ndt/pcl_generic.h"
-
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::NormalDistributionsTransformPCLGeneric()
   : ndt_ptr_(new pcl::NormalDistributionsTransform<PointSource, PointTarget>)
