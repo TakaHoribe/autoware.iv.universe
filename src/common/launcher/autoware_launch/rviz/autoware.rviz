@@ -180,7 +180,7 @@ Visualization Manager:
         - Class: rviz/MarkerArray
           Enabled: true
           Marker Topic: /lanelet2_map_viz
-          Name: VectorMap
+          Name: Lanelet2VectorMap
           Namespaces:
             center_lane_line: true
             crosswalk_lanelets: true
@@ -191,6 +191,19 @@ Visualization Manager:
             stop_lines: true
             traffic_light: true
             traffic_light_triangle: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /autoware_vector_map/vizualization
+          Name: AutowareVectorMap
+          Namespaces:
+            Crosswalk: true
+            IntersectionArea: true
+            LaneArea: true
+            LaneCenterLine: true
+            LaneSection: true
+            StopLine: true
           Queue Size: 100
           Value: true
       Enabled: true
