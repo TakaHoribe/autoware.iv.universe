@@ -6,6 +6,7 @@ SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
 find_package(catkin REQUIRED COMPONENTS
   ndt_pcl_modified
+  ndt_omp
 )
 find_package(PCL REQUIRED)
 
@@ -27,6 +28,7 @@ add_definitions(${PCL_DEFINITIONS})
 add_library(ndt src/base.cpp
                 src/pcl_generic.cpp
                 src/pcl_modified.cpp
+                src/omp.cpp
 )
 
 add_dependencies(ndt ${${PROJECT_NAME}_EXPORTED_TARGETS}
