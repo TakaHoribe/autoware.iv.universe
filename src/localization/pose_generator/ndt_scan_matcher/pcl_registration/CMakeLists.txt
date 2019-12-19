@@ -3,6 +3,7 @@ project(pcl_registration)
 
 add_compile_options(-std=c++14)
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
+set(CMAKE_BUILD_TYPE "RELEASE")
 
 find_package(catkin REQUIRED)
 find_package(PCL REQUIRED)

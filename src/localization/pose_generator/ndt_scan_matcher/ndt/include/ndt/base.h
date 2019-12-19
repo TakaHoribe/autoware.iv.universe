@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef NDT_SLAM_BASE_H
-#define NDT_SLAM_BASE_H
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_H
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_H
+
+#include <vector>
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -23,11 +25,11 @@
 #include <pcl/search/kdtree.h>
 
 template <class PointSource, class PointTarget>
-class NdtSlamBase
+class NormalDistributionsTransformBase
 {
   public:
-    NdtSlamBase();
-    virtual ~NdtSlamBase() = default;
+    NormalDistributionsTransformBase();
+    virtual ~NormalDistributionsTransformBase() = default;
 
     virtual void align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) = 0;
     virtual void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) = 0;
@@ -39,16 +41,23 @@ class NdtSlamBase
     virtual void setTransformationEpsilon(double trans_eps) = 0;
 
     virtual int getMaximumIterations() = 0;
+    virtual int getFinalNumIteration() const = 0;
     virtual float getResolution() const = 0;
     virtual double getStepSize() const = 0;
     virtual double getTransformationEpsilon() = 0;
     virtual double getTransformationProbability() const = 0;
     virtual double getFitnessScore() = 0;
+    virtual boost::shared_ptr< const pcl::PointCloud<PointTarget>> getInputTarget() const = 0;
+    virtual boost::shared_ptr< const pcl::PointCloud<PointSource>> getInputSource() const = 0;
+    virtual Eigen::Matrix4f getFinalTransformation() const = 0;
+    virtual std::vector<Eigen::Matrix4f> getFinalTransformationArray() const = 0;
 
     virtual Eigen::Matrix<double, 6, 6> getHessian() const = 0;
 
     virtual boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const = 0;
 
 };
+
+#include "ndt/impl/base.hpp"
 
 #endif

@@ -41,7 +41,9 @@
 
 #include "ndt_scan_matcher/NDTAlign.h"
 // #include <pcl/registration/ndt.h>
-#include "pcl_registration/ndt.h"
+// #include "pcl_registration/ndt.h"
+#include "ndt/pcl_generic.h"
+#include "ndt/pcl_modify.h"
 
 class NDTScanMatcher {
   using PointSource = pcl::PointXYZI;
@@ -99,7 +101,8 @@ private:
   tf2_ros::TransformListener tf2_listener_;
   tf2_ros::TransformBroadcaster tf2_broadcaster_;
 
-  std::shared_ptr<pcl::NormalDistributionsTransformModified<PointSource, PointTarget>> ndt_ptr_;
+  enum class NDTImplementType{ PCL_GENERIC = 0, PCL_MODIFY = 1} ndt_implement_type_;
+  std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> ndt_ptr_;
 
   Eigen::Matrix4f base_to_sensor_matrix_;
   std::string base_frame_;
