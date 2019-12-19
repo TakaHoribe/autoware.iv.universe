@@ -16,7 +16,7 @@
   <arg name="min_dec_jerk_nominal" default="-0.3"/>
   <arg name="min_dec_jerk_urgent" default="-1.5"/>
   <arg name="replan_vel_deviation" default="5.53"/>
-  <arg name="engage_velocity" default="1.5"/>
+  <arg name="engage_velocity" default="1.0"/>
   <arg name="jerk_planning_span" default="0.1"/>
   <arg name="stop_dist_mergin" default="0.55"/>
   <!-- use this velocity as command to engage vehicle speed when stopping -->
