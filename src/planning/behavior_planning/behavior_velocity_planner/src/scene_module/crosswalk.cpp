@@ -79,17 +79,19 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
             if (collision_points.empty())
                 continue;
             // -- debug code --
-            // for (const auto &collision_point : collision_points)
-            // {
-            //     manager_ptr_->debuger.pushCollisionPoint(collision_point);
-            // }
-            // std::vector<Eigen::Vector3d> line3d;
-            // Eigen::Vector3d point3d;
-            // point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
-            // line3d.push_back(point3d);
-            // point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
-            // line3d.push_back(point3d);
-            // manager_ptr_->debuger.pushCollisionLine(line3d);
+            for (const auto &collision_point : collision_points)
+            {
+                Eigen::Vector3d point3d;
+                point3d << collision_point.x(), collision_point.y(), 0;
+                manager_ptr_->debuger.pushCollisionPoint(point3d);
+            }
+            std::vector<Eigen::Vector3d> line3d;
+            Eigen::Vector3d point3d;
+            point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
+            line3d.push_back(point3d);
+            point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
+            line3d.push_back(point3d);
+            manager_ptr_->debuger.pushCollisionLine(line3d);
             // ----------------
 
             // check nearest collision point
@@ -97,7 +99,7 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
             double min_dist;
             for (size_t j = 0; j < collision_points.size(); ++j)
             {
-                double dist = bg::length(Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
+                double dist = bg::distance(Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
                                          collision_points.at(j));
                 if (j == 0 || dist < min_dist)
                 {
