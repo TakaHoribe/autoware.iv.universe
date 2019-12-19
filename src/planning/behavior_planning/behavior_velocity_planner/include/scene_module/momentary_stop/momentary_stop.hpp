@@ -6,10 +6,18 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/assert.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/assign/list_of.hpp>
 #include <string>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_extension/utility/query.h>
+#define EIGEN_MPL2_ONLY
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace behavior_planning
 {
@@ -26,6 +34,12 @@ public:
     ~MomentaryStopModule(){};
 
 private:
+    bool getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
+                                       const Eigen::Vector2d &line_point2,
+                                       const Eigen::Vector2d &base_point,
+                                       const double backward_length,
+                                       Eigen::Vector2d &output_point);
+
     enum class State
     {
         APPROARCH,
@@ -36,6 +50,7 @@ private:
     State state_;
     int lane_id_;
     lanelet::ConstLineString3d stop_line_;
+    double stop_margin_;
     boost::uuids::uuid task_id_;
 };
 

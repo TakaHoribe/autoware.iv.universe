@@ -3,12 +3,17 @@
 
 namespace behavior_planning
 {
+namespace bg = boost::geometry;
+using Point = bg::model::d2::point_xy<double>;
+using Polygon = bg::model::polygon<Point>;
+
 MomentaryStopModule::MomentaryStopModule(MomentaryStopModuleManager *manager_ptr,
                                          const lanelet::ConstLineString3d &stop_line,
                                          const int lane_id)
     : manager_ptr_(manager_ptr),
       state_(State::APPROARCH),
       stop_line_(stop_line),
+      stop_margin_(0.0),
       lane_id_(lane_id),
       task_id_(boost::uuids::random_generator()())
 {
@@ -19,33 +24,74 @@ MomentaryStopModule::MomentaryStopModule(MomentaryStopModuleManager *manager_ptr
 bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output)
 {
     output = input;
-    const double stop_point_x = (stop_line_[0].x() + stop_line_[1].x()) / 2.0;
-    const double stop_point_y = (stop_line_[0].y() + stop_line_[1].y()) / 2.0;
+    Eigen::Vector2d stop_point;
+    bg::model::linestring<Point> stop_line = {{stop_line_[0].x(), stop_line_[0].y()},
+                                              {stop_line_[1].x(), stop_line_[1].y()}};
+
     if (state_ == State::APPROARCH)
     {
-        double min_dist;
-        size_t min_dist_index;
-        for (size_t i = 0; i < output.points.size(); ++i)
+        for (size_t i = 0; i < output.points.size() - 1; ++i)
         {
-            const double x = output.points.at(i).point.pose.position.x - stop_point_x;
-            const double y = output.points.at(i).point.pose.position.y - stop_point_y;
-            const double dist = std::sqrt(x * x + y * y);
-            if (dist < min_dist || i == 0 /*init*/)
+            bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+                                                 {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+            std::vector<Point> collision_points;
+            bg::intersection(stop_line, line, collision_points);
+            if (collision_points.empty())
+                continue;
+    
+            // search stop point index
+            size_t insert_stop_point_idx;
+            double base_link2front;
+            double length_sum = 0;
+            if (!getBaselink2FrontLength(base_link2front))
             {
-                min_dist = dist;
-                min_dist_index = i;
+                ROS_ERROR("cannot get vehicle front to base_link");
+                return false;
             }
-        }
-        for (size_t i = min_dist_index; i < output.points.size(); ++i)
-        {
-            output.points.at(i).point.twist.linear.x = 0.0;
+            const double stop_length = stop_margin_ + base_link2front;
+            Eigen::Vector2d point1, point2;
+            point1 << collision_points.at(0).x(), collision_points.at(0).y();
+            point2 << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
+            length_sum += (point2 - point1).norm();
+            for (size_t j = i; 0 < j; --j)
+            {
+                if (stop_length < length_sum)
+                {
+                    insert_stop_point_idx = j + 1;
+                    break;
+                }
+                point1 << output.points.at(j).point.pose.position.x, output.points.at(j).point.pose.position.y;
+                point2 << output.points.at(j - 1).point.pose.position.x, output.points.at(j - 1).point.pose.position.y;
+                length_sum += (point2 - point1).norm();
+            }
+
+            // create stop point
+            autoware_planning_msgs::PathPointWithLaneId stop_point_with_lane_id;
+            getBackwordPointFromBasePoint(point2,
+                                          point1,
+                                          point2,
+                                          length_sum - stop_length,
+                                          stop_point);
+            stop_point_with_lane_id = output.points.at(insert_stop_point_idx - 1);
+            stop_point_with_lane_id.point.pose.position.x = stop_point.x();
+            stop_point_with_lane_id.point.pose.position.y = stop_point.y();
+            stop_point_with_lane_id.point.twist.linear.x = 0.0;
+
+            // insert stop point
+            output.points.insert(output.points.begin() + insert_stop_point_idx, stop_point_with_lane_id);
+
+            // insert 0 velocity after stop point
+            for (size_t j = insert_stop_point_idx; j < output.points.size(); ++j)
+                output.points.at(j).point.twist.linear.x = 0.0;
+            break;
         }
 
+        // update state
         geometry_msgs::PoseStamped self_pose;
         if (!getCurrentSelfPose(self_pose))
             return true;
-        const double x = stop_point_x - self_pose.pose.position.x;
-        const double y = stop_point_y - self_pose.pose.position.y;
+        const double x = stop_point.x() - self_pose.pose.position.x;
+        const double y = stop_point.y() - self_pose.pose.position.y;
         const double dist = std::sqrt(x * x + y * y);
         if (dist < 2.0 && isVehicleStopping())
             state_ = State::STOP;
@@ -90,6 +136,19 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
             manager_ptr_->unregisterTask(task_id_);
     return is_end_of_life;
 }
+
+bool MomentaryStopModule::getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
+                                                    const Eigen::Vector2d &line_point2,
+                                                    const Eigen::Vector2d &base_point,
+                                                    const double backward_length,
+                                                    Eigen::Vector2d &output_point)
+{
+    Eigen::Vector2d line_vec = line_point2 - line_point1;
+    Eigen::Vector2d backward_vec = backward_length * line_vec.normalized();
+    output_point = base_point + backward_vec;
+    return true;
+}
+
 bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId &input,
                                                 std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr)
 {
