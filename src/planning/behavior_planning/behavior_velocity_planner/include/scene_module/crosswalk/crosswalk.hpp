@@ -7,11 +7,20 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/assert.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/assign/list_of.hpp>
 #include <string>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraphContainer.h>
+#define EIGEN_MPL2_ONLY
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <vector>
 
 namespace behavior_planning
 {
@@ -28,11 +37,16 @@ public:
     ~CrosswalkModule(){};
 
 private:
+    bool getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
+                                       const Eigen::Vector2d &line_point2,
+                                       const Eigen::Vector2d &base_point,
+                                       const double backward_length,
+                                       Eigen::Vector2d &output_point);
     enum class State
     {
         APPROARCH,
-        STOP,
-        START
+        INSIDE,
+        GO_OUT
     };
     CrosswalkModuleManager* manager_ptr_;
     State state_;
@@ -51,8 +65,7 @@ public:
     void pushCollisionLine(const std::vector<Eigen::Vector2d> &line);
     void pushCollisionPoint(const Eigen::Vector3d &point);
     void pushCollisionPoint(const Eigen::Vector2d &point);
-    void pushStopPoint(const Eigen::Vector3d &point);
-    void pushStopPoint(const Eigen::Vector2d &point);
+    void pushStopPose(const geometry_msgs::Pose &pose);
     void pushCrosswalkPolygon(const std::vector<Eigen::Vector3d> &polygon);
     void pushCrosswalkPolygon(const std::vector<Eigen::Vector2d> &polygon);
 
@@ -63,7 +76,7 @@ private:
     ros::NodeHandle pnh_;
     ros::Publisher debug_viz_pub_;
     std::vector<Eigen::Vector3d> collision_points_;
-    std::vector<Eigen::Vector3d> stop_points_;
+    std::vector<geometry_msgs::Pose> stop_poses_;
     std::vector<std::vector<Eigen::Vector3d>> collision_lines_;
     std::vector<std::vector<Eigen::Vector3d>> crosswalk_polygons_;
 };
