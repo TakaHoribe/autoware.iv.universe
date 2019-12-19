@@ -8,8 +8,6 @@
 
 #include <rosfmt/rosfmt.h>
 
-#include <msgpack.hpp>
-
 #include <ogrsf_frmts.h>
 
 #include <autoware_vector_map/bridge/ogr/feature_converter.h>
