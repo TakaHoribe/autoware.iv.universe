@@ -59,7 +59,7 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~")
   pub_dist_to_stopline_ = pnh_.advertise<std_msgs::Float32>("distance_to_stopline", 1);
   sub_current_trajectory_ = pnh_.subscribe("input/trajectory", 1, &VelocityPlanner::callbackCurrentTrajectory, this);
   sub_current_pose_ = pnh_.subscribe("/current_pose", 1, &VelocityPlanner::callbackCurrentPose, this);
-  sub_current_velocity_ = pnh_.subscribe("/vehicle/velocity", 1, &VelocityPlanner::callbackCurrentVelocity, this);
+  sub_current_velocity_ = pnh_.subscribe("/vehicle/twist", 1, &VelocityPlanner::callbackCurrentVelocity, this);
   sub_external_velocity_limit_ = pnh_.subscribe("/external_velocity_limit_mps", 1, &VelocityPlanner::callbackExternalVelocityLimit, this);
 
   /* for emergency stop manager */

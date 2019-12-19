@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <velocity_planner/velocity_planner.hpp>
+#include <velocity_planner/velocity_planner_osqp.hpp>
 #include <osqp_interface/osqp_interface.h>
 #include <chrono>
 
@@ -104,65 +104,8 @@ void VelocityPlanner::callbackExternalVelocityLimit(const std_msgs::Float32::Con
   external_velocity_limit_ptr_ = msg;
 }
 
-
-void osqpTest()
-{
-// Solves convex quadratic programs (QPs) using the OSQP solver.
-//
-// The function returns a tuple containing the solution as two float vectors.
-// The first element of the tuple contains the 'primal' solution. The second element contains the 'lagrange multiplier'
-// solution.
-//
-// About OSQP  https://osqp.org/docs/
-//
-// Problem definition:
-//  minimize    1/2 * xt * A * x + qt * x
-//  subject to  l <= A * x <= u
-//
-// How to use:
-//   1. Generate the Eigen matrices P, A and vectors q, l, u according to the problem.
-//   2. Call the optimization function
-//        Ex: std::tuple<std::vector<float>, std::vector<float>> result;
-//            result = osqp::optimize(P, A, q, l, u);
-//   3. Access the optimal parameters
-//        Ex: std::vector<float> param = std::get<0>(result);
-
-
-
-
-Eigen::MatrixXf A(3, 2);
-Eigen::MatrixXf P(2, 2);
-P << 1.0, -1.0, -1.0, 2.0;
-A << 1,1,-1,2,2,1;
-
-
-std::vector<float> q = {-2., -6.};
-std::vector<float> l = {-10000.0, -10000.0};
-std::vector<float> u = {2, 2, 3};
-
-std::tuple<std::vector<float>, std::vector<float>> result;
-
-
-auto t_start = std::chrono::system_clock::now();
-
-result = osqp::optimize(P, A, q, l, u);
-
-auto t_end = std::chrono::system_clock::now();
-double elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count() * 1.0e-6;
-ROS_INFO("timer callback: calculation time = %f [ms]", elapsed_ms);
-
-std::vector<float> param = std::get<0>(result);
-printf("result = %f, %f\n", param[0], param[1]);
-
-
-
-
-
-}
-
 void VelocityPlanner::timerReplanCallback(const ros::TimerEvent &e)
 {
-  osqpTest();
   auto t_start = std::chrono::system_clock::now();
 
   DEBUG_INFO("============================== timer callback start ==============================");
@@ -238,7 +181,7 @@ void VelocityPlanner::timerReplanCallback(const ros::TimerEvent &e)
   publishStopDistance(base_traj_resampled, base_traj_resampled_closest);
 
   /* Change base velocity to zero when current_velocity == 0 & stop_dist is close */
-  preventMoveToVeryCloseStopLine(base_traj_resampled_closest, base_traj_resampled);
+  preventMoveToVeryCloseStopLine(base_traj_resampled_closest, planning_param_.stop_dist_not_to_drive_vehicle, base_traj_resampled);
 
   /* for negative velocity */
   const bool negative_velocity_flag =
@@ -982,7 +925,7 @@ void VelocityPlanner::calculateMotionsFromWaypoints(const autoware_planning_msgs
   }
 }
 
-void VelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, autoware_planning_msgs::Trajectory &trajectory) const
+void VelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const
 {
   if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.01)
   {
@@ -990,12 +933,12 @@ void VelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, autoware
     bool stop_point_exist = vpu::searchZeroVelocityIdx(trajectory, stop_idx);
     if (stop_point_exist && stop_idx >= closest /* desired stop line is ahead of ego-vehicle */)
     {
-      double stop_dist = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest)));
-      if (stop_dist < planning_param_.stop_dist_not_to_drive_vehicle)
+      double dist_to_stopline = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest)));
+      if (dist_to_stopline < move_dist_min)
       {
         vpu::zeroVelocity(trajectory);
-        DEBUG_INFO("[preventMoveToVeryCloseStopLine] set zero vel curr_vel = %3.3f, stop_dist = %3.3f < thr = %3.3f",
-                   current_velocity_ptr_->twist.linear.x, stop_dist, planning_param_.stop_dist_not_to_drive_vehicle);
+        DEBUG_INFO("[preventMoveToVeryCloseStopLine] set zero vel curr_vel = %3.3f, dist_to_stopline = %3.3f < move_dist_min = %3.3f",
+                   current_velocity_ptr_->twist.linear.x, dist_to_stopline, move_dist_min);
       }
     }
   }

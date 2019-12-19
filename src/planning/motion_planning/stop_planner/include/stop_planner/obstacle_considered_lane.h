@@ -47,7 +47,7 @@ public:
   ObstacleConsideredLane()
     : is_obstacle_detected_(false)
     , replan_pair_(std::make_pair(false, autoware_planning_msgs::Trajectory()))
-    , stop_distance_(3.0)
+    , stop_distance_(7.0)
     , points_thr_(1)
     , extend_area_size_(5.0)
     , extend_area_size_rev_(2.0)

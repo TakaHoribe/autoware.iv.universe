@@ -36,7 +36,7 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
   rate_ = new ros::Rate(loop_rate_);
 
   // subscribers from autoware
-  vehicle_cmd_sub_ = nh_.subscribe("vehicle_cmd", 1, &SSCInterface::callbackFromVehicleCmd, this);
+  vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromVehicleCmd, this);
   engage_sub_ = nh_.subscribe("vehicle/engage", 1, &SSCInterface::callbackFromEngage, this);
 
   // subscribers from SSC
@@ -63,8 +63,8 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
       boost::bind(&SSCInterface::callbackFromSSCFeedbacks, this, _1, _2, _3, _4, _5, _6, _7));
 
   // publishers to autoware
-  vehicle_status_pub_ = nh_.advertise<autoware_control_msgs::VehicleStatus>("vehicle_status", 10);
-  current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("vehicle/twist", 10);
+  vehicle_status_pub_ = nh_.advertise<autoware_control_msgs::VehicleStatusStamped>("/vehicle/status", 10);
+  current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/twist", 10);
 
   // publishers to SSC
   steer_mode_pub_ = nh_.advertise<automotive_platform_msgs::SteerMode>("as/arbitrated_steering_commands", 10);

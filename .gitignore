@@ -15,6 +15,9 @@ logs/
 *.retry
 /ansible/roles/caffe/caffe/
 
+# Python
+*.pyc
+
 # Lanelet2
 /src/map/lanelet2
 /src/map/mrt_cmake_modules

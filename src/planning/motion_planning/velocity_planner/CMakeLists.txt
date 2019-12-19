@@ -42,8 +42,6 @@ include
   ${EIGEN3_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}  # for matplotlib
 )
-message("\n\n\n\n\n velocity planner : catkin_INCLUDE_DIRS\n")
-message("${catkin_INCLUDE_DIRS}")
 
 add_executable(velocity_planner src/velocity_planner.cpp src/velocity_planner_utils.cpp src/interpolate.cpp)
 add_dependencies(velocity_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} velocity_planner_gencfg)
