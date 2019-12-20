@@ -6,12 +6,15 @@ from pathlib import Path
 import autoware_vector_map.create_features as cf
 from autoware_vector_map.map_api import MapApi
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 def vector_map_preprocessor(gpkg_path):
     map_api = MapApi(gpkg_path)
+    map_api.create_tables_if_not_exist()
+    map_api.fix_schemas()
 
     map_api.save_fiona_objects("lane_connections", cf.create_lane_connections(map_api))
 

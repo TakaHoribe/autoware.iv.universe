@@ -13,6 +13,7 @@ shapely = "^1.6.4"
 inflect = "^3.0.2"
 open3d = "^0.8.0"
 numpy = "^1.17.4"
+GDAL = "2.2.3"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.10.2"
