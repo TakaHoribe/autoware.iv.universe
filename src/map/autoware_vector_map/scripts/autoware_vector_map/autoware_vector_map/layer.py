@@ -57,7 +57,7 @@ def get_autoware_vector_map_layers():
     p = add_feature_layer(layers, "road_edge", "3D LineString")
 
     p = add_feature_layer(layers, "stop_line", "3D LineString")
-    p["is_reason_forced"] = "bool"
+    p["is_reason_rule"] = "bool"
     p["is_reason_crosswalk"] = "bool"
     p["is_reason_traffic_light"] = "bool"
     p["is_reason_standby"] = "bool"
