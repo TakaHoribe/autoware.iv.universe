@@ -83,10 +83,12 @@ std::tuple<std::vector<float>, std::vector<float>> optimize(const Eigen::MatrixX
   // Define Solver settings as default
   osqp_set_default_settings(settings);
   settings->alpha = 1.0;  // Change alpha parameter
-  settings->eps_rel = 1.0E-6;
-  settings->eps_abs = 1.0E-6;
-  settings->eps_prim_inf = 1.0E-6;
-  settings->eps_dual_inf = 1.0E-6;
+  settings->eps_rel = 1.0E-4;
+  settings->eps_abs = 1.0E-4;
+  settings->eps_prim_inf = 1.0E-4;
+  settings->eps_dual_inf = 1.0E-4;
+  settings->warm_start = true;
+  settings->max_iter = 4000;
 
 
   // Setup workspace
