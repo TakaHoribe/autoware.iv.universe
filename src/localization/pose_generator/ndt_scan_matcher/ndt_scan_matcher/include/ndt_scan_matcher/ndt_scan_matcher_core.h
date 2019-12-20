@@ -50,6 +50,19 @@ class NDTScanMatcher {
   using PointSource = pcl::PointXYZI;
   using PointTarget = pcl::PointXYZI;
 
+  // TODO move file
+  struct OMPParams {
+    OMPParams() : search_method(pclomp::NeighborSearchMethod::KDTREE), num_threads(1) {};
+    pclomp::NeighborSearchMethod search_method;
+    int num_threads;
+  };
+
+  enum class NDTImplementType {
+     PCL_GENERIC = 0
+   , PCL_MODIFIED = 1
+   , OMP = 2
+  };
+
 public:
   NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~NDTScanMatcher();
@@ -102,7 +115,7 @@ private:
   tf2_ros::TransformListener tf2_listener_;
   tf2_ros::TransformBroadcaster tf2_broadcaster_;
 
-  enum class NDTImplementType{ PCL_GENERIC = 0, PCL_MODIFIED = 1, OMP = 2} ndt_implement_type_;
+  NDTImplementType ndt_implement_type_;
   std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> ndt_ptr_;
 
   Eigen::Matrix4f base_to_sensor_matrix_;
@@ -114,4 +127,5 @@ private:
   ros::Time current_scan_time_;
   std::mutex ndt_map_mtx_;
 
+  OMPParams omp_params_;
 };

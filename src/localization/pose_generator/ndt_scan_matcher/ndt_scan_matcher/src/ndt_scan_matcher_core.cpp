@@ -54,19 +54,15 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
 
     std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
 
-    int search_method = 2;
-    // private_nh_.getParam("omp_neighborhood_search_method", search_method);
-    ndt_omp_ptr->setNeighborhoodSearchMethod(static_cast<pclomp::NeighborSearchMethod>(search_method));
+    int search_method = static_cast<int>(omp_params_.search_method);
+    private_nh_.getParam("omp_neighborhood_search_method", search_method);
+    omp_params_.search_method = static_cast<pclomp::NeighborSearchMethod>(search_method);
+    // TODO check search_method is valid value.
+    ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
 
-    // bool use_max_threads = false;
-    // int num_threads = ndt_omp_ptr->getMaxThreads();
-    int num_threads = 4;
-    // private_nh_.getParam("omp_use_max_threads", use_max_threads);
-    // if(!use_max_threads) {
-    //   private_nh_.getParam("omp_num_threads", num_threads);
-    //   num_threads = std::min(num_threads, ndt_ptr_->getMaxThreads());
-    // }
-    ndt_omp_ptr->setNumThreads(num_threads);
+    private_nh_.getParam("omp_num_threads", omp_params_.num_threads);
+    omp_params_.num_threads = std::max(omp_params_.num_threads, 1);
+    ndt_omp_ptr->setNumThreads(omp_params_.num_threads);
 
     ndt_ptr_ = ndt_omp_ptr;
   }
@@ -388,8 +384,8 @@ void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr 
 
     std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
 
-    ndt_omp_ptr->setNeighborhoodSearchMethod(static_cast<pclomp::NeighborSearchMethod>(2));
-    ndt_omp_ptr->setNumThreads(4);
+    ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
+    ndt_omp_ptr->setNumThreads(omp_params_.num_threads);
 
     new_ndt_ptr_ = ndt_omp_ptr;
   }
