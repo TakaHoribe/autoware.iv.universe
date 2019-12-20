@@ -493,7 +493,7 @@ bool VelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Tr
     return true;
   }
   std::vector<double> k_arr;
-  vpu::calcWaypointsCurvature(input, idx_dist, k_arr);
+  vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, k_arr);
 
   latacc_filtered_traj = input;  // as initialize
   const double max_lat_acc_abs = std::fabs(max_lat_acc);
@@ -814,7 +814,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
 
   if (!vpu::calcStopDistWithConstantJerk(v0_s, a0_s, planning_jerk, v_end_s, t_neg_s, t_pos_s, brake_dist_s))
   {
-    ROS_WARN("[stopVelocityFilter]: cannot calculate stop_dist in calcStopDistWithConstantJerk() (planning_jerk = %f)", planning_jerk);
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[stopVelocityFilter]: cannot calculate stop_dist in calcStopDistWithConstantJerk() (planning_jerk = %f)", planning_jerk);
     is_stop_ok = false;
     return true;
   }

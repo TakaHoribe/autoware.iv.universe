@@ -11,7 +11,7 @@ void osqpTest()
 // About OSQP  https://osqp.org/docs/
 //
 // Problem definition:
-//  minimize    1/2 * xt * A * x + qt * x
+//  minimize    1/2 * xt * P * x + qt * x
 //  subject to  l <= A * x <= u
 //
 // How to use:
