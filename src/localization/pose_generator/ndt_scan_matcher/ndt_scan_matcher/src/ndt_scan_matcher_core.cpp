@@ -112,6 +112,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   iteration_num_pub_ = nh.advertise<std_msgs::Float32>("iteration_num", 10);
   initial_to_result_distance_pub_ = nh.advertise<std_msgs::Float32>("initial_to_result_distance", 10);
   ndt_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
+  ndt_monte_colro_initial_pose_marker_pub_= nh.advertise<visualization_msgs::MarkerArray>("monte_colro_initial_pose_marker", 10);
 
   service_ = nh.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
   // setup dynamic reconfigure server
@@ -129,35 +130,13 @@ NDTScanMatcher::~NDTScanMatcher()
 
 bool NDTScanMatcher::serviceNDTAlign(ndt_scan_matcher::NDTAlign::Request &req, ndt_scan_matcher::NDTAlign::Response &res)
 {
-  std::cout << req.initial_pose_with_cov.pose.pose.position.x << std::endl;
-  res.result_pose_with_cov = req.initial_pose_with_cov;
-
-  //const auto pcdmsg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("pointcloud_map", ros::Duration(3.0));
-
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
 
-  if (ndt_ptr_->getInputTarget() == nullptr || ndt_ptr_->getInputSource() == nullptr) {
-    ROS_WARN("F***********************************K");
-    return false;
-  }
-
-  Eigen::Affine3d initial_pose_affine;
-  Eigen::fromMsg(req.initial_pose_with_cov.pose.pose, initial_pose_affine);
-  const Eigen::Matrix4f initial_pose_matrix = initial_pose_affine.matrix().cast<float>();
-
-  pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
-  ndt_ptr_->align(*output_cloud, initial_pose_matrix);
-
-
-  const Eigen::Matrix4f result_pose_matrix = ndt_ptr_->getFinalTransformation();
-  Eigen::Affine3d result_pose_affine;
-  result_pose_affine.matrix() = result_pose_matrix.cast<double>();
-  const geometry_msgs::Pose result_pose_msg =  tf2::toMsg(result_pose_affine);
+  res.result_pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, req.initial_pose_with_cov);
+  res.result_pose_with_cov.pose.covariance = req.initial_pose_with_cov.pose.covariance;
 
   res.converged = true;
-  res.result_pose_with_cov = res.result_pose_with_cov;
-  res.result_pose_with_cov.pose.pose = result_pose_msg;
   return true;
 }
 
@@ -168,6 +147,52 @@ void NDTScanMatcher::callbackInitialPose(const geometry_msgs::PoseWithCovariance
   // if rosbag restart, clear buffer
 }
 
+void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &map_points_msg_ptr)
+{
+  const auto trans_epsilon = ndt_ptr_->getTransformationEpsilon();
+  const auto step_size = ndt_ptr_->getStepSize();
+  const auto resolution = ndt_ptr_->getResolution();
+  const auto max_iterations = ndt_ptr_->getMaximumIterations();
+
+  std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> new_ndt_ptr_;
+
+  if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
+  }
+  else if (ndt_implement_type_ == NDTImplementType::OMP) {
+
+    std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
+
+    ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
+    ndt_omp_ptr->setNumThreads(omp_params_.num_threads);
+
+    new_ndt_ptr_ = ndt_omp_ptr;
+  }
+  else {
+    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  }
+
+  new_ndt_ptr_->setTransformationEpsilon(trans_epsilon);
+  new_ndt_ptr_->setStepSize(step_size);
+  new_ndt_ptr_->setResolution(resolution);
+  new_ndt_ptr_->setMaximumIterations(max_iterations);
+
+  pcl::PointCloud<PointTarget>::Ptr map_points_ptr(new pcl::PointCloud<PointTarget>);
+  pcl::fromROSMsg(*map_points_msg_ptr, *map_points_ptr);
+  new_ndt_ptr_->setInputTarget(map_points_ptr);
+  // create Thread
+  // detach
+  pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
+  new_ndt_ptr_->align(*output_cloud, Eigen::Matrix4f::Identity());
+
+  // swap
+  ndt_map_mtx_.lock();
+  ndt_ptr_ = new_ndt_ptr_;
+  ndt_map_mtx_.unlock();
+}
 
 void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr &sensor_points_sensorTF_msg_ptr)
 {
@@ -365,51 +390,112 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   std::cout << "iter_num: " << iteration_num << std::endl;
 }
 
-void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &map_points_msg_ptr)
+geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> &ndt_ptr, const geometry_msgs::PoseWithCovarianceStamped &initial_pose_with_cov)
 {
-  const auto trans_epsilon = ndt_ptr_->getTransformationEpsilon();
-  const auto step_size = ndt_ptr_->getStepSize();
-  const auto resolution = ndt_ptr_->getResolution();
-  const auto max_iterations = ndt_ptr_->getMaximumIterations();
-
-  std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> new_ndt_ptr_;
-
-  if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
-    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
-  }
-  else if (ndt_implement_type_ == NDTImplementType::PCL_MODIFIED) {
-    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLModified<PointSource, PointTarget>);
-  }
-  else if (ndt_implement_type_ == NDTImplementType::OMP) {
-
-    std::shared_ptr<NormalDistributionsTransformOMP<PointSource, PointTarget>> ndt_omp_ptr(new NormalDistributionsTransformOMP<PointSource, PointTarget>);
-
-    ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
-    ndt_omp_ptr->setNumThreads(omp_params_.num_threads);
-
-    new_ndt_ptr_ = ndt_omp_ptr;
-  }
-  else {
-    new_ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
+  if (ndt_ptr->getInputTarget() == nullptr || ndt_ptr->getInputSource() == nullptr) {
+    ROS_WARN("F***********************************K");
+    return geometry_msgs::PoseWithCovarianceStamped();
   }
 
-  new_ndt_ptr_->setTransformationEpsilon(trans_epsilon);
-  new_ndt_ptr_->setStepSize(step_size);
-  new_ndt_ptr_->setResolution(resolution);
-  new_ndt_ptr_->setMaximumIterations(max_iterations);
+  //generateParticle
+  const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 100);
 
-  pcl::PointCloud<PointTarget>::Ptr map_points_ptr(new pcl::PointCloud<PointTarget>);
-  pcl::fromROSMsg(*map_points_msg_ptr, *map_points_ptr);
-  new_ndt_ptr_->setInputTarget(map_points_ptr);
-  // create Thread
-  // detach
+  std::vector<Particle> particle_array;
   pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
-  new_ndt_ptr_->align(*output_cloud, Eigen::Matrix4f::Identity());
 
-  // swap
-  ndt_map_mtx_.lock();
-  ndt_ptr_ = new_ndt_ptr_;
-  ndt_map_mtx_.unlock();
+  int i = 0;
+  for (const auto& initial_pose : initial_pose_array.poses)
+  {
+    Eigen::Affine3d initial_pose_affine;
+    Eigen::fromMsg(initial_pose, initial_pose_affine);
+    const Eigen::Matrix4f initial_pose_matrix = initial_pose_affine.matrix().cast<float>();
+
+    ndt_ptr->align(*output_cloud, initial_pose_matrix);
+
+    const Eigen::Matrix4f result_pose_matrix = ndt_ptr->getFinalTransformation();
+    Eigen::Affine3d result_pose_affine;
+    result_pose_affine.matrix() = result_pose_matrix.cast<double>();
+    const geometry_msgs::Pose result_pose =  tf2::toMsg(result_pose_affine);
+
+    const auto transform_probability = ndt_ptr->getTransformationProbability();
+    const auto num_iteration = ndt_ptr->getFinalNumIteration();
+    
+    Particle particle(initial_pose, result_pose, transform_probability, num_iteration);
+    particle_array.push_back(particle);
+    publishMarkerForDebug(particle, i++);
+
+    pcl::PointCloud<PointSource>::Ptr sensor_points_mapTF_ptr(new pcl::PointCloud<PointSource>);
+    const auto sensor_points_baselinkTF_ptr = ndt_ptr->getInputSource();
+    pcl::transformPointCloud(*sensor_points_baselinkTF_ptr, *sensor_points_mapTF_ptr, result_pose_matrix);
+    sensor_msgs::PointCloud2 sensor_points_mapTF_msg;
+    pcl::toROSMsg(*sensor_points_mapTF_ptr, sensor_points_mapTF_msg);
+    sensor_points_mapTF_msg.header.stamp = initial_pose_with_cov.header.stamp;
+    sensor_points_mapTF_msg.header.frame_id = map_frame_;
+    sensor_aligned_pose_pub_.publish(sensor_points_mapTF_msg);
+
+  }
+  
+  auto best_particle = std::max_element(std::begin(particle_array), std::end(particle_array),
+    [](const Particle& lhs, const Particle& rhs)
+    {
+      return lhs.score < rhs.score;
+    });
+  std::cout << "best score" << best_particle->score << std::endl;
+
+  geometry_msgs::PoseWithCovarianceStamped result_pose_with_cov_msg;
+  result_pose_with_cov_msg.header.frame_id = map_frame_;
+  result_pose_with_cov_msg.pose.pose = best_particle->result_pose;
+  ndt_pose_with_covariance_pub_.publish(result_pose_with_cov_msg);
+
+  return result_pose_with_cov_msg;
+}
+
+void NDTScanMatcher::publishMarkerForDebug(const Particle &particle, const size_t i)
+{
+  visualization_msgs::MarkerArray marker_array;
+
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.header.frame_id = map_frame_;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.id = i;
+
+  marker.ns = "initial_pose_transform_probability_color_marker";
+  marker.pose = particle.initial_pose;
+  marker.color = ExchangeColorCrc(particle.score/4.5);
+  marker_array.markers.push_back(marker);
+
+  marker.ns = "initial_pose_iteration_color_marker";
+  marker.pose = particle.initial_pose;
+  marker.color = ExchangeColorCrc((1.0*particle.iteration)/30.0);
+  marker_array.markers.push_back(marker);
+
+  marker.ns = "initial_pose_index_color_marker";
+  marker.pose = particle.initial_pose;
+  marker.color = ExchangeColorCrc((1.0*i)/100);
+  marker_array.markers.push_back(marker);
+
+  marker.ns = "result_pose_transform_probability_color_marker";
+  marker.pose = particle.result_pose;
+  marker.color = ExchangeColorCrc(particle.score/4.5);
+  marker_array.markers.push_back(marker);
+
+  marker.ns = "result_pose_iteration_color_marker";
+  marker.pose = particle.result_pose;
+  marker.color = ExchangeColorCrc((1.0*particle.iteration)/30.0);
+  marker_array.markers.push_back(marker);
+
+  marker.ns = "result_pose_index_color_marker";
+  marker.pose = particle.result_pose;
+  marker.color = ExchangeColorCrc((1.0*i)/100);
+  marker_array.markers.push_back(marker);
+
+  ndt_monte_colro_initial_pose_marker_pub_.publish(marker_array);
+
 }
 
 void NDTScanMatcher::publishTF(const std::string &frame_id, const std::string &child_frame_id, const geometry_msgs::Pose &pose_msg) {
