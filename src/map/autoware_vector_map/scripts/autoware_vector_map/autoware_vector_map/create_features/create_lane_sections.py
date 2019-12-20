@@ -1,8 +1,8 @@
 from autoware_vector_map import map_util
 
 
-def create_lane_section(coordinates):
-    return {"geometry": {"type": "Polygon", "coordinates": coordinates}, "properties": {}}
+def create_lane_section(id, coordinates):
+    return {"id": id, "geometry": {"type": "Polygon", "coordinates": coordinates}, "properties": {}}
 
 
 def create_lane_sections(map_api):
@@ -51,6 +51,6 @@ def create_lane_sections(map_api):
 
         coordinates = exterior + interiors
 
-        lane_sections.append(create_lane_section(coordinates))
+        lane_sections.append(create_lane_section(lane_section_id, coordinates))
 
     return lane_sections
