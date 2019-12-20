@@ -10,9 +10,8 @@ def parallel_offset_wrapper(line_string, distance, side):
     if side == "right":
         offseted = LineString(reversed(offseted.coords))
 
-    coords_3d = [
-        (offseted.coords[i][0], offseted.coords[i][1], line_string.coords[i][2]) for i in range(len(line_string.coords))
-    ]
+    z = line_string.coords[0][2]
+    coords_3d = [(c[0], c[1], z) for c in offseted.coords]
 
     return LineString(coords_3d)
 

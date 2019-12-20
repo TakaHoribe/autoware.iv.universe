@@ -16,14 +16,14 @@ def create_lane_sections(map_api):
         left_most_lane = map_api.find_edge_lane(lanes_in_section, "left")
         right_most_lane = map_api.find_edge_lane(lanes_in_section, "right")
 
-        # Set offset distance
-        margin = 0.5
-        left_offset = margin + left_most_lane.width / 2
-        right_offset = margin + right_most_lane.width / 2
+        # Alias
+        left_half_width = left_most_lane.width / 2
+        right_half_width = right_most_lane.width / 2
 
         # Shift geometry using width
-        left_geometry = map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "left")
-        right_geometry = map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "right")
+        margin = 0.5
+        left_geometry = map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width + margin, "left")
+        right_geometry = map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width + margin, "right")
 
         # Create additional points, mainly for intersections
         if len(lanes_in_section) == 1:
@@ -31,12 +31,12 @@ def create_lane_sections(map_api):
             end_additional_points = []
         else:
             start_additional_points = [
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "right").coords[0],
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "left").coords[0],
+                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width, "right").coords[0],
+                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width, "left").coords[0],
             ]
             end_additional_points = [
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "left").coords[-1],
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "right").coords[-1],
+                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width, "left").coords[-1],
+                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width, "right").coords[-1],
             ]
 
         exterior = [
