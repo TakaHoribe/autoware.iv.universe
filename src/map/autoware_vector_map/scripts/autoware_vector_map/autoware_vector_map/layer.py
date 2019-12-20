@@ -35,11 +35,11 @@ def get_autoware_vector_map_layers():
     layers = {}
 
     # Feature
-    p = add_feature_layer(layers, "intersection_area", "Polygon")
+    p = add_feature_layer(layers, "intersection_area", "3D Polygon")
 
-    p = add_feature_layer(layers, "lane_section", "Polygon")
+    p = add_feature_layer(layers, "lane_section", "3D Polygon")
 
-    p = add_feature_layer(layers, "lane", "LineString")
+    p = add_feature_layer(layers, "lane", "3D LineString")
     p["lane_section_id"] = "int64"
     p["width"] = "float"
     p["can_left_lane_change"] = "bool"
@@ -48,25 +48,25 @@ def get_autoware_vector_map_layers():
     p["is_left_turn"] = "bool"
     p["is_right_turn"] = "bool"
 
-    p = add_feature_layer(layers, "lane_boundary", "LineString")
+    p = add_feature_layer(layers, "lane_boundary", "3D LineString")
     p["width"] = "float"
 
-    p = add_feature_layer(layers, "lane_divider_line", "LineString")
+    p = add_feature_layer(layers, "lane_divider_line", "3D LineString")
     p["width"] = "float"
 
-    p = add_feature_layer(layers, "road_edge", "LineString")
+    p = add_feature_layer(layers, "road_edge", "3D LineString")
 
-    p = add_feature_layer(layers, "stop_line", "LineString")
+    p = add_feature_layer(layers, "stop_line", "3D LineString")
     p["is_reason_forced"] = "bool"
     p["is_reason_crosswalk"] = "bool"
     p["is_reason_traffic_light"] = "bool"
     p["is_reason_standby"] = "bool"
     p["is_reason_virtual"] = "bool"
 
-    p = add_feature_layer(layers, "crosswalk", "LineString")
+    p = add_feature_layer(layers, "crosswalk", "3D LineString")
     p["width"] = "float"
 
-    p = add_feature_layer(layers, "traffic_light", "LineString")
+    p = add_feature_layer(layers, "traffic_light", "3D LineString")
     p["code"] = "str"
 
     # Relationship
