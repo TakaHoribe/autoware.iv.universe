@@ -21,7 +21,9 @@ using Point = Position;
 
 using LineString = std::vector<Point>;
 
-struct LinearRing : public LineString {};
+struct LinearRing : public LineString {
+  using LineString::LineString;
+};
 
 struct Polygon {
   LinearRing exterior;
