@@ -50,6 +50,33 @@ class NDTScanMatcher {
   using PointSource = pcl::PointXYZI;
   using PointTarget = pcl::PointXYZI;
 
+  // TODO move file
+  struct OMPParams {
+    OMPParams() : search_method(pclomp::NeighborSearchMethod::KDTREE), num_threads(1) {};
+    pclomp::NeighborSearchMethod search_method;
+    int num_threads;
+  };
+
+  struct Particle
+  {
+    Particle(const geometry_msgs::Pose& a_initial_pose, const geometry_msgs::Pose& a_result_pose, const double a_score, const int a_iteration)
+      : initial_pose(a_initial_pose)
+      , result_pose(a_result_pose)
+      , score(a_score)
+      , iteration(a_iteration)
+      {};
+    geometry_msgs::Pose initial_pose;
+    geometry_msgs::Pose result_pose;
+    double score;
+    int iteration;
+  };
+
+  enum class NDTImplementType {
+     PCL_GENERIC = 0
+   , PCL_MODIFIED = 1
+   , OMP = 2
+  };
+
 public:
   NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~NDTScanMatcher();
@@ -70,11 +97,15 @@ private:
   void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
   void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
 
+  geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> &ndt_ptr, const geometry_msgs::PoseWithCovarianceStamped &initial_pose_with_cov);
+
   void updateTransforms();
 
   void publishTF(const std::string &frame_id, const std::string &child_frame_id, const geometry_msgs::Pose &pose_msg);
   bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr, const ros::Time &time_stamp);
   bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
+
+  void publishMarkerForDebug(const Particle &particle_array, const size_t i);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -92,6 +123,7 @@ private:
   ros::Publisher iteration_num_pub_;
   ros::Publisher initial_to_result_distance_pub_;
   ros::Publisher ndt_marker_pub_;
+  ros::Publisher ndt_monte_colro_initial_pose_marker_pub_;
 
   // dynamic_reconfigure::Server<ndt_slam::NDTScanMatcherConfig> server_;
   // dynamic_reconfigure::Server<ndt_slam::NDTScanMatcherConfig>::CallbackType f_;
@@ -102,7 +134,7 @@ private:
   tf2_ros::TransformListener tf2_listener_;
   tf2_ros::TransformBroadcaster tf2_broadcaster_;
 
-  enum class NDTImplementType{ PCL_GENERIC = 0, PCL_MODIFIED = 1, OMP = 2} ndt_implement_type_;
+  NDTImplementType ndt_implement_type_;
   std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> ndt_ptr_;
 
   Eigen::Matrix4f base_to_sensor_matrix_;
@@ -114,4 +146,5 @@ private:
   ros::Time current_scan_time_;
   std::mutex ndt_map_mtx_;
 
+  OMPParams omp_params_;
 };

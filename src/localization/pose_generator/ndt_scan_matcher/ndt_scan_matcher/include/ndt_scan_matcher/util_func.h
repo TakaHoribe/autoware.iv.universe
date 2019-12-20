@@ -18,11 +18,13 @@
 
 #include <cmath>
 #include <algorithm>
+#include <random>
 
 #include <tf/tf.h>
 #include <tf2_eigen/tf2_eigen.h>
 
 #include <std_msgs/Float32.h>
+#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -76,12 +78,22 @@ double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 }
 
 // x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped &pose)
+geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose &pose)
 {
   geometry_msgs::Vector3 rpy;
-  tf2::Quaternion q(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
+  tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
   return rpy;
+}
+
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped &pose)
+{
+  return getRPY(pose.pose);
+}
+
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseWithCovarianceStamped &pose)
+{
+  return getRPY(pose.pose.pose);
 }
 
 geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
@@ -150,4 +162,47 @@ geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseStamped &pos
   pose.pose.position.z = xyz.z;
   pose.pose.orientation = tf2::toMsg(tf_quaternion);
   return pose;
+}
+
+static geometry_msgs::PoseArray createRandomPoseArray(const geometry_msgs::PoseWithCovarianceStamped &base_pose_with_cov, const size_t particle_num)
+{
+  std::random_device seed_gen;
+  std::default_random_engine engine(seed_gen());
+  std::normal_distribution<> x_distribution(0.0, base_pose_with_cov.pose.covariance[0]);
+  std::normal_distribution<> y_distribution(0.0, base_pose_with_cov.pose.covariance[1*6+1]);
+  std::normal_distribution<> z_distribution(0.0, base_pose_with_cov.pose.covariance[2*6+2]);
+  std::normal_distribution<> roll_distribution(0.0, base_pose_with_cov.pose.covariance[3*6+3]);
+  std::normal_distribution<> pitch_distribution(0.0, base_pose_with_cov.pose.covariance[4*6+4]);
+  std::normal_distribution<> yaw_distribution(0.0, base_pose_with_cov.pose.covariance[5*6+5]);
+
+  const auto base_rpy = getRPY(base_pose_with_cov);
+
+  geometry_msgs::PoseArray pose_array;
+  pose_array.header = base_pose_with_cov.header;
+  for(size_t i = 0; i < particle_num; ++i)
+  {
+    geometry_msgs::Vector3 xyz;
+    geometry_msgs::Vector3 rpy;
+
+    xyz.x = base_pose_with_cov.pose.pose.position.x + x_distribution(engine);
+    xyz.y = base_pose_with_cov.pose.pose.position.y + y_distribution(engine);
+    xyz.z = base_pose_with_cov.pose.pose.position.z + z_distribution(engine);
+    rpy.x = base_rpy.x + roll_distribution(engine);
+    rpy.y = base_rpy.y + pitch_distribution(engine);
+    rpy.z = base_rpy.z + yaw_distribution(engine);
+        
+
+    tf2::Quaternion tf_quaternion;
+    tf_quaternion.setRPY(rpy.x, rpy.y, rpy.z);
+
+    geometry_msgs::Pose pose;
+    pose.position.x = xyz.x;
+    pose.position.y = xyz.y;
+    pose.position.z = xyz.z;
+    pose.orientation = tf2::toMsg(tf_quaternion);
+
+    pose_array.poses.push_back(pose);
+  }
+
+  return pose_array;
 }

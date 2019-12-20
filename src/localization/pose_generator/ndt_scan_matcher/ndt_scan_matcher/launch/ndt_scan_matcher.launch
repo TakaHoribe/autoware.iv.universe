@@ -28,6 +28,12 @@
 
   <arg name="converged_param_transform_probability" default="4.5" doc="" />
 
+  <!-- OMP Params -->
+  <arg name="omp_neighborhood_search_method" default="0" doc="0:KDTREE, 1:DIRECT26, 2:DIRECT7, 3:DIRECT1" />
+  <arg name="omp_num_threads" default="4" doc="" />
+
+
+
   <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="log">
 
     <remap from="points_raw" to="$(arg input_sensor_points_topic)" />
