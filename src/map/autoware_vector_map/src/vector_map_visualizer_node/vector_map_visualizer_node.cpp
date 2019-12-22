@@ -19,18 +19,14 @@ using visualization_msgs::Marker;
 using visualization_msgs::MarkerArray;
 
 template <class T>
-Marker createMarkerFromFeature(const char* ns, const T& feature, const std_msgs::ColorRGBA& color) {
-  return createMarker("map", ns, static_cast<int32_t>(feature.id), feature.geometry, color);
-}
-
-template <class T>
 void addMarkers(GpkgLoader* gpkg_loader, MarkerArray* marker_array,
                 const std_msgs::ColorRGBA& color,
                 const std::function<void(const T&, Marker*)>& post_process = nullptr,
                 const char* ns = gpkg_content<T>::class_name()) {
   const auto features = gpkg_loader->getAllFeatures<T>();
   for (const auto& feature : *features) {
-    auto marker = createMarkerFromFeature(ns, feature, color);
+    auto marker =
+        createMarker("map", ns, static_cast<int32_t>(feature.id), feature.geometry, color);
 
     if (post_process) {
       post_process(feature, &marker);
