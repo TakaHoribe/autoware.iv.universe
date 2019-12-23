@@ -12,6 +12,15 @@ bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &poin
     return SingletonDataManager::getInstance().getNoGroundPointcloud(pointcloud);
 }
 
+bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &pointcloud)
+{
+    std::shared_ptr<sensor_msgs::PointCloud2 const> ros_pointcloud;
+    bool ret = SingletonDataManager::getInstance().getNoGroundPointcloud(ros_pointcloud);
+    if (ret)
+        pcl::fromROSMsg(*ros_pointcloud, *pointcloud);
+    return ret;
+}
+
 bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist){
     return SingletonDataManager::getInstance().getCurrentSelfVelocity(twist);
 }
@@ -25,6 +34,10 @@ bool getBaselink2FrontLength(double &length){
     length = front_overhang + wheel_base;
     return true;
 }
+bool getVehicleWidth(double &width){
+    return SingletonDataManager::getInstance().getVehicleWidth(width);
+}
+
 
 bool isVehicleStopping(){
     std::shared_ptr<geometry_msgs::TwistStamped const> twist_ptr;

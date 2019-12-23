@@ -1,12 +1,13 @@
 #include <scene_module/crosswalk/crosswalk.hpp>
 #include <behavior_velocity_planner/api.hpp>
 #include <visualization_msgs/MarkerArray.h>
+#include <cmath>
 
 namespace behavior_planning
 {
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
-using Polygon = bg::model::polygon<Point>;
+using Polygon = bg::model::polygon<Point, false>;
 
 CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
                                  const lanelet::ConstLanelet &crosswalk,
@@ -15,6 +16,7 @@ CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
       state_(State::APPROARCH),
       crosswalk_(crosswalk),
       stop_margin_(1.0),
+      slow_margin_(5.0),
       lane_id_(lane_id),
       task_id_(boost::uuids::random_generator()())
 {
@@ -52,112 +54,22 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId &input, a
         {
             return false;
         }
-        bool pedestrian_found = false;
-        for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+        pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+        autoware_planning_msgs::PathWithLaneId slow_path, stop_path;
+        if (!getNoGroundPointcloud(no_ground_pointcloud_ptr))
         {
-            if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
-            {
-                Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
-                if (bg::within(point, polygon))
-                {
-                    pedestrian_found = true;
-                }
-            }
+            // return false;
         }
-
-        if (!pedestrian_found)
+        if (!checkSlowArea(input, polygon, objects_ptr, no_ground_pointcloud_ptr, slow_path))
+        {
             return false;
-
-        // insert stop point
-        for (size_t i = 0; i < output.points.size() - 1; ++i)
-        {
-            bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
-                                                 {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
-            std::vector<Point> collision_points;
-            bg::intersection(polygon, line, collision_points);
-
-            if (collision_points.empty())
-                continue;
-            // -- debug code --
-            for (const auto &collision_point : collision_points)
-            {
-                Eigen::Vector3d point3d;
-                point3d << collision_point.x(), collision_point.y(), 0;
-                manager_ptr_->debuger.pushCollisionPoint(point3d);
-            }
-            std::vector<Eigen::Vector3d> line3d;
-            Eigen::Vector3d point3d;
-            point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
-            line3d.push_back(point3d);
-            point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
-            line3d.push_back(point3d);
-            manager_ptr_->debuger.pushCollisionLine(line3d);
-            // ----------------
-
-            // check nearest collision point
-            Point nearest_collision_point;
-            double min_dist;
-            for (size_t j = 0; j < collision_points.size(); ++j)
-            {
-                double dist = bg::distance(Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
-                                         collision_points.at(j));
-                if (j == 0 || dist < min_dist)
-                {
-                    min_dist = dist;
-                    nearest_collision_point = collision_points.at(j);
-                }
-            }
-
-            // search stop point index
-            size_t insert_stop_point_idx;
-            double base_link2front;
-            double length_sum = 0;
-            if (!getBaselink2FrontLength(base_link2front))
-            {
-                ROS_ERROR("cannot get vehicle front to base_link");
-                return false;
-            }
-            const double stop_length = stop_margin_ + base_link2front;
-            Eigen::Vector2d point1, point2;
-            point1 << nearest_collision_point.x(), nearest_collision_point.y();
-            point2 << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
-            length_sum += (point2 - point1).norm();
-            for (size_t j = i; 0 < j; --j)
-            {
-                if (stop_length < length_sum)
-                {
-                    insert_stop_point_idx = j + 1;
-                    break;
-                }
-                point1 << output.points.at(j).point.pose.position.x, output.points.at(j).point.pose.position.y;
-                point2 << output.points.at(j - 1).point.pose.position.x, output.points.at(j - 1).point.pose.position.y;
-                length_sum += (point2 - point1).norm();
-            }
-
-            // create stop point
-            Eigen::Vector2d stop_point;
-            autoware_planning_msgs::PathPointWithLaneId stop_point_with_lane_id;
-            getBackwordPointFromBasePoint(point2,
-                                          point1,
-                                          point2,
-                                          length_sum - stop_length,
-                                          stop_point);
-            stop_point_with_lane_id = output.points.at(insert_stop_point_idx - 1);
-            stop_point_with_lane_id.point.pose.position.x = stop_point.x();
-            stop_point_with_lane_id.point.pose.position.y = stop_point.y();
-            stop_point_with_lane_id.point.twist.linear.x = 0.0;
-            // -- debug code --
-            manager_ptr_->debuger.pushStopPose(stop_point_with_lane_id.point.pose);
-            // ----------------
-
-            // insert stop point
-            output.points.insert(output.points.begin() + insert_stop_point_idx, stop_point_with_lane_id);
-
-            // insert 0 velocity after stop point
-            for (size_t j = insert_stop_point_idx; j < output.points.size(); ++j)
-                output.points.at(j).point.twist.linear.x = 0.0;
-            break;
         }
+        if (!checkStopArea(slow_path, polygon, objects_ptr, no_ground_pointcloud_ptr, stop_path))
+        {
+            return false;
+        }
+        // stop_path = slow_path;
+        output = stop_path;
     }
     return true;
 }
@@ -182,6 +94,258 @@ bool CrosswalkModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &in
         if (manager_ptr_ != nullptr)
             manager_ptr_->unregisterTask(task_id_);
     return is_end_of_life;
+}
+
+bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId &input,
+                                    const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &crosswalk_polygon,
+                                    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects_ptr,
+                                    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &no_ground_pointcloud_ptr,
+                                    autoware_planning_msgs::PathWithLaneId &output)
+{
+    output = input;
+    bool pedestrian_found = false;
+    bool object_found = false;
+
+    // create stop area
+    std::vector<Point> path_collision_points;
+    for (size_t i = 0; i < output.points.size() - 1; ++i)
+    {
+        bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+                                             {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+        std::vector<Point> line_collision_points;
+        bg::intersection(crosswalk_polygon, line, line_collision_points);
+        if (line_collision_points.empty())
+            continue;
+        for (size_t j = 0; j < line_collision_points.size(); ++j)
+        {
+            path_collision_points.push_back(line_collision_points.at(j));
+        }
+    }
+    if (path_collision_points.size() != 2)
+    {
+        ROS_ERROR("Must be 2");
+    }
+    double width;
+    if (!getVehicleWidth(width))
+    {
+        ROS_ERROR("cannot get vehicle width");
+        return false;
+    }
+    const double yaw = std::atan2(path_collision_points.at(1).y() - path_collision_points.at(0).y(), path_collision_points.at(1).x() - path_collision_points.at(0).x()) + M_PI_2;
+    Polygon stop_polygon;
+    const double extension_margin = 1.0;
+    stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(0).x() + std::cos(yaw) * ((width / 2.0) + extension_margin),
+                                                       path_collision_points.at(0).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
+    stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(0).x() - std::cos(yaw) * ((width / 2.0) + extension_margin),
+                                                       path_collision_points.at(0).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
+    stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(1).x() - std::cos(yaw) * ((width / 2.0) + extension_margin),
+                                                       path_collision_points.at(1).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
+    stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(1).x() + std::cos(yaw) * ((width / 2.0) + extension_margin),
+                                                       path_collision_points.at(1).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
+    stop_polygon.outer().push_back(stop_polygon.outer().front());
+
+
+    // -- debug code --
+    // for (size_t i = 0; i < stop_polygon.size(); ++i)
+    // {
+    //     std::vector<Eigen::Vector3d> points;
+    //     for (size_t j = 0; j < stop_polygon.at(i).outer().size(); ++j)
+    //     {
+    //         Eigen::Vector3d point;
+    //         point << stop_polygon.at(i).outer().at(j).x(), stop_polygon.at(i).outer().at(j).y(), 0.0;
+    //         points.push_back(point);
+    //     }
+    //     manager_ptr_->debuger.pushCrosswalkPolygon(points);
+    // }
+    std::vector<Eigen::Vector3d> points;
+    for (size_t i = 0; i < stop_polygon.outer().size(); ++i)
+    {
+        Eigen::Vector3d point;
+        point << stop_polygon.outer().at(i).x(), stop_polygon.outer().at(i).y(), 0.0;
+        points.push_back(point);
+    }
+    manager_ptr_->debuger.pushStopPolygon(points);
+    // ----------------
+    // check object pointcloud
+    for (size_t i = 0; i < no_ground_pointcloud_ptr->size(); ++i)
+    {
+        Point point(no_ground_pointcloud_ptr->at(i).x, no_ground_pointcloud_ptr->at(i).y);
+        if (bg::within(point, stop_polygon))
+        {
+            object_found = true;
+        }
+    }
+
+    // check pedestrian
+    for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+    {
+        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+        {
+            Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
+            if (bg::within(point, stop_polygon))
+            {
+                pedestrian_found = true;
+            }
+        }
+    }
+
+    if (!pedestrian_found && !object_found)
+        return true;
+
+    // insert stop point
+    if (!insertTargetVelocityPoint(input,
+                                   crosswalk_polygon,
+                                   stop_margin_,
+                                   0.0,
+                                   output))
+        return false;
+    return true;
+}
+
+bool CrosswalkModule::checkSlowArea(const autoware_planning_msgs::PathWithLaneId &input,
+                                    const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &polygon,
+                                    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects_ptr,
+                                    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &no_ground_pointcloud_ptr,
+                                    autoware_planning_msgs::PathWithLaneId &output)
+{
+    const double slow_velocity = 1.39; // 5kmph
+    output = input;
+    bool pedestrian_found = false;
+    for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+    {
+        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+        {
+            Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
+            if (bg::within(point, polygon))
+            {
+                pedestrian_found = true;
+            }
+        }
+    }
+    // -- debug code --
+    std::vector<Eigen::Vector3d> points;
+    for (size_t i = 0; i < polygon.outer().size(); ++i)
+    {
+        Eigen::Vector3d point;
+        point << polygon.outer().at(i).x(), polygon.outer().at(i).y(), 0.0;
+        points.push_back(point);
+    }
+    manager_ptr_->debuger.pushSlowPolygon(points);
+    // ----------------
+
+    if (!pedestrian_found)
+        return true;
+
+    // insert slow point
+    if (!insertTargetVelocityPoint(input,
+                                   polygon,
+                                   slow_margin_,
+                                   slow_velocity,
+                                   output))
+        return false;
+    return true;
+}
+
+bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::PathWithLaneId &input,
+                                                const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &polygon,
+                                                const double &margin,
+                                                const double &velocity,
+                                                autoware_planning_msgs::PathWithLaneId &output)
+{
+    output = input;
+    for (size_t i = 0; i < output.points.size() - 1; ++i)
+    {
+        bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+                                             {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+        std::vector<Point> collision_points;
+        bg::intersection(polygon, line, collision_points);
+
+        if (collision_points.empty())
+            continue;
+        // -- debug code --
+        for (const auto &collision_point : collision_points)
+        {
+            Eigen::Vector3d point3d;
+            point3d << collision_point.x(), collision_point.y(), 0;
+            manager_ptr_->debuger.pushCollisionPoint(point3d);
+        }
+        std::vector<Eigen::Vector3d> line3d;
+        Eigen::Vector3d point3d;
+        point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y, output.points.at(i).point.pose.position.z;
+        line3d.push_back(point3d);
+        point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
+        line3d.push_back(point3d);
+        manager_ptr_->debuger.pushCollisionLine(line3d);
+        // ----------------
+
+        // check nearest collision point
+        Point nearest_collision_point;
+        double min_dist;
+        for (size_t j = 0; j < collision_points.size(); ++j)
+        {
+            double dist = bg::distance(Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
+                                       collision_points.at(j));
+            if (j == 0 || dist < min_dist)
+            {
+                min_dist = dist;
+                nearest_collision_point = collision_points.at(j);
+            }
+        }
+
+        // search target point index
+        size_t insert_target_point_idx;
+        double base_link2front;
+        double length_sum = 0;
+        if (!getBaselink2FrontLength(base_link2front))
+        {
+            ROS_ERROR("cannot get vehicle front to base_link");
+            return false;
+        }
+        const double target_length = margin + base_link2front;
+        Eigen::Vector2d point1, point2;
+        point1 << nearest_collision_point.x(), nearest_collision_point.y();
+        point2 << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
+        length_sum += (point2 - point1).norm();
+        for (size_t j = i; 0 < j; --j)
+        {
+            if (target_length < length_sum)
+            {
+                insert_target_point_idx = j + 1;
+                break;
+            }
+            point1 << output.points.at(j).point.pose.position.x, output.points.at(j).point.pose.position.y;
+            point2 << output.points.at(j - 1).point.pose.position.x, output.points.at(j - 1).point.pose.position.y;
+            length_sum += (point2 - point1).norm();
+        }
+
+        // create target point
+        Eigen::Vector2d target_point;
+        autoware_planning_msgs::PathPointWithLaneId target_point_with_lane_id;
+        getBackwordPointFromBasePoint(point2,
+                                      point1,
+                                      point2,
+                                      length_sum - target_length,
+                                      target_point);
+        target_point_with_lane_id = output.points.at(insert_target_point_idx - 1);
+        target_point_with_lane_id.point.pose.position.x = target_point.x();
+        target_point_with_lane_id.point.pose.position.y = target_point.y();
+        target_point_with_lane_id.point.twist.linear.x = velocity;
+        // -- debug code --
+        if (velocity == 0.0)
+            manager_ptr_->debuger.pushStopPose(target_point_with_lane_id.point.pose);
+        else
+            manager_ptr_->debuger.pushSlowPose(target_point_with_lane_id.point.pose);
+        // ----------------
+
+        // insert target point
+        output.points.insert(output.points.begin() + insert_target_point_idx, target_point_with_lane_id);
+
+        // insert 0 velocity after target point
+        for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
+            output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
+        break;
+    }
+    return true;
 }
 
 bool CrosswalkModule::getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
@@ -331,6 +495,11 @@ void CrosswalkDebugMarkersManager::pushStopPose(const geometry_msgs::Pose &pose)
     stop_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
+void CrosswalkDebugMarkersManager::pushSlowPose(const geometry_msgs::Pose &pose)
+{
+    slow_poses_.push_back(geometry_msgs::Pose(pose));
+}
+
 void CrosswalkDebugMarkersManager::pushCrosswalkPolygon(const std::vector<Eigen::Vector3d> &polygon)
 {
     crosswalk_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
@@ -346,6 +515,40 @@ void CrosswalkDebugMarkersManager::pushCrosswalkPolygon(const std::vector<Eigen:
         polygon3d.push_back(point3d);
     }
     pushCrosswalkPolygon(polygon3d);
+}
+
+void CrosswalkDebugMarkersManager::pushStopPolygon(const std::vector<Eigen::Vector3d> &polygon)
+{
+    stop_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
+}
+
+void CrosswalkDebugMarkersManager::pushStopPolygon(const std::vector<Eigen::Vector2d> &polygon)
+{
+    std::vector<Eigen::Vector3d> polygon3d;
+    for (const auto &point : polygon)
+    {
+        Eigen::Vector3d point3d;
+        point3d << point.x(), point.y(), 0;
+        polygon3d.push_back(point3d);
+    }
+    pushStopPolygon(polygon3d);
+}
+
+void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vector3d> &polygon)
+{
+    slow_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
+}
+
+void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vector2d> &polygon)
+{
+    std::vector<Eigen::Vector3d> polygon3d;
+    for (const auto &point : polygon)
+    {
+        Eigen::Vector3d point3d;
+        point3d << point.x(), point.y(), 0;
+        polygon3d.push_back(point3d);
+    }
+    pushSlowPolygon(polygon3d);
 }
 
 void CrosswalkDebugMarkersManager::publish()
@@ -487,6 +690,117 @@ void CrosswalkDebugMarkersManager::publish()
         msg.markers.push_back(marker);
     }
 
+    // Slow polygon
+    for (size_t i = 0; i < slow_polygons_.size(); ++i)
+    {
+        std::vector<Eigen::Vector3d> polygon = slow_polygons_.at(i);
+
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";
+        marker.header.stamp = current_time;
+
+        marker.ns = "slow polygon line";
+        marker.id = i;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = 0;
+        marker.pose.position.y = 0;
+        marker.pose.position.z = 0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.1;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 0.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+        for (size_t j = 0; j < polygon.size(); ++j)
+        {
+            geometry_msgs::Point point;
+            point.x = polygon.at(j).x();
+            point.y = polygon.at(j).y();
+            point.z = polygon.at(j).z();
+            marker.points.push_back(point);
+        }
+        marker.points.push_back(marker.points.front());
+        msg.markers.push_back(marker);
+    }
+
+    // Slow point
+    if (!slow_poses_.empty())
+    {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";
+        marker.header.stamp = current_time;
+        marker.ns = "slow point";
+        marker.id = 0;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::POINTS;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = 0;
+        marker.pose.position.y = 0;
+        marker.pose.position.z = 0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.25;
+        marker.scale.y = 0.25;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 0.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+        for (size_t j = 0; j < slow_poses_.size(); ++j)
+        {
+            geometry_msgs::Point point;
+            point.x = slow_poses_.at(j).position.x;
+            point.y = slow_poses_.at(j).position.y;
+            point.z = slow_poses_.at(j).position.z;
+            marker.points.push_back(point);
+        }
+        msg.markers.push_back(marker);
+    }
+
+    // Stop polygon
+    for (size_t i = 0; i < stop_polygons_.size(); ++i)
+    {
+        std::vector<Eigen::Vector3d> polygon = stop_polygons_.at(i);
+
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";
+        marker.header.stamp = current_time;
+
+        marker.ns = "stop polygon line";
+        marker.id = i;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = 0;
+        marker.pose.position.y = 0;
+        marker.pose.position.z = 0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.1;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+        for (size_t j = 0; j < polygon.size(); ++j)
+        {
+            geometry_msgs::Point point;
+            point.x = polygon.at(j).x();
+            point.y = polygon.at(j).y();
+            point.z = polygon.at(j).z();
+            marker.points.push_back(point);
+        }
+        marker.points.push_back(marker.points.front());
+        msg.markers.push_back(marker);
+    }
+
     // Stop point
     if (!stop_poses_.empty())
     {
@@ -559,8 +873,12 @@ void CrosswalkDebugMarkersManager::publish()
     debug_viz_pub_.publish(msg);
     collision_points_.clear();
     stop_poses_.clear();
+    slow_poses_.clear();
     collision_lines_.clear();
     crosswalk_polygons_.clear();
+    slow_polygons_.clear();
+    stop_polygons_.clear();
+
     return;
 }
 

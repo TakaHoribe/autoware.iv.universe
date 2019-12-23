@@ -40,6 +40,11 @@ void SingletonDataManager::setFrontOverhang(const double &front_overhang)
     front_overhang_ptr_ = std::make_shared<double>(front_overhang);
 }
 
+void SingletonDataManager::setVehicleWidth(const double &width)
+{
+    vehicle_width_ptr_ = std::make_shared<double>(width);
+}
+
 bool SingletonDataManager::getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects)
 {
     if (perception_ptr_ == nullptr)
@@ -98,6 +103,14 @@ bool SingletonDataManager::getFrontOverhang(double &front_overhang)
     if (front_overhang_ptr_ == nullptr)
         return false;
     front_overhang = *front_overhang_ptr_;
+    return true;
+}
+
+bool SingletonDataManager::getVehicleWidth(double &width)
+{
+    if (vehicle_width_ptr_ == nullptr)
+        return false;
+    width = *vehicle_width_ptr_;
     return true;
 }
 

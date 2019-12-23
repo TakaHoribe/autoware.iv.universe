@@ -73,6 +73,7 @@ private:
     lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
     std::shared_ptr<double> wheel_base_ptr_;
     std::shared_ptr<double> front_overhang_ptr_;
+    std::shared_ptr<double> vehicle_width_ptr_;
 
     /*
      * SelfPoseLinstener
@@ -87,6 +88,7 @@ public:
     // setter
     void setWheelBase(const double &wheel_base);
     void setFrontOverhang(const double &front_overhang);
+    void setVehicleWidth(const double &width);
     // getter
     bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects);
     bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud);
@@ -96,6 +98,7 @@ public:
                        lanelet::routing::RoutingGraphConstPtr &routing_graph_ptr);
     bool getWheelBase(double &wheel_base);
     bool getFrontOverhang(double &front_overhang);
+    bool getVehicleWidth(double &width);
 };
 
 } // namespace behavior_planning
