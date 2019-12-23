@@ -367,19 +367,20 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
   const double smooth_weight = optimization_param_smooth_weight_;
 
   /* design objective function */
+  const double coeff_P = 2.0;
   for (unsigned int i = 0; i < N; ++i) // bi
   {
-    P(i, i) = 1.0;
+    P(i, i) = 1.0 * coeff_P;
     q[i] = -2.0 * vmax[i] * vmax[i];
   }
   
   for (unsigned int i = N; i < 2 * N - 1; ++i) // ai
   {
     const double cw = c * smooth_weight;
-    P(i, i) += cw;
-    P(i, i + 1) -= cw;
-    P(i + 1, i) -= cw;
-    P(i + 1, i + 1) += cw;
+    P(i, i) += cw * coeff_P;
+    P(i, i + 1) -= cw * coeff_P;
+    P(i + 1, i) -= cw * coeff_P;
+    P(i + 1, i + 1) += cw * coeff_P;
   }
 
   /* design constraint matrix */
@@ -410,6 +411,7 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
   double v0 = initial_motion.vel;
   if (v0 > vmax[0] - 1.0)
   {
+    ROS_ERROR("v0 = %f, vmax[0] = %f", v0, vmax[0]);
     v0 = vmax[0] - 1.0;
   }
 
@@ -484,13 +486,6 @@ void VelocityPlanner::replanVelocity(const autoware_planning_msgs::Trajectory &i
   const unsigned int idx_dist = 20;
   lateralAccelerationFilter(input, planning_param_.max_lat_acc, idx_dist, /* out */ latacc_filtered_traj);
 
-  /* apply forward-direction jerk filter */
-  // autoware_planning_msgs::Trajectory jerk_filtered_traj = moveave_filtered_traj;
-  // std::vector<Motion> jerk_filtered_motion;
-  // VelocityPlanner::jerkVelocityFilter(init_m, moveave_filtered_traj, input_closest, prev_output_motion,
-  //                                     prev_output_closest, init_type, 
-  //                                     /* out */ jerk_filtered_traj, /* out */ jerk_filtered_motion);
-
   autoware_planning_msgs::Trajectory optimized_traj;
   optimizeVelocity(init_m, latacc_filtered_traj, input_closest, /* out */ optimized_traj);
 
@@ -502,73 +497,14 @@ void VelocityPlanner::replanVelocity(const autoware_planning_msgs::Trajectory &i
   DEBUG_INFO("[replan] : base_speed = %f, stop_idx_zero_vel = %d, input_closest = %d, stop_point_exists = %d",
              base_speed, stop_idx_zero_vel, input_closest, (int)stop_point_exists);
 
-  // bool is_stop_ok = false;
-  // stop_planning_jerk = 0.0;
-  // if (emergency_stop_manager_ptr_->getEmergencyFlag() == true)
-  // {
-  //   setZeroLaneAndMotions(input, output, output_motion);
-  //   stop_planning_jerk = -77.7;
-  //   DEBUG_WARN("[replan] : EMERGENCY DETECTED. Keep stopping for a while... ");
-  // }
-  // else if (stop_point_exists == false) /* no stop idx */
-  // {
-  //   output = jerk_filtered_traj;
-  //   output_motion = jerk_filtered_motion;
-  // }
-  // else if (stop_idx_zero_vel > input_closest) /* stop idx exist ahead of self position */
-  // {
-  //   if (!stopVelocityFilterWithJerkRange(
-  //           planning_param_.dec_jerk_urgent, planning_param_.dec_jerk_nominal, planning_param_.jerk_planning_span,
-  //           planning_param_.stop_dist_mergin, stop_idx_zero_vel, jerk_filtered_traj, jerk_filtered_motion, input_closest,
-  //           /* out */ stop_planning_jerk, /* out */ output, /* out */ is_stop_ok, /* out */ output_motion))
-  //   {
-  //     vpu::insertZeroVelocityAfterIdx(0, output);
-  //     VelocityPlanner::insertZeroMotionsAfterIdx(0, /* out */ output_motion);
-  //     ROS_ERROR("error in stopVelocityFilter. publish zero velocity ");
-  //     return;
-  //   }
-
-  //   if (is_stop_ok == false)  // cannot find stop velocity profile with any given constraint
-  //   {
-  //     setZeroLaneAndMotions(input, output, output_motion);
-  //     if (std::fabs(current_velocity_ptr_->twist.linear.x) > planning_param_.emergency_flag_vel_thr_kmph / 3.6 /* 3.0 km/h */)
-  //     {
-  //       stop_planning_jerk = -88.8; // for debug
-  //       double dist_tmp = vpu::calcLengthOnWaypoints(jerk_filtered_traj, stop_idx_zero_vel, input_closest);
-  //       ROS_WARN_DELAYED_THROTTLE(5.0, "[replan] : could not plan under given jerk constraint. stop_idx = %d, self_idx = %d, dist = %f, v0 = %f, a0 "
-  //                 "= %f",
-  //                 stop_idx_zero_vel, input_closest, dist_tmp, init_m.vel, init_m.acc);
-  //       emergency_stop_manager_ptr_->setEmergencyFlagTrue(); // EMERGENCY
-  //     }
-  //   }
-  // }
-  // else /* stop idx is behind self pose -> emergency */
-  // {
-  //   setZeroLaneAndMotions(input, output, output_motion);
-  //   if (std::fabs(current_velocity_ptr_->twist.linear.x) > planning_param_.emergency_flag_vel_thr_kmph / 3.6 /* 3.0 km/h */)
-  //   {
-  //     stop_planning_jerk = -99.9;
-  //     emergency_stop_manager_ptr_->setEmergencyFlagTrue(); // EMERGENCY
-  //   }
-  //   else
-  //   {
-  //     /* stop idx is behind self pose, but current_velocity is low. Not emergency, use previous jerk for debug publish */
-  //     stop_planning_jerk = prev_stop_planning_jerk_;
-  //   }
-  //   DEBUG_INFO("[replan] : over stop line. publish zero velocity. stop_idx_zero_vel = %d, input_closest = %d", stop_idx_zero_vel, input_closest);
-  // }
-
-  /* set 0 velocity after stop index for safety */
-  if (stop_point_exists == true)
-  {
-    vpu::insertZeroVelocityAfterIdx(stop_idx_zero_vel, /* out */ optimized_traj);
-  }
-
   /* for the endpoint of the trajectory */
   if (optimized_traj.points.size() > 0)
+  {
     optimized_traj.points.back().twist.linear.x = 0.0;
+  }
 
   /* check if it is emergency with planning jerk */
+  stop_planning_jerk = 0.0;
   publishIsEmergency(stop_planning_jerk);
 
   /* debug */
