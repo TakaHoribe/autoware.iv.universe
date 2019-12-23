@@ -36,12 +36,6 @@
             <node pkg="pointcloud_preprocessor" type="ray_ground_filter_node" name="ray_ground_filter" output="screen">
                 <remap from="~input" to="lidar/self_cropped/pointcloud" />
                 <remap from="~output" to="lidar/no_ground/pointcloud_raw" />
-                <rosparam>
-                    voxel_size_x: 0.3
-                    voxel_size_y: 0.3
-                    voxel_size_z: 0.5
-                    voxel_points_threshold: 2
-                </rosparam>
             </node>
             <!-- PointCloud Outlier Filter -->
             <node pkg="pointcloud_preprocessor" type="voxel_grid_outlier_filter_node" name="voxel_grid_outlier_filter" output="screen">
