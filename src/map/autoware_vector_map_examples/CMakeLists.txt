@@ -24,6 +24,9 @@ include_directories(
 add_executable(example1 src/example1/main.cpp)
 target_link_libraries(example1 ${catkin_LIBRARIES})
 
+add_executable(example2 src/example2/main.cpp)
+target_link_libraries(example2 ${catkin_LIBRARIES})
+
 # Install
 install(
   TARGETS

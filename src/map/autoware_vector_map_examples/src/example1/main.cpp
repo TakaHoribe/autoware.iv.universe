@@ -1,13 +1,10 @@
-#include <string>
 
-#include <ros/ros.h>
+#include <examples_common.h>
 
 #include <autoware_vector_map/io/gpkg_interface.h>
 
 #include <autoware_vector_map/bridge/boost/geometry_registration.h>
 #include <autoware_vector_map/util/to_debug_string.h>
-
-#include <examples_common.h>
 
 namespace autoware_vector_map {
 
