@@ -94,6 +94,20 @@ namespace bridge {
 namespace ros {
 
 template <>
+visualization_msgs::Marker createMarker<Point>(const char* frame_id, const char* ns,
+                                               const int32_t id, const Point& geometry,
+                                               const std_msgs::ColorRGBA& color) {
+  auto marker = initMarker(frame_id, ns, id, Marker::SPHERE, color);
+
+  marker.pose.position = toRosGeometry(geometry);
+
+  marker.points.push_back(toRosGeometry(geometry));
+  marker.colors.push_back(marker.color);
+
+  return marker;
+}
+
+template <>
 visualization_msgs::Marker createMarker<LineString>(const char* frame_id, const char* ns,
                                                     const int32_t id, const LineString& geometry,
                                                     const std_msgs::ColorRGBA& color) {
