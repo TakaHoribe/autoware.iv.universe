@@ -4,14 +4,15 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Sensing1/NoGroundPointCloud1/Autocompute Value Bounds1
         - /Localization1/NDT1/PoseHistory1/Line1
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
         - /Planning1/MissionPlanning1
         - /Planning1/BehaviorPlanning1
-      Splitter Ratio: 0.6797752976417542
-    Tree Height: 1402
+      Splitter Ratio: 0.679775298
+    Tree Height: 1535
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -20,7 +21,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.5886790156364441
+    Splitter Ratio: 0.588679016
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -30,9 +31,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloudMap
-Preferences:
-  PromptSaveOnExit: true
+    SyncSource: PointCloud
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -44,7 +43,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: false
       Line Style:
-        Line Width: 0.029999999329447746
+        Line Width: 0.0299999993
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -151,7 +150,7 @@ Visualization Manager:
       Name: System
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
+        - Alpha: 0.200000003
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 10
@@ -173,9 +172,9 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 3
-          Size (m): 0.05000000074505806
-          Style: Flat Squares
+          Size (Pixels): 2
+          Size (m): 0.0500000007
+          Style: Points
           Topic: /pointcloud_map
           Unreliable: false
           Use Fixed Frame: true
@@ -186,12 +185,7 @@ Visualization Manager:
           Marker Topic: /lanelet2_map_viz
           Name: VectorMap
           Namespaces:
-            center_lane_line: true
-            crosswalk_lanelets: true
-            left_lane_bound: true
-            right_lane_bound: true
-            road_lanelets: true
-            stop_lines: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -199,43 +193,29 @@ Visualization Manager:
     - Class: rviz/Group
       Displays:
         - Alpha: 1
-          Autocompute Intensity Bounds: true
-          Autocompute Value Bounds:
-            Max Value: 3
-            Min Value: -0.5
-            Value: false
-          Axis: Z
-          Channel Name: intensity
-          Class: rviz/PointCloud2
-          Color: 255; 255; 255
-          Color Transformer: AxisColor
-          Decay Time: 0
+          Class: rviz/Polygon
+          Color: 25; 255; 0
           Enabled: true
-          Invert Rainbow: false
-          Max Color: 255; 255; 255
-          Max Intensity: 224
-          Min Color: 0; 0; 0
-          Min Intensity: 0
-          Name: PointCloud
-          Position Transformer: XYZ
-          Queue Size: 10
-          Selectable: true
-          Size (Pixels): 3
-          Size (m): 0.009999999776482582
-          Style: Points
-          Topic: /sensor/lidar/main/pointcloud
+          Name: Vehicle
+          Topic: /sensing/preprocess/pointcloud_preprocessor/crop_box_filter_vehicle/crop_box_polygon
           Unreliable: false
-          Use Fixed Frame: true
-          Use rainbow: true
           Value: true
         - Alpha: 1
-          Autocompute Intensity Bounds: true
+          Class: rviz/Polygon
+          Color: 25; 255; 0
+          Enabled: false
+          Name: MesurementRange
+          Topic: /sensing/preprocess/pointcloud_preprocessor/crop_box_filter_mesurement_range/crop_box_polygon
+          Unreliable: false
+          Value: false
+        - Alpha: 1
+          Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
             Max Value: 10
             Min Value: -10
             Value: true
           Axis: Z
-          Channel Name: intensity
+          Channel Name: z
           Class: rviz/PointCloud2
           Color: 255; 255; 255
           Color Transformer: Intensity
@@ -243,17 +223,47 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 4096
+          Max Intensity: 15
           Min Color: 0; 0; 0
-          Min Intensity: 0
-          Name: NoGroundPointCloud
+          Min Intensity: -5
+          Name: PointCloud
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
           Size (Pixels): 3
-          Size (m): 0.009999999776482582
+          Size (m): 0.00999999978
           Style: Points
-          Topic: /points_raw/outlier/filtered
+          Topic: /sensor/lidar/main/pointcloud
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 0.699999988
+          Autocompute Intensity Bounds: false
+          Autocompute Value Bounds:
+            Max Value: 15
+            Min Value: -2
+            Value: false
+          Axis: Z
+          Channel Name: z
+          Class: rviz/PointCloud2
+          Color: 255; 85; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 15
+          Min Color: 0; 0; 0
+          Min Intensity: -5
+          Name: NoGroundPointCloud
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 10
+          Size (m): 0.00999999978
+          Style: Points
+          Topic: /sensing/preprocess/lidar/no_ground/pointcloud_raw
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -266,7 +276,7 @@ Visualization Manager:
           Displays:
             - Alpha: 1
               Axes Length: 1
-              Axes Radius: 0.10000000149011612
+              Axes Radius: 0.100000001
               Class: rviz/PoseWithCovariance
               Color: 0; 170; 255
               Covariance:
@@ -279,24 +289,24 @@ Visualization Manager:
                   Scale: 1
                   Value: true
                 Position:
-                  Alpha: 0.30000001192092896
+                  Alpha: 0.300000012
                   Color: 204; 51; 204
                   Scale: 1
                   Value: true
                 Value: true
               Enabled: true
-              Head Length: 0.4000000059604645
-              Head Radius: 0.6000000238418579
+              Head Length: 0.400000006
+              Head Radius: 0.600000024
               Name: PoseWithCovInitial
-              Shaft Length: 0.6000000238418579
-              Shaft Radius: 0.30000001192092896
+              Shaft Length: 0.600000024
+              Shaft Radius: 0.300000012
               Shape: Arrow
               Topic: /localization/pose_generator/initial_pose_with_covariance
               Unreliable: false
               Value: true
             - Alpha: 1
               Axes Length: 1
-              Axes Radius: 0.10000000149011612
+              Axes Radius: 0.100000001
               Class: rviz/PoseWithCovariance
               Color: 0; 255; 0
               Covariance:
@@ -309,17 +319,17 @@ Visualization Manager:
                   Scale: 1
                   Value: true
                 Position:
-                  Alpha: 0.30000001192092896
+                  Alpha: 0.300000012
                   Color: 204; 51; 204
                   Scale: 1
                   Value: true
                 Value: true
               Enabled: true
-              Head Length: 0.4000000059604645
-              Head Radius: 0.6000000238418579
+              Head Length: 0.400000006
+              Head Radius: 0.600000024
               Name: PoseWithCovAligned
-              Shaft Length: 0.6000000238418579
-              Shaft Radius: 0.30000001192092896
+              Shaft Length: 0.600000024
+              Shaft Radius: 0.300000012
               Shape: Arrow
               Topic: /localization/pose_generator/ndt_pose_with_covariance
               Unreliable: false
@@ -330,7 +340,7 @@ Visualization Manager:
               Line:
                 Color: 170; 255; 127
                 Value: true
-                Width: 0.10000000149011612
+                Width: 0.100000001
               Name: PoseHistory
               Topic: /localization/pose_generator/ndt_pose
               Value: true
@@ -357,7 +367,7 @@ Visualization Manager:
               Queue Size: 10
               Selectable: true
               Size (Pixels): 10
-              Size (m): 0.009999999776482582
+              Size (m): 0.00999999978
               Style: Points
               Topic: /localization/util/downsample
               Unreliable: false
@@ -387,7 +397,7 @@ Visualization Manager:
               Queue Size: 10
               Selectable: true
               Size (Pixels): 10
-              Size (m): 0.009999999776482582
+              Size (m): 0.00999999978
               Style: Points
               Topic: /localization/pose_generator/points_aligned
               Unreliable: false
@@ -406,7 +416,7 @@ Visualization Manager:
               background color: 0; 0; 0
               backround alpha: 0
               border: true
-              foreground alpha: 0.699999988079071
+              foreground alpha: 0.699999988
               foreground color: 25; 255; 240
               height: 100
               left: 10
@@ -417,7 +427,7 @@ Visualization Manager:
               show caption: true
               text size: 8
               top: 250
-              update interval: 0.03999999910593033
+              update interval: 0.0399999991
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
@@ -431,7 +441,7 @@ Visualization Manager:
               background color: 0; 0; 0
               backround alpha: 0
               border: true
-              foreground alpha: 0.699999988079071
+              foreground alpha: 0.699999988
               foreground color: 255; 0; 0
               height: 100
               left: 120
@@ -442,7 +452,7 @@ Visualization Manager:
               show caption: true
               text size: 8
               top: 250
-              update interval: 0.03999999910593033
+              update interval: 0.0399999991
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
@@ -456,7 +466,7 @@ Visualization Manager:
               background color: 0; 0; 0
               backround alpha: 0
               border: true
-              foreground alpha: 0.699999988079071
+              foreground alpha: 0.699999988
               foreground color: 25; 255; 240
               height: 100
               left: 230
@@ -467,7 +477,7 @@ Visualization Manager:
               show caption: true
               text size: 8
               top: 250
-              update interval: 0.03999999910593033
+              update interval: 0.0399999991
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
@@ -481,29 +491,29 @@ Visualization Manager:
               background color: 0; 0; 0
               backround alpha: 0
               border: true
-              foreground alpha: 0.699999988079071
+              foreground alpha: 0.699999988
               foreground color: 25; 255; 240
               height: 100
               left: 340
               linewidth: 1
               max color: 255; 0; 0
               max value: 1
-              min value: 0.20000000298023224
+              min value: 0.200000003
               show caption: true
               text size: 8
               top: 250
-              update interval: 0.03999999910593033
+              update interval: 0.0399999991
               width: 100
             - Class: rviz/MarkerArray
               Enabled: true
               Marker Topic: /localization/pose_generator/monte_colro_initial_pose_marker
               Name: MonteColroInitialPose
               Namespaces:
-                initial_pose_index_color_marker: false
-                initial_pose_iteration_color_marker: false
-                initial_pose_transform_probability_color_marker: false
-                result_pose_index_color_marker: false
-                result_pose_iteration_color_marker: false
+                initial_pose_index_color_marker: true
+                initial_pose_iteration_color_marker: true
+                initial_pose_transform_probability_color_marker: true
+                result_pose_index_color_marker: true
+                result_pose_iteration_color_marker: true
                 result_pose_transform_probability_color_marker: true
               Queue Size: 1
               Value: true
@@ -517,7 +527,7 @@ Visualization Manager:
               Line:
                 Color: 0; 255; 255
                 Value: true
-                Width: 0.10000000149011612
+                Width: 0.100000001
               Name: PoseHistory
               Topic: /localization/fusion_localizer/ekf_pose
               Value: true
@@ -582,23 +592,8 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Class: rviz_plugins/Path
-              Color Border Vel Max: 3
               Enabled: true
               Name: Path
-              Topic: ""
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
             - Class: rviz/MarkerArray
               Enabled: true
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
@@ -628,23 +623,8 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Class: rviz_plugins/Trajectory
-              Color Border Vel Max: 3
               Enabled: true
               Name: Trajectory
-              Topic: ""
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
             - Class: rviz/MarkerArray
               Enabled: true
               Marker Topic: /planning/motion_planning/stop_planner/debug/markers
@@ -684,10 +664,7 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
-      Theta std deviation: 0.2617993950843811
       Topic: initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
@@ -696,21 +673,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -0.02500002086162567
+      Angle: 0
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.05999999865889549
+        Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.009999999776482582
-      Scale: 13.150053977966309
+      Near Clip Distance: 0.00999999978
+      Scale: 10
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 97.81499481201172
-      Y: -45.68117141723633
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Displays:
@@ -718,7 +695,7 @@ Window Geometry:
   Height: 2104
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002bf00000736fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000006720000018200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000006ec000000b8000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000015f00000736fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000006e000007360000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000f000000005afc0100000002fb0000000800540069006d0065010000000000000f000000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000aca0000073600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002bf00000792fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000006ca000000d700fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000006f8000000c20000006100fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000015f00000792fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000002800000792000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000ebf0000005afc0100000002fb0000000800540069006d0065010000000000000ebf0000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000a950000079200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -727,6 +704,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 3840
-  X: 0
-  Y: 0
+  Width: 3775
+  X: 65
+  Y: 24
