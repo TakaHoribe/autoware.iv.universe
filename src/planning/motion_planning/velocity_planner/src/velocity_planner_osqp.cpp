@@ -438,7 +438,7 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
   const std::vector<float> optval = std::get<0>(result); // [b0, b1, ..., bN, a0, a1, ..., aN]
 
   /* get velocity & acceleration */
-  for (unsigned int i = 0; i < closest; ++i)
+  for (int i = 0; i < closest; ++i)
   {
     output.points.at(i).twist.linear.x = std::sqrt(optval.at(0));
     output.points.at(i).accel.linear.x = optval.at(N);
