@@ -28,19 +28,53 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pluginlib/class_list_macros.h>
 #include "pointcloud_preprocessor/ground_filter/ray_ground_filter_nodelet.h"
+
+#include <pluginlib/class_list_macros.h>
+
+#include <pcl_ros/transforms.h>
 
 
 namespace pointcloud_preprocessor
 {
   RayGroundFilterNodelet::RayGroundFilterNodelet()
+    : tf_listener_(tf_buffer_)
   {
     grid_width_ = 1000;
     grid_height_ = 1000;
     grid_precision_ = 0.2;
     ray_ground_filter::generateColors(colors_, color_num_);
   }
+
+
+  bool RayGroundFilterNodelet::TransformPointCloud(const std::string& in_target_frame,
+                                            const sensor_msgs::PointCloud2::ConstPtr& in_cloud_ptr,
+                                            const sensor_msgs::PointCloud2::Ptr& out_cloud_ptr)
+  {
+    if (in_target_frame == in_cloud_ptr->header.frame_id)
+    {
+      *out_cloud_ptr = *in_cloud_ptr;
+      return true;
+    }
+
+    geometry_msgs::TransformStamped transform_stamped;
+    try
+    {
+      transform_stamped = tf_buffer_.lookupTransform(in_target_frame, in_cloud_ptr->header.frame_id,
+                                                     in_cloud_ptr->header.stamp, ros::Duration(1.0));
+    }
+    catch (tf2::TransformException& ex)
+    {
+      ROS_WARN("%s", ex.what());
+      return false;
+    }
+    // tf2::doTransform(*in_cloud_ptr, *out_cloud_ptr, transform_stamped);
+    Eigen::Matrix4f mat = tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
+    pcl_ros::transformPointCloud(mat, *in_cloud_ptr, *out_cloud_ptr);
+    out_cloud_ptr->header.frame_id = in_target_frame;
+    return true;
+  }
+
   void RayGroundFilterNodelet::ConvertXYZIToRTZColor(const pcl::PointCloud<PointType_>::Ptr in_cloud,
                                                      PointCloudXYZIRTColor &out_organized_points,
                                                      std::vector <pcl::PointIndices> &out_radial_divided_indices,
@@ -63,7 +97,10 @@ namespace pointcloud_preprocessor
       {
         theta += 360;
       }
-
+      if (theta >= 360)
+      {
+        theta -= 360;
+      }
       auto radial_div = (size_t) floor(theta / radial_divider_angle_);
       auto concentric_div = (size_t) floor(fabs(radius / concentric_divider_distance_));
 
@@ -101,7 +138,6 @@ namespace pointcloud_preprocessor
     }
   }
 
-
   void RayGroundFilterNodelet::ClassifyPointCloud(std::vector <PointCloudXYZIRTColor> &in_radial_ordered_clouds,
                                                   pcl::PointIndices &out_ground_indices,
                                                   pcl::PointIndices &out_no_ground_indices)
@@ -112,7 +148,7 @@ namespace pointcloud_preprocessor
     for (size_t i = 0; i < in_radial_ordered_clouds.size(); i++)//sweep through each radial division
     {
       float prev_radius = 0.f;
-      float prev_height = -sensor_height_;
+      float prev_height = 0.f;
       bool prev_ground = false;
       bool current_ground = false;
       for (size_t j = 0; j < in_radial_ordered_clouds[i].size(); j++)//loop through each point in the radial div
@@ -141,8 +177,8 @@ namespace pointcloud_preprocessor
             //Check again using general geometry (radius from origin) if previous points wasn't ground
             if (!prev_ground)
             {
-              if (current_height <= (-sensor_height_ + general_height_threshold)
-                  && current_height >= (-sensor_height_ - general_height_threshold))
+              if (current_height <= general_height_threshold
+                  && current_height >= -general_height_threshold)
               {
                 current_ground = true;
               } else
@@ -157,8 +193,8 @@ namespace pointcloud_preprocessor
           {
             //check if previous point is too far from previous one, if so classify again
             if (points_distance > reclass_distance_threshold_ &&
-                (current_height <= (-sensor_height_ + height_threshold)
-                 && current_height >= (-sensor_height_ - height_threshold))
+                (current_height <= height_threshold
+                 && current_height >= - height_threshold)
               )
             {
               current_ground = true;
@@ -183,137 +219,6 @@ namespace pointcloud_preprocessor
         prev_height = in_radial_ordered_clouds[i][j].point.z;
       }
     }
-  }
-
-
-  void RayGroundFilterNodelet::ClipCloud(const pcl::PointCloud<PointType_>::Ptr in_cloud_ptr,
-                                  double in_clip_height,
-                                  pcl::PointCloud<PointType_>::Ptr out_clipped_cloud_ptr)
-  {
-    pcl::ExtractIndices <PointType_> extractor;
-    extractor.setInputCloud(in_cloud_ptr);
-    pcl::PointIndices indices;
-
-#pragma omp for
-    for (size_t i = 0; i < in_cloud_ptr->points.size(); i++)
-    {
-      if (in_cloud_ptr->points[i].z > in_clip_height)
-      {
-        indices.indices.push_back(i);
-      }
-    }
-    extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    extractor.setNegative(true);//true removes the indices, false leaves only the indices
-    extractor.filter(*out_clipped_cloud_ptr);
-  }
-
-  void RayGroundFilterNodelet::RemovePointsUpTo(const pcl::PointCloud<PointType_>::Ptr in_cloud_ptr,
-                                         double in_min_distance,
-                                         pcl::PointCloud<PointType_>::Ptr out_filtered_cloud_ptr)
-  {
-    pcl::ExtractIndices <PointType_> extractor;
-    extractor.setInputCloud(in_cloud_ptr);
-    pcl::PointIndices indices;
-
-#pragma omp for
-    for (size_t i = 0; i < in_cloud_ptr->points.size(); i++)
-    {
-      if (sqrt(in_cloud_ptr->points[i].x * in_cloud_ptr->points[i].x +
-               in_cloud_ptr->points[i].y * in_cloud_ptr->points[i].y)
-          < in_min_distance)
-      {
-        indices.indices.push_back(i);
-      }
-    }
-    extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    extractor.setNegative(true);//true removes the indices, false leaves only the indices
-    extractor.filter(*out_filtered_cloud_ptr);
-  }
-
-  pcl::PointCloud<RayGroundFilterNodelet::PointType_>::Ptr
-  RayGroundFilterNodelet::MatchClouds(const pcl::PointCloud<PointType_>::Ptr &in_previous_scan,
-                               pcl::PointCloud<PointType_>::Ptr in_current_scan)
-  {
-    if (in_previous_scan->points.size() > min_icp_points_
-    && in_current_scan->points.size() > min_icp_points_)
-    {
-
-      pcl::PointCloud<PointType_>::Ptr matched_cloud(new pcl::PointCloud<PointType_>);
-      pcl::IterativeClosestPoint<PointType_, PointType_> icp;
-      icp.setInputSource(in_previous_scan);
-      icp.setInputTarget(in_current_scan);
-
-      icp.align(*matched_cloud);
-
-      if (icp.hasConverged())
-      {
-        return matched_cloud;
-      }
-    }
-    return in_current_scan;
-  }
-
-
-  template<typename T>
-  cv::Point2i
-  RayGroundFilterNodelet::ProjectPointToGrid(const T &in_point, size_t in_grid_w, size_t in_grid_h, double in_precision)
-  {
-    size_t u, v;
-    try
-    {
-      u = -in_point.x / in_precision + in_grid_w / 2;
-      v = -in_point.y / in_precision + in_grid_h / 2;
-    }
-    catch (std::exception &e)
-    {
-      ROS_ERROR("[Ground Filter] precision set to 0. %s", e.what());
-      throw;
-    }
-    return cv::Point2i(v, u);
-  }
-
-  template<typename T>
-  cv::Mat
-  RayGroundFilterNodelet::CreateOccupancyFromCloud(const T &in_cloud_ptr)
-  {
-    cv::Mat grid(grid_height_, grid_width_, CV_8UC1, cv::Scalar(0));
-    for (const auto &point: in_cloud_ptr->points)
-    {
-      cv::Point2i pixel = ProjectPointToGrid(point, grid_width_, grid_height_, grid_precision_);
-      if (pixel.x >= 0 && pixel.x < grid_width_
-          && pixel.y >= 0 && pixel.y < grid_height_)
-      {
-        cv::circle(grid, pixel, 2, cv::Scalar(1), CV_FILLED);
-      }
-    }
-    return grid;
-  }
-
-  pcl::PointCloud<RayGroundFilterNodelet::PointType_>::Ptr
-  RayGroundFilterNodelet::ValidatePointCloudWithOccupancyGrid(const pcl::PointCloud<PointType_>::Ptr &in_cloud,
-                                                       cv::Mat in_out_grid, size_t in_threshold)
-  {
-    pcl::PointCloud<PointType_>::Ptr validated_cloud_ptr(new pcl::PointCloud <PointType_>);
-
-    for (const auto &point: in_cloud->points)
-    {
-      cv::Point2i pixel = ProjectPointToGrid(point, grid_width_, grid_height_, grid_precision_);
-      if (pixel.x >= 0 && pixel.x < (int)grid_width_
-          && pixel.y >= 0 && pixel.y < (int)grid_height_)
-      {
-        if (in_out_grid.at<char>(pixel) >= (int)in_threshold)
-        {
-          validated_cloud_ptr->points.push_back(point);
-        } else
-        {
-          if (in_out_grid.at<char>(pixel) > 0)
-          {
-            in_out_grid.at<char>(pixel) -= 1;
-          }
-        }
-      }
-    }
-    return validated_cloud_ptr;
   }
 
   bool
@@ -345,68 +250,31 @@ namespace pointcloud_preprocessor
     extract_ground.filter(*out_removed_indices_cloud_ptr);
   }
 
-  template<typename T>
-  void
-  RayGroundFilterNodelet::publish_cloud(const ros::Publisher &in_publisher,
-                                      const T &in_cloud_to_publish_ptr,
-                                      const std_msgs::Header &in_header)
-  {
-    sensor_msgs::PointCloud2 cloud_msg;
-    pcl::toROSMsg(*in_cloud_to_publish_ptr, cloud_msg);
-    cloud_msg.header = in_header;
-    in_publisher.publish(cloud_msg);
-  }
-
-
-  pcl::PointCloud<RayGroundFilterNodelet::PointType_>::Ptr
-  RayGroundFilterNodelet::Voxelize(const pcl::PointCloud<PointType_>::Ptr in_cloud_ptr)
-  {
-    pcl::PointCloud<PointType_>::Ptr voxelized_cloud_ptr(new pcl::PointCloud <PointType_>);
-    // Create the filtering object
-    pcl::VoxelGrid<PointType_> voxel_filter;
-    voxel_filter.setInputCloud (in_cloud_ptr);
-    voxel_filter.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
-    voxel_filter.filter (*voxelized_cloud_ptr);
-    return voxelized_cloud_ptr;
-  }
-
   void
   RayGroundFilterNodelet::filter(const PointCloud2::ConstPtr &input, const IndicesPtr &indices,
                                       PointCloud2 &output)
   {
     boost::mutex::scoped_lock lock(mutex_);
-    pcl::PointCloud<PointType_>::Ptr current_sensor_cloud_ptr(new pcl::PointCloud <PointType_>);
-    pcl::fromROSMsg(*input, *current_sensor_cloud_ptr);
 
-    pcl::PointCloud<PointType_>::Ptr clipped_cloud_ptr(new pcl::PointCloud <PointType_>);
-
-    // auto t1 = std::chrono::high_resolution_clock::now();
-
-    //remove points above certain point
-    ClipCloud(current_sensor_cloud_ptr, clipping_height_, clipped_cloud_ptr);
-
-    //remove closer points than a threshold
-    pcl::PointCloud<PointType_>::Ptr close_cloud_ptr(new pcl::PointCloud <PointType_>);
-    RemovePointsUpTo(clipped_cloud_ptr, min_point_distance_, close_cloud_ptr);
-
-    //apply voxel if point cloud is larger than a threshold
-    pcl::PointCloud<PointType_>::Ptr filtered_cloud_ptr(new pcl::PointCloud <PointType_>);
-    if (close_cloud_ptr->points.size() > max_cloud_size_)
+    sensor_msgs::PointCloud2::Ptr input_transed_ptr(new sensor_msgs::PointCloud2);
+    bool succeeded = TransformPointCloud(base_frame_, input, input_transed_ptr);
+    if (!succeeded)
     {
-      filtered_cloud_ptr = Voxelize(close_cloud_ptr);
-    } else
-    {
-      filtered_cloud_ptr = close_cloud_ptr;
+      ROS_ERROR_STREAM_THROTTLE(10, "Failed transform from " << base_frame_ << " to "
+                                                             << input->header.frame_id);
+      return;
     }
+
+    pcl::PointCloud<PointType_>::Ptr current_sensor_cloud_ptr(new pcl::PointCloud <PointType_>);
+    pcl::fromROSMsg(*input_transed_ptr, *current_sensor_cloud_ptr);
 
     PointCloudXYZIRTColor organized_points;
     std::vector <pcl::PointIndices> radial_division_indices;
-    std::vector <pcl::PointIndices> closest_indices;
     std::vector <PointCloudXYZIRTColor> radial_ordered_clouds;
 
     radial_dividers_num_ = ceil(360 / radial_divider_angle_);
 
-    ConvertXYZIToRTZColor(filtered_cloud_ptr,
+    ConvertXYZIToRTZColor(current_sensor_cloud_ptr,
                           organized_points,
                           radial_division_indices,
                           radial_ordered_clouds);
@@ -419,10 +287,21 @@ namespace pointcloud_preprocessor
     pcl::PointCloud<PointType_>::Ptr no_ground_cloud_ptr(new pcl::PointCloud <PointType_>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr radials_cloud_ptr(new pcl::PointCloud <pcl::PointXYZRGB>);
 
-    ExtractPointsIndices(filtered_cloud_ptr, ground_indices, ground_cloud_ptr, no_ground_cloud_ptr);
+    ExtractPointsIndices(current_sensor_cloud_ptr, ground_indices, ground_cloud_ptr, no_ground_cloud_ptr);
 
-    pcl::toROSMsg(*no_ground_cloud_ptr, output);
-    output.header = input->header;
+    sensor_msgs::PointCloud2::Ptr no_ground_cloud_msg_ptr(new sensor_msgs::PointCloud2);
+    pcl::toROSMsg(*no_ground_cloud_ptr, *no_ground_cloud_msg_ptr);
+    no_ground_cloud_msg_ptr->header = input->header;
+    sensor_msgs::PointCloud2::Ptr no_ground_cloud_transed_msg_ptr(new sensor_msgs::PointCloud2);
+    succeeded = TransformPointCloud(base_frame_, no_ground_cloud_msg_ptr, no_ground_cloud_transed_msg_ptr);
+    if (!succeeded)
+    {
+      ROS_ERROR_STREAM_THROTTLE(10, "Failed transform from " << base_frame_ << " to "
+                                                             << no_ground_cloud_msg_ptr->header.frame_id);
+      return;
+    }
+    output = *no_ground_cloud_transed_msg_ptr;
+
   }
 
   void
@@ -442,10 +321,11 @@ namespace pointcloud_preprocessor
   {
     boost::mutex::scoped_lock lock(mutex_);
 
-    if (sensor_height_ != config.sensor_height)
+    if (base_frame_ != config.base_frame)
     {
-      sensor_height_ = config.sensor_height;
-      NODELET_DEBUG("[%s::config_callback] Setting sensor_height to: %f.", getName().c_str(), config.sensor_height);
+      base_frame_ = config.base_frame;
+      NODELET_DEBUG("[%s::config_callback] Setting base_frame to: %s.", getName().c_str(),
+                    config.base_frame.c_str());
     }
     if (general_max_slope_ != config.general_max_slope)
     {
@@ -475,17 +355,6 @@ namespace pointcloud_preprocessor
       min_height_threshold_ = config.min_height_threshold;
       NODELET_DEBUG("[%s::config_callback] Setting min_height_threshold_ to: %f.", getName().c_str(),
                     config.min_height_threshold);
-    }
-    if (clipping_height_ != config.clipping_height)
-    {
-      clipping_height_ = config.clipping_height;
-      NODELET_DEBUG("[%s::config_callback] Setting clipping_height to: %f.", getName().c_str(), config.clipping_height);
-    }
-    if (min_point_distance_ != config.min_point_distance)
-    {
-      min_point_distance_ = config.min_point_distance;
-      NODELET_DEBUG("[%s::config_callback] Setting min_point_distance_ to: %f.", getName().c_str(),
-                    config.min_point_distance);
     }
     if (reclass_distance_threshold_ != config.reclass_distance_threshold)
     {
