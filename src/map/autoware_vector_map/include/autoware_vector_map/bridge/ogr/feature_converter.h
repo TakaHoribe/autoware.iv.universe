@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 
+#include <fmt/format.h>
+
 #include <ogrsf_frmts.h>
 
 #include <autoware_vector_map/bridge/ogr/geometry_converter.h>
@@ -70,7 +72,7 @@ bool assignId(OGRFeature* ogr_feature, T* feature) {
 template <class T, std::enable_if_t<has_geometry<T>::value, std::nullptr_t> = nullptr>
 bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
   using GeometryType = typename T::GeometryType;
-  using OgrGeometryType = typename OgrGeometry<GeometryType>::type;
+  using OgrGeometryType = ogr_geometry_t<GeometryType>;
 
   OgrGeometryType* ogr_geometry = static_cast<OgrGeometryType*>(ogr_feature->GetGeometryRef());
   feature->geometry = fromOgrGeometry<GeometryType>(ogr_geometry);

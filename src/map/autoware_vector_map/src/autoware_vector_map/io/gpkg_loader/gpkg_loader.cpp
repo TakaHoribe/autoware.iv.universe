@@ -48,7 +48,7 @@ GpkgLoader::GpkgLoader(const std::vector<uint8_t>& bin_data) {
 
 void GpkgLoader::toFile(const char* gpkg_path) {
   if (!dataset_) {
-    throw std::runtime_error("dataset_ is empty.");
+    throw std::runtime_error("dataset_ is empty");
   }
 
   GDALDriver* gpkg_driver = GetGDALDriverManager()->GetDriverByName("GPKG");
