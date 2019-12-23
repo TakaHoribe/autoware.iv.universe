@@ -3,8 +3,8 @@
     <group ns="sensor">
         <group ns="lidar">
             <group ns="main">
+                <remap from="velodyne_points_transed" to="pointcloud" />
                 <include file="$(find velodyne_pointcloud)/launch/VLP-32C_points.launch">
-                    <remap from="velodyne_points" to="pointcloud" />
                 </include>
             </group>
         </group>
