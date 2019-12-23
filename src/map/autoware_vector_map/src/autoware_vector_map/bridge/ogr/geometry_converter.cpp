@@ -1,5 +1,5 @@
 #include <autoware_vector_map/bridge/ogr/geometry_converter.h>
-#include <iostream>
+
 namespace autoware_vector_map {
 namespace bridge {
 namespace ogr {
