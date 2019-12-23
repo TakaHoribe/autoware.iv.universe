@@ -194,7 +194,7 @@ void CNNSegmentation::run()
   init();
 
   points_sub_ = nh_.subscribe(topic_src_, 1, &CNNSegmentation::pointsCallback, this);
-  points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/detection/lidar_detector/points_cluster", 1);
+  points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("debug/points_cluster", 1);
   d_objects_pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 1);
 
   ROS_INFO("[%s] Ready. Waiting for data...", __APP_NAME__);
