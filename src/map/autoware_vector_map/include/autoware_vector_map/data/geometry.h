@@ -17,9 +17,14 @@ struct Pose {
   Orientation orientation;
 };
 
-using Point = Position;
+struct Point : public Position {
+  Point() = default;
+  Point(const double x, const double y, const double z = 0.0) : Position(x, y, z) {}
+};
 
-using LineString = std::vector<Point>;
+struct LineString : public std::vector<Point> {
+  using std::vector<Point>::vector;
+};
 
 struct LinearRing : public LineString {
   using LineString::LineString;
