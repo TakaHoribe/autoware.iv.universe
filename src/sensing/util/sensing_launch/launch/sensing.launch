@@ -2,8 +2,11 @@
     <!-- LiDAR Driver -->
     <group ns="sensor">
         <group ns="lidar">
-            <include file="$(find velodyne_pointcloud)/launch/VLP-32C_points.launch">
-            </include>
+            <group ns="main">
+                <include file="$(find velodyne_pointcloud)/launch/VLP-32C_points.launch">
+                    <remap from="velodyne_points" to="pointcloud" />
+                </include>
+            </group>
         </group>
     </group>
     <!-- Camera Driver -->
