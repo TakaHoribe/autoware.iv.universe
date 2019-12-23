@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
   geometry_msgs
   tf2
+  tf2_ros
   dynamic_reconfigure
   stop_planner
   osqp_interface
@@ -32,6 +33,7 @@ catkin_package(
       autoware_planning_msgs
       geometry_msgs
       tf2
+      tf2_ros
       stop_planner
       osqp_interface
 )

@@ -18,6 +18,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <tf2/utils.h>
+#include <tf2_ros/transform_listener.h>
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 
@@ -46,7 +47,7 @@ public:
 private:
   ros::NodeHandle nh_, pnh_;
   ros::Publisher pub_trajectory_, pub_is_emergency_, pub_dist_to_stopline_;
-  ros::Subscriber sub_current_pose_, sub_current_velocity_, sub_stop_fact_, sub_current_trajectory_, sub_external_velocity_limit_;
+  ros::Subscriber sub_current_velocity_, sub_stop_fact_, sub_current_trajectory_, sub_external_velocity_limit_;
   ros::Timer timer_replan_;
 
   boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;       // current vehicle pose
@@ -55,6 +56,9 @@ private:
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;     // current external_velocity_limit
 
   autoware_planning_msgs::Trajectory replanned_traj_;  // velocity replanned waypoints (output of this node)
+
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
 
   bool show_debug_info_;      // print level 1
   bool show_debug_info_all_;  // print level 2
@@ -112,6 +116,7 @@ private:
 
   /* non-const methods */
   void timerReplanCallback(const ros::TimerEvent &e);
+  void updateCurrentPose();
 
   /* const methods */
   void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
