@@ -4,7 +4,7 @@
 		<remap from="~input/vehicle_status" to="/vehicle/status"/>
 		<remap from="~input/lateral/control_cmd" to="lateral/control_cmd"/>
 		<remap from="~input/longitudinal/control_cmd" to="longitudinal/control_cmd"/>
-		<remap from="~input/engage" to="/vehicle/engage"/>
+		<remap from="~input/engage" to="/autoware/engage"/>
 		<remap from="~output/vehicle_cmd" to="vehicle_cmd"/>
 
 	</node>
