@@ -16,6 +16,10 @@ double calcSquaredDist2d(const geometry_msgs::Point &a, const geometry_msgs::Poi
 double calcSquaredDist2d(const geometry_msgs::Pose &a, const geometry_msgs::Pose &b);
 double calcSquaredDist2d(const geometry_msgs::PoseStamped &a, const geometry_msgs::PoseStamped &b);
 double calcSquaredDist2d(const autoware_planning_msgs::TrajectoryPoint &a, const autoware_planning_msgs::TrajectoryPoint &b);
+double calcDist2d(const geometry_msgs::Point &a, const geometry_msgs::Point &b);
+double calcDist2d(const geometry_msgs::Pose &a, const geometry_msgs::Pose &b);
+double calcDist2d(const geometry_msgs::PoseStamped &a, const geometry_msgs::PoseStamped &b);
+double calcDist2d(const autoware_planning_msgs::TrajectoryPoint &a, const autoware_planning_msgs::TrajectoryPoint &b);
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const geometry_msgs::Point &point);
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const geometry_msgs::Pose &pose);
 bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &trajectory, const int index, const double &ahead_length,
@@ -38,8 +42,10 @@ void multiplyConstantToTrajectoryVelocity(const double &scalar, autoware_plannin
 void insertZeroVelocityAfterIdx(const int &stop_idx, autoware_planning_msgs::Trajectory &trajectory);
 double getVx(const autoware_planning_msgs::Trajectory &trajectory, const int &i);
 double getForwardAcc(const autoware_planning_msgs::Trajectory &trajectory, const int &i);
+double getTrajectoryJerk(const autoware_planning_msgs::Trajectory &trajectory, const int idx);
+ 
 double getDurationToNextIdx(const autoware_planning_msgs::Trajectory &trajectory, const double &v, const int &i);
 bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory &trajectory, int &idx);
-bool calcWaypointsCurvature(const autoware_planning_msgs::Trajectory &trajectory, const unsigned int &idx_dist, std::vector<double> &k_arr);
+bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory &trajectory, const unsigned int &idx_dist, std::vector<double> &k_arr);
 bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planning_msgs::Trajectory &trajectory);
 }  // namespace vpu

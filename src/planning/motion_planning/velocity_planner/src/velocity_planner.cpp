@@ -21,7 +21,7 @@
 #define DEBUG_WARN(...) { if (show_debug_info_) {ROS_WARN(__VA_ARGS__); } }
 #define DEBUG_INFO_ALL(...) { if (show_debug_info_all_) {ROS_INFO(__VA_ARGS__); } }
 
-VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~")
+VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   pnh_.param("max_velocity", planning_param_.max_velocity, double(11.11));              // 40.0 kmph
   pnh_.param("max_accel", planning_param_.max_accel, double(1.0));                         // 0.11G
@@ -58,7 +58,6 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~")
   pub_is_emergency_ = pnh_.advertise<std_msgs::Bool>("is_sudden_stop", 1);
   pub_dist_to_stopline_ = pnh_.advertise<std_msgs::Float32>("distance_to_stopline", 1);
   sub_current_trajectory_ = pnh_.subscribe("input/trajectory", 1, &VelocityPlanner::callbackCurrentTrajectory, this);
-  sub_current_pose_ = pnh_.subscribe("/current_pose", 1, &VelocityPlanner::callbackCurrentPose, this);
   sub_current_velocity_ = pnh_.subscribe("/vehicle/twist", 1, &VelocityPlanner::callbackCurrentVelocity, this);
   sub_external_velocity_limit_ = pnh_.subscribe("/external_velocity_limit_mps", 1, &VelocityPlanner::callbackExternalVelocityLimit, this);
 
@@ -77,17 +76,27 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~")
   /* debug */
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
   pub_debug_planning_jerk_ = pnh_.advertise<std_msgs::Float32>("current_planning_jerk", 1);
+
+  /* wait to get vehicle position */
+  while (true)
+  {
+    try
+    {
+      tf_buffer_.lookupTransform("map", "base_link", ros::Time::now(), ros::Duration(5.0));
+      break;
+    }
+    catch (tf2::TransformException &ex)
+    {
+      ROS_INFO("[VelocityPlanner] is waitting to get map to base_link transform. %s", ex.what());
+      continue;
+    }
+  }
 };
 VelocityPlanner::~VelocityPlanner(){};
 
 void VelocityPlanner::publishTrajectory(const autoware_planning_msgs::Trajectory &trajectory) const
 {
   pub_trajectory_.publish(trajectory);
-}
-
-void VelocityPlanner::callbackCurrentPose(const geometry_msgs::PoseStamped::ConstPtr msg)
-{
-  current_pose_ptr_ = msg;
 }
 
 void VelocityPlanner::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg)
@@ -102,8 +111,35 @@ void VelocityPlanner::callbackExternalVelocityLimit(const std_msgs::Float32::Con
 {
   external_velocity_limit_ptr_ = msg;
 }
+
+void VelocityPlanner::updateCurrentPose()
+{
+
+  geometry_msgs::TransformStamped transform;
+  try
+  {
+    transform = tf_buffer_.lookupTransform(
+        "map", "base_link", ros::Time(0));
+  }
+  catch (tf2::TransformException &ex)
+  {
+    ROS_WARN("[VelocityPlanner] cannot get map to base_link transform. %s", ex.what());
+    return;
+  }
+
+  geometry_msgs::PoseStamped ps;
+  ps.header = transform.header;
+  ps.pose.position.x = transform.transform.translation.x;
+  ps.pose.position.y = transform.transform.translation.y;
+  ps.pose.position.z = transform.transform.translation.z;
+  ps.pose.orientation = transform.transform.rotation;
+  current_pose_ptr_ = boost::make_shared<geometry_msgs::PoseStamped>(ps);
+};
+
 void VelocityPlanner::timerReplanCallback(const ros::TimerEvent &e)
 {
+  updateCurrentPose();
+  
   auto t_start = std::chrono::system_clock::now();
 
   DEBUG_INFO("============================== timer callback start ==============================");
@@ -493,7 +529,7 @@ bool VelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Tr
     return true;
   }
   std::vector<double> k_arr;
-  vpu::calcWaypointsCurvature(input, idx_dist, k_arr);
+  vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, k_arr);
 
   latacc_filtered_traj = input;  // as initialize
   const double max_lat_acc_abs = std::fabs(max_lat_acc);
@@ -814,7 +850,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
 
   if (!vpu::calcStopDistWithConstantJerk(v0_s, a0_s, planning_jerk, v_end_s, t_neg_s, t_pos_s, brake_dist_s))
   {
-    ROS_WARN("[stopVelocityFilter]: cannot calculate stop_dist in calcStopDistWithConstantJerk() (planning_jerk = %f)", planning_jerk);
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[stopVelocityFilter]: cannot calculate stop_dist in calcStopDistWithConstantJerk() (planning_jerk = %f)", planning_jerk);
     is_stop_ok = false;
     return true;
   }

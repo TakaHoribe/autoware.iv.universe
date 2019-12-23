@@ -32,7 +32,7 @@
 #include <stop_planner/planning_utils.h>
 
 
-// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
+#define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #include "matplotlibcpp.h"
 #endif
@@ -54,7 +54,7 @@ private:
   boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_;              // current base_waypoints
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;     // current external_velocity_limit
 
-  autoware_planning_msgs::Trajectory replanned_traj_;  // velocity replanned waypoints (output of this node)
+  autoware_planning_msgs::Trajectory prev_output_trajectory_;  // velocity replanned waypoints (output of this node)
 
   bool show_debug_info_;      // print level 1
   bool show_debug_info_all_;  // print level 2
@@ -104,6 +104,8 @@ private:
     double stop_dist_mergin;
   } planning_param_;
 
+  double optimization_param_smooth_weight_;
+
   /* topic callback */
   void callbackCurrentPose(const geometry_msgs::PoseStamped::ConstPtr msg);
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg);
@@ -115,45 +117,28 @@ private:
 
   /* const methods */
   void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
-                      const std::vector<Motion> &prev_output_motion, const int prev_output_closest,
-                      autoware_planning_msgs::Trajectory &output, std::vector<Motion> &output_motion,
+                      const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest,
+                      autoware_planning_msgs::Trajectory &output,
                       double &stop_planning_jerk) const;
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
-                         const std::vector<Motion> &prev_replanned_traj_motion, const int prev_replanned_traj_closest,
+                         const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
                          VelocityPlanner::Motion *initial_motion, int &init_type) const;
-  Motion updateMotionWithConstraint(const Motion &m_prev, const Motion &m_des_prev, const double &dt,
-                                    const VelocityPlannerParam &planning_param, int &debug) const;
 
   void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
-  bool moveAverageFilter(const autoware_planning_msgs::Trajectory &latacc_filtered_traj, const unsigned int move_ave_num,
-                         autoware_planning_msgs::Trajectory &moveave_filtered_traj) const;
-  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input, const double &max_lat_acc,
-                                 const unsigned int idx_dist, autoware_planning_msgs::Trajectory &latacc_filtered_traj) const;
   void jerkVelocityFilter(const Motion &initial_motion, const autoware_planning_msgs::Trajectory &input, const int input_closest,
                           const std::vector<Motion> &prev_output_motion, const int prev_output_closest,
                           const int &init_type, autoware_planning_msgs::Trajectory &output, std::vector<Motion> &output_motion) const;
-  bool stopVelocityFilterWithMergin(const double &stop_mergin, const int &input_stop_idx,
-                                    const autoware_planning_msgs::Trajectory &input, const std::vector<Motion> &input_motion,
-                                    const int &input_closest, const double &planning_jerk, autoware_planning_msgs::Trajectory &output,
-                                    bool &is_stop_ok, std::vector<Motion> &output_motion) const;
-  bool stopVelocityFilterWithJerkRange(const double &jerk_max, const double &jerk_min, const double &jerk_span,
-                                       const double &stop_mergin, const int &input_stop_idx,
-                                       const autoware_planning_msgs::Trajectory &input, const std::vector<Motion> &input_motion,
-                                       const int &input_closest, double &planning_jerk, autoware_planning_msgs::Trajectory &output,
-                                       bool &is_stop_ok, std::vector<Motion> &output_motion) const;
-  bool stopVelocityFilter(const int &input_stop_idx, const autoware_planning_msgs::Trajectory &input,
-                          const std::vector<Motion> &input_motion, const int &input_closest,
-                          const double &planning_jerk, autoware_planning_msgs::Trajectory &output, bool &is_stop_ok,
-                          std::vector<Motion> &output_motion) const;
-  void calculateMotionsFromWaypoints(const autoware_planning_msgs::Trajectory &trajectory, std::vector<Motion> motions) const;
+  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
+                                 const double &max_lat_acc, const unsigned int curvature_calc_idx_dist,
+                                 autoware_planning_msgs::Trajectory &output) const;
+      void calculateMotionsFromWaypoints(const autoware_planning_msgs::Trajectory &trajectory, std::vector<Motion> motions) const;
   void publishTrajectory(const autoware_planning_msgs::Trajectory &traj) const;
   void insertZeroMotionsAfterIdx(const int &idx, std::vector<Motion> &motions) const;
-  void setZeroLaneAndMotions(const autoware_planning_msgs::Trajectory &base_trajectory, autoware_planning_msgs::Trajectory &trajectory,
-                             std::vector<Motion> &motions) const;
   void publishIsEmergency(const double &jerk_value) const;
   void preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const;
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
+  void optimizeVelocity(const Motion initial_motion, const autoware_planning_msgs::Trajectory &input, const int closest, autoware_planning_msgs::Trajectory &output) const;
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<velocity_planner::VelocityPlannerConfig> dyncon_server_;
@@ -246,11 +231,10 @@ private:
   void publishPlanningJerk(const double &jerk) const;
 
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  void plotMotionVelocity(const std::string &color_str) const;
-  void plotMotionAcceleration(const std::string &color_str) const;
-  void plotMotionJerk(const std::string &color_str) const;
+  void plotVelocity(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
+  void plotAcceleration(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
+  void plotJerk(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
   void plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &base,
-               const autoware_planning_msgs::Trajectory &latacc_base, const autoware_planning_msgs::Trajectory &moveave_filtered,
-               const autoware_planning_msgs::Trajectory &jerk_filtered, const autoware_planning_msgs::Trajectory &final) const;
+               const autoware_planning_msgs::Trajectory &latacc_base, const autoware_planning_msgs::Trajectory &jerk_filtered) const;
 #endif
 };

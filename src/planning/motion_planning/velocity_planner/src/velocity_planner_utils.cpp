@@ -40,6 +40,23 @@ double calcSquaredDist2d(const autoware_planning_msgs::TrajectoryPoint &a, const
   return square(a.pose.position.x - b.pose.position.x) + square(a.pose.position.y - b.pose.position.y);
 }
 
+double calcDist2d(const geometry_msgs::Point &a, const geometry_msgs::Point &b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(const geometry_msgs::Pose &a, const geometry_msgs::Pose &b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(const geometry_msgs::PoseStamped &a, const geometry_msgs::PoseStamped &b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(const autoware_planning_msgs::TrajectoryPoint &a, const autoware_planning_msgs::TrajectoryPoint &b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+
 
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::Point &point)
 {
@@ -79,7 +96,7 @@ bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &trajectory
   int ahead_index = trajectory.points.size() - 1;
   for (int i = index; i < (int)trajectory.points.size() - 1; ++i)
   {
-    dist_sum_tmp += std::sqrt(calcSquaredDist2d(trajectory.points.at(i), trajectory.points.at(i + 1)));
+    dist_sum_tmp += vpu::calcDist2d(trajectory.points.at(i), trajectory.points.at(i + 1));
     if (dist_sum_tmp > ahead_length)
     {
 
@@ -94,7 +111,7 @@ bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &trajectory
   int behind_index = 0;
   for (int i = index; i > 0; --i)
   {
-    dist_sum_tmp += std::sqrt(calcSquaredDist2d(trajectory.points.at(i), trajectory.points[i - 1]));
+    dist_sum_tmp += vpu::calcDist2d(trajectory.points.at(i), trajectory.points[i - 1]);
     if (dist_sum_tmp > behind_length)
     {
       behind_index = i - 1;
@@ -184,7 +201,7 @@ double calcLengthOnWaypoints(const autoware_planning_msgs::Trajectory &path, con
   double dist_sum = 0.0;
   for (int i = idx_from; i < idx_to; ++i)
   {
-    dist_sum += std::sqrt(calcSquaredDist2d(path.points.at(i), path.points.at(i+1)));
+    dist_sum += vpu::calcDist2d(path.points.at(i), path.points.at(i+1));
   }
   return dist_sum;
 }
@@ -311,7 +328,7 @@ void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &path, std:
   {
     const autoware_planning_msgs::TrajectoryPoint tp = path.points.at(i);
     const autoware_planning_msgs::TrajectoryPoint tp_prev = path.points.at(i - 1);
-    dist += std::sqrt(calcSquaredDist2d(tp.pose, tp_prev.pose));
+    dist += vpu::calcDist2d(tp.pose, tp_prev.pose);
     arclength.push_back(dist);
   }
 }
@@ -467,7 +484,7 @@ bool calcStopVelocityWithConstantJerk(const double &v0, const double &a0, const 
   {
     const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
     const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
-    dist += std::sqrt(calcSquaredDist2d(tp.pose, tp_prev.pose));
+    dist += vpu::calcDist2d(tp.pose, tp_prev.pose);
     if (dist > x_arr.back())
       break;
     arclength.push_back(dist);
@@ -550,15 +567,46 @@ double getVx(const autoware_planning_msgs::Trajectory &trajectory, const int &i)
 double getForwardAcc(const autoware_planning_msgs::Trajectory &trajectory, const int &i)
 {
   const double v_curr_ref = trajectory.points.at(i).twist.linear.x;
-  const double dist_next = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(i + 1), trajectory.points.at(i)));
+  const double dist_next = vpu::calcDist2d(trajectory.points.at(i + 1), trajectory.points.at(i));
   const double dt_next = std::max(0.0001, dist_next) / std::max(v_curr_ref, 0.2 /* to avoid zero devide */);
   const double v_next_ref = trajectory.points.at(i + 1).twist.linear.x;
   return (v_next_ref - v_curr_ref) / dt_next;
 }
+double getTrajectoryJerk(const autoware_planning_msgs::Trajectory &trajectory, const int idx)
+{
+  if (trajectory.points.size() < 2)
+  {
+    return 0.0;
+  }
+
+  if (idx == 0)
+  {
+    const double v = std::fabs(trajectory.points.at(0).twist.linear.x);
+    const double dt = vpu::calcDist2d(trajectory.points.at(0), trajectory.points.at(1)) / std::max(v, 0.001 /* avoid 0 divide */);
+    const double da = trajectory.points.at(1).accel.linear.x - trajectory.points.at(0).accel.linear.x;
+    return da / std::max(dt, 0.001);
+  }
+
+  if (idx == (int)trajectory.points.size() - 1)
+  {
+    const double v = std::fabs(trajectory.points.at(idx - 1).twist.linear.x);
+    const double dt = vpu::calcDist2d(trajectory.points.at(idx - 1), trajectory.points.at(idx)) / std::max(v, 0.001 /* avoid 0 divide */);
+    const double da = trajectory.points.at(idx).accel.linear.x - trajectory.points.at(idx - 1).accel.linear.x;
+    return da / std::max(dt, 0.001);
+  }
+
+  const double v = std::fabs(trajectory.points.at(idx).twist.linear.x);
+  const double dt = vpu::calcDist2d(trajectory.points.at(idx - 1), trajectory.points.at(idx + 1)) / std::max(v, 0.001 /* avoid 0 divide */);
+  const double da = trajectory.points.at(idx + 1).accel.linear.x - trajectory.points.at(idx - 1).accel.linear.x;
+  return da / std::max(dt, 0.001);
+
+
+}
+
 
 double getDurationToNextIdx(const autoware_planning_msgs::Trajectory &trajectory, const double &v, const int &i)
 {
-    const double dist_prev = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(i + 1), trajectory.points.at(i)));
+    const double dist_prev = vpu::calcDist2d(trajectory.points.at(i + 1), trajectory.points.at(i));
     return  std::max(0.0001, dist_prev) / std::max(v, 0.2 /* to avoid zero devide */);
 }
 
@@ -575,12 +623,12 @@ bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory &trajectory,
   return false;
 }
 
-bool calcWaypointsCurvature(const autoware_planning_msgs::Trajectory &trajectory, const unsigned int &idx_dist, std::vector<double> &k_arr)
+bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory &trajectory, const unsigned int &idx_dist, std::vector<double> &k_arr)
 {
   k_arr.clear();
-  if (trajectory.points.size() < 2 * idx_dist) 
+  if (trajectory.points.size() < 2 * idx_dist + 1)
   {
-    ROS_ERROR("[calcWaypointsCurvature] cannot calc curvature idx_dist = %df, trajectory.size() = %lu", idx_dist, trajectory.points.size());
+    ROS_WARN("[calcTrajectoryCurvatureFrom3Points] cannot calc curvature idx_dist = %d, trajectory.size() = %lu", idx_dist, trajectory.points.size());
     for (unsigned int i = 0; i < trajectory.points.size(); ++i)
     {
       k_arr.push_back(0.0);
@@ -607,7 +655,7 @@ bool calcWaypointsCurvature(const autoware_planning_msgs::Trajectory &trajectory
   // for debug
   if (k_arr.size() == 0)
   {
-    ROS_ERROR("[calcWaypointsCurvature] k_arr.size() = 0, somthing wrong. pls check.");
+    ROS_ERROR("[calcTrajectoryCurvatureFrom3Points] k_arr.size() = 0, somthing wrong. pls check.");
     return false;
   }
 
@@ -630,7 +678,7 @@ bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planni
 
   for (int i = zero_index - 1; i >= 0; --i)
   {
-    const double dist = std::sqrt(calcSquaredDist2d(trajectory.points.at(i), trajectory.points.at(i + 1)));
+    const double dist = vpu::calcDist2d(trajectory.points.at(i), trajectory.points.at(i + 1));
     const double v0 = trajectory.points.at(i + 1).twist.linear.x;
     const double v1 = std::sqrt(v0 * v0 + 2.0 * std::fabs(accel) * dist);
     printf("i = %d, dist = %3.3f, v0 = %3.3f, v1 = %3.3f\n", i, dist, v0, v1);

@@ -17,11 +17,13 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
     pnh_.param("foward_path_length", foward_path_length_, 1000.0);
     pnh_.param("backward_path_length", backward_path_length_, 5.0);
-    double wheel_base,front_overhang;
+    double wheel_base, front_overhang, vehicle_width;
     pnh_.param("/vehicle_info/wheel_base", wheel_base, 2.95);
     pnh_.param("/vehicle_info/front_overhang", front_overhang, 1.0);
+    pnh_.param("/vehicle_info/vehicle_width", vehicle_width, 1.775);
     SingletonDataManager::getInstance().setWheelBase(wheel_base);
     SingletonDataManager::getInstance().setFrontOverhang(front_overhang);
+    SingletonDataManager::getInstance().setVehicleWidth(vehicle_width);
     planner_manager_ptr_ = std::make_shared<BehaviorVelocityPlannerManager>();
 };
 

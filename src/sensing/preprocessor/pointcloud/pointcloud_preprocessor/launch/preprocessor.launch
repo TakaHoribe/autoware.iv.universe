@@ -47,17 +47,5 @@
             <param name="input_frame" value="$(arg tf_output_frame)" />
             <param name="output_frame" value="$(arg tf_output_frame)" />
         </node>
-        <!-- <node pkg="nodelet" type="nodelet" name="voxel_grid_outlier_filter" args="load pointcloud_preprocessor/voxel_grid_outlier_filter_nodelet pcl_manager" output="screen">
-            <remap from="~input" to="points_raw/cropbox/filtered" />
-            <remap from="~output" to="$(arg output_points_raw)" />
-            <rosparam>
-                voxel_size_x: 0.3
-                voxel_size_y: 0.3
-                voxel_size_z: 0.5
-                voxel_points_threshold: 2
-            </rosparam>
-            <param name="input_frame" value="$(arg tf_output_frame)" />
-            <param name="output_frame" value="$(arg tf_output_frame)" />
-        </node> -->
     </group>
 </launch>

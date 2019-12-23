@@ -1,11 +1,11 @@
 <launch>
   <arg name="ns" default="/"/>
-  <arg name="output" default="log"/>
+  <arg name="output" default="screen"/>
 
   <!-- debug flags -->
-  <arg name="show_debug_info" default="false"/>
+  <arg name="show_debug_info" default="true"/>
   <arg name="show_debug_info_all" default="false"/>
-  <arg name="show_figure" default="false"/>
+  <arg name="show_figure" default="true"/>
 
 
   <!-- planning parameters -->
@@ -34,8 +34,12 @@
   <arg name="emergency_flag_vel_thr_kmph" default="3.0"/>
   <arg name="large_jerk_report" default="-1.4"/>
 
+  <arg name="optimization_param_smooth_weight" default="1000000.0"/>
+  <arg name="enable_latacc_filter" default="true"/>
 
-  <node pkg="velocity_planner" type="velocity_planner" name="velocity_planner" output="$(arg output)">
+
+
+  <node pkg="velocity_planner" type="velocity_planner_osqp" name="velocity_planner_osqp" output="$(arg output)">
 
     <param name="show_debug_info" value="$(arg show_debug_info)"/>
     <param name="show_debug_info_all" value="$(arg show_debug_info_all)"/>
@@ -59,6 +63,8 @@
     <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
     <param name="enable_to_publish_emergency" value="$(arg enable_to_publish_emergency)"/>
     <param name="large_jerk_report" value="$(arg large_jerk_report)"/>
+    <param name="optimization_param_smooth_weight" value="$(arg optimization_param_smooth_weight)"/>
+    <param name="enable_latacc_filter" value="$(arg enable_latacc_filter)"/>
   </node>
 
 

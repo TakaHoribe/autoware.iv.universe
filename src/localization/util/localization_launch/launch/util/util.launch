@@ -2,7 +2,7 @@
 <launch>
 
   <!-- Topics -->
-  <arg name="input_sensor_points_topic" default="/velodyne_points_transed" doc="Sensor points topic"/>
+  <arg name="input_sensor_points_topic" default="/sensor/lidar/main/pointcloud" doc="Sensor points topic"/>
   <arg name="output_crop_vehicle_sensor_points_topic" default="crop_vehicle" doc="Sensor points topic"/>
   <arg name="output_crop_far_sensor_points_topic" default="crop_vehicle_and_far" doc="Sensor points topic"/>
   <arg name="output_downsample_sensor_points_topic" default="downsample" doc="Sensor points topic"/>
