@@ -15,13 +15,15 @@ protected:
   virtual void subscribe();
   virtual void unsubscribe();
 
+  void publishCropBoxPolygon();
   bool child_init(ros::NodeHandle &nh, bool &has_service);
   void config_callback(pointcloud_preprocessor::CropBoxFilterConfig &config, uint32_t level);
+
 
 private:
   /** \brief The PCL filter implementation used. */
   pcl::CropBox<pcl::PCLPointCloud2> impl_;
-
+  ros::Publisher crop_box_polygon_pub_;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

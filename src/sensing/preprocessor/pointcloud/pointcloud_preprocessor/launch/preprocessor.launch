@@ -31,18 +31,34 @@
             </node>
         </group>
         <!-- crop box filter -->
-        <node pkg="nodelet" type="nodelet" name="crop_box_filter" args="load pcl/CropBox pcl_manager" output="screen">
+        <node pkg="nodelet" type="nodelet" name="crop_box_filter_vehicle" args="load pointcloud_preprocessor/crop_box_filter_nodelet pcl_manager" output="log">
             <remap if="$(eval input_points_number==1)" from="~input" to="$(arg input_points_raw0)" />
             <remap if="$(eval input_points_number!=1)" from="~input" to="points_raw/concatenated" />
-            <remap from="~output" to="$(arg output_points_raw)" />
+            <remap from="~output" to="points_raw/filter_vehicle" />
             <rosparam>
         min_x: -1.0
-        max_x: 3.0
+        max_x: 5.0
         min_y: -1.20
         max_y: 1.20
-        min_z: -100.0 
-        max_z: 100.0
+        min_z: 0.0 
+        max_z: 2.5
         negative: True
+            </rosparam>
+            <param name="input_frame" value="$(arg tf_output_frame)" />
+            <param name="output_frame" value="$(arg tf_output_frame)" />
+        </node>
+
+        <node pkg="nodelet" type="nodelet" name="crop_box_filter_mesurement_range" args="load pointcloud_preprocessor/crop_box_filter_nodelet pcl_manager" output="log">
+            <remap from="~input" to="points_raw/filter_vehicle" />
+            <remap from="~output" to="$(arg output_points_raw)" />
+            <rosparam>
+        min_x: -200.0
+        max_x: 1000.0
+        min_y: -50.0
+        max_y: 50.0
+        min_z: -2.0
+        max_z: 3.0
+        negative: False
             </rosparam>
             <param name="input_frame" value="$(arg tf_output_frame)" />
             <param name="output_frame" value="$(arg tf_output_frame)" />
