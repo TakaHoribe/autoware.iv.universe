@@ -3,6 +3,7 @@
 // Scene include
 #include <scene_module/momentary_stop/momentary_stop.hpp>
 #include <scene_module/crosswalk/crosswalk.hpp>
+#include <scene_module/right_turn/right_turn.hpp>
 
 namespace behavior_planning
 {
@@ -11,6 +12,7 @@ BehaviorVelocityPlannerManager::BehaviorVelocityPlannerManager()
 {
     scene_managers_ptr_.push_back(std::make_shared<MomentaryStopModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
+    scene_managers_ptr_.push_back(std::make_shared<RightTurnModuleManager>());
 }
 
 bool BehaviorVelocityPlannerManager::callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
