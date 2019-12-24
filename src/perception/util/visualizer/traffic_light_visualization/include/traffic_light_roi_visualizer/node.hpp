@@ -28,7 +28,7 @@ private:
   image_transport::ImageTransport image_transport_;
   image_transport::SubscriberFilter image_sub_;
   message_filters::Subscriber<autoware_traffic_light_msgs::TrafficLightRoiArray> roi_sub_;
-image_transport::Publisher image_pub_;
+  image_transport::Publisher image_pub_;
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
                                                           autoware_traffic_light_msgs::TrafficLightRoiArray>
       SyncPolicy;
@@ -36,4 +36,4 @@ image_transport::Publisher image_pub_;
   Sync sync_;
 };
 
-} // namespace roi_cluster_fusion
+} // namespace traffic_light

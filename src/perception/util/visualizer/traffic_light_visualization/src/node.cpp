@@ -26,7 +26,7 @@ void TrafficLightRoiVisualizer::imageRoiCallback(const sensor_msgs::ImageConstPt
     cv_bridge::CvImagePtr cv_ptr;
     try
     {
-          cv_ptr = cv_bridge::toCvCopy(input_image_msg, sensor_msgs::image_encodings::BGR8);
+        cv_ptr = cv_bridge::toCvCopy(input_image_msg, sensor_msgs::image_encodings::BGR8);
         for (size_t i = 0; i < input_tl_roi_msg->rois.size(); ++i)
         {
             cv::rectangle(cv_ptr->image, cv::Point(input_tl_roi_msg->rois.at(i).roi.x_offset, input_tl_roi_msg->rois.at(i).roi.y_offset),
