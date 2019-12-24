@@ -131,12 +131,11 @@ MPCFollower::MPCFollower()
   sub_vehicle_status_ = pnh_.subscribe("input/vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
 
   /* wait to get vehicle position */
-  while(true){
+  while (ros::ok())
+  {
     try
     {
-      tf_buffer_.lookupTransform("map",       /* targert */
-                                 "base_link", /* src */
-                                 ros::Time::now(), ros::Duration(5.0));
+      tf_buffer_.lookupTransform("map", "base_link", ros::Time::now(), ros::Duration(5.0));
       break;
     }
     catch (tf2::TransformException &ex)
@@ -657,12 +656,7 @@ void MPCFollower::updateCurrentPose()
   geometry_msgs::TransformStamped transform;
   try
   {
-    // in order to get base_link position in map frame
-    // need translation matrix from base_link to map
-    transform = tf_buffer_.lookupTransform(
-        "map", /* targert */
-        "base_link",       /* src */
-        ros::Time(0));
+    transform = tf_buffer_.lookupTransform("map", "base_link", ros::Time(0));
   }
   catch (tf2::TransformException &ex)
   {

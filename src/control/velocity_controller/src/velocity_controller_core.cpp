@@ -142,7 +142,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   }
 
   /* wait to get vehicle position */
-  while (true)
+  while (ros::ok())
   {
     if (!updateCurrentPose(5.0))
     {

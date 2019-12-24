@@ -78,7 +78,7 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_
   pub_debug_planning_jerk_ = pnh_.advertise<std_msgs::Float32>("current_planning_jerk", 1);
 
   /* wait to get vehicle position */
-  while (true)
+  while (ros::ok())
   {
     try
     {
@@ -139,7 +139,7 @@ void VelocityPlanner::updateCurrentPose()
 void VelocityPlanner::timerReplanCallback(const ros::TimerEvent &e)
 {
   updateCurrentPose();
-  
+
   auto t_start = std::chrono::system_clock::now();
 
   DEBUG_INFO("============================== timer callback start ==============================");

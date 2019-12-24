@@ -31,7 +31,7 @@ StopPlanner::StopPlanner()
 
 
   /* wait until base_link is received */
-  while (true)
+  while (ros::ok())
   {
     if (updateCurrentPose(10.0))
     {
