@@ -30,7 +30,6 @@ namespace lanelet
 {
 namespace utils
 {
-
 lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj, const double resolution = 5.0);
 
 /**
@@ -38,6 +37,9 @@ lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanele
  * doesn't have enough quality
  */
 void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool force_overite = false);
+
+lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphConstPtr& graph,
+                                              const lanelet::ConstLanelet& lanelet);
 
 }  // namespace utils
 }  // namespace lanelet

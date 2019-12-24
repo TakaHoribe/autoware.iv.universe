@@ -55,8 +55,7 @@ bool exists(const std::vector<int>& array, const int element)
  */
 void getContactingLanelets(const lanelet::LaneletMapPtr lanelet_map,
                            const lanelet::traffic_rules::TrafficRulesPtr traffic_rules,
-                           const lanelet::BasicPoint2d search_point,
-                           std::vector<int>* contacting_lanelet_ids)
+                           const lanelet::BasicPoint2d search_point, std::vector<int>* contacting_lanelet_ids)
 {
   if (!lanelet_map)
   {
@@ -210,6 +209,23 @@ void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool 
       lanelet_obj.setCenterline(fine_center_line);
     }
   }
+}
+
+lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphConstPtr& graph,
+                                              const lanelet::ConstLanelet& lanelet)
+{
+  const auto& llt_or_areas = graph->conflicting(lanelet);
+  lanelet::ConstLanelets lanelets;
+  lanelets.reserve(llt_or_areas.size());
+  for (const auto& l_or_a : llt_or_areas)
+  {
+    auto llt_opt = l_or_a.lanelet();
+    if (!!llt_opt)
+    {
+      lanelets.push_back(llt_opt.get());
+    }
+  }
+  return lanelets;
 }
 
 }  // namespace utils

@@ -28,8 +28,11 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pluginlib/class_list_macros.h>
 #include "pointcloud_preprocessor/crop_box_filter/crop_box_filter_nodelet.h"
+
+#include <pluginlib/class_list_macros.h>
+
+#include <geometry_msgs/PolygonStamped.h>
 
 namespace pointcloud_preprocessor
 {
@@ -40,6 +43,8 @@ bool CropBoxFilterNodelet::child_init(ros::NodeHandle &nh, bool &has_service)
   srv_ = boost::make_shared<dynamic_reconfigure::Server<pointcloud_preprocessor::CropBoxFilterConfig> >(nh);
   dynamic_reconfigure::Server<pointcloud_preprocessor::CropBoxFilterConfig>::CallbackType f = boost::bind(&CropBoxFilterNodelet::config_callback, this, _1, _2);
   srv_->setCallback(f);
+
+  crop_box_polygon_pub_ = advertise<geometry_msgs::PolygonStamped>(*pnh_, "crop_box_polygon", 10);
   return (true);
 }
 
@@ -54,6 +59,58 @@ void CropBoxFilterNodelet::filter(const PointCloud2::ConstPtr &input, const Indi
   pcl::PCLPointCloud2 pcl_output;
   impl_.filter (pcl_output);
   pcl_conversions::moveFromPCL(pcl_output, output);
+
+  publishCropBoxPolygon();
+}
+
+void CropBoxFilterNodelet::publishCropBoxPolygon()
+{
+  auto generatePoint = [](double x, double y, double z){
+    geometry_msgs::Point32 point;
+    point.x = x;
+    point.y = y;
+    point.z = z;
+    return point;
+  };
+  
+  const double x1 = impl_.getMax()(0);
+  const double x2 = impl_.getMin()(0);
+  const double x3 = impl_.getMin()(0);
+  const double x4 = impl_.getMax()(0);
+
+  const double y1 = impl_.getMax()(1);
+  const double y2 = impl_.getMax()(1);
+  const double y3 = impl_.getMin()(1);
+  const double y4 = impl_.getMin()(1);
+
+  const double z1 = impl_.getMin()(2);
+  const double z2 = impl_.getMax()(2);
+
+  geometry_msgs::PolygonStamped polygon_msg;
+  polygon_msg.header.frame_id = "base_link";
+  polygon_msg.polygon.points.push_back(generatePoint(x1, y1, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x2, y2, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x3, y3, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x4, y4, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x1, y1, z1));
+
+  polygon_msg.polygon.points.push_back(generatePoint(x1, y1, z2));
+
+  polygon_msg.polygon.points.push_back(generatePoint(x2, y2, z2));
+  polygon_msg.polygon.points.push_back(generatePoint(x2, y2, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x2, y2, z2));
+
+  polygon_msg.polygon.points.push_back(generatePoint(x3, y3, z2));
+  polygon_msg.polygon.points.push_back(generatePoint(x3, y3, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x3, y3, z2));
+
+  polygon_msg.polygon.points.push_back(generatePoint(x4, y4, z2));
+  polygon_msg.polygon.points.push_back(generatePoint(x4, y4, z1));
+  polygon_msg.polygon.points.push_back(generatePoint(x4, y4, z2));
+
+  polygon_msg.polygon.points.push_back(generatePoint(x1, y1, z2));
+
+  crop_box_polygon_pub_.publish(polygon_msg);
 }
 
 void CropBoxFilterNodelet::subscribe()

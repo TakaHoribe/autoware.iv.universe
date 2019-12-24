@@ -37,7 +37,7 @@
             </include>
             <!-- PointCloud Ground Filter -->
             <node pkg="pointcloud_preprocessor" type="ray_ground_filter_node" name="ray_ground_filter" output="screen">
-                <remap from="~input" to="lidar/self_cropped/pointcloud" />
+                <remap from="~input" to="pointcloud_preprocessor/lidar/self_cropped" />
                 <remap from="~output" to="lidar/no_ground/pointcloud_raw" />
             </node>
             <!-- PointCloud Outlier Filter -->
