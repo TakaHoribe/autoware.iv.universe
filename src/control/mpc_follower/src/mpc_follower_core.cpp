@@ -194,7 +194,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
 
   if (!mpc_solved)
   {
-    ROS_WARN("[MPC] MPC is not solved. publish 0 velocity.");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] MPC is not solved. publish 0 velocity.");
     vel_cmd = 0.0;
     acc_cmd = 0.0;
     steer_cmd = steer_cmd_prev_;
@@ -228,7 +228,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   /* check if lateral error is not too large */
   if (dist_err > admisible_position_error_ || std::fabs(yaw_err) > DEG2RAD * admisible_yaw_error_deg_ )
   {
-    ROS_WARN("[MPC] error is over limit, stop mpc. (pos: error = %f[m], limit: %f[m], yaw: error = %f[deg], limit %f[deg])",
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] error is over limit, stop mpc. (pos: error = %f[m], limit: %f[m], yaw: error = %f[deg], limit %f[deg])",
              dist_err, admisible_position_error_, RAD2DEG * (yaw_err), admisible_yaw_error_deg_);
     return false;
   }
