@@ -211,7 +211,7 @@ void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool 
   }
 }
 
-lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphPtr& graph,
+lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphConstPtr& graph,
                                               const lanelet::ConstLanelet& lanelet)
 {
   const auto& llt_or_areas = graph->conflicting(lanelet);

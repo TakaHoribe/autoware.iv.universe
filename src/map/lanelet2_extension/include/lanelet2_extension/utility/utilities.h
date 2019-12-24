@@ -38,7 +38,7 @@ lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanele
  */
 void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool force_overite = false);
 
-lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphPtr& graph,
+lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphConstPtr& graph,
                                               const lanelet::ConstLanelet& lanelet);
 
 }  // namespace utils
