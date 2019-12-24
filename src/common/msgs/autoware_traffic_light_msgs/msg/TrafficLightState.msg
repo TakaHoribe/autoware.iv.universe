@@ -1,0 +1,2 @@
+autoware_traffic_light_msgs/LampState[] lamp_states
+int32 id

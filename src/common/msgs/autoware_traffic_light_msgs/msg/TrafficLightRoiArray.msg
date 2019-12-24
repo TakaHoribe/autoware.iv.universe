@@ -1,0 +1,2 @@
+std_msgs/Header header
+autoware_traffic_light_msgs/TrafficLightRoi[] rois
