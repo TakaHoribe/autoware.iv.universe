@@ -47,8 +47,8 @@
 #include "ndt/omp.h"
 
 class NDTScanMatcher {
-  using PointSource = pcl::PointXYZI;
-  using PointTarget = pcl::PointXYZI;
+  using PointSource = pcl::PointXYZ;
+  using PointTarget = pcl::PointXYZ;
 
   // TODO move file
   struct OMPParams {
