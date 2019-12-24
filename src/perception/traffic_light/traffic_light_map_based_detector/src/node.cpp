@@ -45,6 +45,11 @@ MapBasedDetector::MapBasedDetector() : nh_(""), pnh_("~"), tf_listener_(tf_buffe
   camera_info_sub_ = pnh_.subscribe("input/camera_info", 1, &MapBasedDetector::cameraInfoCallback, this);
   route_sub_ = pnh_.subscribe("input/route", 1, &MapBasedDetector::routeCallback, this);
   roi_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
+  pnh_.getParam("max_vibration_pitch", config_.max_vibration_pitch);
+  pnh_.getParam("max_vibration_yaw", config_.max_vibration_yaw);
+  pnh_.getParam("max_vibration_height", config_.max_vibration_height);
+  pnh_.getParam("max_vibration_width", config_.max_vibration_width);
+  pnh_.getParam("max_vibration_depth", config_.max_vibration_depth);
 }
 
 void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr &input_msg)
@@ -93,7 +98,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
 
       lanelet::ConstLineString3d ls = static_cast<lanelet::ConstLineString3d>(lsp);
       autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
-      if (!getTrafficLightRoi(camera_pose, camera_info, ls, tl_roi))
+      if (!getTrafficLightRoi(camera_pose, camera_info, ls, config_, tl_roi))
         continue;
 
       output_msg.rois.push_back(tl_roi);
@@ -105,6 +110,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
 bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose &camera_pose,
                                           const sensor_msgs::CameraInfo &camera_info,
                                           const lanelet::ConstLineString3d traffic_light,
+                                          const Config &config,
                                           autoware_traffic_light_msgs::TrafficLightRoi &tl_roi)
 {
 
@@ -124,9 +130,13 @@ bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose &camera_pose
     tf2::Transform tf_camera2tl;
     tf_camera2tl = tf_map2camera.inverse() * tf_map2tl;
 
-    const double &camera_x = tf_camera2tl.getOrigin().x();
-    const double &camera_y = tf_camera2tl.getOrigin().y();
-    const double &camera_z = tf_camera2tl.getOrigin().z();
+    const double &camera_x = tf_camera2tl.getOrigin().x() -
+                             (std::sin(config.max_vibration_yaw / 2.0) * tf_camera2tl.getOrigin().z()) -
+                             config.max_vibration_width / 2.0;
+    const double &camera_y = tf_camera2tl.getOrigin().y() -
+                             (std::sin(config.max_vibration_pitch / 2.0) * tf_camera2tl.getOrigin().z()) -
+                             config.max_vibration_height / 2.0;
+    const double &camera_z = tf_camera2tl.getOrigin().z() - config.max_vibration_depth / 2.0;
     if (camera_z <= 0.0)
       return false;
     const double image_u = (fx * camera_x + cx * camera_z) / camera_z;
@@ -143,9 +153,13 @@ bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose &camera_pose
     tf2::Transform tf_camera2tl;
     tf_camera2tl = tf_map2camera.inverse() * tf_map2tl;
 
-    const double &camera_x = tf_camera2tl.getOrigin().x();
-    const double &camera_y = tf_camera2tl.getOrigin().y();
-    const double &camera_z = tf_camera2tl.getOrigin().z();
+    const double &camera_x = tf_camera2tl.getOrigin().x() +
+                             (std::sin(config.max_vibration_yaw / 2.0) * tf_camera2tl.getOrigin().z()) +
+                             config.max_vibration_width / 2.0;
+    const double &camera_y = tf_camera2tl.getOrigin().y() +
+                             (std::sin(config.max_vibration_pitch / 2.0) * tf_camera2tl.getOrigin().z()) +
+                             config.max_vibration_height / 2.0;
+    const double &camera_z = tf_camera2tl.getOrigin().z() - config.max_vibration_depth / 2.0;
     if (camera_z <= 0.0)
       return false;
     const double image_u = (fx * camera_x + cx * camera_z) / camera_z;

@@ -45,6 +45,16 @@ public:
   ~MapBasedDetector() {}
 
 private:
+  struct Config
+  {
+    double max_vibration_pitch;
+    double max_vibration_yaw;
+    double max_vibration_height;
+    double max_vibration_width;
+    double max_vibration_depth;
+  };
+
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Subscriber map_sub_;
@@ -61,6 +71,7 @@ private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
+  Config config_;
 
   void mapCallback(const autoware_lanelet2_msgs::MapBin &input_msg);
   void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr &input_msg);
@@ -77,6 +88,7 @@ private:
   bool getTrafficLightRoi(const geometry_msgs::Pose &camera_pose,
                           const sensor_msgs::CameraInfo &camera_info,
                           const lanelet::ConstLineString3d traffic_light,
+                          const Config &config,
                           autoware_traffic_light_msgs::TrafficLightRoi &tl_roi);
 };
 } // namespace traffic_light

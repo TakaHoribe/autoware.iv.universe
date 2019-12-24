@@ -12,5 +12,6 @@
         <remap from="~input/camera_info" to="$(arg input/camera_info)"/>
         <remap from="~input/route" to="$(arg input/route)"/>
         <remap from="~output/rois" to="$(arg output/rois)"/>
+        <rosparam command="load" file="$(find traffic_light_map_based_detector)/config/traffic_light_map_based_detector.yaml" />
     </node>
 </launch>
