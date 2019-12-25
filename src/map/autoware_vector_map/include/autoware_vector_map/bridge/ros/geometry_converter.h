@@ -5,16 +5,11 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 
 namespace autoware_vector_map {
 namespace bridge {
 namespace ros {
-
-using autoware_vector_map::data::LinearRing;
-using autoware_vector_map::data::LineString;
-using autoware_vector_map::data::Point;
-using autoware_vector_map::data::Polygon;
 
 template <class T>
 struct ros_geometry;
@@ -23,22 +18,22 @@ template <class T>
 using ros_geometry_t = typename ros_geometry<T>::type;
 
 template <>
-struct ros_geometry<Point> {
+struct ros_geometry<Point3d> {
   using type = geometry_msgs::Point;
 };
 
 template <>
-struct ros_geometry<LineString> {
+struct ros_geometry<LineString3d> {
   using type = std::vector<geometry_msgs::Point>;
 };
 
 template <>
-struct ros_geometry<LinearRing> {
+struct ros_geometry<LinearRing3d> {
   using type = std::vector<geometry_msgs::Point>;
 };
 
 template <>
-struct ros_geometry<Polygon> {
+struct ros_geometry<Polygon3d> {
   using type = std::vector<geometry_msgs::Point>;
 };
 

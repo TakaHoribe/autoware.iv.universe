@@ -4,8 +4,6 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <autoware_vector_map/data/data.h>
-
 namespace autoware_vector_map {
 namespace bridge {
 namespace ros {

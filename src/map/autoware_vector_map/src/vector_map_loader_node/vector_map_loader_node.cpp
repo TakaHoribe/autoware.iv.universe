@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <autoware_vector_map/autoware_vector_map.h>
+#include <autoware_vector_map/io/gpkg_loader/gpkg_loader.h>
 #include <autoware_vector_map_msgs/BinaryGpkgMap.h>
 
 using autoware_vector_map::io::gpkg_loader::GpkgLoader;

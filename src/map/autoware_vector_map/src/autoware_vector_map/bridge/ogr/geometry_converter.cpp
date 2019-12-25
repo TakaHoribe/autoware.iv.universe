@@ -5,13 +5,13 @@ namespace bridge {
 namespace ogr {
 
 template <>
-Point fromOgrGeometry<Point>(OGRPoint* ogr_geom) {
-  return Point(ogr_geom->getX(), ogr_geom->getY(), ogr_geom->getZ());
+Point3d fromOgrGeometry<Point3d>(OGRPoint* ogr_geom) {
+  return Point3d(ogr_geom->getX(), ogr_geom->getY(), ogr_geom->getZ());
 }
 
 template <>
-LineString fromOgrGeometry<LineString>(OGRLineString* ogr_geom) {
-  LineString geom{};
+LineString3d fromOgrGeometry<LineString3d>(OGRLineString* ogr_geom) {
+  LineString3d geom{};
 
   geom.reserve(ogr_geom->getNumPoints());
   for (int i = 0; i < ogr_geom->getNumPoints(); ++i) {
@@ -22,8 +22,8 @@ LineString fromOgrGeometry<LineString>(OGRLineString* ogr_geom) {
 }
 
 template <>
-LinearRing fromOgrGeometry<LinearRing>(OGRLinearRing* ogr_geom) {
-  LinearRing geom{};
+LinearRing3d fromOgrGeometry<LinearRing3d>(OGRLinearRing* ogr_geom) {
+  LinearRing3d geom{};
 
   geom.reserve(ogr_geom->getNumPoints());
   for (int i = 0; i < ogr_geom->getNumPoints(); ++i) {
@@ -34,26 +34,26 @@ LinearRing fromOgrGeometry<LinearRing>(OGRLinearRing* ogr_geom) {
 }
 
 template <>
-Polygon fromOgrGeometry<Polygon>(OGRPolygon* ogr_geom) {
-  Polygon geom{};
+Polygon3d fromOgrGeometry<Polygon3d>(OGRPolygon* ogr_geom) {
+  Polygon3d geom{};
 
-  geom.exterior = fromOgrGeometry<LinearRing>(ogr_geom->getExteriorRing());
+  geom.exterior = fromOgrGeometry<LinearRing3d>(ogr_geom->getExteriorRing());
 
   geom.interiors.reserve(ogr_geom->getNumInteriorRings());
   for (int i = 0; i < ogr_geom->getNumInteriorRings(); ++i) {
-    geom.interiors.push_back(fromOgrGeometry<LinearRing>(ogr_geom->getInteriorRing(i)));
+    geom.interiors.push_back(fromOgrGeometry<LinearRing3d>(ogr_geom->getInteriorRing(i)));
   }
 
   return geom;
 }
 
 template <>
-OGRPoint toOgrGeometry<Point>(const Point& geom) {
+OGRPoint toOgrGeometry<Point3d>(const Point3d& geom) {
   return OGRPoint(geom.x(), geom.y(), geom.z());
 }
 
 template <>
-OGRLineString toOgrGeometry<LineString>(const LineString& geom) {
+OGRLineString toOgrGeometry<LineString3d>(const LineString3d& geom) {
   OGRLineString ogr_geom{};
 
   for (const auto& p : geom) {
@@ -64,7 +64,7 @@ OGRLineString toOgrGeometry<LineString>(const LineString& geom) {
 }
 
 template <>
-OGRLinearRing toOgrGeometry<LinearRing>(const LinearRing& geom) {
+OGRLinearRing toOgrGeometry<LinearRing3d>(const LinearRing3d& geom) {
   OGRLinearRing ogr_geom{};
 
   for (const auto& p : geom) {
@@ -75,7 +75,7 @@ OGRLinearRing toOgrGeometry<LinearRing>(const LinearRing& geom) {
 }
 
 template <>
-OGRPolygon toOgrGeometry<Polygon>(const Polygon& geom) {
+OGRPolygon toOgrGeometry<Polygon3d>(const Polygon3d& geom) {
   OGRPolygon ogr_geom{};
 
   OGRLinearRing* exterior_ring = new OGRLinearRing();

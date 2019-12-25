@@ -2,10 +2,9 @@
 
 #include <string>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 
 namespace autoware_vector_map {
-namespace data {
 
 template <class T_Feature>
 struct Attribute {
@@ -14,5 +13,4 @@ struct Attribute {
   Id id;
 };
 
-}  // namespace data
 }  // namespace autoware_vector_map

@@ -2,10 +2,9 @@
 
 #include <string>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 
 namespace autoware_vector_map {
-namespace data {
 
 template <class T_LeftFeature, class T_RightFeature>
 struct Relationship {
@@ -46,5 +45,4 @@ struct Lane_TrafficLight : public Relationship<Lane, TrafficLight> {
   Id traffic_light_id;
 };
 
-}  // namespace data
 }  // namespace autoware_vector_map

@@ -2,10 +2,9 @@
 
 #include <string>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 
 namespace autoware_vector_map {
-namespace data {
 
 template <class T_Geometry>
 struct Feature {
@@ -15,11 +14,11 @@ struct Feature {
   T_Geometry geometry;
 };
 
-struct IntersectionArea : public Feature<Polygon> {};
+struct IntersectionArea : public Feature<Polygon3d> {};
 
-struct LaneSection : public Feature<Polygon> {};
+struct LaneSection : public Feature<Polygon3d> {};
 
-struct Lane : public Feature<LineString> {
+struct Lane : public Feature<LineString3d> {
   Id lane_section_id;
   double width;
   bool can_left_lane_change;
@@ -29,7 +28,7 @@ struct Lane : public Feature<LineString> {
   bool is_right_turn;
 };
 
-struct StopLine : public Feature<LineString> {
+struct StopLine : public Feature<LineString3d> {
   bool is_reason_rule;
   bool is_reason_crosswalk;
   bool is_reason_traffic_light;
@@ -37,11 +36,10 @@ struct StopLine : public Feature<LineString> {
   bool is_reason_virtual;
 };
 
-struct Crosswalk : public Feature<LineString> {
+struct Crosswalk : public Feature<LineString3d> {
   double width;
 };
 
-struct TrafficLight : public Feature<LineString> {};
+struct TrafficLight : public Feature<LineString3d> {};
 
-}  // namespace data
 }  // namespace autoware_vector_map

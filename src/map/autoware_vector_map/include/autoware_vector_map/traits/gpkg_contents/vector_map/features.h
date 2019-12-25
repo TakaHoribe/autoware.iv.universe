@@ -16,7 +16,7 @@ AUTOWARE_VECTOR_MAP_REGISTER_GPKG_FEATURE(IntersectionArea, intersection_areas)
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_FEATURE(LaneSection, lane_sections)
 
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_FEATURE(Lane, lanes)
-AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(Lane, 0, lane_section_id, data::invalid_id)
+AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(Lane, 0, lane_section_id, invalid_id)
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(Lane, 1, width, 0.0)
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(Lane, 2, can_left_lane_change, false)
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(Lane, 3, can_right_lane_change, false)

@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 #include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
 
 class OGRLayer;
@@ -12,20 +12,6 @@ class GDALDataset;
 namespace autoware_vector_map {
 namespace io {
 namespace gpkg_loader {
-
-using autoware_vector_map::data::ConstPtr;
-using autoware_vector_map::data::Ptr;
-
-using autoware_vector_map::data::Id;
-
-using autoware_vector_map::data::Attribute;
-using autoware_vector_map::data::Feature;
-using autoware_vector_map::data::Relationship;
-
-using autoware_vector_map::data::LinearRing;
-using autoware_vector_map::data::LineString;
-using autoware_vector_map::data::Point;
-using autoware_vector_map::data::Polygon;
 
 using autoware_vector_map::traits::gpkg_attribute;
 using autoware_vector_map::traits::gpkg_content;
@@ -56,7 +42,7 @@ class GpkgLoader {
   ConstPtr<std::vector<T>> getAllFeatures();
 
   template <class T>
-  ConstPtr<std::vector<T>> findFeaturesByRange(const Point& p, const double range);
+  ConstPtr<std::vector<T>> findFeaturesByRange(const Point3d& p, const double range);
 
  private:
   std::unique_ptr<GDALDataset> dataset_;

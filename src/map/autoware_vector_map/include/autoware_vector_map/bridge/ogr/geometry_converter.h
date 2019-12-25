@@ -5,52 +5,47 @@
 
 #include <ogrsf_frmts.h>
 
-#include <autoware_vector_map/data/data.h>
+#include <autoware_vector_map/core.h>
 
 namespace autoware_vector_map {
 namespace bridge {
 namespace ogr {
 
-using autoware_vector_map::data::LinearRing;
-using autoware_vector_map::data::LineString;
-using autoware_vector_map::data::Point;
-using autoware_vector_map::data::Polygon;
-
 template <class T>
 struct ogr_geometry;
 
 template <>
-struct ogr_geometry<Point> {
+struct ogr_geometry<Point3d> {
   using type = OGRPoint;
 };
 
 template <>
-struct ogr_geometry<LineString> {
+struct ogr_geometry<LineString3d> {
   using type = OGRLineString;
 };
 
 template <>
-struct ogr_geometry<LinearRing> {
+struct ogr_geometry<LinearRing3d> {
   using type = OGRLinearRing;
 };
 
 template <>
-struct ogr_geometry<Polygon> {
+struct ogr_geometry<Polygon3d> {
   using type = OGRPolygon;
 };
 
 template <>
-struct ogr_geometry<std::vector<Point>> {
+struct ogr_geometry<std::vector<Point3d>> {
   using type = OGRMultiPoint;
 };
 
 template <>
-struct ogr_geometry<std::vector<LineString>> {
+struct ogr_geometry<std::vector<LineString3d>> {
   using type = OGRMultiLineString;
 };
 
 template <>
-struct ogr_geometry<std::vector<Polygon>> {
+struct ogr_geometry<std::vector<Polygon3d>> {
   using type = OGRMultiPolygon;
 };
 

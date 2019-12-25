@@ -5,10 +5,10 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <autoware_vector_map/autoware_vector_map.h>
 #include <autoware_vector_map/bridge/ros/marker_converter.h>
+#include <autoware_vector_map/io/gpkg_loader/gpkg_loader.h>
 
-namespace avm = autoware_vector_map::data;
+namespace avm = autoware_vector_map;
 using autoware_vector_map::bridge::ros::createMarker;
 using autoware_vector_map::io::gpkg_loader::GpkgLoader;
 using autoware_vector_map::traits::gpkg_content;

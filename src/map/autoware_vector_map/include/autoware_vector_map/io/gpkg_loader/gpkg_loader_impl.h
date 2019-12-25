@@ -90,7 +90,7 @@ ConstPtr<std::vector<U>> GpkgLoader::getRelatedFeaturesById(const Id id, const P
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::findFeaturesByRange(const Point& p, const double range) {
+ConstPtr<std::vector<T>> GpkgLoader::findFeaturesByRange(const Point3d& p, const double range) {
   OGRLayer* table_layer = dataset_->GetLayerByName(gpkg_content<T>::table_name());
 
   const auto condition = fmt::format(

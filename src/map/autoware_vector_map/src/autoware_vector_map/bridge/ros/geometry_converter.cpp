@@ -5,13 +5,13 @@ namespace bridge {
 namespace ros {
 
 template <>
-Point fromRosGeometry<Point>(const geometry_msgs::Point& p) {
-  return Point(p.x, p.y, p.z);
+Point3d fromRosGeometry<Point3d>(const geometry_msgs::Point& p) {
+  return Point3d(p.x, p.y, p.z);
 }
 
 template <>
-LineString fromRosGeometry<LineString>(const std::vector<geometry_msgs::Point>& ros_geom) {
-  LineString geom{};
+LineString3d fromRosGeometry<LineString3d>(const std::vector<geometry_msgs::Point>& ros_geom) {
+  LineString3d geom{};
 
   geom.reserve(ros_geom.size());
   for (const auto& p : ros_geom) {
@@ -22,8 +22,8 @@ LineString fromRosGeometry<LineString>(const std::vector<geometry_msgs::Point>& 
 }
 
 template <>
-LinearRing fromRosGeometry<LinearRing>(const std::vector<geometry_msgs::Point>& ros_geom) {
-  LinearRing geom{};
+LinearRing3d fromRosGeometry<LinearRing3d>(const std::vector<geometry_msgs::Point>& ros_geom) {
+  LinearRing3d geom{};
 
   geom.reserve(ros_geom.size());
   for (const auto& p : ros_geom) {
@@ -34,16 +34,16 @@ LinearRing fromRosGeometry<LinearRing>(const std::vector<geometry_msgs::Point>& 
 }
 
 template <>
-Polygon fromRosGeometry<Polygon>(const std::vector<geometry_msgs::Point>& ros_geom) {
-  Polygon geom{};
+Polygon3d fromRosGeometry<Polygon3d>(const std::vector<geometry_msgs::Point>& ros_geom) {
+  Polygon3d geom{};
 
-  geom.exterior = fromRosGeometry<LinearRing>(ros_geom);
+  geom.exterior = fromRosGeometry<LinearRing3d>(ros_geom);
 
   return geom;
 }
 
 template <>
-geometry_msgs::Point toRosGeometry<Point>(const Point& geom) {
+geometry_msgs::Point toRosGeometry<Point3d>(const Point3d& geom) {
   geometry_msgs::Point p;
 
   p.x = geom.x();
@@ -54,33 +54,33 @@ geometry_msgs::Point toRosGeometry<Point>(const Point& geom) {
 }
 
 template <>
-std::vector<geometry_msgs::Point> toRosGeometry<LineString>(const LineString& geom) {
+std::vector<geometry_msgs::Point> toRosGeometry<LineString3d>(const LineString3d& geom) {
   std::vector<geometry_msgs::Point> ros_geom{};
 
   for (const auto& p : geom) {
-    ros_geom.push_back(toRosGeometry<Point>(p));
+    ros_geom.push_back(toRosGeometry<Point3d>(p));
   }
 
   return ros_geom;
 }
 
 template <>
-std::vector<geometry_msgs::Point> toRosGeometry<LinearRing>(const LinearRing& geom) {
+std::vector<geometry_msgs::Point> toRosGeometry<LinearRing3d>(const LinearRing3d& geom) {
   std::vector<geometry_msgs::Point> ros_geom{};
 
   for (const auto& p : geom) {
-    ros_geom.push_back(toRosGeometry<Point>(p));
+    ros_geom.push_back(toRosGeometry<Point3d>(p));
   }
 
   return ros_geom;
 }
 
 template <>
-std::vector<geometry_msgs::Point> toRosGeometry<Polygon>(const Polygon& geom) {
+std::vector<geometry_msgs::Point> toRosGeometry<Polygon3d>(const Polygon3d& geom) {
   std::vector<geometry_msgs::Point> ros_geom{};
 
   for (const auto& p : geom.exterior) {
-    ros_geom.push_back(toRosGeometry<Point>(p));
+    ros_geom.push_back(toRosGeometry<Point3d>(p));
   }
 
   return ros_geom;
