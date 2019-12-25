@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <autoware_vector_map/core.h>
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 class OGRLayer;
 class GDALDataset;

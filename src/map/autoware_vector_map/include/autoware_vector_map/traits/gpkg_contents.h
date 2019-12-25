@@ -1,5 +1,7 @@
 #pragma once
 
+#include <autoware_vector_map/future/void_t.h>
+
 #include <autoware_vector_map/core.h>
 
 #define AUTOWARE_VECTOR_MAP_REGISTER_GPKG_CONTENT(CONTENT, TABLE_NAME) \
@@ -36,9 +38,18 @@ struct gpkg_content {
   struct member_def;
 };
 
+template <class T, size_t N>
+using member = typename gpkg_content<T>::template member_def<N>;
+
+template <class T, size_t N, class = std::void_t<>>
+struct has_member_n : std::false_type {};
+
+template <class T, size_t N>
+struct has_member_n<T, N, std::void_t<typename member<T, N>::type>> : std::true_type {};
+
 }  // namespace traits
 }  // namespace autoware_vector_map
 
-#include "vector_map/attributes.h"
-#include "vector_map/features.h"
-#include "vector_map/relationships.h"
+#include "gpkg_contents/vector_map/attributes.h"
+#include "gpkg_contents/vector_map/features.h"
+#include "gpkg_contents/vector_map/relationships.h"

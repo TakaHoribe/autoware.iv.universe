@@ -8,8 +8,8 @@
 #include <ogrsf_frmts.h>
 
 #include <autoware_vector_map/bridge/ogr/geometry_converter.h>
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
-#include <autoware_vector_map/traits/type_traits.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
+#include <autoware_vector_map/traits/has_geometry.h>
 
 namespace autoware_vector_map {
 namespace bridge {

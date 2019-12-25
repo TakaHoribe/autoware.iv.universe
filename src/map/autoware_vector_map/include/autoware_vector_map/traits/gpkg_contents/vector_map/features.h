@@ -1,6 +1,6 @@
 #pragma once
 
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 #define AUTOWARE_VECTOR_MAP_REGISTER_GPKG_FEATURE(FEATURE, TABLE_NAME) \
   AUTOWARE_VECTOR_MAP_REGISTER_GPKG_CONTENT(FEATURE, TABLE_NAME)

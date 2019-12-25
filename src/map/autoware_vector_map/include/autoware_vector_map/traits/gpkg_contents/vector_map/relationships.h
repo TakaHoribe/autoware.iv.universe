@@ -1,6 +1,6 @@
 #pragma once
 
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 #define AUTOWARE_VECTOR_MAP_REGISTER_GPKG_RELATIONSHIP(RELATIONSHIP, TABLE_NAME, LEFT_FEATURE_ID, \
                                                        RIGHT_FEATURE_ID)                          \

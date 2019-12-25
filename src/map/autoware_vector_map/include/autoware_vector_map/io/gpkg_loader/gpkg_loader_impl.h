@@ -11,7 +11,7 @@
 #include <ogrsf_frmts.h>
 
 #include <autoware_vector_map/bridge/ogr/feature_converter.h>
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 namespace autoware_vector_map {
 namespace io {
