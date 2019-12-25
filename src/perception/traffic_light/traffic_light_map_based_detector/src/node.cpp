@@ -219,9 +219,13 @@ void MapBasedDetector::isInVisibility(
       // check angle range
       const double tl_yaw = normalizeAngle(std::atan2(tl_right_down_point.y() - tl_left_down_point.y(), tl_right_down_point.x() - tl_left_down_point.x()) + M_PI_2);
       const double max_angele_range = 40.0 / 180.0 * M_PI;
-      tf2::Matrix3x3 camera_rotation_matrix(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y, camera_pose.orientation.z, camera_pose.orientation.w));
-      double camera_roll, camera_pitch, camera_yaw;
-      camera_rotation_matrix.getRPY(camera_roll, camera_pitch, camera_yaw);
+
+      // get direction of z axis
+      tf2::Vector3 camera_z_dir(0, 0, 1);
+      tf2::Matrix3x3 camera_rotation_matrix(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y,
+                                                            camera_pose.orientation.z, camera_pose.orientation.w));
+      camera_z_dir = camera_rotation_matrix * camera_z_dir;
+      double camera_yaw = std::atan2(camera_z_dir.y(), camera_z_dir.x());
       camera_yaw = normalizeAngle(camera_yaw);
       if (!isInAngleRange(tl_yaw, camera_yaw, max_angele_range))
         continue;
@@ -257,7 +261,7 @@ bool MapBasedDetector::isInAngleRange(const double &tl_yaw, const double &camera
   Eigen::Vector2d vec1, vec2;
   vec1 << std::cos(tl_yaw), std::sin(tl_yaw);
   vec2 << std::cos(camera_yaw), std::sin(camera_yaw);
-  const double diff_angle = std::atan2((vec1 + vec2).y(), (vec1 + vec2).x());
+  const double diff_angle = std::acos(vec1.dot(vec2));
   return (std::fabs(diff_angle) < max_angele_range);
 }
 
