@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <autoware_vector_map/bridge/ros/message_conversion.h>
 #include <autoware_vector_map/io/gpkg_interface.h>
 #include <autoware_vector_map_msgs/BinaryGpkgMap.h>
 
@@ -16,18 +17,9 @@ VectorMapLoaderNode::VectorMapLoaderNode() : nh_(""), private_nh_("~") {
   private_nh_.getParam("vector_map_path", vector_map_path);
 
   GpkgInterface gpkg_interface(vector_map_path.c_str());
-  const auto bin_data = gpkg_interface.toBinary();
 
-  BinaryGpkgMap binary_gpkg_map;
-  binary_gpkg_map.header.frame_id = "";
-  binary_gpkg_map.header.stamp = ros::Time::now();
-  binary_gpkg_map.header.frame_id = "map";
-
-  binary_gpkg_map.format_version = "";
-  binary_gpkg_map.map_version = "";
-
-  binary_gpkg_map.data.clear();
-  binary_gpkg_map.data.assign(bin_data.begin(), bin_data.end());
+  const auto binary_gpkg_map =
+      autoware_vector_map::bridge::bin2msg(gpkg_interface.toBinary(), "map", "", "");
 
   pub_binary_gpkg_map_.publish(binary_gpkg_map);
 }
