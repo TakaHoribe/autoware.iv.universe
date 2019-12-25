@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
   visualization_msgs
+  planning_utils
 )
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
@@ -116,7 +117,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES behavior_velocity_planner
-  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs
+  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs planning_utils
 #  DEPENDS system_lib
 )
 
