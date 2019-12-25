@@ -1,6 +1,6 @@
-#include <autoware_vector_map/bridge/ros/marker_converter.h>
+#include <autoware_vector_map/bridge/ros/marker_conversion.h>
 
-#include <autoware_vector_map/bridge/ros/geometry_converter.h>
+#include <autoware_vector_map/bridge/ros/geometry_conversion.h>
 #include <autoware_vector_map/core.h>
 
 #include "earcut.hpp"

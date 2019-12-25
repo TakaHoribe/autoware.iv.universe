@@ -1,4 +1,4 @@
-#include <autoware_vector_map/bridge/ros/geometry_converter.h>
+#include <autoware_vector_map/bridge/ros/geometry_conversion.h>
 
 namespace autoware_vector_map {
 namespace bridge {

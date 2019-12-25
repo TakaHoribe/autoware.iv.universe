@@ -5,7 +5,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <autoware_vector_map/bridge/ros/marker_converter.h>
+#include <autoware_vector_map/bridge/ros/marker_conversion.h>
 #include <autoware_vector_map/io/gpkg_loader.h>
 
 namespace avm = autoware_vector_map;

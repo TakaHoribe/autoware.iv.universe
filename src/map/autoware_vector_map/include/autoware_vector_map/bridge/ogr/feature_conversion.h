@@ -7,7 +7,7 @@
 
 #include <ogrsf_frmts.h>
 
-#include <autoware_vector_map/bridge/ogr/geometry_converter.h>
+#include <autoware_vector_map/bridge/ogr/geometry_conversion.h>
 #include <autoware_vector_map/traits/gpkg_contents.h>
 #include <autoware_vector_map/traits/has_geometry.h>
 
