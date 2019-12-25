@@ -10,9 +10,13 @@
 #include "map_based_prediction.h"
 
 MapBasedPrediction::MapBasedPrediction(
-  double interpolating_resolution
+  double interpolating_resolution,
+  double time_horizon,
+  double sampling_delta_time
 ):
-interpolating_resolution_(interpolating_resolution)
+interpolating_resolution_(interpolating_resolution),
+time_horizon_(time_horizon),
+sampling_delta_time_(sampling_delta_time)
 {
 }
 
@@ -252,7 +256,7 @@ bool MapBasedPrediction::getPredictedPath(
   //                [axe - 2 * self.a2]])
   double target_d_position = 0;
   
-  double t = 5.0;
+  double t = time_horizon_;
   Eigen::Matrix3d a_3_inv;
   a_3_inv << 10/std::pow(t,3), -4/std::pow(t,2), 1/(2*t),
           -15/std::pow(t,4), 7/std::pow(t,3), -1/std::pow(t,2),
@@ -285,7 +289,7 @@ bool MapBasedPrediction::getPredictedPath(
   x_2 = a_2_inv*b_2;
   
   // sampling points from calculated path
-  double dt = 0.5;
+  double dt = sampling_delta_time_;
   std::vector<double> d_vec;
   double calculated_d, calculated_s;
   for(double i = dt; i < t; i+=dt)
@@ -324,8 +328,8 @@ bool MapBasedPrediction::getLinearPredictedPath(
   autoware_perception_msgs::PredictedPath& path)
 {
   double yaw = tf2::getYaw(object_pose.orientation);
-  double dt = 0.5;
-  double time_horizon = 5;
+  double dt = sampling_delta_time_;
+  double time_horizon = time_horizon_;
   geometry_msgs::PoseWithCovarianceStamped pose;
   pose.pose.pose  = object_pose;
   for(double i = dt; i < time_horizon; i+=dt)

@@ -50,6 +50,8 @@ class MapBasedPrediction
 {
 private:
   double interpolating_resolution_;  
+  double time_horizon_;  
+  double sampling_delta_time_;  
   
   
   bool getPredictedPath(
@@ -75,7 +77,9 @@ private:
   bool normalizeLikelyhood(std::vector<autoware_perception_msgs::PredictedPath>& paths);
 
 public:
-  MapBasedPrediction(double interpolating_resolution);
+  MapBasedPrediction(double interpolating_resolution,
+                     double time_horizon,
+                     double sampling_delta_time);
   
   bool doPrediction(const DynamicObjectWithLanesArray& in_objects, 
                           std::vector<autoware_perception_msgs::DynamicObject>& out_objects,
