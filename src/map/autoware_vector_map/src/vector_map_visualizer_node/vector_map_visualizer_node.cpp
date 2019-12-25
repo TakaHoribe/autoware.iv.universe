@@ -24,12 +24,12 @@ void addMarkers(const std::unique_ptr<GpkgInterface>& gpkg_interface, MarkerArra
   using autoware_vector_map::bridge::createMarker;
 
   const auto features = gpkg_interface->getAllFeatures<T>();
-  for (const auto& feature : *features) {
+  for (const auto& feature : features) {
     auto marker =
-        createMarker("map", ns, static_cast<int32_t>(feature.id), feature.geometry, color);
+        createMarker("map", ns, static_cast<int32_t>(feature->id), feature->geometry, color);
 
     if (post_process) {
-      post_process(feature, &marker);
+      post_process(*feature, &marker);
     }
 
     marker_array->markers.push_back(marker);

@@ -24,27 +24,27 @@ class GpkgInterface {
   ConstPtr<T> getFeatureById(const Id id);
 
   template <class T>
-  ConstPtr<std::vector<T>> getFeaturesByIds(const std::vector<Id>& ids);
+  std::vector<ConstPtr<T>> getFeaturesByIds(const std::vector<Id>& ids);
 
   template <class T, RelationSide S,
             class U = typename traits::gpkg_relationship<T>::template related_feature_t<S>,
             class P = std::function<bool(const T&)>>
-  ConstPtr<std::vector<U>> getRelatedFeaturesById(const Id id, const P& predicate = nullptr);
+  std::vector<ConstPtr<U>> getRelatedFeaturesById(const Id id, const P& predicate = nullptr);
 
   template <class T>
-  ConstPtr<std::vector<T>> getAllFeatures();
+  std::vector<ConstPtr<T>> getAllFeatures();
 
   template <class T>
-  ConstPtr<std::vector<T>> findFeaturesByRange(const Point3d& p, const double range);
+  std::vector<ConstPtr<T>> findFeaturesByRange(const Point3d& p, const double range);
 
  private:
   std::unique_ptr<GDALDataset> dataset_;
 
   template <class T>
-  ConstPtr<std::vector<T>> getFeaturesBySql(const char* sql);
+  std::vector<ConstPtr<T>> getFeaturesBySql(const char* sql);
 
   template <class T>
-  ConstPtr<std::vector<T>> getFeaturesByLayer(OGRLayer* layer);
+  std::vector<ConstPtr<T>> getFeaturesByLayer(OGRLayer* layer);
 };
 
 }  // namespace io

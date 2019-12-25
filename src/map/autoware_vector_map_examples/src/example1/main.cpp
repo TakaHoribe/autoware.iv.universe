@@ -37,8 +37,8 @@ void example(const std::string vector_map_path) {
     std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
 
     const auto features = gpkg_interface.getFeaturesByIds<Feature>(ids);
-    for (const auto& feature : *features) {
-      std::cout << util::toDebugString(feature) << std::endl;
+    for (const auto& feature : features) {
+      std::cout << util::toDebugString(*feature) << std::endl;
     }
   }
 
@@ -49,8 +49,8 @@ void example(const std::string vector_map_path) {
     std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
 
     const auto features = gpkg_interface.getAllFeatures<Feature>();
-    for (const auto& feature : *features) {
-      std::cout << util::toDebugString(feature) << std::endl;
+    for (const auto& feature : features) {
+      std::cout << util::toDebugString(*feature) << std::endl;
     }
   }
 
@@ -63,8 +63,8 @@ void example(const std::string vector_map_path) {
     std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
 
     const auto features = gpkg_interface.findFeaturesByRange<Feature>(p, range);
-    for (const auto& feature : *features) {
-      std::cout << util::toDebugString(feature) << std::endl;
+    for (const auto& feature : features) {
+      std::cout << util::toDebugString(*feature) << std::endl;
     }
   }
 
@@ -78,8 +78,8 @@ void example(const std::string vector_map_path) {
 
     const auto features =
         gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id);
-    for (const auto& feature : *features) {
-      std::cout << util::toDebugString(feature) << std::endl;
+    for (const auto& feature : features) {
+      std::cout << util::toDebugString(*feature) << std::endl;
     }
   }
 
@@ -94,8 +94,8 @@ void example(const std::string vector_map_path) {
 
     const auto features =
         gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id, predicate);
-    for (const auto& feature : *features) {
-      std::cout << util::toDebugString(feature) << std::endl;
+    for (const auto& feature : features) {
+      std::cout << util::toDebugString(*feature) << std::endl;
     }
   }
 
