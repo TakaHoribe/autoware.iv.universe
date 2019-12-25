@@ -31,7 +31,8 @@
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_traffic_light_msgs/TrafficLightRoiArray.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <tf2_ros/transform_listener.h>
 
 #include <memory>
@@ -61,12 +62,14 @@ private:
   ros::Subscriber camera_info_sub_;
   ros::Subscriber route_sub_;
   ros::Publisher roi_pub_;
+  ros::Publisher viz_pub_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
   sensor_msgs::CameraInfo::ConstPtr camera_info_ptr_;
-  std::shared_ptr<std::vector<lanelet::AutowareTrafficLightConstPtr>> all_traffic_light_ptr_;
+  std::shared_ptr<std::vector<lanelet::ConstLineString3d>> all_traffic_lights_ptr_;
+  std::shared_ptr<std::vector<lanelet::ConstLineString3d>> route_traffic_lights_ptr_;
 
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
@@ -77,10 +80,10 @@ private:
   void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr &input_msg);
   void routeCallback(const autoware_planning_msgs::Route::ConstPtr &input_msg);
   void isInVisibility(
-      const std::vector<lanelet::AutowareTrafficLightConstPtr> &all_traffic_light,
+      const std::vector<lanelet::ConstLineString3d> &all_traffic_lights,
       const geometry_msgs::Pose &camera_pose,
       const sensor_msgs::CameraInfo &camera_info,
-      std::vector<lanelet::AutowareTrafficLightConstPtr> &visible_traffic_light);
+      std::vector<lanelet::ConstLineString3d> &visible_traffic_lights);
   bool isInDistanceRange(const geometry_msgs::Point &tl_point, const geometry_msgs::Point &camera_point, const double max_distance_range);
   bool isInAngleRange(const double &tl_yaw, const double &camera_yaw, const double max_angele_range);
   bool isInImageFrame(const sensor_msgs::CameraInfo &camera_info, const geometry_msgs::Point &point);
@@ -90,5 +93,8 @@ private:
                           const lanelet::ConstLineString3d traffic_light,
                           const Config &config,
                           autoware_traffic_light_msgs::TrafficLightRoi &tl_roi);
+  void publishVisibleTrafficLights(const geometry_msgs::PoseStamped camera_pose_stamped,
+                                   const std::vector<lanelet::ConstLineString3d> &visible_traffic_lights,
+                                   const ros::Publisher &pub);
 };
 } // namespace traffic_light

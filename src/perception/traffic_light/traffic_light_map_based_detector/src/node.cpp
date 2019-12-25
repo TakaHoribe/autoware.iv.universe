@@ -45,6 +45,7 @@ MapBasedDetector::MapBasedDetector() : nh_(""), pnh_("~"), tf_listener_(tf_buffe
   camera_info_sub_ = pnh_.subscribe("input/camera_info", 1, &MapBasedDetector::cameraInfoCallback, this);
   route_sub_ = pnh_.subscribe("input/route", 1, &MapBasedDetector::routeCallback, this);
   roi_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
+  viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/markers", 1);
   pnh_.getParam("max_vibration_pitch", config_.max_vibration_pitch);
   pnh_.getParam("max_vibration_yaw", config_.max_vibration_yaw);
   pnh_.getParam("max_vibration_height", config_.max_vibration_height);
@@ -60,19 +61,20 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
 
   autoware_traffic_light_msgs::TrafficLightRoiArray output_msg;
   output_msg.header = camera_info_ptr_->header;
-  geometry_msgs::Pose camera_pose;
+  geometry_msgs::PoseStamped camera_pose_stamped;
   try
   {
     geometry_msgs::TransformStamped transform;
     transform = tf_buffer_.lookupTransform("map", input_msg->header.frame_id,
                                            input_msg->header.stamp, ros::Duration(0.2));
-    camera_pose.position.x = transform.transform.translation.x;
-    camera_pose.position.y = transform.transform.translation.y;
-    camera_pose.position.z = transform.transform.translation.z;
-    camera_pose.orientation.x = transform.transform.rotation.x;
-    camera_pose.orientation.y = transform.transform.rotation.y;
-    camera_pose.orientation.z = transform.transform.rotation.z;
-    camera_pose.orientation.w = transform.transform.rotation.w;
+    camera_pose_stamped.header = input_msg->header;
+    camera_pose_stamped.pose.position.x = transform.transform.translation.x;
+    camera_pose_stamped.pose.position.y = transform.transform.translation.y;
+    camera_pose_stamped.pose.position.z = transform.transform.translation.z;
+    camera_pose_stamped.pose.orientation.x = transform.transform.rotation.x;
+    camera_pose_stamped.pose.orientation.y = transform.transform.rotation.y;
+    camera_pose_stamped.pose.orientation.z = transform.transform.rotation.z;
+    camera_pose_stamped.pose.orientation.w = transform.transform.rotation.w;
   }
   catch (tf2::TransformException &ex)
   {
@@ -81,30 +83,23 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
   }
 
   const sensor_msgs::CameraInfo &camera_info = *input_msg;
-  std::vector<lanelet::AutowareTrafficLightConstPtr> visible_traffic_light;
-  if (all_traffic_light_ptr_ == nullptr)
+  std::vector<lanelet::ConstLineString3d> visible_traffic_lights;
+  if (all_traffic_lights_ptr_ == nullptr)
     return;
-  isInVisibility(*all_traffic_light_ptr_, camera_pose, camera_info, visible_traffic_light);
+  isInVisibility(*all_traffic_lights_ptr_, camera_pose_stamped.pose, camera_info, visible_traffic_lights);
 
-  for (auto tl_itr = visible_traffic_light.begin(); tl_itr != visible_traffic_light.end(); ++tl_itr)
+  for (const auto &traffic_light : visible_traffic_lights)
   {
-    lanelet::AutowareTrafficLightConstPtr tl = *tl_itr;
+    autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
+    if (!getTrafficLightRoi(camera_pose_stamped.pose, camera_info, traffic_light, config_, tl_roi))
+      continue;
 
-    auto lights = tl->trafficLights();
-    for (auto lsp : lights)
-    {
-      if (!lsp.isLineString()) // traffic ligths must be linestrings
-        continue;
-
-      lanelet::ConstLineString3d ls = static_cast<lanelet::ConstLineString3d>(lsp);
-      autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
-      if (!getTrafficLightRoi(camera_pose, camera_info, ls, config_, tl_roi))
-        continue;
-
-      output_msg.rois.push_back(tl_roi);
-    }
+    output_msg.rois.push_back(tl_roi);
   }
   roi_pub_.publish(output_msg);
+  publishVisibleTrafficLights(camera_pose_stamped,
+                              visible_traffic_lights,
+                              viz_pub_);
 }
 
 bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose &camera_pose,
@@ -123,6 +118,9 @@ bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose &camera_pose
   const auto &tl_right_down_point = traffic_light.back();
   tf2::Transform tf_map2camera(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y, camera_pose.orientation.z, camera_pose.orientation.w),
                                tf2::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+  // id
+  tl_roi.id = traffic_light.id();
+
   // for roi.x_offset and roi.y_offset
   {
     tf2::Transform tf_map2tl(tf2::Quaternion(0, 0, 0, 1),
@@ -177,21 +175,10 @@ void MapBasedDetector::mapCallback(const autoware_lanelet2_msgs::MapBin &input_m
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
   lanelet::utils::conversion::fromBinMsg(input_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
   lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(lanelet_map_ptr_);
-  all_traffic_light_ptr_ = std::make_shared<std::vector<lanelet::AutowareTrafficLightConstPtr>>(lanelet::utils::query::autowareTrafficLights(all_lanelets));
-}
-
-void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstPtr &input_msg)
-{
-}
-
-void MapBasedDetector::isInVisibility(
-    const std::vector<lanelet::AutowareTrafficLightConstPtr> &all_traffic_light,
-    const geometry_msgs::Pose &camera_pose,
-    const sensor_msgs::CameraInfo &camera_info,
-    std::vector<lanelet::AutowareTrafficLightConstPtr> &visible_traffic_light)
-{
+  std::vector<lanelet::AutowareTrafficLightConstPtr> all_lanelet_traffic_lights = lanelet::utils::query::autowareTrafficLights(all_lanelets);
+  all_traffic_lights_ptr_ = std::make_shared<std::vector<lanelet::ConstLineString3d>>();
   // for each traffic light in map check if in range and in view angle of camera
-  for (auto tl_itr = all_traffic_light.begin(); tl_itr != all_traffic_light.end(); ++tl_itr)
+  for (auto tl_itr = all_lanelet_traffic_lights.begin(); tl_itr != all_lanelet_traffic_lights.end(); ++tl_itr)
   {
     lanelet::AutowareTrafficLightConstPtr tl = *tl_itr;
 
@@ -201,52 +188,67 @@ void MapBasedDetector::isInVisibility(
       if (!lsp.isLineString()) // traffic ligths must be linestrings
         continue;
 
-      lanelet::ConstLineString3d ls = static_cast<lanelet::ConstLineString3d>(lsp);
-
-      const auto &tl_left_down_point = ls.front();
-      const auto &tl_right_down_point = ls.back();
-      const double tl_height = ls.attributeOr("height", 0.0);
-
-      // check distance range
-      geometry_msgs::Point tl_central_point;
-      tl_central_point.x = (tl_right_down_point.x() + tl_left_down_point.x()) / 2.0;
-      tl_central_point.y = (tl_right_down_point.y() + tl_left_down_point.y()) / 2.0;
-      tl_central_point.z = (tl_right_down_point.z() + tl_left_down_point.z() + tl_height) / 2.0;
-      const double max_distance_range = 200.0;
-      if (!isInDistanceRange(tl_central_point, camera_pose.position, max_distance_range))
-        continue;
-
-      // check angle range
-      const double tl_yaw = normalizeAngle(std::atan2(tl_right_down_point.y() - tl_left_down_point.y(), tl_right_down_point.x() - tl_left_down_point.x()) + M_PI_2);
-      const double max_angele_range = 40.0 / 180.0 * M_PI;
-
-      // get direction of z axis
-      tf2::Vector3 camera_z_dir(0, 0, 1);
-      tf2::Matrix3x3 camera_rotation_matrix(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y,
-                                                            camera_pose.orientation.z, camera_pose.orientation.w));
-      camera_z_dir = camera_rotation_matrix * camera_z_dir;
-      double camera_yaw = std::atan2(camera_z_dir.y(), camera_z_dir.x());
-      camera_yaw = normalizeAngle(camera_yaw);
-      if (!isInAngleRange(tl_yaw, camera_yaw, max_angele_range))
-        continue;
-
-      // check within image frame
-      tf2::Transform tf_map2camera(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y, camera_pose.orientation.z, camera_pose.orientation.w),
-                                   tf2::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
-      tf2::Transform tf_map2tl(tf2::Quaternion(0, 0, 0, 1),
-                               tf2::Vector3(tl_central_point.x, tl_central_point.y, tl_central_point.z));
-      tf2::Transform tf_camera2tl;
-      tf_camera2tl = tf_map2camera.inverse() * tf_map2tl;
-
-      geometry_msgs::Point camera2tl_point;
-      camera2tl_point.x = tf_camera2tl.getOrigin().x();
-      camera2tl_point.y = tf_camera2tl.getOrigin().y();
-      camera2tl_point.z = tf_camera2tl.getOrigin().z();
-      if (!isInImageFrame(camera_info, camera2tl_point))
-        continue;
-
-      visible_traffic_light.push_back(tl);
+      all_traffic_lights_ptr_->push_back(static_cast<lanelet::ConstLineString3d>(lsp));
     }
+  }
+}
+
+void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstPtr &input_msg)
+{
+}
+
+void MapBasedDetector::isInVisibility(
+    const std::vector<lanelet::ConstLineString3d> &all_traffic_lights,
+    const geometry_msgs::Pose &camera_pose,
+    const sensor_msgs::CameraInfo &camera_info,
+    std::vector<lanelet::ConstLineString3d> &visible_traffic_lights)
+{
+  for (const auto &traffic_light : all_traffic_lights)
+  {
+
+    const auto &tl_left_down_point = traffic_light.front();
+    const auto &tl_right_down_point = traffic_light.back();
+    const double tl_height = traffic_light.attributeOr("height", 0.0);
+
+    // check distance range
+    geometry_msgs::Point tl_central_point;
+    tl_central_point.x = (tl_right_down_point.x() + tl_left_down_point.x()) / 2.0;
+    tl_central_point.y = (tl_right_down_point.y() + tl_left_down_point.y()) / 2.0;
+    tl_central_point.z = (tl_right_down_point.z() + tl_left_down_point.z() + tl_height) / 2.0;
+    const double max_distance_range = 200.0;
+    if (!isInDistanceRange(tl_central_point, camera_pose.position, max_distance_range))
+      continue;
+
+    // check angle range
+    const double tl_yaw = normalizeAngle(std::atan2(tl_right_down_point.y() - tl_left_down_point.y(), tl_right_down_point.x() - tl_left_down_point.x()) + M_PI_2);
+    const double max_angele_range = 40.0 / 180.0 * M_PI;
+
+    // get direction of z axis
+    tf2::Vector3 camera_z_dir(0, 0, 1);
+    tf2::Matrix3x3 camera_rotation_matrix(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y,
+                                                          camera_pose.orientation.z, camera_pose.orientation.w));
+    camera_z_dir = camera_rotation_matrix * camera_z_dir;
+    double camera_yaw = std::atan2(camera_z_dir.y(), camera_z_dir.x());
+    camera_yaw = normalizeAngle(camera_yaw);
+    if (!isInAngleRange(tl_yaw, camera_yaw, max_angele_range))
+      continue;
+
+    // check within image frame
+    tf2::Transform tf_map2camera(tf2::Quaternion(camera_pose.orientation.x, camera_pose.orientation.y, camera_pose.orientation.z, camera_pose.orientation.w),
+                                 tf2::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+    tf2::Transform tf_map2tl(tf2::Quaternion(0, 0, 0, 1),
+                             tf2::Vector3(tl_central_point.x, tl_central_point.y, tl_central_point.z));
+    tf2::Transform tf_camera2tl;
+    tf_camera2tl = tf_map2camera.inverse() * tf_map2tl;
+
+    geometry_msgs::Point camera2tl_point;
+    camera2tl_point.x = tf_camera2tl.getOrigin().x();
+    camera2tl_point.y = tf_camera2tl.getOrigin().y();
+    camera2tl_point.z = tf_camera2tl.getOrigin().z();
+    if (!isInImageFrame(camera_info, camera2tl_point))
+      continue;
+
+    visible_traffic_lights.push_back(traffic_light);
   }
 }
 
@@ -282,6 +284,68 @@ bool MapBasedDetector::isInImageFrame(const sensor_msgs::CameraInfo &camera_info
     if (0 <= image_v && image_v < camera_info.height)
       return true;
   return false;
+}
+
+void MapBasedDetector::publishVisibleTrafficLights(const geometry_msgs::PoseStamped camera_pose_stamped,
+                                                   const std::vector<lanelet::ConstLineString3d> &visible_traffic_lights,
+                                                   const ros::Publisher &pub)
+{
+  visualization_msgs::MarkerArray output_msg;
+  for (const auto &traffic_light : visible_traffic_lights)
+  {
+    const auto &tl_left_down_point = traffic_light.front();
+    const auto &tl_right_down_point = traffic_light.back();
+    const double tl_height = traffic_light.attributeOr("height", 0.0);
+    const int id = traffic_light.id();
+
+    geometry_msgs::Point tl_central_point;
+    tl_central_point.x = (tl_right_down_point.x() + tl_left_down_point.x()) / 2.0;
+    tl_central_point.y = (tl_right_down_point.y() + tl_left_down_point.y()) / 2.0;
+    tl_central_point.z = (tl_right_down_point.z() + tl_left_down_point.z() + tl_height) / 2.0;
+
+    visualization_msgs::Marker marker;
+
+    tf2::Transform tf_map2camera(tf2::Quaternion(camera_pose_stamped.pose.orientation.x, camera_pose_stamped.pose.orientation.y, camera_pose_stamped.pose.orientation.z, camera_pose_stamped.pose.orientation.w),
+                                 tf2::Vector3(camera_pose_stamped.pose.position.x, camera_pose_stamped.pose.position.y, camera_pose_stamped.pose.position.z));
+    tf2::Transform tf_map2tl(tf2::Quaternion(0, 0, 0, 1),
+                             tf2::Vector3(tl_central_point.x, tl_central_point.y, tl_central_point.z));
+    tf2::Transform tf_camera2tl;
+    tf_camera2tl = tf_map2camera.inverse() * tf_map2tl;
+
+    marker.header = camera_pose_stamped.header;
+    marker.id = id;
+    marker.type = visualization_msgs::Marker::LINE_LIST;
+    marker.ns = std::string("beam");
+    marker.scale.x = 0.05;
+    marker.action = visualization_msgs::Marker::MODIFY;
+    marker.pose.position.x = 0.0;
+    marker.pose.position.y = 0.0;
+    marker.pose.position.z = 0.0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    geometry_msgs::Point point;
+    point.x = 0.0;
+    point.y = 0.0;
+    point.z = 0.0;
+    marker.points.push_back(point);
+    point.x = tf_camera2tl.getOrigin().x();
+    point.y = tf_camera2tl.getOrigin().y();
+    point.z = tf_camera2tl.getOrigin().z();
+    marker.points.push_back(point);
+
+    marker.lifetime = ros::Duration(0.2);
+    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+
+    output_msg.markers.push_back(marker);
+  }
+  pub.publish(output_msg);
+
+  return;
 }
 
 double MapBasedDetector::normalizeAngle(const double &angle)
