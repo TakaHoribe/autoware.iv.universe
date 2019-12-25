@@ -2,7 +2,6 @@
 
 namespace autoware_vector_map {
 namespace bridge {
-namespace ogr {
 
 template <>
 Point3d fromOgrGeometry<Point3d>(OGRPoint* ogr_geom) {
@@ -91,6 +90,5 @@ OGRPolygon toOgrGeometry<Polygon3d>(const Polygon3d& geom) {
   return ogr_geom;
 }
 
-}  // namespace ogr
 }  // namespace bridge
 }  // namespace autoware_vector_map

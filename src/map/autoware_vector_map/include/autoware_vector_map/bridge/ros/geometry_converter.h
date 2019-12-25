@@ -9,7 +9,6 @@
 
 namespace autoware_vector_map {
 namespace bridge {
-namespace ros {
 
 template <class T>
 struct ros_geometry;
@@ -43,6 +42,5 @@ T fromRosGeometry(const T_Ros& ros_geom);
 template <class T, class T_Ros = ros_geometry_t<T>>
 T_Ros toRosGeometry(const T& geom);
 
-}  // namespace ros
 }  // namespace bridge
 }  // namespace autoware_vector_map

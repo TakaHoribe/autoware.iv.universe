@@ -2,7 +2,6 @@
 
 namespace autoware_vector_map {
 namespace bridge {
-namespace ros {
 
 template <>
 Point3d fromRosGeometry<Point3d>(const geometry_msgs::Point& p) {
@@ -85,6 +84,6 @@ std::vector<geometry_msgs::Point> toRosGeometry<Polygon3d>(const Polygon3d& geom
 
   return ros_geom;
 }
-}  // namespace ros
+
 }  // namespace bridge
 }  // namespace autoware_vector_map

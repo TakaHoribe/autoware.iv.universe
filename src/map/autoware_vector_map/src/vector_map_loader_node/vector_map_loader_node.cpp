@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include <autoware_vector_map/io/gpkg_loader/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_loader.h>
 #include <autoware_vector_map_msgs/BinaryGpkgMap.h>
 
-using autoware_vector_map::io::gpkg_loader::GpkgLoader;
+using autoware_vector_map::io::GpkgLoader;
 using autoware_vector_map_msgs::BinaryGpkgMap;
 
 VectorMapLoaderNode::VectorMapLoaderNode() : nh_(""), private_nh_("~") {

@@ -11,13 +11,6 @@ class GDALDataset;
 
 namespace autoware_vector_map {
 namespace io {
-namespace gpkg_loader {
-
-using autoware_vector_map::traits::gpkg_attribute;
-using autoware_vector_map::traits::gpkg_content;
-using autoware_vector_map::traits::gpkg_feature;
-using autoware_vector_map::traits::gpkg_relationship;
-using autoware_vector_map::traits::RelationSide;
 
 class GpkgLoader {
  public:
@@ -33,8 +26,8 @@ class GpkgLoader {
   template <class T>
   ConstPtr<std::vector<T>> getFeaturesByIds(const std::vector<Id>& ids);
 
-  template <class T, RelationSide S,
-            class U = typename gpkg_relationship<T>::template RelatedFeature<S>::type,
+  template <class T, traits::RelationSide S,
+            class U = typename traits::gpkg_relationship<T>::template RelatedFeature<S>::type,
             class P = std::function<bool(const T&)>>
   ConstPtr<std::vector<U>> getRelatedFeaturesById(const Id id, const P& predicate = nullptr);
 
@@ -54,8 +47,7 @@ class GpkgLoader {
   ConstPtr<std::vector<T>> getFeaturesByLayer(OGRLayer* layer);
 };
 
-}  // namespace gpkg_loader
 }  // namespace io
 }  // namespace autoware_vector_map
 
-#include "gpkg_loader_impl.h"
+#include "gpkg_loader/gpkg_loader_impl.h"

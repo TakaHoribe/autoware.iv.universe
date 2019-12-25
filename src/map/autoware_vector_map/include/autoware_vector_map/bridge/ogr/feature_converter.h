@@ -13,11 +13,6 @@
 
 namespace autoware_vector_map {
 namespace bridge {
-namespace ogr {
-
-using autoware_vector_map::traits::gpkg_content;
-using autoware_vector_map::traits::has_geometry;
-using autoware_vector_map::traits::has_member_n;
 
 template <class T>
 struct OgrFieldCaster {
@@ -69,7 +64,7 @@ bool assignId(OGRFeature* ogr_feature, T* feature) {
   return true;
 }
 
-template <class T, std::enable_if_t<has_geometry<T>::value, std::nullptr_t> = nullptr>
+template <class T, std::enable_if_t<traits::has_geometry<T>::value, std::nullptr_t> = nullptr>
 bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
   using GeometryType = typename T::GeometryType;
   using OgrGeometryType = ogr_geometry_t<GeometryType>;
@@ -80,18 +75,19 @@ bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
   return true;
 }
 
-template <class T, std::enable_if_t<!has_geometry<T>::value, std::nullptr_t> = nullptr>
+template <class T, std::enable_if_t<!traits::has_geometry<T>::value, std::nullptr_t> = nullptr>
 bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
   return false;
 }
 
-template <class T, size_t N, std::enable_if_t<has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool assignField(OGRFeature* ogr_feature, T* feature) {
-  using member = typename gpkg_content<T>::template member_def<N>;
+  using member = typename traits::gpkg_content<T>::template member_def<N>;
 
   if (N >= ogr_feature->GetFieldCount()) {
     const auto msg =
-        "[autoware_vector_map] Too many fields. Please confirm gpkg_content::member_def.";
+        "[autoware_vector_map] Too many fields. Please confirm traits::gpkg_content::member_def.";
     throw std::runtime_error(msg);
   }
 
@@ -109,7 +105,8 @@ bool assignField(OGRFeature* ogr_feature, T* feature) {
   return true;
 }
 
-template <class T, size_t N, std::enable_if_t<!has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool assignField(OGRFeature* ogr_feature, T* feature) {
   return false;
 }
@@ -150,7 +147,7 @@ bool assignFields(OGRFeature* ogr_feature, T* feature) {
     if (!assignField<T, 29>(ogr_feature, feature)) return;
     if (!assignField<T, 30>(ogr_feature, feature)) return;
     if (!assignField<T, 31>(ogr_feature, feature)) return;
-    static_assert(!has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
   }();
 
   return true;
@@ -167,14 +164,16 @@ T fromOgrFeature(OGRFeature* ogr_feature) {
   return feature;
 }
 
-template <class T, size_t N, std::enable_if_t<has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addMemberName(std::stringstream* ss) {
-  using member = typename gpkg_content<T>::template member_def<N>;
+  using member = typename traits::gpkg_content<T>::template member_def<N>;
   *ss << ", " << member::name;
   return true;
 }
 
-template <class T, size_t N, std::enable_if_t<!has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addMemberName(std::stringstream* ss) {
   return false;
 }
@@ -220,7 +219,7 @@ std::string createFeatureQuery(OGRLayer* layer) {
     if (!addMemberName<T, 29>(&ss)) return;
     if (!addMemberName<T, 30>(&ss)) return;
     if (!addMemberName<T, 31>(&ss)) return;
-    static_assert(!has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
   }();
 
   std::string geometry_part{};
@@ -231,6 +230,5 @@ std::string createFeatureQuery(OGRLayer* layer) {
   return fmt::format("{}{}{}", id_name, geometry_part, ss.str());
 }
 
-}  // namespace ogr
 }  // namespace bridge
 }  // namespace autoware_vector_map

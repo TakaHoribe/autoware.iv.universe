@@ -1,4 +1,4 @@
-#include <autoware_vector_map/io/gpkg_loader/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_loader.h>
 
 #include <fstream>
 #include <random>
@@ -8,7 +8,6 @@
 
 namespace autoware_vector_map {
 namespace io {
-namespace gpkg_loader {
 
 GpkgLoader::GpkgLoader(const char* gpkg_path) {
   GDALAllRegister();
@@ -97,6 +96,5 @@ std::vector<uint8_t> GpkgLoader::toBinary() {
   return bin_data;
 }
 
-}  // namespace gpkg_loader
 }  // namespace io
 }  // namespace autoware_vector_map

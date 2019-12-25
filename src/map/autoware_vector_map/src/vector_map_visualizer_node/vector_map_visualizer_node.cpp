@@ -6,11 +6,13 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <autoware_vector_map/bridge/ros/marker_converter.h>
-#include <autoware_vector_map/io/gpkg_loader/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_loader.h>
 
 namespace avm = autoware_vector_map;
-using autoware_vector_map::bridge::ros::createMarker;
-using autoware_vector_map::io::gpkg_loader::GpkgLoader;
+using autoware_vector_map::bridge::createMarker;
+using autoware_vector_map::bridge::createMarkerColor;
+using autoware_vector_map::bridge::createMarkerScale;
+using autoware_vector_map::io::GpkgLoader;
 using autoware_vector_map::traits::gpkg_content;
 
 using autoware_vector_map_msgs::BinaryGpkgMap;

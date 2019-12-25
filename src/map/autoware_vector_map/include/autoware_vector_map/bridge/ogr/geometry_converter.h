@@ -9,7 +9,6 @@
 
 namespace autoware_vector_map {
 namespace bridge {
-namespace ogr {
 
 template <class T>
 struct ogr_geometry;
@@ -96,6 +95,5 @@ T fromOgrGeometry(T_Ogr* ogr_geom);
 template <class T, class T_Ogr = ogr_geometry_t<T>>
 T_Ogr toOgrGeometry(const T& geom);
 
-}  // namespace ogr
 }  // namespace bridge
 }  // namespace autoware_vector_map
