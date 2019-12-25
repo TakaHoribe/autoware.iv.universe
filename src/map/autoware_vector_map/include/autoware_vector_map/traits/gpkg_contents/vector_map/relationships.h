@@ -31,11 +31,6 @@
 namespace autoware_vector_map {
 namespace traits {
 
-enum class RelationSide {
-  Left,
-  Right,
-};
-
 template <class T>
 struct gpkg_relationship {
   static constexpr const char* left_feature_id_name();

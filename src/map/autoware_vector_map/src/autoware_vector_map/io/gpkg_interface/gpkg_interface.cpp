@@ -1,4 +1,4 @@
-#include <autoware_vector_map/io/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_interface.h>
 
 #include <fstream>
 #include <random>
@@ -9,7 +9,7 @@
 namespace autoware_vector_map {
 namespace io {
 
-GpkgLoader::GpkgLoader(const char* gpkg_path) {
+GpkgInterface::GpkgInterface(const char* gpkg_path) {
   GDALAllRegister();
 
   if (!std::filesystem::exists(gpkg_path)) {
@@ -24,7 +24,7 @@ GpkgLoader::GpkgLoader(const char* gpkg_path) {
   }
 }
 
-GpkgLoader::GpkgLoader(const std::vector<uint8_t>& bin_data) {
+GpkgInterface::GpkgInterface(const std::vector<uint8_t>& bin_data) {
   GDALAllRegister();
 
   constexpr const char* vsi_file_name = "/vsimem/memory.gpkg";
@@ -45,7 +45,7 @@ GpkgLoader::GpkgLoader(const std::vector<uint8_t>& bin_data) {
   VSIUnlink(vsi_file_name);
 }
 
-void GpkgLoader::toFile(const char* gpkg_path) {
+void GpkgInterface::toFile(const char* gpkg_path) {
   if (!dataset_) {
     throw std::runtime_error("dataset_ is empty");
   }
@@ -55,7 +55,7 @@ void GpkgLoader::toFile(const char* gpkg_path) {
       gpkg_driver->CreateCopy(gpkg_path, dataset_.get(), false, nullptr, nullptr, nullptr));
 }
 
-std::vector<uint8_t> GpkgLoader::toBinary() {
+std::vector<uint8_t> GpkgInterface::toBinary() {
   // Generate random string
   std::string random_str;
   {

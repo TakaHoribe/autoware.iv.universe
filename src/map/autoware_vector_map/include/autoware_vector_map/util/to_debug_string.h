@@ -7,15 +7,11 @@
 
 #include <autoware_vector_map/bridge/ogr/feature_conversion.h>
 #include <autoware_vector_map/bridge/ogr/geometry_conversion.h>
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
-#include <autoware_vector_map/traits/type_traits.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
+#include <autoware_vector_map/traits/has_geometry.h>
 
 namespace autoware_vector_map {
 namespace util {
-
-using autoware_vector_map::traits::gpkg_content;
-using autoware_vector_map::traits::has_geometry;
-using autoware_vector_map::traits::has_member_n;
 
 template <class T>
 bool addIdString(const T& feature, std::stringstream* ss) {
@@ -23,11 +19,11 @@ bool addIdString(const T& feature, std::stringstream* ss) {
   return true;
 }
 
-template <class T, std::enable_if_t<has_geometry<T>::value, std::nullptr_t> = nullptr>
+template <class T, std::enable_if_t<traits::has_geometry<T>::value, std::nullptr_t> = nullptr>
 bool addGeometryString(const T& feature, std::stringstream* ss) {
   using GeometryType = typename T::GeometryType;
 
-  const auto ogr_geometry = bridge::ogr::toOgrGeometry<GeometryType>(feature.geometry);
+  const auto ogr_geometry = bridge::toOgrGeometry<GeometryType>(feature.geometry);
 
   char* p_wkt = nullptr;
   ogr_geometry.exportToWkt(&p_wkt);
@@ -37,19 +33,21 @@ bool addGeometryString(const T& feature, std::stringstream* ss) {
   return true;
 }
 
-template <class T, std::enable_if_t<!has_geometry<T>::value, std::nullptr_t> = nullptr>
+template <class T, std::enable_if_t<!traits::has_geometry<T>::value, std::nullptr_t> = nullptr>
 bool addGeometryString(const T& feature, std::stringstream* ss) {
   return false;
 }
 
-template <class T, size_t N, std::enable_if_t<has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addFieldString(const T& feature, std::stringstream* ss) {
-  using member = typename gpkg_content<T>::template member_def<N>;
+  using member = typename traits::gpkg_content<T>::template member_def<N>;
   *ss << member::name << ": " << feature.*member::reference << std::endl;
   return true;
 }
 
-template <class T, size_t N, std::enable_if_t<!has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N,
+          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addFieldString(const T& feature, std::stringstream* ss) {
   return false;
 }
@@ -95,7 +93,7 @@ std::string toDebugString(const T& feature) {
     if (!addFieldString<T, 29>(feature, &ss)) return;
     if (!addFieldString<T, 30>(feature, &ss)) return;
     if (!addFieldString<T, 31>(feature, &ss)) return;
-    static_assert(!has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
   }();
 
   return ss.str();

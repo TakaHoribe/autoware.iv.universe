@@ -12,10 +12,10 @@ class GDALDataset;
 namespace autoware_vector_map {
 namespace io {
 
-class GpkgLoader {
+class GpkgInterface {
  public:
-  explicit GpkgLoader(const char* gpkg_path);
-  explicit GpkgLoader(const std::vector<uint8_t>& bin_data);
+  explicit GpkgInterface(const char* gpkg_path);
+  explicit GpkgInterface(const std::vector<uint8_t>& bin_data);
 
   void toFile(const char* gpkg_path);
   std::vector<uint8_t> toBinary();
@@ -26,7 +26,7 @@ class GpkgLoader {
   template <class T>
   ConstPtr<std::vector<T>> getFeaturesByIds(const std::vector<Id>& ids);
 
-  template <class T, traits::RelationSide S,
+  template <class T, RelationSide S,
             class U = typename traits::gpkg_relationship<T>::template RelatedFeature<S>::type,
             class P = std::function<bool(const T&)>>
   ConstPtr<std::vector<U>> getRelatedFeaturesById(const Id id, const P& predicate = nullptr);
@@ -50,4 +50,4 @@ class GpkgLoader {
 }  // namespace io
 }  // namespace autoware_vector_map
 
-#include "gpkg_loader/gpkg_loader_impl.h"
+#include "gpkg_interface/gpkg_interface_impl.h"

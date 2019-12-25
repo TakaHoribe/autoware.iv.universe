@@ -14,6 +14,11 @@ struct Relationship {
   Id id;
 };
 
+enum class RelationSide {
+  Left,
+  Right,
+};
+
 struct LaneSectionConnection : public Relationship<LaneSection, LaneSection> {
   Id lane_section_id;
   Id next_lane_section_id;

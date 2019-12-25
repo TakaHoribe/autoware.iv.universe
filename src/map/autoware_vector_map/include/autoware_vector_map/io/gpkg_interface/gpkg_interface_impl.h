@@ -1,6 +1,6 @@
 #pragma once
 
-#include <autoware_vector_map/io/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_interface.h>
 
 #include <memory>
 #include <string>
@@ -19,7 +19,7 @@ namespace io {
 using fmt::literals::operator""_a;
 
 template <class T>
-ConstPtr<T> GpkgLoader::getFeatureById(const Id id) {
+ConstPtr<T> GpkgInterface::getFeatureById(const Id id) {
   // Use raw pointer because reusing the same resource
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
   if (!table_layer) {
@@ -36,7 +36,7 @@ ConstPtr<T> GpkgLoader::getFeatureById(const Id id) {
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::getFeaturesByIds(const std::vector<Id>& ids) {
+ConstPtr<std::vector<T>> GpkgInterface::getFeaturesByIds(const std::vector<Id>& ids) {
   std::stringstream ss_ids;
   for (auto itr = std::begin(ids); itr != std::end(ids); ++itr) {
     if (itr != std::begin(ids)) {
@@ -55,15 +55,15 @@ ConstPtr<std::vector<T>> GpkgLoader::getFeaturesByIds(const std::vector<Id>& ids
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::getAllFeatures() {
+ConstPtr<std::vector<T>> GpkgInterface::getAllFeatures() {
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
   const auto sql = fmt::format("SELECT {} FROM {}", bridge::createFeatureQuery<T>(table_layer),
                                traits::gpkg_content<T>::table_name());
   return getFeaturesBySql<T>(sql.c_str());
 }
 
-template <class T, traits::RelationSide S, class U, class P>
-ConstPtr<std::vector<U>> GpkgLoader::getRelatedFeaturesById(const Id id, const P& predicate) {
+template <class T, RelationSide S, class U, class P>
+ConstPtr<std::vector<U>> GpkgInterface::getRelatedFeaturesById(const Id id, const P& predicate) {
   OGRLayer* relationship_table_layer =
       dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
 
@@ -88,7 +88,7 @@ ConstPtr<std::vector<U>> GpkgLoader::getRelatedFeaturesById(const Id id, const P
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::findFeaturesByRange(const Point3d& p, const double range) {
+ConstPtr<std::vector<T>> GpkgInterface::findFeaturesByRange(const Point3d& p, const double range) {
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
 
   const auto condition = fmt::format(
@@ -105,13 +105,13 @@ ConstPtr<std::vector<T>> GpkgLoader::findFeaturesByRange(const Point3d& p, const
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::getFeaturesBySql(const char* sql) {
+ConstPtr<std::vector<T>> GpkgInterface::getFeaturesBySql(const char* sql) {
   const auto result_layer = std::shared_ptr<OGRLayer>(dataset_->ExecuteSQL(sql, nullptr, "sql"));
   return getFeaturesByLayer<T>(result_layer.get());
 }
 
 template <class T>
-ConstPtr<std::vector<T>> GpkgLoader::getFeaturesByLayer(OGRLayer* layer) {
+ConstPtr<std::vector<T>> GpkgInterface::getFeaturesByLayer(OGRLayer* layer) {
   auto features = std::make_shared<std::vector<T>>();
   features->reserve(layer->GetFeatureCount());
 

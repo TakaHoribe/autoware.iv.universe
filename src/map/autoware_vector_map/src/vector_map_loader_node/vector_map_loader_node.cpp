@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include <autoware_vector_map/io/gpkg_loader.h>
+#include <autoware_vector_map/io/gpkg_interface.h>
 #include <autoware_vector_map_msgs/BinaryGpkgMap.h>
 
-using autoware_vector_map::io::GpkgLoader;
+using autoware_vector_map::io::GpkgInterface;
 using autoware_vector_map_msgs::BinaryGpkgMap;
 
 VectorMapLoaderNode::VectorMapLoaderNode() : nh_(""), private_nh_("~") {
@@ -15,8 +15,8 @@ VectorMapLoaderNode::VectorMapLoaderNode() : nh_(""), private_nh_("~") {
   std::string vector_map_path;
   private_nh_.getParam("vector_map_path", vector_map_path);
 
-  GpkgLoader gpkg_loader(vector_map_path.c_str());
-  const auto bin_data = gpkg_loader.toBinary();
+  GpkgInterface gpkg_interface(vector_map_path.c_str());
+  const auto bin_data = gpkg_interface.toBinary();
 
   BinaryGpkgMap binary_gpkg_map;
   binary_gpkg_map.header.frame_id = "";
