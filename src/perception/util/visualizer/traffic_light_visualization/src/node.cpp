@@ -1,6 +1,7 @@
 #include <traffic_light_roi_visualizer/node.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <string>
 
 namespace traffic_light
 {
@@ -32,6 +33,8 @@ void TrafficLightRoiVisualizer::imageRoiCallback(const sensor_msgs::ImageConstPt
             cv::rectangle(cv_ptr->image, cv::Point(input_tl_roi_msg->rois.at(i).roi.x_offset, input_tl_roi_msg->rois.at(i).roi.y_offset),
                           cv::Point(input_tl_roi_msg->rois.at(i).roi.x_offset + input_tl_roi_msg->rois.at(i).roi.width, input_tl_roi_msg->rois.at(i).roi.y_offset + input_tl_roi_msg->rois.at(i).roi.height),
                           cv::Scalar(0, 0, 255), 1, CV_AA, 0);
+            cv::putText(cv_ptr->image, std::to_string(input_tl_roi_msg->rois.at(i).id), cv::Point(input_tl_roi_msg->rois.at(i).roi.x_offset, input_tl_roi_msg->rois.at(i).roi.y_offset),
+                        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 200), 1, CV_AA);
         }
         // cv::imshow("view", cv_ptr->image);
         // cv::waitKey(10);
