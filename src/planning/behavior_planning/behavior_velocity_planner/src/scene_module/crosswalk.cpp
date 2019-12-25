@@ -124,6 +124,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     if (path_collision_points.size() != 2)
     {
         ROS_ERROR("Must be 2");
+        return false;
     }
     double width;
     if (!getVehicleWidth(width))
