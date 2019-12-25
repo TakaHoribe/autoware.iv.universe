@@ -83,7 +83,7 @@ bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
 template <class T, size_t N,
           std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool assignField(OGRFeature* ogr_feature, T* feature) {
-  using member = typename traits::gpkg_content<T>::template member_def<N>;
+  using member = traits::member_n<T, N>;
 
   if (N >= ogr_feature->GetFieldCount()) {
     const auto msg =
@@ -167,7 +167,7 @@ T fromOgrFeature(OGRFeature* ogr_feature) {
 template <class T, size_t N,
           std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addMemberName(std::stringstream* ss) {
-  using member = typename traits::gpkg_content<T>::template member_def<N>;
+  using member = traits::member_n<T, N>;
   *ss << ", " << member::name;
   return true;
 }

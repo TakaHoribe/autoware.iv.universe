@@ -41,7 +41,7 @@ bool addGeometryString(const T& feature, std::stringstream* ss) {
 template <class T, size_t N,
           std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addFieldString(const T& feature, std::stringstream* ss) {
-  using member = typename traits::gpkg_content<T>::template member_def<N>;
+  using member = traits::member_n<T, N>;
   *ss << member::name << ": " << feature.*member::reference << std::endl;
   return true;
 }

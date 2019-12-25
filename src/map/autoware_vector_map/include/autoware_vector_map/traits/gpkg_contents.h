@@ -39,13 +39,13 @@ struct gpkg_content {
 };
 
 template <class T, size_t N>
-using member = typename gpkg_content<T>::template member_def<N>;
+using member_n = typename gpkg_content<T>::template member_def<N>;
 
 template <class T, size_t N, class = std::void_t<>>
 struct has_member_n : std::false_type {};
 
 template <class T, size_t N>
-struct has_member_n<T, N, std::void_t<typename member<T, N>::type>> : std::true_type {};
+struct has_member_n<T, N, std::void_t<typename member_n<T, N>::type>> : std::true_type {};
 
 }  // namespace traits
 }  // namespace autoware_vector_map

@@ -33,21 +33,6 @@ struct ogr_geometry<Polygon3d> {
   using type = OGRPolygon;
 };
 
-template <>
-struct ogr_geometry<std::vector<Point3d>> {
-  using type = OGRMultiPoint;
-};
-
-template <>
-struct ogr_geometry<std::vector<LineString3d>> {
-  using type = OGRMultiLineString;
-};
-
-template <>
-struct ogr_geometry<std::vector<Polygon3d>> {
-  using type = OGRMultiPolygon;
-};
-
 template <class T>
 using ogr_geometry_t = typename ogr_geometry<T>::type;
 
@@ -72,21 +57,6 @@ struct ogr_geometry_name<OGRLinearRing> {
 template <>
 struct ogr_geometry_name<OGRPolygon> {
   static constexpr const char* value = "POLYGON";
-};
-
-template <>
-struct ogr_geometry_name<OGRMultiPoint> {
-  static constexpr const char* value = "MULTIPOINT";
-};
-
-template <>
-struct ogr_geometry_name<OGRMultiLineString> {
-  static constexpr const char* value = "MULTILINESTRING";
-};
-
-template <>
-struct ogr_geometry_name<OGRMultiPolygon> {
-  static constexpr const char* value = "MULTIPOLYGON";
 };
 
 template <class T, class T_Ogr = ogr_geometry_t<T>>
