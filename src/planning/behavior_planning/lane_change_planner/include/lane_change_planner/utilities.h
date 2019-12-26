@@ -20,6 +20,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseArray.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
@@ -47,6 +48,8 @@ double l2Norm(const geometry_msgs::Vector3 vector);
 
 Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt);
 std::vector<geometry_msgs::Point> convertToGeometryPointArray(const autoware_planning_msgs::PathWithLaneId& path);
+geometry_msgs::PoseArray convertToGeometryPoseArray(const autoware_planning_msgs::PathWithLaneId& path);
+
 autoware_perception_msgs::PredictedPath convertToPredictedPath(const autoware_planning_msgs::PathWithLaneId& path,
                                                                const geometry_msgs::Twist& vehicle_twist,
                                                                const geometry_msgs::Pose& vehicle_pose);
@@ -69,6 +72,9 @@ std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::Dyna
 autoware_planning_msgs::PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range,
                                                   const autoware_planning_msgs::PathWithLaneId& input,
                                                   const geometry_msgs::Pose& goal, const int64_t goal_lane_id);
+autoware_planning_msgs::PathWithLaneId
+removeOverlappingPoints(const autoware_planning_msgs::PathWithLaneId& input_path);
+
 }  // namespace util
 }  // namespace lane_change_planner
 

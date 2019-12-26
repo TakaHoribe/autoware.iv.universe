@@ -44,6 +44,7 @@ private:
   ros::Timer timer_;
 
   ros::Publisher path_publisher_;
+  ros::Publisher path_marker_publisher_;
 
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
