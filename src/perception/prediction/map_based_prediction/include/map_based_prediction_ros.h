@@ -67,6 +67,8 @@ class MapBasedPredictionROS
 {
 private:
   bool has_subscribed_map_;
+  double prediction_time_horizon_;
+  double prediction_sampling_delta_time_;
   double interpolating_resolution_;
   double debug_accumulated_time_;
 
