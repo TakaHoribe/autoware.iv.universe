@@ -307,8 +307,12 @@ bool MapBasedPrediction::getPredictedPath(
                           x_2(1) *i*i*i*i;
     
     geometry_msgs::PoseWithCovarianceStamped tmp_point;
+    if(calculated_s> spline2d.s.back())
+    {
+      break;
+    }
     std::array<double, 2> p = spline2d.calc_position(calculated_s);
-    double yaw = spline2d. calc_yaw(calculated_s);
+    double yaw = spline2d.calc_yaw(calculated_s);
     tmp_point.pose.pose.position.x = p[0]+ std::cos(yaw-M_PI/2.0)*calculated_d;
     tmp_point.pose.pose.position.y = p[1]+ std::sin(yaw-M_PI/2.0)*calculated_d;
     tmp_point.pose.pose.position.z = height;

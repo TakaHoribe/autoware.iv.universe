@@ -4,6 +4,8 @@
 <launch>
 
   <!-- declare arguments with default values -->
+  <arg name="launch_driver" default="true"/>
+
   <arg name="calibration" default="$(find velodyne_pointcloud)/params/VeloView-VLP-32C.yaml"/>
   <arg name="device_ip" default="" />
   <arg name="frame_id" default="velodyne" />
@@ -22,7 +24,7 @@
   <arg name="invalid_intensity" default="[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"/>
 
   <!-- start nodelet manager and driver nodelets -->
-  <include file="$(find velodyne_driver)/launch/nodelet_manager.launch">
+  <include file="$(find velodyne_driver)/launch/nodelet_manager.launch" if="$(arg launch_driver)">
     <arg name="device_ip" value="$(arg device_ip)"/>
     <arg name="frame_id" value="$(arg frame_id)"/>
     <arg name="manager" value="$(arg manager)" />
