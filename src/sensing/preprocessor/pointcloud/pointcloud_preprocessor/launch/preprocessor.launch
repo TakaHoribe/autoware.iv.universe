@@ -42,15 +42,7 @@
             <remap from="~min_z" to="/vehicle_info/min_height_offset" />
             <remap from="~max_z" to="/vehicle_info/max_height_offset" />
             <param name="negative" value="True" />
-            <!-- <rosparam>
-        min_x: -1.0
-        max_x: 5.0
-        min_y: -1.20
-        max_y: 1.20
-        min_z: 0.0 
-        max_z: 2.5
-        negative: True
-            </rosparam> -->
+
             <param name="input_frame" value="$(arg tf_output_frame)" />
             <param name="output_frame" value="$(arg tf_output_frame)" />
         </node>
