@@ -34,7 +34,7 @@
 
   <!-- sensor -->
   <xacro:property name="calibration" value="${load_yaml('$(find vehicle_description)/config/calibration.yaml')}"/>
-  <HDL-32E parent="base_link" name="velodyne" topic="/points_raw" hz="10" samples="220" gpu="$(arg gpu)">
+  <HDL-32E parent="base_link" name="velodyne_top" topic="/points_raw" hz="10" samples="220" gpu="$(arg gpu)">
     <origin xyz="${calibration['base_link2velodyne']['x']} ${calibration['base_link2velodyne']['y']} ${calibration['base_link2velodyne']['z']}" rpy="${calibration['base_link2velodyne']['roll']} ${calibration['base_link2velodyne']['pitch']} ${calibration['base_link2velodyne']['yaw']}" />
   </HDL-32E>
   <xacro:monocular_camera_macro suffix="camera" parent="base_link" namespace="" x="${calibration['base_link2camera']['x']}" y="${calibration['base_link2camera']['y']}" z="${calibration['base_link2camera']['z']}" roll="${calibration['base_link2camera']['roll']}" pitch="${calibration['base_link2camera']['pitch']}" yaw="${calibration['base_link2camera']['yaw']}" fps="30" width="800" height="400" fov="1.3"/>
