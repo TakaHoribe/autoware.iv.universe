@@ -1,6 +1,8 @@
 #include <scene_module/right_turn/right_turn.hpp>
 #include <behavior_velocity_planner/api.hpp>
 
+#include "util/util.h"
+
 // clang-format off
 #define DEBUG_INFO(...) { if (show_debug_info_) { ROS_INFO(__VA_ARGS__); }}
 

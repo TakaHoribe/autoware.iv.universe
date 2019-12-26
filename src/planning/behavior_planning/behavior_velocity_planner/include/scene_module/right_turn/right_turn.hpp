@@ -18,8 +18,6 @@
 
 #include <scene_module/scene_module_interface.hpp>
 
-#include "planning_utils/planning_utils.h"
-
 namespace behavior_planning
 {
 namespace bg = boost::geometry;
