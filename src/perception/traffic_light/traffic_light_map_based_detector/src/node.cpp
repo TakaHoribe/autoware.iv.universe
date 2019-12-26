@@ -84,9 +84,12 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
 
   const sensor_msgs::CameraInfo &camera_info = *input_msg;
   std::vector<lanelet::ConstLineString3d> visible_traffic_lights;
-  if (all_traffic_lights_ptr_ == nullptr)
+  if (route_traffic_lights_ptr_ != nullptr)
+    isInVisibility(*route_traffic_lights_ptr_, camera_pose_stamped.pose, camera_info, visible_traffic_lights);
+  else if (all_traffic_lights_ptr_ != nullptr)
+    isInVisibility(*all_traffic_lights_ptr_, camera_pose_stamped.pose, camera_info, visible_traffic_lights);
+  else
     return;
-  isInVisibility(*all_traffic_lights_ptr_, camera_pose_stamped.pose, camera_info, visible_traffic_lights);
 
   for (const auto &traffic_light : visible_traffic_lights)
   {
@@ -195,6 +198,32 @@ void MapBasedDetector::mapCallback(const autoware_lanelet2_msgs::MapBin &input_m
 
 void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstPtr &input_msg)
 {
+  if (lanelet_map_ptr_ == nullptr){
+    ROS_WARN("cannot set traffic light in route because don't recieve map");
+    return;
+  }
+  lanelet::ConstLanelets route_lanelets;
+  for (const auto &route_section : input_msg->route_sections)
+  {
+    for (const auto &lane_id : route_section.lane_ids)
+    {
+      route_lanelets.push_back(lanelet_map_ptr_->laneletLayer.get(lane_id));
+    }
+  }
+  std::vector<lanelet::AutowareTrafficLightConstPtr> route_lanelet_traffic_lights = lanelet::utils::query::autowareTrafficLights(route_lanelets);
+  route_traffic_lights_ptr_ = std::make_shared<std::vector<lanelet::ConstLineString3d>>();
+  for (auto tl_itr = route_lanelet_traffic_lights.begin(); tl_itr != route_lanelet_traffic_lights.end(); ++tl_itr)
+  {
+    lanelet::AutowareTrafficLightConstPtr tl = *tl_itr;
+
+    auto lights = tl->trafficLights();
+    for (auto lsp : lights)
+    {
+      if (!lsp.isLineString()) // traffic ligths must be linestrings
+        continue;
+      route_traffic_lights_ptr_->push_back(static_cast<lanelet::ConstLineString3d>(lsp));
+    }
+  }
 }
 
 void MapBasedDetector::isInVisibility(

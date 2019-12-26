@@ -79,7 +79,6 @@ bool BehaviorPathPlannerNode::callback(const autoware_planning_msgs::Route &inpu
 {
     autoware_planning_msgs::PathWithLaneId path;
     // generate
-    lanelet::ConstLanelets route_lanelets;
     for (const auto &route_section : input_route_msg.route_sections)
     {
         for (const auto &lane_id : route_section.lane_ids)

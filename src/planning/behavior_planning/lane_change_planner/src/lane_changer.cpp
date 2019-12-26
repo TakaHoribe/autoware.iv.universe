@@ -41,6 +41,7 @@ void LaneChanger::init()
 
   // path_publisher
   path_publisher_ = nh_.advertise<autoware_planning_msgs::PathWithLaneId>("lane_change_path", 1);
+  path_marker_publisher_ = nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1);
 }
 
 void LaneChanger::run(const ros::TimerEvent& event)
@@ -55,11 +56,15 @@ void LaneChanger::run(const ros::TimerEvent& event)
   auto goal = RouteHandler::getInstance().getGoalPose();
   auto goal_lane_id = RouteHandler::getInstance().getGoalLaneId();
   auto refined_path = util::refinePath(7.5, M_PI * 0.5, path, goal, goal_lane_id);
+  refined_path.header.frame_id = "map";
+  refined_path.header.stamp = ros::Time::now();
   // auto path = path_extender.ExtendPath(path);
   if (!path.points.empty())
   {
     path_publisher_.publish(refined_path);
   }
+
+  path_marker_publisher_.publish(util::convertToGeometryPoseArray(refined_path));
 }
 
 }  // namespace lane_change_planner

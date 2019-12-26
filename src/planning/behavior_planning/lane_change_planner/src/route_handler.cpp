@@ -15,6 +15,8 @@
  */
 
 #include <lane_change_planner/route_handler.h>
+#include <lane_change_planner/utilities.h>
+
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 
@@ -533,6 +535,8 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
       s += distance;
     }
   }
+
+  reference_path = util::removeOverlappingPoints(reference_path);
 
   // set angle
   for (size_t i = 0; i < reference_path.points.size(); i++)
