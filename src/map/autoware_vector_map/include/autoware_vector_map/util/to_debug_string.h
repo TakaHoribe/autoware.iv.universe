@@ -56,6 +56,7 @@ template <class T>
 std::string toDebugString(const T& feature) {
   std::stringstream ss;
 
+  ss << "class_name: " << traits::gpkg_content<T>::class_name() << std::endl;
   addIdString(feature, &ss);
   addGeometryString(feature, &ss);
 
