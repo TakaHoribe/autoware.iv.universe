@@ -31,7 +31,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
-#include "ndt_scan_matcher/NDTAlign.h"
+#include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 
 class PoseInitializer {
 
@@ -42,7 +42,7 @@ public:
 private:
 
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
-  bool serviceGNSSInitial(ndt_scan_matcher::NDTAlign::Request &req, ndt_scan_matcher::NDTAlign::Response &res);
+  bool serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
   void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
 
   geometry_msgs::PoseWithCovarianceStamped getHeight(const geometry_msgs::PoseWithCovarianceStamped &initial_pose_msg_ptr);

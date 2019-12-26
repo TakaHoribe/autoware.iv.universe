@@ -45,13 +45,20 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
-#include "gnss_initial_button_panel.h"
+#include "initial_pose_button_panel.h"
 
-namespace autoware_rviz_debug
+namespace autoware_localization_rviz_plugin
 {
 
-GNSSInitialButtonPanel::GNSSInitialButtonPanel(QWidget* parent) : rviz::Panel(parent)
+InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(parent)
 {
+
+  topic_label_ = new QLabel("PoseWithCovarianceStamped ");
+  topic_label_->setAlignment(Qt::AlignCenter);
+
+  topic_edit_ = new QLineEdit("/gnss_pose_cov");
+  connect(topic_edit_, SIGNAL(textEdited(QString)), SLOT(editTopic()));
+
   initialize_button_ = new QPushButton("Wait for subscribe topic");
   initialize_button_->setEnabled(false);
   connect(initialize_button_, SIGNAL(clicked(bool)), SLOT(pushInitialzeButton()));
@@ -60,29 +67,42 @@ GNSSInitialButtonPanel::GNSSInitialButtonPanel(QWidget* parent) : rviz::Panel(pa
   status_label_->setAlignment(Qt::AlignCenter);
   status_label_->setStyleSheet("QLabel { background-color : gray;}");
 
+
   QSizePolicy* q_size_policy = new QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   initialize_button_->setSizePolicy(*q_size_policy);
 
+  QHBoxLayout* topic_layout = new QHBoxLayout;
+  topic_layout->addWidget(topic_label_);
+  topic_layout->addWidget(topic_edit_);
   
   QVBoxLayout* v_layout = new QVBoxLayout;
+  v_layout->addLayout(topic_layout);
   v_layout->addWidget(initialize_button_);
   v_layout->addWidget(status_label_);
 
   setLayout(v_layout);
 
-  gnss_pose_cov_sub_ = nh_.subscribe("gnss_pose_cov", 10, &GNSSInitialButtonPanel::callbackGNSSPoseCov, this);
+  pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
 
-  client_ = nh_.serviceClient<ndt_scan_matcher::NDTAlign>("/localization/util/gnss_initial_srv");
+  client_ = nh_.serviceClient<autoware_localization_srvs::PoseWithCovarianceStamped>("/localization/util/pose_initializer_srv");
 }
 
-void GNSSInitialButtonPanel::callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
+void InitialPoseButtonPanel::callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
 {
-  gnss_pose_cov_msg_ = *msg;
+  pose_cov_msg_ = *msg;
+  initialize_button_->setText("Pose Initializer   Let's GO!");
   initialize_button_->setEnabled(true);
-  initialize_button_->setText("GNSS Pose Initializer   Let's GO!");
 }
 
-void GNSSInitialButtonPanel::pushInitialzeButton()
+void InitialPoseButtonPanel::editTopic()
+{
+  pose_cov_sub_.shutdown();
+  pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
+  initialize_button_->setText("Wait for subscribe topic");
+  initialize_button_->setEnabled(false);
+}
+
+void InitialPoseButtonPanel::pushInitialzeButton()
 {
   // lock button
   initialize_button_->setEnabled(false);
@@ -93,9 +113,8 @@ void GNSSInitialButtonPanel::pushInitialzeButton()
 
 
   std::thread thread([this]{
-
-    ndt_scan_matcher::NDTAlign srv;
-    srv.request.initial_pose_with_cov = gnss_pose_cov_msg_;
+    autoware_localization_srvs::PoseWithCovarianceStamped srv;
+    srv.request.pose_with_cov = pose_cov_msg_;
     if(client_.call(srv))
     {
       status_label_->setStyleSheet("QLabel { background-color : lightgreen;}");
@@ -106,8 +125,6 @@ void GNSSInitialButtonPanel::pushInitialzeButton()
       status_label_->setStyleSheet("QLabel { background-color : red;}");
       status_label_->setText("F**************************K");
     }
-
-
     // unlock button
     initialize_button_->setEnabled(true);
   });
@@ -116,7 +133,7 @@ void GNSSInitialButtonPanel::pushInitialzeButton()
 }
 
 
-}  // end namespace autoware_rviz_debug
+}  // end namespace autoware_localization_rviz_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(autoware_rviz_debug::GNSSInitialButtonPanel, rviz::Panel)
+PLUGINLIB_EXPORT_CLASS(autoware_localization_rviz_plugin::InitialPoseButtonPanel, rviz::Panel)

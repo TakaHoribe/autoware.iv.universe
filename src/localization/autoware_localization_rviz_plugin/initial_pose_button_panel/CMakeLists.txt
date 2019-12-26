@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gnss_initial_button_panel)
+project(initial_pose_button_panel)
 
 add_compile_options(-std=c++14)
 
@@ -7,7 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   rviz
   std_msgs
   geometry_msgs
-  ndt_scan_matcher
+  autoware_localization_srvs
 )
 
 if(rviz_QT_VERSION VERSION_LESS "5")
@@ -34,11 +34,11 @@ add_definitions(-DQT_NO_KEYWORDS -g)
 
 set(CMAKE_AUTOMOC ON)
 set(SOURCE_FILES
-  src/gnss_initial_button_panel.cpp
+  src/initial_pose_button_panel.cpp
   )
 
-add_library(gnss_initial_button_panel ${SOURCE_FILES} ${UIC_FILES})
-target_link_libraries(gnss_initial_button_panel ${QT_LIBRARIES} ${catkin_LIBRARIES} ${rviz_DEFAULT_PLUGIN_LIBRARIES})
+add_library(initial_pose_button_panel ${SOURCE_FILES} ${UIC_FILES})
+target_link_libraries(initial_pose_button_panel ${QT_LIBRARIES} ${catkin_LIBRARIES} ${rviz_DEFAULT_PLUGIN_LIBRARIES})
 
 install(TARGETS
   ${PROJECT_NAME}

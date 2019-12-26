@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-    <name>gnss_initial_button_panel</name>
+    <name>initial_pose_button_panel</name>
     <version>1.12.0</version>
-    <description>The gnss_initial_button_panel package</description>
+    <description>The initial_pose_button_panel package</description>
 
     <maintainer email="yamato.ando@gmail.com">Yamato ANDO</maintainer>
     <author>Yamato ANDO</author>
@@ -13,7 +13,7 @@
     <depend>rviz</depend>
     <depend>qtbase5-dev</depend>
     <depend>geometry_msgs</depend>
-    <depend>ndt_scan_matcher</depend>
+    <depend>autoware_localization_srvs</depend>
 
     <exec_depend>libqt5-core</exec_depend>
     <exec_depend>libqt5-widgets</exec_depend>

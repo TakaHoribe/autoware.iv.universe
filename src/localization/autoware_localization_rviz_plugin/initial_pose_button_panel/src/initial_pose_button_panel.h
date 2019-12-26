@@ -37,35 +37,41 @@
 #ifndef Q_MOC_RUN
 #include <ros/ros.h>
 #include <rviz/panel.h>
+#include <rviz/properties/ros_topic_property.h>
 #endif
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
-#include "ndt_scan_matcher/NDTAlign.h"
+#include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 
-namespace autoware_rviz_debug
+namespace autoware_localization_rviz_plugin
 {
-class GNSSInitialButtonPanel : public rviz::Panel
+class InitialPoseButtonPanel : public rviz::Panel
 {
   Q_OBJECT
 public:
-  GNSSInitialButtonPanel(QWidget* parent = 0);
-  void callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
+  InitialPoseButtonPanel(QWidget* parent = 0);
+  void callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
 public Q_SLOTS:
+  void editTopic();
   void pushInitialzeButton();
 
 protected:
   ros::NodeHandle nh_;
-  ros::Subscriber gnss_pose_cov_sub_;
+  ros::Subscriber pose_cov_sub_;
 
   ros::ServiceClient client_;
 
+  QLabel* topic_label_;
+  QLineEdit* topic_edit_;
   QPushButton* initialize_button_;
   QLabel* status_label_;
 
-  geometry_msgs::PoseWithCovarianceStamped gnss_pose_cov_msg_;
+  rviz::RosTopicProperty* property_topic_;
+
+  geometry_msgs::PoseWithCovarianceStamped pose_cov_msg_;
 
 };
 
-}  // end namespace autoware_rviz_debug
+}  // end namespace autoware_localization_rviz_plugin
 

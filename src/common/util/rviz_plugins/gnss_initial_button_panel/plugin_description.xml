@@ -1,9 +1,0 @@
-<library path="lib/libgnss_initial_button_panel">
-    <class name="autoware_rviz_debug/GNSSInitialButtonPanel"
-           type="autoware_rviz_debug::GNSSInitialButtonPanel"
-           base_class_type="rviz::Panel">
-        <description>
-          gnss initial button.
-        </description>
-    </class>
-</library>
