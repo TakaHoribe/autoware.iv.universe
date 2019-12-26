@@ -16,7 +16,7 @@
  * Author: Robin Karlsson
  */
 
-#include "planning_utils/planning_utils.h"
+#include "planning_utils.h"
 
 namespace planning_utils
 {
@@ -82,4 +82,22 @@ template bool calcClosestIndex<autoware_planning_msgs::PathWithLaneId>(const aut
 template bool calcClosestIndex<autoware_planning_msgs::Path>(const autoware_planning_msgs::Path &path, const geometry_msgs::Pose &pose,
                                                              int &closest, double dist_thr, double angle_thr);
 
+geometry_msgs::Pose transformOrigin2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin)
+{
+  // translation
+  geometry_msgs::Point trans_p;
+  trans_p.x = target.position.x - origin.position.x;
+  trans_p.y = target.position.y - origin.position.y;
+
+  // rotation (use inverse matrix of rotation)
+  double yaw = tf2::getYaw(origin.orientation);
+
+  geometry_msgs::Pose res;
+  res.position.x = (std::cos(yaw) * trans_p.x) + (std::sin(yaw) * trans_p.y);
+  res.position.y = ((-1.0) * std::sin(yaw) * trans_p.x) + (std::cos(yaw) * trans_p.y);
+  res.position.z = target.position.z - origin.position.z;
+  res.orientation = getQuaternionFromYaw(tf2::getYaw(target.orientation) - yaw);
+  
+  return res;
+}
 } // namespace planning_utils

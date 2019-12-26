@@ -10,8 +10,8 @@ namespace behavior_planning
 
 BehaviorVelocityPlannerManager::BehaviorVelocityPlannerManager()
 {
-    scene_managers_ptr_.push_back(std::make_shared<MomentaryStopModuleManager>());
-    scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
+    // scene_managers_ptr_.push_back(std::make_shared<MomentaryStopModuleManager>());
+    // scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<RightTurnModuleManager>());
 }
 

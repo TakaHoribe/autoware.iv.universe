@@ -6,7 +6,6 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <geometry_msgs/Point.h>
-#include <planning_utils/planning_utils.h>
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
@@ -18,6 +17,8 @@
 #include <lanelet2_extension/utility/utilities.h>
 
 #include <scene_module/scene_module_interface.hpp>
+
+#include "planning_utils/planning_utils.h"
 
 namespace behavior_planning
 {
@@ -144,6 +145,8 @@ public:
     ~RightTurnModuleDebugger(){};
 
     void publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns);
+    void publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b);
+    void publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b);
 
 private:
     ros::NodeHandle nh_;

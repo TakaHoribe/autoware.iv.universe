@@ -18,10 +18,10 @@ using Polygon = bg::model::polygon<Point, false>;
 RightTurnModule::RightTurnModule(const int lane_id, RightTurnModuleManager *right_turn_module_manager)
     : assigned_lane_id_(lane_id), right_turn_module_manager_(right_turn_module_manager)
 {
-    judge_line_dist_ = 10.0;                      // [m]
+    judge_line_dist_ = 3.0;                      // [m]
     approaching_speed_to_stopline_ = 10.0 / 3.6; // 10[km/h]
     state_machine_.setMarginTime(2.0);           // [sec]
-    path_expand_width_ = 10.0;
+    path_expand_width_ = 2.0;
     show_debug_info_ = false;
 };
 
@@ -30,12 +30,18 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
 {
     output = input;
 
+    right_turn_module_manager_->debugger_.publishPath(output, "path_raw", 0.0, 1.0, 1.0);
+
     /* set stop-line and stop-judgement-line */
     if (!setStopLineIdx(judge_line_dist_, output, stop_line_idx_, judge_line_idx_))
     {
         ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModule::run] setStopLineIdx fail");
         return false;
     }
+    right_turn_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 1.0, 0.0);
+    right_turn_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose", 1.0, 1.0, 0.5);
+    right_turn_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
+
 
     /* set approaching speed to stop-line */
     setVelocityFrom(judge_line_idx_, approaching_speed_to_stopline_, output);
@@ -50,16 +56,21 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
 
     /* check if the current_pose is ahead from judgement line */
     int closest = -1;
-    if (!planning_utils::calcClosestIndex(output, current_pose.pose, closest, 100.0, 6.0)) // TEMP: threshold is not appropriate. Should be modified later.
+    if (!planning_utils::calcClosestIndex(output, current_pose.pose, closest))
     {
         ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModule::run] calcClosestIndex fail");
         return false;
     }
 
-    if (closest > judge_line_idx_ && state_machine_.getState() == State::GO)
+    if (state_machine_.getState() == State::GO)
     {
-        DEBUG_INFO("[RightTurnModule::run] no plan needed. skip collision check.");
-        return true; // no plan needed.
+        geometry_msgs::Pose p = planning_utils::transformOrigin2D(current_pose.pose, output.points.at(judge_line_idx_).point.pose);
+        if (p.position.x > 0.0) // current_pose is ahead of judge_line
+        {
+            DEBUG_INFO("[RightTurnModule::run] no plan needed. skip collision check.");
+            return true; // no plan needed.
+        }
+
     }
 
     /* get lanelet map */
@@ -246,10 +257,13 @@ bool RightTurnModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
                                      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
                                      const double path_width, bool &is_collision)
 {
-    autoware_planning_msgs::PathWithLaneId path_r;
-    autoware_planning_msgs::PathWithLaneId path_l;
+    /* generates side edge line */
+    autoware_planning_msgs::PathWithLaneId path_r; // right side edge line
+    autoware_planning_msgs::PathWithLaneId path_l; // left side edge line
     generateEdgeLine(path, path_width, path_r, path_l);
 
+
+    /* check collision for each objects and lanelets area */
     is_collision = false;
     for (size_t i = 0; i < objective_lanelets.size(); ++i) // for each objective lanelets
     {
@@ -277,6 +291,11 @@ bool RightTurnModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
         if (is_collision)
             break;
     }
+
+    /* for debug */
+    right_turn_module_manager_->debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
+    right_turn_module_manager_->debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
+
     return true;
 }
 
@@ -501,5 +520,63 @@ void RightTurnModuleDebugger::publishLaneletsArea(const std::vector<lanelet::Con
     }
     debug_viz_pub_.publish(msg);
 }
+
+void RightTurnModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b)
+{
+    ros::Time curr_time = ros::Time::now();
+    visualization_msgs::MarkerArray msg;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = curr_time;
+    marker.ns = ns;
+    
+    for (int i = 0; i < path.points.size(); ++i)
+    {
+        marker.id = i;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::ARROW;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose = path.points.at(i).point.pose;
+        marker.scale.x = 0.5;
+        marker.scale.y = 0.3;
+        marker.scale.z = 0.3;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = r;
+        marker.color.g = g;
+        marker.color.b = b;
+        msg.markers.push_back(marker);
+    }
+
+    debug_viz_pub_.publish(msg);
+}
+
+void RightTurnModuleDebugger::publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b)
+{
+    ros::Time curr_time = ros::Time::now();
+    visualization_msgs::MarkerArray msg;
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = curr_time;
+    marker.ns = ns;
+
+    marker.id = 0;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = pose;
+    marker.scale.x = 0.5;
+    marker.scale.y = 0.3;
+    marker.scale.z = 0.3;
+    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.r = r;
+    marker.color.g = g;
+    marker.color.b = b;
+    msg.markers.push_back(marker);
+    
+    debug_viz_pub_.publish(msg);
+}
+
 
 } // namespace behavior_planning

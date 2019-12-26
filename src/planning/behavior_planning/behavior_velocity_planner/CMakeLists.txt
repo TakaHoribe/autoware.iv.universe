@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
   visualization_msgs
-  planning_utils
 )
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
@@ -117,7 +116,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES behavior_velocity_planner
-  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs planning_utils
+  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -157,6 +156,7 @@ src/main.cpp
 src/scene_module/momentary_stop.cpp
 src/scene_module/crosswalk.cpp
 src/scene_module/right_turn.cpp
+include/planning_utils/planning_utils.cpp
 )
 
 ## Rename C++ executable without prefix
