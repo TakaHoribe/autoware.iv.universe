@@ -1,4 +1,4 @@
-#include <scene_module/right_turn/right_turn.hpp>
+#include <scene_module/intersection/intersection.hpp>
 #include <behavior_velocity_planner/api.hpp>
 
 #include "util/util.h"
@@ -15,10 +15,10 @@ using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
 /*
- * ========================= Right Turn Module =========================
+ * ========================= Intersection Module =========================
  */
-RightTurnModule::RightTurnModule(const int lane_id, RightTurnModuleManager *right_turn_module_manager)
-    : assigned_lane_id_(lane_id), right_turn_module_manager_(right_turn_module_manager)
+IntersectionModule::IntersectionModule(const int lane_id, IntersectionModuleManager *intersection_module_manager)
+    : assigned_lane_id_(lane_id), intersection_module_manager_(intersection_module_manager)
 {
     judge_line_dist_ = 3.0;                      // [m]
     approaching_speed_to_stopline_ = 10.0 / 3.6; // 10[km/h]
@@ -27,22 +27,22 @@ RightTurnModule::RightTurnModule(const int lane_id, RightTurnModuleManager *righ
     show_debug_info_ = false;
 };
 
-bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
+bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId &input,
                           autoware_planning_msgs::PathWithLaneId &output)
 {
     output = input;
 
-    right_turn_module_manager_->debugger_.publishPath(output, "path_raw", 0.0, 1.0, 1.0);
+    intersection_module_manager_->debugger_.publishPath(output, "path_raw", 0.0, 1.0, 1.0);
 
     /* set stop-line and stop-judgement-line */
     if (!setStopLineIdx(judge_line_dist_, output, stop_line_idx_, judge_line_idx_))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModule::run] setStopLineIdx fail");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
         return false;
     }
-    right_turn_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 1.0, 0.0);
-    right_turn_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose", 1.0, 1.0, 0.5);
-    right_turn_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
+    intersection_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 1.0, 0.0);
+    intersection_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose", 1.0, 1.0, 0.5);
+    intersection_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
 
 
     /* set approaching speed to stop-line */
@@ -52,7 +52,7 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
     geometry_msgs::PoseStamped current_pose;
     if (!getCurrentSelfPose(current_pose))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModule::run] getCurrentSelfPose fail");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] getCurrentSelfPose fail");
         return false;
     }
 
@@ -60,7 +60,7 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
     int closest = -1;
     if (!planning_utils::calcClosestIndex(output, current_pose.pose, closest))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModule::run] calcClosestIndex fail");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] calcClosestIndex fail");
         return false;
     }
 
@@ -69,7 +69,7 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
         geometry_msgs::Pose p = planning_utils::transformOrigin2D(current_pose.pose, output.points.at(judge_line_idx_).point.pose);
         if (p.position.x > 0.0) // current_pose is ahead of judge_line
         {
-            DEBUG_INFO("[RightTurnModule::run] no plan needed. skip collision check.");
+            DEBUG_INFO("[IntersectionModule::run] no plan needed. skip collision check.");
             return true; // no plan needed.
         }
 
@@ -80,18 +80,18 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
     lanelet::routing::RoutingGraphConstPtr routing_graph_ptr; // route info
     if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModuleManager::run()] cannot get lanelet map");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::run()] cannot get lanelet map");
         return false;
     }
 
     /* get detection area */
     lanelet::ConstLanelet assigned_lanelet = lanelet_map_ptr->laneletLayer.get(assigned_lane_id_); // current assigned lanelets
     std::vector<lanelet::ConstLanelet> objective_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
-    right_turn_module_manager_->debugger_.publishLaneletsArea(objective_lanelets, "right_turn_detection_lanelets");
-    DEBUG_INFO("[RightTurnModuleManager::run()] assigned_lane_id_ = %d, objective_lanelets.size() = %lu", assigned_lane_id_, objective_lanelets.size());
+    intersection_module_manager_->debugger_.publishLaneletsArea(objective_lanelets, "intersection_detection_lanelets");
+    DEBUG_INFO("[IntersectionModuleManager::run()] assigned_lane_id_ = %d, objective_lanelets.size() = %lu", assigned_lane_id_, objective_lanelets.size());
     if (objective_lanelets.empty())
     {
-        DEBUG_INFO("[RightTurnModule::run]: detection area number is zero. skip computation.");
+        DEBUG_INFO("[IntersectionModule::run]: detection area number is zero. skip computation.");
         return true;
     }
 
@@ -99,7 +99,7 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
     std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr = std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
     if (!getDynemicObjects(objects_ptr))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModuleManager::run()] cannot get dynamic object");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::run()] cannot get dynamic object");
         return false;
     }
 
@@ -129,7 +129,7 @@ bool RightTurnModule::run(const autoware_planning_msgs::PathWithLaneId &input,
     return true;
 }
 
-bool RightTurnModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &input)
+bool IntersectionModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &input)
 {
 
     /* search if the assigned lane_id is still exists */
@@ -154,13 +154,13 @@ bool RightTurnModule::endOfLife(const autoware_planning_msgs::PathWithLaneId &in
 
     if (is_end_of_life)
     {
-        right_turn_module_manager_->unregisterTask(assigned_lane_id_);
+        intersection_module_manager_->unregisterTask(assigned_lane_id_);
     }
 
     return is_end_of_life;
 }
 
-bool RightTurnModule::setStopLineIdx(const double judge_line_dist, autoware_planning_msgs::PathWithLaneId &path,
+bool IntersectionModule::setStopLineIdx(const double judge_line_dist, autoware_planning_msgs::PathWithLaneId &path,
                                      int &stop_line_idx, int &judge_line_idx)
 {
 
@@ -183,7 +183,7 @@ bool RightTurnModule::setStopLineIdx(const double judge_line_dist, autoware_plan
 
     if (stop_line_idx == -1)
     {
-        ROS_ERROR("[RightTurnModule::setStopLineIdx]: cannot set the stop line. something wrong. please check code. ");
+        ROS_ERROR("[IntersectionModule::setStopLineIdx]: cannot set the stop line. something wrong. please check code. ");
         return false; // cannot find stop line.
     }
 
@@ -228,13 +228,13 @@ bool RightTurnModule::setStopLineIdx(const double judge_line_dist, autoware_plan
     }
     if (judge_line_idx == -1)
     {
-        ROS_ERROR("[RightTurnModule::setStopLineIdx]: cannot set the stop judgement line. path is too short.");
+        ROS_ERROR("[IntersectionModule::setStopLineIdx]: cannot set the stop judgement line. path is too short.");
         judge_line_idx = 0;
     }
     return true;
 }
 
-bool RightTurnModule::setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId &input)
+bool IntersectionModule::setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId &input)
 {
     for (size_t i = idx; i < input.points.size(); ++i)
     {
@@ -242,7 +242,7 @@ bool RightTurnModule::setVelocityFrom(const size_t idx, const double vel, autowa
     }
 }
 
-Polygon RightTurnModule::convertToBoostGeometryPolygon(const lanelet::ConstLanelet &lanelet)
+Polygon IntersectionModule::convertToBoostGeometryPolygon(const lanelet::ConstLanelet &lanelet)
 {
     Polygon polygon;
     lanelet::CompoundPolygon3d lanelet_polygon = lanelet.polygon3d();
@@ -254,7 +254,7 @@ Polygon RightTurnModule::convertToBoostGeometryPolygon(const lanelet::ConstLanel
     return polygon;
 }
 
-bool RightTurnModule::checkCollision(const autoware_planning_msgs::PathWithLaneId &path,
+bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLaneId &path,
                                      const std::vector<lanelet::ConstLanelet> &objective_lanelets,
                                      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
                                      const double path_width, bool &is_collision)
@@ -295,13 +295,13 @@ bool RightTurnModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
     }
 
     /* for debug */
-    right_turn_module_manager_->debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
-    right_turn_module_manager_->debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
+    intersection_module_manager_->debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
+    intersection_module_manager_->debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
 
     return true;
 }
 
-bool RightTurnModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId &path,
+bool IntersectionModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId &path,
                                          const autoware_perception_msgs::DynamicObject &object)
 {
     bool is_collision = false;
@@ -332,7 +332,7 @@ bool RightTurnModule::checkPathCollision(const autoware_planning_msgs::PathWithL
     return is_collision;
 }
 
-bool RightTurnModule::generateEdgeLine(const autoware_planning_msgs::PathWithLaneId &path, const double path_width,
+bool IntersectionModule::generateEdgeLine(const autoware_planning_msgs::PathWithLaneId &path, const double path_width,
                                        autoware_planning_msgs::PathWithLaneId &path_r, autoware_planning_msgs::PathWithLaneId &path_l)
 {
     path_r = path;
@@ -348,7 +348,7 @@ bool RightTurnModule::generateEdgeLine(const autoware_planning_msgs::PathWithLan
 }
 
 
-void RightTurnModule::StateMachine::setStateWithMarginTime(RightTurnModule::State state)
+void IntersectionModule::StateMachine::setStateWithMarginTime(IntersectionModule::State state)
 {
     /* same state request */
     if (state_ == state)
@@ -380,45 +380,45 @@ void RightTurnModule::StateMachine::setStateWithMarginTime(RightTurnModule::Stat
             {
                 state_ = State::GO;
                 start_time_ = nullptr; // reset timer
-                // ROS_INFO("[RightTurnModule::StateMachine::setStateWithMarginTime()]: timer counting... (%3.3f < %3.3f)", duration, margin_time_);
+                // ROS_INFO("[IntersectionModule::StateMachine::setStateWithMarginTime()]: timer counting... (%3.3f < %3.3f)", duration, margin_time_);
             }
             else
             {
-                // ROS_INFO("[RightTurnModule::StateMachine::setStateWithMarginTime()]: state changed. STOP -> GO (%3.3f > %3.3f)", duration, margin_time_);
+                // ROS_INFO("[IntersectionModule::StateMachine::setStateWithMarginTime()]: state changed. STOP -> GO (%3.3f > %3.3f)", duration, margin_time_);
             }
             return;
         }
     }
 
-    ROS_ERROR("[RightTurnModule::StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore request.");
+    ROS_ERROR("[IntersectionModule::StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore request.");
     return;
 }
 
-void RightTurnModule::StateMachine::setState(RightTurnModule::State state)
+void IntersectionModule::StateMachine::setState(IntersectionModule::State state)
 {
     state_ = state;
 }
 
-void RightTurnModule::StateMachine::setMarginTime(const double t)
+void IntersectionModule::StateMachine::setMarginTime(const double t)
 {
     margin_time_ = t;
 }
 
-RightTurnModule::State RightTurnModule::StateMachine::getState()
+IntersectionModule::State IntersectionModule::StateMachine::getState()
 {
     return state_;
 }
 /*
- * ========================= Right Turn Module Manager =========================
+ * ========================= Intersection Module Manager =========================
  */
-bool RightTurnModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId &input,
+bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId &input,
                                             std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr)
 {
     /* get self pose */
     geometry_msgs::PoseStamped self_pose;
     if (!getCurrentSelfPose(self_pose))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModuleManager::startCondition()] cannot get current self pose");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::startCondition()] cannot get current self pose");
         return false;
     }
 
@@ -427,11 +427,11 @@ bool RightTurnModuleManager::startCondition(const autoware_planning_msgs::PathWi
     lanelet::routing::RoutingGraphConstPtr routing_graph_ptr; // route info
     if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr))
     {
-        ROS_WARN_DELAYED_THROTTLE(1.0, "[RightTurnModuleManager::startCondition()] cannot get lanelet map");
+        ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::startCondition()] cannot get lanelet map");
         return false;
     }
 
-    /* search right turn tag */
+    /* search intersection tag */
     for (size_t i = 0; i < input.points.size(); ++i)
     {
         for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j)
@@ -440,11 +440,15 @@ bool RightTurnModuleManager::startCondition(const autoware_planning_msgs::PathWi
             lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id); // get lanelet layer
             std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else"); // get turn_direction
 
-            if (turn_direction.compare("right") == 0 && !isRunning(lane_id))
+            if (!isRunning(lane_id))
             {
-                // right turn tag is found. set module.
-                v_module_ptr.push_back(std::make_shared<RightTurnModule>(lane_id, this));
-                registerTask(lane_id);
+                // check intersection tag
+                if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0 || turn_direction.compare("straight") == 0)
+                {
+                    // intersection tag is found. set module.
+                    v_module_ptr.push_back(std::make_shared<IntersectionModule>(lane_id, this));
+                    registerTask(lane_id);
+                }
             }
         }
     }
@@ -452,7 +456,7 @@ bool RightTurnModuleManager::startCondition(const autoware_planning_msgs::PathWi
     return true;
 }
 
-bool RightTurnModuleManager::isRunning(const int lane_id)
+bool IntersectionModuleManager::isRunning(const int lane_id)
 {
     for (const auto &id : registered_lane_ids_)
     {
@@ -462,30 +466,30 @@ bool RightTurnModuleManager::isRunning(const int lane_id)
     return false;
 }
 
-void RightTurnModuleManager::registerTask(const int lane_id)
+void IntersectionModuleManager::registerTask(const int lane_id)
 {
     registered_lane_ids_.push_back(lane_id);
 }
 
-void RightTurnModuleManager::unregisterTask(const int lane_id)
+void IntersectionModuleManager::unregisterTask(const int lane_id)
 {
     const auto itr = std::find(registered_lane_ids_.begin(), registered_lane_ids_.end(), lane_id);
     if (itr == registered_lane_ids_.end())
-        ROS_ERROR("[RightTurnModuleManager::unregisterTask()] : cannot remove task (lane_id = %d,"
+        ROS_ERROR("[IntersectionModuleManager::unregisterTask()] : cannot remove task (lane_id = %d,"
                   " registered_lane_ids_.size() = %lu)",
                   lane_id, registered_lane_ids_.size());
     registered_lane_ids_.erase(itr);
 }
 
 /*
- * ========================= Right Turn Module Debugger =========================
+ * ========================= Intersection Module Debugger =========================
  */
-RightTurnModuleDebugger::RightTurnModuleDebugger() : nh_(""), pnh_("~")
+IntersectionModuleDebugger::IntersectionModuleDebugger() : nh_(""), pnh_("~")
 {
-    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/right_turn", 1);
+    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/intersection", 1);
 }
 
-void RightTurnModuleDebugger::publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns)
+void IntersectionModuleDebugger::publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns)
 {
     ros::Time curr_time = ros::Time::now();
     visualization_msgs::MarkerArray msg;
@@ -523,7 +527,7 @@ void RightTurnModuleDebugger::publishLaneletsArea(const std::vector<lanelet::Con
     debug_viz_pub_.publish(msg);
 }
 
-void RightTurnModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b)
+void IntersectionModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b)
 {
     ros::Time curr_time = ros::Time::now();
     visualization_msgs::MarkerArray msg;
@@ -553,7 +557,7 @@ void RightTurnModuleDebugger::publishPath(const autoware_planning_msgs::PathWith
     debug_viz_pub_.publish(msg);
 }
 
-void RightTurnModuleDebugger::publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b)
+void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b)
 {
     ros::Time curr_time = ros::Time::now();
     visualization_msgs::MarkerArray msg;

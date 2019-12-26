@@ -155,8 +155,8 @@ src/node.cpp
 src/main.cpp
 src/scene_module/momentary_stop.cpp
 src/scene_module/crosswalk.cpp
-src/scene_module/right_turn/right_turn.cpp
-src/scene_module/right_turn/util/util.cpp
+src/scene_module/intersection/intersection.cpp
+src/scene_module/intersection/util/util.cpp
 )
 
 ## Rename C++ executable without prefix

@@ -24,17 +24,17 @@ namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
-class RightTurnModuleManager;
-class RightTurnModuleDebugger;
+class IntersectionModuleManager;
+class IntersectionModuleDebugger;
 
 /*
- * ========================= Right Turn Module =========================
+ * ========================= Intersection Module =========================
  */
-class RightTurnModule : public SceneModuleInterface
+class IntersectionModule : public SceneModuleInterface
 {
 public:
-    RightTurnModule(const int lane_id, RightTurnModuleManager *right_turn_module_manager);
-    ~RightTurnModule(){};
+    IntersectionModule(const int lane_id, IntersectionModuleManager *intersection_module_manager);
+    ~IntersectionModule(){};
 
     /**
      * @brief plan go-stop velocity at traffic crossing with collision check between reference path and object predicted path
@@ -53,7 +53,7 @@ private:
     double judge_line_dist_;                            //< @brief distance from stop-line to stop-judgement line
     double approaching_speed_to_stopline_;              //< @brief speed when approaching stop-line (should be slow)
     double path_expand_width_;                          //< @brief path width to calculate the edge line for both side
-    RightTurnModuleManager *right_turn_module_manager_; //< @brief manager pointer
+    IntersectionModuleManager *intersection_module_manager_; //< @brief manager pointer
     bool show_debug_info_;
 
     /**
@@ -102,19 +102,19 @@ private:
     public:
         StateMachine()
         {
-            state_ = RightTurnModule::State::STOP;
+            state_ = IntersectionModule::State::STOP;
             margin_time_ = 0.0;
         };
 
         /**
          * @brief set request state command with margin time
          */
-        void setStateWithMarginTime(RightTurnModule::State state);
+        void setStateWithMarginTime(IntersectionModule::State state);
 
         /**
          * @brief set request state command directly
          */
-        void setState(RightTurnModule::State state);
+        void setState(IntersectionModule::State state);
 
         /**
          * @brief set margin time
@@ -124,7 +124,7 @@ private:
         /**
          * @brief get current state
          */
-        RightTurnModule::State getState();
+        IntersectionModule::State getState();
 
     private:
         State state_;                           //< @brief current state
@@ -134,13 +134,13 @@ private:
 };
 
 /*
- * ========================= Right Turn Module Debugger =========================
+ * ========================= Intersection Module Debugger =========================
  */
-class RightTurnModuleDebugger
+class IntersectionModuleDebugger
 {
 public:
-    RightTurnModuleDebugger();
-    ~RightTurnModuleDebugger(){};
+    IntersectionModuleDebugger();
+    ~IntersectionModuleDebugger(){};
 
     void publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns);
     void publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b);
@@ -153,15 +153,15 @@ private:
 };
 
 /*
- * ========================= Right Turn Module Manager =========================
+ * ========================= Intersection Module Manager =========================
  */
-class RightTurnModuleManager : public SceneModuleManagerInterface
+class IntersectionModuleManager : public SceneModuleManagerInterface
 {
 public:
-    RightTurnModuleManager(){};
-    ~RightTurnModuleManager(){};
+    IntersectionModuleManager(){};
+    ~IntersectionModuleManager(){};
     bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr) override;
-    RightTurnModuleDebugger debugger_;
+    IntersectionModuleDebugger debugger_;
     void unregisterTask(const int lane_id);
 
 private:
