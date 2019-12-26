@@ -16,6 +16,8 @@
 
   <!-- Sensing -->
   <include file="$(find sensing_launch)/launch/sensing.launch" >
+    <arg name="launch_driver" value="true" unless="$(arg rosbag)"/>
+    <arg name="launch_driver" value="false" if="$(arg rosbag)"/>
   </include>
 
   <!-- Localization -->
