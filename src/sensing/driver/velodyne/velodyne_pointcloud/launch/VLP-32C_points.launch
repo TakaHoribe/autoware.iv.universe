@@ -23,7 +23,10 @@
   <arg name="num_points_thresthold" default="300"/>
   <arg name="invalid_intensity" default="[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"/>
 
-  <!-- start nodelet manager and driver nodelets -->
+  <!-- start nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+
+  <!-- start nodelet manager -->
   <include file="$(find velodyne_driver)/launch/nodelet_manager.launch" if="$(arg launch_driver)">
     <arg name="device_ip" value="$(arg device_ip)"/>
     <arg name="frame_id" value="$(arg frame_id)"/>
