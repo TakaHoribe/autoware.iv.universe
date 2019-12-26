@@ -16,7 +16,7 @@
     <build_depend>sensor_msgs</build_depend>
     <build_depend>pcl_ros</build_depend>
     <build_depend>pcl_conversions</build_depend>
-    <build_depend>ndt_scan_matcher</build_depend>
+    <build_depend>autoware_localization_srvs</build_depend>
 
     <run_depend>roscpp</run_depend>
     <run_depend>tf2</run_depend>
@@ -27,7 +27,7 @@
     <run_depend>sensor_msgs</run_depend>
     <run_depend>pcl_ros</run_depend>
     <run_depend>pcl_conversions</run_depend>
-    <run_depend>ndt_scan_matcher</run_depend>
+    <run_depend>autoware_localization_srvs</run_depend>
 
     <export>
     </export>

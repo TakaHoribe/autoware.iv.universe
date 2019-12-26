@@ -39,7 +39,7 @@
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include "ndt_scan_matcher/NDTAlign.h"
+#include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 // #include <pcl/registration/ndt.h>
 // #include "pcl_registration/ndt.h"
 #include "ndt/pcl_generic.h"
@@ -91,7 +91,7 @@ private:
    */
   // void configCallback(const ndt_slam::NDTScanMatcherConfig &config, uint32_t level);
 
-  bool serviceNDTAlign(ndt_scan_matcher::NDTAlign::Request &req, ndt_scan_matcher::NDTAlign::Response &res);
+  bool serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
 
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
   void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);

@@ -21,22 +21,11 @@ find_package(catkin REQUIRED COMPONENTS
         ndt_pcl_modified
         ndt_omp
         ndt
-        message_generation
+        autoware_localization_srvs
         )
 
 #add dynamic reconfigure api
 #generate_dynamic_reconfigure_options(config/ndt_scan_matcher.cfg)
-
-add_service_files(
-  FILES
-  NDTAlign.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
 
 ###################################
 ## catkin specific configuration ##
@@ -59,7 +48,6 @@ add_executable(ndt_scan_matcher
 
 add_dependencies(ndt_scan_matcher ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                   ${catkin_EXPORTED_TARGETS}
-                                  ndt_scan_matcher_generate_messages_cpp
 )
 
 target_link_libraries(ndt_scan_matcher ${catkin_LIBRARIES})

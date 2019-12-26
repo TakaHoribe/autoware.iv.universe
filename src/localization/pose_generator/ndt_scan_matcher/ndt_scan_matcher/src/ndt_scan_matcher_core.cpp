@@ -128,15 +128,14 @@ NDTScanMatcher::~NDTScanMatcher()
 // {
 // }
 
-bool NDTScanMatcher::serviceNDTAlign(ndt_scan_matcher::NDTAlign::Request &req, ndt_scan_matcher::NDTAlign::Response &res)
+bool NDTScanMatcher::serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res)
 {
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
 
-  res.result_pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, req.initial_pose_with_cov);
-  res.result_pose_with_cov.pose.covariance = req.initial_pose_with_cov.pose.covariance;
+  res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, req.pose_with_cov);
+  res.pose_with_cov.pose.covariance = req.pose_with_cov.pose.covariance;
 
-  res.converged = true;
   return true;
 }
 
