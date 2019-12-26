@@ -60,10 +60,6 @@ private:
 
   ros::ServiceServer gnss_service_;
 
-  // dynamic_reconfigure::Server<ndt_slam::PoseInitializerConfig> server_;
-  // dynamic_reconfigure::Server<ndt_slam::PoseInitializerConfig>::CallbackType f_;
-
-
   tf2_ros::Buffer tf2_buffer_;
   tf2_ros::TransformListener tf2_listener_;
 
