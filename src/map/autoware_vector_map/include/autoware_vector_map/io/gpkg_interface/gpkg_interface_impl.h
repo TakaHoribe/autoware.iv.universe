@@ -62,8 +62,9 @@ std::vector<ConstPtr<T>> GpkgInterface::getAllFeatures() {
   return getFeaturesBySql<T>(sql.c_str());
 }
 
-template <class T, RelationSide S, class U, class P>
-std::vector<ConstPtr<U>> GpkgInterface::getRelatedFeaturesById(const Id id, const P& predicate) {
+template <class T, RelationSide S, class U>
+std::vector<ConstPtr<U>> GpkgInterface::getRelatedFeaturesById(
+    const Id id, const std::function<bool(const T&)> predicate) {
   OGRLayer* relationship_table_layer =
       dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
 

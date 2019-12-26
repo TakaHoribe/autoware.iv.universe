@@ -27,9 +27,9 @@ class GpkgInterface {
   std::vector<ConstPtr<T>> getFeaturesByIds(const std::vector<Id>& ids);
 
   template <class T, RelationSide S,
-            class U = typename traits::gpkg_relationship<T>::template related_feature_t<S>,
-            class P = std::function<bool(const T&)>>
-  std::vector<ConstPtr<U>> getRelatedFeaturesById(const Id id, const P& predicate = nullptr);
+            class U = typename traits::gpkg_relationship<T>::template related_feature_t<S>>
+  std::vector<ConstPtr<U>> getRelatedFeaturesById(
+      const Id id, const std::function<bool(const T&)> predicate = nullptr);
 
   template <class T>
   std::vector<ConstPtr<T>> getAllFeatures();

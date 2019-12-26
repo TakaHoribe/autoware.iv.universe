@@ -19,7 +19,7 @@ void example(const std::string vector_map_path) {
   {
     using Feature = Lane;
 
-    std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
+    std::cout << "### " << traits::gpkg_content<Feature>::class_name() << " ###" << std::endl;
 
     for (Id id : {-1, 0, 1, 3, 1000}) {
       const auto feature = gpkg_interface.getFeatureById<Feature>(id);
@@ -34,7 +34,7 @@ void example(const std::string vector_map_path) {
     using Feature = Lane;
     const std::vector<Id> ids{-1, 0, 2, 4, 1000};
 
-    std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
+    std::cout << "### " << traits::gpkg_content<Feature>::class_name() << " ###" << std::endl;
 
     const auto features = gpkg_interface.getFeaturesByIds<Feature>(ids);
     for (const auto& feature : features) {
@@ -46,7 +46,7 @@ void example(const std::string vector_map_path) {
   {
     using Feature = LaneSection;
 
-    std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
+    std::cout << "### " << traits::gpkg_content<Feature>::class_name() << " ###" << std::endl;
 
     const auto features = gpkg_interface.getAllFeatures<Feature>();
     for (const auto& feature : features) {
@@ -60,7 +60,7 @@ void example(const std::string vector_map_path) {
     const Point3d p(80721.15, 7393.34, 0);
     const double range = 5.0;
 
-    std::cout << "###### " << traits::gpkg_content<Feature>::class_name() << " ######" << std::endl;
+    std::cout << "### " << traits::gpkg_content<Feature>::class_name() << " ###" << std::endl;
 
     const auto features = gpkg_interface.findFeaturesByRange<Feature>(p, range);
     for (const auto& feature : features) {
@@ -73,8 +73,7 @@ void example(const std::string vector_map_path) {
     using Relationship = LaneConnection;
     const auto lane = *gpkg_interface.getFeatureById<Lane>(1);
 
-    std::cout << "###### " << traits::gpkg_content<Relationship>::class_name() << " ######"
-              << std::endl;
+    std::cout << "### " << traits::gpkg_content<Relationship>::class_name() << " ###" << std::endl;
 
     const auto features =
         gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id);
@@ -87,13 +86,11 @@ void example(const std::string vector_map_path) {
   {
     using Relationship = AdjacentLane;
     const auto lane = *gpkg_interface.getFeatureById<Lane>(30);
-    const auto predicate = [](const Relationship& r) { return r.type == "left"; };
 
-    std::cout << "###### " << traits::gpkg_content<Relationship>::class_name() << " ######"
-              << std::endl;
+    std::cout << "### " << traits::gpkg_content<Relationship>::class_name() << " ###" << std::endl;
 
-    const auto features =
-        gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id, predicate);
+    const auto features = gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(
+        lane.id, [](const Relationship& r) { return r.type == "left"; });
     for (const auto& feature : features) {
       std::cout << util::toDebugString(*feature) << std::endl;
     }
@@ -101,7 +98,7 @@ void example(const std::string vector_map_path) {
 
   // boost::geometry
   {
-    std::cout << "###### boost::geometry ######" << std::endl;
+    std::cout << "### boost::geometry ###" << std::endl;
 
     const auto lane_1 = *gpkg_interface.getFeatureById<Lane>(1);
     const auto lane_2 = *gpkg_interface.getFeatureById<Lane>(2);

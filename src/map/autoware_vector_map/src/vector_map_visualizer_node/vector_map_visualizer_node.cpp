@@ -19,7 +19,7 @@ using visualization_msgs::MarkerArray;
 template <class T>
 void addMarkers(const std::unique_ptr<GpkgInterface>& gpkg_interface, MarkerArray* marker_array,
                 const std_msgs::ColorRGBA& color,
-                const std::function<void(const T&, Marker*)>& post_process = nullptr,
+                const std::function<void(const T&, Marker*)> post_process = nullptr,
                 const char* ns = gpkg_content<T>::class_name()) {
   using autoware_vector_map::bridge::createMarker;
 
