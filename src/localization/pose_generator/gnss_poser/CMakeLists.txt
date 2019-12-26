@@ -1,14 +1,32 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(localization_launch)
+project(gnss_poser)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED
-ndt_slam)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  ublox_msgs
+)
+
+# find_package (GeographicLib REQUIRED)
+find_package(PkgConfig)
+find_path(GeographicLib_INCLUDE_DIR GeographicLib/Config.h
+  PATH_SUFFIXES GeographicLib
+  )
+set(GeographicLib_INCLUDE_DIRS ${GeographicLib_INCLUDE_DIR})
+find_library(GeographicLib_LIBRARIES
+  NAMES Geographic
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -67,7 +85,7 @@ ndt_slam)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   std_msgs
 # )
 
 ################################################
@@ -92,7 +110,7 @@ ndt_slam)
 
 ###################################
 ## catkin specific configuration ##
-###################################
+##############################nmea2mgrs#####
 ## The catkin_package macro generates cmake config files for your package
 ## Declare things to be passed to dependent projects
 ## INCLUDE_DIRS: uncomment this if your package contains header files
@@ -100,9 +118,9 @@ ndt_slam)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES localization_launch
-#  CATKIN_DEPENDS ndt_slam
+   INCLUDE_DIRS include
+#  LIBRARIES nmea2mgrs
+#  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
 
@@ -113,13 +131,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-# ${catkin_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${GeographicLib_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/localization_launch.cpp
+#   src/${PROJECT_NAME}/nmea2mgrs.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -130,7 +149,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/localization_launch_node.cpp)
+add_executable(gnss_poser src/gnss_poser_node.cpp
+                          src/gnss_poser_core.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -140,12 +160,13 @@ include_directories(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(gnss_poser ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+ target_link_libraries(gnss_poser
+   ${catkin_LIBRARIES}
+   ${GeographicLib_LIBRARIES}
+ )
 
 #############
 ## Install ##
@@ -163,13 +184,13 @@ include_directories(
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS gnss_poser
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-# install(TARGETS ${PROJECT_NAME}
+# install(TARGETS gnss2tfpose
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
@@ -189,12 +210,17 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
+install(DIRECTORY
+  launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_localization_launch.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_nmea2mgrs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

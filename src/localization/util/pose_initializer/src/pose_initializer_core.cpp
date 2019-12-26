@@ -51,9 +51,11 @@ PoseInitializer::PoseInitializer(ros::NodeHandle nh, ros::NodeHandle private_nh)
 
   initial_pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose3d", 10);
 
-  ndt_client_ = nh_.serviceClient<ndt_scan_matcher::NDTAlign>("ndt_align_srv");
-
+  ndt_client_ = nh_.serviceClient<autoware_localization_srvs::PoseWithCovarianceStamped>("ndt_align_srv");
   ndt_client_.waitForExistence(ros::Duration(1.0)); //TODO
+
+  gnss_service_ = nh.advertiseService("pose_initializer_srv", &PoseInitializer::serviceInitial, this);
+
 }
 
 PoseInitializer::~PoseInitializer()
@@ -67,10 +69,36 @@ void PoseInitializer::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr
   pcl::fromROSMsg(*map_points_msg_ptr, *map_ptr_);
 }
 
+bool PoseInitializer::serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res)
+{
+  const auto a = getHeight(req.pose_with_cov);
+  const auto b = callAlignService(a);
+
+
+  initial_pose_pub_.publish(b);
+
+  return true;
+}
+
 void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &initial_pose_msg_ptr)
 {
-  std::string fixed_frame = initial_pose_msg_ptr->header.frame_id;
-  tf2::Vector3 point(initial_pose_msg_ptr->pose.pose.position.x, initial_pose_msg_ptr->pose.pose.position.y, initial_pose_msg_ptr->pose.pose.position.z);
+  const auto a = getHeight(*initial_pose_msg_ptr);
+  auto b = callAlignService(a);
+  // NOTE temporary cov
+  b.pose.covariance[0] = 1.0;
+  b.pose.covariance[1*6+1] = 1.0;
+  b.pose.covariance[2*6+2] = 0.01;
+  b.pose.covariance[3*6+3] = 0.01;
+  b.pose.covariance[4*6+4] = 0.01;
+  b.pose.covariance[5*6+5] = 1.5;
+
+  initial_pose_pub_.publish(b);
+}
+
+geometry_msgs::PoseWithCovarianceStamped PoseInitializer::getHeight(const geometry_msgs::PoseWithCovarianceStamped &initial_pose_msg_ptr)
+{
+  std::string fixed_frame = initial_pose_msg_ptr.header.frame_id;
+  tf2::Vector3 point(initial_pose_msg_ptr.pose.pose.position.x, initial_pose_msg_ptr.pose.pose.position.y, initial_pose_msg_ptr.pose.pose.position.z);
 
   if(map_ptr_)
   {
@@ -91,37 +119,38 @@ void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianc
   }
 
   geometry_msgs::PoseWithCovarianceStamped msg;
-  msg = *initial_pose_msg_ptr;
+  msg = initial_pose_msg_ptr;
   msg.pose.pose.position.x = point.getX();
   msg.pose.pose.position.y = point.getY();
   msg.pose.pose.position.z = point.getZ();
+  return msg;
+}
 
-  ndt_scan_matcher::NDTAlign srv;
-  srv.request.initial_pose_with_cov = msg;
-
-  // NOTE temporary cov
-  srv.request.initial_pose_with_cov.pose.covariance[0] = 1.0;
-  srv.request.initial_pose_with_cov.pose.covariance[1*6+1] = 1.0;
-  srv.request.initial_pose_with_cov.pose.covariance[2*6+2] = 0.01;
-  srv.request.initial_pose_with_cov.pose.covariance[3*6+3] = 0.01;
-  srv.request.initial_pose_with_cov.pose.covariance[4*6+4] = 0.01;
-  srv.request.initial_pose_with_cov.pose.covariance[5*6+5] = 0.2;
+geometry_msgs::PoseWithCovarianceStamped PoseInitializer::callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg)
+{
+  autoware_localization_srvs::PoseWithCovarianceStamped srv;
+  srv.request.pose_with_cov = msg;
 
   ROS_INFO("[pose_initializer] call NDT Align Server");
   if(ndt_client_.call(srv))
   {
     ROS_INFO("[pose_initializer] called NDT Align Server");
     // NOTE temporary cov
-    srv.response.result_pose_with_cov.pose.covariance[0] = 1.0;
-    srv.response.result_pose_with_cov.pose.covariance[1*6+1] = 1.0;
-    srv.response.result_pose_with_cov.pose.covariance[2*6+2] = 0.01;
-    srv.response.result_pose_with_cov.pose.covariance[3*6+3] = 0.01;
-    srv.response.result_pose_with_cov.pose.covariance[4*6+4] = 0.01;
-    srv.response.result_pose_with_cov.pose.covariance[5*6+5] = 0.2;
-    initial_pose_pub_.publish(srv.response.result_pose_with_cov);
+    srv.response.pose_with_cov.pose.covariance[0] = 1.0;
+    srv.response.pose_with_cov.pose.covariance[1*6+1] = 1.0;
+    srv.response.pose_with_cov.pose.covariance[2*6+2] = 0.01;
+    srv.response.pose_with_cov.pose.covariance[3*6+3] = 0.01;
+    srv.response.pose_with_cov.pose.covariance[4*6+4] = 0.01;
+    srv.response.pose_with_cov.pose.covariance[5*6+5] = 0.2;
   }
   else
   {
     ROS_ERROR("[pose_initializer] could not call NDT Align Server");
   }
+
+  return srv.response.pose_with_cov;
 }
+
+
+
+

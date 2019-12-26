@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
         dynamic_reconfigure
         pcl_ros
         pcl_conversions
-        ndt_scan_matcher
+        autoware_localization_srvs
         )
 
 #add dynamic reconfigure api
