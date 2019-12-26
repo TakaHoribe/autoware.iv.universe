@@ -41,8 +41,12 @@ public:
 
 private:
 
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
+  bool serviceGNSSInitial(ndt_scan_matcher::NDTAlign::Request &req, ndt_scan_matcher::NDTAlign::Response &res);
+  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
+
+  geometry_msgs::PoseWithCovarianceStamped getHeight(const geometry_msgs::PoseWithCovarianceStamped &initial_pose_msg_ptr);
+  geometry_msgs::PoseWithCovarianceStamped callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -53,6 +57,8 @@ private:
   ros::Publisher initial_pose_pub_;
 
   ros::ServiceClient ndt_client_;
+
+  ros::ServiceServer gnss_service_;
 
   // dynamic_reconfigure::Server<ndt_slam::PoseInitializerConfig> server_;
   // dynamic_reconfigure::Server<ndt_slam::PoseInitializerConfig>::CallbackType f_;
