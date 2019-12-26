@@ -86,6 +86,19 @@ std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PathWithLane
   return converted_path;
 }
 
+geometry_msgs::PoseArray convertToGeometryPoseArray(const PathWithLaneId& path)
+{
+  geometry_msgs::PoseArray converted_array;
+  converted_array.header = path.header;
+
+  converted_array.poses.reserve(path.points.size());
+  for (const auto& point_with_id : path.points)
+  {
+    converted_array.poses.push_back(point_with_id.point.pose);
+  }
+  return converted_array;
+}
+
 PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_msgs::Twist& vehicle_twist,
                                      const geometry_msgs::Pose& vehicle_pose)
 {

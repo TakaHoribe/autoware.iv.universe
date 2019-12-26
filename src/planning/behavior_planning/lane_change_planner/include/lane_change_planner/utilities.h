@@ -20,6 +20,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseArray.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
@@ -47,6 +48,8 @@ double l2Norm(const geometry_msgs::Vector3 vector);
 
 Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt);
 std::vector<geometry_msgs::Point> convertToGeometryPointArray(const autoware_planning_msgs::PathWithLaneId& path);
+geometry_msgs::PoseArray convertToGeometryPoseArray(const autoware_planning_msgs::PathWithLaneId& path);
+
 autoware_perception_msgs::PredictedPath convertToPredictedPath(const autoware_planning_msgs::PathWithLaneId& path,
                                                                const geometry_msgs::Twist& vehicle_twist,
                                                                const geometry_msgs::Pose& vehicle_pose);
