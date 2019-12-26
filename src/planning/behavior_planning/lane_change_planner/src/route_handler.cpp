@@ -381,7 +381,7 @@ PathWithLaneId RouteHandler::getReferencePath(const geometry_msgs::Pose& pose, c
   double s_backward = std::max(0., s - backward_path_length);
   double s_forward = s + forward_path_length;
   // ROS_INFO_STREAM("s: " << s << "s_backward: " << s_backward << "s_forward: " << s_forward);
-  return getReferencePath(lanelet_sequence, s_backward, s_forward);
+  return getReferencePath(lanelet_sequence, s_backward, s_forward, false);
 }
 
 int RouteHandler::getNumLaneToPreferredLane(const lanelet::ConstLanelet& lanelet) const
