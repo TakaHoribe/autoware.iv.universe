@@ -53,7 +53,9 @@ private:
     int judge_line_idx_;                                //< @brief stop-judgement-line index
     double judge_line_dist_;                            //< @brief distance from stop-line to stop-judgement line
     double approaching_speed_to_stopline_;              //< @brief speed when approaching stop-line (should be slow)
+    double path_expand_width_;                          //< @brief path width to calculate the edge line for both side
     RightTurnModuleManager *right_turn_module_manager_; //< @brief manager pointer
+    bool show_debug_info_;
 
     /**
      * @brief set velocity from idx to the end point
@@ -69,8 +71,14 @@ private:
      * @brief check collision for all lanelet area & dynamic objects (call checkPathCollision() as actual collision check algorithm inside this function)
      */
     bool checkCollision(const autoware_planning_msgs::PathWithLaneId &path, const std::vector<lanelet::ConstLanelet> &objective_lanelets,
-                        const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, bool &is_collision);
-
+                        const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, 
+                        const double path_width, bool &is_collision);
+                        
+    /**
+     * @brief calculate right and left path edge line
+     */
+    bool generateEdgeLine(const autoware_planning_msgs::PathWithLaneId &path, const double path_width,
+                          autoware_planning_msgs::PathWithLaneId &path_r, autoware_planning_msgs::PathWithLaneId &path_l);
     /**
      * @brief set stop-line and stop-judgement-line index. This may modificates path size due to interpolate insertion.
      */
