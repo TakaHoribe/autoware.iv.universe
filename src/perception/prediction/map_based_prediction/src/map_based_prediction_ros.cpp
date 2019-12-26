@@ -291,7 +291,7 @@ void MapBasedPredictionROS::objectsCallback(
     {
       right_paths =  
         routing_graph_ptr_->possiblePaths(*opt_right, 
-                                          100, 0,false);
+                                          150, 0,false);
     }
     auto opt_left = routing_graph_ptr_->left(start_lanelet);
     lanelet::routing::LaneletPaths left_paths;
@@ -299,12 +299,12 @@ void MapBasedPredictionROS::objectsCallback(
     {
       left_paths =  
         routing_graph_ptr_->possiblePaths(*opt_left, 
-                                          100, 0,false);
+                                          150, 0,false);
     }
     
     lanelet::routing::LaneletPaths paths =  
       routing_graph_ptr_->possiblePaths(start_lanelet, 
-                                        100, 0,false);
+                                        150, 0,false);
    
     paths.insert(paths.end(), right_paths.begin(), right_paths.end());
     paths.insert(paths.end(), left_paths.begin(), left_paths.end());
