@@ -163,7 +163,9 @@ interpolating_resolution_(0.5)
   tf_buffer_ptr_ = std::make_shared<tf2_ros::Buffer>();
   tf_listener_ptr_= std::make_shared<tf2_ros::TransformListener>(*tf_buffer_ptr_);
   pnh_.param<bool>("map_based_prediction/has_subscribed_map", has_subscribed_map_, false);
-  map_based_prediction_ = std::make_shared<MapBasedPrediction>(interpolating_resolution_);
+  pnh_.param<double>("prediction_time_horizon", prediction_time_horizon_, 10.0);
+  pnh_.param<double>("prediction_sampling_delta_time", prediction_sampling_delta_time_, 0.5);
+  map_based_prediction_ = std::make_shared<MapBasedPrediction>(interpolating_resolution_,prediction_time_horizon_, prediction_sampling_delta_time_);
   debug_ego_uid_= std::make_shared<uuid_msgs::UniqueID>
                     (unique_id::toMsg(unique_id::fromRandom()));
 }
@@ -289,7 +291,7 @@ void MapBasedPredictionROS::objectsCallback(
     {
       right_paths =  
         routing_graph_ptr_->possiblePaths(*opt_right, 
-                                          100, 0,false);
+                                          150, 0,false);
     }
     auto opt_left = routing_graph_ptr_->left(start_lanelet);
     lanelet::routing::LaneletPaths left_paths;
@@ -297,12 +299,12 @@ void MapBasedPredictionROS::objectsCallback(
     {
       left_paths =  
         routing_graph_ptr_->possiblePaths(*opt_left, 
-                                          100, 0,false);
+                                          150, 0,false);
     }
     
     lanelet::routing::LaneletPaths paths =  
       routing_graph_ptr_->possiblePaths(start_lanelet, 
-                                        100, 0,false);
+                                        150, 0,false);
    
     paths.insert(paths.end(), right_paths.begin(), right_paths.end());
     paths.insert(paths.end(), left_paths.begin(), left_paths.end());

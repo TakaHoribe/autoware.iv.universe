@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+    <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
+        <arg name="output/rois" default="traffic_light/rois"/>
+    </include>
+    <include file="$(find traffic_light_visualization)/launch/traffic_light_roi_visualizer.launch">
+        <arg name="input/rois" default="traffic_light/rois"/>
+    </include>
+</launch>
