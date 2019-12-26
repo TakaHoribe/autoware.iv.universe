@@ -20,13 +20,11 @@
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
 ```
 wheel_radius: 0.341
-wheel_width: 0.225
-wheel_base: 2.950 # between front wheel center and rear wheel center
+wheel_width: 0.42
+wheel_base: 2.63 # between front wheel center and rear wheel center
 wheel_tread: 1.55 # between left wheel center and right wheel center
-front_overhang: 1.0 # between front wheel center and vehicle front
-rear_overhang: 0.5 # between rear wheel center and vehicle rear 
-vehicle_length: 4.45 # rear_overhang + front_overhang + wheel_base
-vehicle_width: 1.775 # wheel_tread + wheel_width
+front_overhang: 1.29 # between front wheel center and vehicle front
+rear_overhang: 1.1 # between rear wheel center and vehicle rear 
 vehicle_height: 2.0
 ```
 
@@ -46,12 +44,10 @@ $ roslaunch autoware_launch autoware.launch
 - global param list
 ```
 wheel_radius: 0.341
-wheel_width: 0.225
-wheel_base: 2.950 # between front wheel center and rear wheel center
+wheel_width: 0.42
+wheel_base: 2.63 # between front wheel center and rear wheel center
 wheel_tread: 1.55 # between left wheel center and right wheel center
-front_overhang: 1.0 # between front wheel center and vehicle front
-rear_overhang: 0.5 # between rear wheel center and vehicle rear 
-vehicle_length: 4.45 # rear_overhang + front_overhang + wheel_base
-vehicle_width: 1.775 # wheel_tread + wheel_width
+front_overhang: 1.29 # between front wheel center and vehicle front
+rear_overhang: 1.1 # between rear wheel center and vehicle rear 
 vehicle_height: 2.0
 ```
