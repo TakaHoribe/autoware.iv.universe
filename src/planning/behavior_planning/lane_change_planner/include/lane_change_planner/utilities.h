@@ -69,6 +69,9 @@ std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::Dyna
 autoware_planning_msgs::PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range,
                                                   const autoware_planning_msgs::PathWithLaneId& input,
                                                   const geometry_msgs::Pose& goal, const int64_t goal_lane_id);
+autoware_planning_msgs::PathWithLaneId
+removeOverlappingPoints(const autoware_planning_msgs::PathWithLaneId& input_path);
+
 }  // namespace util
 }  // namespace lane_change_planner
 
