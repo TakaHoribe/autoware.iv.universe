@@ -27,7 +27,7 @@
   <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
 
   <!-- start nodelet manager -->
-  <include file="$(find velodyne_driver)/launch/nodelet_manager.launch" if="$(arg launch_driver)">
+  <include file="$(find velodyne_driver)/launch/driver_nodelet.launch" if="$(arg launch_driver)">
     <arg name="device_ip" value="$(arg device_ip)"/>
     <arg name="frame_id" value="$(arg frame_id)"/>
     <arg name="manager" value="$(arg manager)" />

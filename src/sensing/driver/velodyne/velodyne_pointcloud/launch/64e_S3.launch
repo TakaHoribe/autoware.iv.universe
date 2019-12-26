@@ -21,8 +21,11 @@
   <arg name="laserscan_resolution" default="0.007" />
   <arg name="model" value="64E_S3"/>
 
-  <!-- start nodelet manager and driver nodelets -->
-  <include file="$(find velodyne_driver)/launch/nodelet_manager.launch">
+  <!-- start nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+
+  <!-- start nodelet manager -->
+  <include file="$(find velodyne_driver)/launch/driver_nodelet.launch">
     <arg name="device_ip" value="$(arg device_ip)"/>
     <arg name="frame_id" value="$(arg frame_id)"/>
     <arg name="manager" value="$(arg manager)" />

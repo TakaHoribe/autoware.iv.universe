@@ -15,9 +15,6 @@
   <arg name="rpm" default="600.0" />
   <arg name="cut_angle" default="-0.01" />
 
-  <!-- start nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
-
   <!-- load driver nodelet into it -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
         args="load velodyne_driver/DriverNodelet $(arg manager)" >
