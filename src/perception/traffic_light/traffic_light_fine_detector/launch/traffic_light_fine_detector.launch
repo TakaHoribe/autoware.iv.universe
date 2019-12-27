@@ -1,0 +1,17 @@
+<launch>
+
+  <arg name="onnx_file" default="$(find traffic_light_fine_detector)/data/yolov3-tlr.onnx"/>
+  <arg name="input/image" default="/image_raw"/>
+  <arg name="input/rois" default="/traffic_light_map_based_detector/output/rois" />
+  <arg name="output/rois" default="output/rois" />
+  <arg name="score_thresh" default="0.7"/>
+   <arg name="approximate_sync" default="false"/>
+  <node pkg="traffic_light_fine_detector" type="traffic_light_fine_detector" name="traffic_light_fine_detector" output="screen">
+    <remap from="~input/image" to="$(arg input/image)" />
+    <remap from="~input/rois" to="$(arg input/rois)" />
+    <remap from="~output/rois" to="$(arg output/rois)" />
+    <param name="onnx_file" type="str" value="$(arg onnx_file)"/>
+    <param name="score_thresh" value="$(arg score_thresh)"/>
+    <param name="approximate_sync" value="$(arg approximate_sync)"/>
+  </node>
+</launch>
