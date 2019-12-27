@@ -220,7 +220,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   geometry_msgs::Pose nearest_pose;
   if (!MPCUtils::calcNearestPoseInterp(ref_traj_, current_pose_ptr_->pose, nearest_pose, nearest_index, dist_err, yaw_err, nearest_traj_time))
   {
-    ROS_WARN("[MPC] calculateMPC: error in calculating nearest pose. stop mpc.");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: error in calculating nearest pose. stop mpc.");
     return false;
   };
 
@@ -239,7 +239,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   const double mpc_end_time = mpc_start_time + (N - 1) * DT + mpc_param_.delay_compensation_time + ctrl_period_;
   if (mpc_end_time > ref_traj_.relative_time.back())
   {
-    ROS_WARN("[MPC] path is too short for prediction. path end: %f[s], mpc end time: %f[s]", ref_traj_.relative_time.back(), mpc_end_time);
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] path is too short for prediction. path end: %f[s], mpc end time: %f[s]", ref_traj_.relative_time.back(), mpc_end_time);
     return false;
   }
 
@@ -301,7 +301,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     if (!MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.k, mpc_curr_time, k) ||
         !MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.vx, mpc_curr_time, v))
     {
-      ROS_WARN("[MPC] calculateMPC: mpc resample error at delay compensation, stop mpc calculation. check code!");
+      ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: mpc resample error at delay compensation, stop mpc calculation. check code!");
       return false;
     }
 
@@ -350,7 +350,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   MPCTrajectory mpc_resampled_ref_traj;
   if (!MPCUtils::interp1dMPCTraj(ref_traj_.relative_time, ref_traj_, mpc_time_v, mpc_resampled_ref_traj))
   {
-    ROS_WARN("[MPC] calculateMPC: mpc resample error, stop mpc calculation. check code!");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: mpc resample error, stop mpc calculation. check code!");
     return false;
   }
 
@@ -428,7 +428,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   if (Aex.array().isNaN().any() || Bex.array().isNaN().any() ||
       Cex.array().isNaN().any() || Wex.array().isNaN().any())
   {
-    ROS_WARN("[MPC] calculateMPC: model matrix includes NaN, stop MPC.");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model matrix includes NaN, stop MPC.");
     return false;
   }
 
@@ -457,7 +457,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   Eigen::VectorXd Uex;
   if (!qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, Uex))
   {
-    ROS_WARN("[MPC] qp solver error");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] qp solver error");
     return false;
   }
   double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
@@ -465,7 +465,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
   if (Uex.array().isNaN().any())
   {
-    ROS_WARN("[MPC] calculateMPC: model Uex includes NaN, stop MPC. ");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model Uex includes NaN, stop MPC. ");
     return false;
   }
 
@@ -660,7 +660,7 @@ void MPCFollower::updateCurrentPose()
   }
   catch (tf2::TransformException &ex)
   {
-    ROS_WARN("[mpc_follower] cannot get map to base_link transform. %s", ex.what());
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[mpc_follower] cannot get map to base_link transform. %s", ex.what());
     return;
   }
 
