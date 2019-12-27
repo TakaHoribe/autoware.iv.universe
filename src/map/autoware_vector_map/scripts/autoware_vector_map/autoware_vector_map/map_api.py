@@ -192,7 +192,7 @@ class MapApi:
 
         self._reload_table(table_name)
 
-    def get_all_features_as_gdf(self, table_name):
+    def get_all_features_as_gdf(self, table_name) -> gpd.GeoDataFrame:
         if not table_name in self._gdf_map:
             self._reload_table(table_name)
         return self._gdf_map[table_name]

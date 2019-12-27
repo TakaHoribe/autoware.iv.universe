@@ -68,7 +68,7 @@ def create_new_geometry(points, geometry, height_offset):
         return Polygon(exterior, interiors)
 
 
-def align_features(map_api, table_name, points):
+def align_features(map_api: MapApi, table_name, points):
     gdf = map_api.get_all_features_as_gdf(table_name)
 
     if not gdf.geometry.any():

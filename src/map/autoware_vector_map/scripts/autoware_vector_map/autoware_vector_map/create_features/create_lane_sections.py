@@ -1,17 +1,18 @@
 from autoware_vector_map import map_util
+from autoware_vector_map.map_api import MapApi
 
 
 def create_lane_section(id, coordinates):
     return {"id": id, "geometry": {"type": "Polygon", "coordinates": coordinates}, "properties": {}}
 
 
-def create_lane_sections(map_api):
+def create_lane_sections(map_api: MapApi):
     lanes = map_api.get_all_features_as_gdf("lanes")
     all_lane_section_id_set = {lane.lane_section_id for lane in lanes.itertuples()}
 
     lane_sections = []
     for lane_section_id in all_lane_section_id_set:
-        lanes_in_section = list(lanes[lanes.lane_section_id == lane_section_id].itertuples())
+        lanes_in_section = map_api.get_lanes_by_lane_section_id(lane_section_id)
 
         left_most_lane = map_api.find_edge_lane(lanes_in_section, "left")
         right_most_lane = map_api.find_edge_lane(lanes_in_section, "right")

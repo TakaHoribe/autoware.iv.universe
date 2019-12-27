@@ -1,4 +1,5 @@
 from autoware_vector_map import map_util
+from autoware_vector_map.map_api import MapApi
 
 
 def create_adjacent_lane(lane_id, adjacent_lane_id, left_right):
@@ -8,7 +9,7 @@ def create_adjacent_lane(lane_id, adjacent_lane_id, left_right):
     }
 
 
-def create_adjacent_lanes(map_api):
+def create_adjacent_lanes(map_api: MapApi):
     lanes = map_api.get_all_features_as_gdf("lanes")
     all_lane_section_id_set = {lane.lane_section_id for lane in lanes.itertuples()}
 

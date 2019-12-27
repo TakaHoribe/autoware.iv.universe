@@ -1,4 +1,5 @@
 from autoware_vector_map.layer import get_plural_name
+from autoware_vector_map.map_api import MapApi
 
 
 def create_intersect_relationship(base_feature_name, target_feature_name, base_feature, target_feature):
@@ -8,7 +9,7 @@ def create_intersect_relationship(base_feature_name, target_feature_name, base_f
     }
 
 
-def create_intersect_relationships(map_api, base_feature_name, target_feature_name):
+def create_intersect_relationships(map_api: MapApi, base_feature_name, target_feature_name):
     base_features = map_api.get_all_features_as_gdf(get_plural_name(base_feature_name))
     target_features = map_api.get_all_features_as_gdf(get_plural_name(target_feature_name))
 

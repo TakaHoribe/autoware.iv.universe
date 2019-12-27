@@ -1,11 +1,13 @@
 from shapely.geometry import Point
 
+from autoware_vector_map.map_api import MapApi
+
 
 def create_lane_connection(lane_id, next_lane_id):
     return {"geometry": None, "properties": {"lane_id": lane_id, "next_lane_id": next_lane_id}}
 
 
-def create_lane_connections(map_api):
+def create_lane_connections(map_api: MapApi):
     lanes = map_api.get_all_features_as_gdf("lanes")
 
     lane_connections = []
