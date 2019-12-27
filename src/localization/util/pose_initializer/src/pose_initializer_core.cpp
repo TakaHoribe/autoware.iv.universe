@@ -46,8 +46,17 @@ PoseInitializer::PoseInitializer(ros::NodeHandle nh, ros::NodeHandle private_nh)
   , tf2_listener_(tf2_buffer_)
   , map_frame_("map")
 {
+
   initial_pose_sub_ = nh_.subscribe("initialpose", 10, &PoseInitializer::callbackInitialPose, this);
   map_points_sub_ = nh_.subscribe("pointcloud_map", 1, &PoseInitializer::callbackMapPoints, this);
+
+  bool use_first_gnss_topic = true;
+  private_nh_.getParam("use_first_gnss_topic", use_first_gnss_topic);
+  if(use_first_gnss_topic) {
+    gnss_pose_sub_ = nh_.subscribe("gnss_pose_cov", 1, &PoseInitializer::callbackGNSSPoseCov, this);
+  }
+
+
 
   initial_pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose3d", 10);
 
@@ -80,9 +89,26 @@ bool PoseInitializer::serviceInitial(autoware_localization_srvs::PoseWithCovaria
   return true;
 }
 
-void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &initial_pose_msg_ptr)
+void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr)
 {
-  const auto a = getHeight(*initial_pose_msg_ptr);
+  const auto a = getHeight(*pose_cov_msg_ptr);
+  auto b = callAlignService(a);
+  // NOTE temporary cov
+  b.pose.covariance[0] = 1.0;
+  b.pose.covariance[1*6+1] = 1.0;
+  b.pose.covariance[2*6+2] = 0.01;
+  b.pose.covariance[3*6+3] = 0.01;
+  b.pose.covariance[4*6+4] = 0.01;
+  b.pose.covariance[5*6+5] = 1.5;
+
+  initial_pose_pub_.publish(b);
+}
+
+void PoseInitializer::callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr)
+{
+  gnss_pose_sub_.shutdown();  // get only first topic
+
+  const auto a = getHeight(*pose_cov_msg_ptr);
   auto b = callAlignService(a);
   // NOTE temporary cov
   b.pose.covariance[0] = 1.0;
