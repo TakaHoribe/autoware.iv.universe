@@ -81,7 +81,7 @@ def get_autoware_vector_map_layers():
     p = add_relationship_layer(layers, "lane", "adjacent_lane", "adjacent_lanes")
     p["type"] = "str"
 
-    p = add_relationship_layer(layers, "lane", "lane_boundary")
+    p = add_relationship_layer(layers, "lane", "lane_boundary", "adjacent_lane_boundaries")
     p["type"] = "str"
 
     p = add_relationship_layer(layers, "lane", "stop_line")

@@ -3,6 +3,29 @@ import math
 from shapely.geometry import Point
 
 
+def normalize_radian(rad: float):
+    """Return the normalized azimuth
+
+    Arguments:
+        azimuth {float} -- azimuth
+
+    >>> round(normalize_radian(3.14), 6)
+    3.14
+    >>> round(normalize_radian(-3.14), 6)
+    -3.14
+    >>> round(normalize_radian(3.15), 6)
+    -3.133185
+    >>> round(normalize_radian(-3.15), 6)
+    3.133185
+    """
+
+    v = math.fmod(rad, 2 * math.pi)
+    if -math.pi < v and v <= math.pi:
+        return v
+    else:
+        return v - math.copysign(2 * math.pi, v)
+
+
 def calc_azimuth(p1: Point, p2: Point):
     """Return the distance between p1 and p2
 

@@ -26,6 +26,9 @@ def vector_map_preprocessor(gpkg_path):
     map_api.save_fiona_objects("lane_sections", cf.create_lane_sections(map_api))
     map_api.save_fiona_objects("lane_section_connections", cf.create_lane_section_connections(map_api))
 
+    map_api.save_fiona_objects("lane_boundaries", cf.create_lane_boundaries(map_api))
+    map_api.save_fiona_objects("adjacent_lane_boundaries", cf.create_adjacent_lane_boundaries(map_api))
+
 
 def main():
     stream_handler = logging.StreamHandler()

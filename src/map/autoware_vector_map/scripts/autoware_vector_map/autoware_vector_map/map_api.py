@@ -209,7 +209,7 @@ class MapApi:
         features = self.get_features_by_ids(table_name, ids)
 
         if not features:
-            return []
+            return None
 
         return features[0]
 
