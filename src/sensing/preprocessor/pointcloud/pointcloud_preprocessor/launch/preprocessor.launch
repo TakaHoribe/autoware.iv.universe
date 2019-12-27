@@ -30,25 +30,11 @@
                 <rosparam if="$(eval input_points_number==8)" param="input_topics" subst_value="true">[$(arg input_points_raw0), $(arg input_points_raw1), $(arg input_points_raw2), $(arg input_points_raw3), $(arg input_points_raw4), $(arg input_points_raw5), $(arg input_points_raw6), $(arg input_points_raw7)]</rosparam>
             </node>
         </group>
+
         <!-- crop box filter -->
-        <node pkg="nodelet" type="nodelet" name="crop_box_filter_vehicle" args="load pointcloud_preprocessor/crop_box_filter_nodelet pcl_manager" output="log">
+        <node pkg="nodelet" type="nodelet" name="crop_box_filter_mesurement_range" args="load pointcloud_preprocessor/crop_box_filter_nodelet pcl_manager" output="log">
             <remap if="$(eval input_points_number==1)" from="~input" to="$(arg input_points_raw0)" />
             <remap if="$(eval input_points_number!=1)" from="~input" to="points_raw/concatenated" />
-            <remap from="~output" to="points_raw/filter_vehicle" />
-            <remap from="~min_x" to="/vehicle_info/min_longitudinal_offset" />
-            <remap from="~max_x" to="/vehicle_info/max_longitudinal_offset" />
-            <remap from="~min_y" to="/vehicle_info/min_lateral_offset" />
-            <remap from="~max_y" to="/vehicle_info/max_lateral_offset" />
-            <remap from="~min_z" to="/vehicle_info/min_height_offset" />
-            <remap from="~max_z" to="/vehicle_info/max_height_offset" />
-            <param name="negative" value="True" />
-
-            <param name="input_frame" value="$(arg tf_output_frame)" />
-            <param name="output_frame" value="$(arg tf_output_frame)" />
-        </node>
-
-        <node pkg="nodelet" type="nodelet" name="crop_box_filter_mesurement_range" args="load pointcloud_preprocessor/crop_box_filter_nodelet pcl_manager" output="log">
-            <remap from="~input" to="points_raw/filter_vehicle" />
             <remap from="~output" to="$(arg output_points_raw)" />
             <rosparam>
         min_x: -200.0

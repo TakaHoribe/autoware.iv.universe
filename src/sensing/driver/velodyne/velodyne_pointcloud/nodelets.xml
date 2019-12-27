@@ -10,6 +10,16 @@
     </class>
   </library>
 
+  <library path="lib/libinterpolate_nodelet">
+    <class name="velodyne_pointcloud/InterpolateNodelet"
+           type="velodyne_pointcloud::InterpolateNodelet"
+           base_class_type="nodelet::Nodelet">
+      <description>
+        Interpolate points using twist info.
+      </description>
+    </class>
+  </library>
+
   <library path="lib/libringcolors_nodelet">
     <class name="velodyne_pointcloud/RingColorsNodelet"
            type="velodyne_pointcloud::RingColorsNodelet"
