@@ -86,6 +86,10 @@ class MapApi:
         else:
             return table_name in fiona.listlayers(self._gpkg_path)
 
+    def is_mandatory(self, table_name):
+        schema = self.get_schema(table_name)
+        return schema["meta"]["is_mandatory"]
+
     def create_table(self, table_name, crs=None):
         schema = self.get_schema(table_name)
 
