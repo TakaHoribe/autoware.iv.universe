@@ -7,4 +7,9 @@
     <include file="$(find traffic_light_visualization)/launch/traffic_light_roi_visualizer.launch">
         <arg name="input/rois" default="traffic_light/rois"/>
     </include>
+    <include file="$(find traffic_light_classifier)/launch/traffic_light_classifier.launch">
+        <arg name="input/rois" default="traffic_light/rois"/>
+        <arg name="input/image" default="/camera/image_raw" />
+        <arg name="output/traffic_light_states" default="traffic_light_states" />
+    </include>
 </launch>
