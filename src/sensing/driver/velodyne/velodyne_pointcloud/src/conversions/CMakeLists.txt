@@ -14,6 +14,22 @@ install(TARGETS cloud_nodelet
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
+add_executable(interpolate_node interpolate_node.cc interpolate.cc pointcloudXYZIR.cc pointcloudXYZIRADT.cc func.cc)
+add_dependencies(interpolate_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(interpolate_node
+                      ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OpenCV_LIBS})
+install(TARGETS interpolate_node
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+add_library(interpolate_nodelet interpolate_nodelet.cc interpolate.cc pointcloudXYZIR.cc pointcloudXYZIRADT.cc func.cc)
+add_dependencies(interpolate_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(interpolate_nodelet
+                      ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OpenCV_LIBS})
+install(TARGETS interpolate_nodelet
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
 add_executable(ringcolors_node ringcolors_node.cc colors.cc)
 target_link_libraries(ringcolors_node
                       ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES})

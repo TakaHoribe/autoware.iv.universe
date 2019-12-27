@@ -27,7 +27,6 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -49,17 +48,14 @@ namespace velodyne_pointcloud
   private:
     
     void callback(velodyne_pointcloud::CloudNodeConfig &config, uint32_t level);
-    void processTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
     void processScan(const velodyne_msgs::VelodyneScan::ConstPtr &scanMsg);
     visualization_msgs::MarkerArray createVelodyneModelMakerMsg(const std_msgs::Header& header);
     bool getTransform(const std::string &target_frame, const std::string &source_frame, tf2::Transform *tf2_transform_ptr);
 
     ros::Subscriber velodyne_scan_;
-    ros::Subscriber twist_sub_;
     ros::Publisher velodyne_points_pub_;
-    ros::Publisher velodyne_points_transed_pub_;
+    ros::Publisher velodyne_points_ex_pub_;
     ros::Publisher velodyne_points_invalid_near_pub_;
-    ros::Publisher velodyne_points_combined_pub_;
     ros::Publisher marker_array_pub_;
 
     tf2_ros::Buffer tf2_buffer_;
@@ -69,8 +65,6 @@ namespace velodyne_pointcloud
     boost::shared_ptr<dynamic_reconfigure::Server<velodyne_pointcloud::CloudNodeConfig> > srv_;
     
     boost::shared_ptr<velodyne_rawdata::RawData> data_;
-
-    std::deque<geometry_msgs::TwistStamped> twist_queue_;
 
     int num_points_thresthold_;
     std::vector<float> invalid_intensity_array_;

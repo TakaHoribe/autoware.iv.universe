@@ -152,7 +152,7 @@ namespace velodyne_pointcloud
 		return output_pointcloud;
 	}
 
-  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpotate(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::deque<geometry_msgs::TwistStamped> &twist_queue, const tf2::Transform &tf2_base_link_to_sensor)
+  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpolate(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::deque<geometry_msgs::TwistStamped> &twist_queue, const tf2::Transform &tf2_base_link_to_sensor)
 	{
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
     output_pointcloud->reserve(input_pointcloud->points.size());
@@ -193,7 +193,7 @@ namespace velodyne_pointcloud
       double w = twist_it->twist.angular.z;
 
       if(std::fabs(p.time_stamp - twist_it->header.stamp.toSec()) > 0.1) {
-        ROS_WARN_STREAM_THROTTLE(10, "Twist time_stamp is too late. Cloud not interpotate.");
+        ROS_WARN_STREAM_THROTTLE(10, "Twist time_stamp is too late. Cloud not interpolate.");
         v = 0;
         w = 0;
       }

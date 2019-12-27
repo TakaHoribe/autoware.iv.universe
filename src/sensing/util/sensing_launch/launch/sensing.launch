@@ -6,13 +6,42 @@
     <group ns="sensor">
         <group ns="lidar">
             <group ns="main">
-                <remap from="velodyne_points_transed" to="pointcloud" />
+                <arg name="sensor_frame" default="velodyne" />
+                <arg name="base_frame" default="base_link" />
+                <arg name="manager" default="$(arg sensor_frame)_nodelet_manager" />
+  
+                <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+
                 <include file="$(find velodyne_pointcloud)/launch/VLP-32C_points.launch">
                   <arg name="launch_driver" value="$(arg launch_driver)" />
+                  <arg name="frame_id" value="$(arg sensor_frame)" />
+                  <arg name="manager" value="$(arg manager)" />
                 </include>
+
+                <node pkg="nodelet" type="nodelet" name="crop_box_filter_self" args="load pointcloud_preprocessor/crop_box_filter_nodelet $(arg manager)" output="log">
+                    <remap from="~input" to="velodyne_points_ex" />
+                    <remap from="~output" to="velodyne_points_ex/self_cropped" />
+                    <remap from="~min_x" to="/vehicle_info/min_longitudinal_offset" />
+                    <remap from="~max_x" to="/vehicle_info/max_longitudinal_offset" />
+                    <remap from="~min_y" to="/vehicle_info/min_lateral_offset" />
+                    <remap from="~max_y" to="/vehicle_info/max_lateral_offset" />
+                    <remap from="~min_z" to="/vehicle_info/min_height_offset" />
+                    <remap from="~max_z" to="/vehicle_info/max_height_offset" />
+
+                    <param name="negative" value="True" />
+                    <param name="input_frame" value="$(arg base_frame)" />
+                    <param name="output_frame" value="$(arg base_frame)" />
+                </node>
+
+                <remap from="velodyne_points_ex" to="velodyne_points_ex/self_cropped" />    
+                <remap from="velodyne_points_interpolate" to="pointcloud" />
+                <include file="$(find velodyne_pointcloud)/launch/interpolate_nodelet.launch">
+                </include>
+
             </group>
         </group>
     </group>
+
     <!-- Camera Driver -->
     <!-- <node pkg="uvc_camera" name="camera" type="uvc_camera_node" output="screen">
         <param name="device" type="string" value="/dev/video2"/>
@@ -37,11 +66,11 @@
                 <arg name="input_points_raw6" default="" />
                 <arg name="input_points_raw7" default="" />
                 <arg name="input_points_number" default="1" />
-                <arg name="output_points_raw" default="lidar/self_cropped" />
+                <arg name="output_points_raw" default="lidar/mesurement_range" />
             </include>
             <!-- PointCloud Ground Filter -->
             <node pkg="pointcloud_preprocessor" type="ray_ground_filter_node" name="ray_ground_filter" output="screen">
-                <remap from="~input" to="pointcloud_preprocessor/lidar/self_cropped" />
+                <remap from="~input" to="pointcloud_preprocessor/lidar/mesurement_range" />
                 <remap from="~output" to="lidar/no_ground/pointcloud_raw" />
             </node>
             <!-- PointCloud Outlier Filter -->
