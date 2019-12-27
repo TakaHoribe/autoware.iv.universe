@@ -39,7 +39,7 @@ struct Point2d : public Eigen::Vector2d {
   Point2d() = default;
   Point2d(const double x, const double y) : Eigen::Vector2d(x, y) {}
 
-  Point3d to_3d() const;
+  Point3d to_3d(const double z = 0.0) const;
 };
 
 struct Point3d : public Eigen::Vector3d {
@@ -52,7 +52,7 @@ struct Point3d : public Eigen::Vector3d {
 struct LineString2d : public std::vector<Point2d> {
   using std::vector<Point2d>::vector;
 
-  LineString3d to_3d() const;
+  LineString3d to_3d(const double z = 0.0) const;
 };
 
 struct LineString3d : public std::vector<Point3d> {
@@ -64,7 +64,7 @@ struct LineString3d : public std::vector<Point3d> {
 struct LinearRing2d : public LineString2d {
   using LineString2d::LineString2d;
 
-  LinearRing3d to_3d() const;
+  LinearRing3d to_3d(const double z = 0.0) const;
 };
 
 struct LinearRing3d : public LineString3d {
@@ -77,7 +77,7 @@ struct Polygon2d {
   LinearRing2d exterior;
   std::vector<LinearRing2d> interiors;
 
-  Polygon3d to_3d() const;
+  Polygon3d to_3d(const double z = 0.0) const;
 };
 
 struct Polygon3d {
