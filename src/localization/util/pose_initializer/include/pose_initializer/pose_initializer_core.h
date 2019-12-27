@@ -43,7 +43,8 @@ private:
 
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
   bool serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
+  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
+  void callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
 
   geometry_msgs::PoseWithCovarianceStamped getHeight(const geometry_msgs::PoseWithCovarianceStamped &initial_pose_msg_ptr);
   geometry_msgs::PoseWithCovarianceStamped callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg);
@@ -52,6 +53,8 @@ private:
   ros::NodeHandle private_nh_;
 
   ros::Subscriber initial_pose_sub_;
+  ros::Subscriber gnss_pose_sub_;
+
   ros::Subscriber map_points_sub_;
 
   ros::Publisher initial_pose_pub_;
