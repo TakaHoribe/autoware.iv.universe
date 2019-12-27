@@ -102,7 +102,7 @@ find_package(catkin REQUIRED
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES localization_launch
-#  CATKIN_DEPENDS ndt_slam
+#  CATKIN_DEPENDS 
 #  DEPENDS system_lib
 )
 

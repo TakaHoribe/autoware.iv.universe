@@ -87,7 +87,8 @@ void CropBoxFilterNodelet::publishCropBoxPolygon()
   const double z2 = impl_.getMax()(2);
 
   geometry_msgs::PolygonStamped polygon_msg;
-  polygon_msg.header.frame_id = "base_link";
+  polygon_msg.header.frame_id = tf_input_frame_;
+  polygon_msg.header.stamp = ros::Time::now();
   polygon_msg.polygon.points.push_back(generatePoint(x1, y1, z1));
   polygon_msg.polygon.points.push_back(generatePoint(x2, y2, z1));
   polygon_msg.polygon.points.push_back(generatePoint(x3, y3, z1));

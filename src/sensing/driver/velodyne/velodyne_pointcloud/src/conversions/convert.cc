@@ -50,9 +50,8 @@ namespace velodyne_pointcloud
 
     // advertise
     velodyne_points_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points", 10);
-    velodyne_points_transed_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_transed", 10);
+    velodyne_points_ex_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_ex", 10);
     velodyne_points_invalid_near_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_invalid_near", 10);
-    velodyne_points_combined_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_combined", 10);
     marker_array_pub_ = node.advertise<visualization_msgs::MarkerArray>("velodyne_model_marker", 1);
     srv_ = boost::make_shared <dynamic_reconfigure::Server<velodyne_pointcloud::CloudNodeConfig> > (private_nh);
     dynamic_reconfigure::Server<velodyne_pointcloud::CloudNodeConfig>::CallbackType f;
@@ -60,7 +59,6 @@ namespace velodyne_pointcloud
     srv_->setCallback (f);
 
     // subscribe
-    twist_sub_ = node.subscribe("/vehicle/twist", 10, &Convert::processTwist, (Convert *) this, ros::TransportHints().tcpNoDelay(true));
     velodyne_scan_ = node.subscribe("velodyne_packets", 10, &Convert::processScan, (Convert *) this, ros::TransportHints().tcpNoDelay(true));
   }
   
@@ -77,30 +75,12 @@ namespace velodyne_pointcloud
     }
   }
 
-  void Convert::processTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg)
-  {
-    twist_queue_.push_back(*twist_msg);
-
-    while(!twist_queue_.empty()) {
-      //for replay rosbag
-      if(twist_queue_.front().header.stamp > twist_msg->header.stamp) {
-        twist_queue_.pop_front();
-      }
-      else if(twist_queue_.front().header.stamp < twist_msg->header.stamp - ros::Duration(1.0)) {
-        twist_queue_.pop_front();
-      }
-      else {
-        break;
-      }
-    }
-  }
-
   /** @brief Callback for raw scan messages. */
   void Convert::processScan(const velodyne_msgs::VelodyneScan::ConstPtr &scanMsg)
   {
 
     velodyne_pointcloud::PointcloudXYZIRADT scan_points_xyziradt;
-    if(velodyne_points_pub_.getNumSubscribers() > 0 || velodyne_points_transed_pub_.getNumSubscribers() > 0 || velodyne_points_invalid_near_pub_.getNumSubscribers() > 0 || velodyne_points_combined_pub_.getNumSubscribers() > 0) {
+    if(velodyne_points_pub_.getNumSubscribers() > 0 || velodyne_points_ex_pub_.getNumSubscribers() > 0 || velodyne_points_invalid_near_pub_.getNumSubscribers() > 0) {
       scan_points_xyziradt.pc->points.reserve(scanMsg->packets.size() * data_->scansPerPacket());
       for (size_t i = 0; i < scanMsg->packets.size(); ++i) {
         data_->unpack(scanMsg->packets[i], scan_points_xyziradt);
@@ -112,43 +92,25 @@ namespace velodyne_pointcloud
     }
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr valid_points_xyziradt(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
-    if(velodyne_points_pub_.getNumSubscribers() > 0 || velodyne_points_transed_pub_.getNumSubscribers() > 0 || velodyne_points_combined_pub_.getNumSubscribers() > 0) {
+    if(velodyne_points_pub_.getNumSubscribers() > 0 || velodyne_points_ex_pub_.getNumSubscribers() > 0) {
       valid_points_xyziradt = extractValidPoints(scan_points_xyziradt.pc, data_->getMinRange(), data_->getMaxRange());
       if(velodyne_points_pub_.getNumSubscribers() > 0) {
         const auto valid_points_xyzir = convert(valid_points_xyziradt);
         velodyne_points_pub_.publish(valid_points_xyzir);
       }
-    }
-
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpotate_valid_points_xyzir(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
-    if(velodyne_points_transed_pub_.getNumSubscribers() > 0  || velodyne_points_combined_pub_.getNumSubscribers() > 0) {
-      tf2::Transform tf2_base_link_to_sensor;
-      getTransform(base_link_frame_, valid_points_xyziradt->header.frame_id, &tf2_base_link_to_sensor);
-      interpotate_valid_points_xyzir = interpotate(valid_points_xyziradt, twist_queue_, tf2_base_link_to_sensor);
-      if(velodyne_points_transed_pub_.getNumSubscribers() > 0) {
-        velodyne_points_transed_pub_.publish(interpotate_valid_points_xyzir);
+      if(velodyne_points_ex_pub_.getNumSubscribers() > 0) {
+        velodyne_points_ex_pub_.publish(valid_points_xyziradt);
       }
     }
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr invalid_near_points_filtered_xyzir(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
-    if(velodyne_points_invalid_near_pub_.getNumSubscribers() > 0 || velodyne_points_combined_pub_.getNumSubscribers() > 0) {
+    if(velodyne_points_invalid_near_pub_.getNumSubscribers() > 0) {
       const size_t num_lasers = data_->getNumLasers();
       const auto sorted_invalid_points_xyziradt = sortZeroIndex(scan_points_xyziradt.pc, num_lasers);
       invalid_near_points_filtered_xyzir = extractInvalidNearPointsFiltered(sorted_invalid_points_xyziradt, invalid_intensity_array_, num_lasers, num_points_thresthold_);
       if(velodyne_points_invalid_near_pub_.getNumSubscribers() > 0) {
         velodyne_points_invalid_near_pub_.publish(invalid_near_points_filtered_xyzir);
       }
-    }
-
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr combined_points_xyzir(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
-    if(velodyne_points_combined_pub_.getNumSubscribers() > 0) {
-      combined_points_xyzir->points.reserve(interpotate_valid_points_xyzir->points.size()+invalid_near_points_filtered_xyzir->points.size());
-      combined_points_xyzir->points.insert(std::end(combined_points_xyzir->points), std::begin(interpotate_valid_points_xyzir->points), std::end(interpotate_valid_points_xyzir->points));
-      combined_points_xyzir->points.insert(std::end(combined_points_xyzir->points), std::begin(invalid_near_points_filtered_xyzir->points), std::end(invalid_near_points_filtered_xyzir->points));
-      combined_points_xyzir->header = pcl_conversions::toPCL(scanMsg->header);
-      combined_points_xyzir->height = 1;
-      combined_points_xyzir->width = combined_points_xyzir->points.size();
-      velodyne_points_combined_pub_.publish(combined_points_xyzir);
     }
 
     if(marker_array_pub_.getNumSubscribers() > 0) {
