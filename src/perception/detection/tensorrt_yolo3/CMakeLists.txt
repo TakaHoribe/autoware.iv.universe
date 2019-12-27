@@ -58,14 +58,13 @@ set(FILE "${PATH}/yolov3_416.caffemodel")
 message(STATUS "Checking and downloading yolov3_416.caffemodel")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118772&authkey=AEeI4E33pFiXkoY" -O ${PATH}/yolov3_416.caffemodel)
-  
-  endif()
+  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118772&authkey=AJ6vPO3jDyA0Cic" -O ${PATH}/yolov3_416.caffemodel)  
+endif()
 set(FILE "${PATH}/yolov3_416_trt.prototxt")
 message(STATUS "Checking and downloading yolov3_416_trt.prototxt")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget "https://drive.google.com/uc?export=download&id=19DCsuwfXOfm4L8QQlAhlOQJ0WL-3jo3q" -O ${PATH}/yolov3_416_trt.prototxt)
+  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118903&authkey=APTS-WLW4E9fYDc" -O ${PATH}/yolov3_416_trt.prototxt)
 endif()
 
 

@@ -1,20 +1,33 @@
 <?xml version="1.0"?>
 
 <launch>
-    <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
-        <arg name="output/rois" default="traffic_light/rois"/>
-    </include>
+
+    <arg name="enable_fine_detection" default="true"/>
+    <arg name="input/image" default="/camera/image_raw"/>
+
+    <group if="$(arg enable_fine_detection)">
+        <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
+            <arg name="output/rois" default="traffic_light/rough/rois"/>
+        </include>
+        <include file="$(find traffic_light_fine_detector)/launch/traffic_light_fine_detector.launch">
+            <arg name="input/image" default="$(arg input/image)"/>
+            <arg name="input/rois" default="traffic_light/rough/rois"/>
+            <arg name="output/rois" default="traffic_light/rois"/>
+        </include>
+    </group>
+
+    <group unless="$(arg enable_fine_detection)">
+        <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
+            <arg name="output/rois" default="traffic_light/rois"/>
+        </include>
+    </group>
+
     <include file="$(find traffic_light_visualization)/launch/traffic_light_roi_visualizer.launch">
-        <arg name="input/rois" default="traffic_light/rois/fine"/>
-    </include>
-    <include file="$(find traffic_light_fine_detector)/launch/traffic_light_fine_detector.launch">
-        <arg name="input/image" default="/camera/image_raw"/>
         <arg name="input/rois" default="traffic_light/rois"/>
-        <arg name="output/rois" default="traffic_light/rois/fine"/>
-    </include>
+    </include>    
     <include file="$(find traffic_light_classifier)/launch/traffic_light_classifier.launch">
         <arg name="input/rois" default="traffic_light/rois"/>
-        <arg name="input/image" default="/camera/image_raw" />
+        <arg name="input/image" default="$(arg input/image)" />
         <arg name="output/traffic_light_states" default="traffic_light_states" />
     </include>
 </launch>

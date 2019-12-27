@@ -34,7 +34,7 @@
     <!-- preception module -->
     <group ns="perception">
         <!-- detection module -->
-        <group ns="detection">
+        <!-- <group ns="detection">
             <include file="$(find perception_launch)/launch/detection/detection.launch">
                 <arg name="mode" default="$(arg mode)"/>
                 <arg name="image_raw0" default="$(arg image_raw0)"/>
@@ -56,7 +56,7 @@
                 <arg name="image_number" default="$(arg image_number)"/>
                 <arg name="use_vector_map" default="false"/>
             </include>
-        </group>
+        </group> -->
         <!-- tracking module -->
         <group ns="tracking">
             <include file="$(find perception_launch)/launch/tracking/tracking.launch">

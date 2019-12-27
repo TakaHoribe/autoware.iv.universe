@@ -5,7 +5,6 @@ namespace traffic_light
 ColorClassifier::ColorClassifier()
     : nh_(""), pnh_("~"), ratio_threshold_(0.02)
 {
-    std::cout << __LINE__ << std::endl;
     std::vector<int> green_max_hsv;
     std::vector<int> green_min_hsv;
     std::vector<int> red_max_hsv;

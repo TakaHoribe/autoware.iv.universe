@@ -78,6 +78,19 @@ else()
   set(CUDNN_AVAIL OFF)
 endif()
 
+# Download caffemodel and prototxt
+set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
+if (NOT EXISTS "${PATH}")
+  execute_process(COMMAND mkdir -p ${PATH})
+endif()
+set(FILE "${PATH}/yolov3_tlr.onnx")
+message(STATUS "Checking and downloading yolov3_tlr.onnx")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118901&authkey=AB6BiE4PoWNAcJw" -O ${PATH}/yolov3-tlr.onnx)
+  
+endif()
+
 
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   ###################################
