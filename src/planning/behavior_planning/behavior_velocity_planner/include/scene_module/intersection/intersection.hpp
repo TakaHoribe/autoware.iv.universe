@@ -62,6 +62,12 @@ private:
     bool setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId &input);
 
     /**
+     * @brief get objective lanelets for detection area
+     */
+    bool getObjectiveLanelets(lanelet::LaneletMapConstPtr lanelet_map_ptr, lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, 
+                              const int lane_id, std::vector<lanelet::ConstLanelet> &objective_lanelets);
+
+    /**
      * @brief check collision with path & dynamic object predicted path
      */
     bool checkPathCollision(const autoware_planning_msgs::PathWithLaneId &path, const autoware_perception_msgs::DynamicObject &object);

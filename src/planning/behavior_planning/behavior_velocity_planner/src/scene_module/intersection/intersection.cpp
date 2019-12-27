@@ -85,8 +85,8 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId &input
     }
 
     /* get detection area */
-    lanelet::ConstLanelet assigned_lanelet = lanelet_map_ptr->laneletLayer.get(assigned_lane_id_); // current assigned lanelets
-    std::vector<lanelet::ConstLanelet> objective_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+    std::vector<lanelet::ConstLanelet> objective_lanelets;
+    getObjectiveLanelets(lanelet_map_ptr, routing_graph_ptr, assigned_lane_id_, objective_lanelets);
     intersection_module_manager_->debugger_.publishLaneletsArea(objective_lanelets, "intersection_detection_lanelets");
     DEBUG_INFO("[IntersectionModuleManager::run()] assigned_lane_id_ = %d, objective_lanelets.size() = %lu", assigned_lane_id_, objective_lanelets.size());
     if (objective_lanelets.empty())
@@ -240,6 +240,28 @@ bool IntersectionModule::setVelocityFrom(const size_t idx, const double vel, aut
     {
         input.points.at(i).point.twist.linear.x = vel;
     }
+}
+
+bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanelet_map_ptr,
+                                              lanelet::routing::RoutingGraphConstPtr routing_graph_ptr,
+                                              const int lane_id, std::vector<lanelet::ConstLanelet> &objective_lanelets)
+{
+    lanelet::ConstLanelet assigned_lanelet = lanelet_map_ptr->laneletLayer.get(lane_id); // current assigned lanelets
+
+    // get conflicting lanes on assigned lanelet
+    objective_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+
+    // get previous lanelet of conflicting lanelets
+    const size_t conflicting_lanelets_num = objective_lanelets.size();
+    for (size_t i = 0; i < conflicting_lanelets_num; ++i)
+    {
+        lanelet::ConstLanelets previous_lanelets = routing_graph_ptr->previous(objective_lanelets.at(i));
+        for (size_t j = 0; j < previous_lanelets.size(); ++j)
+        {
+            objective_lanelets.push_back(previous_lanelets.at(j));
+        }
+    }
+    return true;
 }
 
 Polygon IntersectionModule::convertToBoostGeometryPolygon(const lanelet::ConstLanelet &lanelet)
