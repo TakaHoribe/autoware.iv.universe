@@ -104,9 +104,12 @@ void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianc
   initial_pose_pub_.publish(b);
 }
 
+// NOTE Still not usable callback
 void PoseInitializer::callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr)
 {
   gnss_pose_sub_.shutdown();  // get only first topic
+
+  // TODO check service is available
 
   const auto a = getHeight(*pose_cov_msg_ptr);
   auto b = callAlignService(a);

@@ -124,16 +124,20 @@ NDTScanMatcher::~NDTScanMatcher()
 {
 }
 
-// void NDTScanMatcher::configCallback(const ndt_slam::NDTScanMatcherConfig &config, uint32_t level)
-// {
-// }
-
 bool NDTScanMatcher::serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res)
 {
+  // get TF from pose_frame to map_frame
+  geometry_msgs::TransformStamped::Ptr TF_pose_to_map_ptr(new geometry_msgs::TransformStamped);
+  getTransform(map_frame_, req.pose_with_cov.header.frame_id, TF_pose_to_map_ptr);
+
+  // transform pose_frame to map_frame
+  geometry_msgs::PoseWithCovarianceStamped::Ptr mapTF_initial_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
+  tf2::doTransform(req.pose_with_cov, *mapTF_initial_pose_msg_ptr, *TF_pose_to_map_ptr);
+
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
 
-  res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, req.pose_with_cov);
+  res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, *mapTF_initial_pose_msg_ptr);
   res.pose_with_cov.pose.covariance = req.pose_with_cov.pose.covariance;
 
   return true;
@@ -141,7 +145,15 @@ bool NDTScanMatcher::serviceNDTAlign(autoware_localization_srvs::PoseWithCovaria
 
 void NDTScanMatcher::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &initial_pose_msg_ptr)
 {
-  initial_pose_msg_ptr_array_.push_back(initial_pose_msg_ptr);
+  // get TF from pose_frame to map_frame
+  geometry_msgs::TransformStamped::Ptr TF_pose_to_map_ptr(new geometry_msgs::TransformStamped);
+  getTransform(map_frame_, initial_pose_msg_ptr->header.frame_id, TF_pose_to_map_ptr);
+
+  // transform pose_frame to map_frame
+  geometry_msgs::PoseWithCovarianceStamped::Ptr mapTF_initial_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
+  tf2::doTransform(*initial_pose_msg_ptr, *mapTF_initial_pose_msg_ptr, *TF_pose_to_map_ptr);
+
+  initial_pose_msg_ptr_array_.push_back(mapTF_initial_pose_msg_ptr);
 
   // if rosbag restart, clear buffer
 }
@@ -229,7 +241,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
     return;
   }
 
-  // searchNNPose
+  // searchNNPose using timestamp
   geometry_msgs::PoseStamped initial_pose_old_msg;
   geometry_msgs::PoseStamped initial_pose_new_msg;
   while (!initial_pose_msg_ptr_array_.empty())
@@ -434,16 +446,16 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(co
 
   }
   
-  auto best_particle = std::max_element(std::begin(particle_array), std::end(particle_array),
+  auto best_particle_ptr = std::max_element(std::begin(particle_array), std::end(particle_array),
     [](const Particle& lhs, const Particle& rhs)
     {
       return lhs.score < rhs.score;
     });
-  std::cout << "best score" << best_particle->score << std::endl;
+  std::cout << "best score" << best_particle_ptr->score << std::endl;
 
   geometry_msgs::PoseWithCovarianceStamped result_pose_with_cov_msg;
   result_pose_with_cov_msg.header.frame_id = map_frame_;
-  result_pose_with_cov_msg.pose.pose = best_particle->result_pose;
+  result_pose_with_cov_msg.pose.pose = best_particle_ptr->result_pose;
   ndt_pose_with_covariance_pub_.publish(result_pose_with_cov_msg);
 
   return result_pose_with_cov_msg;
@@ -451,6 +463,8 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(co
 
 void NDTScanMatcher::publishMarkerForDebug(const Particle &particle, const size_t i)
 {
+  // TODO getNumSubscribers
+  // TODO clear old object
   visualization_msgs::MarkerArray marker_array;
 
   visualization_msgs::Marker marker;
