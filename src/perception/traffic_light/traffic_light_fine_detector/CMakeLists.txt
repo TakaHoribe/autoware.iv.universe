@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   sensor_msgs
   std_msgs
-  autoware_msgs
   autoware_traffic_light_msgs
   )
 
@@ -45,16 +44,14 @@ endif (CUDA_FOUND)
 option(TRT_AVAIL "TensorRT available" OFF)
 # try to find the tensorRT modules
 find_library(NVINFER NAMES nvinfer)
-find_library(NVPARSERS NAMES nvparsers)
-find_library(NVONNXPARSER_RUNTIME nvonnxparser_runtime)
 find_library(NVONNXPARSER nvonnxparser)
 find_library(NVINFER_PLUGIN NAMES nvinfer_plugin)
-if(NVINFER AND NVPARSERS AND NVONNXPARSER AND NVONNXPARSER_RUNTIME AND NVINFER_PLUGIN)
+if(NVINFER AND NVONNXPARSER AND NVINFER_PLUGIN)
    message("TensorRT is available!")
    message("NVINFER: ${NVINFER}")
    message("NVPARSERS: ${NVPARSERS}")
+   message("NVINFER_PLUGIN: ${NVINFER_PLUGIN}")
    message("NVONNXPARSER: ${NVONNXPARSER}")
-   message("NVONNXPARSER_RUNTIME: ${NVONNXPARSER_RUNTIME}")
    set(TRT_AVAIL ON)
 else()
   message("TensorRT is NOT Available")
@@ -126,7 +123,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   target_link_libraries(libtlrdetector
           ${NVINFER}
           ${NVONNXPARSER}
-          ${NVONNXPARSER_RUNTIME}
           ${NVINFER_PLUGIN}
           ${CUDA_LIBRARIES}
           ${CUDA_CUBLAS_LIBRARIES}
