@@ -1,15 +1,39 @@
-- name: TensorRT (install TensorRT 5.0GA repository)
+- name: TensorRT (install machine learning repository)
   become: yes
   apt:
     deb: "{{ item }}"
   with_items:
-    - http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvinfer-runtime-trt-repo-ubuntu1804-5.0.2-ga-cuda10.0_1-1_amd64.deb
+    - https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
 
-- name: TensorRT (install nvinfer)
+- name: TensorRT (install libraries for TensorRT 7)
   become: yes
   apt:
     name: "{{ item }}"
     update_cache: yes
   with_items:
-    - libnvinfer5
+    - libnvinfer7=7.0.0-1+cuda10.0
+    - libnvinfer-dev=7.0.0-1+cuda10.0
+    - libnvinfer-plugin7=7.0.0-1+cuda10.0
+    - libnvinfer-plugin-dev=7.0.0-1+cuda10.0
+    - libnvonnxparsers7=7.0.0-1+cuda10.0
+    - libnvonnxparsers-dev=7.0.0-1+cuda10.0
+    - libnvparsers7=7.0.0-1+cuda10.0
+    - libnvparsers-dev=7.0.0-1+cuda10.0
+
+- name: TensorRT (prevent cuda related packages from upgrading)
+  become: yes
+  command: apt-mark hold "{{ item }}"
+  with_items:
+    - cuda-repo-ubuntu1804
+    - nvidia-machine-learning-repo-ubuntu1804
+    - cuda-10-0
+    - libcudnn7
+    - libcudnn7-dev
+    - libnvinfer7
     - libnvinfer-dev
+    - libnvinfer-plugin7
+    - libnvinfer-plugin-dev
+    - libnvonnxparsers7
+    - libnvonnxparsers-dev
+    - libnvparsers7
+    - libnvparsers-dev
