@@ -32,10 +32,6 @@ void example(const std::string vector_map_path) {
   const auto crosswalks = vmap.getRelatedCrosswalks(*lane_50);
   assert(equal(sorted(to_ids(stop_lines)), {3}));
   assert(equal(sorted(to_ids(crosswalks)), {11, 14}));
-
-  // TODO: findLaneRoute
-
-  std::cout << "finish!" << std::endl;
 }
 
 }  // namespace autoware_vector_map

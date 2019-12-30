@@ -14,8 +14,6 @@ namespace api {
 using autoware_vector_map::io::GpkgInterface;
 using autoware_vector_map_msgs::BinaryGpkgMap;
 
-// TODO: VectorMapApiConcept
-
 class VectorMapApi {
  public:
   explicit VectorMapApi(GpkgInterface* gpkg_interface);
@@ -37,9 +35,6 @@ class VectorMapApi {
 
   std::vector<ConstPtr<Lane>> getNextLanes(const Lane& lane);
   std::vector<ConstPtr<Lane>> getPrevLanes(const Lane& lane);
-
-  // TODO: getSaferAdjacentLane? Dengerer?
-  // TODO: getLeftLane, getRightLane
 
   std::vector<ConstPtr<StopLine>> getRelatedStopLines(const Lane& lane);
   std::vector<ConstPtr<Crosswalk>> getRelatedCrosswalks(const Lane& lane);

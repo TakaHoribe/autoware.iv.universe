@@ -100,8 +100,7 @@ void example(const std::string vector_map_path) {
     const auto lane_1 = *gpkg_interface.getFeatureById<Lane>(1);
     const auto lane_2 = *gpkg_interface.getFeatureById<Lane>(2);
 
-    std::cout << boost::geometry::distance(lane_1.geometry.at(0), lane_2.geometry) << std::endl
-              << std::endl;
+    std::cout << boost::geometry::distance(lane_1.geometry.at(0), lane_2.geometry) << std::endl;
   }
 }
 }  // namespace autoware_vector_map
