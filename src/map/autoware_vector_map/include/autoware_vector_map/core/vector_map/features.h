@@ -23,6 +23,8 @@ struct Lane : public Feature<LineString3d> {
   double width;
   bool can_left_lane_change;
   bool can_right_lane_change;
+  bool is_merge;
+  bool is_diverge;
   bool is_intersection;
   bool is_left_turn;
   bool is_right_turn;

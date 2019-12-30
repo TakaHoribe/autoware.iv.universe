@@ -48,6 +48,8 @@ def get_autoware_vector_map_layers():
     p["width"] = "float"
     p["can_left_lane_change"] = "bool"
     p["can_right_lane_change"] = "bool"
+    p["is_merge"] = "bool"
+    p["is_diverge"] = "bool"
     p["is_intersection"] = "bool"
     p["is_left_turn"] = "bool"
     p["is_right_turn"] = "bool"
