@@ -18,7 +18,9 @@ def vector_map_preprocessor(gpkg_path):
 
     map_api.save_fiona_objects("lane_connections", cf.create_lane_connections(map_api))
 
-    map_api.save_fiona_objects("lanes_stop_lines", cf.create_intersect_relationships(map_api, "lane", "stop_line"))
+    map_api.save_fiona_objects(
+        "lanes_stop_lines", cf.create_intersect_relationships(map_api, "lane", "stop_line", offset=0.5)
+    )
     map_api.save_fiona_objects("lanes_crosswalks", cf.create_intersect_relationships(map_api, "lane", "crosswalk"))
 
     map_api.save_fiona_objects("adjacent_lanes", cf.create_adjacent_lanes(map_api))
