@@ -16,7 +16,7 @@ def create_empty_vector_map(gpkg_path, crs, only_mandatory):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-path", type=Path, default="./empty_vector_map.gpkg")
+    parser.add_argument("--output-path", type=Path, default="./empty-vector-map.gpkg")
     parser.add_argument("--crs", type=str, default="WGS84")
     parser.add_argument("--only-mandatory", type=bool, default=True)
     ns = parser.parse_args()
