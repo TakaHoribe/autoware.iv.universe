@@ -13,7 +13,7 @@ GpkgInterface::GpkgInterface(const char* gpkg_path) {
   GDALAllRegister();
 
   if (!std::filesystem::exists(gpkg_path)) {
-    const auto msg = fmt::format("file not found: {}", gpkg_path);
+    const auto msg = fmt::format("no such file: {}", gpkg_path);
     throw std::runtime_error(msg);
   }
 

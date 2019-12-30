@@ -86,8 +86,8 @@ bool assignField(OGRFeature* ogr_feature, T* feature) {
   using member = traits::member_n<T, N>;
 
   if (N >= ogr_feature->GetFieldCount()) {
-    const auto msg =
-        "[autoware_vector_map] Too many fields. Please confirm traits::gpkg_content::member_def.";
+    constexpr const char* class_name = traits::gpkg_content<T>::class_name();
+    const auto msg = fmt::format("mismatch in field definition: {}", class_name);
     throw std::runtime_error(msg);
   }
 
@@ -147,7 +147,7 @@ bool assignFields(OGRFeature* ogr_feature, T* feature) {
     if (!assignField<T, 29>(ogr_feature, feature)) return;
     if (!assignField<T, 30>(ogr_feature, feature)) return;
     if (!assignField<T, 31>(ogr_feature, feature)) return;
-    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "unsupported member size");
   }();
 
   return true;
@@ -219,7 +219,7 @@ std::string createFeatureQuery(OGRLayer* layer) {
     if (!addMemberName<T, 29>(&ss)) return;
     if (!addMemberName<T, 30>(&ss)) return;
     if (!addMemberName<T, 31>(&ss)) return;
-    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "unsupported member size");
   }();
 
   std::string geometry_part{};

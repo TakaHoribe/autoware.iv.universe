@@ -94,7 +94,7 @@ std::string toDebugString(const T& feature) {
     if (!addFieldString<T, 29>(feature, &ss)) return;
     if (!addFieldString<T, 30>(feature, &ss)) return;
     if (!addFieldString<T, 31>(feature, &ss)) return;
-    static_assert(!traits::has_member_n<T, 32>::value, "Unsupported member size");
+    static_assert(!traits::has_member_n<T, 32>::value, "unsupported member size");
   }();
 
   return ss.str();

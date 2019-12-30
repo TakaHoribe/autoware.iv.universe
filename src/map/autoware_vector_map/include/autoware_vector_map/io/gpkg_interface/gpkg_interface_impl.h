@@ -19,9 +19,22 @@ namespace io {
 using fmt::literals::operator""_a;
 
 template <class T>
+OGRLayer* getTableLayer(GDALDataset* dataset) {
+  constexpr const char* table_name = traits::gpkg_content<T>::table_name();
+
+  // Use raw pointer because GDAL manages the resource
+  OGRLayer* table_layer = dataset->GetLayerByName(table_name);
+  if (!table_layer) {
+    const auto msg = fmt::format("table doesn't exist: {}", table_name);
+    throw std::runtime_error(msg);
+  }
+
+  return table_layer;
+}
+
+template <class T>
 std::optional<T> GpkgInterface::getFeatureById(const Id id) {
-  // Use raw pointer because reusing the same resource
-  OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
+  OGRLayer* table_layer = getTableLayer<T>(dataset_.get());
   if (!table_layer) {
     return {};
   }
@@ -46,7 +59,7 @@ std::vector<T> GpkgInterface::getFeaturesByIds(const std::vector<Id>& ids) {
     ss_ids << *itr;
   }
 
-  OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
+  OGRLayer* table_layer = getTableLayer<T>(dataset_.get());
   const auto sql =
       fmt::format("SELECT {} FROM {} WHERE {} in ({})", bridge::createFeatureQuery<T>(table_layer),
                   traits::gpkg_content<T>::table_name(), table_layer->GetFIDColumn(), ss_ids.str());
@@ -56,7 +69,7 @@ std::vector<T> GpkgInterface::getFeaturesByIds(const std::vector<Id>& ids) {
 
 template <class T>
 std::vector<T> GpkgInterface::getAllFeatures() {
-  OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
+  OGRLayer* table_layer = getTableLayer<T>(dataset_.get());
   const auto sql = fmt::format("SELECT {} FROM {}", bridge::createFeatureQuery<T>(table_layer),
                                traits::gpkg_content<T>::table_name());
   return getFeaturesBySql<T>(sql.c_str());
@@ -65,8 +78,7 @@ std::vector<T> GpkgInterface::getAllFeatures() {
 template <class T, RelationSide S, class U>
 std::vector<U> GpkgInterface::getRelatedFeaturesById(
     const Id id, const std::function<bool(const T&)> predicate) {
-  OGRLayer* relationship_table_layer =
-      dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
+  OGRLayer* relationship_table_layer = getTableLayer<T>(dataset_.get());
 
   const auto relationship_sql = fmt::format(
       "SELECT {} FROM {} WHERE {} = {}", bridge::createFeatureQuery<T>(relationship_table_layer),
@@ -90,7 +102,7 @@ std::vector<U> GpkgInterface::getRelatedFeaturesById(
 
 template <class T>
 std::vector<T> GpkgInterface::findFeaturesByRange(const Point3d& p, const double range) {
-  OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
+  OGRLayer* table_layer = getTableLayer<T>(dataset_.get());
 
   const auto condition = fmt::format(
       "Intersects(Buffer(GeomFromText('POINTZ({x} {y} {z})'), {range}), "
