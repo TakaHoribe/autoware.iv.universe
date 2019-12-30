@@ -11,39 +11,38 @@ using util::equal;
 using util::sorted;
 using util::to_ids;
 
-void example(const std::string vector_map_path) {
-  api::VectorMapApi vmap(new io::GpkgInterface(vector_map_path.c_str()));
+void example(const char* vector_map_path) {
+  api::VectorMapApi vmap(new io::GpkgInterface(vector_map_path));
 
   // findNearestLane
-  const Point3d p(80720.70642536, 7406.76297997, 0);
-  const double range = 5.0;
-  const auto nearest_lane = vmap.findNearestLane(p, range);
-  assert(nearest_lane->id == 66);
+  {
+    const Point3d p(-5022.11625494, -41829.62138366, 0);
+    const double range = 5.0;
+    const auto nearest_lane = vmap.findNearestLane(p, range);
+    assert(nearest_lane->id == 2);
+  }
 
   // getNextLanes / getPrevLanes
-  const auto next_lanes = vmap.getNextLanes(*nearest_lane);
-  const auto prev_lanes = vmap.getPrevLanes(*nearest_lane);
-  assert(equal(sorted(to_ids(next_lanes)), {69}));
-  assert(equal(sorted(to_ids(prev_lanes)), {}));
+  {
+    const auto lane = *vmap.getFeatureById<Lane>(58);
+    const auto next_lanes = vmap.getNextLanes(lane);
+    const auto prev_lanes = vmap.getPrevLanes(lane);
+    assert(equal(sorted(to_ids(next_lanes)), {20, 52, 53}));
+    assert(equal(sorted(to_ids(prev_lanes)), {}));
+  }
 
   // getRelatedStopLines / getRelatedCrosswalks
-  const auto lane_50 = vmap.getFeatureById<Lane>(50);
-  const auto stop_lines = vmap.getRelatedStopLines(*lane_50);
-  const auto crosswalks = vmap.getRelatedCrosswalks(*lane_50);
-  assert(equal(sorted(to_ids(stop_lines)), {3}));
-  assert(equal(sorted(to_ids(crosswalks)), {11, 14}));
+  {
+    const auto lane = *vmap.getFeatureById<Lane>(20);
+    const auto stop_lines = vmap.getRelatedStopLines(lane);
+    const auto crosswalks = vmap.getRelatedCrosswalks(lane);
+    assert(equal(sorted(to_ids(stop_lines)), {2}));
+    assert(equal(sorted(to_ids(crosswalks)), {2, 4}));
+  }
 }
 
 }  // namespace autoware_vector_map
 
 int main(int argc, char* argv[]) {
-  ros::init(argc, argv, "example1");
-
-  ros::NodeHandle nh_("");
-  ros::NodeHandle private_nh_("~");
-
-  std::string vector_map_path;
-  private_nh_.getParam("vector_map_path", vector_map_path);
-
-  autoware_vector_map::example(vector_map_path);
+  autoware_vector_map::example(helper::getExampleFilePath().c_str());
 }

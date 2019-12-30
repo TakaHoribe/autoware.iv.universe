@@ -6,6 +6,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_vector_map
   roscpp
+  roslib
 )
 
 catkin_package(

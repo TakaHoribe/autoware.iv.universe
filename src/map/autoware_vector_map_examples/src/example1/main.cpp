@@ -10,8 +10,8 @@ namespace autoware_vector_map {
 
 void printTitle(const char* title) { std::cout << "### " << title << " ###" << std::endl; }
 
-void example(const std::string vector_map_path) {
-  io::GpkgInterface gpkg_interface(vector_map_path.c_str());
+void example(const char* vector_map_path) {
+  io::GpkgInterface gpkg_interface(vector_map_path);
 
   {
     printTitle("getFeatureById");
@@ -22,6 +22,8 @@ void example(const std::string vector_map_path) {
       const auto feature = gpkg_interface.getFeatureById<Feature>(id);
       if (feature) {
         std::cout << util::toDebugString(*feature) << std::endl;
+      } else {
+        std::cout << "feature not exist: " << id << std::endl;
       }
     }
   }
@@ -29,7 +31,7 @@ void example(const std::string vector_map_path) {
   {
     printTitle("getFeaturesByIds");
 
-    using Feature = Lane;
+    using Feature = LaneSection;
     const std::vector<Id> ids{-1, 0, 2, 4, 1000};
 
     const auto features = gpkg_interface.getFeaturesByIds<Feature>(ids);
@@ -41,7 +43,7 @@ void example(const std::string vector_map_path) {
   {
     printTitle("getAllFeatures");
 
-    using Feature = LaneSection;
+    using Feature = Crosswalk;
 
     const auto features = gpkg_interface.getAllFeatures<Feature>();
     for (const auto& feature : features) {
@@ -106,13 +108,5 @@ void example(const std::string vector_map_path) {
 }  // namespace autoware_vector_map
 
 int main(int argc, char* argv[]) {
-  ros::init(argc, argv, "example1");
-
-  ros::NodeHandle nh_("");
-  ros::NodeHandle private_nh_("~");
-
-  std::string vector_map_path;
-  private_nh_.getParam("vector_map_path", vector_map_path);
-
-  autoware_vector_map::example(vector_map_path);
+  autoware_vector_map::example(helper::getExampleFilePath().c_str());
 }
