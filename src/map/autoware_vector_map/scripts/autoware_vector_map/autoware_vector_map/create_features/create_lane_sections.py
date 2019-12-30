@@ -14,8 +14,10 @@ def create_lane_sections(map_api: MapApi):
     for lane_section_id in all_lane_section_id_set:
         lanes_in_section = map_api.get_lanes_by_lane_section_id(lane_section_id)
 
-        left_most_lane = map_api.find_edge_lane(lanes_in_section, "left")
-        right_most_lane = map_api.find_edge_lane(lanes_in_section, "right")
+        sorted_lanes = map_util.get_sorted_lanes_from_left_to_right(map_api, lanes_in_section)
+
+        left_most_lane = sorted_lanes[0]
+        right_most_lane = sorted_lanes[-1]
 
         # Alias
         left_half_width = left_most_lane.width / 2
@@ -26,19 +28,13 @@ def create_lane_sections(map_api: MapApi):
         left_geometry = map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width + margin, "left")
         right_geometry = map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width + margin, "right")
 
-        # Create additional points, mainly for intersections
-        if len(lanes_in_section) == 1:
-            start_additional_points = []
-            end_additional_points = []
-        else:
-            start_additional_points = [
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width, "right").coords[0],
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width, "left").coords[0],
-            ]
-            end_additional_points = [
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width, "left").coords[-1],
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width, "right").coords[-1],
-            ]
+        start_additional_points = []
+        end_additional_points = []
+        for lane in sorted_lanes:
+            start_additional_points.append(lane.geometry.coords[0])
+
+        for lane in reversed(sorted_lanes):
+            end_additional_points.append(lane.geometry.coords[-1])
 
         exterior = [
             [left_geometry.coords[0]]
