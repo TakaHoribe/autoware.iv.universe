@@ -108,11 +108,6 @@ std::vector<Id> to_ids(const std::vector<T>& ids) {
   return map(ids, [](const T& f) { return f.id; });
 }
 
-template <class T>
-std::vector<Id> to_ids(const std::vector<ConstPtr<T>>& ids) {
-  return map(ids, [](const ConstPtr<T>& f) { return f->id; });
-}
-
 template <class T_container>
 size_t argmin(const T_container& c) {
   const auto itr = std::min_element(begin(c), end(c));

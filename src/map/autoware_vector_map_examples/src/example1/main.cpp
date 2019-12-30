@@ -34,7 +34,7 @@ void example(const std::string vector_map_path) {
 
     const auto features = gpkg_interface.getFeaturesByIds<Feature>(ids);
     for (const auto& feature : features) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
   }
 
@@ -45,7 +45,7 @@ void example(const std::string vector_map_path) {
 
     const auto features = gpkg_interface.getAllFeatures<Feature>();
     for (const auto& feature : features) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
   }
 
@@ -58,7 +58,7 @@ void example(const std::string vector_map_path) {
 
     const auto features = gpkg_interface.findFeaturesByRange<Feature>(p, range);
     for (const auto& feature : features) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
   }
 
@@ -71,7 +71,7 @@ void example(const std::string vector_map_path) {
     const auto features =
         gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id);
     for (const auto& feature : features) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
   }
 
@@ -84,13 +84,13 @@ void example(const std::string vector_map_path) {
     const auto features1 = gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(
         lane.id, [](const Relationship& r) { return r.type == "left"; });
     for (const auto& feature : features1) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
 
     const auto features2 = gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(
         lane.id, [](const Relationship& r) { return r.type == "right"; });
     for (const auto& feature : features2) {
-      std::cout << util::toDebugString(*feature) << std::endl;
+      std::cout << util::toDebugString(feature) << std::endl;
     }
   }
 

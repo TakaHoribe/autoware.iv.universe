@@ -19,24 +19,24 @@ namespace io {
 using fmt::literals::operator""_a;
 
 template <class T>
-ConstPtr<T> GpkgInterface::getFeatureById(const Id id) {
+std::optional<T> GpkgInterface::getFeatureById(const Id id) {
   // Use raw pointer because reusing the same resource
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
   if (!table_layer) {
-    return nullptr;
+    return {};
   }
 
   const auto ogr_feature =
       std::shared_ptr<OGRFeature>(table_layer->GetFeature(static_cast<GIntBig>(id)));
   if (!ogr_feature) {
-    return nullptr;
+    return {};
   }
 
-  return std::make_shared<T>(bridge::fromOgrFeature<T>(ogr_feature.get()));
+  return bridge::fromOgrFeature<T>(ogr_feature.get());
 }
 
 template <class T>
-std::vector<ConstPtr<T>> GpkgInterface::getFeaturesByIds(const std::vector<Id>& ids) {
+std::vector<T> GpkgInterface::getFeaturesByIds(const std::vector<Id>& ids) {
   std::stringstream ss_ids;
   for (auto itr = std::begin(ids); itr != std::end(ids); ++itr) {
     if (itr != std::begin(ids)) {
@@ -55,7 +55,7 @@ std::vector<ConstPtr<T>> GpkgInterface::getFeaturesByIds(const std::vector<Id>& 
 }
 
 template <class T>
-std::vector<ConstPtr<T>> GpkgInterface::getAllFeatures() {
+std::vector<T> GpkgInterface::getAllFeatures() {
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
   const auto sql = fmt::format("SELECT {} FROM {}", bridge::createFeatureQuery<T>(table_layer),
                                traits::gpkg_content<T>::table_name());
@@ -63,7 +63,7 @@ std::vector<ConstPtr<T>> GpkgInterface::getAllFeatures() {
 }
 
 template <class T, RelationSide S, class U>
-std::vector<ConstPtr<U>> GpkgInterface::getRelatedFeaturesById(
+std::vector<U> GpkgInterface::getRelatedFeaturesById(
     const Id id, const std::function<bool(const T&)> predicate) {
   OGRLayer* relationship_table_layer =
       dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
@@ -73,23 +73,23 @@ std::vector<ConstPtr<U>> GpkgInterface::getRelatedFeaturesById(
       traits::gpkg_content<T>::table_name(),
       traits::gpkg_relationship<T>::template this_feature_id_name<S>(), id);
 
-  std::vector<ConstPtr<T>> relationship_features = getFeaturesBySql<T>(relationship_sql.c_str());
+  std::vector<T> relationship_features = getFeaturesBySql<T>(relationship_sql.c_str());
 
   std::vector<Id> feature_ids;
   for (const auto relationship_feature : relationship_features) {
-    if (predicate && !predicate(*relationship_feature)) {
+    if (predicate && !predicate(relationship_feature)) {
       continue;
     }
 
     feature_ids.push_back(
-        traits::gpkg_relationship<T>::template related_feature_id<S>(*relationship_feature));
+        traits::gpkg_relationship<T>::template related_feature_id<S>(relationship_feature));
   }
 
   return getFeaturesByIds<U>(feature_ids);
 }
 
 template <class T>
-std::vector<ConstPtr<T>> GpkgInterface::findFeaturesByRange(const Point3d& p, const double range) {
+std::vector<T> GpkgInterface::findFeaturesByRange(const Point3d& p, const double range) {
   OGRLayer* table_layer = dataset_->GetLayerByName(traits::gpkg_content<T>::table_name());
 
   const auto condition = fmt::format(
@@ -106,18 +106,18 @@ std::vector<ConstPtr<T>> GpkgInterface::findFeaturesByRange(const Point3d& p, co
 }
 
 template <class T>
-std::vector<ConstPtr<T>> GpkgInterface::getFeaturesBySql(const char* sql) {
+std::vector<T> GpkgInterface::getFeaturesBySql(const char* sql) {
   const auto result_layer = std::shared_ptr<OGRLayer>(dataset_->ExecuteSQL(sql, nullptr, "sql"));
   return getFeaturesByLayer<T>(result_layer.get());
 }
 
 template <class T>
-std::vector<ConstPtr<T>> GpkgInterface::getFeaturesByLayer(OGRLayer* layer) {
-  std::vector<ConstPtr<T>> features;
+std::vector<T> GpkgInterface::getFeaturesByLayer(OGRLayer* layer) {
+  std::vector<T> features;
   features.reserve(layer->GetFeatureCount());
 
   while (auto ogr_feature = layer->GetNextFeature()) {
-    features.push_back(getFeatureById<T>(static_cast<Id>(ogr_feature->GetFID())));
+    features.push_back(*getFeatureById<T>(static_cast<Id>(ogr_feature->GetFID())));
   }
 
   return features;
