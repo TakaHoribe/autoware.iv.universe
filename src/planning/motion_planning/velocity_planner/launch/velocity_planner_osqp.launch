@@ -1,6 +1,6 @@
 <launch>
   <arg name="ns" default="/"/>
-  <arg name="output" default="screen"/>
+  <arg name="output" default="log"/>
 
   <!-- debug flags -->
   <arg name="show_debug_info" default="true"/>
@@ -34,7 +34,7 @@
   <arg name="emergency_flag_vel_thr_kmph" default="3.0"/>
   <arg name="large_jerk_report" default="-1.4"/>
 
-  <arg name="optimization_param_smooth_weight" default="1000000.0"/>
+  <arg name="pseudo_jerk_weight" default="10000.0"/>
   <arg name="enable_latacc_filter" default="true"/>
 
 
@@ -63,8 +63,9 @@
     <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
     <param name="enable_to_publish_emergency" value="$(arg enable_to_publish_emergency)"/>
     <param name="large_jerk_report" value="$(arg large_jerk_report)"/>
-    <param name="optimization_param_smooth_weight" value="$(arg optimization_param_smooth_weight)"/>
     <param name="enable_latacc_filter" value="$(arg enable_latacc_filter)"/>
+    <param name="pseudo_jerk_weight" value="$(arg pseudo_jerk_weight)"/>
+
   </node>
 
 

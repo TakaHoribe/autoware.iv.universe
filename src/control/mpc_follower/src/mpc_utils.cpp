@@ -137,7 +137,7 @@ bool MPCUtils::interp1dMPCTraj(const std::vector<double> &index, const MPCTrajec
   {
     if (!(index[i] > index[i - 1]))
     {
-      printf("index must be monotonically increasing, return false. index[%d] = %f, but index[%d] = %f\n", i, index[i], i-1, index[i - 1]);
+      printf("index must be monotonically increasing, return false. index[%d] = %f, but index[%d] = %f. index.size() = %lu\n", i, index[i], i-1, index[i - 1], index.size());
       return false;
     }
   }
