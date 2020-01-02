@@ -31,13 +31,13 @@ bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
 
   if (!csv.readCsv(table))
   {
-    ROS_ERROR("[Brake Map] Cannot open %s", csv_path);
+    ROS_ERROR("[Brake Map] Cannot open %s", csv_path.c_str());
     return false;
   }
 
   if (table[0].size() < 2)
   {
-    ROS_ERROR("[Brake Map] Cannot read %s. CSV file should have at least 2 column", csv_path);
+    ROS_ERROR("[Brake Map] Cannot read %s. CSV file should have at least 2 column", csv_path.c_str());
     return false;
   }
 
@@ -51,7 +51,7 @@ bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
   {
     if (table[0].size() != table[i].size())
     {
-      ROS_ERROR("[Brake Map] Cannot read %s. Each row should have a same number of columns", csv_path);
+      ROS_ERROR("[Brake Map] Cannot read %s. Each row should have a same number of columns", csv_path.c_str());
       return false;
     }
     brake_index_.push_back(std::stod(table[i][0]));
