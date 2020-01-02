@@ -13,6 +13,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~")
     pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &SingletonDataManager::pointcloudCallback, &SingletonDataManager::getInstance());
     vehicle_velocity_sub_ = pnh_.subscribe("input/vehicle/velocity", 1, &SingletonDataManager::velocityCallback, &SingletonDataManager::getInstance());
     map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &SingletonDataManager::mapCallback, &SingletonDataManager::getInstance());
+    traffic_light_states_sub_ = pnh_.subscribe("input/traffic_light_states", 10, &SingletonDataManager::trafficLightStatesCallback, &SingletonDataManager::getInstance());
     path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
     debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
     pnh_.param("foward_path_length", foward_path_length_, 1000.0);

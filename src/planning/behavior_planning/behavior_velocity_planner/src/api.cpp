@@ -21,6 +21,11 @@ bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &pointcloud)
     return ret;
 }
 
+bool getTrafficLightState(const int id, std_msgs::Header &header, autoware_traffic_light_msgs::TrafficLightState &traffic_light){
+    return SingletonDataManager::getInstance().getTrafficLightState(id, header, traffic_light);
+}
+
+
 bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist){
     return SingletonDataManager::getInstance().getCurrentSelfVelocity(twist);
 }
