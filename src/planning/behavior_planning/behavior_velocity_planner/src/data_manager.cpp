@@ -30,6 +30,13 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin &inp
     lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
+void SingletonDataManager::trafficLightStatesCallback(const autoware_traffic_light_msgs::TrafficLightStateArray &input_msg){
+    for (size_t i = 0; i < input_msg.states.size(); ++i)
+    {
+        traffic_light_id_map_[input_msg.states.at(i).id] = std::make_tuple(input_msg.header, input_msg.states.at(i));
+    }
+}
+
 void SingletonDataManager::setWheelBase(const double &wheel_base)
 {
     wheel_base_ptr_ = std::make_shared<double>(wheel_base);
@@ -58,6 +65,17 @@ bool SingletonDataManager::getNoGroundPointcloud(std::shared_ptr<sensor_msgs::Po
     if (pointcloud_ptr_ == nullptr)
         return false;
     pointcloud = pointcloud_ptr_;
+    return true;
+}
+
+bool SingletonDataManager::getTrafficLightState(const int id,
+                                                std_msgs::Header &header,
+                                                autoware_traffic_light_msgs::TrafficLightState &traffic_light)
+{
+    if (traffic_light_id_map_.count(id) == 0)
+        return false;
+    header = std::get<0>(traffic_light_id_map_.at(id));
+    traffic_light = std::get<1>(traffic_light_id_map_.at(id));
     return true;
 }
 

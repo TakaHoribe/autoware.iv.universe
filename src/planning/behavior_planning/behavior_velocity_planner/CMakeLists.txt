@@ -10,6 +10,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   autoware_planning_msgs
+  autoware_traffic_light_msgs
   geometry_msgs
   lanelet2_extension
   roscpp
@@ -116,7 +117,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES behavior_velocity_planner
-  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs
+  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs autoware_traffic_light_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -153,10 +154,11 @@ src/utilization/path_utilization.cpp
 src/planner_manager.cpp
 src/node.cpp
 src/main.cpp
-src/scene_module/momentary_stop.cpp
-src/scene_module/crosswalk.cpp
+src/scene_module/momentary_stop/momentary_stop.cpp
+src/scene_module/crosswalk/crosswalk.cpp
 src/scene_module/intersection/intersection.cpp
 src/scene_module/intersection/util/util.cpp
+src/scene_module/traffic_light/traffic_light.cpp
 )
 
 ## Rename C++ executable without prefix

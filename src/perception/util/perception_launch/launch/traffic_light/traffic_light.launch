@@ -2,7 +2,7 @@
 
 <launch>
 
-    <arg name="enable_fine_detection" default="true"/>
+    <arg name="enable_fine_detection" default="false"/>
     <arg name="input/image" default="/camera/image_raw"/>
 
     <group if="$(arg enable_fine_detection)">
