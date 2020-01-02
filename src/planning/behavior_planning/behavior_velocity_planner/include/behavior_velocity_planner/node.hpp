@@ -46,6 +46,7 @@ private:
   ros::Subscriber perception_sub_;
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber vehicle_velocity_sub_;
+  ros::Subscriber traffic_light_states_sub_;
   ros::Subscriber map_sub_;
   ros::Publisher path_pub_;
   ros::Publisher debug_viz_pub_;

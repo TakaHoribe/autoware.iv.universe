@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="onnx_file" default="$(find traffic_light_fine_detector)/data/yolov3-tlr.onnx"/>
+  <arg name="onnx_file" default="$(find traffic_light_fine_detector)/data/yolov3_tlr.engine"/>
   <arg name="input/image" default="/image_raw"/>
   <arg name="input/rois" default="/traffic_light_map_based_detector/output/rois" />
   <arg name="output/rois" default="output/rois" />

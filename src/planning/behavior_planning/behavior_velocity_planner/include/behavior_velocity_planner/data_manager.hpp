@@ -18,6 +18,7 @@
 #include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_traffic_light_msgs/TrafficLightStateArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -74,6 +75,7 @@ private:
     std::shared_ptr<double> wheel_base_ptr_;
     std::shared_ptr<double> front_overhang_ptr_;
     std::shared_ptr<double> vehicle_width_ptr_;
+    std::map<int, std::tuple<std_msgs::Header, autoware_traffic_light_msgs::TrafficLightState>> traffic_light_id_map_;
 
     /*
      * SelfPoseLinstener
@@ -83,6 +85,7 @@ private:
     void pointcloudCallback(const sensor_msgs::PointCloud2 &input_pointcloud_msg);
     void velocityCallback(const geometry_msgs::TwistStamped &input_twist_msg);
     void mapCallback(const autoware_lanelet2_msgs::MapBin &input_map_msg);
+    void trafficLightStatesCallback(const autoware_traffic_light_msgs::TrafficLightStateArray &input_tl_states_msg);
 
 public:
     // setter
@@ -92,6 +95,7 @@ public:
     // getter
     bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> &objects);
     bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const> &pointcloud);
+    bool getTrafficLightState(const int id, std_msgs::Header &header, autoware_traffic_light_msgs::TrafficLightState &traffic_light);
     bool getCurrentSelfPose(geometry_msgs::PoseStamped &pose);
     bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const> &twist);
     bool getLaneletMap(lanelet::LaneletMapConstPtr &lanelet_map_ptr,

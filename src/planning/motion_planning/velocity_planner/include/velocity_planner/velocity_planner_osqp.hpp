@@ -56,7 +56,7 @@ private:
 
   autoware_planning_msgs::Trajectory prev_output_trajectory_;  // velocity replanned waypoints (output of this node)
 
-  bool show_debug_info_;      // print level 1
+  bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
   bool show_figure_;          // for plot visualize
   bool enable_latacc_filter_;
@@ -84,9 +84,6 @@ private:
     double max_velocity;
     double max_accel;             // max acceleration in planning [m/s2] > 0
     double min_decel;             // min deceltion in planning [m/s2] < 0
-    double acc_jerk;          // max jerk in acceleration [m/s3] > 0
-    double dec_jerk_nominal;  // nominal jerk in deceleration [m/s3] < 0
-    double dec_jerk_urgent;   // min jerk in deceleration [m/s3] < 0
     double max_lat_acc;
     double replan_vel_deviation;           // replan with current speed if speed deviation exceeds this value [m/s]
     double replan_stop_point_change_dist;  // replan if stop position changes over this distance [m]
@@ -97,14 +94,17 @@ private:
     double extract_behind_dist;            // backward waypoints distance from current position [m]
     int resample_num;          // used in resample with interpolate (output waypints size = original size * this value)
     double large_jerk_report;  // publish emergency topic if stop jerk overs this value
-    double velocity_feedback_gain;  // to calculate desired acceleration from velocity deviation
     double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
     double emergency_flag_vel_thr_kmph;    // Threshold for throwing emergency flag when unable to stop under jerk constraints
     double jerk_planning_span;             // Interval jerk value when planning from nominal jerk to maximum jerk for stop
     double stop_dist_mergin;
   } planning_param_;
 
-  double optimization_param_smooth_weight_;
+  struct QPParam
+  {
+    double pseudo_jerk_weight;
+  } qp_param_;
+
 
   /* topic callback */
   void callbackCurrentPose(const geometry_msgs::PoseStamped::ConstPtr msg);
@@ -147,12 +147,8 @@ private:
   {
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;
-    planning_param_.acc_jerk = config.max_acc_jerk;
-    planning_param_.dec_jerk_nominal = config.min_dec_jerk_nominal;
-    planning_param_.dec_jerk_urgent = config.min_dec_jerk_urgent;
     planning_param_.engage_velocity = config.engage_velocity;
     planning_param_.engage_acceleration = config.engage_acceleration;
-    planning_param_.velocity_feedback_gain = config.velocity_feedback_gain;
   }
 
 
