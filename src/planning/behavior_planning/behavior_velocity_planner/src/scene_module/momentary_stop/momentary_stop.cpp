@@ -19,7 +19,13 @@ MomentaryStopModule::MomentaryStopModule(MomentaryStopModuleManager *manager_ptr
 {
     if (manager_ptr_ != nullptr)
         manager_ptr_->registerTask(stop_line, task_id_);
-};
+}
+
+MomentaryStopModule::~MomentaryStopModule()
+{
+    if (manager_ptr_ != nullptr)
+        manager_ptr_->unregisterTask(task_id_);
+}
 
 bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output)
 {
@@ -38,7 +44,7 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &inpu
             bg::intersection(stop_line, line, collision_points);
             if (collision_points.empty())
                 continue;
-    
+
             // search stop point index
             size_t insert_stop_point_idx;
             double base_link2front;
@@ -131,9 +137,6 @@ bool MomentaryStopModule::endOfLife(const autoware_planning_msgs::PathWithLaneId
 
     // is_end_of_life = (!found && state_ == State::START);
     is_end_of_life = !found;
-    if (is_end_of_life)
-        if (manager_ptr_ != nullptr)
-            manager_ptr_->unregisterTask(task_id_);
     return is_end_of_life;
 }
 

@@ -31,7 +31,7 @@ public:
                         const int lane_id);
     bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) override;
     bool endOfLife(const autoware_planning_msgs::PathWithLaneId &input) override;
-    ~MomentaryStopModule(){};
+    ~MomentaryStopModule();
 
 private:
     bool getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
