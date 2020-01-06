@@ -25,7 +25,7 @@ TEST_F(TestSuite, toBinary) {
   GpkgInterface gpkg_interface(vector_map_path_.c_str());
   const auto bin_data = gpkg_interface.toBinary();
 
-  ASSERT_EQ(bin_data.size(), 217088);
+  ASSERT_EQ(bin_data.size(), 380928);
 }
 
 int main(int argc, char* argv[]) {
