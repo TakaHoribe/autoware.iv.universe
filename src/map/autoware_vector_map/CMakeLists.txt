@@ -7,7 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_vector_map_msgs
   geometry_msgs
   roscpp
-  rosfmt
   tf2
   tf2_geometry_msgs
   tf2_ros
@@ -16,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(GDAL REQUIRED)
+find_package(fmt REQUIRED)
 
 # To be replaced by std::filesystem in C++17
 find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -27,7 +27,6 @@ catkin_package(
     autoware_vector_map
   CATKIN_DEPENDS
     autoware_vector_map_msgs
-    rosfmt
   DEPENDS
     Boost
     EIGEN3
@@ -52,6 +51,7 @@ add_library(autoware_vector_map
 target_link_libraries(autoware_vector_map
   ${Boost_LIBRARIES}
   ${GDAL_LIBRARIES}
+  fmt
   ${catkin_LIBRARIES}
 )
 

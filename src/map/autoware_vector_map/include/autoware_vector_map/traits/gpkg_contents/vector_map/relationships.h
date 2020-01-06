@@ -1,47 +1,42 @@
 #pragma once
 
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 #define AUTOWARE_VECTOR_MAP_REGISTER_GPKG_RELATIONSHIP(RELATIONSHIP, TABLE_NAME, LEFT_FEATURE_ID, \
                                                        RIGHT_FEATURE_ID)                          \
   AUTOWARE_VECTOR_MAP_REGISTER_GPKG_CONTENT(RELATIONSHIP, TABLE_NAME)                             \
-  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(RELATIONSHIP, 0, LEFT_FEATURE_ID, data::invalid_id)    \
-  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(RELATIONSHIP, 1, RIGHT_FEATURE_ID, data::invalid_id)   \
+  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(RELATIONSHIP, 0, LEFT_FEATURE_ID, invalid_id)          \
+  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(RELATIONSHIP, 1, RIGHT_FEATURE_ID, invalid_id)         \
                                                                                                   \
   template <>                                                                                     \
-  constexpr const char* gpkg_relationship<data::RELATIONSHIP>::left_feature_id_name() {           \
+  constexpr const char* gpkg_relationship<RELATIONSHIP>::left_feature_id_name() {                 \
     return #LEFT_FEATURE_ID;                                                                      \
   }                                                                                               \
                                                                                                   \
   template <>                                                                                     \
-  constexpr const char* gpkg_relationship<data::RELATIONSHIP>::right_feature_id_name() {          \
+  constexpr const char* gpkg_relationship<RELATIONSHIP>::right_feature_id_name() {                \
     return #RIGHT_FEATURE_ID;                                                                     \
   }                                                                                               \
                                                                                                   \
   template <>                                                                                     \
-  inline data::Id gpkg_relationship<data::RELATIONSHIP>::left_feature_id(                         \
-      const data::RELATIONSHIP& relationship) {                                                   \
+  inline Id gpkg_relationship<RELATIONSHIP>::left_feature_id(const RELATIONSHIP& relationship) {  \
     return relationship.LEFT_FEATURE_ID;                                                          \
   }                                                                                               \
                                                                                                   \
   template <>                                                                                     \
-  inline data::Id gpkg_relationship<data::RELATIONSHIP>::right_feature_id(                        \
-      const data::RELATIONSHIP& relationship) {                                                   \
+  inline Id gpkg_relationship<RELATIONSHIP>::right_feature_id(const RELATIONSHIP& relationship) { \
     return relationship.RIGHT_FEATURE_ID;                                                         \
   }
 
 namespace autoware_vector_map {
 namespace traits {
 
-enum class RelationSide {
-  Left,
-  Right,
-};
-
 template <class T>
 struct gpkg_relationship {
   static constexpr const char* left_feature_id_name();
   static constexpr const char* right_feature_id_name();
+  static Id left_feature_id(const T& relationship);
+  static Id right_feature_id(const T& relationship);
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Left, std::nullptr_t> = nullptr>
   static constexpr const char* this_feature_id_name() {
@@ -63,58 +58,61 @@ struct gpkg_relationship {
     return left_feature_id_name();
   }
 
-  static data::Id left_feature_id(const T& relationship);
-  static data::Id right_feature_id(const T& relationship);
-
   template <RelationSide S, std::enable_if_t<S == RelationSide::Left, std::nullptr_t> = nullptr>
-  static data::Id this_feature_id(const T& relationship) {
+  static Id this_feature_id(const T& relationship) {
     return left_feature_id(relationship);
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Right, std::nullptr_t> = nullptr>
-  static data::Id this_feature_id(const T& relationship) {
+  static Id this_feature_id(const T& relationship) {
     return right_feature_id(relationship);
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Left, std::nullptr_t> = nullptr>
-  static data::Id related_feature_id(const T& relationship) {
+  static Id related_feature_id(const T& relationship) {
     return right_feature_id(relationship);
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Right, std::nullptr_t> = nullptr>
-  static data::Id related_feature_id(const T& relationship) {
+  static Id related_feature_id(const T& relationship) {
     return left_feature_id(relationship);
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Left, std::nullptr_t> = nullptr>
-  static auto this_feature() {
+  static auto empty_this_feature() {
     return typename T::LeftFeatureType();
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Right, std::nullptr_t> = nullptr>
-  static auto this_feature() {
+  static auto empty_this_feature() {
     return typename T::RightFeatureType();
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Left, std::nullptr_t> = nullptr>
-  static auto related_feature() {
+  static auto empty_related_feature() {
     return typename T::RightFeatureType();
   }
 
   template <RelationSide S, std::enable_if_t<S == RelationSide::Right, std::nullptr_t> = nullptr>
-  static auto related_feature() {
+  static auto empty_related_feature() {
     return typename T::LeftFeatureType();
   }
 
   template <RelationSide S>
-  struct ThisFeature {
-    using type = decltype(this_feature<S>());
+  struct this_feature {
+    using type = decltype(empty_this_feature<S>());
   };
 
   template <RelationSide S>
-  struct RelatedFeature {
-    using type = decltype(related_feature<S>());
+  struct related_feature {
+    using type = decltype(empty_related_feature<S>());
   };
+
+  template <RelationSide S>
+  using this_feature_t = typename this_feature<S>::type;
+
+  template <RelationSide S>
+  using related_feature_t = typename related_feature<S>::type;
 };
 
 AUTOWARE_VECTOR_MAP_REGISTER_GPKG_RELATIONSHIP(LaneSectionConnection, lane_section_connections,

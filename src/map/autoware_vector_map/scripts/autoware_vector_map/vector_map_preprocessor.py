@@ -6,22 +6,30 @@ from pathlib import Path
 import autoware_vector_map.create_features as cf
 from autoware_vector_map.map_api import MapApi
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 def vector_map_preprocessor(gpkg_path):
     map_api = MapApi(gpkg_path)
+    map_api.create_tables_if_not_exist()
+    map_api.fix_schemas()
 
     map_api.save_fiona_objects("lane_connections", cf.create_lane_connections(map_api))
 
-    map_api.save_fiona_objects("lanes_stop_lines", cf.create_intersect_relationships(map_api, "lane", "stop_line"))
+    map_api.save_fiona_objects(
+        "lanes_stop_lines", cf.create_intersect_relationships(map_api, "lane", "stop_line", offset=0.5)
+    )
     map_api.save_fiona_objects("lanes_crosswalks", cf.create_intersect_relationships(map_api, "lane", "crosswalk"))
 
     map_api.save_fiona_objects("adjacent_lanes", cf.create_adjacent_lanes(map_api))
 
     map_api.save_fiona_objects("lane_sections", cf.create_lane_sections(map_api))
     map_api.save_fiona_objects("lane_section_connections", cf.create_lane_section_connections(map_api))
+
+    map_api.save_fiona_objects("lane_boundaries", cf.create_lane_boundaries(map_api))
+    map_api.save_fiona_objects("adjacent_lane_boundaries", cf.create_adjacent_lane_boundaries(map_api))
 
 
 def main():

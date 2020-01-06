@@ -1,3 +1,6 @@
+from autoware_vector_map.map_api import MapApi
+
+
 def create_lane_section_connection(lane_section_id, next_lane_section_id):
     return {
         "geometry": None,
@@ -5,7 +8,7 @@ def create_lane_section_connection(lane_section_id, next_lane_section_id):
     }
 
 
-def create_lane_section_connections(map_api):
+def create_lane_section_connections(map_api: MapApi):
     lanes = map_api.get_all_features_as_gdf("lanes")
     all_lane_section_id_set = {lane.lane_section_id for lane in lanes.itertuples()}
 

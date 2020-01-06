@@ -1,43 +1,40 @@
 from autoware_vector_map import map_util
+from autoware_vector_map.map_api import MapApi
 
 
-def create_lane_section(coordinates):
-    return {"geometry": {"type": "Polygon", "coordinates": coordinates}, "properties": {}}
+def create_lane_section(id, coordinates):
+    return {"id": id, "geometry": {"type": "Polygon", "coordinates": coordinates}, "properties": {}}
 
 
-def create_lane_sections(map_api):
+def create_lane_sections(map_api: MapApi):
     lanes = map_api.get_all_features_as_gdf("lanes")
     all_lane_section_id_set = {lane.lane_section_id for lane in lanes.itertuples()}
 
     lane_sections = []
     for lane_section_id in all_lane_section_id_set:
-        lanes_in_section = list(lanes[lanes.lane_section_id == lane_section_id].itertuples())
+        lanes_in_section = map_api.get_lanes_by_lane_section_id(lane_section_id)
 
-        left_most_lane = map_api.find_edge_lane(lanes_in_section, "left")
-        right_most_lane = map_api.find_edge_lane(lanes_in_section, "right")
+        sorted_lanes = map_util.get_sorted_lanes_from_left_to_right(map_api, lanes_in_section)
 
-        # Set offset distance
-        margin = 0.5
-        left_offset = margin + left_most_lane.width / 2
-        right_offset = margin + right_most_lane.width / 2
+        left_most_lane = sorted_lanes[0]
+        right_most_lane = sorted_lanes[-1]
+
+        # Alias
+        left_half_width = left_most_lane.width / 2
+        right_half_width = right_most_lane.width / 2
 
         # Shift geometry using width
-        left_geometry = map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "left")
-        right_geometry = map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "right")
+        margin = 0.5
+        left_geometry = map_util.parallel_offset_wrapper(left_most_lane.geometry, left_half_width + margin, "left")
+        right_geometry = map_util.parallel_offset_wrapper(right_most_lane.geometry, right_half_width + margin, "right")
 
-        # Create additional points, mainly for intersections
-        if len(lanes_in_section) == 1:
-            start_additional_points = []
-            end_additional_points = []
-        else:
-            start_additional_points = [
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "right").coords[0],
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "left").coords[0],
-            ]
-            end_additional_points = [
-                map_util.parallel_offset_wrapper(right_most_lane.geometry, right_offset, "left").coords[-1],
-                map_util.parallel_offset_wrapper(left_most_lane.geometry, left_offset, "right").coords[-1],
-            ]
+        start_additional_points = []
+        end_additional_points = []
+        for lane in sorted_lanes:
+            start_additional_points.append(lane.geometry.coords[0])
+
+        for lane in reversed(sorted_lanes):
+            end_additional_points.append(lane.geometry.coords[-1])
 
         exterior = [
             [left_geometry.coords[0]]
@@ -51,6 +48,6 @@ def create_lane_sections(map_api):
 
         coordinates = exterior + interiors
 
-        lane_sections.append(create_lane_section(coordinates))
+        lane_sections.append(create_lane_section(lane_section_id, coordinates))
 
     return lane_sections

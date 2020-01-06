@@ -162,6 +162,14 @@ test = ["pytest (>=3)", "pytest-cov", "boto3 (>=1.2.4)", "mock"]
 
 [[package]]
 category = "main"
+description = "GDAL: Geospatial Data Abstraction Library"
+name = "gdal"
+optional = false
+python-versions = "*"
+version = "2.2.3"
+
+[[package]]
+category = "main"
 description = "Geographic pandas extensions"
 name = "geopandas"
 optional = false
@@ -821,7 +829,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "0624b03d15f6714db9ceab28c3497971b02cfa4e8cec32a629d9820658038f51"
+content-hash = "745e8a7e7cf0a177aef4363a9871d49cbc24155eeb6e54695dfb3afe333a2f79"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -890,6 +898,9 @@ fiona = [
     {file = "Fiona-1.8.13-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:83314cf2cbe50df24c290d241681964adf6fe9c0ba33a0a0f980a5f44008296b"},
     {file = "Fiona-1.8.13-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:f0adf55192ac715c1ac7a19ff1aacd667ffe251df0e09b9a6feeddce45849f17"},
     {file = "Fiona-1.8.13.tar.gz", hash = "sha256:5ec34898c8b983a723fb4e949dd3e0ed7e691c303e51f6bfd61e52ac9ac813ae"},
+]
+gdal = [
+    {file = "GDAL-2.2.3.tar.gz", hash = "sha256:561a952394bc1d9291179a8677eb6f5dafbf3e361c851f3dbb59db604c9b8e8b"},
 ]
 geopandas = [
     {file = "geopandas-0.6.2-py2.py3-none-any.whl", hash = "sha256:684b4f8b2452638f9f1d43aed6a44bf0638b739a403f19f8a74f3f9beef94e41"},

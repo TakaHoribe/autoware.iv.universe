@@ -6,6 +6,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_vector_map
   roscpp
+  roslib
 )
 
 catkin_package(
@@ -23,6 +24,9 @@ include_directories(
 # Target
 add_executable(example1 src/example1/main.cpp)
 target_link_libraries(example1 ${catkin_LIBRARIES})
+
+add_executable(example2 src/example2/main.cpp)
+target_link_libraries(example2 ${catkin_LIBRARIES})
 
 # Install
 install(

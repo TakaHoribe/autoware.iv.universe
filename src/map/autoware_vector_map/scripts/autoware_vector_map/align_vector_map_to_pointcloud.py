@@ -9,66 +9,81 @@ from shapely.geometry import LinearRing, LineString, Point, Polygon
 from autoware_vector_map.map_api import MapApi
 
 
-def find_nearest_z_value(points, x, y, z):
-    # Alias
+def filter_points_by_rectangle(points, x_min, x_max, y_min, y_max):
     xs = points[:, 0]
     ys = points[:, 1]
-    zs = points[:, 2]
 
-    # Filter by rectangle
+    idx = np.where((x_min < xs) & (xs < x_max) & (y_min < ys) & (ys < y_max))
+
+    return points[idx[0]]
+
+
+def find_nearest_z_value(points, x, y, z, height_offset):
     margin = 5
-    idx = np.argwhere((x - margin < xs) & (xs < x + margin) & (y - margin < ys) & (ys < y + margin))
+    x_min, x_max = (x - margin, x + margin)
+    y_min, y_max = (y - margin, y + margin)
+    filtered_points = filter_points_by_rectangle(points, x_min, x_max, y_min, y_max)
 
-    if not idx.any():
+    if not filtered_points.any():
         return None
 
-    new_z = np.min(zs[idx])
+    zs = filtered_points[:, 2]
+    min_z = np.min(zs)
+    search_margin = 1
+
+    zs_in_range = zs[(min_z + height_offset - search_margin < zs) & (zs < min_z + height_offset + search_margin)]
+    new_z = np.mean(zs_in_range)
 
     return new_z
 
 
-def create_new_coord(points, coord):
+def create_new_coord(points, coord, height_offset):
     x, y, z = (coord[0], coord[1], coord[2])
-    new_z = find_nearest_z_value(points, x, y, z)
-    return (x, y, new_z)
+    new_z = find_nearest_z_value(points, x, y, z, height_offset)
+
+    if new_z:
+        return (x, y, new_z)
+    else:
+        return (x, y, z)
 
 
-def create_new_geometry(points, geometry):
+def create_new_geometry(points, geometry, height_offset):
+    f_new_coord = lambda points, coord: create_new_coord(points, coord, height_offset)
+
     if geometry.geom_type == "Point":
-        return create_new_coord(points, geometry.coords[0])
+        return Point(f_new_coord(points, geometry.coords[0]))
+
+    x_min, y_min, x_max, y_max = geometry.bounds
+    filtered_points = filter_points_by_rectangle(points, x_min, x_max, y_min, y_max)
 
     if geometry.geom_type == "LineString":
-        new_coords = []
-        for coord in geometry.coords:
-            new_coords.append(create_new_coord(points, coord))
-
-        return LineString(new_coords)
+        return LineString([f_new_coord(filtered_points, c) for c in geometry.coords])
 
     if geometry.geom_type == "LinearRing":
-        new_coords = []
-        for coord in geometry.coords:
-            new_coords.append(create_new_coord(points, coord))
-
-        return LinearRing(new_coords)
+        return LinearRing([f_new_coord(filtered_points, c) for c in geometry.coords])
 
     if geometry.geom_type == "Polygon":
-        new_exterior = create_new_geometry(points, geometry.exterior).coords
-
-        new_interiors = []
-        for interior in geometry.interiors:
-            new_interiors.append(create_new_geometry(points, interior).coords)
-
-        return Polygon(new_exterior, new_interiors)
+        exterior = [f_new_coord(filtered_points, c) for c in geometry.exterior.coords]
+        interiors = [[f_new_coord(filtered_points, c) for c in interior.coords] for interior in geometry.interiors]
+        return Polygon(exterior, interiors)
 
 
-def align_features(map_api, table_name, points):
+def align_features(map_api: MapApi, table_name, points):
     gdf = map_api.get_all_features_as_gdf(table_name)
 
     if not gdf.geometry.any():
         return
 
+    x_min, y_min, x_max, y_max = gdf.total_bounds
+    filtered_points = filter_points_by_rectangle(points, x_min, x_max, y_min, y_max)
+
+    if table_name in ["traffic_lights"]:
+        height_offset = 5
+    else:
+        height_offset = 0
+
     for i, row in gdf.iterrows():
-        gdf.loc[i, "geometry"] = create_new_geometry(points, row.geometry)
+        gdf.loc[i, "geometry"] = create_new_geometry(filtered_points, row.geometry, height_offset)
 
     map_api.save_gdf(table_name, gdf)
 

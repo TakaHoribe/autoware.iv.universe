@@ -1,13 +1,13 @@
 #pragma once
 
-#include <autoware_vector_map/traits/gpkg_contents/gpkg_contents.h>
+#include <autoware_vector_map/traits/gpkg_contents.h>
 
 #define AUTOWARE_VECTOR_MAP_REGISTER_GPKG_ATTRIBUTE(ATTRIBUTE, TABLE_NAME, FEATURE_ID) \
   AUTOWARE_VECTOR_MAP_REGISTER_GPKG_CONTENT(ATTRIBUTE, TABLE_NAME)                     \
-  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(ATTRIBUTE, 0, FEATURE_ID, data::invalid_id) \
+  AUTOWARE_VECTOR_MAP_REGISTER_GPKG_MEMBER(ATTRIBUTE, 0, FEATURE_ID, invalid_id)       \
                                                                                        \
   template <>                                                                          \
-  constexpr const char* gpkg_attribute<data::ATTRIBUTE>::feature_id_name() {           \
+  constexpr const char* gpkg_attribute<ATTRIBUTE>::feature_id_name() {                 \
     return #FEATURE_ID;                                                                \
   }
 

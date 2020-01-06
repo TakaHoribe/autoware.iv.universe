@@ -2,9 +2,9 @@
 
 #include <ros/ros.h>
 
-#include <autoware_vector_map/autoware_vector_map.h>
+#include <autoware_vector_map/io/gpkg_interface.h>
 
-using autoware_vector_map::io::gpkg_loader::GpkgLoader;
+using autoware_vector_map::io::GpkgInterface;
 
 class TestSuite : public ::testing::Test {
  public:
@@ -22,10 +22,10 @@ class TestSuite : public ::testing::Test {
 };
 
 TEST_F(TestSuite, toBinary) {
-  GpkgLoader gpkg_loader(vector_map_path_.c_str());
-  const auto bin_data = gpkg_loader.toBinary();
+  GpkgInterface gpkg_interface(vector_map_path_.c_str());
+  const auto bin_data = gpkg_interface.toBinary();
 
-  ASSERT_EQ(bin_data.size(), 217088);
+  ASSERT_EQ(bin_data.size(), 380928);
 }
 
 int main(int argc, char* argv[]) {
