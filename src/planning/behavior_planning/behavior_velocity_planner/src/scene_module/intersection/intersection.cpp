@@ -57,7 +57,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId &input
         return false;
     }
 
-    if (stop_line_idx_ <= 0 || judge_line_dist_ <= 0)
+    if (stop_line_idx_ <= 0 || judge_line_idx_ <= 0)
     {
         ROS_INFO_COND(show_debug_info_, "[IntersectionModule::run] the stop line or judge line is at path[0], ignore planning. Maybe it is far behind the current position.");
         return true;
