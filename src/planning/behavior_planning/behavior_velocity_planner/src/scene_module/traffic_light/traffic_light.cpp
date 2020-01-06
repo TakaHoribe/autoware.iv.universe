@@ -55,7 +55,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     }
     if (!found)
     {
-        ROS_WARN_THROTTLE(1.0,"cannot find traffic light lamp state");
+        ROS_WARN_THROTTLE(1.0, "cannot find traffic light lamp state");
         return false;
     }
 
@@ -68,8 +68,6 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     // lamp_state.confidence = 1.0;
     // tl_state.lamp_states.push_back(lamp_state);
     // manager_ptr_->debuger.pushTrafficLightState(traffic_light_ptr_, tl_state);
-    std::cout << __LINE__ << ":" << tl_state.lamp_states.size() << std::endl;
-    std::cout << __LINE__ << ":" << tl_state.lamp_states.front().type << std::endl;
 
     // if state is red, insert stop point into path
     if (tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED)
