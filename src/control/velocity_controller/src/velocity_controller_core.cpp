@@ -136,10 +136,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   lpf_velocity_error.init(lpf_velocity_error_gain);
 
   debug_values_.data.clear();
-  for (int i = 0; i < num_debug_values_; ++i)
-  {
-    debug_values_.data.push_back(0.0);
-  }
+  debug_values_.data.resize(num_debug_values_, 0.0);
 
   /* wait to get vehicle position */
   while (ros::ok())
@@ -609,8 +606,6 @@ void VelocityController::writeDebugValuesCmdAcceleration(const double cmd_accele
 
 void VelocityController::resetDebugValues()
 {
-  for (unsigned int i = 0; i < num_debug_values_; i++)
-  {
-    debug_values_.data.at(i) = 0.0;
-  }
+  debug_values_.data.clear();
+  debug_values_.data.resize(num_debug_values_, 0.0);
 }

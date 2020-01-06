@@ -89,6 +89,7 @@ std::tuple<std::vector<float>, std::vector<float>> optimize(const Eigen::MatrixX
   settings->eps_dual_inf = 1.0E-4;
   settings->warm_start = true;
   settings->max_iter = 4000;
+  settings->verbose = false;
 
 
   // Setup workspace

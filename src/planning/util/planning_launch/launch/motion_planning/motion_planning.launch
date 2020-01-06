@@ -16,7 +16,7 @@
   <group>
     <remap from="~/input/trajectory" to="stop_planner/trajectory"/>
     <remap from="~/output/trajectory" to="trajectory"/>
-    <include file="$(find velocity_planner)/launch/velocity_planner.launch"/>
+    <include file="$(find velocity_planner)/launch/velocity_planner_osqp.launch"/>
   </group>
 
 </launch>

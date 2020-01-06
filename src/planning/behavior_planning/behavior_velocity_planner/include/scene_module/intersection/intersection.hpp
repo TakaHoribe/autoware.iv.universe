@@ -2,6 +2,7 @@
 #include <string>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <autoware_perception_msgs/DynamicObject.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
@@ -87,7 +88,7 @@ private:
     /**
      * @brief set stop-line and stop-judgement-line index. This may modificates path size due to interpolate insertion.
      */
-    bool setStopLineIdx(const double judge_line_dist, autoware_planning_msgs::PathWithLaneId &path, int &stop_line_idx, int &judge_line_idx);
+    bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId &path, int &stop_line_idx, int &judge_line_idx);
 
     /**
      * @brief convert from lanelet to boost polygon
@@ -151,11 +152,13 @@ public:
     void publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns);
     void publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b);
     void publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b);
+    void publishDebugValues(const std_msgs::Float32MultiArray &msg);
 
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
     ros::Publisher debug_viz_pub_;
+    ros::Publisher debug_values_pub_;
 };
 
 /*
