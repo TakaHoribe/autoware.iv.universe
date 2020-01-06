@@ -32,7 +32,7 @@
 #include <stop_planner/planning_utils.h>
 
 
-#define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
+// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #include "matplotlibcpp.h"
 #endif
