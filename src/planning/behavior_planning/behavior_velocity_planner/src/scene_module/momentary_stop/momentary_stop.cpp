@@ -78,7 +78,7 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &inpu
                                           point2,
                                           length_sum - stop_length,
                                           stop_point);
-            stop_point_with_lane_id = output.points.at(insert_stop_point_idx - 1);
+            stop_point_with_lane_id = output.points.at(std::max(int(insert_stop_point_idx - 1), 0));
             stop_point_with_lane_id.point.pose.position.x = stop_point.x();
             stop_point_with_lane_id.point.pose.position.y = stop_point.y();
             stop_point_with_lane_id.point.twist.linear.x = 0.0;
