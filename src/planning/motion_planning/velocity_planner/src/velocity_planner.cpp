@@ -813,7 +813,7 @@ bool VelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const autowa
   /* Emergency */
   if (input_stop_idx < input_closest || input_closest >= (int)output.points.size())
   {
-    ROS_WARN("[stopVelocityFilter]: return, self_pose over stop_point");
+    ROS_DEBUG("[stopVelocityFilter]: return, self_pose over stop_point");
     is_stop_ok = false;
     vpu::zeroVelocity(output);
     return true;  // return value is for system error. return true with is_stop_ok = false for emergency.
