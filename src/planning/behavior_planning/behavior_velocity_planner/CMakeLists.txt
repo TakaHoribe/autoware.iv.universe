@@ -159,6 +159,7 @@ src/scene_module/crosswalk/crosswalk.cpp
 src/scene_module/intersection/intersection.cpp
 src/scene_module/intersection/util/util.cpp
 src/scene_module/traffic_light/traffic_light.cpp
+src/scene_module/traffic_light/debug_marker.cpp
 )
 
 ## Rename C++ executable without prefix

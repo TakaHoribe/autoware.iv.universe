@@ -1,11 +1,16 @@
 #pragma once
 #include <ros/ros.h>
 #include <scene_module/scene_module_interface.hpp>
+#include <scene_module/traffic_light/debug_marker.hpp>
 #include <unordered_map>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/assert.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
 #include <string>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -27,7 +32,7 @@ public:
                         const int lane_id);
     bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) override;
     bool endOfLife(const autoware_planning_msgs::PathWithLaneId &input) override;
-    ~TrafficLightModule(){};
+    ~TrafficLightModule();
 
 private:
     bool getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
@@ -35,7 +40,12 @@ private:
                                        const Eigen::Vector2d &base_point,
                                        const double backward_length,
                                        Eigen::Vector2d &output_point);
-    TrafficLightModuleManager* manager_ptr_;
+    bool insertTargetVelocityPoint(const autoware_planning_msgs::PathWithLaneId &input,
+                                   const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &stop_line,
+                                   const double &margin,
+                                   const double &velocity,
+                                   autoware_planning_msgs::PathWithLaneId &output);
+    TrafficLightModuleManager *manager_ptr_;
     std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr_;
     int lane_id_;
     double stop_margin_;
@@ -49,9 +59,11 @@ public:
     TrafficLightModuleManager();
     ~TrafficLightModuleManager(){};
     bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr) override;
+    bool run(const autoware_planning_msgs::PathWithLaneId &input, autoware_planning_msgs::PathWithLaneId &output) override;
     bool isRunning(const lanelet::TrafficLight &traffic_light);
     bool registerTask(const lanelet::TrafficLight &traffic_light, const boost::uuids::uuid &uuid);
     bool unregisterTask(const boost::uuids::uuid &uuid);
+    TrafficLightDebugMarkersManager debuger;
 
 private:
     ros::NodeHandle nh_;

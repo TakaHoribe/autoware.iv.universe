@@ -21,6 +21,7 @@
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
       <remap from="~input/vehicle/velocity" to="/vehicle/twist"/>
       <remap from="~input/perception" to="/perception/prediction/objects"/>
+      <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
       <remap from="~output/path" to="path"/>
     </node>
   </launch>

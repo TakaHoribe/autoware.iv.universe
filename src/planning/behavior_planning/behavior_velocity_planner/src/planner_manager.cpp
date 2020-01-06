@@ -3,6 +3,7 @@
 // Scene include
 #include <scene_module/momentary_stop/momentary_stop.hpp>
 #include <scene_module/crosswalk/crosswalk.hpp>
+#include <scene_module/traffic_light/traffic_light.hpp>
 #include <scene_module/intersection/intersection.hpp>
 
 namespace behavior_planning
@@ -12,6 +13,7 @@ BehaviorVelocityPlannerManager::BehaviorVelocityPlannerManager()
 {
     scene_managers_ptr_.push_back(std::make_shared<MomentaryStopModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
+    scene_managers_ptr_.push_back(std::make_shared<TrafficLightModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<IntersectionModuleManager>());
 }
 
