@@ -25,8 +25,8 @@
 VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~")
 {
   pnh_.param("max_velocity", planning_param_.max_velocity, double(11.11));              // 40.0 kmph
-  pnh_.param("max_accel", planning_param_.max_accel, double(1.0));                         // 0.11G
-  pnh_.param("min_decel", planning_param_.min_decel, double(-2.0));                        // -0.2G
+  pnh_.param("max_accel", planning_param_.max_accel, double(2.0));                         // 0.11G
+  pnh_.param("min_decel", planning_param_.min_decel, double(-3.0));                        // -0.2G
   pnh_.param("max_lat_acc", planning_param_.max_lat_acc, double(0.2));          //
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));

@@ -628,7 +628,7 @@ bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory
   k_arr.clear();
   if (trajectory.points.size() < 2 * idx_dist + 1)
   {
-    ROS_WARN("[calcTrajectoryCurvatureFrom3Points] cannot calc curvature idx_dist = %d, trajectory.size() = %lu", idx_dist, trajectory.points.size());
+    ROS_DEBUG("[calcTrajectoryCurvatureFrom3Points] cannot calc curvature idx_dist = %d, trajectory.size() = %lu", idx_dist, trajectory.points.size());
     for (unsigned int i = 0; i < trajectory.points.size(); ++i)
     {
       k_arr.push_back(0.0);
