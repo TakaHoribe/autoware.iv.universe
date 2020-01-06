@@ -344,9 +344,9 @@ bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::Pa
         // insert 0 velocity after target point
         for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
             output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
-        break;
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool CrosswalkModule::getBackwordPointFromBasePoint(const Eigen::Vector2d &line_point1,
