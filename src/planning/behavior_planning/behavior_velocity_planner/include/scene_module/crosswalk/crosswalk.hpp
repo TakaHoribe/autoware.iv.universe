@@ -73,6 +73,7 @@ private:
     int lane_id_;
     lanelet::ConstLanelet crosswalk_;
     double stop_margin_;
+    double stop_dynamic_object_prediction_time_margin_;
     double slow_margin_;
     boost::uuids::uuid task_id_;
 };

@@ -17,6 +17,7 @@ CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
       state_(State::APPROARCH),
       crosswalk_(crosswalk),
       stop_margin_(1.0),
+      stop_dynamic_object_prediction_time_margin_(3.0),
       slow_margin_(5.0),
       lane_id_(lane_id),
       task_id_(boost::uuids::random_generator()())
@@ -106,6 +107,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     output = input;
     bool pedestrian_found = false;
     bool object_found = false;
+    ros::Time current_time = ros::Time::now();
 
     // create stop area
     std::vector<Point> path_collision_points;
@@ -179,20 +181,33 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     }
 
     // check pedestrian
-    for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
+    for (const auto &object :objects_ptr->objects)
     {
-        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
-            objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::BICYCLE)
+        if (object.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
+            object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE)
         {
-            Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
+            Point point(object.state.pose_covariance.pose.position.x, object.state.pose_covariance.pose.position.y);
             if (bg::within(point, stop_polygon))
             {
                 pedestrian_found = true;
             }
-            // for (size_t j = 0; j < objects_ptr->objects.at(i).state.predicted_paths.size(); ++j){
-
-            // }
-
+            for (const auto &object_path : object.state.predicted_paths)
+            {
+                for (size_t k = 0; k < object_path.path.size() - 1; ++k)
+                {
+                    if ((current_time - object_path.path.at(k).header.stamp).toSec() < stop_dynamic_object_prediction_time_margin_)
+                    {
+                        Line line = {{object_path.path.at(k).pose.pose.position.x,
+                                      object_path.path.at(k).pose.pose.position.y},
+                                     {object_path.path.at(k + 1).pose.pose.position.x,
+                                      object_path.path.at(k + 1).pose.pose.position.y}};
+                        std::vector<Point> line_collision_points;
+                        bg::intersection(stop_polygon, line, line_collision_points);
+                        if (!line_collision_points.empty())
+                            pedestrian_found = true;
+                    }
+                }
+            }
         }
     }
 
@@ -333,7 +348,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::Pa
                                       point2,
                                       length_sum - target_length,
                                       target_point);
-        target_point_with_lane_id = output.points.at(insert_target_point_idx - 1);
+        target_point_with_lane_id = output.points.at(std::max(int(insert_target_point_idx - 1), 0));
         target_point_with_lane_id.point.pose.position.x = target_point.x();
         target_point_with_lane_id.point.pose.position.y = target_point.y();
         target_point_with_lane_id.point.twist.linear.x = velocity;

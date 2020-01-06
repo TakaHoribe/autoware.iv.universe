@@ -6,7 +6,7 @@ namespace behavior_planning
 // TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~")
 {
-    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("traffic_light/output/debug/marker", 1);
+    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/traffic_light", 1);
 }
 
 void TrafficLightDebugMarkersManager::pushTrafficLightState(const std::shared_ptr<lanelet::TrafficLight const> &traffic_light,

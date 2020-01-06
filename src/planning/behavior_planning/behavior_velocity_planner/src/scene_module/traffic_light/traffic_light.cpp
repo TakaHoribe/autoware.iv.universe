@@ -167,7 +167,7 @@ bool TrafficLightModule::insertTargetVelocityPoint(const autoware_planning_msgs:
                                       point2,
                                       length_sum - target_length,
                                       target_point);
-        target_point_with_lane_id = output.points.at(insert_target_point_idx - 1);
+        target_point_with_lane_id = output.points.at(std::max(int(insert_target_point_idx - 1), 0));
         target_point_with_lane_id.point.pose.position.x = target_point.x();
         target_point_with_lane_id.point.pose.position.y = target_point.y();
         target_point_with_lane_id.point.twist.linear.x = velocity;
