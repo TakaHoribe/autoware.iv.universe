@@ -8,6 +8,7 @@ namespace behavior_planning
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
+using Line = bg::model::linestring<Point>;
 
 CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
                                  const lanelet::ConstLanelet &crosswalk,
@@ -110,7 +111,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     std::vector<Point> path_collision_points;
     for (size_t i = 0; i < output.points.size() - 1; ++i)
     {
-        bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+        Line line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
                                              {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
         std::vector<Point> line_collision_points;
         bg::intersection(crosswalk_polygon, line, line_collision_points);
@@ -123,7 +124,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     }
     if (path_collision_points.size() != 2)
     {
-        ROS_ERROR("Must be 2");
+        // ROS_ERROR("Must be 2. Size is %d", (int)path_collision_points.size());
         return false;
     }
     double width;
@@ -180,13 +181,18 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     // check pedestrian
     for (size_t i = 0; i < objects_ptr->objects.size(); ++i)
     {
-        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN)
+        if (objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
+            objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::BICYCLE)
         {
             Point point(objects_ptr->objects.at(i).state.pose_covariance.pose.position.x, objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
             if (bg::within(point, stop_polygon))
             {
                 pedestrian_found = true;
             }
+            // for (size_t j = 0; j < objects_ptr->objects.at(i).state.predicted_paths.size(); ++j){
+
+            // }
+
         }
     }
 
@@ -256,7 +262,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::Pa
     output = input;
     for (size_t i = 0; i < output.points.size() - 1; ++i)
     {
-        bg::model::linestring<Point> line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
+        Line line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
                                              {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
         std::vector<Point> collision_points;
         bg::intersection(polygon, line, collision_points);
