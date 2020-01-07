@@ -243,7 +243,7 @@ bool IntersectionModule::setVelocityFrom(const size_t idx, const double vel, aut
 {
     for (size_t i = idx; i < input.points.size(); ++i)
     {
-        input.points.at(i).point.twist.linear.x = vel;
+        input.points.at(i).point.twist.linear.x = std::min(vel, input.points.at(i).point.twist.linear.x);
     }
 }
 
