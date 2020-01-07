@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <param name="/use_sim_time" value="true"/>
+  <arg name="city_config_path" default="/media/tier4/Sandisk2TB/t4b/us_sample"/>
+  <arg name="lanelet_map_path" default="$(arg city_config_path)/lanelet2_map.osm"/>
+  <arg name="pointcloud_map_path" default="$(arg city_config_path)/pointcloud_map.pcd"/>
+  <arg name="map_tf_path" default="$(arg city_config_path)/tf.launch"/>
+
+  <!-- Vehicle Setting -->
+  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
+
+  <!-- Map -->
+  <include file="$(find map_launch)/launch/map.launch" >
+    <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
+    <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
+    <arg name="map_tf_path" value="$(arg map_tf_path)"/>
+  </include>
+
+  <!-- Sensing -->
+  <include file="$(find sensing_launch)/launch/sensing.launch" >
+  </include>
+
+  <!-- Localization -->
+  <include file="$(find localization_launch)/launch/localization.launch" >
+  </include>
+
+  <!-- Perception -->
+  <include file="$(find perception_launch)/launch/perception.launch" >
+    <arg name="mode" default="lidar"/>  <!-- "camera_lidar_fusion", "lidar" or "camera" -->
+  </include>
+
+  <!-- Traffic Light Recognition -->
+
+
+  <!-- Rviz -->
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />/>
+  
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /media/tier4/Sandisk2TB/log/03082019/auto_2019-03-08-11-22-32.bag"/>
+</launch>
+
