@@ -10,7 +10,6 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
-        - /Planning1/BehaviorPlanning1/Path1
       Splitter Ratio: 0.5410334467887878
     Tree Height: 751
   - Class: rviz/Selection
@@ -20,6 +19,8 @@ Panels:
       - /2D Pose Estimate1
       - /2D Nav Goal1
       - /Publish Point1
+      - /2D Pedestrian Pose1
+      - /2D Car Pose1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
@@ -111,8 +112,6 @@ Visualization Manager:
             All Enabled: true
             base_link:
               Value: true
-            camera:
-              Value: true
             camera_link:
               Value: true
             camera_optical_link:
@@ -141,11 +140,9 @@ Visualization Manager:
                       {}
                   imu_link:
                     {}
-                  velodyne:
-                    camera:
-                      {}
                   velodyne_base_link:
-                    {}
+                    velodyne:
+                      {}
           Update Interval: 0
           Value: true
       Enabled: true
@@ -243,7 +240,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.009999999776482582
           Style: Points
-          Topic: /sensing/preprocess/lidar/no_ground/pointcloud_raw
+          Topic: /sensing/preprocess/lidar/no_ground/pointcloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -585,11 +582,7 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                label: true
-                path: true
-                path confidence: true
-                shape: true
-                twist: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -613,7 +606,7 @@ Visualization Manager:
               Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/output/debug/markers
               Name: Beam
               Namespaces:
-                beam: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -629,12 +622,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                end_lanelets: true
-                goal_lanelets: true
-                left_lane_bound: true
-                normal_lanelets: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -664,7 +652,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
-                "": true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -680,10 +668,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
-                crosswalk polygon line: true
-                crosswalk polygon point: true
-                slow polygon line: true
-                stop polygon line: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -756,6 +741,18 @@ Visualization Manager:
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
+    - Class: rviz/PedestrianInitialPoseTool
+      Theta std deviation: 0.2617993950843811
+      Topic: initial_pedestrian_pose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+      Z position: 0
+    - Class: rviz/CarInitialPoseTool
+      Theta std deviation: 0.2617993950843811
+      Topic: initial_car_pose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+      Z position: 0
   Value: true
   Views:
     Current:
