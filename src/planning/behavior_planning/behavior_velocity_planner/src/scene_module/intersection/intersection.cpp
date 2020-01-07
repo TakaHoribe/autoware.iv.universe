@@ -18,7 +18,7 @@ IntersectionModule::IntersectionModule(const int lane_id, IntersectionModuleMana
     : assigned_lane_id_(lane_id), intersection_module_manager_(intersection_module_manager)
 {
     judge_line_dist_ = 1.5;                      // [m]
-    approaching_speed_to_stopline_ = 10.0 / 3.6; // 10[km/h]
+    approaching_speed_to_stopline_ = 100.0 / 3.6; // 100[km/h]
     state_machine_.setMarginTime(2.0);           // [sec]
     path_expand_width_ = 2.0;
     show_debug_info_ = false;
