@@ -3,11 +3,13 @@
 <launch>
 
     <arg name="enable_fine_detection" default="false"/>
-    <arg name="input/image" default="/camera/image_raw"/>
+    <arg name="input/image" default="/sensor/camera/traffic_light/image_raw"/>
+    <arg name="input/camera_info" default="/sensor/camera/traffic_light/camera_info"/>
 
     <group if="$(arg enable_fine_detection)">
         <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
             <arg name="output/rois" default="traffic_light/rough/rois"/>
+            <arg name="input/camera_info" default="$(arg input/camera_info)"/>
         </include>
         <include file="$(find traffic_light_fine_detector)/launch/traffic_light_fine_detector.launch">
             <arg name="input/image" default="$(arg input/image)"/>
@@ -19,6 +21,7 @@
     <group unless="$(arg enable_fine_detection)">
         <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">
             <arg name="output/rois" default="traffic_light/rois"/>
+            <arg name="input/camera_info" default="$(arg input/camera_info)"/>
         </include>
     </group>
 
