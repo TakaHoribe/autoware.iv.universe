@@ -28,6 +28,7 @@
 
 #include <unordered_set>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2/utils.h>
 
 using autoware_planning_msgs::PathPointWithLaneId;
 using autoware_planning_msgs::PathWithLaneId;
@@ -59,6 +60,46 @@ lanelet::Point3d toLaneletPoint(const geometry_msgs::Point point)
 {
   return lanelet::Point3d(lanelet::InvalId, point.x, point.y, point.z);
 }
+
+double getAngleDifference(const double angle1, const double angle2)
+{
+  Eigen::Vector2d vec1, vec2;
+  vec1 << std::cos(angle1), std::sin(angle1);
+  vec2 << std::cos(angle2), std::sin(angle2);
+  const double diff_angle = std::acos(vec1.dot(vec2));
+  return std::fabs(diff_angle);
+}
+
+lanelet::ConstLineString3d getClosestSegment(const lanelet::BasicPoint2d& search_pt,
+                                             const lanelet::ConstLineString3d& linestring)
+{
+  if (linestring.size() < 2)
+  {
+    return lanelet::LineString3d();
+  }
+
+  lanelet::ConstLineString3d closest_segment;
+  double min_distance = std::numeric_limits<double>::max();
+
+  for (size_t i = 1; i < linestring.size(); i++)
+  {
+    lanelet::BasicPoint3d prev_basic_pt = linestring[i - 1].basicPoint();
+    lanelet::BasicPoint3d current_basic_pt = linestring[i].basicPoint();
+
+    lanelet::Point3d prev_pt(lanelet::InvalId, prev_basic_pt.x(), prev_basic_pt.y(), prev_basic_pt.z());
+    lanelet::Point3d current_pt(lanelet::InvalId, current_basic_pt.x(), current_basic_pt.y(), current_basic_pt.z());
+
+    lanelet::LineString3d current_segment(lanelet::InvalId, { prev_pt, current_pt });
+    double distance = lanelet::geometry::distance2d(to2D(current_segment).basicLineString(), search_pt);
+    if (distance < min_distance)
+    {
+      closest_segment = current_segment;
+      min_distance = distance;
+    }
+  }
+  return closest_segment;
+}
+
 }  // namespace
 
 namespace lane_change_planner
@@ -328,6 +369,7 @@ lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_
   }
   return arc_coordinates;
 }
+
 bool RouteHandler::getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose,
                                                 lanelet::ConstLanelet* closest_lanelet, double distance_thresh) const
 {
@@ -338,16 +380,39 @@ bool RouteHandler::getClosestLaneletWithinRoute(const geometry_msgs::Pose& searc
 
   lanelet::BasicPoint2d search_point(search_pose.position.x, search_pose.position.y);
 
+  lanelet::ConstLanelets candidate_lanelets;
   double min_distance = std::numeric_limits<double>::max();
   for (const auto& llt : route_lanelets_)
   {
     double distance = boost::geometry::comparable_distance(llt.polygon2d().basicPolygon(), search_point);
-    if (distance < min_distance)
+
+    if (std::abs(distance - min_distance) <= std::numeric_limits<double>::epsilon())
     {
-      *closest_lanelet = llt;
+      candidate_lanelets.push_back(llt);
+    }
+    else if (distance < min_distance)
+    {
+      candidate_lanelets.clear();
+      candidate_lanelets.push_back(llt);
       min_distance = distance;
     }
   }
+
+  double min_angle = std::numeric_limits<double>::max();
+  double pose_yaw = tf2::getYaw(search_pose.orientation);
+  for (const auto& llt : candidate_lanelets)
+  {
+    lanelet::ConstLineString3d segment = getClosestSegment(search_point, llt.centerline());
+    double segment_angle =
+        std::atan2(segment.back().y() - segment.front().y(), segment.back().x() - segment.front().x());
+    double angle_diff = getAngleDifference(segment_angle, pose_yaw);
+    if (angle_diff < min_angle)
+    {
+      min_angle = angle_diff;
+      *closest_lanelet = llt;
+    }
+  }
+
   double actual_distance = boost::geometry::distance(closest_lanelet->polygon2d().basicPolygon(), search_point);
 
   return actual_distance < distance_thresh;
