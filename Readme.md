@@ -35,8 +35,8 @@ $ roslaunch autoware_launch autoware.launch
 ```
 2. set goal pose
 3. push engage button.
-[http://localhost:8085/autoware_web_controller/index.html](http://localhost:8085/autoware_web_controller/index.html)
-
+[autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
+4. (optional) [webviz](https://webviz.io/app/)
 # for developper (temporary)
 ## rule
 - only use tf2
