@@ -26,6 +26,7 @@
     </group>
 
     <include file="$(find traffic_light_visualization)/launch/traffic_light_roi_visualizer.launch">
+        <arg name="input/image" default="$(arg input/image)"/>
         <arg name="input/rois" default="traffic_light/rois"/>
     </include>    
     <include file="$(find traffic_light_classifier)/launch/traffic_light_classifier.launch">
