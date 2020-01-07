@@ -114,7 +114,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     for (size_t i = 0; i < output.points.size() - 1; ++i)
     {
         Line line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
-                                             {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+                     {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
         std::vector<Point> line_collision_points;
         bg::intersection(crosswalk_polygon, line, line_collision_points);
         if (line_collision_points.empty())
@@ -139,15 +139,14 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     Polygon stop_polygon;
     const double extension_margin = 1.0;
     stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(0).x() + std::cos(yaw) * ((width / 2.0) + extension_margin),
-                                                       path_collision_points.at(0).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
+                                                   path_collision_points.at(0).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
     stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(0).x() - std::cos(yaw) * ((width / 2.0) + extension_margin),
-                                                       path_collision_points.at(0).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
+                                                   path_collision_points.at(0).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
     stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(1).x() - std::cos(yaw) * ((width / 2.0) + extension_margin),
-                                                       path_collision_points.at(1).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
+                                                   path_collision_points.at(1).y() - std::sin(yaw) * ((width / 2.0) + extension_margin)));
     stop_polygon.outer().push_back(bg::make<Point>(path_collision_points.at(1).x() + std::cos(yaw) * ((width / 2.0) + extension_margin),
-                                                       path_collision_points.at(1).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
+                                                   path_collision_points.at(1).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
     stop_polygon.outer().push_back(stop_polygon.outer().front());
-
 
     // -- debug code --
     // for (size_t i = 0; i < stop_polygon.size(); ++i)
@@ -181,7 +180,7 @@ bool CrosswalkModule::checkStopArea(const autoware_planning_msgs::PathWithLaneId
     }
 
     // check pedestrian
-    for (const auto &object :objects_ptr->objects)
+    for (const auto &object : objects_ptr->objects)
     {
         if (object.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
             object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE)
@@ -278,7 +277,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::Pa
     for (size_t i = 0; i < output.points.size() - 1; ++i)
     {
         Line line = {{output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
-                                             {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
+                     {output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y}};
         std::vector<Point> collision_points;
         bg::intersection(polygon, line, collision_points);
 
@@ -315,7 +314,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(const autoware_planning_msgs::Pa
         }
 
         // search target point index
-        size_t insert_target_point_idx;
+        size_t insert_target_point_idx = 0;
         double base_link2front;
         double length_sum = 0;
         if (!getBaselink2FrontLength(base_link2front))

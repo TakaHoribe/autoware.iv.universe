@@ -46,7 +46,7 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId &inpu
                 continue;
 
             // search stop point index
-            size_t insert_stop_point_idx;
+            size_t insert_stop_point_idx = 0;
             double base_link2front;
             double length_sum = 0;
             if (!getBaselink2FrontLength(base_link2front))
