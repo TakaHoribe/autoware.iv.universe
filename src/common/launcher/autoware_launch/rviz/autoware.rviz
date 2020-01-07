@@ -665,7 +665,7 @@ Visualization Manager:
               Value: true
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /planning/behavior_planning/behavior_path_planner/output/debug/path
+              Marker Topic: /planning/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
               Name: PathWithLaneId
               Namespaces:
                 {}
