@@ -16,6 +16,10 @@
       <remap from="velocity" to="/vehicle/twist"/>
     </node>
 
+    <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
+      <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
+    </node>
+
     <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
       <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
