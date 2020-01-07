@@ -20,16 +20,18 @@ class DummyPerceptionPublisherNode
 private:
   ros::NodeHandle nh_, pnh_;
   ros::Publisher pointcloud_pub_;
-  ros::Publisher pose_pub_;
   ros::Publisher dynamic_object_pub_;
-  ros::Subscriber pose_sub_;
+  ros::Subscriber pedestrian_pose_sub_;
+  ros::Subscriber car_pose_sub_;
   ros::Timer timer_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-  std::shared_ptr<geometry_msgs::PoseStamped> pose_ptr_;
+  std::shared_ptr<geometry_msgs::PoseStamped> pedestrian_pose_ptr_;
+  std::shared_ptr<geometry_msgs::PoseStamped> car_pose_ptr_;
   double velocity_;
   void timerCallback(const ros::TimerEvent &);
-  void poseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_msg);
+  void pedestrianPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_msg);
+  void carPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_msg);
 
 public:
   DummyPerceptionPublisherNode();
