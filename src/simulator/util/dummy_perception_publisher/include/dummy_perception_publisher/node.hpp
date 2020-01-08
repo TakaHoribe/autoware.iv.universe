@@ -26,9 +26,10 @@ private:
   ros::Timer timer_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-  std::shared_ptr<geometry_msgs::PoseStamped> pedestrian_pose_ptr_;
-  std::shared_ptr<geometry_msgs::PoseStamped> car_pose_ptr_;
+  std::vector<std::shared_ptr<geometry_msgs::PoseStamped>> pedestrian_pose_ptrs_;
+  std::vector<std::shared_ptr<geometry_msgs::PoseStamped>> car_pose_ptrs_;
   double velocity_;
+  double visible_range_;
   void timerCallback(const ros::TimerEvent &);
   void pedestrianPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_msg);
   void carPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_msg);
