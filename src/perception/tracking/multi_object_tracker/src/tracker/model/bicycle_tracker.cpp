@@ -82,7 +82,7 @@ bool BicycleTracker::measure(const autoware_perception_msgs::DynamicObject &obje
                       (object.state.pose_covariance.pose.position.y - last_measurement_posy_) *
                           (object.state.pose_covariance.pose.position.y - last_measurement_posy_));
         const double max_vel = 15.0; /* [m/s]*/
-        const double vel_scale = std::min(max_vel, current_vel) / current_vel;
+        const double vel_scale = current_vel < 0.01 ? 1.0 : std::min(max_vel, current_vel) / current_vel;
         if (is_changed_unknown_object)
         {
             filtered_vx_ = 0.9 * filtered_vx_ + (1.0 - 0.9) * ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) * vel_scale;

@@ -67,7 +67,6 @@ void MultiObjectTrackerNode::measurementCallback(const autoware_perception_msgs:
 
     /* tracker prediction */
     ros::Time measuremet_time = input_objects_msg->header.stamp;
-    // ros::Time measuremet_time = ros::Time::now();
     for (auto itr = list_tracker_.begin(); itr != list_tracker_.end(); ++itr)
     {
         (*itr)->predict(measuremet_time);
