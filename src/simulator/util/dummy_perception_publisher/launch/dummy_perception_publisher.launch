@@ -7,7 +7,9 @@
         <remap from="~output/objects_pose" to="debug/object_pose" />
         <remap from="~output/points_raw" to="/sensing/preprocess/lidar/no_ground/pointcloud" />
         <remap from="~input/pedestrian/pose" to="initial_pedestrian_pose" />
+        <remap from="~input/pedestrian/twist" to="initial_pedestrian_twist" />
         <remap from="~input/car/pose" to="initial_car_pose" />
+        <remap from="~input/car/twist" to="initial_car_twist" />
         <param name="~velocity" value="1.0" />
     </node>
     <include file="$(find dynamic_object_visualization)/launch/dynamic_object_visualizer.launch">

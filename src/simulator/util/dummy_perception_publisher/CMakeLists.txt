@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
   autoware_perception_msgs
+  message_filters
   pcl_ros
 )
 
@@ -109,7 +110,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES dummy_perception_publisher
-  CATKIN_DEPENDS roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros autoware_perception_msgs pcl_ros
+  CATKIN_DEPENDS roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros autoware_perception_msgs pcl_ros message_filters
 #  DEPENDS system_lib
 )
 

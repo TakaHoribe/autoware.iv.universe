@@ -29,7 +29,8 @@
 
 #include <tf/transform_listener.h>
 
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+# include "geometry_msgs/PoseStamped.h"
+# include "geometry_msgs/TwistStamped.h"
 
 #include "rviz/display_context.h"
 #include "rviz/properties/string_property.h"
@@ -44,13 +45,17 @@ PedestrianInitialPoseTool::PedestrianInitialPoseTool()
 {
   shortcut_key_ = 'l';
 
-  topic_property_ = new StringProperty( "Topic", "initial_pedestrian_pose",
+  pose_topic_property_ = new StringProperty( "Pose Topic", "initial_pedestrian_pose",
                                         "The topic on which to publish initial pose estimates.",
+                                        getPropertyContainer(), SLOT( updateTopic() ), this );
+  twist_topic_property_ = new StringProperty( "Twist Topic", "initial_pedestrian_twist",
+                                        "The topic on which to publish initial twist estimates.",
                                         getPropertyContainer(), SLOT( updateTopic() ), this );
   std_dev_x_ = new FloatProperty("X std deviation", 0.5, "X standard deviation for initial pose [m]", getPropertyContainer());
   std_dev_y_ = new FloatProperty("Y std deviation", 0.5, "Y standard deviation for initial pose [m]", getPropertyContainer());
   std_dev_theta_ = new FloatProperty("Theta std deviation", M_PI / 12.0, "Theta standard deviation for initial pose [rad]", getPropertyContainer());
   position_z_ = new FloatProperty("Z position", 0.0, "Z position for initial pose [m]", getPropertyContainer());
+  velocity_ = new FloatProperty("Velocity", 0.0, "velocity [m/s]", getPropertyContainer());
   std_dev_x_->setMin(0);
   std_dev_y_->setMin(0);
   std_dev_theta_->setMin(0);
@@ -66,28 +71,40 @@ void PedestrianInitialPoseTool::onInitialize()
 
 void PedestrianInitialPoseTool::updateTopic()
 {
-  pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>( topic_property_->getStdString(), 1 );
+  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>( pose_topic_property_->getStdString(), 1 );
+  twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>( twist_topic_property_->getStdString(), 1 );
 }
 
 void PedestrianInitialPoseTool::onPoseSet(double x, double y, double theta)
 {
+  const ros::Time current_time = ros::Time::now();
+  // pose
   std::string fixed_frame = context_->getFixedFrame().toStdString();
-  geometry_msgs::PoseWithCovarianceStamped pose;
+  geometry_msgs::PoseStamped pose;
   pose.header.frame_id = fixed_frame;
-  pose.header.stamp = ros::Time::now();
-  pose.pose.pose.position.x = x;
-  pose.pose.pose.position.y = y;
-  pose.pose.pose.position.z = position_z_->getFloat();
+  pose.header.stamp = current_time;
+  pose.pose.position.x = x;
+  pose.pose.position.y = y;
+  pose.pose.position.z = position_z_->getFloat();
 
   tf::Quaternion quat;
   quat.setRPY(0.0, 0.0, theta);
   tf::quaternionTFToMsg(quat,
-                        pose.pose.pose.orientation);
-  pose.pose.covariance[6*0+0] = std::pow(std_dev_x_->getFloat(), 2);
-  pose.pose.covariance[6*1+1] = std::pow(std_dev_y_->getFloat(), 2);
-  pose.pose.covariance[6*5+5] = std::pow(std_dev_theta_->getFloat(), 2);
+                        pose.pose.orientation);
   ROS_INFO("Setting pose: %.3f %.3f %.3f %.3f [frame=%s]", x, y, position_z_->getFloat(), theta, fixed_frame.c_str());
-  pub_.publish(pose);
+  pose_pub_.publish(pose);
+
+  // twist
+  geometry_msgs::TwistStamped twist;
+  twist.header.frame_id = fixed_frame;
+  twist.header.stamp = current_time;
+  twist.twist.linear.x = velocity_->getFloat();
+  twist.twist.linear.y = 0.0;
+  twist.twist.linear.z = 0.0;
+
+  ROS_INFO("Setting twist: %.3f %.3f %.3f [frame=%s]", velocity_->getFloat(), 0.0, 0.0, fixed_frame.c_str());
+  twist_pub_.publish(twist);
+
 }
 
 } // end namespace rviz
