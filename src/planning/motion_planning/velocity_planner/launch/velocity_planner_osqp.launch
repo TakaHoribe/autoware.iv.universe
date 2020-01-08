@@ -19,7 +19,7 @@
   <arg name="engage_acceleration" default="0.0"/>
   <!-- use this acceleration as command to engage vehicle speed when stopping -->
   <!-- planning assuming this speed is stop speed -->
-  <arg name="extract_ahead_dist" default="50.0"/>
+  <arg name="extract_ahead_dist" default="200.0"/>
   <arg name="extract_behind_dist" default="3.0"/>
 
   <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>

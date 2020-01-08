@@ -271,11 +271,14 @@ bool VelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajector
   const double min_vel = 1.0; // [m/s]
   const double dt = 0.1;
   const double tmax = 10.0;
-  const double N = tmax / std::max(dt, 0.001);
+  double smax = 200.0; // [m]
+  smax = std::min(smax, arclength.back());
+  const double smin = 30; // [m]
+  const double Nt = tmax / std::max(dt, 0.001);
   const double v_interp = std::max(current_velocity_ptr_->twist.linear.x, min_vel);
   ds = v_interp * dt;
-  double smax = 100.0; // [m]
-  smax = std::min(smax, arclength.back());
+  const double Ns = smin / std::max(ds, 0.001);
+  const double N = std::max(Nt, Ns);
   std::vector<double> s_arr;
   double si = 0.0;
   for (int i = 0; i <= N; ++i)
@@ -596,7 +599,7 @@ bool VelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Tr
   for (unsigned int i = 0; i < input.points.size(); ++i)
   {
     const double curvature = std::max(std::fabs(curvature_v.at(i)), 0.0001 /* avoid 0 divide */);
-    const double v_curvature_max = std::sqrt(max_lat_acc_abs / curvature);
+    const double v_curvature_max = std::max(std::sqrt(max_lat_acc_abs / curvature), planning_param_.engage_velocity);
     if (output.points.at(i).twist.linear.x > v_curvature_max)
     {
       output.points.at(i).twist.linear.x = v_curvature_max;
