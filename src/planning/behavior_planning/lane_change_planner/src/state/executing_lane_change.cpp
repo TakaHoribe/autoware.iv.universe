@@ -28,7 +28,6 @@ State ExecutingLaneChangeState::getCurrentState() const
 
 void ExecutingLaneChangeState::entry()
 {
-  ROS_INFO("entered ExecutingLaneChange");
   while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
   {
     ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
