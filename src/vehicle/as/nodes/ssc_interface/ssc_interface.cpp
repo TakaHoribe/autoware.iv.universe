@@ -64,7 +64,7 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
 
   // publishers to autoware
   vehicle_status_pub_ = nh_.advertise<autoware_control_msgs::VehicleStatusStamped>("/vehicle/status", 10);
-  current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/twist", 10);
+  current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 10);
 
   // publishers to SSC
   steer_mode_pub_ = nh_.advertise<automotive_platform_msgs::SteerMode>("as/arbitrated_steering_commands", 10);
