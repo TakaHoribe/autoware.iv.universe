@@ -33,6 +33,10 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/current_pose", 1);
   pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_velocity", 1);
   pub_vehicle_status_ = pnh_.advertise<autoware_control_msgs::VehicleStatusStamped>("output/status", 1);
+  pub_steer_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering", 1);
+  pub_steer_wheel_deg_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering_wheel_deg", 1);
+  pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
+  pub_velocity_kmph_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity_kmph", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
   timer_tf_ = nh_.createTimer(ros::Duration(0.1 / loop_rate_), &Simulator::timerCallbackPublishTF, this);
@@ -222,6 +226,26 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
     vs.status.steering_angle += (*steer_norm_dist_ptr_)(*rand_engine_ptr_);
   }
   pub_vehicle_status_.publish(vs);
+
+  /* float info publishers */
+  std_msgs::Float32 steer_msg;
+  steer_msg.data = vs.status.steering_angle;
+  pub_steer_.publish(steer_msg);
+
+  std_msgs::Float32 steer_wheel_deg_msg;
+  const double sim_gear_ratio = 15.0;
+  const double rad2deg = 180.0 / 3.14159265;
+  steer_wheel_deg_msg.data = vs.status.steering_angle * sim_gear_ratio * rad2deg;
+  pub_steer_wheel_deg_.publish(steer_wheel_deg_msg);
+
+  std_msgs::Float32 velocity_msg;
+  velocity_msg.data = current_twist_.linear.x;
+  pub_velocity_.publish(velocity_msg);
+
+  std_msgs::Float32 velocity_kmph_msg;
+  const double mps2kmph = 3.6;
+  velocity_kmph_msg.data = current_twist_.linear.x * mps2kmph;
+  pub_velocity_kmph_.publish(velocity_kmph_msg);
 }
 
 void Simulator::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStampedConstPtr &msg)

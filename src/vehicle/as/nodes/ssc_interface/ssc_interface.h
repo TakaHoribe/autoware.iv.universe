@@ -21,6 +21,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Time.h>
 #include <std_msgs/Header.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -83,6 +84,10 @@ private:
   ros::Publisher gear_pub_;
   ros::Publisher vehicle_status_pub_;
   ros::Publisher current_twist_pub_;
+  ros::Publisher current_steer_pub_;
+  ros::Publisher current_steer_wheel_deg_pub_;
+  ros::Publisher current_velocity_pub_;
+  ros::Publisher current_velocity_kmph_pub_;
 
   // ros param
   int command_timeout_;        // vehicle_cmd timeout [ms]
