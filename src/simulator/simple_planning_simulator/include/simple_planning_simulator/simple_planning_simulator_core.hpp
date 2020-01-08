@@ -29,6 +29,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 #include <tf2/utils.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -67,6 +68,11 @@ private:
   ros::Publisher pub_pose_;           //!< @brief topic ros publisher for current pose
   ros::Publisher pub_twist_;          //!< @brief topic ros publisher for current twist
   ros::Publisher pub_vehicle_status_; //!< @brief topic ros publisher for current vehicle status
+  ros::Publisher pub_steer_;
+  ros::Publisher pub_steer_wheel_deg_;
+  ros::Publisher pub_velocity_;
+  ros::Publisher pub_velocity_kmph_;
+
   ros::Subscriber sub_vehicle_cmd_;   //!< @brief topic subscriber for vehicle_cmd
   ros::Subscriber sub_trajectory_;    //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;   //!< @brief topic subscriber for initialpose topic

@@ -65,6 +65,10 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
   // publishers to autoware
   vehicle_status_pub_ = nh_.advertise<autoware_control_msgs::VehicleStatusStamped>("/vehicle/status", 10);
   current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 10);
+  current_steer_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering", 10);
+  current_steer_wheel_deg_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering_wheel_deg", 10);
+  current_velocity_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 10);
+  current_velocity_kmph_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity_kmph", 10);
 
   // publishers to SSC
   steer_mode_pub_ = nh_.advertise<automotive_platform_msgs::SteerMode>("as/arbitrated_steering_commands", 10);
@@ -185,6 +189,22 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   // vehicle_status.light
 
   vehicle_status_pub_.publish(vehicle_status);
+
+  std_msgs::Float32 vel;
+  vel.data = twist.twist.linear.x;
+  current_velocity_pub_.publish(vel);
+
+  std_msgs::Float32 vel_kmph;
+  vel_kmph.data = twist.twist.linear.x / 3.6;
+  current_velocity_kmph_pub_.publish(vel_kmph);
+
+  std_msgs::Float32 steer;
+  steer.data = vehicle_status.status.steering_angle;
+  current_steer_pub_.publish(steer);
+
+  std_msgs::Float32 steer_wheel_deg;
+  steer_wheel_deg.data = msg_steering_wheel->output;
+  current_steer_wheel_deg_pub_.publish(steer_wheel_deg);
 }
 
 void SSCInterface::publishCommand()

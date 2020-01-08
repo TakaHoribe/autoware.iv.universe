@@ -24,9 +24,9 @@
 
   <arg name="add_measurement_noise" default="true"/>
   <arg name="pos_noise_stddev" default="0.01"/>
-  <arg name="vel_noise_stddev" default="0.01"/>
+  <arg name="vel_noise_stddev" default="0.0"/>
   <arg name="rpy_noise_stddev" default="0.0001"/>
-  <arg name="angvel_noise_stddev" default="0.001"/>
+  <arg name="angvel_noise_stddev" default="0.00"/>
   <arg name="steer_noise_stddev" default="0.0001"/>
 
 
