@@ -27,12 +27,12 @@
 
   <arg name="max_trajectory_length" default="200.0"/>
   <arg name="min_trajectory_length" default="30.0"/>
-  <arg name="resample_total_time" default="20.0"/>
+  <arg name="resample_total_time" default="10.0"/>
   <arg name="resample_time_interval" default="0.1"/>
   <arg name="min_trajectory_distance_interval" default="0.1"/>
 
 
-  <arg name="pseudo_jerk_weight" default="10000.0"/>
+  <arg name="pseudo_jerk_weight" default="1000.0"/>
   <arg name="max_lat_acc" default="0.05"/>
   <arg name="enable_latacc_filter" default="true"/>
 

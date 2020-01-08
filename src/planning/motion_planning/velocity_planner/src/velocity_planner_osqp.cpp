@@ -381,7 +381,7 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
 
   if (std::fabs(input.points.at(closest).twist.linear.x) < 0.1)
   {
-    ROS_INFO("[VelocityPlanner::optimizeVelocity] closest vmax < 0.1, keep stopping. return.");
+    DEBUG_INFO("[VelocityPlanner::optimizeVelocity] closest vmax < 0.1, keep stopping. return.");
     return;
   }
 
