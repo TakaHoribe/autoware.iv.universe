@@ -31,8 +31,13 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));
   pnh_.param("engage_acceleration", planning_param_.engage_acceleration, double(0.1));
-  pnh_.param("extract_ahead_dist", planning_param_.extract_ahead_dist, double(30.0));
-  pnh_.param("extract_behind_dist", planning_param_.extract_behind_dist, double(2.0));
+  pnh_.param("extract_ahead_dist", planning_param_.extract_ahead_dist, double(200.0));
+  pnh_.param("extract_behind_dist", planning_param_.extract_behind_dist, double(3.0));
+  pnh_.param("max_trajectory_length", planning_param_.max_trajectory_length, double(200.0));
+  pnh_.param("min_trajectory_length", planning_param_.min_trajectory_length, double(30.0));
+  pnh_.param("resample_total_time", planning_param_.resample_total_time, double(10.0));
+  pnh_.param("resample_time_interval", planning_param_.resample_dt, double(0.1));
+  pnh_.param("min_trajectory_distance_interval", planning_param_.min_trajectory_distance_interval, double(0.1));
   pnh_.param("stop_dist_not_to_drive_vehicle", planning_param_.stop_dist_not_to_drive_vehicle, double(1.5));
   pnh_.param("emergency_flag_vel_thr_kmph", planning_param_.emergency_flag_vel_thr_kmph, double(3.0));
   pnh_.param("stop_dist_mergin", planning_param_.stop_dist_mergin, double(0.55));
@@ -264,20 +269,16 @@ void VelocityPlanner::publishStopDistance(const autoware_planning_msgs::Trajecto
   pub_dist_to_stopline_.publish(dist_to_stopline);
 }
 
-bool VelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output, double &ds) const
+bool VelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajectory &input,
+                                         autoware_planning_msgs::Trajectory &output, double &ds) const
 {
   std::vector<double> arclength;
   vpu::calcWaypointsArclength(input, arclength);
-  const double min_vel = 1.0; // [m/s]
-  const double dt = 0.1;
-  const double tmax = 10.0;
-  double smax = 200.0; // [m]
-  smax = std::min(smax, arclength.back());
-  const double smin = 30; // [m]
-  const double Nt = tmax / std::max(dt, 0.001);
-  const double v_interp = std::max(current_velocity_ptr_->twist.linear.x, min_vel);
-  ds = v_interp * dt;
-  const double Ns = smin / std::max(ds, 0.001);
+  const double smax = std::min(planning_param_.max_trajectory_length, arclength.back());
+  const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
+  ds = std::max(current_velocity_ptr_->twist.linear.x * planning_param_.resample_dt,
+                planning_param_.min_trajectory_distance_interval);
+  const double Ns = planning_param_.min_trajectory_length / std::max(ds, 0.001);
   const double N = std::max(Nt, Ns);
   std::vector<double> s_arr;
   double si = 0.0;

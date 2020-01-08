@@ -3,7 +3,7 @@
   <arg name="output" default="log"/>
 
   <!-- debug flags -->
-  <arg name="show_debug_info" default="true"/>
+  <arg name="show_debug_info" default="false"/>
   <arg name="show_debug_info_all" default="false"/>
   <arg name="show_figure" default="true"/>
 
@@ -24,6 +24,12 @@
 
   <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>
   <arg name="enable_to_publish_emergency" default="true"/>
+
+  <arg name="max_trajectory_length" default="200.0"/>
+  <arg name="min_trajectory_length" default="30.0"/>
+  <arg name="resample_total_time" default="20.0"/>
+  <arg name="resample_time_interval" default="0.1"/>
+  <arg name="min_trajectory_distance_interval" default="0.1"/>
 
 
   <arg name="pseudo_jerk_weight" default="10000.0"/>
