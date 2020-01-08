@@ -15,7 +15,6 @@
  */
 
 #include <velocity_planner/velocity_planner_osqp.hpp>
-#include <osqp_interface/osqp_interface.h>
 #include <chrono>
 
 #define DEBUG_INFO(...) { if (show_debug_info_) {ROS_INFO(__VA_ARGS__); } }
@@ -83,6 +82,7 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_
       continue;
     }
   }
+
 };
 VelocityPlanner::~VelocityPlanner(){};
 
@@ -367,7 +367,7 @@ void VelocityPlanner::calcInitialMotion(const double &base_speed, const autoware
 }
 
 void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autoware_planning_msgs::Trajectory &input, 
-                                       const int closest, const double ds, autoware_planning_msgs::Trajectory &output) const
+                                       const int closest, const double ds, autoware_planning_msgs::Trajectory &output)
 {
   auto ts = std::chrono::system_clock::now();
 
@@ -392,19 +392,19 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
     return;
   }
 
-  std::vector<float> vmax(N, 0.0);
+  std::vector<double> vmax(N, 0.0);
   for (unsigned int i = 0; i < N; ++i)
   {
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXf A = Eigen::MatrixXf::Zero(3 * N + 1, 4 * N); // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3 * N + 1, 4 * N); // the matrix size depends on constraint numbers.
 
-  std::vector<float> lower_bound(3 * N + 1, 0.0);
-  std::vector<float> upper_bound(3 * N + 1, 0.0);
+  std::vector<double> lower_bound(3 * N + 1, 0.0);
+  std::vector<double> upper_bound(3 * N + 1, 0.0);
 
-  Eigen::MatrixXf P = Eigen::MatrixXf::Zero(4 * N, 4 * N); 
-  std::vector<float> q(4 * N, 0.0);                         
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N, 4 * N);
+  std::vector<double> q(4 * N, 0.0);
 
   /*
    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
@@ -426,7 +426,7 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
   for (unsigned int i = 0; i < N; ++i) // bi
   {
     // The lower the speed, the higher the demand of speed accuracy
-    const double velocity_weight = 10.0 / (std::max(std::min(vmax[i], /*max=*/(float)10.0), /*min=*/(float)2.0));
+    const double velocity_weight = 10.0 / (std::max(std::min(vmax[i], /*max=*/10.0), /*min=*/2.0));
 
     // w_v * |vmax^2 - b| -> minimize (-w_v * bi)
     q[i] = -velocity_weight;
@@ -508,10 +508,10 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
 
   /* execute optimization */
   auto ts2 = std::chrono::system_clock::now();
-  std::tuple<std::vector<float>, std::vector<float>> result = osqp::optimize(P, A, q, lower_bound, upper_bound);
+  std::tuple<std::vector<double>, std::vector<double>, int> result = qp_solver_.optimize(P, A, q, lower_bound, upper_bound);
 
    // [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN]
-  const std::vector<float> optval = std::get<0>(result);
+  const std::vector<double> optval = std::get<0>(result);
 
   /* get velocity & acceleration */
   for (int i = 0; i < closest; ++i)
@@ -547,7 +547,7 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
 
 void VelocityPlanner::replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                                      const autoware_planning_msgs::Trajectory &prev_output, const int prev_output_closest,
-                                     const double ds, autoware_planning_msgs::Trajectory &output) const
+                                     const double ds, autoware_planning_msgs::Trajectory &output)
 {
   const double base_speed = std::fabs(input.points.at(input_closest).twist.linear.x);
 
