@@ -31,11 +31,8 @@ VelocityPlanner::VelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));
   pnh_.param("engage_acceleration", planning_param_.engage_acceleration, double(0.1));
-  pnh_.param("stopping_speed", planning_param_.stopping_speed, double(0.0));
   pnh_.param("extract_ahead_dist", planning_param_.extract_ahead_dist, double(30.0));
   pnh_.param("extract_behind_dist", planning_param_.extract_behind_dist, double(2.0));
-  pnh_.param("resample_num", planning_param_.resample_num, int(10));
-  pnh_.param("replan_stop_point_change_dist", planning_param_.replan_stop_point_change_dist, double(2.0));
   pnh_.param("stop_dist_not_to_drive_vehicle", planning_param_.stop_dist_not_to_drive_vehicle, double(1.5));
   pnh_.param("emergency_flag_vel_thr_kmph", planning_param_.emergency_flag_vel_thr_kmph, double(3.0));
   pnh_.param("stop_dist_mergin", planning_param_.stop_dist_mergin, double(0.55));
@@ -418,14 +415,17 @@ void VelocityPlanner::optimizeVelocity(const Motion initial_motion, const autowa
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
   const double smooth_weight = qp_param_.pseudo_jerk_weight;
-  const double over_v_weight = 1000000.0;
-  const double over_a_weight = 10000.0;
+  const double over_v_weight = 100000.0;
+  const double over_a_weight = 1000.0;
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) // bi
   {
-    // |vmax^2 - b| -> minimize (-bi)
-    q[i] = -1.0;
+    // The lower the speed, the higher the demand of speed accuracy
+    const double velocity_weight = 10.0 / (std::max(std::min(vmax[i], /*max=*/(float)10.0), /*min=*/(float)2.0));
+
+    // w_v * |vmax^2 - b| -> minimize (-w_v * bi)
+    q[i] = -velocity_weight;
   }
   
   for (unsigned int i = N; i < 2 * N - 1; ++i) // pseudo jerk: d(ai)/ds
@@ -608,20 +608,26 @@ bool VelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Tr
 
 void VelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const
 {
-  if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.01)
+  if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.1)
   {
     int stop_idx = 0;
     bool stop_point_exist = vpu::searchZeroVelocityIdx(trajectory, stop_idx);
+    double dist_to_stopline = -1.0;
     if (stop_point_exist && stop_idx >= closest /* desired stop line is ahead of ego-vehicle */)
     {
-      double dist_to_stopline = vpu::calcDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest));
+      dist_to_stopline = vpu::calcDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest));
       if (dist_to_stopline < move_dist_min)
       {
         vpu::zeroVelocity(trajectory);
-        DEBUG_INFO("[preventMoveToVeryCloseStopLine] set zero vel curr_vel = %3.3f, dist_to_stopline = %3.3f < move_dist_min = %3.3f",
-                   current_velocity_ptr_->twist.linear.x, dist_to_stopline, move_dist_min);
-      }
+        DEBUG_INFO("[preventMoveToVeryCloseStopLine] vehicle velocity is low, and stop point is very close. keep stopping."
+                   " curr_vel = %3.3f, dist_to_stopline = %3.3f < move_dist_min = %3.3f, stop_idx = %d, closest = %d",
+                   current_velocity_ptr_->twist.linear.x, dist_to_stopline, move_dist_min, stop_idx, closest);
+        return;
+      }     
     }
+    DEBUG_INFO("[preventMoveToVeryCloseStopLine] vehicle velocity is low, and stop point is far away. move."
+                " curr_vel = %3.3f, dist_to_stopline = %3.3f < move_dist_min = %3.3f, stop_idx = %d, closest = %d",
+                current_velocity_ptr_->twist.linear.x, dist_to_stopline, move_dist_min, stop_idx, closest);
   }
 }
 

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <tf2/utils.h>
 #include <boost/shared_ptr.hpp>
-#include <iostream>
 #include <tf2_ros/transform_listener.h>
 #include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -44,14 +44,18 @@ public:
   ~VelocityPlanner();
 
 private:
-  ros::NodeHandle nh_, pnh_;
-  ros::Publisher pub_trajectory_, pub_dist_to_stopline_;
-  ros::Subscriber sub_current_velocity_, sub_current_trajectory_, sub_external_velocity_limit_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  ros::Publisher pub_trajectory_;
+  ros::Publisher pub_dist_to_stopline_;
+  ros::Subscriber sub_current_velocity_;
+  ros::Subscriber sub_current_trajectory_;
+  ros::Subscriber sub_external_velocity_limit_;
 
-  boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;       // current vehicle pose
-  boost::shared_ptr<geometry_msgs::TwistStamped const> current_velocity_ptr_;  // current vehicle twist
-  boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_;              // current base_waypoints
-  boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;     // current external_velocity_limit
+  boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;          // current vehicle pose
+  boost::shared_ptr<geometry_msgs::TwistStamped const> current_velocity_ptr_;     // current vehicle twist
+  boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_; // current base_waypoints
+  boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;        // current external_velocity_limit
 
   autoware_planning_msgs::Trajectory prev_output_trajectory_;  // velocity replanned waypoints (output of this node)
 
@@ -81,22 +85,17 @@ private:
 
   struct VelocityPlannerParam
   {
-    double max_velocity;
-    double max_accel;             // max acceleration in planning [m/s2] > 0
-    double min_decel;             // min deceltion in planning [m/s2] < 0
-    double max_lat_acc;
+    double max_velocity;                   // max velocity [m/s]
+    double max_accel;                      // max acceleration in planning [m/s2] > 0
+    double min_decel;                      // min deceltion in planning [m/s2] < 0
+    double max_lat_acc;                    // max lateral acceleartion [m/ss] > 0
     double replan_vel_deviation;           // replan with current speed if speed deviation exceeds this value [m/s]
-    double replan_stop_point_change_dist;  // replan if stop position changes over this distance [m]
     double engage_velocity;                // use this speed when start moving [m/s]
     double engage_acceleration;            // use this acceleration when start moving [m/ss]
-    double stopping_speed;                 // Speed just before stop point (speed at stop point is 0) [m/s]
     double extract_ahead_dist;             // forward waypoints distance from current position [m]
     double extract_behind_dist;            // backward waypoints distance from current position [m]
-    int resample_num;          // used in resample with interpolate (output waypints size = original size * this value)
-    double large_jerk_report;  // publish emergency topic if stop jerk overs this value
     double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
     double emergency_flag_vel_thr_kmph;    // Threshold for throwing emergency flag when unable to stop under jerk constraints
-    double jerk_planning_span;             // Interval jerk value when planning from nominal jerk to maximum jerk for stop
     double stop_dist_mergin;
   } planning_param_;
 
