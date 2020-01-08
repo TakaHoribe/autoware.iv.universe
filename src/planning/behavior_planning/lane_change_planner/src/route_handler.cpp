@@ -59,7 +59,7 @@ lanelet::Point3d toLaneletPoint(const geometry_msgs::Point point)
 {
   return lanelet::Point3d(lanelet::InvalId, point.x, point.y, point.z);
 }
-}
+}  // namespace
 
 namespace lane_change_planner
 {
@@ -380,7 +380,6 @@ PathWithLaneId RouteHandler::getReferencePath(const geometry_msgs::Pose& pose, c
   double s = arc_coordinates.length;
   double s_backward = std::max(0., s - backward_path_length);
   double s_forward = s + forward_path_length;
-  // ROS_INFO_STREAM("s: " << s << "s_backward: " << s_backward << "s_forward: " << s_forward);
   return getReferencePath(lanelet_sequence, s_backward, s_forward, false);
 }
 
@@ -482,7 +481,6 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
       lanelet::ConstPoint3d next_pt = (i + 1 < centerline.size()) ? centerline[i + 1] : centerline[i];
       double distance = lanelet::geometry::distance2d(to2D(pt), to2D(next_pt));
 
-      // ROS_INFO_STREAM("s: " << s << "s+distance: " << s + distance << "s_start :" << s_start << "s_end: " << s_end);
       if (s < s_start && s + distance > s_start)
       {
         if (use_exact)
@@ -504,7 +502,7 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
         }
       }
 
-      if (s > s_start && s < s_end)
+      if (s >= s_start && s <= s_end)
       {
         PathPointWithLaneId point;
         point.point.pose.position = lanelet::utils::conversion::toGeomMsgPt(pt);
@@ -643,7 +641,9 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
     s_end = s_start + 100;
     reference_path2 = getReferencePath(left_lanelet_sequence, s_start, s_end);
   }
+
   reference_path = combineReferencePath(reference_path1, reference_path2);
+
   return reference_path;
 }
 
