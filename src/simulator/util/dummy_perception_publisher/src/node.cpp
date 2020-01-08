@@ -68,6 +68,7 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
                 geometry_msgs::Transform ros_moved_object2point;
                 ros_moved_object2point.translation.x = x;
                 ros_moved_object2point.translation.y = y;
+                ros_moved_object2point.translation.z =  output_moved_object_pose.pose.position.z;
                 ros_moved_object2point.rotation.x = 0;
                 ros_moved_object2point.rotation.y = 0;
                 ros_moved_object2point.rotation.z = 0;
@@ -142,6 +143,7 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
                 geometry_msgs::Transform ros_moved_object2point;
                 ros_moved_object2point.translation.x = x;
                 ros_moved_object2point.translation.y = y;
+                ros_moved_object2point.translation.z = output_moved_object_pose.pose.position.z;
                 ros_moved_object2point.rotation.x = 0;
                 ros_moved_object2point.rotation.y = 0;
                 ros_moved_object2point.rotation.z = 0;
