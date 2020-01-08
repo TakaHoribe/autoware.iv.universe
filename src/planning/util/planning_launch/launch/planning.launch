@@ -1,4 +1,5 @@
 <launch>
+    <arg name="is_online_path_update" default="true"/>
     <!-- planning module -->
     <group ns="planning">
         <!-- mission planning module -->
@@ -14,6 +15,7 @@
         <!-- motion planning module -->
         <group ns="motion_planning">
             <include file="$(find planning_launch)/launch/motion_planning/motion_planning.launch">
+                <arg name="is_online_path_update" value="$(arg is_online_path_update)"/>
             </include>
         </group>
     </group>

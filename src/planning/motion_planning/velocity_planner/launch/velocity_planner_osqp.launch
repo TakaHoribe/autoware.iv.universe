@@ -27,7 +27,7 @@
 
 
   <arg name="pseudo_jerk_weight" default="10000.0"/>
-  <arg name="max_lat_acc" default="0.1"/>
+  <arg name="max_lat_acc" default="0.05"/>
   <arg name="enable_latacc_filter" default="true"/>
 
 

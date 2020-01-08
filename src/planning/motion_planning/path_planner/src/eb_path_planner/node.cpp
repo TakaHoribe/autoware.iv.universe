@@ -2,28 +2,25 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
 
+#include <lanelet2_extension/utility/message_conversion.h>
 
 
 #include <tf2/utils.h>
 
 #include <memory>
+#include <chrono>
+#include <algorithm>
 
-#include "eb_path_planner/reference_path.hpp"
-
+#include "eb_path_planner/modify_reference_path.h"
+#include "eb_path_planner/eb_path_smoother.h"
 #include "eb_path_planner/node.hpp"
 
 namespace path_planner
 {
-  
-double sign(double a){
-  if(a>0) return 1;
-  else if(a<0) return -1;
-  else return 0;
-}
-
 EBPathPlannerNode::EBPathPlannerNode()
     : nh_(),
       private_nh_("~")
@@ -33,13 +30,34 @@ EBPathPlannerNode::EBPathPlannerNode()
   
   twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
                            &EBPathPlannerNode::currentVelocityCallback, this);
+  map_sub_ = private_nh_.subscribe("/lanelet_map_bin", 10,
+                           &EBPathPlannerNode::mapCallback, this);
+  route_sub_ = private_nh_.subscribe("/planning/mission_planning/route", 10,
+                           &EBPathPlannerNode::routeCallback, this);
   private_nh_.param<bool>("enable_velocity_based_cropping", 
                          enable_velocity_based_cropping_,false);
   private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
                     time_for_calculating_velocity_based_distance_, 5);
   private_nh_.param<double>("distance_for_cropping", 
                              distance_for_cropping_, -3);
-  
+  private_nh_.param<double>("backward_distance", 
+                             backward_distance_, 5);
+  private_nh_.param<double>("exploring_minumum_radius", 
+                             exploring_minimum_radius_, 1.4);
+  private_nh_.param<double>("fixing_distance", 
+                             fixing_distance_, 20.0);
+  private_nh_.param<double>("sampling_resolution", 
+                             sampling_resolution_, 0.1);
+  private_nh_.param<double>("delta_ego_point_threshold_", 
+                             delta_ego_point_threshold_, 5);
+  modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
+    exploring_minimum_radius_,
+    backward_distance_);
+  eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
+    exploring_minimum_radius_,
+    backward_distance_,
+    fixing_distance_,
+    sampling_resolution_);
 }
 
 EBPathPlannerNode::~EBPathPlannerNode() {}
@@ -47,102 +65,61 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
+  
+  std::chrono::high_resolution_clock::time_point begin= 
+    std::chrono::high_resolution_clock::now();
+  
   geometry_msgs::Pose self_pose;
   if (!getSelfPoseInMap(self_pose))
+  {
     return;
-  
-  if(input_path_msg.points.size()==0)
-  {
-    std::cerr  <<"[WARNING] input path size is 0"<< std::endl;
   }
-
-  double distance_threshold = 0;
-  if(enable_velocity_based_cropping_)
+  if(!previous_ego_point_ptr_)
   {
-    if(!in_twist_ptr_)
-    {
-      std::cerr << "[WARNING] current velocity has not been subscribed"  << std::endl;
-      return;
-    }
-    distance_threshold = in_twist_ptr_->twist.linear.x*
-                          time_for_calculating_velocity_based_distance_;
-  }
-  else
-  {
-    distance_threshold = distance_for_cropping_;
+    previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
+    return;
   }
   
-  double yaw = tf2::getYaw(self_pose.orientation);
-  double min_dist = 999999;
-  size_t min_index = 0;
-  for (size_t i = 0; i < input_path_msg.points.size(); i++)
+  if(needReset(*previous_ego_point_ptr_, self_pose.position))
   {
-    double dx = input_path_msg.points[i].pose.position.x-self_pose.position.x;
-    double dy = input_path_msg.points[i].pose.position.y-self_pose.position.y;
-    double dist = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
-    double ex = std::cos(yaw);
-    double ey = std::sin(yaw);
-    double inner_product = dx*ex+dy*ey;
-    if(std::abs(distance_threshold)<0.1)
-    {
-      if (dist < min_dist )
-      {
-        min_dist = dist;
-        min_index = i;
-      }
-    }
-    else
-    {
-      if (dist < min_dist && 
-          dist > std::abs(distance_threshold) &&
-         sign(distance_threshold)*inner_product > 0)
-      {
-        min_dist = dist;
-        min_index = i;
-      }
-    }
+    modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
+                exploring_minimum_radius_,
+                backward_distance_);
+    eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
+                exploring_minimum_radius_,
+                backward_distance_,
+                fixing_distance_,
+                sampling_resolution_);
   }
-
-  std::vector<double> tmp_x;
-  std::vector<double> tmp_y;
-  std::vector<double> tmp_z;
-  std::vector<double> tmp_v;
-  for (size_t i = min_index; i < min_index + 50; i++)
-  {
-    tmp_x.push_back(input_path_msg.points[i].pose.position.x);
-    tmp_y.push_back(input_path_msg.points[i].pose.position.y);
-    tmp_z.push_back(input_path_msg.points[i].pose.position.z);
-    tmp_v.push_back(input_path_msg.points[i].twist.linear.x);
-  }
-  // ReferencePath reference_path(tmp_x, tmp_y, 0.1);
-  // ReferenceTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_v, 0.1);
-  Reference3DTrajectoryPath reference_trajectory_path(tmp_x, tmp_y, tmp_z, tmp_v, 0.1);
-
-  autoware_planning_msgs::Path path_msg;
-  path_msg.header.frame_id = "map";
-  path_msg.header.stamp = ros::Time::now();
-  output_trajectory_msg.header = path_msg.header;
-  for (size_t i = 0; i < reference_trajectory_path.x_.size(); i++)
-  {
-    autoware_planning_msgs::PathPoint path_point_msg;
-    path_point_msg.pose.position.x = reference_trajectory_path.x_[i];
-    path_point_msg.pose.position.y = reference_trajectory_path.y_[i];
-    path_point_msg.pose.position.z = reference_trajectory_path.z_[i];
-    float roll = 0;
-    float pitch = 0;
-    float yaw = reference_trajectory_path.yaw_[i];
-    tf2::Quaternion quaternion;
-    quaternion.setRPY( roll, pitch, yaw );
-    path_point_msg.pose.orientation = tf2::toMsg(quaternion);
-    path_point_msg.twist.linear.x = reference_trajectory_path.v_[i];
-    path_msg.points.push_back(path_point_msg);
-
-    autoware_planning_msgs::TrajectoryPoint traj_point_msg;
-    traj_point_msg.pose = path_point_msg.pose;
-    traj_point_msg.twist = path_point_msg.twist;
-    output_trajectory_msg.points.push_back(traj_point_msg);
-  }
-  path_pub_.publish(path_msg);
+  std::vector<geometry_msgs::Point> debug_points;
+  geometry_msgs::Point debug_goal_point;
+  modify_reference_path_ptr_->generateModifiedPath(
+        self_pose, 
+        input_path_msg.points,
+        *routing_graph_ptr_, 
+        *lanelet_map_ptr_,
+        *in_route_ptr_,
+        debug_points, 
+        debug_goal_point);
+  std::vector<geometry_msgs::Point> debug_interpolated_points;
+  std::vector<geometry_msgs::Point> debug_cached_explored_points;
+  std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
+  eb_path_smoother_ptr_->generateOptimizedPath(
+        input_path_msg.points,
+        debug_points, 
+        self_pose, 
+        debug_interpolated_points,
+        debug_cached_explored_points,
+        optimized_points);
+  
+  std::chrono::high_resolution_clock::time_point end= 
+    std::chrono::high_resolution_clock::now();
+  std::chrono::nanoseconds time = 
+    std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  std::cout << "    total time "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  output_trajectory_msg.points = optimized_points;
+  output_trajectory_msg.header = input_path_msg.header;
+  previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
 
   //debug; marker array
   visualization_msgs::MarkerArray marker_array;
@@ -151,8 +128,8 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   // visualize cubic spline point
   visualization_msgs::Marker debug_cubic_spline;
   debug_cubic_spline.lifetime = ros::Duration(1.0);
-  debug_cubic_spline.header = path_msg.header;
-  debug_cubic_spline.ns = std::string("debug_cubic_spline");
+  debug_cubic_spline.header = input_path_msg.header;
+  debug_cubic_spline.ns = std::string("debug_explored_points");
   debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
   debug_cubic_spline.pose.orientation.w = 1.0;
   debug_cubic_spline.id = unique_id;
@@ -162,22 +139,172 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_cubic_spline.scale.z = 0.1f;
   debug_cubic_spline.color.g = 1.0f;
   debug_cubic_spline.color.a = 1;
-  for (size_t i = 0; i < reference_trajectory_path.x_.size(); i++)
+  for(const auto& point: debug_points)
   {
-    geometry_msgs::Point point;
-    point.x = reference_trajectory_path.x_[i];
-    point.y = reference_trajectory_path.y_[i];
     debug_cubic_spline.points.push_back(point);
   }
-
-  marker_array.markers.push_back(debug_cubic_spline);
+  if(!debug_cubic_spline.points.empty())
+  {
+    marker_array.markers.push_back(debug_cubic_spline);
+  }
   unique_id++;
-
+  
+  // visualize cubic spline point
+  visualization_msgs::Marker debug_goal_point_marker;
+  debug_goal_point_marker.lifetime = ros::Duration(1.0);
+  debug_goal_point_marker.header = input_path_msg.header;
+  debug_goal_point_marker.ns = std::string("debug_goal_point_marker");
+  debug_goal_point_marker.action = visualization_msgs::Marker::MODIFY;
+  debug_goal_point_marker.pose.orientation.w = 1.0;
+  debug_goal_point_marker.id = unique_id;
+  debug_goal_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  debug_goal_point_marker.scale.x = 1.0f;
+  debug_goal_point_marker.scale.y = 0.1f;
+  debug_goal_point_marker.scale.z = 0.1f;
+  debug_goal_point_marker.color.r = 1.0f;
+  debug_goal_point_marker.color.a = 1;
+  debug_goal_point_marker.points.push_back(debug_goal_point);
+  marker_array.markers.push_back(debug_goal_point_marker);
+  unique_id++;
+  
+  // visualize cubic spline point
+  visualization_msgs::Marker debug_interpolated_points_marker;
+  debug_interpolated_points_marker.lifetime = ros::Duration(1.0);
+  debug_interpolated_points_marker.header = input_path_msg.header;
+  debug_interpolated_points_marker.ns = std::string("debug_interpolated_points_marker");
+  debug_interpolated_points_marker.action = visualization_msgs::Marker::MODIFY;
+  debug_interpolated_points_marker.pose.orientation.w = 1.0;
+  debug_interpolated_points_marker.id = unique_id;
+  debug_interpolated_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  debug_interpolated_points_marker.scale.x = 1.0f;
+  debug_interpolated_points_marker.scale.y = 0.1f;
+  debug_interpolated_points_marker.scale.z = 0.1f;
+  debug_interpolated_points_marker.color.g = 1.0f;
+  debug_interpolated_points_marker.color.a = 1;
+  for(const auto& point: debug_interpolated_points)
+  {
+    debug_interpolated_points_marker.points.push_back(point);
+  }
+  if(!debug_interpolated_points_marker.points.empty())
+  {
+    marker_array.markers.push_back(debug_interpolated_points_marker);
+  }
+  unique_id++;
+  
+  // visualize cubic spline point
+  visualization_msgs::Marker debug_optimized_points_marker;
+  debug_optimized_points_marker.lifetime = ros::Duration(1.0);
+  debug_optimized_points_marker.header = input_path_msg.header;
+  debug_optimized_points_marker.ns = std::string("debug_optimized_points_marker");
+  debug_optimized_points_marker.action = visualization_msgs::Marker::MODIFY;
+  debug_optimized_points_marker.pose.orientation.w = 1.0;
+  debug_optimized_points_marker.id = unique_id;
+  debug_optimized_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  debug_optimized_points_marker.scale.x = 1.0f;
+  debug_optimized_points_marker.scale.y = 0.1f;
+  debug_optimized_points_marker.scale.z = 0.1f;
+  debug_optimized_points_marker.color.g = 1.0f;
+  debug_optimized_points_marker.color.a = 1;
+  for (size_t i = fixing_distance_/sampling_resolution_; i < optimized_points.size(); i++)
+  {
+    debug_optimized_points_marker.points.push_back(optimized_points[i].pose.position);
+  }
+  if(!debug_optimized_points_marker.points.empty())
+  {
+    marker_array.markers.push_back(debug_optimized_points_marker);
+  }
+  unique_id++;
+  
+  visualization_msgs::Marker debug_fixing_optimized_points_marker;
+  debug_fixing_optimized_points_marker.lifetime = ros::Duration(1.0);
+  debug_fixing_optimized_points_marker.header = input_path_msg.header;
+  debug_fixing_optimized_points_marker.ns = std::string("debug_fixing_optimized_points_marker");
+  debug_fixing_optimized_points_marker.action = visualization_msgs::Marker::MODIFY;
+  debug_fixing_optimized_points_marker.pose.orientation.w = 1.0;
+  debug_fixing_optimized_points_marker.id = unique_id;
+  debug_fixing_optimized_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  debug_fixing_optimized_points_marker.scale.x = 1.0f;
+  debug_fixing_optimized_points_marker.scale.y = 0.1f;
+  debug_fixing_optimized_points_marker.scale.z = 0.1f;
+  debug_fixing_optimized_points_marker.color.r = 1.0f;
+  debug_fixing_optimized_points_marker.color.g = 1.0f;
+  debug_fixing_optimized_points_marker.color.a = 1;
+  int tmp_max_ind = std::min((int)std::ceil(fixing_distance_/sampling_resolution_), 
+                             (int)optimized_points.size());
+  for (int i = 0; i < tmp_max_ind; i++)
+  {
+    debug_fixing_optimized_points_marker.points.push_back(optimized_points[i].pose.position);
+  }
+  if(!debug_fixing_optimized_points_marker.points.empty())
+  {
+    marker_array.markers.push_back(debug_fixing_optimized_points_marker);
+  }
+  unique_id++;
+  
+  for (size_t i = 0; i < debug_points.size(); i++)
+  {
+    visualization_msgs::Marker text_marker;
+    text_marker.lifetime = ros::Duration(1.0);
+    text_marker.header = input_path_msg.header;
+    text_marker.ns = std::string("text_marker");
+    text_marker.action = visualization_msgs::Marker::MODIFY;
+    text_marker.pose.orientation.w = 1.0;
+    text_marker.id = unique_id;
+    text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    text_marker.scale.x = 1.0f;
+    text_marker.scale.y = 0.1f;
+    text_marker.scale.z = 1.0f;
+    text_marker.color.r = 1.0f;
+    text_marker.color.g = 1.0f;
+    text_marker.color.a = 1;
+    text_marker.text = std::to_string((int)i);
+    text_marker.pose.position = debug_points[i];
+    text_marker.pose.orientation.w = 1.0;
+    marker_array.markers.push_back(text_marker);
+    unique_id++;
+    
+  }
   markers_pub_.publish(marker_array);
 }
 
 void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStamped& msg)
 {
   in_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(msg);
+}
+
+void EBPathPlannerNode::mapCallback(
+  const autoware_lanelet2_msgs::MapBin& msg)
+{
+  ROS_INFO("Start loading lanelet");
+  lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
+  lanelet::utils::conversion::fromBinMsg(msg, 
+                                        lanelet_map_ptr_,
+                                        &traffic_rules_ptr_, 
+                                        &routing_graph_ptr_);
+  ROS_INFO("Map is loaded");
+}
+
+void EBPathPlannerNode::routeCallback(
+  const autoware_planning_msgs::Route& msg)
+{
+  in_route_ptr_ = std::make_shared<autoware_planning_msgs::Route>(msg);
+}
+
+bool EBPathPlannerNode::needReset(
+  const geometry_msgs::Point& previous_ego_point,
+  const geometry_msgs::Point& current_ego_point)
+{
+  double dx = previous_ego_point.x - current_ego_point.x;
+  double dy = previous_ego_point.y - current_ego_point.y;
+  double dist = std::sqrt(dx*dx+dy*dy);
+  if(dist > delta_ego_point_threshold_)
+  {
+    ROS_WARN("[EBPathPlanner] Reset eb path planner");
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 } // namespace path_planner
