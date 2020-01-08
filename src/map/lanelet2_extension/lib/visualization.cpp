@@ -24,6 +24,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
@@ -31,6 +32,12 @@
 
 namespace
 {
+template <typename T>
+bool exists(const std::unordered_set<T>& set, const T& element)
+{
+  return std::find(set.begin(), set.end(), element) != set.end();
+}
+
 void adjacentPoints(const int i, const int N, const geometry_msgs::Polygon poly, geometry_msgs::Point32* p0,
                     geometry_msgs::Point32* p1, geometry_msgs::Point32* p2)
 {
@@ -83,8 +90,10 @@ void lightAsMarker(lanelet::ConstPoint3d p, visualization_msgs::Marker* marker, 
 
   marker->header.frame_id = "map";
   marker->header.stamp = ros::Time();
+  marker->frame_locked - true;
   marker->ns = ns;
   marker->id = p.id();
+  marker->lifetime = ros::Duration();
   marker->type = visualization_msgs::Marker::SPHERE;
   marker->pose.position.x = p.x();
   marker->pose.position.y = p.y();
@@ -120,7 +129,6 @@ void lightAsMarker(lanelet::ConstPoint3d p, visualization_msgs::Marker* marker, 
     marker->color.g = 1.0f;
     marker->color.b = 1.0f;
   }
-  marker->lifetime = ros::Duration();
 }
 
 void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs::Marker* marker, const int id,
@@ -134,9 +142,11 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
 
   marker->header.frame_id = "map";
   marker->header.stamp = ros::Time();
+  marker->frame_locked = true;
   marker->ns = ns;
   marker->id = id;
   marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
+  marker->lifetime = ros::Duration();
 
   lanelet::BasicPoint3d pt[3];
   pt[0].x() = 0.0;
@@ -153,8 +163,6 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
 
   lanelet::ConstLineString3d center_ls = ll.centerline();
   float s = 1.0;
-
-  marker->lifetime = ros::Duration();
 
   marker->pose.position.x = 0.0;  // p.x();
   marker->pose.position.y = 0.0;  // p.y();
@@ -457,6 +465,7 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
 
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
+  marker.frame_locked = true;
   marker.ns = "detection_area";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
@@ -525,15 +534,18 @@ visualization_msgs::MarkerArray
 visualization::lineStringsAsMarkerArray(const std::vector<lanelet::ConstLineString3d> line_strings,
                                         const std::string name_space, const std_msgs::ColorRGBA c, const double lss)
 {
+  std::unordered_set<lanelet::Id> added;
   visualization_msgs::MarkerArray ls_marker_array;
   for (auto i = line_strings.begin(); i != line_strings.end(); i++)
   {
-    lanelet::ConstLineString3d ls = *i;
-    visualization_msgs::Marker ls_marker;
-
-    visualization::lineString2Marker(ls, &ls_marker, "map", name_space, c, 0.2);
-
-    ls_marker_array.markers.push_back(ls_marker);
+    const lanelet::ConstLineString3d& ls = *i;
+    if (!exists(added, ls.id()))
+    {
+      visualization_msgs::Marker ls_marker;
+      visualization::lineString2Marker(ls, &ls_marker, "map", name_space, c, 0.2);
+      ls_marker_array.markers.push_back(ls_marker);
+      added.insert(ls.id());
+    }
   }
 
   return (ls_marker_array);
@@ -544,6 +556,7 @@ visualization_msgs::MarkerArray visualization::laneletsBoundaryAsMarkerArray(con
                                                                              const bool viz_centerline)
 {
   double lss = 0.2;  // line string size
+  std::unordered_set<lanelet::Id> added;
   visualization_msgs::MarkerArray marker_array;
   for (auto li = lanelets.begin(); li != lanelets.end(); li++)
   {
@@ -554,15 +567,23 @@ visualization_msgs::MarkerArray visualization::laneletsBoundaryAsMarkerArray(con
     lanelet::ConstLineString3d center_ls = lll.centerline();
 
     visualization_msgs::Marker left_line_strip, right_line_strip, center_line_strip;
-
-    visualization::lineString2Marker(left_ls, &left_line_strip, "map", "left_lane_bound", c, lss);
-    visualization::lineString2Marker(right_ls, &right_line_strip, "map", "right_lane_bound", c, lss);
-    marker_array.markers.push_back(left_line_strip);
-    marker_array.markers.push_back(right_line_strip);
-    if (viz_centerline)
+    if (!exists(added, left_ls.id()))
+    {
+      visualization::lineString2Marker(left_ls, &left_line_strip, "map", "left_lane_bound", c, lss);
+      marker_array.markers.push_back(left_line_strip);
+      added.insert(left_ls.id());
+    }
+    if (!exists(added, right_ls.id()))
+    {
+      visualization::lineString2Marker(right_ls, &right_line_strip, "map", "right_lane_bound", c, lss);
+      marker_array.markers.push_back(right_line_strip);
+      added.insert(right_ls.id());
+    }
+    if (viz_centerline && !exists(added, center_ls.id()))
     {
       visualization::lineString2Marker(center_ls, &center_line_strip, "map", "center_lane_line", c, lss * 0.5);
       marker_array.markers.push_back(center_line_strip);
+      added.insert(center_ls.id());
     }
   }
   return marker_array;
@@ -616,6 +637,7 @@ visualization_msgs::MarkerArray visualization::laneletsAsTriangleMarkerArray(con
 
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
+  marker.frame_locked = true;
   marker.ns = ns;
   marker.id = 0;
   marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
@@ -672,10 +694,10 @@ void visualization::trafficLight2TriangleMarker(const lanelet::ConstLineString3d
   }
   marker->header.frame_id = "map";
   marker->header.stamp = ros::Time();
+  marker->frame_locked = true;
   marker->ns = ns;
   marker->id = ls.id();
   marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
-
   marker->lifetime = duration;
 
   marker->pose.position.x = 0.0;  // p.x();
@@ -751,16 +773,17 @@ void visualization::lineString2Marker(const lanelet::ConstLineString3d ls, visua
 
   line_strip->header.frame_id = frame_id;
   line_strip->header.stamp = ros::Time();
+  line_strip->frame_locked = true;
   line_strip->ns = ns;
   line_strip->action = visualization_msgs::Marker::ADD;
-
-  line_strip->pose.orientation.w = 1.0;
-  line_strip->id = ls.id();
-
   line_strip->type = visualization_msgs::Marker::LINE_STRIP;
 
+  line_strip->id = ls.id();
+  line_strip->pose.orientation.x = 0.0;
+  line_strip->pose.orientation.y = 0.0;
+  line_strip->pose.orientation.z = 0.0;
+  line_strip->pose.orientation.w = 1.0;
   line_strip->scale.x = lss;
-
   line_strip->color = c;
 
   // fill out lane line
