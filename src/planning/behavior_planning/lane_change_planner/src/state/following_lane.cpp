@@ -27,32 +27,52 @@ State FollowingLaneState::getCurrentState() const
 }
 void FollowingLaneState::entry()
 {
+  ROS_INFO("entered ExecutingLaneChange");
+
+  // wait until mandatory data aris ready
+  while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
+  {
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
+    ros::Duration(0.01);
+  }
+  while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_) && ros::ok())
+  {
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_velocity");
+    ros::Duration(0.01);
+  }
 }
+
 void FollowingLaneState::update()
 {
-  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
+  // update input data
   {
-    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
+    if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
+    {
+      ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity.");
+    }
+    if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
+    {
+      ROS_ERROR_STREAM("Failed to get self pose. Using previous pose.");
+    }
+    if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects_))
+    {
+      ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects.");
+    }
   }
-  if (SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
+
+  // update path
   {
     double backward_path_length = 5;
     double forward_path_length = 100;
     path_ = RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
+
     if (!RouteHandler::getInstance().isInPreferredLane(current_pose_))
     {
       lane_change_path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
     }
   }
-  else
-  {
-    ROS_ERROR_STREAM("Failed to get self pose. Skipping path update.");
-  }
-  if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects_))
-  {
-    ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
-  }
 }
+
 State FollowingLaneState::getNextState() const
 {
   if (RouteHandler::getInstance().isInPreferredLane(current_pose_))
@@ -82,16 +102,20 @@ bool FollowingLaneState::isTooCloseToDeadEnd() const
 
 bool FollowingLaneState::isLaneChangeable() const
 {
-  double min_thresh = 5;
-  double stop_time = 2.0;
-  double buffer = 2;
   const auto& target_lanelets = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
   if (target_lanelets.empty())
   {
     return false;
   }
+  if (dynamic_objects_ == nullptr)
+  {
+    return true;
+  }
   auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanelets);
 
+  const double min_thresh = 5;
+  const double stop_time = 2.0;
+  const double buffer = 2;
   const double time_resolution = 0.5;
   const auto& vehicle_predicted_path =
       util::convertToPredictedPath(lane_change_path_, current_twist_->twist, current_pose_.pose);
