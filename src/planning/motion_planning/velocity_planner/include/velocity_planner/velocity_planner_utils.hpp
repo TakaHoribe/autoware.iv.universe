@@ -48,4 +48,9 @@ double getDurationToNextIdx(const autoware_planning_msgs::Trajectory &trajectory
 bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory &trajectory, int &idx);
 bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory &trajectory, const unsigned int &idx_dist, std::vector<double> &k_arr);
 bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planning_msgs::Trajectory &trajectory);
+double normalizeRadian(const double _angle);
+void convertEulerAngleToMonotonic(std::vector<double> &a);
+geometry_msgs::Quaternion getQuaternionFromYaw(double yaw);
+bool linearInterp1qTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory, const std::vector<double> &out_index,
+                              autoware_planning_msgs::Trajectory &out_trajectory);
 }  // namespace vpu

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(velocity_planner)
 
 
-add_compile_options(-std=c++11 -Wall)
+add_compile_options(-std=c++11 -Wall -O3)
 
 
 find_package(catkin REQUIRED COMPONENTS

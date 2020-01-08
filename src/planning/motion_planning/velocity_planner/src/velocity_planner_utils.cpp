@@ -695,6 +695,84 @@ bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planni
   return true;
 }
 
+double normalizeRadian(const double _angle)
+{
+  double n_angle = std::fmod(_angle, 2 * M_PI);
+  n_angle = n_angle > M_PI ? n_angle - 2 * M_PI : n_angle < -M_PI ? 2 * M_PI + n_angle : n_angle;
+
+  // another way
+  // Math.atan2(Math.sin(_angle), Math.cos(_angle));
+  return n_angle;
+}
+
+void convertEulerAngleToMonotonic(std::vector<double> &a)
+{
+  for (unsigned int i = 1; i < a.size(); ++i)
+  {
+    const double da = a[i] - a[i - 1];
+    a[i] = a[i - 1] + normalizeRadian(da);
+  }
+}
+
+geometry_msgs::Quaternion getQuaternionFromYaw(double yaw)
+{
+  tf2::Quaternion q;
+  q.setRPY(0, 0, yaw);
+  return tf2::toMsg(q);
+}
+
+bool linearInterp1qTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
+                              const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory)
+{
+  std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
+  for (const auto &p : base_trajectory.points)
+  {
+    px.push_back(p.pose.position.x);
+    py.push_back(p.pose.position.y);
+    pz.push_back(p.pose.position.z);
+    pyaw.push_back(tf2::getYaw(p.pose.orientation));
+    tlx.push_back(p.twist.linear.x);
+    taz.push_back(p.twist.angular.z);
+    alx.push_back(p.accel.linear.x);
+    aaz.push_back(p.accel.angular.z);
+  }
+
+  convertEulerAngleToMonotonic(pyaw);
+
+  std::vector<double> px_p, py_p, pz_p, pyaw_p, tlx_p, taz_p, alx_p, aaz_p;
+
+  if (!LinearInterpolate::interpolate(base_index, px, out_index, px_p) ||
+      !LinearInterpolate::interpolate(base_index, py, out_index, py_p) ||
+      !LinearInterpolate::interpolate(base_index, pz, out_index, pz_p) ||
+      !LinearInterpolate::interpolate(base_index, pyaw, out_index, pyaw_p) ||
+      !LinearInterpolate::interpolate(base_index, tlx, out_index, tlx_p) ||
+      !LinearInterpolate::interpolate(base_index, taz, out_index, taz_p) ||
+      !LinearInterpolate::interpolate(base_index, alx, out_index, alx_p) ||
+      !LinearInterpolate::interpolate(base_index, aaz, out_index, aaz_p))
+  {
+    ROS_WARN("[linearInterp1qTrajectory] interpolation error!!");
+    return false;
+  }
+
+  out_trajectory.header = base_trajectory.header;
+  out_trajectory.points.clear();
+  autoware_planning_msgs::TrajectoryPoint point;
+  for (unsigned int i = 0; i < out_index.size(); ++i)
+  {
+    point.pose.position.x = px_p.at(i);
+    point.pose.position.y = py_p.at(i);
+    point.pose.position.z = pz_p.at(i);
+    point.pose.orientation = getQuaternionFromYaw(pyaw_p.at(i));
+    point.twist.linear.x = tlx_p.at(i);
+    point.twist.angular.z = taz_p.at(i);
+    point.accel.linear.x = alx_p.at(i);
+    point.accel.angular.z = aaz_p.at(i);
+    out_trajectory.points.push_back(point);
+  }
+  return true;
+
+}
+
 }  // namespace vpu
 
 
