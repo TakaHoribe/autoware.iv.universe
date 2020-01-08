@@ -1,6 +1,6 @@
 <launch>
   <arg name="ns" default="/"/>
-  <arg name="output" default="screen"/>
+  <arg name="output" default="log"/>
 
   <!-- debug flags -->
   <arg name="show_debug_info" default="true"/>
