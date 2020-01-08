@@ -5,15 +5,15 @@
   <!-- debug flags -->
   <arg name="show_debug_info" default="true"/>
   <arg name="show_debug_info_all" default="false"/>
-  <arg name="show_figure" default="false"/>
+  <arg name="show_figure" default="true"/>
 
 
   <!-- planning parameters -->
   <arg name="max_velocity" default="20.0"/>
   <arg name="max_accel" default="1.5"/>
-  <arg name="min_decel" default="-2.0"/>
+  <arg name="min_decel" default="-1.5"/>
   <arg name="replan_vel_deviation" default="5.53"/>
-  <arg name="engage_velocity" default="2.0"/>
+  <arg name="engage_velocity" default="1.0"/>
   <arg name="stop_dist_mergin" default="0.55"/>
   <!-- use this velocity as command to engage vehicle speed when stopping -->
   <arg name="engage_acceleration" default="0.0"/>
