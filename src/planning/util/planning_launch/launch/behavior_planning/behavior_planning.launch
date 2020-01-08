@@ -13,7 +13,7 @@
       <remap from="vector_map" to="$(arg map_topic_name)"/>
       <remap from="lane_change_path" to="path_with_lane_id"/>
       <remap from="perception" to="/perception/prediction/objects"/>
-      <remap from="velocity" to="/vehicle/twist"/>
+      <remap from="velocity" to="/vehicle/status/twist"/>
     </node>
 
     <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
@@ -23,7 +23,7 @@
     <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
       <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
-      <remap from="~input/vehicle/velocity" to="/vehicle/twist"/>
+      <remap from="~input/vehicle/velocity" to="/vehicle/status/twist"/>
       <remap from="~input/perception" to="/perception/prediction/objects"/>
       <remap from="~input/pointcloud" to="/sensing/preprocess/lidar/no_ground/pointcloud"/>
       <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
