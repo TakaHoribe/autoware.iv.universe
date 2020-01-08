@@ -44,7 +44,7 @@ Visualization Manager:
       Delta Range: 10
       Enabled: true
       Max Alpha: 1
-      Max Range: 200
+      Max Range: 100
       Max Wave Alpha: 1
       Min Alpha: 0.20000000298023224
       Min Wave Alpha: 0.20000000298023224
@@ -52,7 +52,7 @@ Visualization Manager:
       Reference Frame: base_link
       Value: true
       Wave Color: 255; 255; 255
-      Wave Velocity: 100
+      Wave Velocity: 40
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
