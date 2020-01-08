@@ -27,17 +27,6 @@ State FollowingLaneState::getCurrentState() const
 }
 void FollowingLaneState::entry()
 {
-  // wait until mandatory data aris ready
-  while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
-  {
-    ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
-    ros::Duration(0.01);
-  }
-  while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_) && ros::ok())
-  {
-    ROS_ERROR_THROTTLE(0.5, "waiting for current_velocity");
-    ros::Duration(0.01);
-  }
 }
 
 void FollowingLaneState::update()
@@ -64,7 +53,7 @@ void FollowingLaneState::update()
     double forward_path_length = 100;
     path_ = RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
 
-    if (!RouteHandler::getInstance().isInPreferredLane(current_pose_))
+    if (!RouteHandler::getInstance().isInPreferredLane(current_pose_) && current_twist_ != nullptr)
     {
       lane_change_path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
     }

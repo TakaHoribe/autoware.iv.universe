@@ -47,7 +47,7 @@ void ExecutingLaneChangeState::update()
 {
   if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
   {
-    ROS_ERROR("failed to get curren pose");
+    ROS_ERROR("failed to get current pose");
   }
   if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
   {
