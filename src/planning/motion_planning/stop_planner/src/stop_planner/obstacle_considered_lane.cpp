@@ -147,7 +147,7 @@ std::pair<bool, autoware_planning_msgs::Trajectory> ObstacleConsideredLane::repl
   // point cloud error handling
   if (pc_.data.empty() || points_thr_ == 0)
   {
-    ROS_WARN("point cloud is not subscribed or invalid!, points_thr_ = %d, pc.siize = %lu", points_thr_, pc_.data.size());
+    ROS_INFO("point cloud is not subscribed or invalid!, points_thr_ = %d, pc.siize = %lu", points_thr_, pc_.data.size());
     return NotReplan();
   }
 

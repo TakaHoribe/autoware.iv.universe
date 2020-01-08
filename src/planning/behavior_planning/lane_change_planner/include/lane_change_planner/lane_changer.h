@@ -46,7 +46,6 @@ private:
   ros::Publisher path_publisher_;
   ros::Publisher path_marker_publisher_;
 
-  ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 
   ros::Subscriber points_subscriber_;

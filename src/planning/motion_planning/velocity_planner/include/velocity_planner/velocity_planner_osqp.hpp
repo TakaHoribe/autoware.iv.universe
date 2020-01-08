@@ -30,6 +30,7 @@
 #include <velocity_planner/velocity_planner_utils.hpp>
 
 #include <stop_planner/planning_utils.h>
+#include <osqp_interface/osqp_interface.h>
 
 
 // #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
@@ -61,6 +62,8 @@ private:
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+
+  osqp::OSQPInterface qp_solver_;
 
   bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
@@ -123,7 +126,7 @@ private:
 
   void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                       const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest, const double ds, 
-                      autoware_planning_msgs::Trajectory &output) const;
+                      autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
                          VelocityPlanner::Motion *initial_motion, int &init_type) const;
@@ -139,7 +142,7 @@ private:
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
   void optimizeVelocity(const Motion initial_motion, const autoware_planning_msgs::Trajectory &input, const int closest,
-                        const double ds, autoware_planning_msgs::Trajectory &output) const;
+                        const double ds, autoware_planning_msgs::Trajectory &output);
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<velocity_planner::VelocityPlannerConfig> dyncon_server_;

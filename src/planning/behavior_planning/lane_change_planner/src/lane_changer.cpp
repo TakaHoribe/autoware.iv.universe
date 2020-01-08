@@ -24,33 +24,56 @@ LaneChanger::LaneChanger() : pnh_("~")
 
 void LaneChanger::init()
 {
-  timer_ = nh_.createTimer(ros::Duration(0.1), &LaneChanger::run, this);
 
   // data_manager
-  points_subscriber_ =
-      nh_.subscribe("points", 1, &SingletonDataManager::pointcloudCallback, &SingletonDataManager::getInstance());
-  velocity_subscriber_ =
-      nh_.subscribe("velocity", 1, &SingletonDataManager::velocityCallback, &SingletonDataManager::getInstance());
-  perception_subscriber_ =
-      nh_.subscribe("perception", 1, &SingletonDataManager::perceptionCallback, &SingletonDataManager::getInstance());
+  points_subscriber_ = pnh_.subscribe("input/points", 1, &SingletonDataManager::pointcloudCallback,
+                                      &SingletonDataManager::getInstance());
+  velocity_subscriber_ = pnh_.subscribe("input/velocity", 1, &SingletonDataManager::velocityCallback,
+                                        &SingletonDataManager::getInstance());
+  perception_subscriber_ = pnh_.subscribe("input/perception", 1, &SingletonDataManager::perceptionCallback,
+                                          &SingletonDataManager::getInstance());
 
   // route_handler
-  vector_map_subscriber_ = nh_.subscribe("vector_map", 1, &RouteHandler::mapCallback, &RouteHandler::getInstance());
-  route_subscriber_ = nh_.subscribe("route", 1, &RouteHandler::routeCallback, &RouteHandler::getInstance());
-  route_init_subscriber_ = nh_.subscribe("route", 1, &StateMachine::init, &state_machine_);
+  vector_map_subscriber_ =
+      pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &RouteHandler::getInstance());
+  route_subscriber_ = pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &RouteHandler::getInstance());
+  route_init_subscriber_ = pnh_.subscribe("input/route", 1, &StateMachine::init, &state_machine_);
 
   // path_publisher
-  path_publisher_ = nh_.advertise<autoware_planning_msgs::PathWithLaneId>("lane_change_path", 1);
-  path_marker_publisher_ = nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1);
+  path_publisher_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
+  path_marker_publisher_ = pnh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1);
+
+  // wait until mandatory data is ready
+  {
+    while (!RouteHandler::getInstance().isHandlerReady() && ros::ok())
+    {
+      ROS_WARN_THROTTLE(0.5, "waiting for route to be ready");
+      ros::spinOnce();
+      ros::Duration(0.1).sleep();
+    }
+
+    geometry_msgs::PoseStamped tmp_current_pose;
+    std::shared_ptr<geometry_msgs::TwistStamped const> tmp_current_twist;
+    while (!SingletonDataManager::getInstance().getCurrentSelfPose(tmp_current_pose) && ros::ok())
+    {
+      ROS_WARN_THROTTLE(0.5, "waiting for vehicle pose");
+      ros::spinOnce();
+      ros::Duration(0.1).sleep();
+    }
+    while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(tmp_current_twist) && ros::ok())
+    {
+      ROS_WARN_THROTTLE(0.5, "waiting for vehicle velocity");
+      ros::spinOnce();
+      ros::Duration(0.1).sleep();
+    }
+  }
+
+  // Start timer. This must be done after all data (e.g. vehicle pose, velocity) are ready.
+  timer_ = pnh_.createTimer(ros::Duration(0.1), &LaneChanger::run, this);
 }
 
 void LaneChanger::run(const ros::TimerEvent& event)
 {
-  if (!RouteHandler::getInstance().isHandlerReady())
-  {
-    return;
-  }
-
   state_machine_.updateState();
   auto path = state_machine_.getPath();
   auto goal = RouteHandler::getInstance().getGoalPose();
@@ -58,7 +81,7 @@ void LaneChanger::run(const ros::TimerEvent& event)
   auto refined_path = util::refinePath(7.5, M_PI * 0.5, path, goal, goal_lane_id);
   refined_path.header.frame_id = "map";
   refined_path.header.stamp = ros::Time::now();
-  // auto path = path_extender.ExtendPath(path);
+
   if (!path.points.empty())
   {
     path_publisher_.publish(refined_path);

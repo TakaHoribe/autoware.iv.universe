@@ -28,28 +28,26 @@ State ExecutingLaneChangeState::getCurrentState() const
 
 void ExecutingLaneChangeState::entry()
 {
-  ROS_INFO("entered ExecutingLaneChange");
   while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
   {
-    ROS_ERROR("waiting for current_pose");
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
     ros::Duration(0.01);
   }
   while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_) && ros::ok())
   {
-    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_velocity");
     ros::Duration(0.01);
   }
   original_lanes_ = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
   target_lanes_ = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
   path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
-  // locked_path = createLaneChangePath(current_pose, current_lane, target_lane);
 }
 
 void ExecutingLaneChangeState::update()
 {
   if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
   {
-    ROS_ERROR("failed to get curren pose");
+    ROS_ERROR("failed to get current pose");
   }
   if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
   {
@@ -59,8 +57,6 @@ void ExecutingLaneChangeState::update()
   {
     ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
   }
-
-  // return locked_path;
 }
 
 State ExecutingLaneChangeState::getNextState() const

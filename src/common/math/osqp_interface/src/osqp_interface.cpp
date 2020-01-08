@@ -15,34 +15,64 @@
  *
  * Author: Robin Karlsson
  */
-
 #include "osqp_interface/osqp_interface.h"
+#include <iostream>
+#include <chrono>
 
 namespace osqp
 {
-inline bool isEqual(double x, double y)
+
+OSQPInterface::OSQPInterface(const c_float eps_abs)
 {
-  const double epsilon = 1e-6;
-  return std::abs(x - y) <= epsilon * std::abs(x);
+  /************************
+   * INITIALIZE WORKSPACE
+   ************************/
+  settings = (OSQPSettings *)c_malloc(sizeof(OSQPSettings));
+  data = (OSQPData *)c_malloc(sizeof(OSQPData));
+
+  /*******************
+   * SOLVER SETTINGS
+   *******************/
+  if (settings)
+  {
+    osqp_set_default_settings(settings);
+    settings->alpha = 1.6;  // Change alpha parameter
+    settings->eps_rel = 1.0E-4;
+    settings->eps_abs = eps_abs;
+    settings->eps_prim_inf = 1.0E-4;
+    settings->eps_dual_inf = 1.0E-4;
+    settings->warm_start = true;
+    settings->max_iter = 4000;
+    settings->verbose = false;
+  }
+  // Set flag for successful initialization
+  exitflag = 0;
 }
 
-std::tuple<std::vector<float>, std::vector<float>> optimize(const Eigen::MatrixXf &P, const Eigen::MatrixXf &A,
-                                                            const std::vector<float> &q, const std::vector<float> &l,
-                                                            const std::vector<float> &u)
+OSQPInterface::OSQPInterface(const Eigen::MatrixXd &P, const Eigen::MatrixXd &A, const std::vector<double> &q,
+                             const std::vector<double> &l, const std::vector<double> &u, const c_float eps_abs) : OSQPInterface(eps_abs)
+{
+  initializeProblem(P, A, q, l, u);
+}
+
+c_int OSQPInterface::initializeProblem(const Eigen::MatrixXd &P,
+                                       const Eigen::MatrixXd &A,
+                                       const std::vector<double> &q,
+                                       const std::vector<double> &l,
+                                       const std::vector<double> &u)
 {
   /*******************
    * SET UP MATRICES
    *******************/
-  // CSC matrices
-  CSC_Matrix P_csc = convEigenMatrixToCSCMatrix(P);
-  CSC_Matrix A_csc = convEigenMatrixToCSCMatrix(A);
+  CSC_Matrix P_csc = calCSCMatrixTrapesoidal(P);
+  CSC_Matrix A_csc = calCSCMatrix(A);
   // Dynamic float arrays
-  std::vector<c_float> q_tmp(q.begin(), q.end());
-  std::vector<c_float> l_tmp(l.begin(), l.end());
-  std::vector<c_float> u_tmp(u.begin(), u.end());
-  c_float* q_dyn = q_tmp.data();
-  c_float* l_dyn = l_tmp.data();
-  c_float* u_dyn = u_tmp.data();
+  std::vector<double> q_tmp(q.begin(), q.end());
+  std::vector<double> l_tmp(l.begin(), l.end());
+  std::vector<double> u_tmp(u.begin(), u.end());
+  double *q_dyn = q_tmp.data();
+  double *l_dyn = l_tmp.data();
+  double *u_dyn = u_tmp.data();
 
   /**********************
    * OBJECTIVE FUNCTION
@@ -50,128 +80,142 @@ std::tuple<std::vector<float>, std::vector<float>> optimize(const Eigen::MatrixX
   // Number of constraints
   c_int constr_m = A.rows();
   // Number of parameters
-  c_int param_n = P.rows();
-  // Number of elements
-  c_int P_elem_N = P.size();
-  c_int A_elem_N = A.size();
+  param_n = P.rows();
 
-  // Problem settings
-  OSQPSettings* settings = (OSQPSettings*)c_malloc(sizeof(OSQPSettings));
-
-  // Structures
-  OSQPWorkspace* work;  // Workspace
-  OSQPData* data;       // OSQPData
-
-  // Populate data
-  data = (OSQPData*)c_malloc(sizeof(OSQPData));
-
+  /*****************
+   * POLULATE DATA
+   *****************/
   data->m = constr_m;
   data->n = param_n;
-  data->P = csc_matrix(data->n, data->n, P_elem_N, P_csc.elem_val.data(), P_csc.row_idx.data(), P_csc.col_idx.data());
+  data->P = csc_matrix(data->n, data->n, P_csc.vals.size(), P_csc.vals.data(), P_csc.row_idxs.data(), P_csc.col_idxs.data());
   data->q = q_dyn;
-
-  /**********************
-   * LINEAR CONSTRAINTS
-   **********************/
-  data->A = csc_matrix(data->m, data->n, A_elem_N, A_csc.elem_val.data(), A_csc.row_idx.data(), A_csc.col_idx.data());
+  data->A = csc_matrix(data->m, data->n, A_csc.vals.size(), A_csc.vals.data(), A_csc.row_idxs.data(), A_csc.col_idxs.data());
   data->l = l_dyn;
   data->u = u_dyn;
 
-  /************
-   * OPTIMIZE
-   ************/
-  // Define Solver settings as default
-  osqp_set_default_settings(settings);
-  settings->alpha = 1.6;  // Change alpha parameter
-  settings->eps_rel = 1.0E-4;
-  settings->eps_abs = 1.0E-4;
-  settings->eps_prim_inf = 1.0E-4;
-  settings->eps_dual_inf = 1.0E-4;
-  settings->warm_start = true;
-  settings->max_iter = 4000;
-  settings->verbose = false;
-
+  // For deconstructor
+  problem_in_memory = true;
 
   // Setup workspace
-  work = osqp_setup(data, settings);
+  exitflag = osqp_setup(&work, data, settings);
 
+  return exitflag;
+}
+
+OSQPInterface::~OSQPInterface()
+{
+  // Cleanup dynamic OSQP memory
+  if (data)
+  {
+    if (problem_in_memory)
+    {
+      c_free(data->A);
+      c_free(data->P);
+    }
+    c_free(data);
+  }
+  if (settings)
+    c_free(settings);
+}
+
+c_int OSQPInterface::updateP(const Eigen::MatrixXd &P_new)
+{
+  /*
+  // Transform 'P' into an 'upper trapesoidal matrix'
+  Eigen::MatrixXd P_trap = P_new.triangularView<Eigen::Upper>();
+  // Transform 'P' into a sparse matrix and extract data as dynamic arrays
+  Eigen::SparseMatrix<double> P_sparse = P_trap.sparseView();
+  double *P_val_ptr = P_sparse.valuePtr();
+  // Convert dynamic 'int' arrays to 'c_int' arrays (OSQP input type)
+  c_int P_elem_N = P_sparse.nonZeros();
+  */
+  CSC_Matrix P_csc = calCSCMatrixTrapesoidal(P_new);
+  osqp_update_P(work, P_csc.vals.data(), OSQP_NULL, P_csc.vals.size());
+}
+
+c_int OSQPInterface::updateA(const Eigen::MatrixXd &A_new)
+{
+  /*
+  // Transform 'A' into a sparse matrix and extract data as dynamic arrays
+  Eigen::SparseMatrix<double> A_sparse = A_new.sparseView();
+  double *A_val_ptr = A_sparse.valuePtr();
+  // Convert dynamic 'int' arrays to 'c_int' arrays (OSQP input type)
+  c_int A_elem_N = A_sparse.nonZeros();
+  */
+  CSC_Matrix A_csc = calCSCMatrix(A_new);
+  osqp_update_A(work, A_csc.vals.data(), OSQP_NULL, A_csc.vals.size());
+}
+
+c_int OSQPInterface::updateQ(const std::vector<double> &q_new)
+{
+  std::vector<double> q_tmp(q_new.begin(), q_new.end());
+  double *q_dyn = q_tmp.data();
+  osqp_update_lin_cost(work, q_dyn);
+}
+
+c_int OSQPInterface::updateL(const std::vector<double> &l_new)
+{
+  std::vector<double> l_tmp(l_new.begin(), l_new.end());
+  double *l_dyn = l_tmp.data();
+  osqp_update_lower_bound(work, l_dyn);
+}
+
+c_int OSQPInterface::updateU(const std::vector<double> &u_new)
+{
+  std::vector<double> u_tmp(u_new.begin(), u_new.end());
+  double *u_dyn = u_tmp.data();
+  osqp_update_upper_bound(work, u_dyn);
+}
+
+std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::solve()
+{
   // Solve Problem
   osqp_solve(work);
 
   /********************
    * EXTRACT SOLUTION
    ********************/
-  c_float* sol_x = work->solution->x;
-  c_float* sol_y = work->solution->y;
-  std::vector<float> sol_primal(sol_x, sol_x + static_cast<int>(param_n));
-  std::vector<float> sol_lagrange_multiplier(sol_y, sol_y + static_cast<int>(param_n));
+  double *sol_x = work->solution->x;
+  double *sol_y = work->solution->y;
+  std::vector<double> sol_primal(sol_x, sol_x + static_cast<int>(param_n));
+  std::vector<double> sol_lagrange_multiplier(sol_y, sol_y + static_cast<int>(param_n));
+  // Solver polish status
+  int status_polish = work->info->status_polish;
   // Result tuple
-  std::tuple<std::vector<float>, std::vector<float>> result = std::make_tuple(sol_primal, sol_lagrange_multiplier);
-
-  /***********
-   * CLEANUP
-   ***********/
-  osqp_cleanup(work);
-  c_free(data->A);
-  c_free(data->P);
-  c_free(data);
-  c_free(settings);
+  std::tuple<std::vector<double>, std::vector<double>, int> result = std::make_tuple(sol_primal, sol_lagrange_multiplier, status_polish);
 
   return result;
 }
 
-CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXf& A)
+std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::optimize()
 {
-  // Input dense matrix dimensions
-  int A_rows = A.rows();
-  int A_cols = A.cols();
-
-  /************************************************************************
-   * Generate 'sparse matrix B' from nonzero elements in 'dense matrix A'
-   ************************************************************************/
-
-  // Generate list of nonzero elements
-  std::vector<Eigen::Triplet<c_float>> triplet_list;
-  triplet_list.reserve(A.size());
-  for (int i = 0; i < A_rows; i++)
-  {
-    for (int j = 0; j < A_cols; j++)
-    {
-      float A_val = A(i, j);
-      if (!isEqual(A_val, 0.0))
-      {
-        triplet_list.push_back(Eigen::Triplet<c_float>(i, j, A_val));
-      }
-    }
-  }
-  // Generate 'sparse matrix B' and fill with nonzero elements in list
-  Eigen::SparseMatrix<c_float> B(A_rows, A_cols);
-  B.setFromTriplets(triplet_list.begin(), triplet_list.end());
-
-  /************************************************************************
-   * Generate 'Compressed Sparse Column (CSC) Matrix A_csc' struct object
-   ************************************************************************/
-
-  // Generate CSC matrix B
-  int B_nonzero_N = B.nonZeros();
-  B.makeCompressed();
-
-  // Extract pointer arrays
-  c_float* val_ptr = B.valuePtr();
-  int* inn_ptr = B.innerIndexPtr();
-  int* out_ptr = B.outerIndexPtr();
-
-  // Copy values of pointer arrays into vectors in CSC struct
-  // Array lengths:
-  //     elem_val : nonzero element count
-  //     row_idx  : nonzero element count
-  //     col_idx  : input matrix column count + 1
-  CSC_Matrix A_csc;
-  A_csc.elem_val.assign(val_ptr, val_ptr + B_nonzero_N);
-  A_csc.col_idx.assign(out_ptr, out_ptr + A_cols + 1);
-  A_csc.row_idx.assign(inn_ptr, inn_ptr + B_nonzero_N);
-
-  return A_csc;
+  // Run the solver on the stored problem representation.
+  std::tuple<std::vector<double>, std::vector<double>, int> result = solve();
+  return result;
 }
 
-}  // namespace osqp
+std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::optimize(const Eigen::MatrixXd &P,
+                                                                                  const Eigen::MatrixXd &A,
+                                                                                  const std::vector<double> &q,
+                                                                                  const std::vector<double> &l,
+                                                                                  const std::vector<double> &u)
+{
+  initializeProblem(P, A, q, l, u);
+
+  // Run the solver on the stored problem representation.
+  std::tuple<std::vector<double>, std::vector<double>, int> result = solve();
+  return result;
+}
+
+inline bool OSQPInterface::isEqual(double x, double y)
+{
+  const double epsilon = 1e-6;
+  return std::abs(x - y) <= epsilon * std::abs(x);
+}
+
+c_int OSQPInterface::getExitFlag(void)
+{
+  return exitflag;
+}
+
+} // namespace osqp
