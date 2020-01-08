@@ -39,6 +39,20 @@ Toolbars:
 Visualization Manager:
   Class: ""
   Displays:
+    - Class: rviz/PolarGridDisplay
+      Color: 255; 255; 255
+      Delta Range: 10
+      Enabled: true
+      Max Alpha: 1
+      Max Range: 200
+      Max Wave Alpha: 1
+      Min Alpha: 0.20000000298023224
+      Min Wave Alpha: 0.20000000298023224
+      Name: PolarGridDisplay
+      Reference Frame: base_link
+      Value: true
+      Wave Color: 255; 255; 255
+      Wave Velocity: 100
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -581,11 +595,7 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                label: true
-                path: true
-                path confidence: true
-                shape: true
-                twist: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -625,12 +635,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                end_lanelets: true
-                goal_lanelets: true
-                left_lane_bound: true
-                normal_lanelets: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -660,7 +665,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
-                "": true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -676,14 +681,7 @@ Visualization Manager:
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
-                collision line: true
-                collision point: true
-                crosswalk polygon line: true
-                crosswalk polygon point: true
-                slow point: true
-                slow polygon line: true
-                stop point: true
-                stop polygon line: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -713,11 +711,7 @@ Visualization Manager:
               Marker Topic: /planning/motion_planning/stop_planner/debug/markers
               Name: StopDetectionArea
               Namespaces:
-                active_detection_area: true
-                active_detection_area_point: true
-                obstacle_perpendicular_point: true
-                obstacle_point: true
-                stop_factor_wall: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -806,5 +800,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 3706
-  X: 3974
-  Y: 1124
+  X: 134
+  Y: 55
