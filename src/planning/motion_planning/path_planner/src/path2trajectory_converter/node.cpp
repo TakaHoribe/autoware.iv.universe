@@ -7,7 +7,7 @@
 #include "path2trajectory_converter/node.hpp"
 
 #include "path2trajectory_converter/horibe_interpolate.h"
-#include "eb_path_planner/reference_path.hpp"
+// #include "eb_path_planner/reference_path.hpp"
 
 namespace path_planner
 {

@@ -23,6 +23,7 @@
 
   <!-- Planning -->  
   <include file="$(find planning_launch)/launch/planning.launch" >
+    <arg name="is_online_path_update"  default="true"/>
   </include>
 
   <!-- Control -->

@@ -94,6 +94,11 @@ private:
     double engage_acceleration;            // use this acceleration when start moving [m/ss]
     double extract_ahead_dist;             // forward waypoints distance from current position [m]
     double extract_behind_dist;            // backward waypoints distance from current position [m]
+    double max_trajectory_length;          // max length of the objective trajectory for resample
+    double min_trajectory_length;          // min length of the objective trajectory for resample
+    double resample_total_time;                  // max time to calculate trajectory length
+    double resample_dt;                    // dt to calculate trajectory length
+    double min_trajectory_distance_interval;
     double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
     double emergency_flag_vel_thr_kmph;    // Threshold for throwing emergency flag when unable to stop under jerk constraints
     double stop_dist_mergin;

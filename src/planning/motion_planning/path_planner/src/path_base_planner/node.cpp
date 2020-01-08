@@ -13,7 +13,10 @@ void BasePlannerNode::timerCallback(const ros::TimerEvent &e){
   if (trajectory_pub_.getNumSubscribers() < 1)
     return;
   if(path_ptr_ == nullptr)
+  {
+    ROS_INFO("Waiting for /planning/behavior_planning/path");
     return;
+  }
   autoware_planning_msgs::Trajectory output_trajectory_msg;
   output_trajectory_msg.header = path_ptr_->header;
 
