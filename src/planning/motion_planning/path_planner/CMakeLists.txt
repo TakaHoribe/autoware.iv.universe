@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(path_planner)
 
-# add_compile_options(-std=c++14)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
