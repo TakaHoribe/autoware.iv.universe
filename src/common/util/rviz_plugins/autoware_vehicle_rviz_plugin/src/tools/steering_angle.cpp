@@ -50,7 +50,6 @@ std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::setColorDependsOnVeloci
 SteeringAngleDisplay::SteeringAngleDisplay()
     : handle_image_(std::string(ros::package::getPath("autoware_vehicle_rviz_plugin") + "/images/handle.png").c_str())
 {
-  handle_image_ = QPixmap;
   property_text_color_ = new rviz::ColorProperty(
       "Text Color", QColor(25, 255, 240),
       "text color",
