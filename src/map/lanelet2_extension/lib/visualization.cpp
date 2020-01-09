@@ -112,7 +112,7 @@ void lightAsMarker(lanelet::ConstPoint3d p, visualization_msgs::Marker* marker, 
   marker->color.r = 0.0f;
   marker->color.g = 0.0f;
   marker->color.b = 0.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999f;
 
   if (isAttributeValue(p, "color", "red"))
     marker->color.r = 1.0f;

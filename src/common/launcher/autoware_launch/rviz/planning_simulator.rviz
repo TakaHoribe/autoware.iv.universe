@@ -73,7 +73,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
+        - Alpha: 0.9990000128746033
           Class: rviz/RobotModel
           Collision Enabled: false
           Enabled: true
@@ -696,7 +696,7 @@ Visualization Manager:
               Unreliable: false
               Value: true
               View Path:
-                Alpha: 1
+                Alpha: 0.9990000128746033
                 Color: 0; 0; 0
                 Constant Color: false
                 Value: true
@@ -841,5 +841,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 2503
-  X: 57
+  X: 67
   Y: 27
