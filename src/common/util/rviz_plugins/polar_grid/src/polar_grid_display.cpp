@@ -159,21 +159,19 @@ void PolarGridDisplay::update(float  /*dt*/, float  ros_dt)
   Ogre::MaterialPtr material = Ogre::MaterialManager::getSingleton().getByName("BaseWhiteNoLighting", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
   material->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
   material->setDepthWriteEnabled(false);
-  const double d_theta = 1.0 * M_PI / 180.0;
-  const double d_alpha = std::min(std::max((double)max_wave_alpha_property_->getFloat() - (double)min_wave_alpha_property_->getFloat(), 0.0), 1.0);
+  const float d_theta = 3.6 * M_PI / 180.0;
+  const float d_alpha = std::min(std::max((float)max_wave_alpha_property_->getFloat() - (float)min_wave_alpha_property_->getFloat(), float(0.0)), float(1.0));
   Ogre::ColourValue color;
   color = rviz::qtToOgre(wave_color_property_->getColor());
   color.a = max_wave_alpha_property_->getFloat();
   wave_manual_object_->estimateVertexCount(int(2 * M_PI / d_theta));
-  wave_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
+  wave_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
 
   color.a = d_alpha*(1.0 - (wave_range_ / max_range_property_->getFloat())) + min_wave_alpha_property_->getFloat();
   color.a = std::max(color.a, min_wave_alpha_property_->getFloat());
-  for (double theta = d_theta; theta < 2 * M_PI; theta += d_theta)
+  for (float theta = 0.0; theta < 2.0 * M_PI + d_theta; theta += d_theta)
   {
-    wave_manual_object_->position((double)wave_range_ * std::cos(theta), (double)wave_range_ * std::sin(theta), 0.0);
-    wave_manual_object_->colour(color);
-    wave_manual_object_->position((double)wave_range_ * std::cos(theta - d_theta), (double)wave_range_ * std::sin(theta - d_theta), 0.0);
+    wave_manual_object_->position(wave_range_ * (float)std::cos(theta), wave_range_ * (float)std::sin(theta), 0.0);
     wave_manual_object_->colour(color);
   }
   wave_manual_object_->end();
@@ -189,23 +187,23 @@ void PolarGridDisplay::updatePlane()
   material->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
   material->setDepthWriteEnabled(false);
 
-  const double d_theta = 1.0 * M_PI / 180.0;
-  const double d_range = d_range_property_->getFloat();
-  const double d_alpha = std::min(std::max((double)max_alpha_property_->getFloat() - (double)min_alpha_property_->getFloat(), 0.0), 1.0);
-  const double epsilon = 0.001;
-  const double max_range = max_range_property_->getFloat() + epsilon;
+  const float d_theta = 3.6 * M_PI / 180.0;
+  const float d_range = d_range_property_->getFloat();
+  const float d_alpha = std::min(std::max((float)max_alpha_property_->getFloat() - (float)min_alpha_property_->getFloat(), float(0.0)), float(1.0));
+  const float epsilon = 0.001;
+  const float max_range = max_range_property_->getFloat() + epsilon;
   Ogre::ColourValue color;
   color = rviz::qtToOgre(color_property_->getColor());
   color.a = max_alpha_property_->getFloat();
-  rings_manual_object_->estimateVertexCount(int(max_range / d_range) + int(2 * M_PI / d_theta));
+  rings_manual_object_->estimateVertexCount(int(max_range / d_range) + int(float(2.0) * M_PI / d_theta));
   rings_manual_object_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
   for (int r = d_range; r <= max_range; r += d_range){
-    for (double theta = d_theta; theta < 2 * M_PI; theta += d_theta)
+    for (float theta = 0.0; theta < 2 * M_PI; theta += d_theta)
     {
       {
-        rings_manual_object_->position((double)r * std::cos(theta), (double)r * std::sin(theta), 0.0);
+        rings_manual_object_->position((float)r * std::cos(theta), (float)r * std::sin(theta), 0.0);
         rings_manual_object_->colour(color);
-        rings_manual_object_->position((double)r * std::cos(theta - d_theta), (double)r * std::sin(theta - d_theta), 0.0);
+        rings_manual_object_->position((float)r * std::cos(theta + d_theta), (float)r * std::sin(theta + d_theta), 0.0);
         rings_manual_object_->colour(color);
       }
     }
