@@ -336,7 +336,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
         std::chrono::duration_cast<std::chrono::nanoseconds>(current_explore - begin_explore).count()/(1000.0*1000.0);
       if(current_accum_explroe_time > time_limit_ && !is_debug_each_iteration_mode_)
       {
-        ROS_ERROR("[EBPathPlanner] Exceed time limit of %lf [ms], Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+        ROS_WARN("[EBPathPlanner] Exceed time limit of %lf [ms], Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
           time_limit_, ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
           ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
         return false;
@@ -552,7 +552,7 @@ bool ModifyReferencePath::generateModifiedPath(
       lanelet::geometry::findNearest(map.laneletLayer, ego_point, 3);
   if(nearest_lanelets.empty())
   {
-    ROS_ERROR("[EBPathPlanner] Ego vechicle is not in the lanelet ares");
+    ROS_WARN("[EBPathPlanner] Ego vechicle is not in the lanelet ares");
     return false;
   }
   int nearest_route_secition_idx_from_ego_pose = 0; 
