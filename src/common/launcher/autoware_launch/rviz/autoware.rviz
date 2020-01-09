@@ -4,14 +4,14 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /System1/VehicleModel1
         - /Sensing1/NoGroundPointCloud1/Autocompute Value Bounds1
-        - /Localization1/NDT1
         - /Localization1/NDT1/PoseHistory1/Line1
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
-      Splitter Ratio: 0.5410334467887878
-    Tree Height: 689
+      Splitter Ratio: 0.64552241563797
+    Tree Height: 482
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -73,7 +73,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
+        - Alpha: 0.30000001192092896
           Class: rviz/RobotModel
           Collision Enabled: false
           Enabled: true
@@ -595,7 +595,11 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                {}
+                label: true
+                path: true
+                path confidence: true
+                shape: true
+                twist: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -635,7 +639,12 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                {}
+                end_lanelets: true
+                goal_lanelets: true
+                left_lane_bound: true
+                normal_lanelets: true
+                right_lane_bound: true
+                route_lanelets: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -651,39 +660,41 @@ Visualization Manager:
               Value: true
               View Path:
                 Alpha: 0.4000000059604645
-                Scale: 0.3
                 Color: 0; 0; 0
                 Constant Color: false
                 Value: true
                 Width: 2
               View Velocity:
                 Alpha: 0.4000000059604645
-                Scale: 0.3
                 Color: 0; 0; 0
                 Constant Color: false
+                Scale: 0.30000001192092896
                 Value: true
             - Class: rviz/MarkerArray
-              Enabled: true
+              Enabled: false
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
                 {}
               Queue Size: 100
-              Value: true
+              Value: false
             - Class: rviz/MarkerArray
-              Enabled: true
+              Enabled: false
               Marker Topic: /planning/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
               Name: PathWithLaneId
               Namespaces:
                 {}
               Queue Size: 100
-              Value: true
+              Value: false
             - Class: rviz/MarkerArray
               Enabled: true
               Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
-                {}
+                crosswalk polygon line: true
+                crosswalk polygon point: true
+                slow polygon line: true
+                stop polygon line: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -707,14 +718,15 @@ Visualization Manager:
                 Alpha: 1
                 Color: 0; 0; 0
                 Constant Color: false
-                Scale: 0.3
+                Scale: 0.30000001192092896
                 Value: true
             - Class: rviz/MarkerArray
               Enabled: true
               Marker Topic: /planning/motion_planning/stop_planner/debug/markers
               Name: StopDetectionArea
               Namespaces:
-                {}
+                active_detection_area: true
+                active_detection_area_point: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -811,7 +823,7 @@ Visualization Manager:
       Pose Topic: initial_pedestrian_pose
       Theta std deviation: 0.2617993950843811
       Twist Topic: initial_pedestrian_twist
-      Velocity: 0
+      Velocity: 1
       X std deviation: 0.5
       Y std deviation: 0.5
       Z position: 0
@@ -819,7 +831,7 @@ Visualization Manager:
       Pose Topic: initial_car_pose
       Theta std deviation: 0.2617993950843811
       Twist Topic: initial_car_twist
-      Velocity: 0
+      Velocity: 20
       X std deviation: 0.5
       Y std deviation: 0.5
       Z position: 0
@@ -850,7 +862,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000413000006fffc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e0000031f0000018200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000399000000f3000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d0061006700650100000498000002d50000002600ffffff000000010000015f000006fffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000006e000006ff0000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d00650100000000000004500000000000000000000008f0000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000326000006fffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000002500000018200fffffffb0000000a0056006900650077007301000002ca000001320000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000408000000fb000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000050f0000025e0000002600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b48000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
