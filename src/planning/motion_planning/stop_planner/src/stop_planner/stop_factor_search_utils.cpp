@@ -75,7 +75,7 @@ std_msgs::ColorRGBA setColorWhite()
   color.r = 1.0;
   color.g = 1.0;
   color.b = 1.0;
-  color.a = 1.0;
+  color.a = 0.999;
 
   return color;
 }
@@ -86,7 +86,7 @@ std_msgs::ColorRGBA setColorGray()
   color.r = 0.5;
   color.g = 0.5;
   color.b = 0.5;
-  color.a = 1.0;
+  color.a = 0.999;
 
   return color;
 }
@@ -97,7 +97,7 @@ std_msgs::ColorRGBA setColorYellow()
   color.r = 1.0;
   color.g = 1.0;
   color.b = 0.0;
-  color.a = 1.0;
+  color.a = 0.999;
 
   return color;
 }

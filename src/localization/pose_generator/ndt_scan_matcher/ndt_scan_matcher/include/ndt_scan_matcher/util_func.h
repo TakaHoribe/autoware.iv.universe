@@ -62,7 +62,7 @@ std_msgs::ColorRGBA ExchangeColorCrc(double x) {
       color.g = -std::sin(x * 2.0 * M_PI);
       color.r = 1.0;
   }
-  color.a = 1.0;
+  color.a = 0.999;
   return color;
 }
 

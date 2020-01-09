@@ -177,7 +177,7 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
   marker->color.r = 1.0f;
   marker->color.g = 1.0f;
   marker->color.b = 1.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999;
 
   lanelet::Attribute attr = ll.attribute("turn_direction");
   double turn_dir = 0;
@@ -483,7 +483,7 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
   marker.color.r = 1.0f;
   marker.color.g = 1.0f;
   marker.color.b = 1.0f;
-  marker.color.a = 1.0f;
+  marker.color.a = 0.999;
 
   int da_count = 0;
   for (const auto& da_reg_elem : da_reg_elems)
@@ -655,7 +655,7 @@ visualization_msgs::MarkerArray visualization::laneletsAsTriangleMarkerArray(con
   marker.color.r = 1.0f;
   marker.color.g = 1.0f;
   marker.color.b = 1.0f;
-  marker.color.a = 1.0f;
+  marker.color.a = 0.999;
 
   for (auto ll : lanelets)
   {
@@ -713,7 +713,7 @@ void visualization::trafficLight2TriangleMarker(const lanelet::ConstLineString3d
   marker->color.r = 1.0f;
   marker->color.g = 1.0f;
   marker->color.b = 1.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999;
 
   double h = 0.7;
   if (ls.hasAttribute("height"))

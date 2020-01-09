@@ -45,7 +45,7 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation.w = 1.0;
     marker.lifetime = ros::Duration(0.5);
-    marker.color.a = 1.0;  // Don't forget to set the alpha!
+    marker.color.a = 0.999;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
@@ -66,7 +66,7 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation.w = 1.0;
     marker.lifetime = ros::Duration(0.5);
-    marker.color.a = 1.0;  // Don't forget to set the alpha!
+    marker.color.a = 0.999;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
@@ -98,7 +98,7 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
       text.pop_back();
       marker.text = text;
       marker.lifetime = ros::Duration(0.5);
-      marker.color.a = 1.0;  // Don't forget to set the alpha!
+      marker.color.a = 0.999;  // Don't forget to set the alpha!
       marker.color.r = 1.0;
       marker.color.g = 1.0;
       marker.color.b = 1.0;

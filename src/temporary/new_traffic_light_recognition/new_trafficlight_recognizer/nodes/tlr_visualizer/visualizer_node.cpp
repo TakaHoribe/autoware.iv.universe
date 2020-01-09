@@ -124,7 +124,7 @@ namespace new_trafficlight_recognizer
         marker.type = visualization_msgs::Marker::LINE_STRIP;
         marker.scale.x = 0.1;
         marker.color.g = 1.0;
-        marker.color.a = 1.0;
+        marker.color.a = 0.999;
 
         int split = 100;
         for (uint32_t i = 0; i < split; ++i) {

@@ -78,7 +78,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     marker.lifetime = ros::Duration(0.2);
     marker.scale.x = line_width;
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.999; // Don't forget to set the alpha!
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
@@ -125,7 +125,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.points.push_back(point);
 
     marker.lifetime = ros::Duration(0.2);
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.999; // Don't forget to set the alpha!
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
@@ -165,7 +165,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.action = visualization_msgs::Marker::MODIFY;
     marker.pose = input_msg->objects.at(i).state.pose_covariance.pose;
     marker.lifetime = ros::Duration(0.2);
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.999; // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
@@ -204,7 +204,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     marker.points.push_back(point);
 
     marker.lifetime = ros::Duration(0.2);
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.999; // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
