@@ -162,11 +162,6 @@ void SteeringAngleDisplay::processMessage(const autoware_control_msgs::VehicleSt
   painter.drawText(0, std::min(property_value_height_offset_->getInt(), h - 1), w, std::max(h - property_value_height_offset_->getInt(), 1),
                    Qt::AlignCenter | Qt::AlignVCenter,
                    steering_angle_ss.str().c_str());
-  // std::ostringstream velocity_ss;
-  // velocity_ss << std::fixed << std::setprecision(2) << msg_ptr->status.velocity * 3.6 <<"km/h";
-  // painter.drawText(0, 0, w, h,
-  //                  Qt::AlignCenter | Qt::AlignVCenter,
-  //                  velocity_ss.str().c_str());
 
   painter.end();
   last_msg_ptr_ = msg_ptr;

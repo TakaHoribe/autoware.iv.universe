@@ -60,6 +60,9 @@ AutowarePathDisplay::AutowarePathDisplay()
   property_velocity_alpha_ = new rviz::FloatProperty("Alpha", 1.0, "", property_velocity_view_, SLOT(updateVisualization()), this);
   property_velocity_alpha_->setMin(0.0);
   property_velocity_alpha_->setMax(1.0);
+  property_velocity_scale_ = new rviz::FloatProperty("Scale", 0.3, "", property_velocity_view_, SLOT(updateVisualization()), this);
+  property_velocity_scale_->setMin(0.1);
+  property_velocity_scale_->setMax(10.0);
   property_velocity_color_view_ = new rviz::BoolProperty("Constant Color", false, "", property_velocity_view_, SLOT(updateVisualization()), this);
   property_velocity_color_ = new rviz::ColorProperty("Color", Qt::black, "", property_velocity_view_, SLOT(updateVisualization()), this);
 
@@ -194,7 +197,9 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
         }
         color.a = property_velocity_alpha_->getFloat();
 
-        velocity_manual_object_->position(path_point.pose.position.x, path_point.pose.position.y, path_point.pose.position.z + path_point.twist.linear.x);
+        velocity_manual_object_->position(path_point.pose.position.x,
+                                          path_point.pose.position.y,
+                                          path_point.pose.position.z + path_point.twist.linear.x * property_velocity_scale_->getFloat());
         velocity_manual_object_->colour(color);
       }
     }

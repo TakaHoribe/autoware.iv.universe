@@ -3,12 +3,13 @@
 #include <rviz/uniform_string_stream.h>
 #include <rviz/display_context.h>
 #include <QPainter>
+#include <ros/package.h>
 
 namespace rviz_plugins
 {
 
 std::unique_ptr<Ogre::ColourValue> ConsoleMeterDisplay::gradation(const QColor &color_min, const QColor &color_max,
-                                                                  const double ratio)
+                                                                   const double ratio)
 {
   std::unique_ptr<Ogre::ColourValue> color_ptr(new Ogre::ColourValue);
   color_ptr->g = color_max.greenF() * ratio + color_min.greenF() * (1.0 - ratio);
@@ -47,29 +48,32 @@ std::unique_ptr<Ogre::ColourValue> ConsoleMeterDisplay::setColorDependsOnVelocit
 }
 
 ConsoleMeterDisplay::ConsoleMeterDisplay()
-    : handle_image_("/home/tier4/saito/Autoware-T4B/src/common/util/rviz_plugins/autoware_vehicle_rviz_plugin/images/handle.png")
+    : handle_image_(std::string(ros::package::getPath("autoware_vehicle_rviz_plugin") + "/images/handle.png").c_str())
 {
   property_text_color_ = new rviz::ColorProperty(
       "Text Color", QColor(25, 255, 240),
       "text color",
       this, SLOT(updateVisualization()), this);
-  property_left_ = new rviz::IntProperty("left", 128,
-                                         "left of the plotter window",
+  property_left_ = new rviz::IntProperty("Left", 128,
+                                         "Left of the plotter window",
                                          this, SLOT(updateVisualization()), this);
   property_left_->setMin(0);
-  property_top_ = new rviz::IntProperty("top", 128,
-                                        "top of the plotter window",
+  property_top_ = new rviz::IntProperty("Top", 128,
+                                        "Top of the plotter window",
                                         this, SLOT(updateVisualization()));
   property_top_->setMin(0);
 
-  property_width_ = new rviz::IntProperty("width", 512,
-                                          "width of the plotter window",
-                                          this, SLOT(updateVisualization()), this);
-  property_width_->setMin(1);
-  property_height_ = new rviz::IntProperty("height", 128,
-                                           "height of the plotter window",
-                                           this, SLOT(updateVisualization()));
-  property_height_->setMin(1);
+  property_length_ = new rviz::IntProperty("Length", 256,
+                                           "Length of the plotter window",
+                                           this, SLOT(updateVisualization()), this);
+  property_length_->setMin(10);
+  property_value_height_offset_ = new rviz::IntProperty("Value height offset", 0,
+                                                        "Height offset of the plotter window",
+                                                        this, SLOT(updateVisualization()));
+  property_handle_angle_scale_ = new rviz::FloatProperty("Scale", 3.0,
+                                                         "Scale is steering andle to handle angle ",
+                                                         this, SLOT(updateVisualization()), this);
+  property_handle_angle_scale_->setMin(0.1);
 }
 
 ConsoleMeterDisplay::~ConsoleMeterDisplay()
@@ -90,8 +94,22 @@ void ConsoleMeterDisplay::onInitialize()
 
   overlay_->show();
 
-  overlay_->updateTextureSize(property_width_->getInt(),
-                              property_height_->getInt());
+  overlay_->updateTextureSize(property_length_->getInt(),
+                              property_length_->getInt());
+  overlay_->setPosition(property_left_->getInt(), property_top_->getInt());
+  overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());
+
+  // QColor background_color;
+  // background_color.setAlpha(0);
+  // jsk_rviz_plugins::ScopedPixelBuffer buffer = overlay_->getBuffer();
+  // hud_ = buffer.getQImage(*overlay_);
+  // for (int i = 0; i < overlay_->getTextureWidth(); i++)
+  // {
+  //   for (int j = 0; j < overlay_->getTextureHeight(); j++)
+  //   {
+  //     hud_.setPixel(i, j, background_color.rgba());
+  //   }
+  // }
 }
 
 void ConsoleMeterDisplay::reset()
@@ -110,24 +128,13 @@ void ConsoleMeterDisplay::processMessage(const autoware_control_msgs::VehicleSta
     return;
   }
 
-  overlay_->updateTextureSize(property_width_->getInt(),
-                              property_height_->getInt());
-  overlay_->setPosition(property_left_->getInt(), property_top_->getInt());
-  overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());
   QColor background_color;
   background_color.setAlpha(0);
   jsk_rviz_plugins::ScopedPixelBuffer buffer = overlay_->getBuffer();
-  QImage Hud = buffer.getQImage(*overlay_);
-  // initilize by the background color
-  for (int i = 0; i < overlay_->getTextureWidth(); i++)
-  {
-    for (int j = 0; j < overlay_->getTextureHeight(); j++)
-    {
-      Hud.setPixel(i, j, background_color.rgba());
-    }
-  }
+  QImage hud = buffer.getQImage(*overlay_);
+  hud.fill(background_color);
 
-  QPainter painter(&Hud);
+  QPainter painter(&hud);
   painter.setRenderHint(QPainter::Antialiasing, true);
   QColor text_color(property_text_color_->getColor());
   text_color.setAlpha(255);
@@ -135,33 +142,26 @@ void ConsoleMeterDisplay::processMessage(const autoware_control_msgs::VehicleSta
 
   int w = overlay_->getTextureWidth();
   int h = overlay_->getTextureHeight();
-  painter.drawLine(0, 0, 0, h);
-  painter.drawLine(0, h, w, h);
-  painter.drawLine(w, h, w, 0);
-  painter.drawLine(w, 0, 0, 0);
-
-  QFont font = painter.font();
-  font.setPointSize(std::max(int(double(w) / 40.0), 1));
-  font.setBold(true);
-  painter.setFont(font);
-  std::ostringstream steering_angle_ss;
-  steering_angle_ss << std::fixed << std::setprecision(2) << msg_ptr->status.steering_angle * 180.0 / M_PI << "deg";
-  painter.drawText(0, 0, w, h,
-                   Qt::AlignCenter | Qt::AlignVCenter,
-                   steering_angle_ss.str().c_str());
 
   QMatrix rotation_matrix;
-  rotation_matrix.rotate(msg_ptr->status.steering_angle * -180.0);
+  rotation_matrix.rotate(std::round(property_handle_angle_scale_->getFloat() * (msg_ptr->status.steering_angle / M_PI) * -180.0));
+  // else
+  // rotation_matrix.rotate((property_handle_angle_scale_->getFloat() * (msg_ptr->status.steering_angle / M_PI) * -180.0));
   int handle_image_width = handle_image_.width(), handle_image_height = handle_image_.height();
   QPixmap rotate_handle_image;
   rotate_handle_image = handle_image_.transformed(rotation_matrix);
   rotate_handle_image = rotate_handle_image.copy((rotate_handle_image.width() - handle_image_width) / 2, (rotate_handle_image.height() - handle_image_height) / 2, handle_image_width, handle_image_height);
-  painter.drawPixmap(10, 10, 100, 100, rotate_handle_image);
-  // std::ostringstream velocity_ss;
-  // velocity_ss << std::fixed << std::setprecision(2) << msg_ptr->status.velocity * 3.6 <<"km/h";
-  // painter.drawText(0, 0, w, h,
-  //                  Qt::AlignCenter | Qt::AlignVCenter,
-  //                  velocity_ss.str().c_str());
+  painter.drawPixmap(0, 0, property_length_->getInt(), property_length_->getInt(), rotate_handle_image);
+
+  QFont font = painter.font();
+  font.setPointSize(std::max(int(double(w) / 15.0), 1));
+  font.setBold(true);
+  painter.setFont(font);
+  std::ostringstream velocity_ss;
+  velocity_ss << std::fixed << std::setprecision(2) << msg_ptr->status.velocity * 3.6 <<"km/h";
+  painter.drawText(0, std::min(property_value_height_offset_->getInt(), h - 1), w, std::max(h - property_value_height_offset_->getInt(), 1),
+                   Qt::AlignCenter | Qt::AlignVCenter,
+                   velocity_ss.str().c_str());
 
   painter.end();
   last_msg_ptr_ = msg_ptr;
@@ -169,10 +169,23 @@ void ConsoleMeterDisplay::processMessage(const autoware_control_msgs::VehicleSta
 
 void ConsoleMeterDisplay::updateVisualization()
 {
-  overlay_->updateTextureSize(property_width_->getInt(),
-                              property_height_->getInt());
+  overlay_->updateTextureSize(property_length_->getInt(),
+                              property_length_->getInt());
   overlay_->setPosition(property_left_->getInt(), property_top_->getInt());
   overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());
+
+  // QColor background_color;
+  // background_color.setAlpha(0);
+  // jsk_rviz_plugins::ScopedPixelBuffer buffer = overlay_->getBuffer();
+  // hud_ = buffer.getQImage(*overlay_);
+  // for (int i = 0; i < overlay_->getTextureWidth(); i++)
+  // {
+  //   for (int j = 0; j < overlay_->getTextureHeight(); j++)
+  //   {
+  //     hud_.setPixel(i, j, background_color.rgba());
+  //   }
+  // }
+
   if (last_msg_ptr_ != nullptr)
     processMessage(last_msg_ptr_);
 }

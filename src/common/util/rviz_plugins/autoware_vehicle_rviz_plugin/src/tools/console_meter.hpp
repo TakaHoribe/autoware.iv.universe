@@ -52,9 +52,11 @@ protected:
   rviz::ColorProperty *property_text_color_;
   rviz::IntProperty *property_left_;
   rviz::IntProperty *property_top_;
-  rviz::IntProperty *property_width_;
-  rviz::IntProperty *property_height_;
+  rviz::IntProperty *property_length_;
+  rviz::FloatProperty *property_handle_angle_scale_;
+  rviz::IntProperty *property_value_height_offset_;
   QPixmap handle_image_;
+  // QImage hud_;
 
 private:
   autoware_control_msgs::VehicleStatusStampedConstPtr last_msg_ptr_;

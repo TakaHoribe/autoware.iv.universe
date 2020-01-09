@@ -47,6 +47,7 @@ protected:
   rviz::FloatProperty *property_path_width_;
   rviz::ColorProperty *property_path_color_;
   rviz::ColorProperty *property_velocity_color_;
+  rviz::FloatProperty *property_velocity_scale_;
   rviz::FloatProperty *property_path_alpha_;
   rviz::FloatProperty *property_velocity_alpha_;
   rviz::BoolProperty *property_path_color_view_;
