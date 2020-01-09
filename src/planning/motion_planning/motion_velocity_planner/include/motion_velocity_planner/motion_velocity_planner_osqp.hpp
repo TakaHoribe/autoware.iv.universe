@@ -108,13 +108,14 @@ private:
   void updateCurrentPose();
 
   void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
-                      const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest, const double ds, 
-                      autoware_planning_msgs::Trajectory &output);
+                      const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest,
+                      const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
                          double &initial_vel, double &initial_acc, int &init_type) const;
 
-  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output, double &ds) const;
+  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output,
+                          std::vector<double> &interval_dist_arr) const;
 
   bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
                                  const double &max_lateral_accel, const unsigned int curvature_calc_idx_dist,
@@ -124,7 +125,7 @@ private:
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
   void optimizeVelocity(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
-                        const double ds, autoware_planning_msgs::Trajectory &output);
+                        const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
@@ -138,14 +139,14 @@ private:
 
   /* debug */
   ros::Publisher debug_closest_velocity_;
-  void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   void publishClosestVelocity(const double &vel) const;
 
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  void plotVelocity(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotAcceleration(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotJerk(const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &base,
-               const autoware_planning_msgs::Trajectory &jerk_filtered) const;
+  void plotWaypoint(const double s_max, const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
+  void plotVelocity(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
+  void plotAcceleration(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
+  void plotJerk(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
+  void plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &t1,
+               const autoware_planning_msgs::Trajectory &t2, const autoware_planning_msgs::Trajectory &t3) const;
 #endif
 };
