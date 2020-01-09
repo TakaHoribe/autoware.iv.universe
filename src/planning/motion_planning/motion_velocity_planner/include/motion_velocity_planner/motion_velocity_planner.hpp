@@ -26,9 +26,9 @@
 #include <geometry_msgs/TwistStamped.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <velocity_planner/VelocityPlannerConfig.h>
+#include <motion_velocity_planner/MotionVelocityPlannerConfig.h>
 
-#include <velocity_planner/velocity_planner_utils.hpp>
+#include <motion_velocity_planner/motion_velocity_planner_utils.hpp>
 
 #include <stop_planner/planning_utils.h>
 
@@ -38,11 +38,11 @@
 #include "matplotlibcpp.h"
 #endif
 
-class VelocityPlanner
+class MotionVelocityPlanner
 {
 public:
-  VelocityPlanner();
-  ~VelocityPlanner();
+  MotionVelocityPlanner();
+  ~MotionVelocityPlanner();
 
 private:
   ros::NodeHandle nh_, pnh_;
@@ -83,7 +83,7 @@ private:
   };
   std::vector<Motion> replanned_traj_motion_;  // planning info of velocity, acceleration, jerk.
 
-  struct VelocityPlannerParam
+  struct MotionVelocityPlannerParam
   {
     double max_velocity;
     double max_accel;             // max acceleration in planning [m/s2] > 0
@@ -125,9 +125,9 @@ private:
                       double &stop_planning_jerk) const;
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const std::vector<Motion> &prev_replanned_traj_motion, const int prev_replanned_traj_closest,
-                         VelocityPlanner::Motion *initial_motion, int &init_type) const;
+                         MotionVelocityPlanner::Motion *initial_motion, int &init_type) const;
   Motion updateMotionWithConstraint(const Motion &m_prev, const Motion &m_des_prev, const double &dt,
-                                    const VelocityPlannerParam &planning_param, int &debug) const;
+                                    const MotionVelocityPlannerParam &planning_param, int &debug) const;
 
   void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   bool moveAverageFilter(const autoware_planning_msgs::Trajectory &latacc_filtered_traj, const unsigned int move_ave_num,
@@ -161,9 +161,9 @@ private:
 
 
   /* dynamic reconfigure */
-  dynamic_reconfigure::Server<velocity_planner::VelocityPlannerConfig> dyncon_server_;
+  dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
   
-  void dynamicRecofCallback(velocity_planner::VelocityPlannerConfig &config, uint32_t level)
+  void dynamicRecofCallback(motion_velocity_planner::MotionVelocityPlannerConfig &config, uint32_t level)
   {
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;
@@ -183,15 +183,15 @@ private:
     bool is_emergency_;
     bool is_counting_;
     ros::Time count_start_time_;
-    const VelocityPlanner *velocity_planner_ptr_;
+    const MotionVelocityPlanner *motion_velocity_planner_ptr_;
     double safety_time_for_stop_;
 
   public:
-    EmergencyStopManager(const VelocityPlanner *velocity_planner_ptr, const double &safety_time_for_stop)
-      : velocity_planner_ptr_(velocity_planner_ptr), safety_time_for_stop_(safety_time_for_stop)
+    EmergencyStopManager(const MotionVelocityPlanner *motion_velocity_planner_ptr, const double &safety_time_for_stop)
+      : motion_velocity_planner_ptr_(motion_velocity_planner_ptr), safety_time_for_stop_(safety_time_for_stop)
     {
-      timer_ = velocity_planner_ptr_->nh_.createTimer(ros::Duration(0.1),
-                                                      &VelocityPlanner::EmergencyStopManager::timerCallback, this);
+      timer_ = motion_velocity_planner_ptr_->nh_.createTimer(ros::Duration(0.1),
+                                                      &MotionVelocityPlanner::EmergencyStopManager::timerCallback, this);
       is_emergency_ = false;
       is_counting_ = false;
     };
@@ -215,13 +215,13 @@ private:
     };
     void timerCallback(const ros::TimerEvent &e)
     {
-      if (velocity_planner_ptr_ == nullptr || velocity_planner_ptr_->current_velocity_ptr_ == nullptr)
+      if (motion_velocity_planner_ptr_ == nullptr || motion_velocity_planner_ptr_->current_velocity_ptr_ == nullptr)
         return;
 
       if (is_emergency_ == false)
         return;
 
-      const double curr_v = std::fabs(velocity_planner_ptr_->current_velocity_ptr_->twist.linear.x);
+      const double curr_v = std::fabs(motion_velocity_planner_ptr_->current_velocity_ptr_->twist.linear.x);
       if (curr_v > 0.1)
       {
         ROS_WARN("EMERGENCY MANAGER : still moving");

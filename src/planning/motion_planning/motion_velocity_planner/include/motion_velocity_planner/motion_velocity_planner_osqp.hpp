@@ -25,24 +25,24 @@
 #include <geometry_msgs/TwistStamped.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <velocity_planner/VelocityPlannerConfig.h>
+#include <motion_velocity_planner/MotionVelocityPlannerConfig.h>
 
-#include <velocity_planner/velocity_planner_utils.hpp>
+#include <motion_velocity_planner/motion_velocity_planner_utils.hpp>
 
 #include <stop_planner/planning_utils.h>
 #include <osqp_interface/osqp_interface.h>
 
 
-// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
+#define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #include "matplotlibcpp.h"
 #endif
 
-class VelocityPlanner
+class MotionVelocityPlanner
 {
 public:
-  VelocityPlanner();
-  ~VelocityPlanner();
+  MotionVelocityPlanner();
+  ~MotionVelocityPlanner();
 
 private:
   ros::NodeHandle nh_;
@@ -86,7 +86,7 @@ private:
     };
   };
 
-  struct VelocityPlannerParam
+  struct MotionVelocityPlannerParam
   {
     double max_velocity;                   // max velocity [m/s]
     double max_accel;                      // max acceleration in planning [m/s2] > 0
@@ -129,7 +129,7 @@ private:
                       autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
-                         VelocityPlanner::Motion *initial_motion, int &init_type) const;
+                         MotionVelocityPlanner::Motion *initial_motion, int &init_type) const;
 
   void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output, double &ds) const;
@@ -145,9 +145,9 @@ private:
                         const double ds, autoware_planning_msgs::Trajectory &output);
 
   /* dynamic reconfigure */
-  dynamic_reconfigure::Server<velocity_planner::VelocityPlannerConfig> dyncon_server_;
+  dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
   
-  void dynamicRecofCallback(velocity_planner::VelocityPlannerConfig &config, uint32_t level)
+  void dynamicRecofCallback(motion_velocity_planner::MotionVelocityPlannerConfig &config, uint32_t level)
   {
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;

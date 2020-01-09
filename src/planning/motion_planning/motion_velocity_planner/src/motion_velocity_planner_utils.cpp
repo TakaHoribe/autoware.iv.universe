@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <velocity_planner/velocity_planner_utils.hpp>
-#include <velocity_planner/interpolate.h>
+#include <motion_velocity_planner/motion_velocity_planner_utils.hpp>
+#include <motion_velocity_planner/interpolate.h>
 
 namespace vpu
 {

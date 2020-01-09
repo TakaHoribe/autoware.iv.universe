@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "velocity_planner/interpolate.h"
+#include "motion_velocity_planner/interpolate.h"
 
 /* 
  * linear interpolation
