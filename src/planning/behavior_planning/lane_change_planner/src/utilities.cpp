@@ -128,8 +128,22 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
     }
     double frenet_distance = pt_frenet.length - vehicle_pose_frenet.length;
     double travel_time = frenet_distance / vehicle_speed;
-    auto time_stamp = start_time + ros::Duration(travel_time);
-
+    ros::Time time_stamp;
+    try
+    {
+      time_stamp = start_time + ros::Duration(travel_time);
+    }
+    catch (std::runtime_error& err)
+    {
+      if (travel_time > 0)
+      {
+        time_stamp = ros::TIME_MAX;
+      }
+      if (travel_time < 0)
+      {
+        time_stamp = ros::TIME_MIN;
+      }
+    }
     geometry_msgs::PoseWithCovarianceStamped predicted_pose;
     predicted_pose.header.stamp = time_stamp;
     predicted_pose.pose.pose.position = pt.point.pose.position;
