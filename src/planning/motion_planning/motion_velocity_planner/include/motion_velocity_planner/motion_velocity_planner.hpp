@@ -91,7 +91,7 @@ private:
     double acc_jerk;          // max jerk in acceleration [m/s3] > 0
     double dec_jerk_nominal;  // nominal jerk in deceleration [m/s3] < 0
     double dec_jerk_urgent;   // min jerk in deceleration [m/s3] < 0
-    double max_lat_acc;
+    double max_lateral_accel;
     double replan_vel_deviation;           // replan with current speed if speed deviation exceeds this value [m/s]
     double replan_stop_point_change_dist;  // replan if stop position changes over this distance [m]
     double engage_velocity;                // use this speed when start moving [m/s]
@@ -132,7 +132,7 @@ private:
   void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   bool moveAverageFilter(const autoware_planning_msgs::Trajectory &latacc_filtered_traj, const unsigned int move_ave_num,
                          autoware_planning_msgs::Trajectory &moveave_filtered_traj) const;
-  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input, const double &max_lat_acc,
+  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input, const double &max_lateral_accel,
                                  const unsigned int idx_dist, autoware_planning_msgs::Trajectory &latacc_filtered_traj) const;
   void jerkVelocityFilter(const Motion &initial_motion, const autoware_planning_msgs::Trajectory &input, const int input_closest,
                           const std::vector<Motion> &prev_output_motion, const int prev_output_closest,

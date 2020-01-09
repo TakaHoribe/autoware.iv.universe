@@ -52,6 +52,8 @@ private:
   ros::Subscriber sub_current_velocity_;
   ros::Subscriber sub_current_trajectory_;
   ros::Subscriber sub_external_velocity_limit_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
 
   boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;          // current vehicle pose
   boost::shared_ptr<geometry_msgs::TwistStamped const> current_velocity_ptr_;     // current vehicle twist
@@ -60,8 +62,7 @@ private:
 
   autoware_planning_msgs::Trajectory prev_output_trajectory_;  // velocity replanned waypoints (output of this node)
 
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+
 
   osqp::OSQPInterface qp_solver_;
 
@@ -69,39 +70,23 @@ private:
   bool show_debug_info_all_;  // print level 2
   bool show_figure_;          // for plot visualize
 
-  struct Motion
-  {
-    double vel;
-    double acc;
-    double jerk;
-    Motion(double v = 0.0, double a = 0.0, double s = 0.0) : vel(v), acc(a), jerk(s){};
-    Motion &operator=(const Motion &m)
-    {
-      vel = m.vel;
-      acc = m.acc;
-      jerk = m.jerk;
-      return *this;
-    };
-  };
-
   struct MotionVelocityPlannerParam
   {
-    double max_velocity;                   // max velocity [m/s]
-    double max_accel;                      // max acceleration in planning [m/s2] > 0
-    double min_decel;                      // min deceltion in planning [m/s2] < 0
-    double max_lat_acc;                    // max lateral acceleartion [m/ss] > 0
-    double replan_vel_deviation;           // replan with current speed if speed deviation exceeds this value [m/s]
-    double engage_velocity;                // use this speed when start moving [m/s]
-    double engage_acceleration;            // use this acceleration when start moving [m/ss]
-    double extract_ahead_dist;             // forward waypoints distance from current position [m]
-    double extract_behind_dist;            // backward waypoints distance from current position [m]
-    double max_trajectory_length;          // max length of the objective trajectory for resample
-    double min_trajectory_length;          // min length of the objective trajectory for resample
-    double resample_total_time;                  // max time to calculate trajectory length
-    double resample_dt;                    // dt to calculate trajectory length
-    double min_trajectory_distance_interval;
+    double max_velocity;          // max velocity [m/s]
+    double max_accel;             // max acceleration in planning [m/s2] > 0
+    double min_decel;             // min deceltion in planning [m/s2] < 0
+    double max_lateral_accel;           // max lateral acceleartion [m/ss] > 0
+    double replan_vel_deviation;  // replan with current speed if speed deviation exceeds this value [m/s]
+    double engage_velocity;       // use this speed when start moving [m/s]
+    double engage_acceleration;   // use this acceleration when start moving [m/ss]
+    double extract_ahead_dist;    // forward waypoints distance from current position [m]
+    double extract_behind_dist;   // backward waypoints distance from current position [m]
+    double max_trajectory_length; // max length of the objective trajectory for resample
+    double min_trajectory_length; // min length of the objective trajectory for resample
+    double resample_total_time;   // max time to calculate trajectory length
+    double resample_dt;           // dt to calculate trajectory length
+    double min_trajectory_interval_distance; // minimum interval distance between each trajectory points
     double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
-    double emergency_flag_vel_thr_kmph;    // Threshold for throwing emergency flag when unable to stop under jerk constraints
     double stop_dist_mergin;
   } planning_param_;
 
@@ -127,24 +112,22 @@ private:
                       autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
-                         MotionVelocityPlanner::Motion *initial_motion, int &init_type) const;
+                         double &initial_vel, double &initial_acc, int &init_type) const;
 
-  void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output, double &ds) const;
 
   bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
-                                 const double &max_lat_acc, const unsigned int curvature_calc_idx_dist,
+                                 const double &max_lateral_accel, const unsigned int curvature_calc_idx_dist,
                                  autoware_planning_msgs::Trajectory &output) const;
   void publishTrajectory(const autoware_planning_msgs::Trajectory &traj) const;
   void preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const;
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
-  void optimizeVelocity(const Motion initial_motion, const autoware_planning_msgs::Trajectory &input, const int closest,
+  void optimizeVelocity(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
                         const double ds, autoware_planning_msgs::Trajectory &output);
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
-  
   void dynamicRecofCallback(motion_velocity_planner::MotionVelocityPlannerConfig &config, uint32_t level)
   {
     planning_param_.max_accel = config.max_accel;
@@ -153,9 +136,9 @@ private:
     planning_param_.engage_acceleration = config.engage_acceleration;
   }
 
-
   /* debug */
   ros::Publisher debug_closest_velocity_;
+  void plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
   void publishClosestVelocity(const double &vel) const;
 
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ

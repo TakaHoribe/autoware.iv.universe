@@ -26,7 +26,7 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("max_velocity", planning_param_.max_velocity, double(20.0));    // 72.0 kmph
   pnh_.param("max_accel", planning_param_.max_accel, double(2.0));           // 0.11G
   pnh_.param("min_decel", planning_param_.min_decel, double(-3.0));          // -0.2G
-  pnh_.param("max_lateral_accel", planning_param_.max_lat_acc, double(0.2)); //
+  pnh_.param("max_lateral_accel", planning_param_.max_lateral_accel, double(0.2)); //
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));
   pnh_.param("engage_acceleration", planning_param_.engage_acceleration, double(0.1));
@@ -36,9 +36,8 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("min_trajectory_length", planning_param_.min_trajectory_length, double(30.0));
   pnh_.param("resample_total_time", planning_param_.resample_total_time, double(10.0));
   pnh_.param("resample_time_interval", planning_param_.resample_dt, double(0.1));
-  pnh_.param("min_trajectory_distance_interval", planning_param_.min_trajectory_distance_interval, double(0.1));
+  pnh_.param("min_trajectory_interval_distance", planning_param_.min_trajectory_interval_distance, double(0.1));
   pnh_.param("stop_dist_not_to_drive_vehicle", planning_param_.stop_dist_not_to_drive_vehicle, double(1.5));
-  pnh_.param("emergency_flag_vel_thr_kmph", planning_param_.emergency_flag_vel_thr_kmph, double(3.0));
   pnh_.param("stop_dist_mergin", planning_param_.stop_dist_mergin, double(0.55));
 
   pnh_.param("show_debug_info", show_debug_info_, bool(true));
@@ -180,7 +179,7 @@ void MotionVelocityPlanner::run()
   const double curvature_calc_dist = 3.0;
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / std::max(0.1, 0.001)), 1);
   autoware_planning_msgs::Trajectory base_traj_latacc_filtered;
-  lateralAccelerationFilter(base_traj_extracted, planning_param_.max_lat_acc, idx_dist, /* out */ base_traj_latacc_filtered);
+  lateralAccelerationFilter(base_traj_extracted, planning_param_.max_lateral_accel, idx_dist, /* out */ base_traj_latacc_filtered);
 
 
   /* (4) Resample extructed-waypoints with interpolation */
@@ -272,7 +271,7 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
   const double smax = std::min(planning_param_.max_trajectory_length, arclength.back());
   const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
   ds = std::max(current_velocity_ptr_->twist.linear.x * planning_param_.resample_dt,
-                planning_param_.min_trajectory_distance_interval);
+                planning_param_.min_trajectory_interval_distance);
   const double Ns = planning_param_.min_trajectory_length / std::max(ds, 0.001);
   const double N = std::max(Nt, Ns);
   std::vector<double> s_arr;
@@ -297,16 +296,15 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
 
 void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints,
                                         const int base_closest, const autoware_planning_msgs::Trajectory &prev_output,
-                                        const int prev_replanned_traj_closest, MotionVelocityPlanner::Motion *initial_motion,
+                                        const int prev_replanned_traj_closest, double &initial_vel, double &initial_acc,
                                         int &init_type) const
 {
   const double vehicle_speed = std::fabs(current_velocity_ptr_->twist.linear.x);
 
   if (prev_output.points.size() == 0 /* first time */)
   {
-    initial_motion->vel = vehicle_speed;
-    initial_motion->acc = 0.0;   // if possible, use actual vehicle acc & jerk value;
-    initial_motion->jerk = 0.0;  // if possible, use actual vehicle acc & jerk value;
+    initial_vel = vehicle_speed;
+    initial_acc = 0.0;   // if possible, use actual vehicle acc & jerk value;
     init_type = 0;
     return;
   }
@@ -315,9 +313,8 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
   const double vel_error = vehicle_speed - std::fabs(desired_vel);
   if (std::fabs(vel_error) > planning_param_.replan_vel_deviation /* when velocity tracking deviation is large */)
   {
-    initial_motion->vel = vehicle_speed;  // use current vehicle speed
-    initial_motion->acc = prev_output.points.at(prev_replanned_traj_closest).accel.linear.x;
-    initial_motion->jerk = 0.0;
+    initial_vel = vehicle_speed;  // use current vehicle speed
+    initial_acc = prev_output.points.at(prev_replanned_traj_closest).accel.linear.x;
     init_type = 1;
     DEBUG_WARN("[calcInitialMotion] : Large deviation error for speed control. Use current speed for initial value, "
                "desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
@@ -335,9 +332,8 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
     const double stop_dist = vpu::calcDist2d(base_waypoints.points.at(idx), base_waypoints.points.at(base_closest));
     if (!exist_stop_point || stop_dist > planning_param_.stop_dist_not_to_drive_vehicle)
     {
-      initial_motion->vel = planning_param_.engage_velocity;
-      initial_motion->acc = planning_param_.engage_acceleration;
-      initial_motion->jerk = 0.0;
+      initial_vel = planning_param_.engage_velocity;
+      initial_acc = planning_param_.engage_acceleration;
       init_type = 2;
       DEBUG_INFO("[calcInitialMotion] : vehicle speed is low (%3.3f [m/s]), but desired speed is high (%3.3f [m/s]). "
                 "Use engage speed (%3.3f [m/s]), stop_dist = %3.3f",
@@ -351,18 +347,16 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
   }
 
   /* normal update: use closest in prev_output */
-  initial_motion->vel = prev_output.points.at(prev_replanned_traj_closest).twist.linear.x;
-  initial_motion->acc = prev_output.points.at(prev_replanned_traj_closest).accel.linear.x;
-  initial_motion->jerk = vpu::getTrajectoryJerk(prev_output, prev_replanned_traj_closest);
+  initial_vel = prev_output.points.at(prev_replanned_traj_closest).twist.linear.x;
+  initial_acc = prev_output.points.at(prev_replanned_traj_closest).accel.linear.x;
   init_type = 3;
-  DEBUG_INFO("[calcInitialMotion]: normal update initial_motion.vel = %f, acc = %f, jerk = %f, vehicle_speed = %f, "
-             "base_speed = %f",
-             initial_motion->vel, initial_motion->acc, initial_motion->jerk, vehicle_speed, base_speed);
+  DEBUG_INFO("[calcInitialMotion]: normal update initial_motion.vel = %f, acc = %f, vehicle_speed = %f, "
+             "base_speed = %f", initial_vel, initial_acc, vehicle_speed, base_speed);
   return;
 }
 
-void MotionVelocityPlanner::optimizeVelocity(const Motion initial_motion, const autoware_planning_msgs::Trajectory &input, 
-                                       const int closest, const double ds, autoware_planning_msgs::Trajectory &output)
+void MotionVelocityPlanner::optimizeVelocity(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input,
+                                             const int closest, const double ds, autoware_planning_msgs::Trajectory &output)
 {
   auto ts = std::chrono::system_clock::now();
 
@@ -484,7 +478,7 @@ void MotionVelocityPlanner::optimizeVelocity(const Motion initial_motion, const 
   }
   
   // initial condition
-  const double v0 = initial_motion.vel;
+  const double v0 = initial_vel;
   { 
     const unsigned int i = 3 * N - 1;
     A(i, 0) = 1.0;     // b0
@@ -492,8 +486,8 @@ void MotionVelocityPlanner::optimizeVelocity(const Motion initial_motion, const 
     lower_bound[i] = v0 * v0;
 
     A(i + 1, N) = 1.0; // a0
-    upper_bound[i + 1] = initial_motion.acc;
-    lower_bound[i + 1] = initial_motion.acc;
+    upper_bound[i + 1] = initial_acc;
+    lower_bound[i + 1] = initial_acc;
   }
 
 
@@ -547,13 +541,14 @@ void MotionVelocityPlanner::replanVelocity(const autoware_planning_msgs::Traject
   const double base_speed = std::fabs(input.points.at(input_closest).twist.linear.x);
 
   /* calculate initial motion for planning */
-  Motion init_m;
+  double initial_vel = 0.0;
+  double initial_acc = 0.0;
   int init_type = 3;
   calcInitialMotion(base_speed, input, input_closest, prev_output, prev_output_closest,
-                                     /* out */ &init_m, /* out */ init_type);
+                    /* out */ initial_vel, initial_acc, init_type);
 
   autoware_planning_msgs::Trajectory optimized_traj;
-  optimizeVelocity(init_m, input, input_closest, ds, /* out */ optimized_traj);
+  optimizeVelocity(initial_vel, initial_acc, input, input_closest, ds, /* out */ optimized_traj);
 
   /* find stop point for stopVelocityFilter */
   int stop_idx_zero_vel = -1;
@@ -577,7 +572,7 @@ void MotionVelocityPlanner::replanVelocity(const autoware_planning_msgs::Traject
 }
 
 bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
-                                                const double &max_lat_acc, const unsigned int curvature_calc_idx_dist,
+                                                const double &max_lateral_accel, const unsigned int curvature_calc_idx_dist,
                                                 autoware_planning_msgs::Trajectory &output) const
 {
   output = input; // initialize
@@ -585,12 +580,12 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
   std::vector<double> curvature_v;
   vpu::calcTrajectoryCurvatureFrom3Points(input, curvature_calc_idx_dist, curvature_v);
 
-  const double max_lat_acc_abs = std::fabs(max_lat_acc);
+  const double max_lateral_accel_abs = std::fabs(max_lateral_accel);
 
   for (unsigned int i = 0; i < input.points.size(); ++i)
   {
     const double curvature = std::max(std::fabs(curvature_v.at(i)), 0.0001 /* avoid 0 divide */);
-    const double v_curvature_max = std::max(std::sqrt(max_lat_acc_abs / curvature), planning_param_.engage_velocity);
+    const double v_curvature_max = std::max(std::sqrt(max_lateral_accel_abs / curvature), planning_param_.engage_velocity);
     if (output.points.at(i).twist.linear.x > v_curvature_max)
     {
       output.points.at(i).twist.linear.x = v_curvature_max;

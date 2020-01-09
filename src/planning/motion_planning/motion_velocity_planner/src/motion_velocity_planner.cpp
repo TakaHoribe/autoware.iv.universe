@@ -30,7 +30,7 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("min_dec_jerk_nominal", planning_param_.dec_jerk_nominal, double(-0.3));  // -0.03G
   pnh_.param("min_dec_jerk_urgent", planning_param_.dec_jerk_urgent, double(-1.5));          //
   pnh_.param("large_jerk_report", planning_param_.large_jerk_report, double(-1.4));          //
-  pnh_.param("max_lat_acc", planning_param_.max_lat_acc, double(0.2));          //
+  pnh_.param("max_lateral_accel", planning_param_.max_lateral_accel, double(0.2));          //
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));
   pnh_.param("engage_acceleration", planning_param_.engage_acceleration, double(0.1));
@@ -363,7 +363,7 @@ void MotionVelocityPlanner::replanVelocity(const autoware_planning_msgs::Traject
   /* apply lateral acceleration filter */
   autoware_planning_msgs::Trajectory latacc_filtered_traj = input;
   const unsigned int idx_dist = 20;
-  MotionVelocityPlanner::lateralAccelerationFilter(input, planning_param_.max_lat_acc, idx_dist,
+  MotionVelocityPlanner::lateralAccelerationFilter(input, planning_param_.max_lateral_accel, idx_dist,
                                              /* out */ latacc_filtered_traj);
 
   /* apply forward move average filter for delay compensation */
@@ -520,7 +520,7 @@ bool MotionVelocityPlanner::moveAverageFilter(const autoware_planning_msgs::Traj
 }
 
 bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
-                                                const double &max_lat_acc, const unsigned int idx_dist,
+                                                const double &max_lateral_accel, const unsigned int idx_dist,
                                                 autoware_planning_msgs::Trajectory &latacc_filtered_traj) const
 {
   if (enable_latacc_filter_ == false)
@@ -532,12 +532,12 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
   vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, k_arr);
 
   latacc_filtered_traj = input;  // as initialize
-  const double max_lat_acc_abs = std::fabs(max_lat_acc);
+  const double max_lateral_accel_abs = std::fabs(max_lateral_accel);
 
   for (unsigned int i = 0; i < input.points.size(); ++i)
   {
     const double curvature = std::max(std::fabs(k_arr.at(i)), 0.01 /* avoid 0 divide */);
-    const double v_max = std::sqrt(max_lat_acc_abs / curvature);
+    const double v_max = std::sqrt(max_lateral_accel_abs / curvature);
     if (latacc_filtered_traj.points.at(i).twist.linear.x > v_max)
     {
       latacc_filtered_traj.points.at(i).twist.linear.x = v_max;
