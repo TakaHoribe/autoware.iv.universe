@@ -96,10 +96,43 @@ geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseWithCovarianceStamped &po
   return getRPY(pose.pose.pose);
 }
 
+// geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
+//                                const geometry_msgs::PoseStamped &pose_b)
+// {
+//   const double dt = (pose_a.header.stamp - pose_b.header.stamp).toSec();
+// 
+//   if (dt == 0) {
+//     return geometry_msgs::Twist();
+//   }
+// 
+//   const auto pose_a_rpy = getRPY(pose_a);
+//   const auto pose_b_rpy = getRPY(pose_b);
+// 
+//   geometry_msgs::Vector3 diff_xyz;
+//   geometry_msgs::Vector3 diff_rpy;
+// 
+//   diff_xyz.x = pose_a.pose.position.x - pose_b.pose.position.x;
+//   diff_xyz.y = pose_a.pose.position.y - pose_b.pose.position.y;
+//   diff_xyz.z = pose_a.pose.position.z - pose_b.pose.position.z;
+//   diff_rpy.x = calcDiffForRadian(pose_a_rpy.x, pose_b_rpy.x);
+//   diff_rpy.y = calcDiffForRadian(pose_a_rpy.y, pose_b_rpy.y);
+//   diff_rpy.z = calcDiffForRadian(pose_a_rpy.z, pose_b_rpy.z);
+// 
+//   geometry_msgs::Twist twist;
+//   twist.linear.x = diff_xyz.x / dt;
+//   twist.linear.y = diff_xyz.y / dt;
+//   twist.linear.z = diff_xyz.z / dt;
+//   twist.angular.x = diff_rpy.x / dt;
+//   twist.angular.y = diff_rpy.y / dt;
+//   twist.angular.z = diff_rpy.z / dt;
+// 
+//   return twist;
+// }
+
 geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
                                const geometry_msgs::PoseStamped &pose_b)
 {
-  const double dt = (pose_a.header.stamp - pose_b.header.stamp).toSec();
+  const double dt = (pose_b.header.stamp - pose_a.header.stamp).toSec();
 
   if (dt == 0) {
     return geometry_msgs::Twist();
@@ -111,12 +144,12 @@ geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
   geometry_msgs::Vector3 diff_xyz;
   geometry_msgs::Vector3 diff_rpy;
 
-  diff_xyz.x = pose_a.pose.position.x - pose_b.pose.position.x;
-  diff_xyz.y = pose_a.pose.position.y - pose_b.pose.position.y;
-  diff_xyz.z = pose_a.pose.position.z - pose_b.pose.position.z;
-  diff_rpy.x = calcDiffForRadian(pose_a_rpy.x, pose_b_rpy.x);
-  diff_rpy.y = calcDiffForRadian(pose_a_rpy.y, pose_b_rpy.y);
-  diff_rpy.z = calcDiffForRadian(pose_a_rpy.z, pose_b_rpy.z);
+  diff_xyz.x = pose_b.pose.position.x - pose_a.pose.position.x;
+  diff_xyz.y = pose_b.pose.position.y - pose_a.pose.position.y;
+  diff_xyz.z = pose_b.pose.position.z - pose_a.pose.position.z;
+  diff_rpy.x = calcDiffForRadian(pose_b_rpy.x, pose_a_rpy.x);
+  diff_rpy.y = calcDiffForRadian(pose_b_rpy.y, pose_a_rpy.y);
+  diff_rpy.z = calcDiffForRadian(pose_b_rpy.z, pose_a_rpy.z);
 
   geometry_msgs::Twist twist;
   twist.linear.x = diff_xyz.x / dt;
@@ -129,9 +162,31 @@ geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
   return twist;
 }
 
+void getNearestTimeStampPose(const std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> &pose_cov_msg_ptr_array,
+                             const ros::Time &time_stamp,
+                             geometry_msgs::PoseWithCovarianceStamped::ConstPtr &output_old_pose_cov_msg_ptr,
+                             geometry_msgs::PoseWithCovarianceStamped::ConstPtr &output_new_pose_cov_msg_ptr)
+{
+  for (const auto &pose_cov_msg_ptr : pose_cov_msg_ptr_array)
+  {
+    output_new_pose_cov_msg_ptr = pose_cov_msg_ptr;
+    if (output_new_pose_cov_msg_ptr->header.stamp > time_stamp) {
+      // TODO refactor
+      if(output_old_pose_cov_msg_ptr->header.stamp.toSec() == 0) {
+        output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
+      }
+      break;
+    }
+    output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
+  }
+  std::cout << output_old_pose_cov_msg_ptr->header.stamp.toSec() - 1576563220 << std::endl;
+  std::cout << output_new_pose_cov_msg_ptr->header.stamp.toSec() - 1576563220 << std::endl;
+}
+
 geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseStamped &pose_a,
-                            const geometry_msgs::PoseStamped &pose_b,
-                            const ros::Time &time_stamp) {
+                                           const geometry_msgs::PoseStamped &pose_b,
+                                           const ros::Time &time_stamp)
+{
   if (pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 || time_stamp.toSec() == 0) {
     return geometry_msgs::PoseStamped();
   }
@@ -162,6 +217,33 @@ geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseStamped &pos
   pose.pose.position.z = xyz.z;
   pose.pose.orientation = tf2::toMsg(tf_quaternion);
   return pose;
+}
+
+geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseWithCovarianceStamped &pose_a,
+                                           const geometry_msgs::PoseWithCovarianceStamped &pose_b,
+                                           const ros::Time &time_stamp)
+{
+  geometry_msgs::PoseStamped tmp_pose_a;
+  tmp_pose_a.header = pose_a.header;
+  tmp_pose_a.pose = pose_a.pose.pose;
+
+  geometry_msgs::PoseStamped tmp_pose_b;
+  tmp_pose_b.header = pose_b.header;
+  tmp_pose_b.pose = pose_b.pose.pose;
+
+  return interpolatePose(tmp_pose_a, tmp_pose_b, time_stamp);
+}
+
+void popOldPose(std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> &pose_cov_msg_ptr_array,
+                const ros::Time &time_stamp)
+{
+  while (!pose_cov_msg_ptr_array.empty())
+  {
+    if (pose_cov_msg_ptr_array.front()->header.stamp >= time_stamp) {
+      break;
+    }
+    pose_cov_msg_ptr_array.pop_front();
+  }
 }
 
 static geometry_msgs::PoseArray createRandomPoseArray(const geometry_msgs::PoseWithCovarianceStamped &base_pose_with_cov, const size_t particle_num)

@@ -83,14 +83,6 @@ public:
 
 private:
 
-  /**
-   * @brief A callback of dynamic_reconfigure that sets ndt_slam parameters.
-   * @fn configCallback
-   * @param[in] config ndt_slam config received from dynamic_reconfigure.
-   * @param[in] level unused
-   */
-  // void configCallback(const ndt_slam::NDTScanMatcherConfig &config, uint32_t level);
-
   bool serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
 
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
@@ -122,11 +114,10 @@ private:
   ros::Publisher transform_probability_pub_;
   ros::Publisher iteration_num_pub_;
   ros::Publisher initial_to_result_distance_pub_;
+  ros::Publisher initial_to_result_distance_old_pub_;
+  ros::Publisher initial_to_result_distance_new_pub_;
   ros::Publisher ndt_marker_pub_;
   ros::Publisher ndt_monte_colro_initial_pose_marker_pub_;
-
-  // dynamic_reconfigure::Server<ndt_slam::NDTScanMatcherConfig> server_;
-  // dynamic_reconfigure::Server<ndt_slam::NDTScanMatcherConfig>::CallbackType f_;
 
   ros::ServiceServer service_;
 

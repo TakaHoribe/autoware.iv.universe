@@ -13,18 +13,13 @@
   <!-- tf -->
   <arg name="base_frame" default="base_link" doc="Location of output results (ndt_pose, ndt_pose_with_covariance)" />
 
-
+  <!-- NDT Params -->
   <arg name="ndt_implement_type" default="2" doc="0: PCL_GENERIC, 1: PCL_MODIFIED, 2: OMP" />
 
-  <!-- NDT Params -->
   <arg name="trans_epsilon" default="0.01" doc="The maximum difference between two consecutive transformations in order to consider convergence" />
   <arg name="step_size" default="0.1" doc="The newton line search maximum step length" />
   <arg name="resolution" default="2.0" doc="The ND voxel grid resolution" />
   <arg name="max_iterations" default="30.0" doc="The number of iterations required to calculate alignment" />
-
-  <arg name="use_anonymous_node_name" default="false" doc="If True, launch with anonymous option" />
-  <arg name="node_name" value="ndt_scan_matcher" unless="$(arg use_anonymous_node_name)" doc="Not use anonymous option" />
-  <arg name="node_name" value="$(anon ndt_scan_matcher)" if="$(arg use_anonymous_node_name)" doc="Use anonymous option" />
 
   <arg name="converged_param_transform_probability" default="4.5" doc="" />
 
@@ -33,8 +28,12 @@
   <arg name="omp_num_threads" default="4" doc="" />
 
 
+  <arg name="use_anonymous_node_name" default="false" doc="If True, launch with anonymous option" />
+  <arg name="node_name" value="ndt_scan_matcher" unless="$(arg use_anonymous_node_name)" doc="Not use anonymous option" />
+  <arg name="node_name" value="$(anon ndt_scan_matcher)" if="$(arg use_anonymous_node_name)" doc="Use anonymous option" />
 
-  <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="log">
+
+  <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="screen">
 
     <remap from="points_raw" to="$(arg input_sensor_points_topic)" />
     <param name="input_sensor_points_queue_size" value="$(arg input_sensor_points_queue_size)" />
@@ -43,7 +42,7 @@
     <remap from="pointcloud_map" to="$(arg input_map_points_topic)" />
 
     <param name="base_frame" value="$(arg base_frame)" />
-
+ 
     <param name="ndt_implement_type" value="$(arg ndt_implement_type)" />
 
     <param name="trans_epsilon" value="$(arg trans_epsilon)" />
@@ -52,6 +51,9 @@
     <param name="max_iterations" value="$(arg max_iterations)" />
 
     <param name="converged_param_transform_probability" value="$(arg converged_param_transform_probability)" />
+
+    <param name="omp_neighborhood_search_method" value="$(arg omp_neighborhood_search_method)" />
+    <param name="omp_num_threads" value="$(arg omp_num_threads)" />
   </node>
 
 </launch>
