@@ -38,7 +38,8 @@ public:
   virtual ~ConsoleMeterDisplay();
 
   void onInitialize() override;
-  void reset() override;
+  void onDisable() override;
+  void onEnable() override;
 
 private Q_SLOTS:
   void updateVisualization();
@@ -55,10 +56,13 @@ protected:
   rviz::IntProperty *property_length_;
   rviz::FloatProperty *property_handle_angle_scale_;
   rviz::IntProperty *property_value_height_offset_;
-  QPixmap handle_image_;
   // QImage hud_;
 
 private:
+  const double meter_min_velocity_;
+  const double meter_max_velocity_;
+  const double meter_min_angle_;
+  const double meter_max_angle_;
   autoware_control_msgs::VehicleStatusStampedConstPtr last_msg_ptr_;
 };
 

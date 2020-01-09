@@ -38,7 +38,8 @@ public:
   virtual ~SteeringAngleDisplay();
 
   void onInitialize() override;
-  void reset() override;
+  void onDisable() override;
+  void onEnable() override;
 
 private Q_SLOTS:
   void updateVisualization();

@@ -80,7 +80,7 @@ SteeringAngleDisplay::~SteeringAngleDisplay()
 {
   if (initialized())
   {
-    // scene_manager_->destroyManualObject(path_manual_object_);
+    overlay_->hide();
   }
 }
 
@@ -112,9 +112,17 @@ void SteeringAngleDisplay::onInitialize()
   // }
 }
 
-void SteeringAngleDisplay::reset()
+void SteeringAngleDisplay::onEnable()
 {
-  MFDClass::reset();
+  subscribe();
+  overlay_->show();
+}
+
+void SteeringAngleDisplay::onDisable()
+{
+  unsubscribe();
+  reset();
+  overlay_->hide();
 }
 
 void SteeringAngleDisplay::processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr)
