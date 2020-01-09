@@ -20,9 +20,11 @@ include_directories(
 
 add_executable(fix_z_value_by_pcd src/fix_z_value_by_pcd.cpp)
 add_dependencies(fix_z_value_by_pcd ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(fix_z_value_by_pcd
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(fix_z_value_by_pcd ${catkin_LIBRARIES})
+
+add_executable(transform_maps src/transform_maps.cpp)
+add_dependencies(transform_maps ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(transform_maps ${catkin_LIBRARIES})
 
 #############
 ## Install ##
