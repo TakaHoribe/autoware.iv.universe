@@ -25,6 +25,10 @@ namespace autoware_planning_msgs
   ROS_DECLARE_MESSAGE(PathPoint); 
   ROS_DECLARE_MESSAGE(Route); 
 }
+namespace autoware_perception_msgs
+{
+  ROS_DECLARE_MESSAGE(DynamicObject); 
+}
 
 namespace geometry_msgs
 { 
@@ -52,6 +56,7 @@ private:
   double min_radius_;
   double max_radius_;
   double backward_distance_;
+  double static_objects_velocity_threshold_;
   std::unique_ptr<geometry_msgs::Pose> debug_fix_pose_;
   std::unique_ptr<geometry_msgs::Pose> previous_exploring_goal_point_in_map_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> cached_explored_points_ptr_;
@@ -81,6 +86,7 @@ public:
   bool generateModifiedPath(
     geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
     const lanelet::routing::RoutingGraph& graph,
     lanelet::LaneletMap& map,
     const autoware_planning_msgs::Route& route,

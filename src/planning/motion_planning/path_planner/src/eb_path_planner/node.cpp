@@ -2,6 +2,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
@@ -34,6 +35,8 @@ EBPathPlannerNode::EBPathPlannerNode()
                            &EBPathPlannerNode::mapCallback, this);
   route_sub_ = private_nh_.subscribe("/planning/mission_planning/route", 10,
                            &EBPathPlannerNode::routeCallback, this);
+  objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10,
+                           &EBPathPlannerNode::objectsCallback, this);
   private_nh_.param<bool>("enable_velocity_based_cropping", 
                          enable_velocity_based_cropping_,false);
   private_nh_.param<int>("num_lookup_lanelet_for_drivealble_area", 
@@ -68,7 +71,15 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
-  
+  if(!lanelet_map_ptr_||
+     !in_route_ptr_ )
+  {
+    return;
+  }
+  if(!in_objects_ptr_)
+  {
+    in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
+  }
   std::chrono::high_resolution_clock::time_point begin= 
     std::chrono::high_resolution_clock::now();
   
@@ -100,6 +111,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   modify_reference_path_ptr_->generateModifiedPath(
         self_pose, 
         input_path_msg.points,
+        in_objects_ptr_->objects,
         *routing_graph_ptr_, 
         *lanelet_map_ptr_,
         *in_route_ptr_,
@@ -292,6 +304,12 @@ void EBPathPlannerNode::routeCallback(
   const autoware_planning_msgs::Route& msg)
 {
   in_route_ptr_ = std::make_shared<autoware_planning_msgs::Route>(msg);
+}
+
+void EBPathPlannerNode::objectsCallback(
+  const autoware_perception_msgs::DynamicObjectArray& msg)
+{
+  in_objects_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(msg);
 }
 
 bool EBPathPlannerNode::needReset(

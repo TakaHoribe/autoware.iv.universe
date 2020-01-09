@@ -30,6 +30,11 @@ namespace autoware_planning_msgs
   
 }
 
+namespace autoware_perception_msgs
+{
+  ROS_DECLARE_MESSAGE(DynamicObjectArray);
+}
+
 namespace geometry_msgs
 { 
   ROS_DECLARE_MESSAGE(PoseStamped);
@@ -57,6 +62,7 @@ private:
   ros::Subscriber twist_sub_;
   ros::Subscriber map_sub_;
   ros::Subscriber route_sub_;
+  ros::Subscriber objects_sub_;
   bool enable_velocity_based_cropping_; 
   int num_lookup_lanelet_for_drivealble_area_;
   double time_for_calculating_velocity_based_distance_;
@@ -76,9 +82,11 @@ private:
   
   std::shared_ptr<autoware_planning_msgs::Route> in_route_ptr_;
   std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
+  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
   void currentVelocityCallback(const geometry_msgs::TwistStamped& msg);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
   void routeCallback(const autoware_planning_msgs::Route& msg);
+  void objectsCallback(const autoware_perception_msgs::DynamicObjectArray& msg);
   bool needReset(const geometry_msgs::Point& previous_ego_point,
                  const geometry_msgs::Point& current_ego_point);
   

@@ -20,6 +20,7 @@
 
 #include <geometry_msgs/Pose.h>
 
+#include "autoware_perception_msgs/DynamicObject.h"
 #include "autoware_planning_msgs/PathPoint.h"
 #include "autoware_planning_msgs/Route.h"
 #include "eb_path_planner/modify_reference_path.h"
@@ -141,7 +142,8 @@ resolution_(0.1),
 time_limit_(200.0),
 min_radius_(min_radius),
 max_radius_(7.0),
-backward_distance_(backward_distance)
+backward_distance_(backward_distance),
+static_objects_velocity_threshold_(0.2)
 {
 }
 
@@ -519,6 +521,7 @@ bool ModifyReferencePath::needExploration(
 bool ModifyReferencePath::generateModifiedPath(
   geometry_msgs::Pose& ego_pose,
   const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+  const std::vector<autoware_perception_msgs::DynamicObject>& objects,
   const lanelet::routing::RoutingGraph& graph,
   lanelet::LaneletMap& map,
   const autoware_planning_msgs::Route& route,
@@ -602,6 +605,22 @@ bool ModifyReferencePath::generateModifiedPath(
   image = image(rect);
   
   
+  for(const auto& object: objects)
+  {
+    if(object.state.twist_covariance.twist.linear.x < static_objects_velocity_threshold_)
+    {
+      geometry_msgs::Point point_in_image;
+      if(transformMapToImage(object.state.pose_covariance.pose.position, ego_pose, x_length_, 
+                        y_width_, resolution_, point_in_image))
+      {
+        cv::rectangle(image,cv::Point(std::floor(point_in_image.x)-(std::floor((1.5*min_radius_/resolution_)/std::sqrt(2))), 
+                                      std::floor(point_in_image.y)-(std::floor((1.5*min_radius_/resolution_)/std::sqrt(2)))),
+                            cv::Point(std::floor(point_in_image.x)+(std::floor((1.5*min_radius_/resolution_)/std::sqrt(2))), 
+                                      std::floor(point_in_image.y)+(std::floor((1.5*min_radius_/resolution_)/std::sqrt(2)))),
+                            cv::Scalar(0), -1 ,CV_AA);
+      } 
+    }
+  }
   //dummy object @ kahiwanoha
   // geometry_msgs::Point point_in_map;
   // point_in_map.x = 116.212295532;

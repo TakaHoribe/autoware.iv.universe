@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(path_planner)
 
-add_compile_options(-std=c++14)
-
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
+  autoware_perception_msgs
   roscpp
   tf2_ros
   lanelet2_extension #TODO: add for prototype; should be deprecated in the future
@@ -15,6 +14,7 @@ catkin_package(
     include
   CATKIN_DEPENDS 
    autoware_planning_msgs 
+   autoware_perception_msgs
    roscpp 
    tf2_ros
    lanelet2_extension
