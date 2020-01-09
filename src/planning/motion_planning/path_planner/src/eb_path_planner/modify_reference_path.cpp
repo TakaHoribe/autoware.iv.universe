@@ -127,6 +127,7 @@ bool transformImageToMap(const geometry_msgs::Point& image_point,
 
 
 ModifyReferencePath::ModifyReferencePath(
+  int num_lookup_lanelet_for_driveable_area,
   double min_radius,
   double backward_distance):
 is_fix_pose_mode_for_debug_(false),
@@ -135,6 +136,7 @@ is_debug_each_iteration_mode_(false),
 is_debug_driveable_area_mode_(false),
 y_width_(100),
 x_length_(100),
+num_lookup_lanelet_for_drivealble_area_(num_lookup_lanelet_for_driveable_area),
 resolution_(0.1),
 time_limit_(200.0),
 min_radius_(min_radius),
@@ -388,14 +390,14 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     }
     if(!is_explore_success)
     {
-      ROS_ERROR("[EBPathPlanner] graph a start could not find path");
+      ROS_WARN("[EBPathPlanner] graph a star could not find path");
       return false;
     }
     //backtrack
     Node current_node = s_closed.back();
     if(current_node.parent_node == nullptr)
     {
-      ROS_ERROR("[EBPathPlanner] No node is explored, Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+      ROS_INFO("[EBPathPlanner] No node is explored, Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
         ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
         ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
       return false;
@@ -563,7 +565,8 @@ bool ModifyReferencePath::generateModifiedPath(
   }
   
   int exploring_route_section_id = 
-    std::min(nearest_route_secition_idx_from_ego_pose+4,
+    std::min(nearest_route_secition_idx_from_ego_pose+
+              num_lookup_lanelet_for_drivealble_area_,
             (int)route.route_sections.size());
   for (int i = nearest_route_secition_idx_from_ego_pose;
        i < exploring_route_section_id; i++)

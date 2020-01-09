@@ -246,20 +246,20 @@ bool EBPathSmoother::generateOptimizedPath(
                            debug_interpolated_points);
   if(!is_preprocess_success)
   {
-    ROS_ERROR("[EBPathPlanner]: preprocess for smoother failed; skip optimization");
+    ROS_WARN("[EBPathPlanner] Preprocess for smoother failed. Skip optimization");
     return false;
   }           
   
   if(farrest_idx_from_ego_pose==nearest_idx_from_ego_pose)
   {
-    ROS_ERROR("[EB Path Planner] Nearest and farrest idx is the same. Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+    ROS_WARN("[EBPathPlanner] Nearest and farrest idx is the same. Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
           ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
           ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
     return false;
   }
   if(farrest_idx_from_ego_pose==-1)
   {
-     ROS_ERROR("[EB Path Planner] Farrest idx is -1. Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+     ROS_WARN("[EBPathPlanner] Farrest idx is -1. Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
           ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
           ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
      return false;
@@ -401,7 +401,7 @@ bool EBPathSmoother::generateOptimizedPath(
     autoware_planning_msgs::TrajectoryPoint tmp_point;
     tmp_point.pose.position.x = workspace.solution->x[i];
     tmp_point.pose.position.y = workspace.solution->x[i + number_of_sampling_points_];
-    tmp_point.pose.position.z = 0;
+    tmp_point.pose.position.z = ego_pose.position.z;
     bool flag = false;
     for (size_t j = previously_used_index; j < path_points.size(); j++)
     {
@@ -414,6 +414,7 @@ bool EBPathSmoother::generateOptimizedPath(
       if(inner_product < 0)
       {
         tmp_point.twist = path_points[j].twist;
+        tmp_point.pose.position.z = path_points[j].pose.position.z;
         previously_used_index = j;
         flag = true;
         break;
@@ -421,7 +422,7 @@ bool EBPathSmoother::generateOptimizedPath(
     }
     if(!flag)
     {
-      ROS_ERROR("[EBPathPlanner] flag false");
+      ROS_WARN("[EBPathPlanner] Could find corresponding velocity in path points. Insert 0 velocity");
     }
     double roll = 0;
     double pitch = 0;

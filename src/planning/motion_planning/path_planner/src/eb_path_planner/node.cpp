@@ -36,6 +36,8 @@ EBPathPlannerNode::EBPathPlannerNode()
                            &EBPathPlannerNode::routeCallback, this);
   private_nh_.param<bool>("enable_velocity_based_cropping", 
                          enable_velocity_based_cropping_,false);
+  private_nh_.param<int>("num_lookup_lanelet_for_drivealble_area", 
+                         num_lookup_lanelet_for_drivealble_area_,4);
   private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
                     time_for_calculating_velocity_based_distance_, 5);
   private_nh_.param<double>("distance_for_cropping", 
@@ -51,6 +53,7 @@ EBPathPlannerNode::EBPathPlannerNode()
   private_nh_.param<double>("delta_ego_point_threshold_", 
                              delta_ego_point_threshold_, 5);
   modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
+    num_lookup_lanelet_for_drivealble_area_,
     exploring_minimum_radius_,
     backward_distance_);
   eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
@@ -83,6 +86,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   if(needReset(*previous_ego_point_ptr_, self_pose.position))
   {
     modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
+                num_lookup_lanelet_for_drivealble_area_,
                 exploring_minimum_radius_,
                 backward_distance_);
     eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(

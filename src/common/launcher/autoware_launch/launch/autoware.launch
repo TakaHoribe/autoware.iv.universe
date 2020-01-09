@@ -34,6 +34,7 @@
   <!-- Planning -->
   <include file="$(find planning_launch)/launch/planning.launch" >
     <arg name="is_online_path_update"  default="true"/>
+    <arg name="num_lookup_lanelet_for_drivealble_area"  default="4"/>
   </include>
 
   <!-- Control -->

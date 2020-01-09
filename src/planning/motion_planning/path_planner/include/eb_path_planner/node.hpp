@@ -58,6 +58,7 @@ private:
   ros::Subscriber map_sub_;
   ros::Subscriber route_sub_;
   bool enable_velocity_based_cropping_; 
+  int num_lookup_lanelet_for_drivealble_area_;
   double time_for_calculating_velocity_based_distance_;
   double distance_for_cropping_;
   double backward_distance_;
