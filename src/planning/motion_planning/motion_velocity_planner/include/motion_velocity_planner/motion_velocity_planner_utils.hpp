@@ -51,6 +51,6 @@ bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planni
 double normalizeRadian(const double _angle);
 void convertEulerAngleToMonotonic(std::vector<double> &a);
 geometry_msgs::Quaternion getQuaternionFromYaw(double yaw);
-bool linearInterp1qTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory, const std::vector<double> &out_index,
+bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory, const std::vector<double> &out_index,
                               autoware_planning_msgs::Trajectory &out_trajectory);
 }  // namespace vpu

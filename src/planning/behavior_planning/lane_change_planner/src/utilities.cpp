@@ -16,12 +16,48 @@
 
 #include <lane_change_planner/utilities.h>
 
+namespace
+{
+ros::Duration safeSubtraction(const ros::Time& t1, const ros::Time& t2)
+{
+  ros::Duration duration;
+  try
+  {
+    duration = t1 - t2;
+  }
+  catch (std::runtime_error)
+  {
+    if (t1 > t2)
+      duration = ros::DURATION_MIN;
+    else
+      duration = ros::DURATION_MAX;
+  }
+  return duration;
+}
+ros::Time safeAddition(const ros::Time& t1, const double seconds)
+{
+  ros::Time sum;
+  try
+  {
+    sum = t1 + ros::Duration(seconds);
+  }
+  catch (std::runtime_error& err)
+  {
+    if (seconds > 0)
+      sum = ros::TIME_MAX;
+    if (seconds < 0)
+      sum = ros::TIME_MIN;
+  }
+  return sum;
+}
+}  // namespace
+
 namespace lane_change_planner
 {
 namespace util
 {
-using autoware_planning_msgs::PathWithLaneId;
 using autoware_perception_msgs::PredictedPath;
+using autoware_planning_msgs::PathWithLaneId;
 
 double l2Norm(const geometry_msgs::Vector3 vector)
 {
@@ -128,22 +164,8 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
     }
     double frenet_distance = pt_frenet.length - vehicle_pose_frenet.length;
     double travel_time = frenet_distance / vehicle_speed;
-    ros::Time time_stamp;
-    try
-    {
-      time_stamp = start_time + ros::Duration(travel_time);
-    }
-    catch (std::runtime_error& err)
-    {
-      if (travel_time > 0)
-      {
-        time_stamp = ros::TIME_MAX;
-      }
-      if (travel_time < 0)
-      {
-        time_stamp = ros::TIME_MIN;
-      }
-    }
+    const auto time_stamp = safeAddition(start_time, travel_time);
+
     geometry_msgs::PoseWithCovarianceStamped predicted_pose;
     predicted_pose.header.stamp = time_stamp;
     predicted_pose.pose.pose.position = pt.point.pose.position;
@@ -195,7 +217,7 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
     const auto& prev_pt = path.path.at(i - 1);
     if (t < pt.header.stamp)
     {
-      const auto duration = pt.header.stamp - prev_pt.header.stamp;
+      const ros::Duration duration = safeSubtraction(pt.header.stamp, prev_pt.header.stamp);
       const auto off_set = t - prev_pt.header.stamp;
       const auto ratio = off_set.toSec() / duration.toSec();
       *lerped_pt = lerpByPose(prev_pt.pose.pose, pt.pose.pose, ratio);
