@@ -246,7 +246,7 @@ bool EBPathSmoother::generateOptimizedPath(
                            debug_interpolated_points);
   if(!is_preprocess_success)
   {
-    ROS_WARN("[EBPathPlanner] Preprocess for smoother failed. Skip optimization");
+    ROS_WARN("[EBPathPlanner] Preprocess for smoother return false. Skip optimization");
     return false;
   }           
   
