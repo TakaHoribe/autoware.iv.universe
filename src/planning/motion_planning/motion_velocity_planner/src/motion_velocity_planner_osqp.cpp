@@ -23,10 +23,10 @@
 
 MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
-  pnh_.param("max_velocity", planning_param_.max_velocity, double(20.0));              // 72.0 kmph
-  pnh_.param("max_accel", planning_param_.max_accel, double(2.0));                         // 0.11G
-  pnh_.param("min_decel", planning_param_.min_decel, double(-3.0));                        // -0.2G
-  pnh_.param("max_lat_acc", planning_param_.max_lat_acc, double(0.2));          //
+  pnh_.param("max_velocity", planning_param_.max_velocity, double(20.0));    // 72.0 kmph
+  pnh_.param("max_accel", planning_param_.max_accel, double(2.0));           // 0.11G
+  pnh_.param("min_decel", planning_param_.min_decel, double(-3.0));          // -0.2G
+  pnh_.param("max_lateral_accel", planning_param_.max_lat_acc, double(0.2)); //
   pnh_.param("replan_vel_deviation", planning_param_.replan_vel_deviation, double(3.0));
   pnh_.param("engage_velocity", planning_param_.engage_velocity, double(0.3));
   pnh_.param("engage_acceleration", planning_param_.engage_acceleration, double(0.1));
@@ -40,25 +40,20 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("stop_dist_not_to_drive_vehicle", planning_param_.stop_dist_not_to_drive_vehicle, double(1.5));
   pnh_.param("emergency_flag_vel_thr_kmph", planning_param_.emergency_flag_vel_thr_kmph, double(3.0));
   pnh_.param("stop_dist_mergin", planning_param_.stop_dist_mergin, double(0.55));
-  
-  pnh_.param("enable_to_publish_emergency", enable_to_publish_emergency_, bool(true));
 
   pnh_.param("show_debug_info", show_debug_info_, bool(true));
   pnh_.param("show_debug_info_all", show_debug_info_all_, bool(false));
   pnh_.param("show_figure", show_figure_, bool(false));
-  pnh_.param("enable_latacc_filter", enable_latacc_filter_, bool(false));
 
-  pnh_.param("pseudo_jerk_weight", qp_param_.pseudo_jerk_weight, double(1.0));
+  pnh_.param("pseudo_jerk_weight", qp_param_.pseudo_jerk_weight, double(1000.0));
+  pnh_.param("over_v_weight", qp_param_.over_v_weight, double(100000.0));
+  pnh_.param("over_a_weight", qp_param_.over_a_weight, double(1000.0));
 
   pub_trajectory_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
   pub_dist_to_stopline_ = pnh_.advertise<std_msgs::Float32>("distance_to_stopline", 1);
   sub_current_trajectory_ = pnh_.subscribe("input/trajectory", 1, &MotionVelocityPlanner::callbackCurrentTrajectory, this);
   sub_current_velocity_ = pnh_.subscribe("/vehicle/status/twist", 1, &MotionVelocityPlanner::callbackCurrentVelocity, this);
   sub_external_velocity_limit_ = pnh_.subscribe("external_velocity_limit_mps", 1, &MotionVelocityPlanner::callbackExternalVelocityLimit, this);
-
-  /* for emergency stop manager */
-  double emergency_stop_time;
-  pnh_.param("emergency_stop_time", emergency_stop_time, double());
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig>::CallbackType dyncon_f =
@@ -419,8 +414,8 @@ void MotionVelocityPlanner::optimizeVelocity(const Motion initial_motion, const 
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
   const double smooth_weight = qp_param_.pseudo_jerk_weight;
-  const double over_v_weight = 100000.0;
-  const double over_a_weight = 1000.0;
+  const double over_v_weight = qp_param_.over_v_weight;
+  const double over_a_weight = qp_param_.over_a_weight;
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) // bi
@@ -586,11 +581,6 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
                                                 autoware_planning_msgs::Trajectory &output) const
 {
   output = input; // initialize
-
-  if (enable_latacc_filter_ == false)
-  {
-    return true;
-  }
 
   std::vector<double> curvature_v;
   vpu::calcTrajectoryCurvatureFrom3Points(input, curvature_calc_idx_dist, curvature_v);

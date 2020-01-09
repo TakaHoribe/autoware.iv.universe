@@ -5,25 +5,25 @@
   <!-- debug flags -->
   <arg name="show_debug_info" default="false"/>
   <arg name="show_debug_info_all" default="false"/>
-  <arg name="show_figure" default="true"/>
+  <arg name="show_figure" default="false"/>
 
 
   <!-- planning parameters -->
   <arg name="max_velocity" default="20.0"/>
   <arg name="max_accel" default="1.5"/>
   <arg name="min_decel" default="-1.5"/>
+  <arg name="max_lateral_accel" default="0.05"/>
+
   <arg name="replan_vel_deviation" default="5.53"/>
   <arg name="engage_velocity" default="1.0"/>
-  <arg name="stop_dist_mergin" default="0.55"/>
-  <!-- use this velocity as command to engage vehicle speed when stopping -->
   <arg name="engage_acceleration" default="0.0"/>
-  <!-- use this acceleration as command to engage vehicle speed when stopping -->
-  <!-- planning assuming this speed is stop speed -->
+
+
   <arg name="extract_ahead_dist" default="200.0"/>
   <arg name="extract_behind_dist" default="3.0"/>
-
+  <arg name="stop_dist_mergin" default="0.55"/>
   <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>
-  <arg name="enable_to_publish_emergency" default="true"/>
+
 
   <arg name="max_trajectory_length" default="200.0"/>
   <arg name="min_trajectory_length" default="30.0"/>
@@ -33,9 +33,8 @@
 
 
   <arg name="pseudo_jerk_weight" default="1000.0"/>
-  <arg name="max_lat_acc" default="0.05"/>
-  <arg name="enable_latacc_filter" default="true"/>
-
+  <arg name="over_v_weight" default="100000.0"/>
+  <arg name="over_a_weight" default="1000.0"/>
 
   <node pkg="motion_velocity_planner" type="motion_velocity_planner_osqp" name="motion_velocity_planner_osqp" output="$(arg output)">
 
@@ -46,17 +45,25 @@
     <param name="max_velocity" value="$(arg max_velocity)"/>
     <param name="max_accel" value="$(arg max_accel)"/>
     <param name="min_decel" value="$(arg min_decel)"/>
+    <param name="max_lateral_accel" value="$(arg max_lateral_accel)"/>
 
     <param name="replan_vel_deviation" value="$(arg replan_vel_deviation)"/>
     <param name="engage_velocity" value="$(arg engage_velocity)"/>
+    <param name="engage_acceleration" value="$(arg engage_acceleration)"/>
+
     <param name="extract_ahead_dist" value="$(arg extract_ahead_dist)"/>
     <param name="extract_behind_dist" value="$(arg extract_behind_dist)"/>
     <param name="stop_dist_mergin" value="$(arg stop_dist_mergin)"/>
     <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
-    <param name="enable_to_publish_emergency" value="$(arg enable_to_publish_emergency)"/>
-    <param name="enable_latacc_filter" value="$(arg enable_latacc_filter)"/>
-    <param name="max_lat_acc" value="$(arg max_lat_acc)"/>
+    <param name="max_trajectory_length" value="$(arg max_trajectory_length)"/>
+    <param name="min_trajectory_length" value="$(arg min_trajectory_length)"/>
+    <param name="resample_total_time" value="$(arg resample_total_time)"/>
+    <param name="resample_time_interval" value="$(arg resample_time_interval)"/>
+    <param name="min_trajectory_distance_interval" value="$(arg min_trajectory_distance_interval)"/>
+
     <param name="pseudo_jerk_weight" value="$(arg pseudo_jerk_weight)"/>
+    <param name="over_v_weight" value="$(arg over_v_weight)"/>
+    <param name="over_a_weight" value="$(arg over_a_weight)"/>
 
   </node>
 

@@ -33,7 +33,7 @@
 #include <osqp_interface/osqp_interface.h>
 
 
-#define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
+// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
 #include "matplotlibcpp.h"
 #endif
@@ -68,8 +68,6 @@ private:
   bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
   bool show_figure_;          // for plot visualize
-  bool enable_latacc_filter_;
-  bool enable_to_publish_emergency_;
 
   struct Motion
   {
@@ -110,6 +108,8 @@ private:
   struct QPParam
   {
     double pseudo_jerk_weight;
+    double over_v_weight;
+    double over_a_weight;
   } qp_param_;
 
 
@@ -121,8 +121,6 @@ private:
   /* non-const methods */
   void run();
   void updateCurrentPose();
-
-  /* const methods */
 
   void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                       const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest, const double ds, 
