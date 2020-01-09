@@ -232,7 +232,7 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
       getColor(input_msg->objects.at(i), marker.color);
       for (size_t j = 0; j < input_msg->objects.at(i).state.predicted_paths.size(); ++j)
       {
-        marker.color.a = std::max((double)std::min((double)input_msg->objects.at(i).state.predicted_paths.at(j).confidence, 1.0), 0.5);
+        marker.color.a = std::max((double)std::min((double)input_msg->objects.at(i).state.predicted_paths.at(j).confidence, 0.999), 0.5);
         marker.scale.x = line_width * marker.color.a;
         marker.points.clear();
         if (!calcPathLineList(input_msg->objects.at(i).state.predicted_paths.at(j), marker.points))

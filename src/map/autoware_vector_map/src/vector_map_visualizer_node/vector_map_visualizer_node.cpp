@@ -54,20 +54,20 @@ MarkerArray createAllMarkers(const std::unique_ptr<GpkgInterface>& gpkg_interfac
       "LaneArea");
 
   addMarkers<avm::Lane>(
-      gpkg_interface, &marker_array, createMarkerColor(0.0, 0.0, 0.0, 1.0),
+      gpkg_interface, &marker_array, createMarkerColor(0.0, 0.0, 0.0, 0.999),
       [](const auto& f, Marker* marker) { marker->scale = createMarkerScale(0.5, 0.0, 0.0); },
       "LaneCenterLine");
 
   addMarkers<avm::StopLine>(
-      gpkg_interface, &marker_array, createMarkerColor(1.0, 0.0, 0.0, 1.0),
+      gpkg_interface, &marker_array, createMarkerColor(1.0, 0.0, 0.0, 0.999),
       [](const auto& f, Marker* marker) { marker->scale = createMarkerScale(0.5, 0.0, 0.0); });
 
   addMarkers<avm::Crosswalk>(
-      gpkg_interface, &marker_array, createMarkerColor(0.0, 1.0, 0.0, 1.0),
+      gpkg_interface, &marker_array, createMarkerColor(0.0, 1.0, 0.0, 0.999),
       [](const auto& f, Marker* marker) { marker->scale = createMarkerScale(f.width, 0.0, 0.0); });
 
   addMarkers<avm::TrafficLight>(
-      gpkg_interface, &marker_array, createMarkerColor(1.0, 0.0, 1.0, 1.0),
+      gpkg_interface, &marker_array, createMarkerColor(1.0, 0.0, 1.0, 0.999),
       [](const auto& f, Marker* marker) { marker->scale = createMarkerScale(0.5, 0.0, 0.0); });
 
   return marker_array;
