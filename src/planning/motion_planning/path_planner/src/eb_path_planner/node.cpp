@@ -26,7 +26,7 @@ EBPathPlannerNode::EBPathPlannerNode()
     : nh_(),
       private_nh_("~")
 {
-  markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_planner_debug_markes", 1, true);
+  markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("eb_path_planner_marker", 1, true);
   path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/motion_planning/avoiding_path", 1, true);
   
   twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
@@ -262,13 +262,11 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     visualization_msgs::Marker text_marker;
     text_marker.lifetime = ros::Duration(1.0);
     text_marker.header = input_path_msg.header;
-    text_marker.ns = std::string("text_marker");
+    text_marker.ns = std::string("number_of_explored_points");
     text_marker.action = visualization_msgs::Marker::MODIFY;
     text_marker.pose.orientation.w = 1.0;
     text_marker.id = unique_id;
     text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-    text_marker.scale.x = 1.0f;
-    text_marker.scale.y = 0.1f;
     text_marker.scale.z = 1.0f;
     text_marker.color.r = 1.0f;
     text_marker.color.g = 1.0f;
