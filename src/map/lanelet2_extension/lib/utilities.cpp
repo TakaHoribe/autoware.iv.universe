@@ -228,5 +228,45 @@ lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGra
   return lanelets;
 }
 
+bool lineStringWithWidthToPolygon(const lanelet::ConstLineString3d& linestring, lanelet::ConstPolygon3d* polygon)
+{
+  if (polygon == nullptr)
+  {
+    ROS_ERROR_STREAM(__func__ << ": polygon is null pointer! Failed to convert to polygon.");
+    return false;
+  }
+  if (linestring.size() != 2)
+  {
+    ROS_ERROR_STREAM(__func__ << ": linestring" << linestring.id() << " must have 2 points! (" << linestring.size()
+                              << " != 2)" << std::endl
+                              << "Failed to convert to polygon.");
+    return false;
+  }
+  if (!linestring.hasAttribute("width"))
+  {
+    ROS_ERROR_STREAM(__func__ << ": linestring" << linestring.id()
+                              << " does not have width tag. Failed to convert to polygon.");
+    return false;
+  }
+
+  const Eigen::Vector3d direction = linestring.back().basicPoint() - linestring.front().basicPoint();
+  const double width = linestring.attributeOr("width", 0.0);
+  const Eigen::Vector3d direction_left = (Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ()) * direction).normalized();
+
+  const Eigen::Vector3d eigen_p1 = linestring.front().basicPoint() + direction_left * width / 2;
+  const Eigen::Vector3d eigen_p2 = linestring.back().basicPoint() + direction_left * width / 2;
+  const Eigen::Vector3d eigen_p3 = linestring.back().basicPoint() - direction_left * width / 2;
+  const Eigen::Vector3d eigen_p4 = linestring.front().basicPoint() - direction_left * width / 2;
+
+  const lanelet::Point3d p1(lanelet::InvalId, eigen_p1.x(), eigen_p1.y(), eigen_p1.z());
+  const lanelet::Point3d p2(lanelet::InvalId, eigen_p2.x(), eigen_p2.y(), eigen_p2.z());
+  const lanelet::Point3d p3(lanelet::InvalId, eigen_p3.x(), eigen_p3.y(), eigen_p3.z());
+  const lanelet::Point3d p4(lanelet::InvalId, eigen_p4.x(), eigen_p4.y(), eigen_p4.z());
+
+  *polygon = lanelet::Polygon3d(lanelet::InvalId, { p1, p2, p3, p4 });
+
+  return true;
+}
+
 }  // namespace utils
 }  // namespace lanelet

@@ -41,6 +41,8 @@ void overwriteLaneletsCenterline(lanelet::LaneletMapPtr lanelet_map, const bool 
 lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGraphConstPtr& graph,
                                               const lanelet::ConstLanelet& lanelet);
 
+bool lineStringWithWidthToPolygon(const lanelet::ConstLineString3d& linestring, lanelet::ConstPolygon3d* polygon);
+
 }  // namespace utils
 }  // namespace lanelet
 
