@@ -5,6 +5,7 @@
   <arg name="control_rate" default="30" doc="controller execution rate [Hz]" />
 
   <!-- enable flags -->
+  <arg name="show_debug_info" default="false" />
   <arg name="use_sudden_stop" default="true" />
   <arg name="use_smooth_stop" default="true" />
   <arg name="use_delay_compensation" default="true" />
@@ -12,7 +13,6 @@
   <arg name="use_acceleration_limit" default="true" />
   <arg name="use_jerk_limit" default="true" />
   <arg name="use_slope_compensation" default="false" />
-  <arg name="show_debug_info" default="false" />
   <arg name="use_pub_debug" default="true" />
 
   <!-- calculating dt -->

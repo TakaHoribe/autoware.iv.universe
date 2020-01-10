@@ -46,15 +46,14 @@ private:
   void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
   void callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
 
-  geometry_msgs::PoseWithCovarianceStamped getHeight(const geometry_msgs::PoseWithCovarianceStamped &initial_pose_msg_ptr);
-  geometry_msgs::PoseWithCovarianceStamped callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg);
+  bool getHeight(const geometry_msgs::PoseWithCovarianceStamped &input_pose_msg, const geometry_msgs::PoseWithCovarianceStamped::Ptr &output_pose_msg_ptr);
+  bool callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg, const geometry_msgs::PoseWithCovarianceStamped::Ptr &output_pose_msg_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
   ros::Subscriber initial_pose_sub_;
   ros::Subscriber gnss_pose_sub_;
-
   ros::Subscriber map_points_sub_;
 
   ros::Publisher initial_pose_pub_;

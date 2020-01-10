@@ -3,8 +3,8 @@
 
   <!-- Topics -->
   <arg name="input_sensor_points_topic" default="/sensor/lidar/main/pointcloud" doc="Sensor points topic"/>
-  <arg name="output_crop_vehicle_sensor_points_topic" default="crop_vehicle" doc="Sensor points topic"/>
-  <arg name="output_crop_far_sensor_points_topic" default="crop_vehicle_and_far" doc="Sensor points topic"/>
+  <arg name="output_crop_self_sensor_points_topic" default="crop_self" doc="Sensor points topic"/>
+  <arg name="output_crop_mesurement_range_sensor_points_topic" default="crop_self_and_mesurement_range" doc="Sensor points topic"/>
   <arg name="output_downsample_sensor_points_topic" default="downsample" doc="Sensor points topic"/>
 
   <!-- frame_ids -->
@@ -16,9 +16,9 @@
   </include>
 
   <!-- crop box filter -->
-  <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_vehicle" output="log">
+  <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_self" output="log">
       <remap from="~input" to="$(arg input_sensor_points_topic)" />
-      <remap from="~output" to="$(arg output_crop_vehicle_sensor_points_topic)" />
+      <remap from="~output" to="$(arg output_crop_self_sensor_points_topic)" />
       <rosparam>
         min_x: -1.0
         max_x: 5.0
@@ -32,9 +32,9 @@
       <param name="output_frame" value="$(arg base_frame)" />
   </node>
 
-  <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_far_points" output="log">
-      <remap from="~input" to="$(arg output_crop_vehicle_sensor_points_topic)" />
-      <remap from="~output" to="$(arg output_crop_far_sensor_points_topic)" />
+  <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_mesurement_range" output="log">
+      <remap from="~input" to="$(arg output_crop_self_sensor_points_topic)" />
+      <remap from="~output" to="$(arg output_crop_mesurement_range_sensor_points_topic)" />
       <rosparam>
         min_x: -60.0
         max_x: 60.0
@@ -51,7 +51,7 @@
 
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
   <node pkg="pointcloud_preprocessor" type="voxel_grid_downsample_filter_node" name="voxel_grid_filter" output="log">
-    <remap from="~input" to="$(arg output_crop_far_sensor_points_topic)" />
+    <remap from="~input" to="$(arg output_crop_mesurement_range_sensor_points_topic)" />
     <remap from="~output" to="$(arg output_downsample_sensor_points_topic)" />
     <rosparam>
       voxel_size_x: 3.0
