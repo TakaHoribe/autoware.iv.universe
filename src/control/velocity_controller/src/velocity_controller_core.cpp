@@ -283,8 +283,8 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   }
 
   // stop state
-  if (current_velocity < current_velocity_threshold_stop_state_ &&
-      target_velocity < target_velocity_threshold_stop_state_ && !is_smooth_stop_)
+  if (std::fabs(current_velocity) < current_velocity_threshold_stop_state_ &&
+      std::fabs(target_velocity) < target_velocity_threshold_stop_state_ && !is_smooth_stop_)
   {
     double cmd_acceleration = applyAccelerationLimitFilter(stop_state_acceleration_, max_acceleration_, min_acceleration_);
     cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
@@ -362,20 +362,21 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   // velocity feedback
   if (use_velocity_feedback_)
   {
-    if (shift == Shift::Reverse)
-    {
-      current_velocity = -current_velocity;
-      target_velocity = -target_velocity;
-      target_acceleration = -target_acceleration;
-    }
     DEBUG_INFO("[VC Velocity Feedback] current_vel = %f, target_vel = %f, target_acc = %f", current_velocity,
                target_velocity, target_acceleration);
-    const bool is_integrated = current_velocity < current_velocity_threshold_pid_integrate_ ? false : true;
+    // if (shift == Shift::Reverse)
+    // {
+    //   current_velocity = -current_velocity;
+    //   target_velocity = -target_velocity;
+    //   target_acceleration = -target_acceleration;
+    // }
+    const bool enable_integration = std::fabs(current_velocity) < current_velocity_threshold_pid_integrate_ ? false : true;
 
-    double cmd_acceleration = applyVelocityFeedback(target_acceleration, error_velocity, dt, is_integrated);
+    double cmd_acceleration = applyVelocityFeedback(target_acceleration, error_velocity, dt, enable_integration);
     cmd_acceleration = applySlopeCompensation(cmd_acceleration, pitch, shift);
     cmd_acceleration = applyAccelerationLimitFilter(cmd_acceleration, max_acceleration_, min_acceleration_);
     cmd_acceleration = applyJerkLimitFilter(cmd_acceleration, dt, max_jerk_, min_jerk_);
+
     DEBUG_INFO("[VC Velocity Feedback] after PID and filters cmd_acc = %f", cmd_acceleration);
     publishControlCommandStamped(target_velocity, cmd_acceleration);
     writeDebugValuesCmdAcceleration(cmd_acceleration, 1.0);
@@ -544,13 +545,13 @@ double VelocityController::applySlopeCompensation(const double acceleration, con
 }
 
 double VelocityController::applyVelocityFeedback(const double target_acceleration, const double error_velocity,
-                                                 const double dt, const bool is_integrated)
+                                                 const double dt, const bool enable_integration)
 {
   if (use_velocity_feedback_)
   {
     std::vector<double> pid_contributions(3);
     double feedbacked_acceleration =
-        target_acceleration + pid_velocity_.calculate(error_velocity, dt, is_integrated, pid_contributions);
+        target_acceleration + pid_velocity_.calculate(error_velocity, dt, enable_integration, pid_contributions);
 
     debug_values_.data.at(8) = feedbacked_acceleration;
     debug_values_.data.at(18) = pid_contributions.at(0);
