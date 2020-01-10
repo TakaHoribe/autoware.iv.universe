@@ -159,6 +159,11 @@ visualization_msgs::MarkerArray
 detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionAreaConstPtr>& da_reg_elems,
                             const std_msgs::ColorRGBA c, const ros::Duration duration = ros::Duration());
 
+visualization_msgs::MarkerArray parkingLotsAsMarkerArray(const lanelet::ConstPolygons3d& parking_lots,
+                                                         const std_msgs::ColorRGBA& c);
+visualization_msgs::MarkerArray parkingSpacesAsMarkerArray(const lanelet::ConstLineStrings3d& parking_spaces,
+                                                           const std_msgs::ColorRGBA& c);
+
 }  // namespace visualization
 }  // namespace lanelet
 
