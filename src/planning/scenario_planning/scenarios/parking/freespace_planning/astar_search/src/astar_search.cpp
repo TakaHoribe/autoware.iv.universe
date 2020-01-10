@@ -263,14 +263,9 @@ bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
 
   // Calculate wavefront heuristic cost
   if (use_wavefront_heuristic_) {
-    // auto start = std::chrono::system_clock::now();
     bool wavefront_result = calcWaveFrontHeuristic(goal_sn);
-    // auto end = std::chrono::system_clock::now();
-    // auto usec = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    // std::cout << "wavefront : " << usec / 1000.0 << "[msec]" << std::endl;
 
     if (!wavefront_result) {
-      // ROS_WARN("Reachable is false...");
       return false;
     }
   }
@@ -340,7 +335,6 @@ bool AstarSearch::search() {
 
     // Goal check
     if (isGoal(current_an->x, current_an->y, current_an->theta)) {
-      // ROS_INFO("Search time: %lf [msec]", (now - begin).toSec() * 1000.0);
       setPath(top_sn);
       return true;
     }
@@ -430,7 +424,6 @@ bool AstarSearch::search() {
   }
 
   // Failed to find path
-  // ROS_INFO("Open list is empty...");
   return false;
 }
 
@@ -438,7 +431,12 @@ void AstarSearch::setPath(const SimpleNode& goal) {
   std_msgs::Header header;
   header.stamp = ros::Time::now();
   header.frame_id = costmap_.header.frame_id;
+
   path_.header = header;
+  path_.poses.clear();
+
+  waypoints_.header = header;
+  waypoints_.waypoints.clear();
 
   // From the goal node to the start node
   AstarNode* node = &nodes_[goal.index_y][goal.index_x][goal.index_theta];
@@ -456,6 +454,11 @@ void AstarSearch::setPath(const SimpleNode& goal) {
     tf2::convert(quat, pose.pose.orientation);
 
     path_.poses.push_back(pose);
+    // Set AstarWaypoints
+    AstarWaypoint aw;
+    aw.pose = pose;
+    aw.back = node->back;
+    waypoints_.waypoints.push_back(aw);
 
     // To the next node
     node = node->parent;
@@ -463,6 +466,12 @@ void AstarSearch::setPath(const SimpleNode& goal) {
 
   // Reverse the vector to be start to goal order
   std::reverse(path_.poses.begin(), path_.poses.end());
+  std::reverse(waypoints_.waypoints.begin(), waypoints_.waypoints.end());
+
+  // Update first point direction
+  if (waypoints_.waypoints.size() > 1) {
+    waypoints_.waypoints.at(0).back = waypoints_.waypoints.at(1).back;
+  }
 }
 
 // Check if the next state is the goal
@@ -654,8 +663,4 @@ void AstarSearch::reset() {
       }
     }
   }
-
-  // ros::WallTime end = ros::WallTime::now();
-
-  // ROS_INFO("Reset time: %lf [ms]", (end - begin).toSec() * 1000);
 }

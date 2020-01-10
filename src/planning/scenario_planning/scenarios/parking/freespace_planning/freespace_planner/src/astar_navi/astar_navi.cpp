@@ -120,7 +120,7 @@ void AstarNavi::run() {
 
   if (result) {
     ROS_INFO("Found GOAL!");
-    publishTrajectory(astar_.getPath(), waypoints_velocity_);
+    publishTrajectory(astar_.getWaypoints(), waypoints_velocity_);
   } else {
     ROS_INFO("Can't find goal...");
     publishStopTrajectory();
@@ -129,22 +129,25 @@ void AstarNavi::run() {
   astar_.reset();
 }
 
-void AstarNavi::publishTrajectory(const nav_msgs::Path& path, const double& velocity) {
+void AstarNavi::publishTrajectory(const AstarWaypoints& astar_waypoints, const double& velocity) {
   autoware_planning_msgs::Trajectory trajectory;
   trajectory.header.frame_id = "map";
-  trajectory.header.stamp = path.header.stamp;
+  trajectory.header.stamp = astar_waypoints.header.stamp;
 
-  for (const auto& pose : path.poses) {
+  for (const auto& awp : astar_waypoints.waypoints) {
     autoware_planning_msgs::TrajectoryPoint point;
 
-    point.pose =
-        transformPose(pose.pose, getTransform(trajectory.header.frame_id, pose.header.frame_id));
+    point.pose = transformPose(awp.pose.pose,
+                               getTransform(trajectory.header.frame_id, awp.pose.header.frame_id));
 
     point.accel = {};
     point.twist = {};
 
     point.pose.position.z = current_pose_global_.pose.position.z;  // height = const
     point.twist.linear.x = velocity / 3.6;                         // velocity = const
+
+    // switch sign by forward/backward
+    point.twist.linear.x = (awp.back ? -1 : 1) * point.twist.linear.x;
 
     trajectory.points.push_back(point);
   }
@@ -163,11 +166,15 @@ void AstarNavi::publishTrajectory(const nav_msgs::Path& path, const double& velo
 }
 
 void AstarNavi::publishStopTrajectory() {
-  nav_msgs::Path path;
-  geometry_msgs::PoseStamped pose;  // stop path
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = current_pose_global_.header.frame_id;
-  pose.pose = current_pose_global_.pose;
-  path.poses.push_back(pose);
-  publishTrajectory(path, 0.0);
+  AstarWaypoints waypoints;
+  AstarWaypoint waypoint;
+
+  waypoints.header.stamp = ros::Time::now();
+  waypoints.header.frame_id = current_pose_global_.header.frame_id;
+  waypoint.pose.header = waypoints.header;
+  waypoint.pose.pose = current_pose_global_.pose;
+  waypoint.back = false;
+  waypoints.waypoints.push_back(waypoint);
+
+  publishTrajectory(waypoints, 0.0);
 }

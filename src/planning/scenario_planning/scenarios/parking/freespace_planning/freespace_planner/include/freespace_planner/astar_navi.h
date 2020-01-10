@@ -81,7 +81,7 @@ class AstarNavi {
 
   // fucntions
   geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
-  void publishTrajectory(const nav_msgs::Path& path, const double& velocity);
+  void publishTrajectory(const AstarWaypoints& astar_waypoints, const double& velocity);
   void publishStopTrajectory();
   void run();
 };

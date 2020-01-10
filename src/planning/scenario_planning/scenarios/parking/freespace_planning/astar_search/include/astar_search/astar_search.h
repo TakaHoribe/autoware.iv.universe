@@ -42,6 +42,7 @@ class AstarSearch {
   void reset();
 
   const nav_msgs::Path& getPath() const { return path_; }
+  const AstarWaypoints& getWaypoints() const { return waypoints_; }
 
  private:
   void createStateUpdateTable();
@@ -103,6 +104,7 @@ class AstarSearch {
 
   // result path
   nav_msgs::Path path_;
+  AstarWaypoints waypoints_;
 };
 
 #endif

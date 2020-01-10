@@ -17,9 +17,14 @@
 #ifndef ASTAR_UTIL_H
 #define ASTAR_UTIL_H
 
+#include <vector>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+
+#include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Header.h>
 
 enum class STATUS : uint8_t { NONE, OPEN, CLOSED, OBS };
 
@@ -31,6 +36,16 @@ struct AstarNode {
   double move_distance = 0;      // actual move distance
   bool back;                     // true if the current direction of the vehicle is back
   AstarNode* parent = NULL;      // parent node
+};
+
+struct AstarWaypoint {
+  geometry_msgs::PoseStamped pose;
+  bool back = false;
+};
+
+struct AstarWaypoints {
+  std_msgs::Header header;
+  std::vector<AstarWaypoint> waypoints;
 };
 
 struct WaveFrontNode {
