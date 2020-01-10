@@ -64,6 +64,8 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
   std::vector<lanelet::AutowareTrafficLightConstPtr> aw_tl_reg_elems =
       lanelet::utils::query::autowareTrafficLights(all_lanelets);
   std::vector<lanelet::DetectionAreaConstPtr> da_reg_elems = lanelet::utils::query::detectionAreas(all_lanelets);
+  lanelet::ConstLineStrings3d parking_spaces = lanelet::utils::query::parkingSpaces(viz_lanelet_map);
+  lanelet::ConstPolygons3d parking_lots = lanelet::utils::query::parkingLots(viz_lanelet_map);
 
   std_msgs::ColorRGBA cl_road, cl_cross, cl_ll_borders, cl_stoplines, cl_trafficlights, cl_detection_areas;
   setColor(&cl_road, 0.2, 0.7, 0.7, 0.3);
@@ -88,6 +90,7 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
                                            aw_tl_reg_elems, cl_trafficlights));
   insertMarkerArray(&map_marker_array, lanelet::visualization::detectionAreasAsMarkerArray(
                                           da_reg_elems, cl_detection_areas));
+
   g_map_pub.publish(map_marker_array);
 }
 

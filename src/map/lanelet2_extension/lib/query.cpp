@@ -180,6 +180,32 @@ std::vector<lanelet::DetectionAreaConstPtr> query::detectionAreas(const lanelet:
   return da_reg_elems;
 }
 
+lanelet::ConstPolygons3d query::parkingLots(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+{
+  lanelet::ConstPolygons3d parking_lots;
+  for (const auto& poly : lanelet_map_ptr->polygonLayer)
+  {
+    if (poly.attributeOr(lanelet::AttributeName::Type, "none") == "parking_lot")
+    {
+      parking_lots.push_back(poly);
+    }
+  }
+  return parking_lots;
+}
+
+lanelet::ConstLineStrings3d query::parkingSpaces(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+{
+  lanelet::ConstLineStrings3d parking_spaces;
+  for (const auto& ls : lanelet_map_ptr->lineStringLayer)
+  {
+    if (ls.attributeOr(lanelet::AttributeName::Type, "none") == "parking_space")
+    {
+      parking_spaces.push_back(ls);
+    }
+  }
+  return parking_spaces;
+}
+
 // return all stop lines and ref lines from a given set of lanelets
 std::vector<lanelet::ConstLineString3d> query::stopLinesLanelets(const lanelet::ConstLanelets lanelets)
 {
