@@ -93,7 +93,7 @@ private:
 
   void updateTransforms();
 
-  void publishTF(const std::string &frame_id, const std::string &child_frame_id, const geometry_msgs::Pose &pose_msg);
+  void publishTF(const std::string &frame_id, const std::string &child_frame_id, const geometry_msgs::PoseStamped &pose_msg);
   bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr, const ros::Time &time_stamp);
   bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
 
@@ -130,11 +130,11 @@ private:
 
   Eigen::Matrix4f base_to_sensor_matrix_;
   std::string base_frame_;
+  std::string ndt_base_frame_;
   std::string map_frame_;
   double converged_param_transform_probability_;
 
   std::deque<boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped>> initial_pose_msg_ptr_array_;
-  ros::Time current_scan_time_;
   std::mutex ndt_map_mtx_;
 
   OMPParams omp_params_;
