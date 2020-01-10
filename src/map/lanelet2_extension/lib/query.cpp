@@ -185,7 +185,8 @@ lanelet::ConstPolygons3d query::parkingLots(const lanelet::LaneletMapConstPtr& l
   lanelet::ConstPolygons3d parking_lots;
   for (const auto& poly : lanelet_map_ptr->polygonLayer)
   {
-    if (poly.attributeOr(lanelet::AttributeName::Type, "none") == "parking_lot")
+    const std::string type = poly.attributeOr(lanelet::AttributeName::Type, "none");
+    if (type.compare("parking_lot") == 0)
     {
       parking_lots.push_back(poly);
     }
@@ -198,7 +199,8 @@ lanelet::ConstLineStrings3d query::parkingSpaces(const lanelet::LaneletMapConstP
   lanelet::ConstLineStrings3d parking_spaces;
   for (const auto& ls : lanelet_map_ptr->lineStringLayer)
   {
-    if (ls.attributeOr(lanelet::AttributeName::Type, "none") == "parking_space")
+    const std::string type = ls.attributeOr(lanelet::AttributeName::Type, "none");
+    if (type.compare("parking_space") == 0)
     {
       parking_spaces.push_back(ls);
     }
