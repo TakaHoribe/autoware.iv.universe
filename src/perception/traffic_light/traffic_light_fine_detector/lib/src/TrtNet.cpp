@@ -72,7 +72,6 @@ trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float
   IHostMemory* trtModelStream{ nullptr };
 
   const int maxBatchSize = 1;
-  nvonnxparser::IPluginFactory* onnxPlugin = createPluginFactory(gLogger);
 
   Int8EntropyCalibrator* calibrator = nullptr;
   if (calibratorData.size() > 0)
@@ -97,7 +96,7 @@ trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float
 
   mTrtRunTime = createInferRuntime(gLogger);
   assert(mTrtRunTime != nullptr);
-  mTrtEngine = mTrtRunTime->deserializeCudaEngine(trtModelStream->data(), trtModelStream->size(), onnxPlugin);
+  mTrtEngine = mTrtRunTime->deserializeCudaEngine(trtModelStream->data(), trtModelStream->size());
   assert(mTrtEngine != nullptr);
   // Deserialize the engine.
   trtModelStream->destroy();
@@ -115,7 +114,6 @@ trtNet::trtNet(const std::string& engineFile)
 {
   using namespace std;
   fstream file;
-  nvonnxparser::IPluginFactory* onnxPlugin = createPluginFactory(gLogger);
   file.open(engineFile, ios::binary | ios::in);
   if (!file.is_open())
   {
@@ -133,7 +131,7 @@ trtNet::trtNet(const std::string& engineFile)
   // std::cout << "*** deserializing" << std::endl;
   mTrtRunTime = createInferRuntime(gLogger);
   assert(mTrtRunTime != nullptr);
-  mTrtEngine = mTrtRunTime->deserializeCudaEngine(data.get(), length, onnxPlugin);
+  mTrtEngine = mTrtRunTime->deserializeCudaEngine(data.get(), length);
   assert(mTrtEngine != nullptr);
 
   InitEngine();
@@ -173,7 +171,8 @@ nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* onnxFile, in
   IBuilder* builder = createInferBuilder(gLogger);
 
   // Parse the model to populate the network, then set the outputs.
-  INetworkDefinition* network = builder->createNetwork();
+  const auto explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+  INetworkDefinition* network = builder->createNetworkV2(explicitBatch);
   auto parser = nvonnxparser::createParser(*network, gLogger);
 
   std::cout << "Begin parsing model..." << std::endl;
