@@ -64,8 +64,8 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
   std::vector<lanelet::AutowareTrafficLightConstPtr> aw_tl_reg_elems =
       lanelet::utils::query::autowareTrafficLights(all_lanelets);
   std::vector<lanelet::DetectionAreaConstPtr> da_reg_elems = lanelet::utils::query::detectionAreas(all_lanelets);
-  lanelet::ConstLineStrings3d parking_spaces = lanelet::utils::query::parkingSpaces(viz_lanelet_map);
-  lanelet::ConstPolygons3d parking_lots = lanelet::utils::query::parkingLots(viz_lanelet_map);
+  lanelet::ConstLineStrings3d parking_spaces = lanelet::utils::query::getAllParkingSpaces(viz_lanelet_map);
+  lanelet::ConstPolygons3d parking_lots = lanelet::utils::query::getAllParkingLots(viz_lanelet_map);
 
   std_msgs::ColorRGBA cl_road, cl_cross, cl_ll_borders, cl_stoplines, cl_trafficlights, cl_detection_areas,
       cl_parking_lots, cl_parking_spaces;

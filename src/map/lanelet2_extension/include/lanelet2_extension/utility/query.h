@@ -49,7 +49,7 @@ namespace query
  * @param  ll_Map [input lanelet map]
  * @return        [all lanelets in the map]
  */
-lanelet::ConstLanelets laneletLayer(const lanelet::LaneletMapPtr ll_Map);
+lanelet::ConstLanelets laneletLayer(const lanelet::LaneletMapConstPtr& ll_Map);
 
 /**
  * [subtypeLanelets extracts Lanelet that has given subtype attribute]
@@ -97,11 +97,41 @@ std::vector<lanelet::AutowareTrafficLightConstPtr> autowareTrafficLights(const l
  */
 std::vector<lanelet::DetectionAreaConstPtr> detectionAreas(const lanelet::ConstLanelets& lanelets);
 
-// queries all parking lots in lanelet2 map
-lanelet::ConstPolygons3d parkingLots(const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
+// query all parking lots in lanelet2 map
+lanelet::ConstPolygons3d getAllParkingLots(const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
 
-// queries all parking spaces in lanelet2 map
-lanelet::ConstLineStrings3d parkingSpaces(const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
+// query all parking spaces in lanelet2 map
+lanelet::ConstLineStrings3d getAllParkingSpaces(const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
+
+// query linked parking spaces from lanelet
+lanelet::ConstLineStrings3d getLinkedParkingSpaces(const lanelet::ConstLanelet& lanelet,
+                                                   const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
+lanelet::ConstLineStrings3d getLinkedParkingSpaces(const lanelet::ConstLanelet& lanelet,
+                                                   const lanelet::ConstLineStrings3d& all_parking_spaces,
+                                                   const lanelet::ConstPolygons3d& all_parking_lots);
+// query linked lanelets from parking space
+bool getLinkedLanelet(const lanelet::ConstLineString3d& parking_space, const lanelet::ConstLanelets& all_road_lanelets,
+                      const lanelet::ConstPolygons3d& all_parking_lots, lanelet::ConstLanelet* linked_lanelet);
+bool getLinkedLanelet(const lanelet::ConstLineString3d& parking_space,
+                      const lanelet::LaneletMapConstPtr& lanelet_map_ptr, lanelet::ConstLanelet* linked_lanelet);
+lanelet::ConstLanelets getLinkedLanelets(const lanelet::ConstLineString3d& parking_space,
+                                         const lanelet::ConstLanelets& all_road_lanelets,
+                                         const lanelet::ConstPolygons3d& all_parking_lots);
+lanelet::ConstLanelets getLinkedLanelets(const lanelet::ConstLineString3d& parking_space,
+                                         const lanelet::LaneletMapConstPtr& lanelet_map_ptr);
+
+// get linked parking lot from lanelet
+bool getLinkedParkingLot(const lanelet::ConstLanelet& lanelet, const lanelet::ConstPolygons3d& all_parking_lots,
+                         lanelet::ConstPolygon3d* linked_parking_lot);
+bool getLinkedParkingLot(const lanelet::ConstLineString3d& parking_space,
+                         const lanelet::ConstPolygons3d& all_parking_lots, lanelet::ConstPolygon3d* linked_parking_lot);
+
+// query linked parking space from parking lot
+lanelet::ConstLineStrings3d getLinkedParkingSpaces(const lanelet::ConstPolygon3d& parking_lot,
+                                                   const lanelet::ConstLineStrings3d& all_parking_spaces);
+// query linked lanelets from parking lot
+lanelet::ConstLanelets getLinkedLanelets(const lanelet::ConstPolygon3d& parking_lot,
+                                         const lanelet::ConstLanelets& all_road_lanelets);
 
 /**
  * [stopLinesLanelets extracts stoplines that are associated to lanelets]

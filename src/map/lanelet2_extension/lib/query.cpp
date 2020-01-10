@@ -30,13 +30,15 @@
 #include <string>
 #include <vector>
 
+using lanelet::utils::to2D;
+
 namespace lanelet
 {
 namespace utils
 {
 // returns all lanelets in laneletLayer - don't know how to convert
 // PrimitveLayer<Lanelets> -> std::vector<Lanelets>
-lanelet::ConstLanelets query::laneletLayer(const lanelet::LaneletMapPtr ll_map)
+lanelet::ConstLanelets query::laneletLayer(const lanelet::LaneletMapConstPtr& ll_map)
 {
   lanelet::ConstLanelets lanelets;
   if (!ll_map)
@@ -180,7 +182,7 @@ std::vector<lanelet::DetectionAreaConstPtr> query::detectionAreas(const lanelet:
   return da_reg_elems;
 }
 
-lanelet::ConstPolygons3d query::parkingLots(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+lanelet::ConstPolygons3d query::getAllParkingLots(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
 {
   lanelet::ConstPolygons3d parking_lots;
   for (const auto& poly : lanelet_map_ptr->polygonLayer)
@@ -194,7 +196,7 @@ lanelet::ConstPolygons3d query::parkingLots(const lanelet::LaneletMapConstPtr& l
   return parking_lots;
 }
 
-lanelet::ConstLineStrings3d query::parkingSpaces(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+lanelet::ConstLineStrings3d query::getAllParkingSpaces(const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
 {
   lanelet::ConstLineStrings3d parking_spaces;
   for (const auto& ls : lanelet_map_ptr->lineStringLayer)
@@ -206,6 +208,215 @@ lanelet::ConstLineStrings3d query::parkingSpaces(const lanelet::LaneletMapConstP
     }
   }
   return parking_spaces;
+}
+
+bool query::getLinkedLanelet(const lanelet::ConstLineString3d& parking_space,
+                             const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
+                             lanelet::ConstLanelet* linked_lanelet)
+{
+  const auto& all_lanelets = query::laneletLayer(lanelet_map_ptr);
+  const auto& all_road_lanelets = query::roadLanelets(all_lanelets);
+  const auto& all_parking_lots = query::getAllParkingLots(lanelet_map_ptr);
+  return query::getLinkedLanelet(parking_space, all_road_lanelets, all_parking_lots, linked_lanelet);
+}
+
+bool query::getLinkedLanelet(const lanelet::ConstLineString3d& parking_space,
+                             const lanelet::ConstLanelets& all_road_lanelets,
+                             const lanelet::ConstPolygons3d& all_parking_lots, lanelet::ConstLanelet* linked_lanelet)
+{
+  const auto& linked_lanelets = getLinkedLanelets(parking_space, all_road_lanelets, all_parking_lots);
+  if (linked_lanelets.empty())
+  {
+    return false;
+  }
+
+  double min_distance = std::numeric_limits<double>::max();
+  for (const auto& lanelet : linked_lanelets)
+  {
+    const double distance =
+        boost::geometry::distance(to2D(parking_space).basicLineString(), lanelet.polygon2d().basicPolygon());
+    if (distance < min_distance)
+    {
+      *linked_lanelet = lanelet;
+      min_distance = distance;
+    }
+  }
+  return true;
+}
+
+lanelet::ConstLanelets query::getLinkedLanelets(const lanelet::ConstLineString3d& parking_space,
+                                                const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+{
+  const auto& all_lanelets = query::laneletLayer(lanelet_map_ptr);
+  const auto& all_road_lanelets = query::roadLanelets(all_lanelets);
+  const auto& all_parking_lots = query::getAllParkingLots(lanelet_map_ptr);
+
+  return query::getLinkedLanelets(parking_space, all_road_lanelets, all_parking_lots);
+}
+
+lanelet::ConstLanelets query::getLinkedLanelets(const lanelet::ConstLineString3d& parking_space,
+                                                const lanelet::ConstLanelets& all_road_lanelets,
+                                                const lanelet::ConstPolygons3d& all_parking_lots)
+{
+  lanelet::ConstLanelets linked_lanelets;
+
+  // get lanelets within same parking lot
+  lanelet::ConstPolygon3d linked_parking_lot;
+  if (!getLinkedParkingLot(parking_space, all_parking_lots, &linked_parking_lot))
+  {
+    return linked_lanelets;
+  }
+  const auto& candidate_lanelets = getLinkedLanelets(linked_parking_lot, all_road_lanelets);
+
+  // get lanelets that are close to parking space and facing to parking space
+  for (const auto& lanelet : candidate_lanelets)
+  {
+    // check if parking space is close to lanelet
+    const double distance =
+        boost::geometry::distance(to2D(parking_space).basicLineString(), lanelet.polygon2d().basicPolygon());
+    constexpr double distance_thresh = 5.0;
+    if (distance > distance_thresh)
+    {
+      continue;
+    }
+
+    // check if parking space is facing lanelet
+    const Eigen::Vector3d direction = parking_space.back().basicPoint() - parking_space.front().basicPoint();
+    const Eigen::Vector3d new_pt = parking_space.front().basicPoint() - direction * distance_thresh;
+
+    const lanelet::Point3d check_line_p1(lanelet::InvalId, new_pt.x(), new_pt.y(), new_pt.z());
+    const lanelet::Point3d check_line_p2(lanelet::InvalId, parking_space.back().basicPoint());
+    const lanelet::LineString3d check_line(lanelet::InvalId, { check_line_p1, check_line_p2 });
+
+    const double new_distance =
+        boost::geometry::distance(to2D(check_line).basicLineString(), lanelet.polygon2d().basicPolygon());
+    if (new_distance < std::numeric_limits<double>::epsilon())
+    {
+      linked_lanelets.push_back(lanelet);
+    }
+  }
+
+  return linked_lanelets;
+}
+
+// get overlapping lanelets
+lanelet::ConstLanelets query::getLinkedLanelets(const lanelet::ConstPolygon3d& parking_lot,
+                                                const lanelet::ConstLanelets& all_road_lanelets)
+{
+  lanelet::ConstLanelets linked_lanelets;
+  for (const auto& lanelet : all_road_lanelets)
+  {
+    const double distance =
+        boost::geometry::distance(lanelet.polygon2d().basicPolygon(), to2D(parking_lot).basicPolygon());
+    if (distance < std::numeric_limits<double>::epsilon())
+    {
+      linked_lanelets.push_back(lanelet);
+    }
+  }
+  return linked_lanelets;
+}
+
+lanelet::ConstLineStrings3d query::getLinkedParkingSpaces(const lanelet::ConstLanelet& lanelet,
+                                                          const lanelet::LaneletMapConstPtr& lanelet_map_ptr)
+{
+  const auto& all_parking_spaces = query::getAllParkingSpaces(lanelet_map_ptr);
+  const auto& all_parking_lots = query::getAllParkingLots(lanelet_map_ptr);
+  return getLinkedParkingSpaces(lanelet, all_parking_spaces, all_parking_lots);
+}
+
+lanelet::ConstLineStrings3d query::getLinkedParkingSpaces(const lanelet::ConstLanelet& lanelet,
+                                                          const lanelet::ConstLineStrings3d& all_parking_spaces,
+                                                          const lanelet::ConstPolygons3d& all_parking_lots)
+{
+  lanelet::ConstLineStrings3d linked_parking_spaces;
+
+  // get parking spaces that are in same parking lot.
+  lanelet::ConstPolygon3d linked_parking_lot;
+  if (!getLinkedParkingLot(lanelet, all_parking_lots, &linked_parking_lot))
+  {
+    return linked_parking_spaces;
+  }
+  const auto& possible_parking_spaces = getLinkedParkingSpaces(linked_parking_lot, all_parking_spaces);
+
+  // check for parking spaces that are within 5m and facing towards lanelet
+  for (const auto& parking_space : possible_parking_spaces)
+  {
+    // check if parking space is close to lanelet
+    const double distance =
+        boost::geometry::distance(to2D(parking_space).basicLineString(), lanelet.polygon2d().basicPolygon());
+    constexpr double distance_thresh = 5.0;
+    if (distance > distance_thresh)
+    {
+      continue;
+    }
+
+    // check if parking space is facing lanelet
+    const Eigen::Vector3d direction = parking_space.back().basicPoint() - parking_space.front().basicPoint();
+    const Eigen::Vector3d new_pt = parking_space.front().basicPoint() - direction * distance_thresh;
+
+    const lanelet::Point3d check_line_p1(lanelet::InvalId, new_pt.x(), new_pt.y(), new_pt.z());
+    const lanelet::Point3d check_line_p2(lanelet::InvalId, parking_space.back().basicPoint());
+    const lanelet::LineString3d check_line(lanelet::InvalId, { check_line_p1, check_line_p2 });
+
+    const double new_distance =
+        boost::geometry::distance(to2D(check_line).basicLineString(), lanelet.polygon2d().basicPolygon());
+    if (new_distance < std::numeric_limits<double>::epsilon())
+    {
+      linked_parking_spaces.push_back(parking_space);
+    }
+  }
+  return linked_parking_spaces;
+}
+
+// get overlapping parking lot
+bool query::getLinkedParkingLot(const lanelet::ConstLanelet& lanelet, const lanelet::ConstPolygons3d& all_parking_lots,
+                                lanelet::ConstPolygon3d* linked_parking_lot)
+{
+  for (const auto& parking_lot : all_parking_lots)
+  {
+    const double distance =
+        boost::geometry::distance(lanelet.polygon2d().basicPolygon(), to2D(parking_lot).basicPolygon());
+    if (distance < std::numeric_limits<double>::epsilon())
+    {
+      *linked_parking_lot = parking_lot;
+      return true;
+    }
+  }
+  return false;
+}
+
+// get overlapping parking lot
+bool query::getLinkedParkingLot(const lanelet::ConstLineString3d& parking_space,
+                                const lanelet::ConstPolygons3d& all_parking_lots,
+                                lanelet::ConstPolygon3d* linked_parking_lot)
+{
+  for (const auto& parking_lot : all_parking_lots)
+  {
+    const double distance =
+        boost::geometry::distance(to2D(parking_space).basicLineString(), to2D(parking_lot).basicPolygon());
+    if (distance < std::numeric_limits<double>::epsilon())
+    {
+      *linked_parking_lot = parking_lot;
+      return true;
+    }
+  }
+  return false;
+}
+
+lanelet::ConstLineStrings3d query::getLinkedParkingSpaces(const lanelet::ConstPolygon3d& parking_lot,
+                                                          const lanelet::ConstLineStrings3d& all_parking_spaces)
+{
+  lanelet::ConstLineStrings3d linked_parking_spaces;
+  for (const auto& parking_space : all_parking_spaces)
+  {
+    const double distance =
+        boost::geometry::distance(to2D(parking_space).basicLineString(), to2D(parking_lot).basicPolygon());
+    if (distance < std::numeric_limits<double>::epsilon())
+    {
+      linked_parking_spaces.push_back(parking_space);
+    }
+  }
+  return linked_parking_spaces;
 }
 
 // return all stop lines and ref lines from a given set of lanelets
