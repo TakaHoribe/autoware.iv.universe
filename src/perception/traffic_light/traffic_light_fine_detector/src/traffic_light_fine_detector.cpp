@@ -12,6 +12,7 @@ TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~")
   std::ifstream fs(engine_path);
   if (fs.is_open())
   {
+    ROS_INFO("Found %s", engine_path.c_str());
     net_ptr_.reset(new Tn::trtNet(engine_path));
   }
   else
