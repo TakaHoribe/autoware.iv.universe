@@ -1,8 +1,0 @@
-<launch>
-  <include file="$(find new_trafficlight_recognizer)/launch/feat_proj.launch" />
-  <include file="$(find new_trafficlight_recognizer)/launch/feat_proj_bbox.launch" />
-  <include file="$(find new_trafficlight_recognizer)/launch/tlr_detector.launch" />
-  <include file="$(find new_trafficlight_recognizer)/launch/tlr_kcf_tracker.launch" />
-  <include file="$(find new_trafficlight_recognizer)/launch/tlr_classifier.launch" />
-  <include file="$(find new_trafficlight_recognizer)/launch/tlr_visualizer.launch" />
-</launch>
