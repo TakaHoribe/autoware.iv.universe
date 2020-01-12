@@ -25,8 +25,18 @@ State FollowingLaneState::getCurrentState() const
 {
   return State::FOLLOWING_LANE;
 }
+
 void FollowingLaneState::entry()
 {
+  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_))
+  {
+    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
+  }
+}
+
+autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const
+{
+  return status_.lane_follow_path;
 }
 
 void FollowingLaneState::update()
@@ -49,13 +59,18 @@ void FollowingLaneState::update()
 
   // update path
   {
-    double backward_path_length = 5;
-    double forward_path_length = 100;
-    path_ = RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
+    const double backward_path_length = ros_parameters_.backward_path_length;
+    const double forward_path_length = ros_parameters_.forward_path_length;
+    status_.lane_follow_path =
+        RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
 
     if (!RouteHandler::getInstance().isInPreferredLane(current_pose_) && current_twist_ != nullptr)
     {
-      lane_change_path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
+      const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+      const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+      status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+          current_pose_.pose, current_twist_->twist, backward_path_length, forward_path_length,
+          lane_change_prepare_duration, lane_changing_duration);
     }
   }
 }
@@ -100,21 +115,24 @@ bool FollowingLaneState::isLaneChangeable() const
   }
   auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanelets);
 
-  const double min_thresh = 5;
-  const double stop_time = 2.0;
-  const double buffer = 2;
-  const double time_resolution = 0.5;
+  const double min_thresh = ros_parameters_.min_stop_distance;
+  const double stop_time = ros_parameters_.stop_time;
+  const double buffer = ros_parameters_.hysteresis_buffer_distance;
+  const double time_resolution = ros_parameters_.prediction_time_resolution;
+  const double prediction_duration = ros_parameters_.prediction_duration;
+
   const auto& vehicle_predicted_path =
-      util::convertToPredictedPath(lane_change_path_, current_twist_->twist, current_pose_.pose);
+      util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
 
   for (const auto& i : object_indices)
   {
     const auto& obj = dynamic_objects_->objects.at(i);
     for (const auto& obj_path : obj.state.predicted_paths)
     {
-      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, time_resolution, 2.5);
+      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, time_resolution,
+                                                               prediction_duration);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
-      thresh = (thresh > min_thresh) ? thresh : min_thresh;
+      thresh = std::max(thresh, min_thresh);
       thresh += buffer;
       if (distance < thresh)
       {

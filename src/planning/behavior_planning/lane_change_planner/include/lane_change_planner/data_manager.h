@@ -30,6 +30,7 @@
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <lane_change_planner/lane_changer.h>
+#include <lane_change_planner/parameters.h>
 
 // lanelet
 #include <lanelet2_core/LaneletMap.h>
@@ -80,6 +81,10 @@ private:
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
 
+  // ROS parameters
+  LaneChangerParameters parameters_;
+  bool is_parameter_set_;
+
   /*
    * SelfPoseLinstener
    */
@@ -88,6 +93,7 @@ private:
   void pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg);
   void velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
+  void setLaneChangerParameters(const LaneChangerParameters& parameters);
 
   friend class LaneChanger;
 
@@ -98,6 +104,7 @@ public:
   bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const>& twist);
   bool getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                      lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr);
+  bool getLaneChangerParameters(LaneChangerParameters& parameters);
 };
 }  // namespace lane_change_planner
 

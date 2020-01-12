@@ -19,7 +19,7 @@
 
 namespace lane_change_planner
 {
-SingletonDataManager::SingletonDataManager()
+SingletonDataManager::SingletonDataManager() : is_parameter_set_(false)
 {
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
@@ -44,6 +44,13 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& inp
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
   lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
+
+void SingletonDataManager::setLaneChangerParameters(const LaneChangerParameters& parameters)
+{
+  is_parameter_set_ = true;
+  parameters_ = parameters;
+}
+
 
 bool SingletonDataManager::getDynamicObjects(
     std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects)
@@ -113,4 +120,15 @@ bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose& self_pose, const std_ms
     return false;
   }
 }
-}  // namespace behavior_planning
+
+bool SingletonDataManager::getLaneChangerParameters(LaneChangerParameters& parameters)
+{
+  if (!is_parameter_set_)
+  {
+    return false;
+  }
+  parameters = parameters_;
+  return true;
+}
+
+}  // namespace lane_change_planner
