@@ -10,8 +10,9 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
+        - /Vehicle1/VelocityHistory1/Constant Color1
       Splitter Ratio: 0.64552241563797
-    Tree Height: 482
+    Tree Height: 481
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -789,7 +790,7 @@ Visualization Manager:
           Class: rviz_plugins/VelocityHistory
           Color Border Vel Max: 3
           Constant Color:
-            Color: 0; 0; 0
+            Color: 255; 255; 255
             Value: true
           Enabled: true
           Name: VelocityHistory
