@@ -201,6 +201,8 @@ Visualization Manager:
             crosswalk_lanelets: true
             lanelet direction: true
             left_lane_bound: true
+            parking_lots: true
+            parking_space: true
             right_lane_bound: true
             road_lanelets: true
             stop_lines: true
@@ -783,8 +785,21 @@ Visualization Manager:
           Unreliable: false
           Value: true
           Value height offset: 0
+        - Alpha: 1
+          Class: rviz_plugins/VelocityHistory
+          Color Border Vel Max: 3
+          Constant Color:
+            Color: 0; 0; 0
+            Value: true
+          Enabled: true
+          Name: VelocityHistory
+          Scale: 0.30000001192092896
+          Timeout: 10
+          Topic: /vehicle/status
+          Unreliable: false
+          Value: true
       Enabled: true
-      Name: Monitor
+      Name: Vehicle
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
