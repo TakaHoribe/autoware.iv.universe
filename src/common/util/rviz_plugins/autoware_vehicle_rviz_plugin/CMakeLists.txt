@@ -49,6 +49,7 @@ add_library(autoware_vehicle_rviz_plugin
   src/tools/console_meter.cpp
   src/tools/steering_angle.cpp
   src/tools/jsk_overlay_utils.cpp
+  src/tools/velocity_history.cpp
 )
 
 target_link_libraries(autoware_vehicle_rviz_plugin ${QT_LIBRARIES} ${catkin_LIBRARIES})
