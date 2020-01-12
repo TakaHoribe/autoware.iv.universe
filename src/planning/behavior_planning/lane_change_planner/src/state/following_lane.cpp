@@ -25,8 +25,14 @@ State FollowingLaneState::getCurrentState() const
 {
   return State::FOLLOWING_LANE;
 }
+
 void FollowingLaneState::entry()
 {
+}
+
+autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const
+{
+  return status_.lane_follow_path;
 }
 
 void FollowingLaneState::update()
@@ -51,11 +57,11 @@ void FollowingLaneState::update()
   {
     double backward_path_length = 5;
     double forward_path_length = 100;
-    path_ = RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
+    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
 
     if (!RouteHandler::getInstance().isInPreferredLane(current_pose_) && current_twist_ != nullptr)
     {
-      lane_change_path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
+      status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
     }
   }
 }
@@ -105,7 +111,7 @@ bool FollowingLaneState::isLaneChangeable() const
   const double buffer = 2;
   const double time_resolution = 0.5;
   const auto& vehicle_predicted_path =
-      util::convertToPredictedPath(lane_change_path_, current_twist_->twist, current_pose_.pose);
+      util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
 
   for (const auto& i : object_indices)
   {

@@ -61,7 +61,7 @@ private:
   // PathExtender path_extender_;
 
   void run(const ros::TimerEvent &event);
-
+  void publishDebugMarkers();
 public:
   LaneChanger();
   void init();

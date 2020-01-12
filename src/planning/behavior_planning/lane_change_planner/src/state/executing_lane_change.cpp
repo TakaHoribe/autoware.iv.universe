@@ -40,7 +40,12 @@ void ExecutingLaneChangeState::entry()
   }
   original_lanes_ = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
   target_lanes_ = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
-  path_ = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
+  status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(current_pose_.pose, current_twist_->twist);
+}
+
+autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const
+{
+  return status_.lane_change_path;
 }
 
 void ExecutingLaneChangeState::update()
@@ -98,14 +103,14 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const
   }
   auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanes_);
   const double time_resolution = 0.5;
-  const auto& vehicle_predicted_path = util::convertToPredictedPath(path_, current_twist_->twist, current_pose_.pose);
+  const auto& vehicle_predicted_path = util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
 
   for (const auto& i : object_indices)
   {
     const auto& obj = dynamic_objects_->objects.at(i);
     for (const auto& obj_path : obj.state.predicted_paths)
     {
-      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, 0.5, 2.5);
+      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, 0.5, 8);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = (thresh > min_thresh) ? thresh : min_thresh;
       if (distance < thresh)

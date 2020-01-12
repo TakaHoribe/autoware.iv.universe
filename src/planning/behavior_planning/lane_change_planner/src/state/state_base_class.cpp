@@ -28,9 +28,8 @@ std::ostream& operator<<(std::ostream& ostream, const State& state)
   return ostream;
 }
 
-autoware_planning_msgs::PathWithLaneId StateBase::getPath() const
+Status StateBase::getStatus() const
 {
-  return path_;
+  return status_;
 }
-
 }  // namespace lane_change_planner

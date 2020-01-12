@@ -27,7 +27,7 @@ namespace lane_change_planner
 {
 StateMachine::StateMachine() : pnh_("~")
 {
-  path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/ego_vehicle_paths", 1);
+  path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
   init();
 }
 
@@ -69,9 +69,15 @@ void StateMachine::updateState()
     state_obj_ptr_->entry();
   }
 }
-autoware_planning_msgs::PathWithLaneId StateMachine::getPath()
+
+autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const
 {
   return state_obj_ptr_->getPath();
+}
+
+Status StateMachine::getStatus() const
+{
+  return state_obj_ptr_->getStatus();
 }
 
 }  // namespace lane_change_planner

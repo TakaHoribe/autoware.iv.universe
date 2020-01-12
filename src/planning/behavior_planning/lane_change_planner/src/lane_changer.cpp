@@ -16,6 +16,12 @@
 
 #include <lane_change_planner/lane_changer.h>
 #include <lane_change_planner/utilities.h>
+#include <visualization_msgs/MarkerArray.h>
+
+std_msgs::ColorRGBA toRainbow(double ratio);
+visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
+                                           const std::string& ns, const double radius);
+
 namespace lane_change_planner
 {
 LaneChanger::LaneChanger() : pnh_("~")
@@ -24,7 +30,6 @@ LaneChanger::LaneChanger() : pnh_("~")
 
 void LaneChanger::init()
 {
-
   // data_manager
   points_subscriber_ = pnh_.subscribe("input/points", 1, &SingletonDataManager::pointcloudCallback,
                                       &SingletonDataManager::getInstance());
@@ -41,7 +46,7 @@ void LaneChanger::init()
 
   // path_publisher
   path_publisher_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
-  path_marker_publisher_ = pnh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1);
+  path_marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
 
   // wait until mandatory data is ready
   {
@@ -76,8 +81,10 @@ void LaneChanger::run(const ros::TimerEvent& event)
 {
   state_machine_.updateState();
   auto path = state_machine_.getPath();
+
   auto goal = RouteHandler::getInstance().getGoalPose();
   auto goal_lane_id = RouteHandler::getInstance().getGoalLaneId();
+
   auto refined_path = util::refinePath(7.5, M_PI * 0.5, path, goal, goal_lane_id);
   refined_path.header.frame_id = "map";
   refined_path.header.stamp = ros::Time::now();
@@ -87,7 +94,174 @@ void LaneChanger::run(const ros::TimerEvent& event)
     path_publisher_.publish(refined_path);
   }
 
-  path_marker_publisher_.publish(util::convertToGeometryPoseArray(refined_path));
+  publishDebugMarkers();
+}
+
+void LaneChanger::publishDebugMarkers()
+{
+  geometry_msgs::PoseStamped current_pose;
+  std::shared_ptr<geometry_msgs::TwistStamped const> current_twist;
+  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects;
+
+  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose))
+  {
+    ROS_ERROR("failed to get current pose");
+    return;
+  }
+  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist))
+  {
+    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
+    return;
+  }
+  if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects))
+  {
+    ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
+    return;
+  }
+
+  visualization_msgs::MarkerArray debug_markers;
+  // get ego vehicle path marker
+  const auto& status = state_machine_.getStatus();
+  if (!status.lane_change_path.points.empty())
+  {
+    const auto& vehicle_predicted_path =
+        util::convertToPredictedPath(status.lane_change_path, current_twist->twist, current_pose.pose);
+    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, 0.5, 8);
+
+    const double min_radius = 5;
+    const double stop_time = 2.0;
+    double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
+    radius = (radius > min_radius) ? radius : min_radius;
+    const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_change_path", radius);
+    debug_markers.markers.push_back(marker);
+  }
+
+  if (!status.lane_follow_path.points.empty())
+  {
+    const auto& vehicle_predicted_path =
+        util::convertToPredictedPath(status.lane_follow_path, current_twist->twist, current_pose.pose);
+    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, 0.5, 8);
+
+    const double min_radius = 5;
+    const double stop_time = 2.0;
+    double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
+    radius = (radius > min_radius) ? radius : min_radius;
+    const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_follow_path", radius);
+    debug_markers.markers.push_back(marker);
+  }
+
+  // get obstacle path marker
+  {
+    const double min_radius = 5;
+    const double stop_time = 2.0;
+    const auto& target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose.pose);
+    auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
+    for (const auto& i : object_indices)
+    {
+      const auto& obj = dynamic_objects->objects.at(i);
+      for (const auto& obj_path : obj.state.predicted_paths)
+      {
+        const auto& resampled_path = util::resamplePredictedPath(obj_path, 0.5, 8);
+        double radius = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
+        radius = (radius > min_radius) ? radius : min_radius;
+        const auto& marker = convertToMarker(resampled_path, i, "object_predicted_path", radius);
+        debug_markers.markers.push_back(marker);
+      }
+    }
+  }
+  path_marker_publisher_.publish(debug_markers);
 }
 
 }  // namespace lane_change_planner
+
+std_msgs::ColorRGBA toRainbow(double ratio)
+{
+  // we want to normalize ratio so that it fits in to 6 regions
+  // where each region is 256 units long
+  int normalized = int(ratio * 256 * 6);
+
+  // find the distance to the start of the closest region
+  int x = normalized % 256;
+
+  int red = 0, grn = 0, blu = 0;
+  switch (normalized / 256)
+  {
+    case 0:
+      red = 255;
+      grn = x;
+      blu = 0;
+      break;  // red
+    case 1:
+      red = 255 - x;
+      grn = 255;
+      blu = 0;
+      break;  // yellow
+    case 2:
+      red = 0;
+      grn = 255;
+      blu = x;
+      break;  // green
+    case 3:
+      red = 0;
+      grn = 255 - x;
+      blu = 255;
+      break;  // cyan
+    case 4:
+      red = x;
+      grn = 0;
+      blu = 255;
+      break;  // blue
+    case 5:
+      red = 255;
+      grn = 0;
+      blu = 255 - x;
+      break;  // magenta
+  }
+  std_msgs::ColorRGBA color;
+  color.r = static_cast<double>(red) / 255;
+  color.g = static_cast<double>(grn) / 255;
+  color.b = static_cast<double>(blu) / 255;
+  color.a = 0.3;
+
+  return color;
+}
+
+visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
+                                           const std::string& ns, const double radius)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = ns;
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0.0;
+  marker.pose.position.y = 0.0;
+  marker.pose.position.z = 0.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+
+  marker.scale.x = radius * 2;
+  marker.scale.y = radius * 2;
+  marker.scale.z = radius * 2;
+
+  marker.color.r = 1.0;
+  marker.color.g = 1.0;
+  marker.color.b = 1.0;
+  marker.color.a = 0.3;
+
+  marker.lifetime = ros::Duration(1);
+  marker.frame_locked = true;
+
+  for (std::size_t i = 0; i < path.path.size(); i++)
+  {
+    marker.points.push_back(path.path.at(i).pose.pose.position);
+    marker.colors.push_back(toRainbow(static_cast<double>(i) / path.path.size()));
+  }
+
+  return marker;
+}

@@ -32,7 +32,6 @@ private:
   geometry_msgs::PoseStamped current_pose_;
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
-  autoware_planning_msgs::PathWithLaneId lane_change_path_;
 
   // State transition conditions
   bool isVehicleInPreferredLane() const;
@@ -47,6 +46,7 @@ public:
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;
+  autoware_planning_msgs::PathWithLaneId getPath() const override;
 };
 }  // namespace lane_change_planner
 

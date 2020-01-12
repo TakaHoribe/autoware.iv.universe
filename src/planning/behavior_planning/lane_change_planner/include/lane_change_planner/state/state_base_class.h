@@ -31,21 +31,29 @@ enum State
   ABORTING_LANE_CHANGE,
   FORCING_LANE_CHANGE,
 };
-
 std::ostream& operator<<(std::ostream& ostream, const State& state);
+
+struct Status
+{
+  autoware_planning_msgs::PathWithLaneId lane_follow_path;
+  autoware_planning_msgs::PathWithLaneId lane_change_path;
+  // std::vector<uint64_t> lane_follow_lane_ids;
+  // std::vector<uint64_t> lane_change_lane_ids;
+};
 
 class StateBase
 {
 protected:
-  autoware_planning_msgs::PathWithLaneId path_;
+  Status status_;
 
 public:
   virtual void entry() = 0;
   virtual void update() = 0;
   virtual State getNextState() const = 0;
   virtual State getCurrentState() const = 0;
+  virtual autoware_planning_msgs::PathWithLaneId getPath() const = 0;
 
-  autoware_planning_msgs::PathWithLaneId getPath() const;
+  Status getStatus() const;
 };
 }  // namespace lane_change_planner
 
