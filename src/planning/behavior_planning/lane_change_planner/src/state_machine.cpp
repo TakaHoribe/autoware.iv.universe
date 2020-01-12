@@ -67,6 +67,7 @@ void StateMachine::updateState()
         break;
     }
     state_obj_ptr_->entry();
+    state_obj_ptr_->update();
   }
 }
 
