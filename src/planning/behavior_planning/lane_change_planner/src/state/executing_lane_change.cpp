@@ -68,7 +68,9 @@ State ExecutingLaneChangeState::getNextState() const
 {
   if (isStillOnOriginalLane() && !isTargetLaneStillClear())
   {
-    return State::ABORTING_LANE_CHANGE;
+    // TODO: return to FOLLOWING_LANE until aborting_lane_change is implemented
+    return State::FOLLOWING_LANE;
+    // return State::ABORTING_LANE_CHANGE;
   }
 
   if (hasFinishedLaneChange())
@@ -103,7 +105,8 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const
   }
   auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanes_);
   const double time_resolution = 0.5;
-  const auto& vehicle_predicted_path = util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
+  const auto& vehicle_predicted_path =
+      util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
 
   for (const auto& i : object_indices)
   {
