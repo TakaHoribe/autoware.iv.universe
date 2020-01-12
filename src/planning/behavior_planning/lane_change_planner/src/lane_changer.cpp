@@ -38,6 +38,19 @@ void LaneChanger::init()
   perception_subscriber_ = pnh_.subscribe("input/perception", 1, &SingletonDataManager::perceptionCallback,
                                           &SingletonDataManager::getInstance());
 
+  // ROS parameters
+  LaneChangerParameters parameters;
+  pnh_.param("min_stop_distance", parameters.min_stop_distance, 5.0);
+  pnh_.param("stop_time", parameters.stop_time, 2.0);
+  pnh_.param("hysteresis_buffer_distance", parameters.hysteresis_buffer_distance, 2.0);
+  pnh_.param("backward_path_length", parameters.backward_path_length, 5.0);
+  pnh_.param("forward_path_length", parameters.forward_path_length, 100.0);
+  pnh_.param("lane_change_prepare_duration", parameters.lane_change_prepare_duration, 2.0);
+  pnh_.param("lane_changing_duration", parameters.lane_changing_duration, 4.0);
+  pnh_.param("prediction_duration", parameters.prediction_duration, 8.0);
+  pnh_.param("prediction_time_resolution", parameters.prediction_time_resolution, 0.5);
+  SingletonDataManager::getInstance().setLaneChangerParameters(parameters);
+
   // route_handler
   vector_map_subscriber_ =
       pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &RouteHandler::getInstance());
@@ -102,7 +115,7 @@ void LaneChanger::publishDebugMarkers()
   geometry_msgs::PoseStamped current_pose;
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects;
-
+  LaneChangerParameters ros_parameters;
   if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose))
   {
     ROS_ERROR("failed to get current pose");
@@ -118,6 +131,16 @@ void LaneChanger::publishDebugMarkers()
     ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
     return;
   }
+  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters))
+  {
+    ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
+    return;
+  }
+
+  const double min_radius = ros_parameters.min_stop_distance;
+  const double stop_time = ros_parameters.stop_time;
+  const double time_resolution = ros_parameters.prediction_time_resolution;
+  const double prediction_duration = ros_parameters.prediction_duration;
 
   visualization_msgs::MarkerArray debug_markers;
   // get ego vehicle path marker
@@ -126,12 +149,10 @@ void LaneChanger::publishDebugMarkers()
   {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_change_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, 0.5, 8);
+    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
-    const double min_radius = 5;
-    const double stop_time = 2.0;
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
-    radius = (radius > min_radius) ? radius : min_radius;
+    radius = std::max(radius ,min_radius);
     const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_change_path", radius);
     debug_markers.markers.push_back(marker);
   }
@@ -140,20 +161,16 @@ void LaneChanger::publishDebugMarkers()
   {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_follow_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, 0.5, 8);
+    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
-    const double min_radius = 5;
-    const double stop_time = 2.0;
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
-    radius = (radius > min_radius) ? radius : min_radius;
+    radius = std::max(radius ,min_radius);
     const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_follow_path", radius);
     debug_markers.markers.push_back(marker);
   }
 
   // get obstacle path marker
   {
-    const double min_radius = 5;
-    const double stop_time = 2.0;
     const auto& target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose.pose);
     auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
     for (const auto& i : object_indices)
@@ -161,9 +178,9 @@ void LaneChanger::publishDebugMarkers()
       const auto& obj = dynamic_objects->objects.at(i);
       for (const auto& obj_path : obj.state.predicted_paths)
       {
-        const auto& resampled_path = util::resamplePredictedPath(obj_path, 0.5, 8);
+        const auto& resampled_path = util::resamplePredictedPath(obj_path, time_resolution, prediction_duration);
         double radius = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
-        radius = (radius > min_radius) ? radius : min_radius;
+        radius = std::max(radius ,min_radius);
         const auto& marker = convertToMarker(resampled_path, i, "object_predicted_path", radius);
         debug_markers.markers.push_back(marker);
       }

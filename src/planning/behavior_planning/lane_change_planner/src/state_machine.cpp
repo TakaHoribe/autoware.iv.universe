@@ -28,12 +28,13 @@ namespace lane_change_planner
 StateMachine::StateMachine() : pnh_("~")
 {
   path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
-  init();
+  // init();
 }
 
 void StateMachine::init()
 {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
+  state_obj_ptr_->entry();
   path_.points.clear();
 }
 void StateMachine::init(const autoware_planning_msgs::Route& route)

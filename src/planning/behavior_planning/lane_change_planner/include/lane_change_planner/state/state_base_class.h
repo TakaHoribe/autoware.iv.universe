@@ -18,6 +18,7 @@
 #define LANE_CHANGE_PLANNER_STATE_STATE_BASE_CLASS_H
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <lane_change_planner/parameters.h>
 #include <string>
 #include <iostream>
 
@@ -45,6 +46,7 @@ class StateBase
 {
 protected:
   Status status_;
+  LaneChangerParameters ros_parameters_;
 
 public:
   virtual void entry() = 0;
