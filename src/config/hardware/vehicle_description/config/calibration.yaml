@@ -1,7 +1,7 @@
 base_link2camera:
-  x: 2.0
+  x: 2.07
   y: 0.0
-  z: 1.35
+  z: 1.57
   roll: 0.0
   pitch: 0.0
   yaw: 0.0
