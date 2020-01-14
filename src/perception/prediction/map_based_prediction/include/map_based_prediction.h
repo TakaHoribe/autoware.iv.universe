@@ -84,6 +84,11 @@ public:
   bool doPrediction(const DynamicObjectWithLanesArray& in_objects, 
                           std::vector<autoware_perception_msgs::DynamicObject>& out_objects,
                           std::vector<geometry_msgs::Point>& debug_interpolated_points);
+                          
+  bool doLinearPrediction(const autoware_perception_msgs::DynamicObjectArray & in_objects, 
+                          std::vector<autoware_perception_msgs::DynamicObject>& out_objects);
+                          
+  
                     
   
 };

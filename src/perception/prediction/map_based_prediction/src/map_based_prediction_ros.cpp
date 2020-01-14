@@ -221,6 +221,8 @@ void MapBasedPredictionROS::objectsCallback(
     return;
   }
   
+  autoware_perception_msgs::DynamicObjectArray tmp_objects_whitout_map;
+  tmp_objects_whitout_map.header = in_objects->header;
   DynamicObjectWithLanesArray prediction_input;
   prediction_input.header = in_objects->header;
   for(const auto& object: in_objects->objects)
@@ -239,6 +241,7 @@ void MapBasedPredictionROS::objectsCallback(
     if(tmp_object.object.state.twist_covariance.twist.linear.x< 0 && 
        tmp_object.object.state.orientation_reliable)
     {
+      tmp_objects_whitout_map.objects.push_back(object);
       // geometry_msgs::Point debug_point;
       // tf2::doTransform(pose_in_map.position,
       //                debug_point,
@@ -281,6 +284,7 @@ void MapBasedPredictionROS::objectsCallback(
       tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position,
                      debug_point,
                      debug_map2lidar_transform);
+      tmp_objects_whitout_map.objects.push_back(object);
       // std::cerr << "could not find closest lanelet  " << debug_point.x <<" "<<debug_point.y  << std::endl;
       continue;
     }
@@ -314,6 +318,7 @@ void MapBasedPredictionROS::objectsCallback(
       tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position,
                      debug_point,
                      debug_map2lidar_transform);
+      tmp_objects_whitout_map.objects.push_back(object);
       // std::cerr << "path size is 0; skip  " << debug_point.x <<" "<<debug_point.y  << std::endl;
       continue;
     }
@@ -377,6 +382,10 @@ void MapBasedPredictionROS::objectsCallback(
   output.header = in_objects->header;
   output.header.frame_id = "map";
   output.objects = out_objects_in_map;
+  
+  std::vector<autoware_perception_msgs::DynamicObject> out_objects_without_map;
+  map_based_prediction_->doLinearPrediction(tmp_objects_whitout_map, out_objects_without_map);
+  output.objects.insert(output.objects.begin(), out_objects_without_map.begin(), out_objects_without_map.end());
   // for(const auto& object: out_objects_in_map)
   // {
   //   autoware_perception_msgs::DynamicObject tmp_object;

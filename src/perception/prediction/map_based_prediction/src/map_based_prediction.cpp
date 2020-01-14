@@ -216,6 +216,40 @@ bool MapBasedPrediction::doPrediction(
   // std::cerr <<"prediction time " <<time.count()/(1000.0*1000.0)<< " milli sec" << std::endl;
   return true;
 }
+
+bool MapBasedPrediction::doLinearPrediction(
+  const autoware_perception_msgs::DynamicObjectArray& in_objects, 
+  std::vector<autoware_perception_msgs::DynamicObject>& out_objects)
+{
+  // 1. 現在日時を取得
+  std::chrono::high_resolution_clock::time_point begin= 
+  std::chrono::high_resolution_clock::now();
+
+  for(const auto object: in_objects.objects)
+  {
+    geometry_msgs::Pose object_pose = object.state.pose_covariance.pose;
+    double object_linear_velocity = object.state.twist_covariance.twist.linear.x;
+    autoware_perception_msgs::PredictedPath path;
+    getLinearPredictedPath(object_pose, 
+                            object_linear_velocity,
+                            in_objects.header,
+                            path);
+    autoware_perception_msgs::DynamicObject tmp_object;
+    tmp_object = object;
+    tmp_object.state.predicted_paths.push_back(path);
+    out_objects.push_back(tmp_object);
+  }
+     
+
+  // 3. 現在日時を再度取得
+  std::chrono::high_resolution_clock::time_point end = 
+  std::chrono::high_resolution_clock::now();
+  // 経過時間を取得
+  std::chrono::nanoseconds time = 
+  std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  // std::cerr <<"prediction time " <<time.count()/(1000.0*1000.0)<< " milli sec" << std::endl;
+  return true;
+}
                   
 
 bool MapBasedPrediction::normalizeLikelyhood(std::vector<autoware_perception_msgs::PredictedPath>& paths)
