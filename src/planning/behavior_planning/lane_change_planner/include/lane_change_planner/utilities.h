@@ -53,6 +53,7 @@ geometry_msgs::PoseArray convertToGeometryPoseArray(const autoware_planning_msgs
 autoware_perception_msgs::PredictedPath convertToPredictedPath(const autoware_planning_msgs::PathWithLaneId& path,
                                                                const geometry_msgs::Twist& vehicle_twist,
                                                                const geometry_msgs::Pose& vehicle_pose);
+autoware_perception_msgs::PredictedPath resamplePredictedPath(const autoware_perception_msgs::PredictedPath& input_path, const double resolution, const double duration);
 
 bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linestring,
                                  const geometry_msgs::Point search_point_geom, FrenetCoordinate3d* frenet_coordinate);

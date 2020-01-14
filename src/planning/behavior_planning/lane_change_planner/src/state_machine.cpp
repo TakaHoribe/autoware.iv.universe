@@ -27,13 +27,14 @@ namespace lane_change_planner
 {
 StateMachine::StateMachine() : pnh_("~")
 {
-  path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/ego_vehicle_paths", 1);
-  init();
+  path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
+  // init();
 }
 
 void StateMachine::init()
 {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
+  state_obj_ptr_->entry();
   path_.points.clear();
 }
 void StateMachine::init(const autoware_planning_msgs::Route& route)
@@ -67,11 +68,18 @@ void StateMachine::updateState()
         break;
     }
     state_obj_ptr_->entry();
+    state_obj_ptr_->update();
   }
 }
-autoware_planning_msgs::PathWithLaneId StateMachine::getPath()
+
+autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const
 {
   return state_obj_ptr_->getPath();
+}
+
+Status StateMachine::getStatus() const
+{
+  return state_obj_ptr_->getStatus();
 }
 
 }  // namespace lane_change_planner

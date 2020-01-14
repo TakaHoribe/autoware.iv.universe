@@ -86,7 +86,7 @@ namespace velodyne_pointcloud
         data_->unpack(scanMsg->packets[i], scan_points_xyziradt);
       }
       scan_points_xyziradt.pc->header = pcl_conversions::toPCL(scanMsg->header);
-      // scan_points_xyziradt.pc->header.stamp = pcl_conversions::toPCL(scanMsg->packets[0].stamp);
+      scan_points_xyziradt.pc->header.stamp = pcl_conversions::toPCL(scanMsg->packets[0].stamp-ros::Duration(0.0));
       scan_points_xyziradt.pc->height = 1;
       scan_points_xyziradt.pc->width = scan_points_xyziradt.pc->points.size();
     }

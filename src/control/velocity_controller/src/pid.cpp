@@ -23,12 +23,12 @@ PIDController::PIDController()
   is_first_time_ = true;
 }
 
-double PIDController::calculate(double error, double dt, bool is_integrated, std::vector<double>& pid_contributions)
+double PIDController::calculate(double error, double dt, bool enable_integration, std::vector<double>& pid_contributions)
 {
   double ret_p = kp_ * error;
   ret_p = std::min(std::max(ret_p, min_ret_p_), max_ret_p_);
 
-  if (is_integrated)
+  if (enable_integration)
   {
     error_integral_ += error * dt;
     error_integral_ = std::min(std::max(error_integral_, min_ret_i_ / ki_), max_ret_i_ / ki_);

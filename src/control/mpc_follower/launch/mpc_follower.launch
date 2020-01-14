@@ -3,7 +3,7 @@
 	<arg name="show_debug_info" default="false" doc="flag to display debug info" />
 	<arg name="ctrl_period" default="0.03" doc="control period [s]"/>
 	<arg name="traj_resample_dist" default="0.1" doc="ath resampling interval [m]"/>
-	<arg name="enable_yaw_recalculation" default="true" doc="flag for recalculation of yaw angle after resampling"/>
+	<arg name="enable_yaw_recalculation" default="false" doc="flag for recalculation of yaw angle after resampling"/>
 	<arg name="admisible_position_error" default="5.0" doc="stop mpc calculation when error is larger than the following value"/>
 	<arg name="admisible_yaw_error_deg" default="90.0" doc="stop mpc calculation when error is larger than the following value"/>
 	<arg name="enable_path_smoothing" default="true" doc="flag for path smoothing"/>

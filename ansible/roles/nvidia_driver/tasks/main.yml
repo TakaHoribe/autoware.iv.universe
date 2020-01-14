@@ -1,0 +1,16 @@
+- name: Nvidia Driver (check driver)
+  become: yes
+  command: ubuntu-drivers devices
+  register: check_devices_result
+
+- name: Nvidia Driver (install nvidia-driver-435)
+  become: yes
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - nvidia-driver-435
+
+- name: Nvidia Driver (update kernel)
+  command: update-initramfs -u
+  become: yes

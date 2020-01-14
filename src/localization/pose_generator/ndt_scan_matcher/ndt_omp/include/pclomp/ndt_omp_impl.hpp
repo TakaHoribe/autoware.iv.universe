@@ -102,6 +102,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   Eigen::Transform<float, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
   eig_transformation.matrix () = final_transformation_;
+  transformation_array_.clear();
+  transformation_array_.push_back(final_transformation_);
 
   // Convert initial guess matrix to 6 element transformation vector
   Eigen::Matrix<double, 6, 1> p, delta_p, score_gradient;
@@ -117,7 +119,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   // Calculate derivates of initial transform vector, subsequent derivative calculations are done in the step length determination.
   score = computeDerivatives (score_gradient, hessian, output, p);
-
+  bool converged_rotation = false;
   while (!converged_)
   {
     // Store previous transformation
@@ -138,8 +140,39 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
       return;
     }
 
+    // Eigen::Matrix<double, 6, 1> delta_p_rotation = delta_p;
+    // delta_p_rotation(0) = delta_p_rotation(1) = delta_p_rotation(2) = 0;
+    // double delta_p_rotation_norm = delta_p_rotation.norm ();
+    // 
+    // Eigen::Matrix<double, 6, 1> score_gradient_rotation = score_gradient;
+    // score_gradient_rotation(0) = score_gradient_rotation(1) = score_gradient_rotation(2) = 0;
+
+    // std::cout << "delta_p: "<< delta_p << std::endl;
+    // std::cout << "score_gradient: "<< score_gradient << std::endl;
     delta_p.normalize ();
-    delta_p_norm = computeStepLengthMT (p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score, score_gradient, hessian, output);
+    // delta_p_rotation.normalize();
+    // std::cout << "score: " << score << std::endl;
+    // std::cout << "delta_p_norm: " << delta_p_norm << std::endl;
+    // std::cout << "delta_p_rotation: " << delta_p_rotation_norm << std::endl;
+    // std::cout << "converged_rotation: " << converged_rotation << std::endl;
+
+    // if(!converged_rotation && delta_p_rotation_norm > 0.001 && nr_iterations_ < 10)
+    // {
+    //   delta_p = delta_p_rotation;
+    //   delta_p_norm = delta_p_rotation_norm;
+    //   score_gradient = score_gradient_rotation;
+    //   step_size_ = 0.01;
+    //   transformation_epsilon_ = 0.001;
+    //   delta_p_norm = computeStepLengthMT (p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score, score_gradient, hessian, output);
+    // }
+    // else
+    // {
+    //   converged_rotation = true;
+    //   transformation_epsilon_ = 0.01;
+    //   step_size_ = 0.1;
+      delta_p_norm = computeStepLengthMT (p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score, score_gradient, hessian, output);
+    // }
+
     delta_p *= delta_p_norm;
 
 
@@ -148,6 +181,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
                        Eigen::AngleAxis<float> (static_cast<float> (delta_p (4)), Eigen::Vector3f::UnitY ()) *
                        Eigen::AngleAxis<float> (static_cast<float> (delta_p (5)), Eigen::Vector3f::UnitZ ())).matrix ();
 
+    transformation_array_.push_back(final_transformation_);
 
     p = p + delta_p;
 

@@ -5,6 +5,7 @@
   <arg name="map_frame_id" default="map"/>
   <arg name="initialize_source" default="RVIZ"/>
   <arg name="use_waypoints_for_z_position_source" default="true"/>
+  <arg name="sim_steering_gear_ratio" default="15.0"/>
 
   <!-- model parameters -->
   <arg name="vehicle_model_type" default="IDEAL_STEER"/>
@@ -44,6 +45,7 @@
     <param name="add_measurement_noise" value="$(arg add_measurement_noise)"/>
     <param name="initialize_source" value="$(arg initialize_source)"/>
     <param name="use_waypoints_for_z_position_source" value="$(arg use_waypoints_for_z_position_source)"/>
+    <param name="sim_steering_gear_ratio" value="$(arg sim_steering_gear_ratio)"/>
 
     <param name="tread_length" value="$(arg tread_length)"/>
     <param name="angvel_lim" value="$(arg angvel_lim)"/>

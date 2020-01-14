@@ -721,7 +721,7 @@ geometry_msgs::Quaternion getQuaternionFromYaw(double yaw)
   return tf2::toMsg(q);
 }
 
-bool linearInterp1qTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
+bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
                               const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory)
 {
   std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
@@ -750,7 +750,7 @@ bool linearInterp1qTrajectory(const std::vector<double> &base_index, const autow
       !LinearInterpolate::interpolate(base_index, alx, out_index, alx_p) ||
       !LinearInterpolate::interpolate(base_index, aaz, out_index, aaz_p))
   {
-    ROS_WARN("[linearInterp1qTrajectory] interpolation error!!");
+    ROS_WARN("[linearInterpTrajectory] interpolation error!!");
     return false;
   }
 

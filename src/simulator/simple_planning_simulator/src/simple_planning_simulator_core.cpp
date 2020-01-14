@@ -25,6 +25,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
   nh_.param("/vehicle_info/wheel_base", wheelbase_, double(2.7));
+  pnh_.param("sim_steering_gear_ratio", sim_steering_gear_ratio_, double(15.0));
   pnh_.param("simulation_frame_id", simulation_frame_id_, std::string("base_link"));
   pnh_.param("map_frame_id", map_frame_id_, std::string("map"));
   pnh_.param("add_measurement_noise", add_measurement_noise_, bool(true));
@@ -220,6 +221,7 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   vs.header.frame_id = simulation_frame_id_;
   vs.status.velocity = vehicle_model_ptr_->getVx();
   vs.status.steering_angle = vehicle_model_ptr_->getSteer();
+  vs.status.steering_wheel_angle = vehicle_model_ptr_->getSteer() * sim_steering_gear_ratio_;
   if (add_measurement_noise_)
   {
     vs.status.velocity += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
@@ -233,9 +235,8 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   pub_steer_.publish(steer_msg);
 
   std_msgs::Float32 steer_wheel_deg_msg;
-  const double sim_gear_ratio = 15.0;
   const double rad2deg = 180.0 / 3.14159265;
-  steer_wheel_deg_msg.data = vs.status.steering_angle * sim_gear_ratio * rad2deg;
+  steer_wheel_deg_msg.data = vs.status.steering_wheel_angle * rad2deg;
   pub_steer_wheel_deg_.publish(steer_wheel_deg_msg);
 
   std_msgs::Float32 velocity_msg;

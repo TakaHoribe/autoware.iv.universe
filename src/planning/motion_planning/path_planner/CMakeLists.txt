@@ -29,6 +29,12 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp/include)
+
+add_compile_options(-std=c++14)
+
+
 add_library(path_base_planner
   src/path_base_planner/node.cpp
 )
@@ -40,9 +46,6 @@ target_link_libraries(path_base_planner
 add_dependencies(path_base_planner 
   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS})
-
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp/include)
 
 add_executable(eb_path_planner_node
   src/eb_path_planner/horibe_interpolate.cpp

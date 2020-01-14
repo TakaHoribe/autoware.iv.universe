@@ -8,10 +8,11 @@ namespace traffic_light
 TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~")
 {
   std::string package_path = ros::package::getPath("traffic_light_fine_detector");
-  std::string engine_path = package_path + "/data/yolov3_tlr.engine";
+  std::string engine_path = package_path + "/data/yolov3-tlr.engine";
   std::ifstream fs(engine_path);
   if (fs.is_open())
   {
+    ROS_INFO("Found %s", engine_path.c_str());
     net_ptr_.reset(new Tn::trtNet(engine_path));
   }
   else

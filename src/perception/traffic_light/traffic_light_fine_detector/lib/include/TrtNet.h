@@ -7,9 +7,9 @@
 #include <fstream>
 #include <numeric>
 #include <memory>
+#include "NvInfer.h"
 #include "NvInferPlugin.h"
 #include "NvOnnxParser.h"
-#include "NvOnnxParserRuntime.h"
 #include "Utils.h"
 
 namespace Tn

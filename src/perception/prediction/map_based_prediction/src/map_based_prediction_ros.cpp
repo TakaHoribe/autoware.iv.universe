@@ -428,7 +428,7 @@ void MapBasedPredictionROS::objectsCallback(
   // debug_interpolated_points.scale.y = 0.1f;
   // debug_interpolated_points.scale.z = 0.1f;
   // debug_interpolated_points.color.r = 1.0f;
-  // debug_interpolated_points.color.a = 1;
+  // debug_interpolated_points.color.a = 0.999;
   // for(const auto& point: interpolated_points)
   // {
   //   debug_interpolated_points.points.push_back(point);
@@ -453,7 +453,7 @@ void MapBasedPredictionROS::objectsCallback(
   // debug_out_points.scale.y = 0.1f;
   // debug_out_points.scale.z = 0.1f;
   // debug_out_points.color.r = 1.0f;
-  // debug_out_points.color.a = 1;
+  // debug_out_points.color.a = 0.999;
   // for(const auto& object: out_objects_in_map)
   // {
   //   for(const auto& path: object.state.predicted_paths)

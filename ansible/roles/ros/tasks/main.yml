@@ -3,18 +3,23 @@
   apt_key:
     keyserver: "{{ keyserver }}"
     id: "{{ keyid }}"
+  become: yes
 
 - name: ROS (add source list)
   apt_repository:
     repo: "deb {{ repository }} {{ ansible_lsb.codename }} main"
     state: present
     update_cache: yes
+  become: yes
 
 - name: ROS (install packages)
   become: yes
   apt:
     name: "ros-{{ release }}-{{ package }}"
     state: latest
+    update_cache: yes
+  become: yes
+
 - name: ROS (check rosdep file)
   stat:
     path: /etc/ros/rosdep/sources.list.d/20-default.list
@@ -23,6 +28,7 @@
 - name: ROS (initilize rosdep)
   command: rosdep init
   when: ros_repository.stat.exists == false
+  become: yes
 
 - name: ROS (update rosdep)
   command: rosdep update

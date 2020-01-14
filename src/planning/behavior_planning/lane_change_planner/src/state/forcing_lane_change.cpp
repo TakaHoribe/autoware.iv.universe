@@ -27,6 +27,11 @@ void ForcingLaneChangeState::entry()
   // locked_path = getReferenceLine(current_pose, original_lane);
 }
 
+autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
+{
+  return status_.lane_change_path;
+}
+
 void ForcingLaneChangeState::update()
 {
   // return locked_path;

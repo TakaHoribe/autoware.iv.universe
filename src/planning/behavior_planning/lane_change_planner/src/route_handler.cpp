@@ -588,7 +588,11 @@ lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Po
   return getLaneletSequence(lanelet);
 }
 
-PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist) const
+PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist,
+                                               const double backward_path_length,
+                                               const double forward_path_length,
+                                               const double lane_change_prepare_duration,
+                                               const double lane_changing_duration) const
 {
   PathWithLaneId reference_path;
 
@@ -605,16 +609,15 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
   velocity = (velocity > 1.0) ? velocity : 1.0;
 
   auto lanelet_sequence = getLaneletSequence(lanelet);
-  double backward_distance = 5;
-  double straight_distance = velocity * 2;     // velocity * 3;
-  double lane_change_distance = velocity * 4;  // velocity * 5;
+  double straight_distance = velocity * lane_change_prepare_duration;
+  double lane_change_distance = velocity * lane_changing_duration;
 
   lanelet::Point3d vehicle_position = toLaneletPoint(pose.position);
 
   auto arc_position = getArcCoordinates(lanelet_sequence, vehicle_position);
   double s = arc_position.length;
 
-  double s_start = s - backward_distance;
+  double s_start = s - backward_path_length;
   double s_end = s + straight_distance;
   const auto reference_path1 = getReferencePath(lanelet_sequence, s_start, s_end);
   PathWithLaneId reference_path2;
@@ -627,7 +630,7 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
     const auto& right_lanelet_sequence = getLaneletSequence(right_lanelet.get());
     auto arc_position = getArcCoordinates(right_lanelet_sequence, vehicle_position);
     s_start = arc_position.length + straight_distance + lane_change_distance;
-    s_end = s_start + 100;
+    s_end = s_start + forward_path_length;
     reference_path2 = getReferencePath(right_lanelet_sequence, s_start, s_end);
   }
 
@@ -638,7 +641,7 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
     const auto& left_lanelet_sequence = getLaneletSequence(left_lanelet.get());
     auto arc_position = getArcCoordinates(left_lanelet_sequence, vehicle_position);
     s_start = arc_position.length + straight_distance + lane_change_distance;
-    s_end = s_start + 100;
+    s_end = s_start + forward_path_length;
     reference_path2 = getReferencePath(left_lanelet_sequence, s_start, s_end);
   }
 

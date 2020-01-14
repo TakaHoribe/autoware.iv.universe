@@ -27,6 +27,11 @@ void AbortingLaneChangeState::entry()
 {
 }
 
+autoware_planning_msgs::PathWithLaneId AbortingLaneChangeState::getPath() const
+{
+  return status_.lane_follow_path;
+}
+
 void AbortingLaneChangeState::update()
 {
 }

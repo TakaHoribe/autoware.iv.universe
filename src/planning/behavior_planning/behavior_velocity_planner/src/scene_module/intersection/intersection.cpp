@@ -534,7 +534,7 @@ void IntersectionModuleDebugger::publishLaneletsArea(const std::vector<lanelet::
         marker.action = visualization_msgs::Marker::ADD;
         marker.pose.orientation.w = 1.0;
         marker.scale.x = 0.3;
-        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.a = 0.999; // Don't forget to set the alpha!
         marker.color.r = 0.0;
         marker.color.g = 1.0;
         marker.color.b = 0.0;
@@ -572,7 +572,7 @@ void IntersectionModuleDebugger::publishPath(const autoware_planning_msgs::PathW
         marker.scale.x = 0.5;
         marker.scale.y = 0.3;
         marker.scale.z = 0.3;
-        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.a = 0.999; // Don't forget to set the alpha!
         marker.color.r = r;
         marker.color.g = g;
         marker.color.b = b;
@@ -600,7 +600,7 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose &pose, co
     marker.scale.x = 0.5;
     marker.scale.y = 0.3;
     marker.scale.z = 0.3;
-    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.a = 0.999; // Don't forget to set the alpha!
     marker.color.r = r;
     marker.color.g = g;
     marker.color.b = b;

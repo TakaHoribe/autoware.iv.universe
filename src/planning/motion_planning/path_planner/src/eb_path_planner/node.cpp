@@ -154,7 +154,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_cubic_spline.scale.y = 0.1f;
   debug_cubic_spline.scale.z = 0.1f;
   debug_cubic_spline.color.g = 1.0f;
-  debug_cubic_spline.color.a = 1;
+  debug_cubic_spline.color.a = 0.999;
   for(const auto& point: debug_points)
   {
     debug_cubic_spline.points.push_back(point);
@@ -178,7 +178,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_goal_point_marker.scale.y = 0.1f;
   debug_goal_point_marker.scale.z = 0.1f;
   debug_goal_point_marker.color.r = 1.0f;
-  debug_goal_point_marker.color.a = 1;
+  debug_goal_point_marker.color.a = 0.999;
   debug_goal_point_marker.points.push_back(debug_goal_point);
   marker_array.markers.push_back(debug_goal_point_marker);
   unique_id++;
@@ -196,7 +196,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_interpolated_points_marker.scale.y = 0.1f;
   debug_interpolated_points_marker.scale.z = 0.1f;
   debug_interpolated_points_marker.color.g = 1.0f;
-  debug_interpolated_points_marker.color.a = 1;
+  debug_interpolated_points_marker.color.a = 0.999;
   for(const auto& point: debug_interpolated_points)
   {
     debug_interpolated_points_marker.points.push_back(point);
@@ -220,7 +220,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_optimized_points_marker.scale.y = 0.1f;
   debug_optimized_points_marker.scale.z = 0.1f;
   debug_optimized_points_marker.color.g = 1.0f;
-  debug_optimized_points_marker.color.a = 1;
+  debug_optimized_points_marker.color.a = 0.999;
   for (size_t i = fixing_distance_/sampling_resolution_; i < optimized_points.size(); i++)
   {
     debug_optimized_points_marker.points.push_back(optimized_points[i].pose.position);
@@ -244,7 +244,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   debug_fixing_optimized_points_marker.scale.z = 0.1f;
   debug_fixing_optimized_points_marker.color.r = 1.0f;
   debug_fixing_optimized_points_marker.color.g = 1.0f;
-  debug_fixing_optimized_points_marker.color.a = 1;
+  debug_fixing_optimized_points_marker.color.a = 0.999;
   int tmp_max_ind = std::min((int)std::ceil(fixing_distance_/sampling_resolution_), 
                              (int)optimized_points.size());
   for (int i = 0; i < tmp_max_ind; i++)
@@ -270,7 +270,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     text_marker.scale.z = 1.0f;
     text_marker.color.r = 1.0f;
     text_marker.color.g = 1.0f;
-    text_marker.color.a = 1;
+    text_marker.color.a = 0.999;
     text_marker.text = std::to_string((int)i);
     text_marker.pose.position = debug_points[i];
     text_marker.pose.orientation.w = 1.0;

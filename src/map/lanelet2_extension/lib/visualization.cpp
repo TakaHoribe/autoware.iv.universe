@@ -28,6 +28,7 @@
 
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
 namespace
@@ -112,7 +113,7 @@ void lightAsMarker(lanelet::ConstPoint3d p, visualization_msgs::Marker* marker, 
   marker->color.r = 0.0f;
   marker->color.g = 0.0f;
   marker->color.b = 0.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999f;
 
   if (isAttributeValue(p, "color", "red"))
     marker->color.r = 1.0f;
@@ -177,7 +178,7 @@ void laneletDirectionAsMarker(const lanelet::ConstLanelet ll, visualization_msgs
   marker->color.r = 1.0f;
   marker->color.g = 1.0f;
   marker->color.b = 1.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999;
 
   lanelet::Attribute attr = ll.attribute("turn_direction");
   double turn_dir = 0;
@@ -254,6 +255,56 @@ bool isWithinTriangle(const geometry_msgs::Point32& a, const geometry_msgs::Poin
 
   return c1 > 0.0 && c2 > 0.0 && c3 > 0.0 || c1 < 0.0 && c2 < 0.0 && c3 < 0.0;
 }
+
+visualization_msgs::Marker polygonAsMarker(const lanelet::ConstPolygon3d& polygon, const std::string& name_space,
+                                           const std_msgs::ColorRGBA& color)
+{
+  visualization_msgs::Marker marker;
+  if (polygon.size() < 3)
+  {
+    return marker;
+  }
+
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.frame_locked = true;
+  marker.id = polygon.id();
+  marker.ns = name_space;
+  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  marker.lifetime = ros::Duration(0);
+  marker.pose.position.x = 0.0;
+  marker.pose.position.y = 0.0;
+  marker.pose.position.z = 0.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 1.0;
+  marker.scale.y = 1.0;
+  marker.scale.z = 1.0;
+  marker.color = color;
+
+  geometry_msgs::Polygon geom_poly;
+  lanelet::utils::conversion::toGeomMsgPoly(polygon, &geom_poly);
+
+  std::vector<geometry_msgs::Polygon> triangles;
+  lanelet::visualization::polygon2Triangle(geom_poly, &triangles);
+
+  marker.points.reserve(polygon.size() - 2);
+  marker.colors.reserve(polygon.size() - 2);
+  for (const auto& tri : triangles)
+  {
+    geometry_msgs::Point geom_pts[3];
+    for (int i = 0; i < 3; i++)
+    {
+      lanelet::utils::conversion::toGeomMsgPt(tri.points[i], &geom_pts[i]);
+      marker.points.push_back(geom_pts[i]);
+      marker.colors.push_back(color);
+    }
+  }
+  return marker;
+}
+
 }  // anonymous namespace
 
 namespace lanelet
@@ -322,40 +373,43 @@ void visualization::polygon2Triangle(const geometry_msgs::Polygon& polygon,
         }
       }
     }
-    if (clipped_vertex >= 0 && clipped_vertex < N)
+    if (clipped_vertex < 0 || clipped_vertex >= N)
     {
-      // create triangle
-      geometry_msgs::Point32 p0, p1, p2;
-      adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
-      geometry_msgs::Polygon triangle;
-      triangle.points.push_back(p0);
-      triangle.points.push_back(p1);
-      triangle.points.push_back(p2);
-      triangles->push_back(triangle);
-
-      // remove vertex of center of angle
-      auto it = poly.points.begin();
-      std::advance(it, clipped_vertex);
-      poly.points.erase(it);
-
-      // remove from angle list
-      auto it_angle = is_acute_angle.begin();
-      std::advance(it_angle, clipped_vertex);
-      is_acute_angle.erase(it_angle);
-
-      // update angle list
-      N = poly.points.size();
-      if (clipped_vertex == N)
-      {
-        clipped_vertex = 0;
-      }
-      adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
-      is_acute_angle.at(clipped_vertex) = isAcuteAngle(p0, p1, p2);
-
-      int i_prev = (clipped_vertex == 0) ? N - 1 : clipped_vertex - 1;
-      adjacentPoints(i_prev, N, poly, &p0, &p1, &p2);
-      is_acute_angle.at(i_prev) = isAcuteAngle(p0, p1, p2);
+      ROS_ERROR("Could not find valid vertex for ear clipping triangulation. Triangulation result might be invalid");
+      clipped_vertex = 0;
     }
+
+    // create triangle
+    geometry_msgs::Point32 p0, p1, p2;
+    adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
+    geometry_msgs::Polygon triangle;
+    triangle.points.push_back(p0);
+    triangle.points.push_back(p1);
+    triangle.points.push_back(p2);
+    triangles->push_back(triangle);
+
+    // remove vertex of center of angle
+    auto it = poly.points.begin();
+    std::advance(it, clipped_vertex);
+    poly.points.erase(it);
+
+    // remove from angle list
+    auto it_angle = is_acute_angle.begin();
+    std::advance(it_angle, clipped_vertex);
+    is_acute_angle.erase(it_angle);
+
+    // update angle list
+    N = poly.points.size();
+    if (clipped_vertex == N)
+    {
+      clipped_vertex = 0;
+    }
+    adjacentPoints(clipped_vertex, N, poly, &p0, &p1, &p2);
+    is_acute_angle.at(clipped_vertex) = isAcuteAngle(p0, p1, p2);
+
+    int i_prev = (clipped_vertex == 0) ? N - 1 : clipped_vertex - 1;
+    adjacentPoints(i_prev, N, poly, &p0, &p1, &p2);
+    is_acute_angle.at(i_prev) = isAcuteAngle(p0, p1, p2);
   }
 }
 
@@ -483,7 +537,7 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
   marker.color.r = 1.0f;
   marker.color.g = 1.0f;
   marker.color.b = 1.0f;
-  marker.color.a = 1.0f;
+  marker.color.a = 0.999;
 
   int da_count = 0;
   for (const auto& da_reg_elem : da_reg_elems)
@@ -528,6 +582,56 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
   }  // for regulatory elements
 
   return (marker_array);
+}
+
+visualization_msgs::MarkerArray visualization::parkingLotsAsMarkerArray(const lanelet::ConstPolygons3d& parking_lots,
+                                                                        const std_msgs::ColorRGBA& c)
+{
+  visualization_msgs::MarkerArray marker_array;
+
+  if (parking_lots.empty())
+  {
+    return marker_array;
+  }
+
+  for (const auto& polygon : parking_lots)
+  {
+    const visualization_msgs::Marker marker = polygonAsMarker(polygon, "parking_lots", c);
+    if (!marker.points.empty())
+    {
+      marker_array.markers.push_back(marker);
+    }
+  }
+  return marker_array;
+}
+visualization_msgs::MarkerArray visualization::parkingSpacesAsMarkerArray(
+    const lanelet::ConstLineStrings3d& parking_spaces, const std_msgs::ColorRGBA& c)
+{
+  visualization_msgs::MarkerArray marker_array;
+
+  if (parking_spaces.empty())
+  {
+    return marker_array;
+  }
+
+  for (const auto& linestring : parking_spaces)
+  {
+    lanelet::ConstPolygon3d polygon;
+    if (utils::lineStringWithWidthToPolygon(linestring, &polygon))
+    {
+      visualization_msgs::Marker marker = polygonAsMarker(polygon, "parking_space", c);
+      marker.id = linestring.id();
+      if (!marker.points.empty())
+      {
+        marker_array.markers.push_back(marker);
+      }
+    }
+    else
+    {
+      ROS_ERROR_STREAM("parking space " << linestring.id() << " failed conversion.");
+    }
+  }
+  return marker_array;
 }
 
 visualization_msgs::MarkerArray
@@ -655,7 +759,7 @@ visualization_msgs::MarkerArray visualization::laneletsAsTriangleMarkerArray(con
   marker.color.r = 1.0f;
   marker.color.g = 1.0f;
   marker.color.b = 1.0f;
-  marker.color.a = 1.0f;
+  marker.color.a = 0.999;
 
   for (auto ll : lanelets)
   {
@@ -713,7 +817,7 @@ void visualization::trafficLight2TriangleMarker(const lanelet::ConstLineString3d
   marker->color.r = 1.0f;
   marker->color.g = 1.0f;
   marker->color.b = 1.0f;
-  marker->color.a = 1.0f;
+  marker->color.a = 0.999;
 
   double h = 0.7;
   if (ls.hasAttribute("height"))

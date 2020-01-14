@@ -120,6 +120,7 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
                                             const pacmod_msgs::SystemRptFloatConstPtr& msg_steering_wheel)
 {
   ros::Time stamp = msg_velocity->header.stamp;
+  // ros::Time stamp = msg_wheel_speed->header.stamp;
 
   // current speed
   double speed =
@@ -135,12 +136,17 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
                          (msg_curvature->curvature) :
                          std::tan(msg_steering_wheel->output / adaptive_gear_ratio_) / wheel_base_;
 
+  // constexpr double tread = 1.64;  // spec sheet 1.63
+  // double omega =
+  //   (-msg_wheel_speed->rear_right_wheel_speed + msg_wheel_speed->rear_left_wheel_speed) * tire_radius_ / tread;
+
   // as_current_velocity (geometry_msgs::TwistStamped)
   geometry_msgs::TwistStamped twist;
   twist.header.frame_id = BASE_FRAME_ID;
   twist.header.stamp = stamp;
   twist.twist.linear.x = speed;               // [m/s]
   twist.twist.angular.z = curvature * speed;  // [rad/s]
+  // twist.twist.angular.z = omega;  // [rad/s]
   current_twist_pub_.publish(twist);
 
   // vehicle_status (autoware_control_msgs::VehicleStatus)

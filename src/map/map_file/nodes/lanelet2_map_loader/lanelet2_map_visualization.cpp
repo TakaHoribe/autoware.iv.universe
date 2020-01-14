@@ -64,30 +64,39 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
   std::vector<lanelet::AutowareTrafficLightConstPtr> aw_tl_reg_elems =
       lanelet::utils::query::autowareTrafficLights(all_lanelets);
   std::vector<lanelet::DetectionAreaConstPtr> da_reg_elems = lanelet::utils::query::detectionAreas(all_lanelets);
+  lanelet::ConstLineStrings3d parking_spaces = lanelet::utils::query::getAllParkingSpaces(viz_lanelet_map);
+  lanelet::ConstPolygons3d parking_lots = lanelet::utils::query::getAllParkingLots(viz_lanelet_map);
 
-  std_msgs::ColorRGBA cl_road, cl_cross, cl_ll_borders, cl_stoplines, cl_trafficlights, cl_detection_areas;
+  std_msgs::ColorRGBA cl_road, cl_cross, cl_ll_borders, cl_stoplines, cl_trafficlights, cl_detection_areas,
+      cl_parking_lots, cl_parking_spaces;
   setColor(&cl_road, 0.2, 0.7, 0.7, 0.3);
   setColor(&cl_cross, 0.2, 0.7, 0.2, 0.3);
-  setColor(&cl_ll_borders, 1.0, 1.0, 1.0, 1.0);
+  setColor(&cl_ll_borders, 1.0, 1.0, 1.0, 0.999);
   setColor(&cl_stoplines, 1.0, 0.0, 0.0, 0.5);
   setColor(&cl_trafficlights, 0.7, 0.7, 0.7, 0.8);
   setColor(&cl_detection_areas, 0.7, 0.7, 0.7, 0.3);
+  setColor(&cl_parking_lots, 0.7, 0.7, 0.0, 0.3);
+  setColor(&cl_parking_spaces, 1.0, 0.647, 0.0, 0.6);
 
   visualization_msgs::MarkerArray map_marker_array;
 
   insertMarkerArray(&map_marker_array, lanelet::visualization::laneletsBoundaryAsMarkerArray(
                                            road_lanelets, cl_ll_borders, g_viz_lanelets_centerline));
-  insertMarkerArray(&map_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
-                                           "road_lanelets", road_lanelets, cl_road));
+  insertMarkerArray(&map_marker_array,
+                    lanelet::visualization::laneletsAsTriangleMarkerArray("road_lanelets", road_lanelets, cl_road));
   insertMarkerArray(&map_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
                                            "crosswalk_lanelets", crosswalk_lanelets, cl_cross));
   insertMarkerArray(&map_marker_array, lanelet::visualization::laneletDirectionAsMarkerArray(road_lanelets));
-  insertMarkerArray(&map_marker_array, lanelet::visualization::lineStringsAsMarkerArray(stop_lines, "stop_lines",
-                                                                                              cl_stoplines, 0.5));
-  insertMarkerArray(&map_marker_array, lanelet::visualization::autowareTrafficLightsAsMarkerArray(
-                                           aw_tl_reg_elems, cl_trafficlights));
-  insertMarkerArray(&map_marker_array, lanelet::visualization::detectionAreasAsMarkerArray(
-                                          da_reg_elems, cl_detection_areas));
+  insertMarkerArray(&map_marker_array,
+                    lanelet::visualization::lineStringsAsMarkerArray(stop_lines, "stop_lines", cl_stoplines, 0.5));
+  insertMarkerArray(&map_marker_array,
+                    lanelet::visualization::autowareTrafficLightsAsMarkerArray(aw_tl_reg_elems, cl_trafficlights));
+  insertMarkerArray(&map_marker_array,
+                    lanelet::visualization::detectionAreasAsMarkerArray(da_reg_elems, cl_detection_areas));
+  insertMarkerArray(&map_marker_array, lanelet::visualization::parkingLotsAsMarkerArray(parking_lots, cl_parking_lots));
+  insertMarkerArray(&map_marker_array,
+                    lanelet::visualization::parkingSpacesAsMarkerArray(parking_spaces, cl_parking_spaces));
+
   g_map_pub.publish(map_marker_array);
 }
 

@@ -34,6 +34,7 @@ public:
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;
+  autoware_planning_msgs::PathWithLaneId getPath() const override;
 };
 }  // namespace lane_change_planner
 

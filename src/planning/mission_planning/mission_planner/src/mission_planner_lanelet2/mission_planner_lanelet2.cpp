@@ -82,7 +82,7 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
   setColor(&cl_goal, 0.0, 0.7, 0.7, 0.7);
   setColor(&cl_end, 0.0, 0.2, 0.7, 0.7);
   setColor(&cl_normal, 0.0, 0.7, 0.2, 0.7);
-  setColor(&cl_ll_borders, 1.0, 1.0, 1.0, 1.0);
+  setColor(&cl_ll_borders, 1.0, 1.0, 1.0, 0.999);
 
   visualization_msgs::MarkerArray route_marker_array;
   insertMarkerArray(&route_marker_array,

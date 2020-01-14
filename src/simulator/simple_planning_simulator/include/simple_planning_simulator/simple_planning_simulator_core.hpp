@@ -96,8 +96,9 @@ private:
   std::string map_frame_id_;        //!< @brief map frame_id
 
   /* simple_planning_simulator parameters */
-  double loop_rate_; //!< @brief frequency to calculate vehicle model & pubish result
-  double wheelbase_; //!< @brief wheelbase length to convert angular-velocity & steering
+  double loop_rate_;               //!< @brief frequency to calculate vehicle model & pubish result
+  double wheelbase_;               //!< @brief wheelbase length to convert angular-velocity & steering
+  double sim_steering_gear_ratio_; //!< @brief for steering wheel angle calcultion
 
   /* flags */
   bool is_initialized_;        //!< @brief flag to check the initial position is set

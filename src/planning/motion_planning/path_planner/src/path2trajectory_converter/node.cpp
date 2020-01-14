@@ -102,7 +102,7 @@ void Path2Trajectory::callback(
     traj_point.pose.position.y = new_y[i]; 
     if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
     {
-      ROS_ERROR("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
+      ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
       msgConversionFromPath2Trajectory(input_path_msg, output_trajectory_msg); 
       return;
     }
