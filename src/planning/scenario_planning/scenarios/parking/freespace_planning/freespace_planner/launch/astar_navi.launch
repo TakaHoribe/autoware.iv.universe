@@ -3,6 +3,7 @@
   <!-- Navi configurations -->
   <arg name="input_route" default="/planning/mission_planning/route" />
   <arg name="input_occupancy_grid" default="costmap_generator/occupancy_grid" />
+  <arg name="input_scenario" default="/planning/scenario_planning/scenario" />
   <arg name="output_trajectory" default="~trajectory" />
 
   <arg name="waypoints_velocity" default="5.0" />
@@ -30,6 +31,7 @@
   <node pkg="freespace_planner" type="astar_navi" name="astar_navi" output="screen">
     <remap from="~input/route" to="$(arg input_route)" />
     <remap from="~input/occupancy_grid" to="$(arg input_occupancy_grid)" />
+    <remap from="~input/scenario" to="$(arg input_scenario)" />
     <remap from="~output/trajectory" to="$(arg output_trajectory)" />
 
     <param name="waypoints_velocity" value="$(arg waypoints_velocity)" />

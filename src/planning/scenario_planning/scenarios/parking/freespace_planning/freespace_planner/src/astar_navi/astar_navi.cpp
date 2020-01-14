@@ -22,13 +22,15 @@ AstarNavi::AstarNavi()
       tf_listener_(tf_buffer_),
       occupancy_grid_initialized_(false),
       route_initialized_(false),
-      current_pose_initialized_(false) {
+      current_pose_initialized_(false),
+      is_active_(false) {
   private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
   private_nh_.param<double>("update_rate", update_rate_, 1.0);
 
   route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
   occupancy_grid_sub_ =
       private_nh_.subscribe("input/occupancy_grid", 1, &AstarNavi::onOccupancyGrid, this);
+  scenario_sub_ = private_nh_.subscribe("input/scenario", 1, &AstarNavi::onScenario, this);
 
   trajectory_pub_ =
       private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
@@ -58,6 +60,22 @@ void AstarNavi::onRoute(const autoware_planning_msgs::Route& msg) {
   route_initialized_ = true;
 }
 
+void AstarNavi::onScenario(const autoware_planning_msgs::Scenario& msg) {
+  if (msg.type == msg.Parking) {
+    is_active_ = true;
+  } else {
+    is_active_ = false;
+  }
+}
+
+void AstarNavi::onTimer(const ros::TimerEvent& event) {
+  if (!occupancy_grid_initialized_ || !route_initialized_) {
+    return;
+  }
+
+  run();
+}
+
 geometry_msgs::TransformStamped AstarNavi::getTransform(const std::string& from,
                                                         const std::string& to) {
   geometry_msgs::TransformStamped tf;
@@ -69,15 +87,11 @@ geometry_msgs::TransformStamped AstarNavi::getTransform(const std::string& from,
   return tf;
 }
 
-void AstarNavi::onTimer(const ros::TimerEvent& event) {
-  if (!occupancy_grid_initialized_ || !route_initialized_) {
+void AstarNavi::run() {
+  if (!is_active_) {
     return;
   }
 
-  run();
-}
-
-void AstarNavi::run() {
   // Calculate local goal pose
   goal_pose_local_.pose = transformPose(
       goal_pose_global_.pose,

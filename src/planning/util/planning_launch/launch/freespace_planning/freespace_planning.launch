@@ -10,6 +10,7 @@
   <include file="$(find freespace_planner)/launch/astar_navi.launch">
     <arg name="input_route" value="/planning/mission_planning/route" />
     <arg name="input_occupancy_grid" value="costmap_generator/occupancy_grid" />
+    <arg name="input_scenario" value="/planning/scenario_planning/scenario" />
     <arg name="output_trajectory" value="~trajectory" />
   </include>
 </launch>

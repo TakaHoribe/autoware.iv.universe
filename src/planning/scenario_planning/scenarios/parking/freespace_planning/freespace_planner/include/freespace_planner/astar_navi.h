@@ -31,6 +31,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <autoware_planning_msgs/Route.h>
+#include <autoware_planning_msgs/Scenario.h>
 #include <autoware_planning_msgs/Trajectory.h>
 
 #include "astar_search/astar_search.h"
@@ -49,6 +50,7 @@ class AstarNavi {
 
   ros::Subscriber route_sub_;
   ros::Subscriber occupancy_grid_sub_;
+  ros::Subscriber scenario_sub_;
 
   ros::Timer timer_;
 
@@ -63,6 +65,7 @@ class AstarNavi {
   AstarSearch astar_;
 
   // variables
+  bool is_active_;
   nav_msgs::OccupancyGrid occupancy_grid_;
   geometry_msgs::PoseStamped current_pose_local_;
   geometry_msgs::PoseStamped current_pose_global_;
@@ -76,6 +79,7 @@ class AstarNavi {
   // functions, callback
   void onOccupancyGrid(const nav_msgs::OccupancyGrid& msg);
   void onRoute(const autoware_planning_msgs::Route& msg);
+  void onScenario(const autoware_planning_msgs::Scenario& msg);
 
   void onTimer(const ros::TimerEvent& event);
 
