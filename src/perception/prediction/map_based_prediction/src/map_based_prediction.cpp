@@ -171,7 +171,6 @@ bool MapBasedPrediction::doPrediction(
           // for ego point
           geometry_msgs::PoseWithCovarianceStamped point;
           point.pose.pose.position = object_point;
-          path.path.push_back(point);
           getPredictedPath(object_point.z,
                           current_d_position,
                           current_d_velocity,
@@ -292,7 +291,7 @@ bool MapBasedPrediction::getPredictedPath(
   double dt = sampling_delta_time_;
   std::vector<double> d_vec;
   double calculated_d, calculated_s;
-  for(double i = dt; i < t; i+=dt)
+  for(double i = 0; i < t; i+=dt)
   {
     calculated_d = current_d_position + 
                           current_d_velocity * i +
@@ -317,7 +316,7 @@ bool MapBasedPrediction::getPredictedPath(
     tmp_point.pose.pose.position.y = p[1]+ std::sin(yaw-M_PI/2.0)*calculated_d;
     tmp_point.pose.pose.position.z = height;
     tmp_point.header = origin_header;
-    tmp_point.header.stamp = origin_header.stamp + ros::Duration(dt);
+    tmp_point.header.stamp = origin_header.stamp + ros::Duration(i);
     path.path.push_back(tmp_point);
   }
   path.confidence = calculateLikelyhood(current_d_position);
@@ -336,14 +335,14 @@ bool MapBasedPrediction::getLinearPredictedPath(
   double time_horizon = time_horizon_;
   geometry_msgs::PoseWithCovarianceStamped pose;
   pose.pose.pose  = object_pose;
-  for(double i = dt; i < time_horizon; i+=dt)
+  for(double i = 0; i < time_horizon; i+=dt)
   {
     double next_x = pose.pose.pose.position.x + std::cos(yaw)*linear_velocity*dt;
     double next_y = pose.pose.pose.position.y + std::sin(yaw)*linear_velocity*dt;
     pose.pose.pose.position.x = next_x;
     pose.pose.pose.position.y = next_y;
     pose.header = origin_header;
-    pose.header.stamp = origin_header.stamp + ros::Duration(dt);
+    pose.header.stamp = origin_header.stamp + ros::Duration(i);
     path.path.push_back(pose);
   }
   path.confidence = 1.0;
