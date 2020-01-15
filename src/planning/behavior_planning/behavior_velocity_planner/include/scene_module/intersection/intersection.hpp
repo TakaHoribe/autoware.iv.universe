@@ -109,7 +109,7 @@ private:
     public:
         StateMachine()
         {
-            state_ = IntersectionModule::State::STOP;
+            state_ = IntersectionModule::State::GO;
             margin_time_ = 0.0;
         };
 
