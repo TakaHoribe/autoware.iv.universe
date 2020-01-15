@@ -56,7 +56,7 @@ InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(pa
   topic_label_ = new QLabel("PoseWithCovarianceStamped ");
   topic_label_->setAlignment(Qt::AlignCenter);
 
-  topic_edit_ = new QLineEdit("/gnss_pose_cov");
+  topic_edit_ = new QLineEdit("/localization/pose_generator/gnss_pose_cov");
   connect(topic_edit_, SIGNAL(textEdited(QString)), SLOT(editTopic()));
 
   initialize_button_ = new QPushButton("Wait for subscribe topic");
