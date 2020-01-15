@@ -73,6 +73,16 @@ void FollowingLaneState::update()
           lane_change_prepare_duration, lane_changing_duration);
     }
   }
+
+  // update drivable area
+  {
+    const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
+    const double width = ros_parameters_.drivable_area_width;
+    const double height = ros_parameters_.drivable_area_height;
+    const double resolution = ros_parameters_.drivable_area_resolution;
+    status_.lane_follow_path.drivable_area =
+        util::convertLanesToDrivableArea(current_lanes, current_pose_, width, height, resolution);
+  }
 }
 
 State FollowingLaneState::getNextState() const

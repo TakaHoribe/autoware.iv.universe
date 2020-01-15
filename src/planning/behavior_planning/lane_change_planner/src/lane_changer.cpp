@@ -49,6 +49,9 @@ void LaneChanger::init()
   pnh_.param("lane_changing_duration", parameters.lane_changing_duration, 4.0);
   pnh_.param("prediction_duration", parameters.prediction_duration, 8.0);
   pnh_.param("prediction_time_resolution", parameters.prediction_time_resolution, 0.5);
+  pnh_.param("drivable_area_resolution", parameters.drivable_area_resolution, 0.1);
+  pnh_.param("drivable_area_width", parameters.drivable_area_width, 100.0);
+  pnh_.param("drivable_area_height", parameters.drivable_area_height, 50.0);
   SingletonDataManager::getInstance().setLaneChangerParameters(parameters);
 
   // route_handler
@@ -60,6 +63,7 @@ void LaneChanger::init()
   // path_publisher
   path_publisher_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
   path_marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
+  drivable_area_publisher_ = pnh_.advertise<nav_msgs::OccupancyGrid>("debug/drivable_area", 1);
 
   // wait until mandatory data is ready
   {
@@ -108,6 +112,12 @@ void LaneChanger::run(const ros::TimerEvent& event)
   }
 
   publishDebugMarkers();
+  publishDrivableArea(refined_path);
+}
+
+void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path)
+{
+  drivable_area_publisher_.publish(path.drivable_area);
 }
 
 void LaneChanger::publishDebugMarkers()
@@ -149,10 +159,11 @@ void LaneChanger::publishDebugMarkers()
   {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_change_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
+    const auto& resampled_path =
+        util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
-    radius = std::max(radius ,min_radius);
+    radius = std::max(radius, min_radius);
     const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_change_path", radius);
     debug_markers.markers.push_back(marker);
   }
@@ -161,10 +172,11 @@ void LaneChanger::publishDebugMarkers()
   {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_follow_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path = util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
+    const auto& resampled_path =
+        util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
-    radius = std::max(radius ,min_radius);
+    radius = std::max(radius, min_radius);
     const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_follow_path", radius);
     debug_markers.markers.push_back(marker);
   }
@@ -180,7 +192,7 @@ void LaneChanger::publishDebugMarkers()
       {
         const auto& resampled_path = util::resamplePredictedPath(obj_path, time_resolution, prediction_duration);
         double radius = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
-        radius = std::max(radius ,min_radius);
+        radius = std::max(radius, min_radius);
         const auto& marker = convertToMarker(resampled_path, i, "object_predicted_path", radius);
         debug_markers.markers.push_back(marker);
       }

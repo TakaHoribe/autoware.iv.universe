@@ -28,6 +28,9 @@ struct LaneChangerParameters
   double lane_changing_duration;
   double prediction_duration;
   double prediction_time_resolution;
+  double drivable_area_resolution;
+  double drivable_area_width;
+  double drivable_area_height;
 };
 
 #endif
