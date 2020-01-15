@@ -35,8 +35,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/5</field>
@@ -48,8 +48,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -86,8 +86,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/8</field>
@@ -99,8 +99,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -137,8 +137,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/0</field>
@@ -150,8 +150,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -188,8 +188,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/2</field>
@@ -201,8 +201,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -239,8 +239,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/3</field>
@@ -252,8 +252,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -290,8 +290,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/4</field>
@@ -303,8 +303,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -366,8 +366,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/11</field>
@@ -379,8 +379,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -417,8 +417,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/12</field>
@@ -430,8 +430,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -468,8 +468,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/13</field>
@@ -481,8 +481,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -519,8 +519,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>data/16</field>
@@ -532,8 +532,8 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/mpc_follower/debug/debug_values</topic>
-                                    <type>std_msgs/Float64MultiArray</type>
+                                    <topic>/control/mpc_follower/debug/debug_values</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
