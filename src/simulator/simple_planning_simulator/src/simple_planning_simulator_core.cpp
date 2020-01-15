@@ -40,7 +40,6 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pub_velocity_kmph_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity_kmph", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
-  timer_tf_ = nh_.createTimer(ros::Duration(0.1 / loop_rate_), &Simulator::timerCallbackPublishTF, this);
 
   bool use_trajectory_for_z_position_source;
   pnh_.param("use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(true));
@@ -159,11 +158,6 @@ void Simulator::callbackInitialPoseStamped(const geometry_msgs::PoseStampedConst
 {
   geometry_msgs::Twist initial_twist; // initialized with zero for all components
   setInitialStateWithPoseTransform(*msg, initial_twist);
-}
-
-void Simulator::timerCallbackPublishTF(const ros::TimerEvent &e)
-{
-  publishTF(current_pose_);
 }
 
 void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)

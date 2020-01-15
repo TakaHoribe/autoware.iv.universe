@@ -77,7 +77,6 @@ private:
   ros::Subscriber sub_trajectory_;    //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;   //!< @brief topic subscriber for initialpose topic
   ros::Timer timer_simulation_;       //!< @brief timer for simulation
-  ros::Timer timer_tf_;               //!< @brief timer to pubish tf
 
   /* received & published topics */
   geometry_msgs::Pose current_pose_;                                                      //!< @brief current vehicle position ang angle with pose message class
