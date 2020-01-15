@@ -33,7 +33,7 @@
   <arg name="node_name" value="$(anon ndt_scan_matcher)" if="$(arg use_anonymous_node_name)" doc="Use anonymous option" />
 
 
-  <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="screen">
+  <node pkg="ndt_scan_matcher" type="ndt_scan_matcher" name="$(arg node_name)" output="log">
 
     <remap from="points_raw" to="$(arg input_sensor_points_topic)" />
     <param name="input_sensor_points_queue_size" value="$(arg input_sensor_points_queue_size)" />

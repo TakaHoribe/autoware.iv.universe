@@ -57,6 +57,23 @@
                 </node>
             </group>
         </group>
+
+        <!-- IMU -->
+        <group ns="imu" if="$(eval launch_driver==true)">
+            <include file="$(find microstrain_mips)/launch/microstrain.launch">
+                <arg name="port" value="/dev/ttyACM0" />
+                <arg name="imu_frame_id" value="imu_link" />
+            </include>
+        </group>
+
+        <!-- GNSS -->
+        <group ns="gnss" if="$(eval launch_driver==true)">
+            <include file="$(find ublox_gps)/launch/ublox_device.launch">
+                <arg name="node_name" value="ublox" />
+                <arg name="param_file_name" value="c94_f9p_rover" />
+            </include>
+        </group>
+
     </group>
 
     <!-- <node pkg="uvc_camera" name="camera" type="uvc_camera_node" output="screen">

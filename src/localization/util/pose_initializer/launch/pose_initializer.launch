@@ -4,7 +4,7 @@
   <node pkg="pose_initializer" type="pose_initializer" name="pose_initializer" output="log">
     <remap from="initialpose" to="/initialpose" />
     <remap from="initialpose3d" to="/initialpose3d" />
-    <remap from="gnss_pose_cov" to="/gnss_pose_cov" />
+    <remap from="gnss_pose_cov" to="/localization/pose_generator/gnss_pose_cov" />
     <remap from="pointcloud_map" to="/pointcloud_map" />
     <remap from="ndt_align_srv" to="/localization/pose_generator/ndt_align_srv" />
     <param name="use_first_gnss_topic" value="true" />
