@@ -163,11 +163,6 @@ private:
   void timerCallbackSimulation(const ros::TimerEvent &e);
 
   /**
-   * @brief timer callback for tf publication
-   */
-  void timerCallbackPublishTF(const ros::TimerEvent &e);
-
-  /**
    * @brief set initial state of simulated vehicle
    * @param [in] pose initial position and orientation
    * @param [in] twist initial velocity and angular velocity
