@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef ACCEL_MAP_CONVERTER_INTERPOLATE_H
+#define ACCEL_MAP_CONVERTER_INTERPOLATE_H
+
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -48,3 +50,5 @@ public:
                    const std::vector<double>& return_index, std::vector<double>& return_value);
   void getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v);
 };
+
+#endif

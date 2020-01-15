@@ -14,15 +14,34 @@
  * limitations under the License.
  */
 
+#ifndef ACCEL_MAP_CONVERTER_ACCEL_MAP_H
+#define ACCEL_MAP_CONVERTER_ACCEL_MAP_H
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
 #include <ros/ros.h>
 
-#include "ssc_interface.h"
+#include "accel_map_converter/csv_loader.h"
+#include "accel_map_converter/interpolate.h"
 
-int main(int argc, char** argv)
+class AccelMap
 {
-  ros::init(argc, argv, "ssc_interface");
-  SSCInterface node;
-  node.run();
+public:
+  AccelMap();
+  ~AccelMap();
 
-  return 0;
-}
+  bool readAccelMapFromCSV(std::string csv_path);
+  bool getThrottle(double acc, double vel, double& throttle);
+  void showAccelMapInfo();
+
+private:
+  std::string vehicle_name_;
+  std::vector<double> vel_index_;
+  std::vector<double> throttle_index_;
+  std::vector<std::vector<double>> accel_map_;
+};
+
+#endif

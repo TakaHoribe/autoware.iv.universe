@@ -6,6 +6,7 @@
   <maintainer email="aohsato@gmail.com">Akihito Ohsato</maintainer>
   <author email="aohsato@gmail.com">Akihito Ohsato</author>
   <author email="antm678@ertl.jp">T.Ando</author>
+  <author email="horibe.takamasa@gmail.com">Horibe Takamasa</author>
   <license>Apache 2</license>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -16,6 +17,7 @@
   <depend>geometry_msgs</depend>
   <depend>message_filters</depend>
   <depend>pacmod_msgs</depend>
+  <depend>accel_map_converter</depend>
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
 </package>

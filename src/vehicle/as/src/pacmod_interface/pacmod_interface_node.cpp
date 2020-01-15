@@ -14,35 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef BRAKE_MAP_H
-#define BRAKE_MAP_H
-
-#include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
-
 #include <ros/ros.h>
 
-#include "csv.h"
-#include "interpolate.h"
+#include "pacmod_interface/pacmod_interface.h"
 
-class BrakeMap
+int main(int argc, char** argv)
 {
-public:
-  BrakeMap();
-  ~BrakeMap();
+  ros::init(argc, argv, "pacmod_interface");
+  PacmodInterface node;
+  node.run();
 
-  bool readBrakeMapFromCSV(std::string csv_path);
-  bool getBrake(double acc, double vel, double& brake);
-  void showBrakeMapInfo();
-
-private:
-  std::string vehicle_name_;
-  std::vector<double> vel_index_;
-  std::vector<double> brake_index_;
-  std::vector<double> brake_index_rev_;
-  std::vector<std::vector<double>> brake_map_;
-};
-
-#endif
+  return 0;
+}

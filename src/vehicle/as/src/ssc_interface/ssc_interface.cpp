@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "ssc_interface.h"
+#include "ssc_interface/ssc_interface.h"
 
 SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_initialized_(false)
 {
@@ -23,8 +23,8 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
   private_nh_.param<bool>("use_adaptive_gear_ratio", use_adaptive_gear_ratio_, true);
   private_nh_.param<int>("command_timeout", command_timeout_, 1000);
   private_nh_.param<double>("loop_rate", loop_rate_, 30.0);
-  private_nh_.param<double>("wheel_base", wheel_base_, 2.79);
-  private_nh_.param<double>("tire_radius", tire_radius_, 0.39);
+  private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
+  private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, 0.39);
   private_nh_.param<double>("ssc_gear_ratio", ssc_gear_ratio_, 16.135);
   private_nh_.param<double>("acceleration_limit", acceleration_limit_, 3.0);
   private_nh_.param<double>("deceleration_limit", deceleration_limit_, 3.0);

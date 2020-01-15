@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "accel_map.h"
-#include "brake_map.h"
+#include "accel_map_converter/accel_map.h"
+#include "accel_map_converter/brake_map.h"
 
 int main(int argc, char** argv)
 {

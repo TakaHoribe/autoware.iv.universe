@@ -32,14 +32,16 @@
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
 #include <autoware_control_msgs/VehicleCommandStamped.h>
-#include "accel_map.h"
-#include "brake_map.h"
 
-class LexusConverter
+#include <accel_map_converter/accel_map.h>
+#include <accel_map_converter/brake_map.h>
+
+
+class PacmodInterface
 {
 public:
-  LexusConverter();
-  ~LexusConverter();
+  PacmodInterface();
+  ~PacmodInterface();
 
   void run();
 

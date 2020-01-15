@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2017-2019 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef CSV_H
-#define CSV_H
+#include <ros/ros.h>
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
+#include "ssc_interface/ssc_interface.h"
 
-class Csv
+int main(int argc, char** argv)
 {
-public:
-  Csv(std::string csv_path);
-  ~Csv();
+  ros::init(argc, argv, "ssc_interface");
+  SSCInterface node;
+  node.run();
 
-  bool readCsv(std::vector<std::vector<std::string>>& result, const char delim = ',');
-
-private:
-  std::string csv_path_;
-};
-
-#endif
+  return 0;
+}

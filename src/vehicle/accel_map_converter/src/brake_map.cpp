@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "brake_map.h"
+#include "accel_map_converter/brake_map.h"
 
 BrakeMap::BrakeMap()
 {
@@ -26,10 +26,10 @@ BrakeMap::~BrakeMap()
 
 bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
 {
-  Csv csv(csv_path);
+  CSVLoader csv(csv_path);
   std::vector<std::vector<std::string>> table;
 
-  if (!csv.readCsv(table))
+  if (!csv.readCSV(table))
   {
     ROS_ERROR("[Brake Map] Cannot open %s", csv_path.c_str());
     return false;

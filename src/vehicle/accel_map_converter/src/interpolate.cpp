@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "interpolate.h"
+#include "accel_map_converter/interpolate.h"
 
 /*
  * linear interpolation

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accel_map.h"
+#include "accel_map_converter/accel_map.h"
 
 AccelMap::AccelMap()
 {
@@ -26,10 +26,10 @@ AccelMap::~AccelMap()
 
 bool AccelMap::readAccelMapFromCSV(std::string csv_path)
 {
-  Csv csv(csv_path);
+  CSVLoader csv(csv_path);
   std::vector<std::vector<std::string>> table;
 
-  if (!csv.readCsv(table))
+  if (!csv.readCSV(table))
   {
     ROS_ERROR("[Accel Map] Cannot open %s", csv_path.c_str());
     return false;

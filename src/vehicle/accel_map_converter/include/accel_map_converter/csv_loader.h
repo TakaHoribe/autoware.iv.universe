@@ -14,42 +14,25 @@
  * limitations under the License.
  */
 
-#include "csv.h"
+#ifndef ACCEL_MAP_CONVERTER_CSV_LOADER_H
+#define ACCEL_MAP_CONVERTER_CSV_LOADER_H
 
-Csv::Csv(std::string csv_path)
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
+
+class CSVLoader
 {
-  csv_path_ = csv_path;
-}
+public:
+  CSVLoader(std::string csv_path);
+  ~CSVLoader();
 
-Csv::~Csv()
-{
-}
+  bool readCSV(std::vector<std::vector<std::string>>& result, const char delim = ',');
 
-bool Csv::readCsv(std::vector<std::vector<std::string>>& result, const char delim)
-{
-  std::ifstream ifs(csv_path_);
-  if (!ifs.is_open())
-  {
-    return false;
-  }
+private:
+  std::string csv_path_;
+};
 
-  std::string buf;
-  while (std::getline(ifs, buf))
-  {
-    std::vector<std::string> tokens;
-
-    std::istringstream iss(buf);
-    std::string token;
-    while (std::getline(iss, token, delim))
-    {
-      tokens.push_back(token);
-    }
-
-    if (tokens.size() != 0)
-    {
-      result.push_back(tokens);
-    }
-  }
-
-  return true;
-}
+#endif

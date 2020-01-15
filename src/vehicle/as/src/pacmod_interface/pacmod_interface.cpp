@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "lexus_converter.h"
+#include "pacmod_interface/pacmod_interface.h"
 
-LexusConverter::LexusConverter()
+PacmodInterface::PacmodInterface()
   : nh_()
   , private_nh_("~")
   , engage_(false)
@@ -25,24 +25,28 @@ LexusConverter::LexusConverter()
   , wheel_speed_initialized_(false)
   , steer_wheel_initialized_(false)
 {
-  std::string home_dir{ std::getenv("HOME") };
   // setup parameters
   private_nh_.param<std::string>("base_frame_id", base_frame_id_, "base_link");
   private_nh_.param<int>("command_timeout", command_timeout_, int(1000));
   private_nh_.param<double>("loop_rate", loop_rate_, double(30.0));
+
   // parameters for vehicle specifications
-  private_nh_.param<double>("tire_radius", tire_radius_, double(0.39));
-  private_nh_.param<double>("wheel_base", wheel_base_, double(2.79));
+  private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, double(0.39));
+  private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, double(2.79));
   private_nh_.param<double>("agr_coef_a", agr_coef_a_, double(15.713));
   private_nh_.param<double>("agr_coef_b", agr_coef_b_, double(0.053));
   private_nh_.param<double>("agr_coef_c", agr_coef_c_, double(0.042));
+
   // parameters for accel/brake map
+  std::string home_dir{ std::getenv("HOME") };
   private_nh_.param<std::string>("csv_path_accel_map", csv_path_accel_map_,
                                  home_dir += "/.autoware/vehicle_data/lexus/accel_map.csv");
   private_nh_.param<std::string>("csv_path_brake_map", csv_path_brake_map_,
                                  home_dir += "/.autoware/vehicle_data/lexus/brake_map.csv");
+
   // parameters for emergency stop
   private_nh_.param<double>("acc_emergency", acc_emergency_, double(-2.0));
+
   // parameters for limitter
   private_nh_.param<double>("max_throttle", max_throttle_, double(0.2));
   private_nh_.param<double>("min_throttle", min_throttle_, double(0.0));
@@ -54,10 +58,10 @@ LexusConverter::LexusConverter()
   rate_ = new ros::Rate(loop_rate_);
 
   // subscribers
-  vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &LexusConverter::callbackVehicleCmd, this);
-  engage_sub_ = nh_.subscribe("vehicle/engage", 1, &LexusConverter::callbackEngage, this);
-  steer_wheel_sub_ = nh_.subscribe("pacmod/parsed_tx/steer_rpt", 1, &LexusConverter::callbackSteerWheel, this);
-  wheel_speed_sub_ = nh_.subscribe("pacmod/parsed_tx/wheel_speed_rpt", 1, &LexusConverter::callbackWheelSpeed, this);
+  vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
+  engage_sub_ = nh_.subscribe("vehicle/engage", 1, &PacmodInterface::callbackEngage, this);
+  steer_wheel_sub_ = nh_.subscribe("pacmod/parsed_tx/steer_rpt", 1, &PacmodInterface::callbackSteerWheel, this);
+  wheel_speed_sub_ = nh_.subscribe("pacmod/parsed_tx/wheel_speed_rpt", 1, &PacmodInterface::callbackWheelSpeed, this);
 
   // publisher
   accel_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdFloat>("pacmod/as_rx/accel_cmd", 10);
@@ -66,11 +70,11 @@ LexusConverter::LexusConverter()
   vehicle_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("vehicle/velocity", 10);
 }
 
-LexusConverter::~LexusConverter()
+PacmodInterface::~PacmodInterface()
 {
 }
 
-void LexusConverter::run()
+void PacmodInterface::run()
 {
   if (!accel_map_.readAccelMapFromCSV(csv_path_accel_map_))
   {
@@ -91,32 +95,32 @@ void LexusConverter::run()
   }
 }
 
-void LexusConverter::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStamped::ConstPtr& msg)
+void PacmodInterface::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStamped::ConstPtr& msg)
 {
   command_time_ = ros::Time::now();
   vehicle_cmd_ptr_ = std::make_shared<autoware_control_msgs::VehicleCommandStamped>(*msg);
   vehicle_cmd_initialized_ = true;
 }
 
-void LexusConverter::callbackEngage(const std_msgs::BoolConstPtr& msg)
+void PacmodInterface::callbackEngage(const std_msgs::BoolConstPtr& msg)
 {
   engage_ = msg->data;
 }
 
-void LexusConverter::callbackSteerWheel(const pacmod_msgs::SystemRptFloatConstPtr& msg)
+void PacmodInterface::callbackSteerWheel(const pacmod_msgs::SystemRptFloatConstPtr& msg)
 {
   steer_wheel_ = msg->output;
   steer_wheel_initialized_ = true;
 }
 
-void LexusConverter::callbackWheelSpeed(const pacmod_msgs::WheelSpeedRptConstPtr& msg)
+void PacmodInterface::callbackWheelSpeed(const pacmod_msgs::WheelSpeedRptConstPtr& msg)
 {
   wheel_speed_ =
       (msg->rear_left_wheel_speed + msg->rear_right_wheel_speed) / 2 * tire_radius_;  // [rad/s] * [m] = [m/s]
   wheel_speed_initialized_ = true;
 }
 
-void LexusConverter::publishCommand()
+void PacmodInterface::publishCommand()
 {
   if (!(vehicle_cmd_initialized_ && wheel_speed_initialized_ && steer_wheel_initialized_))
   {
