@@ -122,6 +122,12 @@ void PoseInitializer::callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianc
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
 
+  aligned_pose_msg_ptr->pose.covariance[0] = 2.0;
+  aligned_pose_msg_ptr->pose.covariance[1*6+1] = 2.0;
+  aligned_pose_msg_ptr->pose.covariance[2*6+2] = 0.01;
+  aligned_pose_msg_ptr->pose.covariance[3*6+3] = 0.01;
+  aligned_pose_msg_ptr->pose.covariance[4*6+4] = 0.01;
+  aligned_pose_msg_ptr->pose.covariance[5*6+5] = 3.14;
   if (succeeded_align) {
     initial_pose_pub_.publish(*aligned_pose_msg_ptr);
   }
