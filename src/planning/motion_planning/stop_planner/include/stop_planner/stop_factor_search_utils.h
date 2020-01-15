@@ -50,8 +50,8 @@ std_msgs::ColorRGBA setColorYellow();
 
 std::pair<bool, int32_t> calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &lane, int32_t base_idx, double stop_offset_dist);
 
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc, int32_t points_thr);
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points, int32_t points_thr = 1);
+bool findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc, const int32_t points_thr, std::vector<geometry_msgs::Point> &out_pcd);
+bool findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points, const int32_t points_thr, std::vector<geometry_msgs::Point> &out_points);
 
 
 geometry_msgs::Point calcClosestPointByXAxis(const geometry_msgs::Pose &pose, const std::vector<geometry_msgs::Point> &points);

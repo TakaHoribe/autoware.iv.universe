@@ -57,21 +57,22 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
 
   if (!updateCurrentPose(0.0))
   {
-    ROS_INFO_DELAYED_THROTTLE(3.0, "[StopPlanner] failt to get base_link.");
+    ROS_INFO_DELAYED_THROTTLE(2.0, "[StopPlanner] fail to get base_link.");
     return;
   }
 
   /* nullptr guard */
   if (in_trajectory_ptr_ == nullptr || current_pose_ptr_ == nullptr)
   {
-    ROS_INFO_DELAYED_THROTTLE(3.0, "[StopPlanner] waiting topics. trajectory  %d, current_pose = %d",
+    ROS_INFO_DELAYED_THROTTLE(2.0, "[StopPlanner] waiting topics. trajectory  %d, current_pose = %d",
              in_trajectory_ptr_ != nullptr, current_pose_ptr_ != nullptr);
     return;
   }
 
   /* if obstacle pcd is not received */
-  if (in_obstacle_pcd_ptr_ == nullptr)
+  if (in_obstacle_pcd_ptr_ == nullptr || in_obstacle_pcd_ptr_->data.empty())
   {
+    ROS_DEBUG_DELAYED_THROTTLE(2.0, "[StopPlanner] pcd is not received or size is 0.");
     trajectory_pub_.publish(*in_trajectory_ptr_);
     return;
   }
@@ -99,7 +100,8 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   obstacle_pcd_stop_planner_.setCurrentPose(current_pose_ptr_->pose);
   obstacle_pcd_stop_planner_.setCurrentLane(*in_trajectory_ptr_);
   obstacle_pcd_stop_planner_.setPointCloud(transformed_pointcloud);
-  const autoware_planning_msgs::Trajectory out_trajectory = obstacle_pcd_stop_planner_.run();
+  autoware_planning_msgs::Trajectory out_trajectory;
+  obstacle_pcd_stop_planner_.run(out_trajectory);
 
   auto tf = std::chrono::system_clock::now();
   double calctime_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(tf - ts).count() * 1.0e-6;

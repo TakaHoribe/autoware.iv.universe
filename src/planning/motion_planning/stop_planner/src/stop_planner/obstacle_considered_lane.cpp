@@ -18,11 +18,23 @@
 
 namespace motion_planner
 {
-autoware_planning_msgs::Trajectory ObstacleConsideredLane::run()
+
+ObstacleConsideredLane::ObstacleConsideredLane() : perpendicular_pose_(geometry_msgs::Pose()), in_trajectory_(autoware_planning_msgs::Trajectory()),
+                                                   in_point_cloud_(sensor_msgs::PointCloud2()), polygons_(std::vector<PolygonX>())
 {
-  autoware_planning_msgs::Trajectory trajectory;
-  replan_pair_ = replan(trajectory, is_obstacle_detected_);
-  return replan_pair_.second;
+  init();
+
+  vehicle_param_.baselink_to_front_length = 3.0;
+  vehicle_param_.baselink_to_rear_length = 1.0;
+  vehicle_param_.width = 2.5;
+
+  planning_param_.stop_distance = 7.0;
+  planning_param_.points_thr = 1;
+  planning_param_.endpoint_extend_length = 5.0;
+  planning_param_.endpoint_extend_length_rev = 5.0;
+  planning_param_.detection_area_width = 1.5;
+  planning_param_.search_distance = 50.0;
+  planning_param_.search_distance_rev = 30.0;
 }
 
 visualization_msgs::MarkerArray ObstacleConsideredLane::visualize()
@@ -31,191 +43,160 @@ visualization_msgs::MarkerArray ObstacleConsideredLane::visualize()
   visualization_msgs::MarkerArray ma;
 
   const int8_t stop_kind = is_obstacle_detected_ ? 1 /* obstacle */ : 0 /* none */;
-  ma.markers.push_back(displayWall(wall_pose_, stop_kind, 1));
+  ma.markers.push_back(displayWall(stop_pose_front_, stop_kind, 1));
   ma.markers.push_back(displayObstaclePerpendicularPoint(perpendicular_pose_, stop_kind));
   ma.markers.push_back(displayObstaclePoint(stop_factor_pose_, stop_kind));
-  const auto ma_d = displayActiveDetectionArea(poly_, stop_kind);
+  const auto ma_d = displayActiveDetectionArea(current_detection_area_, stop_kind);
   ma.markers.insert(ma.markers.end(), ma_d.markers.begin(), ma_d.markers.end());
 
   return ma;
 }
 
-std::pair<bool, autoware_planning_msgs::Trajectory> ObstacleConsideredLane::replan(autoware_planning_msgs::Trajectory &trajectory, bool &is_obstacle_detected)
+void ObstacleConsideredLane::init()
+{
+  stop_factor_pose_ = geometry_msgs::Pose();
+  stop_pose_baselink_ = geometry_msgs::Pose();
+  stop_pose_front_ = geometry_msgs::Pose();
+  is_obstacle_detected_ = false;
+}
+
+bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_trajectory)
 {
   ROS_DEBUG_STREAM(__func__);
-  autoware_planning_msgs::Trajectory out = lane_in_;
+  out_trajectory = in_trajectory_;
 
-  auto NotReplan = [&out, &is_obstacle_detected, this]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
-    stop_factor_pose_ = geometry_msgs::Pose();
-    actual_stop_pose_ = geometry_msgs::Pose();
-    wall_pose_ = geometry_msgs::Pose();
-    out.header.stamp = ros::Time::now();
-    is_obstacle_detected = false;
-    return std::make_pair(false, out);
-  };
+  bool ret = false;
 
-  auto Replan = [&out, &is_obstacle_detected]() -> std::pair<bool, autoware_planning_msgs::Trajectory> {
-    out.header.stamp = ros::Time::now();
-    is_obstacle_detected = true;
-    return std::make_pair(true, out);
-  };
+  init();
+
+  // Guard
+  if (in_point_cloud_.data.empty() || planning_param_.points_thr == 0)
+  {
+    ROS_INFO("point cloud is not subscribed or empty. points_thr = %d, pcd.size = %lu", planning_param_.points_thr, in_point_cloud_.data.size());
+    return true;
+  }
+  if (in_trajectory_.points.empty())
+  {
+    ROS_INFO("trajectory size is 0. no plan.", in_point_cloud_.data.size());
+    return true;
+  }
+
 
 
   // get lane direction (0:FWD, 1:REV, 2:ERROR)
-  const int8_t direction = planning_utils::getLaneDirection(planning_utils::extractPoses(lane_in_));
-
-  // insert extend search area
-  double extend_area_size;
-  if(direction == 0) //front
-  {
-    extend_area_size = extend_area_size_;
-  }
-  else if(direction == 1)
-  {
-    extend_area_size = extend_area_size_rev_;
-  }
-  else
+  const int8_t direction = planning_utils::getLaneDirection(planning_utils::extractPoses(in_trajectory_));
+  if (direction != 0 && direction != 1)
   {
     ROS_WARN("cannot get lane direction!");
-    return NotReplan();
+    return false;
   }
 
+  // insert extend search area
+  double endpoint_extend_length = direction == 0 ? planning_param_.endpoint_extend_length : planning_param_.endpoint_extend_length_rev;
 
-  autoware_planning_msgs::Trajectory ext_lane;
-  if(!insertExtendWaypoint(lane_in_, extend_area_size_rev_, ext_lane))
+  autoware_planning_msgs::Trajectory extended_trajectory;
+  ret = extendTrajectory(in_trajectory_, endpoint_extend_length, extended_trajectory);
+  if(!ret)
   {
     ROS_WARN("cannot extend lane");
-    return NotReplan();
+    return false;
   }
 
 
   // define search range
-  std::tuple<bool, int32_t, int32_t> range_tuple;
-
-  if(direction == 0) // front
+  int32_t idx_start, idx_end;
+  ret = calcSearchRange(extended_trajectory, curr_pose_, direction, idx_start, idx_end);
+  if (!ret)
   {
-    ROS_DEBUG("front");
-    auto fp_pair = calcVehicleFrontPosition(curr_pose_, vehicle_length_baselink_to_front_, vehicle_width_);
-
-    range_tuple = calcSearchRange(ext_lane, curr_pose_, fp_pair, search_distance_, direction);
-    if (!std::get<0>(range_tuple))
-    {
-      ROS_WARN("cannot get search range!");
-      return NotReplan();
-    }
+    ROS_WARN("cannot get search range");
+    return false;
   }
-  else if(direction == 1) // reverse
-  {
-    ROS_DEBUG("reverse");
-    auto rp_pair = calcVehicleRearPosition(curr_pose_, vehicle_length_baselink_to_rear_, vehicle_width_);
+  ROS_DEBUG("start: %d, end: %d, pointcloud: %lu", idx_start, idx_end, in_point_cloud_.data.size());
 
-    range_tuple = calcSearchRange(ext_lane, curr_pose_, rp_pair, search_distance_rev_, direction);
-    if (!std::get<0>(range_tuple))
-    {
-      ROS_WARN("cannot get search range");
-      return NotReplan();
-    }
+
+  // 車両形状を考慮して、ポリゴン作成のための横幅を計算する
+  std::vector<double> left_width_v(extended_trajectory.points.size(), 0.0);
+  std::vector<double> right_width_v(extended_trajectory.points.size(), 0.0);
+  for (int32_t i = 0; i < (int32_t)extended_trajectory.points.size(); i++)
+  {
+    calcDetectioWidthByVehicleShape(extended_trajectory, planning_param_.detection_area_width, vehicle_param_.baselink_to_front_length, i,
+                                   left_width_v.at(i), right_width_v.at(i));
   }
-  else
+  ROS_DEBUG("left: %lu, right: %lu", left_width_v.size(), right_width_v.size());
+
+
+  // 経路と左右の幅のvectorから経路を囲う大きなポリゴンを作る。
+  current_detection_area_ = createPolygon(extended_trajectory, left_width_v, right_width_v, idx_start, idx_end);
+
+
+
+  // 検出エリアに入っている点群を抽出する
+  std::vector<geometry_msgs::Point> pcd_in_polygon;
+  ret = findPointCloudInPolygon(current_detection_area_, in_point_cloud_, planning_param_.points_thr, pcd_in_polygon);
+  if (!ret)
   {
-    ROS_WARN("cannot get lane direction");
-    return NotReplan();
-  }
-
-  const auto idx_s = std::get<1>(range_tuple);
-  const auto idx_e = std::get<2>(range_tuple);
-  ROS_DEBUG("start: %d, end: %d, pointcloud: %d", std::get<1>(range_tuple), std::get<2>(range_tuple),
-            (int32_t)pc_.data.size());
-
-
-  // for polygon
-  std::vector<double> left_offset_v(ext_lane.points.size(), 0.0);
-  std::vector<double> right_offset_v(ext_lane.points.size(), 0.0);
-  for (int32_t i = 0; i < (int32_t)ext_lane.points.size(); i++)
-  {
-    calcVehicleShapeDetectionWidth(ext_lane, detection_area_width_, vehicle_length_baselink_to_front_, i,
-                                   left_offset_v.at(i), right_offset_v.at(i));
-  }
-
-  ROS_DEBUG("left: %d, right: %d", (int32_t)left_offset_v.size(), (int32_t)right_offset_v.size());
-
-
-  // create polygon
-  poly_ = createPolygon(ext_lane, left_offset_v, right_offset_v, idx_s, idx_e);
-
-
-  // point cloud error handling
-  if (pc_.data.empty() || points_thr_ == 0)
-  {
-    ROS_INFO("point cloud is not subscribed or invalid!, points_thr_ = %d, pc.siize = %lu", points_thr_, pc_.data.size());
-    return NotReplan();
+    ROS_DEBUG("[StopPlanner] no point is in polygon. return input trajectory as it is.");
+    return true;
   }
 
 
-  // is pointcloud in polygon?
-  const auto pcl_pair = findPointCloudInPolygon(poly_, pc_, points_thr_);
-
-  if (!pcl_pair.first)
-    return NotReplan();
-
-
-  // closest pointcloud
+  // 二分探索で点群の存在するもっとも近いポリゴンのidxと、点の位置を求める
   int32_t clst_idx;
   geometry_msgs::Point clst_point;
-  if (!findClosestPointPosAndIdx(ext_lane, left_offset_v, right_offset_v, pcl_pair.second, idx_s, idx_e, clst_idx, clst_point))
-    return NotReplan();
+  ret = findClosestPointPosAndIdx(extended_trajectory, left_width_v, right_width_v, pcd_in_polygon, idx_start, idx_end, clst_idx, clst_point);
+  if (!ret)
+  {
+    ROS_DEBUG("[StopPlanner] no point is in polygon in binary search. return input trajectory as it is.");
+    return false;
 
+  }
   ROS_DEBUG("closest point before: %d, (%lf, %lf)", clst_idx, clst_point.x, clst_point.y);
 
-  const auto pnt_s = ext_lane.points.at(clst_idx).pose.position;
-  const auto pnt_e = ext_lane.points.at(clst_idx + 1).pose.position;
+  const auto pnt_start = extended_trajectory.points.at(clst_idx).pose.position;
+  const auto pnt_end = extended_trajectory.points.at(clst_idx + 1).pose.position;
 
 
   // calculate stop_factor_pose (the foot of perpendicular line)
-  const auto fop_pair = calcFopPose(pnt_s, pnt_e, clst_point);
+  const auto fop_pair = calcFopPose(pnt_start, pnt_end, clst_point);
   if (!fop_pair.first)
-    return NotReplan();
-
+    return false;
   perpendicular_pose_ = fop_pair.second;
 
   stop_factor_pose_.position = clst_point;
 
 
-  // calc actual stop pose
-  const auto actual_stop_dist = (direction == 0) ? (stop_distance_ + vehicle_length_baselink_to_front_)
-                                           : (stop_distance_ + vehicle_length_baselink_to_rear_);
-  const auto asp_tuple = planning_utils::calcDistanceConsideredPoseAndIdx(ext_lane,  perpendicular_pose_, clst_idx, actual_stop_dist, 1);
+  // calculate stop point index for base_link
+  const auto stop_dist_baselink = (direction == 0) ? (planning_param_.stop_distance + vehicle_param_.baselink_to_front_length)
+                                           : (planning_param_.stop_distance + vehicle_param_.baselink_to_rear_length);
+  const auto asp_tuple = planning_utils::calcDistanceConsideredPoseAndIdx(extended_trajectory, perpendicular_pose_, clst_idx, stop_dist_baselink, 1);
   if(!std::get<0>(asp_tuple))
-    return NotReplan();
+    return false;
+  const auto stop_idx = std::get<1>(asp_tuple);
+  stop_pose_baselink_ = std::get<2>(asp_tuple);
 
-  const auto asp_idx = std::get<1>(asp_tuple);
-  actual_stop_pose_ = std::get<2>(asp_tuple);
 
-
-  // wall pose
-  const auto wall_tuple = planning_utils::calcDistanceConsideredPoseAndIdx(ext_lane,  perpendicular_pose_, clst_idx, stop_distance_, 1);
+  // calculate stop point index for vehicle front
+  const auto wall_tuple = planning_utils::calcDistanceConsideredPoseAndIdx(extended_trajectory, perpendicular_pose_, clst_idx, planning_param_.stop_distance, 1);
   if(!std::get<0>(wall_tuple))
-    return NotReplan();
+    return false;
+  stop_pose_front_ = std::get<2>(wall_tuple);
 
-  wall_pose_ = std::get<2>(wall_tuple);
 
+  // 停止点以降の速度を0埋めする
 
-  // replan
-  if(asp_idx < (int32_t)out.points.size())
+  for(unsigned int k = stop_idx + 1; k < out_trajectory.points.size(); k++)
   {
-    for(int32_t k = (asp_idx + 1); k < (int32_t)out.points.size(); k++)
-    {
-      out.points.at(k).twist.linear.x = 0.0;
-    }
+    out_trajectory.points.at(k).twist.linear.x = 0.0;
   }
 
+
   autoware_planning_msgs::TrajectoryPoint tp;
-  tp.pose = actual_stop_pose_;
+  tp.pose = stop_pose_baselink_;
   tp.twist.linear.x = 0.0;
-  out.points.insert(out.points.begin() + asp_idx + 1, tp);
+  out_trajectory.points.insert(out_trajectory.points.begin() + stop_idx + 1, tp);
 
-
-  return Replan();
+  is_obstacle_detected_ = true;
+  return true;
 }
 
 int ObstacleConsideredLane::getBehindLengthClosest(const autoware_planning_msgs::Trajectory &lane, const int start,
@@ -254,7 +235,7 @@ int ObstacleConsideredLane::getBehindLengthClosest(const autoware_planning_msgs:
   }
 }
 
-bool ObstacleConsideredLane::calcVehicleShapeDetectionWidth(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
+bool ObstacleConsideredLane::calcDetectioWidthByVehicleShape(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
                                                             const double &shape_length, const int idx, double &left_y,
                                                             double &right_y)
 {
@@ -410,53 +391,64 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   return ma;
 }
 
-std::pair<geometry_msgs::Point, geometry_msgs::Point> calcVehicleFrontPosition(const geometry_msgs::Pose &curr_pose,
-                                                                               double base_link_to_front, double width)
+void ObstacleConsideredLane::calcVehicleEdgePoints(const geometry_msgs::Pose &curr_pose, const VehicleParam &param, std::vector<geometry_msgs::Point> &edge_points)
 {
-  geometry_msgs::Pose left;
-  left.position.x += base_link_to_front;
-  left.position.y += width / 2;
+  edge_points.clear();
+  const double half_width = param.width / 2.0;
 
-  auto left_abs = planning_utils::transformToAbsoluteCoordinate2D(left.position, curr_pose);
+  geometry_msgs::Pose front_left;
+  front_left.position.x += param.baselink_to_front_length;
+  front_left.position.y += half_width;
+  edge_points.push_back(planning_utils::transformToAbsoluteCoordinate2D(front_left.position, curr_pose));
 
-  geometry_msgs::Pose right;
-  right.position.x += base_link_to_front;
-  right.position.y -= width / 2;
+  geometry_msgs::Pose front_right;
+  front_right.position.x += param.baselink_to_front_length;
+  front_right.position.y -= half_width;
+  edge_points.push_back(planning_utils::transformToAbsoluteCoordinate2D(front_right.position, curr_pose));
 
-  auto right_abs = planning_utils::transformToAbsoluteCoordinate2D(right.position, curr_pose);
+  geometry_msgs::Pose rear_left;
+  rear_left.position.x -= param.baselink_to_rear_length;
+  rear_left.position.y += half_width;
+  edge_points.push_back(planning_utils::transformToAbsoluteCoordinate2D(rear_left.position, curr_pose));
 
-  return std::make_pair(left_abs, right_abs);
+  geometry_msgs::Pose rear_right;
+  rear_right.position.x -= param.baselink_to_rear_length;
+  rear_right.position.y -= half_width;
+  edge_points.push_back(planning_utils::transformToAbsoluteCoordinate2D(rear_right.position, curr_pose));
+
+  return;
 }
 
-std::pair<geometry_msgs::Point, geometry_msgs::Point> calcVehicleRearPosition(const geometry_msgs::Pose &curr_pose,
-                                                                               double base_link_to_rear, double width)
+bool ObstacleConsideredLane::calcSearchRange(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &curr_pose,
+                                             const int8_t direction, int32_t &start_idx, int32_t &end_idx)
 {
-  geometry_msgs::Pose left;
-  left.position.x -= base_link_to_rear;
-  left.position.y += width / 2;
+  std::vector<geometry_msgs::Point> edge_points;
+  calcVehicleEdgePoints(curr_pose, vehicle_param_, edge_points);
+  geometry_msgs::Point left, right;
+  double search_distance;
+  if (direction == 0)
+  {
+    left = edge_points.at(0);  // front left
+    right = edge_points.at(1); // front right
+    search_distance = planning_param_.search_distance;
+  }
+  else if (direction == 1)
+  {
+    left = edge_points.at(2);  // rear left
+    right = edge_points.at(3); // rear right
+    search_distance = planning_param_.search_distance_rev;
+  }
 
-  auto left_abs = planning_utils::transformToAbsoluteCoordinate2D(left.position, curr_pose);
-
-  geometry_msgs::Pose right;
-  right.position.x -= base_link_to_rear;
-  right.position.y -= width / 2;
-
-  auto right_abs = planning_utils::transformToAbsoluteCoordinate2D(right.position, curr_pose);
-
-  return std::make_pair(left_abs, right_abs);
-}
-
-std::tuple<bool, int32_t, int32_t> calcSearchRange(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &curr_pose,
-                                                   const std::pair<geometry_msgs::Point, geometry_msgs::Point> &edge_pos,
-                                                   double search_distance, int8_t direction)
-{
   auto clst_pair =
       planning_utils::findClosestIdxWithDistAngThr(planning_utils::extractPoses(lane), curr_pose, 3.0, M_PI_4);
+
+  start_idx = -1;
+  end_idx = -1;
 
   if (!clst_pair.first)
   {
     ROS_WARN("Cannot find closest");
-    return std::make_tuple(false, -1, -1);
+    return false;
   }
 
   ROS_DEBUG("clst idx: %d", clst_pair.second);
@@ -464,31 +456,28 @@ std::tuple<bool, int32_t, int32_t> calcSearchRange(const autoware_planning_msgs:
   // search start and end index
   for (uint32_t i = clst_pair.second; i < lane.points.size(); i++)
   {
-    const auto &e = lane.points.at(i).pose;
-    const auto &front_left = edge_pos.first;
-    const auto &front_right = edge_pos.second;
-
-    auto rel_left = planning_utils::transformToRelativeCoordinate2D(front_left, e);
-    auto rel_right = planning_utils::transformToRelativeCoordinate2D(front_right, e);
+    const geometry_msgs::Pose e = lane.points.at(i).pose;
+    auto rel_left = planning_utils::transformToRelativeCoordinate2D(left, e);
+    auto rel_right = planning_utils::transformToRelativeCoordinate2D(right, e);
 
     ROS_DEBUG("rel_left: %lf, %lf", rel_left.x, rel_left.y);
-
     ROS_DEBUG("rel_right: %lf, %lf", rel_right.x, rel_right.y);
 
     if((i == (lane.points.size() - 1))
     || ((direction == 0) && (rel_left.x < 0 || rel_right.x < 0))
     || ((direction == 1) && (rel_left.x > 0 || rel_right.x > 0))) // front
     {
-      auto start = i > 0 ? (i - 1) : i;
-      return std::make_tuple(true, start, calcForwardIdxByLineIntegral(lane, i, search_distance).second);
+      start_idx = std::max((int)i - 1, 0);
+      end_idx = calcForwardIdxByLineIntegral(lane, i, search_distance).second;
+      return true;
     }
   }
 
   ROS_ERROR("cannot find closest: reach end");
-  return std::make_tuple(false, -1, -1);
+  return false;
 }
 
-bool insertExtendWaypoint(const autoware_planning_msgs::Trajectory &lane, const double extend_size, autoware_planning_msgs::Trajectory &out)
+bool extendTrajectory(const autoware_planning_msgs::Trajectory &lane, const double extend_length, autoware_planning_msgs::Trajectory &out)
 {
   if (lane.points.empty())
   {
@@ -502,15 +491,8 @@ bool insertExtendWaypoint(const autoware_planning_msgs::Trajectory &lane, const 
   if(direction == 2)
     return false;
 
-  int32_t sign = [direction](){
-    if(direction == 0)
-      return 1;
-    else
-      return -1;
-  }();
-
   geometry_msgs::Point ext_p;
-  ext_p.x = sign * extend_size;
+  ext_p.x = direction == 0 ? extend_length : (-1.0) * extend_length;
 
   ext_pose.position = planning_utils::transformToAbsoluteCoordinate2D(ext_p, lane.points.back().pose);
   ext_pose.orientation = lane.points.back().pose.orientation;
@@ -522,8 +504,8 @@ bool insertExtendWaypoint(const autoware_planning_msgs::Trajectory &lane, const 
   return true;
 }
 
-PolygonX createPolygon(const autoware_planning_msgs::Trajectory &lane, const std::vector<double> &left_ofs,
-                       const std::vector<double> &right_ofs, int32_t idx_s, int32_t idx_e)
+PolygonX ObstacleConsideredLane::createPolygon(const autoware_planning_msgs::Trajectory &lane, const std::vector<double> &left_ofs,
+                                               const std::vector<double> &right_ofs, int32_t idx_s, int32_t idx_e)
 {
   ROS_DEBUG_STREAM(__func__);
   PolygonX poly;
@@ -549,9 +531,9 @@ PolygonX createPolygon(const autoware_planning_msgs::Trajectory &lane, const std
   return poly;
 }
 
-bool findClosestPointPosAndIdx(const autoware_planning_msgs::Trajectory &lane, const std::vector<double> &left_ofs,
-                               const std::vector<double> &right_ofs, const std::vector<geometry_msgs::Point> &points,
-                               const int32_t idx_s, const int32_t idx_e, int32_t &closest_idx, geometry_msgs::Point &closest_point)
+bool ObstacleConsideredLane::findClosestPointPosAndIdx(const autoware_planning_msgs::Trajectory &lane, const std::vector<double> &left_ofs,
+                                                       const std::vector<double> &right_ofs, const std::vector<geometry_msgs::Point> &points,
+                                                       const int32_t idx_s, const int32_t idx_e, int32_t &closest_idx, geometry_msgs::Point &closest_point)
 {
   ROS_DEBUG_STREAM(__FUNCTION__);
   if(idx_s >= idx_e)
@@ -574,14 +556,15 @@ bool findClosestPointPosAndIdx(const autoware_planning_msgs::Trajectory &lane, c
 
     // is points in polygon?
     ROS_DEBUG("points_pair1");
-    const auto points_pair1 = findPointsInPolygon(poly1, points);
+    std::vector<geometry_msgs::Point> points_in_poly1;
+    const bool is_points_in_poly1 = findPointsInPolygon(poly1, points, 1, points_in_poly1);
 
-    if(points_pair1.first)
+    if(is_points_in_poly1)
     {
       if ((idx_m_loop - idx_s_loop) == 1)
       {
         ROS_DEBUG("last polygon1");
-        auto clst_p = calcClosestPointByXAxis(lane.points.at(idx_s_loop).pose, points_pair1.second);
+        auto clst_p = calcClosestPointByXAxis(lane.points.at(idx_s_loop).pose, points_in_poly1);
         ROS_DEBUG("end: idx: %d, clst_p: (%lf, %lf)", idx_s_loop, clst_p.x, clst_p.y);
         closest_idx = idx_s_loop;
         closest_point = clst_p;
@@ -597,13 +580,14 @@ bool findClosestPointPosAndIdx(const autoware_planning_msgs::Trajectory &lane, c
     auto poly2 = createPolygon(lane, left_ofs, right_ofs, idx_m_loop, idx_e_loop);
 
     ROS_DEBUG("points_pair2");
-    const auto points_pair2 = findPointsInPolygon(poly2, points);
-    if(points_pair2.first)
+    std::vector<geometry_msgs::Point> points_in_poly2;
+    const bool is_points_in_poly2 = findPointsInPolygon(poly2, points, 1, points_in_poly2);
+    if(is_points_in_poly2)
     {
       if ((idx_e_loop - idx_m_loop) == 1)
       {
         ROS_DEBUG("last polygon2");
-        auto clst_p = calcClosestPointByXAxis(lane.points.at(idx_m_loop).pose, points_pair2.second);
+        auto clst_p = calcClosestPointByXAxis(lane.points.at(idx_m_loop).pose, points_in_poly2);
         ROS_DEBUG("end: idx: %d, clst_p: (%lf, %lf)", idx_m_loop, clst_p.x, clst_p.y);
         closest_idx = idx_m_loop;
         closest_point = clst_p;

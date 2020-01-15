@@ -215,9 +215,10 @@ std::pair<bool, int32_t> calcForwardIdxByLineIntegral(const autoware_planning_ms
   return std::make_pair(false, -1);
 }
 
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc, int32_t points_thr)
+bool findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc,
+                             const int32_t points_thr, std::vector<geometry_msgs::Point> &out_pcd)
 {
-  std::vector<geometry_msgs::Point> pc_vec;
+  out_pcd.clear();
   for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(pc, "x"), iter_y(pc, "y"), iter_z(pc, "z");
        iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
   {
@@ -233,42 +234,41 @@ std::pair<bool, std::vector<geometry_msgs::Point>> findPointCloudInPolygon(const
 
     if (planning_utils::isInPolygon(poly, p))
     {
-      pc_vec.push_back(p);
+      out_pcd.push_back(p);
     }
   }
-  ROS_DEBUG("detected, p_count: %d", (int32_t)pc_vec.size());
+  ROS_DEBUG("detected, p_count: lu", out_pcd.size());
 
-  if ((int32_t)pc_vec.size() >= points_thr)
+  if ((int32_t)out_pcd.size() >= points_thr)
   {
-    return std::make_pair(true, pc_vec);
+    return true;
   }
   else
   {
-    return std::make_pair(false, std::vector<geometry_msgs::Point>());
+    return false;
   }
 }
 
-
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points,
-    int32_t points_thr)
+bool findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points,
+                         const int32_t points_thr, std::vector<geometry_msgs::Point> &out_points)
 {
-  std::vector<geometry_msgs::Point> pc_vec;
+  out_points.clear();
   for (const auto &p : points)
   {
     if (planning_utils::isInPolygon(poly, p))
     {
-      pc_vec.push_back(p);
+      out_points.push_back(p);
     }
   }
-  ROS_DEBUG("detected, p_count: %d", (int32_t)pc_vec.size());
+  ROS_DEBUG("detected, p_count: %lu", out_points.size());
 
-  if ((int32_t)pc_vec.size() >= points_thr)
+  if ((int32_t)out_points.size() >= points_thr)
   {
-    return std::make_pair(true, pc_vec);
+    return true;
   }
   else
   {
-    return std::make_pair(false, std::vector<geometry_msgs::Point>());
+    return false;
   }
 }
 
