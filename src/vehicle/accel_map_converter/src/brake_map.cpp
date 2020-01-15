@@ -87,7 +87,7 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake)
   // When the desired acceleration is greater than the brake area, return min brake on the map
   if (acc < accs_interpolated.back())
   {
-    ROS_INFO("[Brake Map] Exceeding the acc range defined by csv. acc: %f < csv limit: %f", acc, accs_interpolated.back());
+    ROS_WARN_DELAYED_THROTTLE(1.0, "[Brake Map] Exceeding the acc range. Desired acc: %f < min acc on map: %f. return max value.", acc, accs_interpolated.back());
     brake = brake_index_.back();
     return true;
   }

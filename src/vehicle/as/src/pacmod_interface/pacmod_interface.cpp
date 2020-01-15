@@ -134,7 +134,7 @@ void PacmodInterface::publishCommand()
   bool timeouted = (((ros::Time::now() - command_time_).toSec() * 1000) > command_timeout_);
   if (emergency || timeouted)
   {
-    ROS_ERROR("[Converter] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
+    ROS_ERROR("[pacmod interface] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_acc = acc_emergency_;
   }
 
@@ -166,7 +166,6 @@ void PacmodInterface::publishCommand()
   accel_cmd.clear_override = flag_clear;
   accel_cmd.clear_faults = flag_clear;
   accel_cmd.command = desired_throttle;
-
   accel_cmd_pub_.publish(accel_cmd);
 
   pacmod_msgs::SystemCmdFloat brake_cmd;
@@ -177,7 +176,6 @@ void PacmodInterface::publishCommand()
   brake_cmd.clear_override = flag_clear;
   brake_cmd.clear_faults = flag_clear;
   brake_cmd.command = desired_brake;
-
   brake_cmd_pub_.publish(brake_cmd);
 
   double adaptive_gear_ratio =
@@ -197,7 +195,6 @@ void PacmodInterface::publishCommand()
   steer_cmd.clear_faults = flag_clear;
   steer_cmd.command = desired_steer_wheel;
   steer_cmd.rotation_rate = desired_rotation_rate;
-
   steer_cmd_pub_.publish(steer_cmd);
 
   double curr_curvature = std::tan(steer_wheel_ / adaptive_gear_ratio) / wheel_base_;
