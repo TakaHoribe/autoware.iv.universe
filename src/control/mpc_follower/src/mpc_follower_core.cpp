@@ -686,7 +686,7 @@ void MPCFollower::callbackCurrentVelocity(const geometry_msgs::TwistStamped::Con
 void MPCFollower::publishCtrlCmd(const double &vel_cmd, const double &acc_cmd, const double &steer_cmd, const double &steer_vel_cmd)
 {
   autoware_control_msgs::ControlCommandStamped cmd;
-  cmd.header.frame_id = "/base_link";
+  cmd.header.frame_id = "base_link";
   cmd.header.stamp = ros::Time::now();
   cmd.control.velocity = vel_cmd;
   cmd.control.acceleration = acc_cmd;
