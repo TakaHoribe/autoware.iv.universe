@@ -54,8 +54,8 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   double proc_stddev_yaw_c, proc_stddev_yaw_bias_c, proc_stddev_vx_c, proc_stddev_wz_c;
   pnh_.param("proc_stddev_yaw_c", proc_stddev_yaw_c, double(0.005));
   pnh_.param("proc_stddev_yaw_bias_c", proc_stddev_yaw_bias_c, double(0.001));
-  pnh_.param("proc_stddev_vx_c", proc_stddev_vx_c, double(2.0));
-  pnh_.param("proc_stddev_wz_c", proc_stddev_wz_c, double(0.2));
+  pnh_.param("proc_stddev_vx_c", proc_stddev_vx_c, double(5.0));
+  pnh_.param("proc_stddev_wz_c", proc_stddev_wz_c, double(1.0));
   if (!enable_yaw_bias_estimation_)
   {
     proc_stddev_yaw_bias_c = 0.0;
