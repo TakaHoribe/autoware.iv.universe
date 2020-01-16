@@ -86,4 +86,5 @@ std::pair<bool, int32_t> findFirstIdxOutOfRange(const std::vector<geometry_msgs:
 std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &pose,
                                                                                 int32_t idx, double stop_dist, int8_t which_dir);
 
+
 }  // namespace planning_utils

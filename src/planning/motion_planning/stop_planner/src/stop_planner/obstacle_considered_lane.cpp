@@ -22,8 +22,6 @@ namespace motion_planner
 ObstacleConsideredLane::ObstacleConsideredLane() : perpendicular_pose_(geometry_msgs::Pose()), in_trajectory_(autoware_planning_msgs::Trajectory()),
                                                    in_point_cloud_(sensor_msgs::PointCloud2()), polygons_(std::vector<PolygonX>())
 {
-  init();
-
   vehicle_param_.baselink_to_front_length = 3.0;
   vehicle_param_.baselink_to_rear_length = 1.0;
   vehicle_param_.width = 2.5;
@@ -37,37 +35,42 @@ ObstacleConsideredLane::ObstacleConsideredLane() : perpendicular_pose_(geometry_
   planning_param_.search_distance_rev = 30.0;
 }
 
-visualization_msgs::MarkerArray ObstacleConsideredLane::visualize()
+autoware_planning_msgs::Trajectory ObstacleConsideredLane::run()
 {
-  ROS_DEBUG_STREAM(__func__);
-  visualization_msgs::MarkerArray ma;
+  double resample_dist = 1.0;
+  autoware_planning_msgs::Trajectory resampled_traj;
+  resampleTrajectory(in_trajectory_, resample_dist, /*out=*/ resampled_traj);
 
-  const int8_t stop_kind = is_obstacle_detected_ ? 1 /* obstacle */ : 0 /* none */;
-  ma.markers.push_back(displayWall(stop_pose_front_, stop_kind, 1));
-  ma.markers.push_back(displayObstaclePerpendicularPoint(perpendicular_pose_, stop_kind));
-  ma.markers.push_back(displayObstaclePoint(stop_factor_pose_, stop_kind));
-  const auto ma_d = displayActiveDetectionArea(current_detection_area_, stop_kind);
-  ma.markers.insert(ma.markers.end(), ma_d.markers.begin(), ma_d.markers.end());
+  geometry_msgs::Pose stop_pose;
+  calculateStopPose(resampled_traj, /*out=*/ stop_pose);
 
-  return ma;
+  autoware_planning_msgs::Trajectory out_trajectory;
+  overwriteStopVelocity(in_trajectory_, stop_pose, /*out=*/ out_trajectory)
+
+  return out_trajectory;
 }
 
-void ObstacleConsideredLane::init()
+bool ObstacleConsideredLane::resampleTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory, const double resample_dist,
+                                                autoware_planning_msgs::Trajectory &out)
 {
-  stop_factor_pose_ = geometry_msgs::Pose();
-  stop_pose_baselink_ = geometry_msgs::Pose();
-  stop_pose_front_ = geometry_msgs::Pose();
-  is_obstacle_detected_ = false;
+
+  
+  for (int i = 0; i < in_trajectory.points.size(); ++i)
+  {
+
+  }
+
+
 }
 
-bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_trajectory)
+bool ObstacleConsideredLane::plan(const autoware_planning_msgs::Trajectory &in_trajectory, autoware_planning_msgs::Trajectory &out_trajectory)
 {
   ROS_DEBUG_STREAM(__func__);
-  out_trajectory = in_trajectory_;
+  out_trajectory = in_trajectory;
 
   bool ret = false;
 
-  init();
+  is_obstacle_detected_ = false;
 
   // Guard
   if (in_point_cloud_.data.empty() || planning_param_.points_thr == 0)
@@ -75,7 +78,7 @@ bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_traject
     ROS_INFO("point cloud is not subscribed or empty. points_thr = %d, pcd.size = %lu", planning_param_.points_thr, in_point_cloud_.data.size());
     return true;
   }
-  if (in_trajectory_.points.empty())
+  if (in_trajectory.points.empty())
   {
     ROS_INFO("trajectory size is 0. no plan.", in_point_cloud_.data.size());
     return true;
@@ -84,7 +87,7 @@ bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_traject
 
 
   // get lane direction (0:FWD, 1:REV, 2:ERROR)
-  const int8_t direction = planning_utils::getLaneDirection(planning_utils::extractPoses(in_trajectory_));
+  const int8_t direction = planning_utils::getLaneDirection(planning_utils::extractPoses(in_trajectory));
   if (direction != 0 && direction != 1)
   {
     ROS_WARN("cannot get lane direction!");
@@ -95,7 +98,7 @@ bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_traject
   double endpoint_extend_length = direction == 0 ? planning_param_.endpoint_extend_length : planning_param_.endpoint_extend_length_rev;
 
   autoware_planning_msgs::Trajectory extended_trajectory;
-  ret = extendTrajectory(in_trajectory_, endpoint_extend_length, extended_trajectory);
+  ret = extendTrajectory(in_trajectory, endpoint_extend_length, extended_trajectory);
   if(!ret)
   {
     ROS_WARN("cannot extend lane");
@@ -119,7 +122,7 @@ bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_traject
   std::vector<double> right_width_v(extended_trajectory.points.size(), 0.0);
   for (int32_t i = 0; i < (int32_t)extended_trajectory.points.size(); i++)
   {
-    calcDetectioWidthByVehicleShape(extended_trajectory, planning_param_.detection_area_width, vehicle_param_.baselink_to_front_length, i,
+    calcDetectionWidthWithVehicleShape(extended_trajectory, planning_param_.detection_area_width, vehicle_param_.baselink_to_front_length, i,
                                    left_width_v.at(i), right_width_v.at(i));
   }
   ROS_DEBUG("left: %lu, right: %lu", left_width_v.size(), right_width_v.size());
@@ -199,12 +202,12 @@ bool ObstacleConsideredLane::run(autoware_planning_msgs::Trajectory &out_traject
   return true;
 }
 
-int ObstacleConsideredLane::getBehindLengthClosest(const autoware_planning_msgs::Trajectory &lane, const int start,
+int ObstacleConsideredLane::getIdxWithBehindLength(const autoware_planning_msgs::Trajectory &lane, const int start,
                                                    const double &length)
 {
   if (start < 0 || start > (int)lane.points.size() - 1)
   {
-    ROS_ERROR("[obstacle_considered_lane] : getBehindLengthClosest() : bad index!");
+    ROS_ERROR("[obstacle_considered_lane] : getIdxWithBehindLength() : bad index!");
     return start;
   }
   double err_min = 1.0E10;
@@ -226,7 +229,7 @@ int ObstacleConsideredLane::getBehindLengthClosest(const autoware_planning_msgs:
   }
   if (idx_min == -1)
   {
-    ROS_ERROR("[obstacle_considered_lane] : getBehindLengthClosest() : bad index");
+    ROS_ERROR("[obstacle_considered_lane] : getIdxWithBehindLength() : bad index");
     return start;
   }
   else
@@ -235,7 +238,7 @@ int ObstacleConsideredLane::getBehindLengthClosest(const autoware_planning_msgs:
   }
 }
 
-bool ObstacleConsideredLane::calcDetectioWidthByVehicleShape(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
+bool ObstacleConsideredLane::calcDetectionWidthWithVehicleShape(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
                                                             const double &shape_length, const int idx, double &left_y,
                                                             double &right_y)
 {
@@ -252,7 +255,7 @@ bool ObstacleConsideredLane::calcDetectioWidthByVehicleShape(const autoware_plan
 
   const geometry_msgs::Pose base_p = lane.points.at(idx).pose;
 
-  int idx_target = getBehindLengthClosest(lane, idx, shape_length);  // calc waypoint behind baselink_to_front length
+  int idx_target = getIdxWithBehindLength(lane, idx, shape_length);  // calc waypoint behind baselink_to_front length
   const geometry_msgs::Pose p_i = lane.points.at(idx_target).pose;
 
   // calculat vehicle edge point (froint_right/left) when vehicle is behind with baselink_to_front length
@@ -279,116 +282,6 @@ bool ObstacleConsideredLane::calcDetectioWidthByVehicleShape(const autoware_plan
   //       planning_utils::calcDistance2D(p_fr_g, base_p.position), alpha_r *rad2deg, dw_r, right_y);
 
   return true;
-}
-
-visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind)
-{
-  ROS_DEBUG_STREAM(__func__);
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time::now();
-  marker.ns = "obstacle_perpendicular_point";
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::CUBE;
-  if (kind == 0 /* no obstacle */)
-  {
-    marker.action = visualization_msgs::Marker::DELETE;
-  }
-  else
-  {
-    marker.action = visualization_msgs::Marker::ADD;
-  }
-  marker.scale.x = 0.3;
-  marker.scale.y = 0.3;
-  marker.scale.z = 2.0;
-  marker.frame_locked = true;
-  marker.pose = pose;
-  marker.pose.position.z += marker.scale.z / 2;
-  marker.color = setColorWhite();
-  
-  return marker;
-}
-
-visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind)
-{
-  ROS_DEBUG_STREAM(__func__);
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time::now();
-  marker.ns = "obstacle_point";
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::SPHERE;
-  if (kind == 0 /* no obstacle */)
-  {
-    marker.action = visualization_msgs::Marker::DELETE;
-  }
-  else
-  {
-    marker.action = visualization_msgs::Marker::ADD;
-  }
-  marker.scale.x = 0.3;
-  marker.scale.y = 0.3;
-  marker.scale.z = 0.3;
-  marker.frame_locked = true;
-  marker.pose = pose;
-  marker.color = setColorWhite();
-
-  return marker;
-}
-
-visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly, int8_t kind)
-{
-  ROS_DEBUG_STREAM(__func__);
-
-  visualization_msgs::MarkerArray ma;
-  visualization_msgs::Marker m_poly;
-  m_poly.header.frame_id = "map";
-  m_poly.header.stamp = ros::Time();
-  m_poly.ns = "active_detection_area";
-  m_poly.id = 0;
-  m_poly.type = visualization_msgs::Marker::LINE_STRIP;
-  m_poly.scale.x = 0.05;
-  m_poly.frame_locked = true;
-
-  visualization_msgs::Marker m_point;
-  m_point.header.frame_id = "map";
-  m_point.header.stamp = ros::Time();
-  m_point.ns = "active_detection_area_point";
-  m_point.id = 0;
-  m_point.type = visualization_msgs::Marker::SPHERE_LIST;
-  m_point.scale.x = 0.1;
-  m_point.scale.y = 0.1;
-  m_point.frame_locked = true;
-
-
-  if (!poly.empty())  // visualize active polygons
-  {
-    m_poly.action = visualization_msgs::Marker::ADD;
-    m_poly.color = *setColorDependsOnObstacleKind(kind);
-
-    m_point.action = visualization_msgs::Marker::ADD;
-    m_point.color = setColorWhite();
-
-    // push back elements
-    for (const auto &e : poly)
-    {
-      m_poly.points.push_back(e);
-      m_point.points.push_back(e);
-    }
-
-    // insert left first element again to connect
-    m_poly.points.push_back(poly.front());
-  }
-  else
-  {
-    m_poly.action = visualization_msgs::Marker::DELETE;
-    m_point.action = visualization_msgs::Marker::DELETE;
-  }
-
-  ma.markers.push_back(m_poly);
-  ma.markers.push_back(m_point);
-
-  return ma;
 }
 
 void ObstacleConsideredLane::calcVehicleEdgePoints(const geometry_msgs::Pose &curr_pose, const VehicleParam &param, std::vector<geometry_msgs::Point> &edge_points)
@@ -607,21 +500,26 @@ bool ObstacleConsideredLane::findClosestPointPosAndIdx(const autoware_planning_m
   }
 }
 
-std::pair<bool, geometry_msgs::Pose> calcFopPose(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e,
-                                                 geometry_msgs::Point point)
+
+visualization_msgs::MarkerArray ObstacleConsideredLane::visualize()
 {
-  auto fop_pair = planning_utils::calcFootOfPerpendicular(line_s, line_e, point);
-  if (!fop_pair.first)
+  ROS_DEBUG_STREAM(__func__);
+  visualization_msgs::MarkerArray ma;
+
+  const int8_t stop_kind = is_obstacle_detected_ ? 1 /* obstacle */ : 0 /* none */;
+  const auto ma_d = displayActiveDetectionArea(current_detection_area_, stop_kind);
+  ma.markers.insert(ma.markers.end(), ma_d.markers.begin(), ma_d.markers.end());
+
+  if (is_obstacle_detected_)
   {
-    ROS_ERROR("calcFootOfPerpendicular: cannot calc");
-    return std::make_pair(false, geometry_msgs::Pose());
+    ma.markers.push_back(displayWall(stop_pose_front_, stop_kind, 1));
+    ma.markers.push_back(displayObstaclePerpendicularPoint(perpendicular_pose_, stop_kind));
+    ma.markers.push_back(displayObstaclePoint(stop_factor_pose_, stop_kind));
   }
-
-  geometry_msgs::Pose res;
-  res.position = fop_pair.second;
-  res.orientation = planning_utils::getQuaternionFromYaw(atan2((line_e.y - line_s.y), (line_e.x - line_s.x)));
-  ROS_DEBUG("fop: (%lf, %lf)", res.position.x, res.position.y);
-
-  return std::make_pair(true, res);
+  return ma;
 }
+
+
+
+
 }

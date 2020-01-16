@@ -290,4 +290,132 @@ geometry_msgs::Point calcClosestPointByXAxis(const geometry_msgs::Pose &pose, co
 }
 
 
+visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind)
+{
+  ROS_DEBUG_STREAM(__func__);
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = "obstacle_perpendicular_point";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::CUBE;
+  if (kind == 0 /* no obstacle */)
+  {
+    marker.action = visualization_msgs::Marker::DELETE;
+  }
+  else
+  {
+    marker.action = visualization_msgs::Marker::ADD;
+  }
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.3;
+  marker.scale.z = 2.0;
+  marker.frame_locked = true;
+  marker.pose = pose;
+  marker.pose.position.z += marker.scale.z / 2;
+  marker.color = setColorWhite();
+  
+  return marker;
+}
+
+visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind)
+{
+  ROS_DEBUG_STREAM(__func__);
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = "obstacle_point";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  if (kind == 0 /* no obstacle */)
+  {
+    marker.action = visualization_msgs::Marker::DELETE;
+  }
+  else
+  {
+    marker.action = visualization_msgs::Marker::ADD;
+  }
+  marker.scale.x = 0.3;
+  marker.scale.y = 0.3;
+  marker.scale.z = 0.3;
+  marker.frame_locked = true;
+  marker.pose = pose;
+  marker.color = setColorWhite();
+
+  return marker;
+}
+
+visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly, int8_t kind)
+{
+  ROS_DEBUG_STREAM(__func__);
+
+  visualization_msgs::MarkerArray ma;
+  visualization_msgs::Marker m_poly;
+  m_poly.header.frame_id = "map";
+  m_poly.header.stamp = ros::Time();
+  m_poly.ns = "active_detection_area";
+  m_poly.id = 0;
+  m_poly.type = visualization_msgs::Marker::LINE_STRIP;
+  m_poly.scale.x = 0.05;
+  m_poly.frame_locked = true;
+
+  visualization_msgs::Marker m_point;
+  m_point.header.frame_id = "map";
+  m_point.header.stamp = ros::Time();
+  m_point.ns = "active_detection_area_point";
+  m_point.id = 0;
+  m_point.type = visualization_msgs::Marker::SPHERE_LIST;
+  m_point.scale.x = 0.1;
+  m_point.scale.y = 0.1;
+  m_point.frame_locked = true;
+
+
+  if (!poly.empty())  // visualize active polygons
+  {
+    m_poly.action = visualization_msgs::Marker::ADD;
+    m_poly.color = *setColorDependsOnObstacleKind(kind);
+
+    m_point.action = visualization_msgs::Marker::ADD;
+    m_point.color = setColorWhite();
+
+    // push back elements
+    for (const auto &e : poly)
+    {
+      m_poly.points.push_back(e);
+      m_point.points.push_back(e);
+    }
+
+    // insert left first element again to connect
+    m_poly.points.push_back(poly.front());
+  }
+  else
+  {
+    m_poly.action = visualization_msgs::Marker::DELETE;
+    m_point.action = visualization_msgs::Marker::DELETE;
+  }
+
+  ma.markers.push_back(m_poly);
+  ma.markers.push_back(m_point);
+
+  return ma;
+}
+
+std::pair<bool, geometry_msgs::Pose> calcFopPose(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e,
+                                                 geometry_msgs::Point point)
+{
+  auto fop_pair = planning_utils::calcFootOfPerpendicular(line_s, line_e, point);
+  if (!fop_pair.first)
+  {
+    ROS_ERROR("calcFootOfPerpendicular: cannot calc");
+    return std::make_pair(false, geometry_msgs::Pose());
+  }
+
+  geometry_msgs::Pose res;
+  res.position = fop_pair.second;
+  res.orientation = planning_utils::getQuaternionFromYaw(atan2((line_e.y - line_s.y), (line_e.x - line_s.x)));
+  ROS_DEBUG("fop: (%lf, %lf)", res.position.x, res.position.y);
+
+  return std::make_pair(true, res);
+}
+
 }  // namespace motion_planner

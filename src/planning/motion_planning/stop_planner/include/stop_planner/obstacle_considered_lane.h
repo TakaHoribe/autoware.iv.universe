@@ -47,7 +47,7 @@ public:
   ObstacleConsideredLane();
 
   // setter
-  void setCurrentLane(const autoware_planning_msgs::Trajectory &traj)
+  void setCurrentTrajectory(const autoware_planning_msgs::Trajectory &traj)
   {
     in_trajectory_ = traj;
   }
@@ -104,22 +104,9 @@ public:
     planning_param_.search_distance_rev = dist_rev;
   }
 
-  // publish
-  void publishStopFactorInfo(ros::Publisher &pub)
-  {
-    // ROS_DEBUG_STREAM("ObstacleConsideredLane: " << __func__);
-    // autoware_planner_msgs::StopFactor sf;
-    // sf.header.stamp = ros::Time::now();
-    // sf.header.frame_id = "map";
-    // sf.point = perpendicular_pose_.position;
-    // sf.stp_point = stop_pose_baselink_.position;
-    // sf.wall_point = stop_pose_front_.position;
-    // sf.kind = stop_kind_;
-    // sf.message = "obstacle";
-    // pub.publish(sf);
-  };
 
-  bool run(autoware_planning_msgs::Trajectory &out_trajectory);
+  autoware_planning_msgs::Trajectory run();
+  bool plan(autoware_planning_msgs::Trajectory &out_trajectory);
   visualization_msgs::MarkerArray visualize();
 
 private:
@@ -163,10 +150,9 @@ private:
   geometry_msgs::Pose perpendicular_pose_;
 
 
-  void init();
-  bool calcDetectioWidthByVehicleShape(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
+  bool calcDetectionWidthWithVehicleShape(const autoware_planning_msgs::Trajectory &lane, const double &shape_tread,
                                       const double &shape_length, const int idx, double &left_y, double &right_y);
-  int getBehindLengthClosest(const autoware_planning_msgs::Trajectory &lane, const int start, const double &length);
+  int getIdxWithBehindLength(const autoware_planning_msgs::Trajectory &lane, const int start, const double &length);
   void calcVehicleEdgePoints(const geometry_msgs::Pose &curr_pose, const VehicleParam &param, std::vector<geometry_msgs::Point> &edge_points);
   bool calcSearchRange(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &curr_pose,
                        const int8_t direction, int32_t &start_idx, int32_t &end_idx);
@@ -175,17 +161,10 @@ private:
   bool findClosestPointPosAndIdx(const autoware_planning_msgs::Trajectory &lane, const std::vector<double> &left_ofs,
                                 const std::vector<double> &right_ofs, const std::vector<geometry_msgs::Point> &points,
                                 const int32_t idx_s, const int32_t idx_e, int32_t &closest_idx, geometry_msgs::Point &closest_point);
+
 };
 
-visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind);
-visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind);
-visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &polygons, int8_t kind);
 
-
-
-
-
-std::pair<bool, geometry_msgs::Pose> calcFopPose(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e, geometry_msgs::Point point);
 
 
 }

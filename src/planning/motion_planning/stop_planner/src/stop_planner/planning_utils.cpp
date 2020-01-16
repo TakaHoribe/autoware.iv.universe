@@ -482,4 +482,5 @@ std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(
   return std::make_tuple(true, dst_idx, res);
 }
 
+
 }  // namespace planning_utils

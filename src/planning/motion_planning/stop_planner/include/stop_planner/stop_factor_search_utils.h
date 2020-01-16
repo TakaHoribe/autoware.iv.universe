@@ -56,4 +56,9 @@ bool findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::
 
 geometry_msgs::Point calcClosestPointByXAxis(const geometry_msgs::Pose &pose, const std::vector<geometry_msgs::Point> &points);
 
+visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind);
+visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind);
+visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &polygons, int8_t kind);
+std::pair<bool, geometry_msgs::Pose> calcFopPose(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e, geometry_msgs::Point point);
+
 }  // namespace motion_planner

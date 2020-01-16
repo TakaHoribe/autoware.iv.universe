@@ -98,7 +98,7 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   auto ts = std::chrono::system_clock::now();
 
   obstacle_pcd_stop_planner_.setCurrentPose(current_pose_ptr_->pose);
-  obstacle_pcd_stop_planner_.setCurrentLane(*in_trajectory_ptr_);
+  obstacle_pcd_stop_planner_.setCurrentTrajectory(*in_trajectory_ptr_);
   obstacle_pcd_stop_planner_.setPointCloud(transformed_pointcloud);
   autoware_planning_msgs::Trajectory out_trajectory;
   obstacle_pcd_stop_planner_.run(out_trajectory);
