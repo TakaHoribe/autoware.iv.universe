@@ -1,0 +1,10 @@
+<launch>
+  <node pkg="scenario_selector" type="scenario_selector" name="scenario_selector" output="screen">
+    <remap from="~input/lane_following/trajectory" to="/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory"/>
+    <remap from="~input/parking/trajectory" to="/planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/trajectory"/>
+    <remap from="~input/lanelet_map" to="/lanelet_map_bin"/>
+    <remap from="~input/route" to="/planning/mission_planning/route"/>
+    <remap from="~output/scenario" to="/planning/scenario_planning/scenario"/>
+    <remap from="~output/trajectory" to="/planning/scenario_planning/trajectory"/>
+  </node>
+</launch>

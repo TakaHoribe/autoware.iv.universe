@@ -61,7 +61,8 @@ void AstarNavi::onRoute(const autoware_planning_msgs::Route& msg) {
 }
 
 void AstarNavi::onScenario(const autoware_planning_msgs::Scenario& msg) {
-  if (msg.type == msg.Parking) {
+  const auto& s = msg.activating_scenarios;
+  if (std::find(std::begin(s), std::end(s), msg.Parking) != std::end(s)) {
     is_active_ = true;
   } else {
     is_active_ = false;

@@ -27,7 +27,7 @@ EBPathPlannerNode::EBPathPlannerNode()
       private_nh_("~")
 {
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("eb_path_planner_marker", 1, true);
-  path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/motion_planning/avoiding_path", 1, true);
+  path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/scenario_planning/scenarios/lane_following/motion_planning/avoiding_path", 1, true);
   
   twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
                            &EBPathPlannerNode::currentVelocityCallback, this);

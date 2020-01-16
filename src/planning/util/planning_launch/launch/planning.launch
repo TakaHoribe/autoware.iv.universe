@@ -3,6 +3,11 @@
     <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
     <!-- planning module -->
     <group ns="planning">
+        <!-- scenario selecting module -->
+        <group ns="scenario_planning/scenario_selecting">
+          <include file="$(find planning_launch)/launch/scenario_selecting/scenario_selecting.launch">
+          </include>
+      </group>
         <!-- mission planning module -->
         <group ns="mission_planning">
             <include file="$(find planning_launch)/launch/mission_planning/mission_planning.launch">
