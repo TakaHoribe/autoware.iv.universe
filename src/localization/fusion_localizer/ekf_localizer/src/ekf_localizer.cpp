@@ -30,7 +30,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pnh_.param("tf_rate", tf_rate_, double(10.0));
   pnh_.param("enable_yaw_bias_estimation", enable_yaw_bias_estimation_, bool(true));
   pnh_.param("extend_state_step", extend_state_step_, int(50));
-  pnh_.param("pose_frame_id", pose_frame_id_, std::string("/map"));
+  pnh_.param("pose_frame_id", pose_frame_id_, std::string("map"));
 
   /* pose measurement */
   pnh_.param("pose_additional_delay", pose_additional_delay_, double(0.0));
@@ -54,18 +54,18 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   double proc_stddev_yaw_c, proc_stddev_yaw_bias_c, proc_stddev_vx_c, proc_stddev_wz_c;
   pnh_.param("proc_stddev_yaw_c", proc_stddev_yaw_c, double(0.005));
   pnh_.param("proc_stddev_yaw_bias_c", proc_stddev_yaw_bias_c, double(0.001));
-  pnh_.param("proc_stddev_vx_c", proc_stddev_vx_c, double(2.0));
-  pnh_.param("proc_stddev_wz_c", proc_stddev_wz_c, double(0.2));
+  pnh_.param("proc_stddev_vx_c", proc_stddev_vx_c, double(5.0));
+  pnh_.param("proc_stddev_wz_c", proc_stddev_wz_c, double(1.0));
   if (!enable_yaw_bias_estimation_)
   {
     proc_stddev_yaw_bias_c = 0.0;
   }
 
   /* convert to continuous to discrete */
-  proc_cov_vx_d_ = std::pow(proc_stddev_vx_c, 2.0) * ekf_dt_;
-  proc_cov_wz_d_ = std::pow(proc_stddev_wz_c, 2.0) * ekf_dt_;
-  proc_cov_yaw_d_ = std::pow(proc_stddev_yaw_c, 2.0) * ekf_dt_;
-  proc_cov_yaw_bias_d_ = std::pow(proc_stddev_yaw_bias_c, 2.0) * ekf_dt_;
+  proc_cov_vx_d_ = std::pow(proc_stddev_vx_c * ekf_dt_, 2.0);
+  proc_cov_wz_d_ = std::pow(proc_stddev_wz_c * ekf_dt_, 2.0);
+  proc_cov_yaw_d_ = std::pow(proc_stddev_yaw_c * ekf_dt_, 2.0);
+  proc_cov_yaw_bias_d_ = std::pow(proc_stddev_yaw_bias_c * ekf_dt_, 2.0);
 
   /* initialize ros system */
 
@@ -402,34 +402,10 @@ void EKFLocalizer::predictKinematicsModel()
   A(IDX::Y, IDX::VX) = sin(yaw + yaw_bias) * dt;
   A(IDX::YAW, IDX::WZ) = dt;
 
-  const double dvx = std::sqrt(P_curr(IDX::VX, IDX::VX));
-  const double dyaw = std::sqrt(P_curr(IDX::YAW, IDX::YAW));
-
   Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(dim_x_, dim_x_);
 
-  if (dvx < 10.0 && dyaw < 1.0)
-  {
-    // auto covariance calculate for x, y assuming vx & yaw estimation covariance is small
-
-    /* Set covariance matrix Q for process noise. Calc Q by velocity and yaw angle covariance :
-     dx = Ax + Jp*w -> Q = Jp*w_cov*Jp'          */
-    Eigen::MatrixXd Jp = Eigen::MatrixXd::Zero(2, 2);  // coeff of deviation of vx & yaw
-    Jp << cos(yaw), -vx * sin(yaw), sin(yaw), vx * cos(yaw);
-    Eigen::MatrixXd Q_vx_yaw = Eigen::MatrixXd::Zero(2, 2);  // cov of vx and yaw
-
-    Q_vx_yaw(0, 0) = P_curr(IDX::VX, IDX::VX) * dt;        // covariance of vx - vx
-    Q_vx_yaw(1, 1) = P_curr(IDX::YAW, IDX::YAW) * dt;      // covariance of yaw - yaw
-    Q_vx_yaw(0, 1) = P_curr(IDX::VX, IDX::YAW) * dt;       // covariance of vx - yaw
-    Q_vx_yaw(1, 0) = P_curr(IDX::YAW, IDX::VX) * dt;       // covariance of yaw - vx
-    Q.block(0, 0, 2, 2) = Jp * Q_vx_yaw * Jp.transpose();  // for pos_x & pos_y
-  }
-  else
-  {
-    // vx & vy is not converged yet, set constant value.
-    Q(IDX::X, IDX::X) = 0.05;
-    Q(IDX::Y, IDX::Y) = 0.05;
-  }
-
+  Q(IDX::X, IDX::X) = 0.0;
+  Q(IDX::Y, IDX::Y) = 0.0;
   Q(IDX::YAW, IDX::YAW) = proc_cov_yaw_d_;         // for yaw
   Q(IDX::YAWB, IDX::YAWB) = proc_cov_yaw_bias_d_;  // for yaw bias
   Q(IDX::VX, IDX::VX) = proc_cov_vx_d_;            // for vx
@@ -535,15 +511,15 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped& pose)
   }
   else
   {
-    const double ekf_yaw = ekf_.getXelement(IDX::YAW);
-    const double vx = ekf_.getXelement(IDX::VX);
-    const double wz = ekf_.getXelement(IDX::WZ);
-    const double cov_pos_x = std::pow(pose_measure_uncertainty_time_ * vx * cos(ekf_yaw), 2.0);
-    const double cov_pos_y = std::pow(pose_measure_uncertainty_time_ * vx * sin(ekf_yaw), 2.0);
-    const double cov_yaw = std::pow(pose_measure_uncertainty_time_ * wz, 2.0);
-    R(0, 0) = std::pow(pose_stddev_x_, 2) + cov_pos_x;  // pos_x
-    R(1, 1) = std::pow(pose_stddev_y_, 2) + cov_pos_y;  // pos_y
-    R(2, 2) = std::pow(pose_stddev_yaw_, 2) + cov_yaw;  // yaw
+    const double ekf_yaw = ekf_.getXelement(delay_step * dim_x_ + IDX::YAW);
+    const double vx = ekf_.getXelement(delay_step * dim_x_ + IDX::VX);
+    const double wz = ekf_.getXelement(delay_step * dim_x_ + IDX::WZ);
+    const double cov_tu_pos_x = std::pow(pose_measure_uncertainty_time_ * vx * cos(ekf_yaw), 2.0);
+    const double cov_tu_pos_y = std::pow(pose_measure_uncertainty_time_ * vx * sin(ekf_yaw), 2.0);
+    const double cov_tu_yaw = std::pow(pose_measure_uncertainty_time_ * wz, 2.0);
+    R(0, 0) = (pose_stddev_x_ * pose_stddev_x_) + cov_tu_pos_x;  // pos_x
+    R(1, 1) = (pose_stddev_y_ * pose_stddev_y_) + cov_tu_pos_y;  // pos_y
+    R(2, 2) = (pose_stddev_yaw_ * pose_stddev_yaw_) + cov_tu_yaw;  // yaw
   }
 
   /* In order to avoid a large change at the time of updating, measuremeent update is performed by dividing at every
@@ -638,8 +614,8 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
   }
   else
   {
-    R(0, 0) = twist_stddev_vx_ * twist_stddev_vx_ * ekf_dt_;  // for vx
-    R(1, 1) = twist_stddev_wz_ * twist_stddev_wz_ * ekf_dt_;  // for wz
+    R(0, 0) = twist_stddev_vx_ * twist_stddev_vx_;  // for vx
+    R(1, 1) = twist_stddev_wz_ * twist_stddev_wz_;  // for wz
   }
 
   /* In order to avoid a large change by update, measurement update is performed by dividing at every step. */

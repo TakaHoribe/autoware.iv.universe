@@ -19,10 +19,10 @@
 ### Set hardware configuration
 In src/config/hardware/vehicle_description/config/vehicle_info.yaml
 ```
-wheel_radius: 0.341
+wheel_radius: 0.39
 wheel_width: 0.42
-wheel_base: 2.63 # between front wheel center and rear wheel center
-wheel_tread: 1.55 # between left wheel center and right wheel center
+wheel_base: 2.79 # between front wheel center and rear wheel center
+wheel_tread: 1.63 # between left wheel center and right wheel center
 front_overhang: 1.29 # between front wheel center and vehicle front
 rear_overhang: 1.1 # between rear wheel center and vehicle rear 
 vehicle_height: 2.0
@@ -43,10 +43,10 @@ $ roslaunch autoware_launch autoware.launch
 - base_link is rear wheel center
 - global param list
 ```
-wheel_radius: 0.341
+wheel_radius: 0.39
 wheel_width: 0.42
-wheel_base: 2.63 # between front wheel center and rear wheel center
-wheel_tread: 1.55 # between left wheel center and right wheel center
+wheel_base: 2.79 # between front wheel center and rear wheel center
+wheel_tread: 1.63 # between left wheel center and right wheel center
 front_overhang: 1.29 # between front wheel center and vehicle front
 rear_overhang: 1.1 # between rear wheel center and vehicle rear 
 vehicle_height: 2.0
