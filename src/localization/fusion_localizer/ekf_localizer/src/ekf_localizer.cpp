@@ -30,7 +30,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pnh_.param("tf_rate", tf_rate_, double(10.0));
   pnh_.param("enable_yaw_bias_estimation", enable_yaw_bias_estimation_, bool(true));
   pnh_.param("extend_state_step", extend_state_step_, int(50));
-  pnh_.param("pose_frame_id", pose_frame_id_, std::string("/map"));
+  pnh_.param("pose_frame_id", pose_frame_id_, std::string("map"));
 
   /* pose measurement */
   pnh_.param("pose_additional_delay", pose_additional_delay_, double(0.0));
