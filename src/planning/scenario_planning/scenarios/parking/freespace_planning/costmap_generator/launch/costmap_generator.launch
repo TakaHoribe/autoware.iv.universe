@@ -1,0 +1,51 @@
+<launch>
+  <!-- node parameters -->
+  <arg name="costmap_frame" default="base_link" />
+  <arg name="map_frame" default="map" />
+  <arg name="grid_min_value" default="0.0" />
+  <arg name="grid_max_value" default="1.0" />
+  <arg name="grid_resolution" default="0.2" />
+  <arg name="grid_length_x" default="100" />
+  <arg name="grid_length_y" default="100" />
+  <arg name="grid_position_x" default="0" />
+  <arg name="grid_position_y" default="0" />
+  <arg name="maximum_lidar_height_thres" default="0.3" />
+  <arg name="minimum_lidar_height_thres" default="-2.2" />
+  <arg name="expand_polygon_size" default="1.0" />
+  <arg name="size_of_expansion_kernel" default="9" />
+  <arg name="use_objects" default="true" />
+  <arg name="use_points" default="true" />
+  <arg name="use_wayarea" default="true" />
+
+  <arg name="input_objects" default="/perception/prediction/objects" />
+  <arg name="input_points" default="/sensing/preprocess/lidar/no_ground/pointcloud" />
+  <arg name="input_lanelet_map_bin" default="/lanelet_map_bin" />
+  <arg name="output_costmap" default="~costmap"/>
+  <arg name="output_occupancy_grid" default="~occupancy_grid"/>
+
+  <!-- Launch node -->
+  <node pkg="costmap_generator" type="costmap_generator" name="costmap_generator" output="screen">
+    <param name="costmap_frame" value="$(arg costmap_frame)" />
+    <param name="map_frame" value="$(arg map_frame)" />
+    <param name="grid_min_value" value="$(arg grid_min_value)" />
+    <param name="grid_max_value" value="$(arg grid_max_value)" />
+    <param name="grid_resolution" value="$(arg grid_resolution)" />
+    <param name="grid_length_x" value="$(arg grid_length_x)" />
+    <param name="grid_length_y" value="$(arg grid_length_y)" />
+    <param name="grid_position_x" value="$(arg grid_position_x)" />
+    <param name="grid_position_y" value="$(arg grid_position_y)" />
+    <param name="maximum_lidar_height_thres" value="$(arg maximum_lidar_height_thres)" />
+    <param name="minimum_lidar_height_thres" value="$(arg minimum_lidar_height_thres)" />
+    <param name="expand_polygon_size" value="$(arg expand_polygon_size)" />
+    <param name="size_of_expansion_kernel" value="$(arg size_of_expansion_kernel)" />
+    <param name="use_objects" value="$(arg use_objects)" />
+    <param name="use_points" value="$(arg use_points)" />
+    <param name="use_wayarea" value="$(arg use_wayarea)" />
+
+    <remap from="~input/objects" to="$(arg input_objects)" />
+    <remap from="~input/points_no_ground" to="$(arg input_points)" />
+    <remap from="~input/lanelet_map_bin" to="$(arg input_lanelet_map_bin)" />
+    <remap from="~output/costmap" to="$(arg output_costmap)" />
+    <remap from="~output/occupancy_grid" to="$(arg output_occupancy_grid)" />
+  </node>
+</launch>

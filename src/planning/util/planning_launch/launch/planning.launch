@@ -20,5 +20,10 @@
                 <arg name="num_lookup_lanelet_for_drivealble_area" value="$(arg num_lookup_lanelet_for_drivealble_area)"/>
             </include>
         </group>
+        <!-- freespace planning module -->
+        <group ns="scenario_planning/scenarios/parking/freespace_planning">
+            <include file="$(find planning_launch)/launch/freespace_planning/freespace_planning.launch">
+            </include>
+        </group>
     </group>
 </launch>
