@@ -30,16 +30,16 @@
 
                     <param name="negative" value="True" />
                     <param name="input_frame" value="$(arg base_frame)" />
-                    <param name="output_frame" value="$(arg base_frame)" />
+                    <param name="output_frame" value="$(arg sensor_frame)" />
                 </node>
 
                 <remap from="velodyne_points_ex" to="velodyne_points_ex/self_cropped" />    
                 <remap from="velodyne_points_interpolate" to="pointcloud" />
                 <include file="$(find velodyne_pointcloud)/launch/interpolate_nodelet.launch">
                 </include>
-
             </group>
         </group>
+
         <!-- Camera Driver -->
         <group ns="camera">
             <group ns="traffic_light">
