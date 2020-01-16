@@ -38,7 +38,7 @@
 		
 
 		<!-- system -->
-		<remap from="~input/reference_trajectory" to="/planning/motion_planning/trajectory"/>
+		<remap from="~input/reference_trajectory" to="/planning/scenario_planning/trajectory"/>
 		<remap from="~input/current_velocity" to="/vehicle/status/twist"/>
 		<remap from="~input/current_steering" to="/vehicle/status/steering"/>
 		<remap from="~output/twist_raw" to="lateral/twist_raw"/>

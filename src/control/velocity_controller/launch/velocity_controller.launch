@@ -91,8 +91,8 @@
 
     <remap from="~current_velocity" to="/vehicle/status/twist"/>
     <remap from="~control_cmd" to="longitudinal/control_cmd"/>
-    <remap from="~current_trajectory" to="/planning/motion_planning/trajectory"/>
-    <remap from="~is_sudden_stop" to="/planning/motion_planning/is_sudden_stop"/>
+    <remap from="~current_trajectory" to="/planning/scenario_planning/trajectory"/>
+    <remap from="~is_sudden_stop" to="/planning/scenario_planning/scenarios/lane_following/motion_planning/is_sudden_stop"/>
 
     <!-- system -->
     <param name="control_rate" value="$(arg control_rate)"/>
