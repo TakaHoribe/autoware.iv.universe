@@ -646,7 +646,7 @@ Visualization Manager:
               Color Border Vel Max: 3
               Enabled: true
               Name: Path
-              Topic: /planning/behavior_planning/path
+              Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
               Unreliable: false
               Value: true
               View Path:
@@ -663,7 +663,7 @@ Visualization Manager:
                 Value: true
             - Class: rviz/MarkerArray
               Enabled: false
-              Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/path
+              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
               Name: Arrow
               Namespaces:
                 {}
@@ -671,7 +671,7 @@ Visualization Manager:
               Value: false
             - Class: rviz/MarkerArray
               Enabled: false
-              Marker Topic: /planning/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
+              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
               Name: PathWithLaneId
               Namespaces:
                 {}
@@ -679,7 +679,7 @@ Visualization Manager:
               Value: false
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /planning/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
+              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
                 {}
@@ -693,7 +693,7 @@ Visualization Manager:
               Color Border Vel Max: 3
               Enabled: true
               Name: Trajectory
-              Topic: /planning/motion_planning/trajectory
+              Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
               Unreliable: false
               Value: true
               View Path:
@@ -710,7 +710,7 @@ Visualization Manager:
                 Value: true
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /planning/motion_planning/stop_planner/debug/markers
+              Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
               Name: StopDetectionArea
               Namespaces:
                 {}
