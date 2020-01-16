@@ -14,6 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
 )
+
+find_package(OpenCV REQUIRED)
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES lane_change_planner
@@ -23,6 +26,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(lane_change_planner
@@ -42,4 +46,5 @@ add_executable(lane_change_planner
 add_dependencies(lane_change_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(lane_change_planner
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )

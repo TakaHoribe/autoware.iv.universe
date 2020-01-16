@@ -38,13 +38,16 @@
 
 #include <memory>
 
-namespace lane_change_planner {
-class LaneChanger {
+namespace lane_change_planner
+{
+class LaneChanger
+{
 private:
   ros::Timer timer_;
 
   ros::Publisher path_publisher_;
   ros::Publisher path_marker_publisher_;
+  ros::Publisher drivable_area_publisher_;
 
   ros::NodeHandle pnh_;
 
@@ -60,12 +63,14 @@ private:
   // RouteHandler route_handler_;
   // PathExtender path_extender_;
 
-  void run(const ros::TimerEvent &event);
+  void run(const ros::TimerEvent& event);
   void publishDebugMarkers();
+  void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path);
+
 public:
   LaneChanger();
   void init();
 };
-} // namespace lane_change_planner
+}  // namespace lane_change_planner
 
-#endif // LANE_CHANGE_PLANNER_LANE_CHANGER_H
+#endif  // LANE_CHANGE_PLANNER_LANE_CHANGER_H

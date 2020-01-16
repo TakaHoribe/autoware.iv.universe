@@ -75,6 +75,18 @@ void ExecutingLaneChangeState::update()
   {
     ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
   }
+
+  // update path
+  {
+    const double width = ros_parameters_.drivable_area_width;
+    const double height = ros_parameters_.drivable_area_height;
+    const double resolution = ros_parameters_.drivable_area_resolution;
+    lanelet::ConstLanelets lanes;
+    lanes.insert(lanes.end(), original_lanes_.begin(), original_lanes_.end());
+    lanes.insert(lanes.end(), target_lanes_.begin(), target_lanes_.end());
+    status_.lane_change_path.drivable_area =
+        util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
+  }
 }
 
 State ExecutingLaneChangeState::getNextState() const
@@ -127,7 +139,8 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const
     const auto& obj = dynamic_objects_->objects.at(i);
     for (const auto& obj_path : obj.state.predicted_paths)
     {
-      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, time_resolution, prediction_duration);
+      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, time_resolution,
+                                                               prediction_duration);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       if (distance < thresh)

@@ -15,6 +15,9 @@
  */
 
 #include <lane_change_planner/utilities.h>
+#include <lanelet2_extension/utility/message_conversion.h>
+#include <opencv2/opencv.hpp>
+#include <tf2/utils.h>
 
 namespace
 {
@@ -50,6 +53,27 @@ ros::Time safeAddition(const ros::Time& t1, const double seconds)
   }
   return sum;
 }
+
+cv::Point toCVPoint(const geometry_msgs::Point& geom_point, const double width_m, const double height_m,
+                    const double resolution)
+{
+  return cv::Point(static_cast<int>((height_m - geom_point.y) / resolution),
+                   static_cast<int>((width_m - geom_point.x) / resolution));
+}
+
+void imageToOccupancyGrid(const cv::Mat& cv_image, nav_msgs::OccupancyGrid* occupancy_grid)
+{
+  occupancy_grid->data.reserve(cv_image.rows * cv_image.cols);
+  for (int x = cv_image.cols - 1; x >= 0; x--)
+  {
+    for (int y = cv_image.rows - 1; y >= 0; y--)
+    {
+      const unsigned char intensity = cv_image.at<unsigned char>(y, x);
+      occupancy_grid->data.push_back(intensity);
+    }
+  }
+}
+
 }  // namespace
 
 namespace lane_change_planner
@@ -338,6 +362,7 @@ PathWithLaneId removeOverlappingPoints(const PathWithLaneId& input_path)
       filtered_path.points.push_back(pt);
     }
   }
+  filtered_path.drivable_area = input_path.drivable_area;
   return filtered_path;
 }
 
@@ -418,6 +443,8 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     }
     output_ptr->points.push_back(pre_refined_goal);
     output_ptr->points.push_back(refined_goal);
+
+    output_ptr->drivable_area = input.drivable_area;
     return true;
   }
   catch (std::out_of_range& ex)
@@ -440,6 +467,81 @@ PathWithLaneId refinePath(const double search_radius_range, const double search_
   {
     return filtered_path;
   }
+}
+
+nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets& lanes,
+                                                   const geometry_msgs::PoseStamped& current_pose, const double width,
+                                                   const double height, const double resolution)
+{
+  nav_msgs::OccupancyGrid occupancy_grid;
+  geometry_msgs::PoseStamped grid_origin;
+
+  // calculate grid origin
+  {
+    grid_origin.header = current_pose.header;
+    const double yaw = tf2::getYaw(current_pose.pose.orientation);
+    const double origin_offset_x_m = (-width / 4) * cos(yaw) - (-height / 2) * sin(yaw);
+    const double origin_offset_y_m = (-width / 4) * sin(yaw) + (-height / 2) * cos(yaw);
+    grid_origin.pose.orientation = current_pose.pose.orientation;
+    grid_origin.pose.position.x = current_pose.pose.position.x + origin_offset_x_m;
+    grid_origin.pose.position.y = current_pose.pose.position.y + origin_offset_y_m;
+    grid_origin.pose.position.z = current_pose.pose.position.z;
+  }
+
+  // header
+  {
+    occupancy_grid.header.stamp = current_pose.header.stamp;
+    occupancy_grid.header.frame_id = "map";
+  }
+
+  // info
+  {
+    const int width_cell = width / resolution;
+    const int height_cell = height / resolution;
+
+    occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
+    occupancy_grid.info.resolution = resolution;
+    occupancy_grid.info.width = width_cell;
+    occupancy_grid.info.height = height_cell;
+    occupancy_grid.info.origin = grid_origin.pose;
+  }
+
+  // occupancy_grid.data = image;
+  {
+    constexpr uint8_t free_space = 0;
+    constexpr uint8_t occupied_space = 100;
+    // get transform
+    tf2::Stamped<tf2::Transform> tf_grid2map, tf_map2grid;
+    tf2::fromMsg(grid_origin, tf_grid2map);
+    tf_map2grid.setData(tf_grid2map.inverse());
+    const auto geom_tf_map2grid = tf2::toMsg(tf_map2grid);
+
+    // convert lane polygons into cv type
+    cv::Mat cv_image(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1, cv::Scalar(occupied_space));
+    std::vector<std::vector<cv::Point>> cv_polygons;
+    std::vector<int> cv_polygon_sizes;
+    for (const auto& llt : lanes)
+    {
+      std::vector<cv::Point> cv_polygon;
+      for (const auto& llt_pt : llt.polygon3d())
+      {
+        geometry_msgs::Point geom_pt = lanelet::utils::conversion::toGeomMsgPt(llt_pt);
+        geometry_msgs::Point transformed_geom_pt;
+        tf2::doTransform(geom_pt, transformed_geom_pt, geom_tf_map2grid);
+        cv_polygon.push_back(toCVPoint(transformed_geom_pt, width, height, resolution));
+      }
+      cv_polygons.push_back(cv_polygon);
+      cv_polygon_sizes.push_back(cv_polygon.size());
+    }
+
+    // fill in drivable area and copy to occupancy grid
+    cv::fillPoly(cv_image, cv_polygons, cv::Scalar(free_space));
+    const auto& cv_image_reshaped = cv_image.reshape(1, 1);
+    imageToOccupancyGrid(cv_image, &occupancy_grid);
+    occupancy_grid.data[0] = 0;
+    // cv_image_reshaped.copyTo(occupancy_grid.data);
+  }
+  return occupancy_grid;
 }
 
 }  // namespace util
