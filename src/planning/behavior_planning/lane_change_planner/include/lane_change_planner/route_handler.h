@@ -77,8 +77,7 @@ public:
 
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
-  bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose, lanelet::ConstLanelet* closest_lanelet,
-                                    double distance_thresh) const;
+  bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose, lanelet::ConstLanelet* closest_lanelet) const;
 
   lanelet::ConstLanelets getRouteLanelets() const;
   lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet) const;
