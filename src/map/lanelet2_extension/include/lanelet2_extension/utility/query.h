@@ -25,6 +25,7 @@
 
 #include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
 #include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
 #include <lanelet2_extension/regulatory_elements/detection_area.h>
 
@@ -171,6 +172,9 @@ ConstLanelets getAllNeighborsLeft(const routing::RoutingGraphPtr& graph, const C
 ConstLanelets getAllNeighborsRight(const routing::RoutingGraphPtr& graph, const ConstLanelet& lanelet);
 ConstLanelets getAllNeighbors(const routing::RoutingGraphPtr& graph, const ConstLanelets& road_lanelets,
                               const geometry_msgs::Point& search_point);
+
+bool getClosestLanelet(const ConstLanelets& lanelets, const geometry_msgs::Pose& search_pose,
+                       ConstLanelet* closest_lanelet_ptr);
 
 }  // namespace query
 }  // namespace utils
