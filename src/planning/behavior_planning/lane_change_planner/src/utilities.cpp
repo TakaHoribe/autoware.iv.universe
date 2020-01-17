@@ -95,6 +95,7 @@ Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt)
   return Eigen::Vector3d(geom_pt.x, geom_pt.y, geom_pt.z);
 }
 
+// returns false when search point is off the linestring
 bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linestring,
                                  const geometry_msgs::Point search_point_geom, FrenetCoordinate3d* frenet_coordinate)
 {
@@ -103,36 +104,90 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
     return false;
   }
 
-  auto prev_geom_pt = linestring.front();
   const auto search_pt = convertToEigenPt(search_point_geom);
   bool found = false;
   double min_distance = std::numeric_limits<double>::max();
-  double accumulated_length = 0;
 
-  for (const auto& geom_pt : linestring)
+  // get frenet coordinate based on points
+  // this is done because linestring is not differentiable at vertices
   {
-    const auto start_pt = convertToEigenPt(prev_geom_pt);
-    const auto end_pt = convertToEigenPt(geom_pt);
+    double accumulated_length = 0;
 
-    const auto line_segment = end_pt - start_pt;
-    const double line_segment_length = line_segment.norm();
-    const auto direction = line_segment / line_segment_length;
-    const auto start2search_pt = (search_pt - start_pt);
-
-    double tmp_length = direction.dot(start2search_pt);
-    if (tmp_length >= 0 && tmp_length <= line_segment_length)
+    for (std::size_t i = 0; i < linestring.size(); i++)
     {
-      double tmp_distance = direction.cross(start2search_pt).norm();
+      const auto geom_pt = linestring.at(i);
+      const auto current_pt = convertToEigenPt(geom_pt);
+      const auto current2search_pt = (search_pt - current_pt);
+
+      // get direction vector
+      Eigen::Vector3d direction;
+      {
+        Eigen::Vector3d p1, p2;
+        if (i == 0)
+        {
+          p1 = current_pt;
+          p2 = convertToEigenPt(linestring.at(i + 1));
+        }
+        else
+        {
+          p1 = convertToEigenPt(linestring.at(i - 1));
+          p2 = current_pt;
+        }
+        direction = (p2 - p1).normalized();
+      }
+
+      // update frenet coordinate
+      const double tmp_distance = current2search_pt.norm();
       if (tmp_distance < min_distance)
       {
-        found = true;
+        if (i > 0 && i < linestring.size() - 1)
+        {
+          found = true;
+        }
         min_distance = tmp_distance;
         frenet_coordinate->distance = tmp_distance;
-        frenet_coordinate->length = accumulated_length + tmp_length;
+        frenet_coordinate->length = accumulated_length;
+      }
+
+      // update accumulated length
+      if (i != 0)
+      {
+        const auto p1 = convertToEigenPt(linestring.at(i - 1));
+        const auto p2 = current_pt;
+        accumulated_length += (p2 - p1).norm();
       }
     }
-    accumulated_length += line_segment_length;
-    prev_geom_pt = geom_pt;
+  }
+
+  // get frenet coordinate based on lines
+  {
+    auto prev_geom_pt = linestring.front();
+    double accumulated_length = 0;
+    for (const auto& geom_pt : linestring)
+    {
+      const auto start_pt = convertToEigenPt(prev_geom_pt);
+      const auto end_pt = convertToEigenPt(geom_pt);
+
+      const auto line_segment = end_pt - start_pt;
+      const double line_segment_length = line_segment.norm();
+      const auto direction = line_segment / line_segment_length;
+      const auto start2search_pt = (search_pt - start_pt);
+
+      double tmp_length = direction.dot(start2search_pt);
+      if (tmp_length >= 0 && tmp_length <= line_segment_length)
+      {
+        double tmp_distance = direction.cross(start2search_pt).norm();
+        if (tmp_distance < min_distance)
+        {
+          found = true;
+          min_distance = tmp_distance;
+          frenet_coordinate->distance = tmp_distance;
+          frenet_coordinate->length = accumulated_length + tmp_length;
+        }
+      }
+      accumulated_length += line_segment_length;
+      prev_geom_pt = geom_pt;
+    }
   }
   return found;
 }
@@ -454,6 +509,47 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     std::cout << ex.what() << std::endl;
     return false;
   }
+}
+
+const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lanelet::ConstLanelet& goal_lanelet)
+{
+  // return goal;
+  const auto lanelet_point = lanelet::utils::conversion::toLaneletPoint(goal.position);
+  const double distance = boost::geometry::distance(goal_lanelet.polygon2d().basicPolygon(),
+                                                    lanelet::utils::to2D(lanelet_point).basicPoint());
+  if (distance < std::numeric_limits<double>::epsilon())
+  {
+    return goal;
+  }
+
+  const auto segment =
+      lanelet::utils::getClosestSegment(lanelet::utils::to2D(lanelet_point), goal_lanelet.centerline());
+  if (segment.empty())
+  {
+    return goal;
+  }
+
+  geometry_msgs::Pose refined_goal;
+  {
+    // find position
+    const auto p1 = segment.front().basicPoint();
+    const auto p2 = segment.back().basicPoint();
+    const auto direction_vector = (p2 - p1).normalized();
+    const auto p1_to_goal = lanelet_point.basicPoint() - p1;
+    const double s = direction_vector.dot(p1_to_goal);
+    const auto refined_point = p1 + direction_vector * s;
+
+    refined_goal.position.x = refined_point.x();
+    refined_goal.position.y = refined_point.y();
+    refined_goal.position.z = refined_point.z();
+
+    // find orientation
+    const double yaw = std::atan2(direction_vector.y(), direction_vector.x());
+    tf2::Quaternion tf_quat;
+    tf_quat.setRPY(0, 0, yaw);
+    refined_goal.orientation = tf2::toMsg(tf_quat);
+  }
+  return refined_goal;
 }
 
 PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range, const PathWithLaneId& input,

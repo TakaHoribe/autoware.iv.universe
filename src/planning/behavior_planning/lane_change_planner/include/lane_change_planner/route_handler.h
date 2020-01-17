@@ -108,6 +108,7 @@ public:
   bool isInTargetLane(const geometry_msgs::PoseStamped& pose, const lanelet::ConstLanelets& target) const;
   geometry_msgs::Pose getGoalPose() const;
   lanelet::Id getGoalLaneId() const;
+  bool getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const;
 };
 }  // namespace lane_change_planner
 #endif  // LANE_CHANGE_PLANNER_ROUTE_HANDLER_H

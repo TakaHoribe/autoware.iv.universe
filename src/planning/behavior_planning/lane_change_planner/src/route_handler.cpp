@@ -605,7 +605,7 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
   }
 
   // get velocity
-  constexpr double min_velocity =2.0;
+  constexpr double min_velocity = 2.0;
   double velocity;
   velocity = util::l2Norm(twist.linear);
   velocity = std::max(velocity, min_velocity);
@@ -671,6 +671,20 @@ lanelet::Id RouteHandler::getGoalLaneId() const
   {
     return route_msg_.route_sections.back().preferred_lane_id;
   }
+}
+
+bool RouteHandler::getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const
+{
+  const lanelet::Id goal_lane_id = getGoalLaneId();
+  for (const auto& llt : route_lanelets_)
+  {
+    if (llt.id() == goal_lane_id)
+    {
+      *goal_lanelet = llt;
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace lane_change_planner
