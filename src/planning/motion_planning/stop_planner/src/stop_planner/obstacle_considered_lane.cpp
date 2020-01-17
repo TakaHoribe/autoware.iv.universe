@@ -74,9 +74,9 @@ bool ObstacleConsideredLane::extractPcdAroundTrajectory2D(const pcl::PointCloud<
 {
   out_pcd.clear();
 
-double squared_radius = radius * radius;
-int in_pcd_max = in_pcd.size();
-int  in_traj_max = in_traj.points.size();
+  double squared_radius = radius * radius;
+  int in_pcd_max = in_pcd.size();
+  int in_traj_max = in_traj.points.size();
   for (int i = 0; i < in_pcd_max; ++i) // for each pcd
   {
     for (int j = 0; j < in_traj_max; ++j) // for each trajectory point
@@ -591,6 +591,7 @@ visualization_msgs::MarkerArray ObstacleConsideredLane::visualize()
     ma.markers.push_back(displayObstaclePerpendicularPoint(perpendicular_pose_, stop_kind));
     ma.markers.push_back(displayObstaclePoint(stop_factor_pose_, stop_kind));
   }
+
   return ma;
 }
 

@@ -180,7 +180,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
     m_poly.color = *setColorDependsOnObstacleKind(kind);
 
     m_point.action = visualization_msgs::Marker::ADD;
-    m_point.color = setColorWhite();
+    m_point.color = *setColorDependsOnObstacleKind(kind);
 
     // push back elements
     for (const auto &e : poly)
@@ -247,21 +247,21 @@ std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind)
   color->a = 0.999;
   if (kind == 0)
   {
-    color->r = 1.0;
-    color->g = 0.0;
+    color->r = 0.0;
+    color->g = 1.0;
     color->b = 1.0;
   }
   else if (kind == 1)
   {
-    color->r = 0.0;
-    color->g = 0.0;
-    color->b = 1.0;
-  }
-  else if (kind == 2)
-  {
     color->r = 1.0;
     color->g = 0.0;
     color->b = 0.0;
+  }
+  else if (kind == 2)
+  {
+    color->r = 0.0;
+    color->g = 0.0;
+    color->b = 1.0;
   }
   else if (kind == 3)
   {
