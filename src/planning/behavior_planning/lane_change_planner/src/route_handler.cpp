@@ -19,7 +19,7 @@
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <lanelet2_extension/utility/message_conversion.h>
-
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/primitives/LaneletSequence.h>
 #include <lanelet2_core/geometry/Lanelet.h>
@@ -120,6 +120,18 @@ void RouteHandler::setRouteLanelets()
 lanelet::ConstLanelets RouteHandler::getRouteLanelets() const
 {
   return route_lanelets_;
+}
+
+bool RouteHandler::isDeadEndLanelet(const lanelet::ConstLanelet& lanelet) const
+{
+  for (const auto& route_section : route_msg_.route_sections)
+  {
+    if (exists(route_section.continued_lane_ids, lanelet.id()))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet) const
@@ -310,29 +322,6 @@ bool RouteHandler::getLaneChangeTarget(const lanelet::ConstLanelet& lanelet,
   return true;
 }
 
-lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_sequence,
-                                          const geometry_msgs::Pose& pose)
-{
-  lanelet::ConstLanelet closest_lanelet;
-  lanelet::utils::query::getClosestLanelet(lanelet_sequence, pose, &closest_lanelet);
-
-  double length = 0;
-  lanelet::ArcCoordinates arc_coordinates;
-  for (const auto& llt : lanelet_sequence)
-  {
-    const auto& centerline_2d = lanelet::utils::to2D(llt.centerline());
-    if (llt == closest_lanelet)
-    {
-      const auto lanelet_point = toLaneletPoint(pose.position);
-      arc_coordinates = lanelet::geometry::toArcCoordinates(centerline_2d, lanelet::utils::to2D(lanelet_point).basicPoint());
-      arc_coordinates.length += length;
-      break;
-    }
-    length += boost::geometry::length(centerline_2d);
-  }
-  return arc_coordinates;
-}
-
 bool RouteHandler::getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose,
                                                 lanelet::ConstLanelet* closest_lanelet) const
 {
@@ -362,10 +351,23 @@ PathWithLaneId RouteHandler::getReferencePath(const geometry_msgs::Pose& pose, c
   }
   const auto& lanelet_sequence = getLaneletSequence(lanelet);
 
-  const auto arc_coordinates = getArcCoordinates(lanelet_sequence, pose);
+  const auto arc_coordinates = lanelet::utils::getArcCoordinates(lanelet_sequence, pose);
   double s = arc_coordinates.length;
   double s_backward = std::max(0., s - backward_path_length);
   double s_forward = s + forward_path_length;
+  double lane_length = lanelet::utils::getLaneletLength2d(lanelet_sequence);
+  int n_lane_change = 0;
+  if (!lanelet_sequence.empty())
+  {
+    n_lane_change = std::abs(getNumLaneToPreferredLane(lanelet_sequence.back()));
+  }
+  else
+  {
+    n_lane_change = std::abs(getNumLaneToPreferredLane(lanelet));
+  }
+
+  double minimum_lanechange_length = 5;
+  s_forward = std::min(s_forward, lane_length - n_lane_change * minimum_lanechange_length);
   return getReferencePath(lanelet_sequence, s_backward, s_forward, false);
 }
 
@@ -545,6 +547,21 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
     pt.point.pose.orientation = tf2::toMsg(yaw_quat);
   }
 
+  // set velocity zero at dead end
+  if (!reference_path.points.empty() && !lanelet_sequence.empty())
+  {
+    auto& path_end_point = reference_path.points.back().point;
+    const auto& centerline = lanelet_sequence.back().centerline();
+    if (isDeadEndLanelet(lanelet_sequence.back()) && !centerline.empty())
+    {
+      const auto& lane_end_point = lanelet::utils::conversion::toGeomMsgPt(centerline.back());
+      if (util::getDistance3d(path_end_point.pose.position, lane_end_point) < std::numeric_limits<double>::epsilon())
+      {
+        path_end_point.twist.linear.x = 0;
+      }
+    }
+  }
+
   return reference_path;
 }
 
@@ -575,8 +592,7 @@ lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Po
 }
 
 PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist,
-                                               const double backward_path_length,
-                                               const double forward_path_length,
+                                               const double backward_path_length, const double forward_path_length,
                                                const double lane_change_prepare_duration,
                                                const double lane_changing_duration) const
 {
@@ -588,47 +604,53 @@ PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, 
     return reference_path;
   }
 
-  double velocity =
-      std::sqrt(twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y + twist.linear.z * twist.linear.z);
+  // get velocity
+  constexpr double min_velocity =2.0;
+  double velocity;
+  velocity = util::l2Norm(twist.linear);
+  velocity = std::max(velocity, min_velocity);
 
-  // saturation
-  velocity = (velocity > 1.0) ? velocity : 1.0;
-
-  auto lanelet_sequence = getLaneletSequence(lanelet);
+  // get path on original lanes
+  const auto& original_lanelets = getLaneletSequence(lanelet);
   double straight_distance = velocity * lane_change_prepare_duration;
   double lane_change_distance = velocity * lane_changing_duration;
+  const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
 
-  auto arc_position = getArcCoordinates(lanelet_sequence, pose);
-  double s = arc_position.length;
+  PathWithLaneId reference_path1;
+  {
+    const auto arc_position = lanelet::utils::getArcCoordinates(original_lanelets, pose);
+    const double s = arc_position.length;
+    const double s_start = s - backward_path_length;
+    const double lane_length = lanelet::utils::getLaneletLength2d(original_lanelets);
+    double s_end = s + straight_distance;
+    // const int num = std::abs(getNumLaneToPreferredLane(lanelet));
+    // s_end = std::min(s_end, lane_length - num * lane_change_total_duration * min_velocity);
+    // s_end = std::max(s_end, s_start + std::numeric_limits<double>::epsilon());
+    reference_path1 = getReferencePath(original_lanelets, s_start, s_end);
+  }
 
-  double s_start = s - backward_path_length;
-  double s_end = s + straight_distance;
-  const auto reference_path1 = getReferencePath(lanelet_sequence, s_start, s_end);
   PathWithLaneId reference_path2;
-
-  int num = getNumLaneToPreferredLane(lanelet);
-  if (num < 0)
   {
-    auto right_lanelet = (!!routing_graph_ptr_->right(lanelet)) ? routing_graph_ptr_->right(lanelet) :
-                                                                  routing_graph_ptr_->adjacentRight(lanelet);
-    const auto& right_lanelet_sequence = getLaneletSequence(right_lanelet.get());
-    auto arc_position = getArcCoordinates(right_lanelet_sequence, pose);
-    s_start = arc_position.length + straight_distance + lane_change_distance;
-    s_end = s_start + forward_path_length;
-    reference_path2 = getReferencePath(right_lanelet_sequence, s_start, s_end);
-  }
+    const auto& target_lanelets = getLaneChangeTarget(pose);
+    const double lane_length = lanelet::utils::getLaneletLength2d(target_lanelets);
 
-  if (num > 0)
-  {
-    auto left_lanelet = (!!routing_graph_ptr_->left(lanelet)) ? routing_graph_ptr_->left(lanelet) :
-                                                                routing_graph_ptr_->adjacentLeft(lanelet);
-    const auto& left_lanelet_sequence = getLaneletSequence(left_lanelet.get());
-    auto arc_position = getArcCoordinates(left_lanelet_sequence, pose);
-    s_start = arc_position.length + straight_distance + lane_change_distance;
-    s_end = s_start + forward_path_length;
-    reference_path2 = getReferencePath(left_lanelet_sequence, s_start, s_end);
+    // const auto path1_end_pose = reference_path1.points.back().point.pose;
+    const auto arc_position = lanelet::utils::getArcCoordinates(target_lanelets, pose);
+    const double s_start = arc_position.length + lane_change_distance;
+    double s_end = s_start + forward_path_length;
+    int num = 0;
+    if (!target_lanelets.empty())
+    {
+      num = std::abs(getNumLaneToPreferredLane(target_lanelets.back()));
+    }
+    else
+    {
+      num = std::max(std::abs(getNumLaneToPreferredLane(lanelet)) - 1, 0);
+    }
+    s_end = std::min(s_end, lane_length - num * lane_change_total_duration * min_velocity);
+    s_end = std::max(s_end, s_start + std::numeric_limits<double>::epsilon());
+    reference_path2 = getReferencePath(target_lanelets, s_start, s_end);
   }
-
   reference_path = combineReferencePath(reference_path1, reference_path2);
 
   return reference_path;

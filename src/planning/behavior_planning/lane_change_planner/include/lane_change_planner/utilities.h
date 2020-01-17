@@ -80,6 +80,9 @@ removeOverlappingPoints(const autoware_planning_msgs::PathWithLaneId& input_path
 nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets& lanes,
                                                    const geometry_msgs::PoseStamped& current_pose, const double width,
                                                    const double height, const double resolution);
+double getDistanceToEndOfLane(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets);
+
+double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets);
 
 }  // namespace util
 }  // namespace lane_change_planner

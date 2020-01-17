@@ -20,6 +20,7 @@
 #define LANELET2_EXTENSION_UTILITY_UTILITIES_H
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
 
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -43,6 +44,13 @@ lanelet::ConstLanelets getConflictingLanelets(const lanelet::routing::RoutingGra
 
 bool lineStringWithWidthToPolygon(const lanelet::ConstLineString3d& linestring, lanelet::ConstPolygon3d* polygon);
 
+double getLaneletLength2d(const lanelet::ConstLanelet& lanelet);
+double getLaneletLength3d(const lanelet::ConstLanelet& lanelet);
+double getLaneletLength2d(const lanelet::ConstLanelets& lanelet_sequence);
+double getLaneletLength3d(const lanelet::ConstLanelets& lanelet_sequence);
+
+lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_sequence,
+                                          const geometry_msgs::Pose& pose);
 }  // namespace utils
 }  // namespace lanelet
 

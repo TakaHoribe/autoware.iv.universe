@@ -25,6 +25,8 @@
 #include <lanelet2_core/geometry/Lanelet.h>
 
 #include <lanelet2_extension/utility/utilities.h>
+#include <lanelet2_extension/utility/query.h>
+#include <lanelet2_extension/utility/message_conversion.h>
 #include <ros/ros.h>
 
 #include <algorithm>
@@ -266,6 +268,60 @@ bool lineStringWithWidthToPolygon(const lanelet::ConstLineString3d& linestring, 
   *polygon = lanelet::Polygon3d(lanelet::InvalId, { p1, p2, p3, p4 });
 
   return true;
+}
+
+double getLaneletLength2d(const lanelet::ConstLanelet& lanelet)
+{
+  return boost::geometry::length(lanelet::utils::to2D(lanelet.centerline()).basicLineString());
+}
+
+double getLaneletLength3d(const lanelet::ConstLanelet& lanelet)
+{
+  return boost::geometry::length(lanelet.centerline().basicLineString());
+}
+
+double getLaneletLength2d(const lanelet::ConstLanelets& lanelet_sequence)
+{
+  double length = 0;
+  for (const auto& llt : lanelet_sequence)
+  {
+    length += getLaneletLength2d(llt);
+  }
+  return length;
+}
+
+double getLaneletLength3d(const lanelet::ConstLanelets& lanelet_sequence)
+{
+  double length = 0;
+  for (const auto& llt : lanelet_sequence)
+  {
+    length += getLaneletLength3d(llt);
+  }
+  return length;
+}
+
+lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_sequence,
+                                          const geometry_msgs::Pose& pose)
+{
+  lanelet::ConstLanelet closest_lanelet;
+  lanelet::utils::query::getClosestLanelet(lanelet_sequence, pose, &closest_lanelet);
+
+  double length = 0;
+  lanelet::ArcCoordinates arc_coordinates;
+  for (const auto& llt : lanelet_sequence)
+  {
+    const auto& centerline_2d = lanelet::utils::to2D(llt.centerline());
+    if (llt == closest_lanelet)
+    {
+      const auto lanelet_point = lanelet::utils::conversion::toLaneletPoint(pose.position);
+      arc_coordinates =
+          lanelet::geometry::toArcCoordinates(centerline_2d, lanelet::utils::to2D(lanelet_point).basicPoint());
+      arc_coordinates.length += length;
+      break;
+    }
+    length += boost::geometry::length(centerline_2d);
+  }
+  return arc_coordinates;
 }
 
 }  // namespace utils

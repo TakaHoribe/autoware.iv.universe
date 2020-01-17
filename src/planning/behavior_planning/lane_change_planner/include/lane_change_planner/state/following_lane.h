@@ -38,6 +38,10 @@ private:
   bool isTooCloseToDeadEnd() const;
   bool isLaneChangeable() const;
 
+  // minor conditions
+  bool hasEnoughDistance() const;
+  bool isLaneChangePathSafe() const;
+
 public:
   FollowingLaneState() = default;
 

@@ -114,6 +114,55 @@ bool FollowingLaneState::isTooCloseToDeadEnd() const
 
 bool FollowingLaneState::isLaneChangeable() const
 {
+  if (!hasEnoughDistance())
+  {
+    return false;
+  }
+  if (!isLaneChangePathSafe())
+  {
+    return false;
+  }
+  return true;
+}
+
+bool FollowingLaneState::hasEnoughDistance() const
+{
+  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+  const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
+  const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
+  const double lane_change_total_distance = lane_change_total_duration * vehicle_speed;
+  const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
+
+  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, current_lanes))
+  {
+    return false;
+  }
+
+  if(lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes))
+  {
+    return false;
+  }
+
+  // if(lane_change_total_distance > getDistanceToNextTrafficLight())
+  // {
+  //   return false;
+  // }
+
+  // if(lane_change_total_distance > getDistanceToNextCrosswalk())
+  // {
+  //   return false;
+  // }
+
+  // if(lane_change_total_distance > getDistanceToNextStopSign())
+  // {
+  //   return false;
+  // }
+  return true;
+}
+
+bool FollowingLaneState::isLaneChangePathSafe() const
+{
   const auto& target_lanelets = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
   if (target_lanelets.empty())
   {

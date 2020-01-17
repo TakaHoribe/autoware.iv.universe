@@ -81,11 +81,13 @@ void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPt
   // *map = std::move(laneletMap);
 }
 
-void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map, lanelet::traffic_rules::TrafficRulesPtr* traffic_rules, lanelet::routing::RoutingGraphPtr* routing_graph)
+void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map,
+                lanelet::traffic_rules::TrafficRulesPtr* traffic_rules,
+                lanelet::routing::RoutingGraphPtr* routing_graph)
 {
   fromBinMsg(msg, map);
   *traffic_rules =
-    lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
+      lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
   *routing_graph = lanelet::routing::RoutingGraph::build(*map, **traffic_rules);
 }
 
@@ -169,6 +171,18 @@ geometry_msgs::Point toGeomMsgPt(const lanelet::ConstPoint2d& src)
   geometry_msgs::Point dst;
   toGeomMsgPt(src, &dst);
   return dst;
+}
+
+lanelet::ConstPoint3d toLaneletPoint(const geometry_msgs::Point& src)
+{
+  lanelet::ConstPoint3d dst;
+  toLaneletPoint(src, &dst);
+  return dst;
+}
+
+void toLaneletPoint(const geometry_msgs::Point& src, lanelet::ConstPoint3d* dst)
+{
+  *dst = lanelet::Point3d(lanelet::InvalId, src.x, src.y, src.z);
 }
 
 void toGeomMsgPoly(const lanelet::ConstPolygon3d& ll_poly, geometry_msgs::Polygon* geom_poly)

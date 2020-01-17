@@ -49,7 +49,9 @@ void toBinMsg(const lanelet::LaneletMapPtr& map, autoware_lanelet2_msgs::MapBin*
  * @param map [Converted lanelet2 data]
  */
 void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map);
-void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map, lanelet::traffic_rules::TrafficRulesPtr* traffic_rules, lanelet::routing::RoutingGraphPtr* routing_graph);
+void fromBinMsg(const autoware_lanelet2_msgs::MapBin& msg, lanelet::LaneletMapPtr map,
+                lanelet::traffic_rules::TrafficRulesPtr* traffic_rules,
+                lanelet::routing::RoutingGraphPtr* routing_graph);
 
 /**
  * [toGeomMsgPt converts various point types to geometry_msgs point]
@@ -72,6 +74,9 @@ geometry_msgs::Point toGeomMsgPt(const geometry_msgs::Point32& src);
 geometry_msgs::Point toGeomMsgPt(const Eigen::Vector3d& src);
 geometry_msgs::Point toGeomMsgPt(const lanelet::ConstPoint3d& src);
 geometry_msgs::Point toGeomMsgPt(const lanelet::ConstPoint2d& src);
+
+lanelet::ConstPoint3d toLaneletPoint(const geometry_msgs::Point& src);
+void toLaneletPoint(const geometry_msgs::Point& src, lanelet::ConstPoint3d* dst);
 
 /**
  * [toGeomMsgPoly converts lanelet polygon to geometry_msgs polygon]

@@ -16,6 +16,8 @@
 
 #include <lane_change_planner/utilities.h>
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
+#include <lanelet2_extension/utility/query.h>
 #include <opencv2/opencv.hpp>
 #include <tf2/utils.h>
 
@@ -542,6 +544,45 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
     // cv_image_reshaped.copyTo(occupancy_grid.data);
   }
   return occupancy_grid;
+}
+
+double getDistanceToEndOfLane(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets)
+{
+  const auto& arc_coordinates = lanelet::utils::getArcCoordinates(lanelets, current_pose);
+  const double lanelet_length = lanelet::utils::getLaneletLength3d(lanelets);
+  return lanelet_length - arc_coordinates.length;
+}
+
+double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets)
+{
+  const auto& arc_coordinates = lanelet::utils::getArcCoordinates(lanelets, current_pose);
+
+  lanelet::ConstLanelet current_lanelet;
+  if (!lanelet::utils::query::getClosestLanelet(lanelets, current_pose, &current_lanelet))
+  {
+    return std::numeric_limits<double>::max();
+  }
+
+  double distance = 0;
+  bool is_before_current_lanelet = true;
+  for (const auto& llt : lanelets)
+  {
+    if (llt == current_lanelet)
+    {
+      is_before_current_lanelet = false;
+    }
+    if (is_before_current_lanelet)
+    {
+      continue;
+    }
+    if (llt.hasAttribute("turn_direction"))
+    {
+      return distance - arc_coordinates.length;
+    }
+    distance += lanelet::utils::getLaneletLength3d(llt);
+  }
+
+  return std::numeric_limits<double>::max();
 }
 
 }  // namespace util

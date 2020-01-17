@@ -77,7 +77,10 @@ public:
 
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
-  bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose, lanelet::ConstLanelet* closest_lanelet) const;
+  bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose,
+                                    lanelet::ConstLanelet* closest_lanelet) const;
+
+  bool isDeadEndLanelet(const lanelet::ConstLanelet& lanelet) const;
 
   lanelet::ConstLanelets getRouteLanelets() const;
   lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet) const;
@@ -87,10 +90,12 @@ public:
   lanelet::ConstLanelets getNeighborsWithinRoute(const lanelet::ConstLanelet& lanelet) const;
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet& lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped& pose) const;
-  autoware_planning_msgs::PathWithLaneId getLaneChangePath(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist,
-                                                 const double backward_path_length, const double forward_path_length,
-                                                 const double lane_change_prepare_duration,
-                                                 const double lane_changing_duration) const;
+  autoware_planning_msgs::PathWithLaneId getLaneChangePath(const geometry_msgs::Pose& pose,
+                                                           const geometry_msgs::Twist& twist,
+                                                           const double backward_path_length,
+                                                           const double forward_path_length,
+                                                           const double lane_change_prepare_duration,
+                                                           const double lane_changing_duration) const;
   autoware_planning_msgs::PathWithLaneId getReferencePath(const geometry_msgs::Pose& pose,
                                                           const double backward_path_length,
                                                           const double forward_path_length) const;
