@@ -34,6 +34,23 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
+namespace {
+
+// Convert from Point32 to Point
+std::vector<geometry_msgs::Point> poly2vector(const geometry_msgs::Polygon& poly) {
+  std::vector<geometry_msgs::Point> ps;
+  for (const auto& p32 : poly.points) {
+    geometry_msgs::Point p;
+    p.x = p32.x;
+    p.y = p32.y;
+    p.z = p32.z;
+    ps.push_back(p);
+  }
+  return ps;
+}
+
+}  // namespace
+
 CostmapGenerator::CostmapGenerator() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_) {}
 
 void CostmapGenerator::init() {
@@ -82,15 +99,7 @@ void CostmapGenerator::loadRoadAreasFromLaneletMap(
   for (const auto& ll : road_lanelets) {
     geometry_msgs::Polygon poly;
     lanelet::visualization::lanelet2Polygon(ll, &poly);
-
-    std::vector<geometry_msgs::Point> poly_pts;
-    for (const auto& p : poly.points) {
-      // convert from Point32 to Point
-      geometry_msgs::Point gp;
-      lanelet::utils::conversion::toGeomMsgPt(p, &gp);
-      poly_pts.push_back(gp);
-    }
-    area_points->push_back(poly_pts);
+    area_points->push_back(poly2vector(poly));
   }
 }
 
