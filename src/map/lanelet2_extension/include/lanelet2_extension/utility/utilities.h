@@ -51,6 +51,9 @@ double getLaneletLength3d(const lanelet::ConstLanelets& lanelet_sequence);
 
 lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_sequence,
                                           const geometry_msgs::Pose& pose);
+
+lanelet::ConstLineString3d getClosestSegment(const lanelet::BasicPoint2d& search_pt,
+                                             const lanelet::ConstLineString3d& linestring);
 }  // namespace utils
 }  // namespace lanelet
 
