@@ -97,12 +97,25 @@ void LaneChanger::init()
 void LaneChanger::run(const ros::TimerEvent& event)
 {
   state_machine_.updateState();
-  auto path = state_machine_.getPath();
+  const auto path = state_machine_.getPath();
 
-  auto goal = RouteHandler::getInstance().getGoalPose();
-  auto goal_lane_id = RouteHandler::getInstance().getGoalLaneId();
+  const auto goal = RouteHandler::getInstance().getGoalPose();
+  const auto goal_lane_id = RouteHandler::getInstance().getGoalLaneId();
 
-  auto refined_path = util::refinePath(7.5, M_PI * 0.5, path, goal, goal_lane_id);
+  geometry_msgs::Pose refined_goal;
+  {
+    lanelet::ConstLanelet goal_lanelet;
+    if (RouteHandler::getInstance().getGoalLanelet(&goal_lanelet))
+    {
+      refined_goal = util::refineGoal(goal, goal_lanelet);
+    }
+    else
+    {
+      refined_goal = goal;
+    }
+  }
+
+  auto refined_path = util::refinePath(7.5, M_PI * 0.5, path, refined_goal, goal_lane_id);
   refined_path.header.frame_id = "map";
   refined_path.header.stamp = ros::Time::now();
 

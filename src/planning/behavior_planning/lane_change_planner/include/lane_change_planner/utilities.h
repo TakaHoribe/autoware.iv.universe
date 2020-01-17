@@ -71,6 +71,8 @@ double getDistanceBetweenPredictedPaths(const autoware_perception_msgs::Predicte
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
                                             const lanelet::ConstLanelets& lanelets);
 
+const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lanelet::ConstLanelet& goal_lanelet);
+
 autoware_planning_msgs::PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range,
                                                   const autoware_planning_msgs::PathWithLaneId& input,
                                                   const geometry_msgs::Pose& goal, const int64_t goal_lane_id);
