@@ -41,7 +41,7 @@
         </group>
 
         <!-- Camera Driver -->
-        <group ns="camera">
+        <group ns="camera" if="$(eval launch_driver==true)">
             <group ns="traffic_light">
                 <node pkg="usb_cam" name="traffic_light_camera" type="usb_cam_node" output="screen">
                     <remap from="~image_raw" to="image_raw" />
@@ -58,7 +58,7 @@
             </group>
         </group>
 
-        <!-- IMU -->
+        <!-- IMU Driver -->
         <group ns="imu" if="$(eval launch_driver==true)">
             <include file="$(find microstrain_mips)/launch/microstrain.launch">
                 <arg name="port" value="/dev/ttyACM0" />
@@ -66,7 +66,7 @@
             </include>
         </group>
 
-        <!-- GNSS -->
+        <!-- GNSS Driver -->
         <group ns="gnss" if="$(eval launch_driver==true)">
             <include file="$(find ublox_gps)/launch/ublox_device.launch">
                 <arg name="node_name" value="ublox" />
