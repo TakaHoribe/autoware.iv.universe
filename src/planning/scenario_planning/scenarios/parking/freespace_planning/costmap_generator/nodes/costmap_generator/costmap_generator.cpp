@@ -31,7 +31,9 @@
 #include <costmap_generator/costmap_generator.h>
 #include <costmap_generator/object_map_utils.hpp>
 
+#include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
 namespace {
@@ -103,6 +105,30 @@ void CostmapGenerator::loadRoadAreasFromLaneletMap(
   }
 }
 
+void CostmapGenerator::loadParkingAreasFromLaneletMap(
+    const lanelet::LaneletMapPtr lanelet_map,
+    std::vector<std::vector<geometry_msgs::Point>>* area_points) {
+  // Parking lots
+  lanelet::ConstPolygons3d all_parking_lots = lanelet::utils::query::getAllParkingLots(lanelet_map);
+  for (const auto& ll_poly : all_parking_lots) {
+    geometry_msgs::Polygon poly;
+    lanelet::utils::conversion::toGeomMsgPoly(ll_poly, &poly);
+    area_points->push_back(poly2vector(poly));
+  }
+
+  // Parking spaces
+  lanelet::ConstLineStrings3d all_parking_spaces =
+      lanelet::utils::query::getAllParkingSpaces(lanelet_map);
+  for (const auto& parking_space : all_parking_spaces) {
+    lanelet::ConstPolygon3d ll_poly;
+    lanelet::utils::lineStringWithWidthToPolygon(parking_space, &ll_poly);
+
+    geometry_msgs::Polygon poly;
+    lanelet::utils::conversion::toGeomMsgPoly(ll_poly, &poly);
+    area_points->push_back(poly2vector(poly));
+  }
+}
+
 void CostmapGenerator::laneletBinMapCallback(const autoware_lanelet2_msgs::MapBin& msg) {
   if (!use_wayarea_) {
     return;
@@ -112,6 +138,7 @@ void CostmapGenerator::laneletBinMapCallback(const autoware_lanelet2_msgs::MapBi
   lanelet::utils::conversion::fromBinMsg(msg, lanelet_map_);
   loaded_lanelet_map_ = true;
   loadRoadAreasFromLaneletMap(lanelet_map_, &area_points_);
+  loadParkingAreasFromLaneletMap(lanelet_map_, &area_points_);
 }
 
 void CostmapGenerator::objectsCallback(

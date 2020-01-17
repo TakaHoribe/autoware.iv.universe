@@ -143,6 +143,12 @@ class CostmapGenerator {
   void loadRoadAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
                                    std::vector<std::vector<geometry_msgs::Point>>* area_points);
 
+  /// \brief set area_points from parking-area polygons
+  /// \param [in] input lanelet_map
+  /// \param [out] calculated area_points of lanelet polygons
+  void loadParkingAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
+                                      std::vector<std::vector<geometry_msgs::Point>>* area_points);
+
   /// \brief calculate cost from pointcloud data
   /// \param[in] in_points: subscribed pointcloud data
   grid_map::Matrix generatePointsCostmap(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_points);
