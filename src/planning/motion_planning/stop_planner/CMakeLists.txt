@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(stop_planner)
 
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++14 -O3)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   sensor_msgs
+  pcl_ros
+  pcl_conversions
 )
 
 catkin_package(
@@ -20,6 +22,8 @@ catkin_package(
    tf2
    tf2_ros
    sensor_msgs
+   pcl_ros
+   pcl_conversions
 )
 
 find_package(Eigen3 REQUIRED)
@@ -35,8 +39,9 @@ add_executable(stop_planner
   src/stop_planner/stop_planner_core.cpp
   src/stop_planner/stop_planner_node.cpp
   src/stop_planner/obstacle_considered_lane.cpp
-  src/stop_planner/stop_factor_search_utils.cpp
-  src/stop_planner/planning_utils.cpp)
+  src/stop_planner/planning_utils.cpp
+  src/stop_planner/visualize.cpp
+  src/stop_planner/interpolate.cpp)
 
 add_dependencies(stop_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

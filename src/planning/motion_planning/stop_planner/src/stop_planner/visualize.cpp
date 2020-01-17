@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-// ROS includes
-
 // User defined includes
-#include "stop_planner/stop_factor_search_utils.h"
+#include "stop_planner/visualize.h"
 #include <sensor_msgs/point_cloud2_iterator.h>
-
-namespace motion_planner
-{
 
 std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose, double height, double width,
                                                 double count)
@@ -69,90 +64,6 @@ std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose,
   return points;
 }
 
-std_msgs::ColorRGBA setColorWhite()
-{
-  std_msgs::ColorRGBA color;
-  color.r = 1.0;
-  color.g = 1.0;
-  color.b = 1.0;
-  color.a = 0.999;
-
-  return color;
-}
-
-std_msgs::ColorRGBA setColorGray()
-{
-  std_msgs::ColorRGBA color;
-  color.r = 0.5;
-  color.g = 0.5;
-  color.b = 0.5;
-  color.a = 0.999;
-
-  return color;
-}
-
-std_msgs::ColorRGBA setColorYellow()
-{
-  std_msgs::ColorRGBA color;
-  color.r = 1.0;
-  color.g = 1.0;
-  color.b = 0.0;
-  color.a = 0.999;
-
-  return color;
-}
-
-
-std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind)
-{
-  std::unique_ptr<std_msgs::ColorRGBA> color(new std_msgs::ColorRGBA);
-
-  color->a = 0.999;
-  if (kind == 0)
-  {
-    color->r = 1.0;
-    color->g = 0.0;
-    color->b = 1.0;
-  }
-  else if (kind == 1)
-  {
-    color->r = 0.0;
-    color->g = 0.0;
-    color->b = 1.0;
-  }
-  else if (kind == 2)
-  {
-    color->r = 1.0;
-    color->g = 0.0;
-    color->b = 0.0;
-  }
-  else if (kind == 3)
-  {
-    color->r = 1.0;
-    color->g = 1.0;
-    color->b = 0.0;
-  }
-  else if (kind == 4)
-  {
-    color->r = 0.0;
-    color->g = 1.0;
-    color->b = 1.0;
-  }
-  else if (kind == 5)
-  {
-    color->r = 0.0;
-    color->g = 1.0;
-    color->b = 0.0;
-  }
-  else
-  {
-    color->r = 1.0;
-    color->g = 1.0;
-    color->b = 1.0;
-  }
-
-  return color;
-}
 
 // display the next waypoint by markers.
 visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t kind, int32_t id)
@@ -180,113 +91,6 @@ visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t k
   marker.color = *setColorDependsOnObstacleKind(kind);
   
   return marker;
-}
-
-
-std::pair<bool, int32_t> calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &lane, int32_t base_idx, double stop_offset_dist)
-{
-  ROS_DEBUG_STREAM(__func__);
-
-  if(lane.points.empty() || (base_idx < 0) || base_idx > (int32_t)(lane.points.size() - 1))
-    return std::make_pair(false, -1);
-
-  int32_t actual_idx = base_idx;
-  double accum = 0.0;
-  while(actual_idx < (int32_t)lane.points.size())
-  {
-    if(actual_idx == (int32_t)lane.points.size() -1)
-    {
-      ROS_DEBUG("idx: %d, accum: %lf, dist: %lf", actual_idx, accum, stop_offset_dist);
-      return std::make_pair(true, actual_idx);
-    }
-
-    accum += planning_utils::calcDistance2D(lane.points.at(actual_idx + 1).pose.position,
-                                            lane.points.at(actual_idx).pose.position);
-
-    if(accum > stop_offset_dist)
-    {
-      ROS_DEBUG("idx: %d, accum: %lf, dist: %lf", actual_idx, accum, stop_offset_dist);
-      return std::make_pair(true, actual_idx + 1);
-    }
-
-    actual_idx++;
-  }
-
-  return std::make_pair(false, -1);
-}
-
-bool findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc,
-                             const int32_t points_thr, std::vector<geometry_msgs::Point> &out_pcd)
-{
-  out_pcd.clear();
-  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(pc, "x"), iter_y(pc, "y"), iter_z(pc, "z");
-       iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
-  {
-    if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z))
-    {
-      ROS_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
-      continue;
-    }
-
-    geometry_msgs::Point p;
-    p.x = *iter_x;
-    p.y = *iter_y;
-
-    if (planning_utils::isInPolygon(poly, p))
-    {
-      out_pcd.push_back(p);
-    }
-  }
-  ROS_DEBUG("detected, p_count: lu", out_pcd.size());
-
-  if ((int32_t)out_pcd.size() >= points_thr)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-bool findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points,
-                         const int32_t points_thr, std::vector<geometry_msgs::Point> &out_points)
-{
-  out_points.clear();
-  for (const auto &p : points)
-  {
-    if (planning_utils::isInPolygon(poly, p))
-    {
-      out_points.push_back(p);
-    }
-  }
-  ROS_DEBUG("detected, p_count: %lu", out_points.size());
-
-  if ((int32_t)out_points.size() >= points_thr)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-geometry_msgs::Point calcClosestPointByXAxis(const geometry_msgs::Pose &pose, const std::vector<geometry_msgs::Point> &points)
-{
-  geometry_msgs::Point clst_p;
-  auto min_x = std::numeric_limits<double>::max();
-  for (const auto &p : points)
-  {
-    auto rel_p = planning_utils::transformToRelativeCoordinate2D(p, pose);
-    if (fabs(rel_p.x) < min_x)
-    {
-      clst_p = p;
-      min_x = fabs(rel_p.x);
-    }
-  }
-
-  return clst_p;
 }
 
 
@@ -400,22 +204,89 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   return ma;
 }
 
-std::pair<bool, geometry_msgs::Pose> calcFopPose(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e,
-                                                 geometry_msgs::Point point)
+
+
+std_msgs::ColorRGBA setColorWhite()
 {
-  auto fop_pair = planning_utils::calcFootOfPerpendicular(line_s, line_e, point);
-  if (!fop_pair.first)
-  {
-    ROS_ERROR("calcFootOfPerpendicular: cannot calc");
-    return std::make_pair(false, geometry_msgs::Pose());
-  }
+  std_msgs::ColorRGBA color;
+  color.r = 1.0;
+  color.g = 1.0;
+  color.b = 1.0;
+  color.a = 0.999;
 
-  geometry_msgs::Pose res;
-  res.position = fop_pair.second;
-  res.orientation = planning_utils::getQuaternionFromYaw(atan2((line_e.y - line_s.y), (line_e.x - line_s.x)));
-  ROS_DEBUG("fop: (%lf, %lf)", res.position.x, res.position.y);
-
-  return std::make_pair(true, res);
+  return color;
 }
 
-}  // namespace motion_planner
+std_msgs::ColorRGBA setColorGray()
+{
+  std_msgs::ColorRGBA color;
+  color.r = 0.5;
+  color.g = 0.5;
+  color.b = 0.5;
+  color.a = 0.999;
+
+  return color;
+}
+
+std_msgs::ColorRGBA setColorYellow()
+{
+  std_msgs::ColorRGBA color;
+  color.r = 1.0;
+  color.g = 1.0;
+  color.b = 0.0;
+  color.a = 0.999;
+
+  return color;
+}
+
+
+std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind)
+{
+  std::unique_ptr<std_msgs::ColorRGBA> color(new std_msgs::ColorRGBA);
+
+  color->a = 0.999;
+  if (kind == 0)
+  {
+    color->r = 1.0;
+    color->g = 0.0;
+    color->b = 1.0;
+  }
+  else if (kind == 1)
+  {
+    color->r = 0.0;
+    color->g = 0.0;
+    color->b = 1.0;
+  }
+  else if (kind == 2)
+  {
+    color->r = 1.0;
+    color->g = 0.0;
+    color->b = 0.0;
+  }
+  else if (kind == 3)
+  {
+    color->r = 1.0;
+    color->g = 1.0;
+    color->b = 0.0;
+  }
+  else if (kind == 4)
+  {
+    color->r = 0.0;
+    color->g = 1.0;
+    color->b = 1.0;
+  }
+  else if (kind == 5)
+  {
+    color->r = 0.0;
+    color->g = 1.0;
+    color->b = 0.0;
+  }
+  else
+  {
+    color->r = 1.0;
+    color->g = 1.0;
+    color->b = 1.0;
+  }
+
+  return color;
+}

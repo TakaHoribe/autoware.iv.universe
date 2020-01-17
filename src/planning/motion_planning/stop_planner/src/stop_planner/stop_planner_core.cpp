@@ -21,13 +21,24 @@ StopPlanner::StopPlanner()
     : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   trajectory_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
+  pcd_extructed_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("extructed/pcd", 1, true);
   marker_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
 
   trajectory_sub_ = pnh_.subscribe("input/trajectory", 1, &StopPlanner::callbackTrajectory, this);
   obstacle_pcd_sub_ = pnh_.subscribe("input/point_cloud", 1, &StopPlanner::callbackPointCloud, this);
 
+  double wheel_base, tread, stop_margin_dist, detection_area_width;
+  int object_pcd_threshold_num;
+  pnh_.param("/vehicle_info/wheel_base", wheel_base, double(2.79));
+  pnh_.param("/vehicle_info/wheel_tread", tread, double(2.0));
+  pnh_.param("stop_margin_dist", stop_margin_dist, double(7.0));
+  pnh_.param("object_pcd_threshold_num", object_pcd_threshold_num, int(1));
+  pnh_.param("detection_area_width", detection_area_width, double(2.5));
+  obstacle_pcd_stop_planner_.setVehicleWidth(tread);
+  obstacle_pcd_stop_planner_.setStopDistance(stop_margin_dist);
+  obstacle_pcd_stop_planner_.setPointsThreshold(object_pcd_threshold_num);
+  obstacle_pcd_stop_planner_.setDetectionAreaWidth(detection_area_width);
 
-  // private_nh_.param<double>("distance_for_cropping", distance_for_cropping_, -3);
 
 
   /* wait until base_link is received */
@@ -100,14 +111,19 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   obstacle_pcd_stop_planner_.setCurrentPose(current_pose_ptr_->pose);
   obstacle_pcd_stop_planner_.setCurrentTrajectory(*in_trajectory_ptr_);
   obstacle_pcd_stop_planner_.setPointCloud(transformed_pointcloud);
-  autoware_planning_msgs::Trajectory out_trajectory;
-  obstacle_pcd_stop_planner_.run(out_trajectory);
+  autoware_planning_msgs::Trajectory out_trajectory = obstacle_pcd_stop_planner_.run();
+
+  sensor_msgs::PointCloud2 pcd_extructed;
+  obstacle_pcd_stop_planner_.getExtructedPcd(pcd_extructed);
+  pcd_extructed.header.stamp = ros::Time::now();
+  pcd_extructed.header.frame_id = "map";
 
   auto tf = std::chrono::system_clock::now();
   double calctime_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(tf - ts).count() * 1.0e-6;
   // ROS_INFO("obstacle processing time : %lf [ms]", calctime_ms);
 
   trajectory_pub_.publish(out_trajectory);
+  pcd_extructed_pub_.publish(pcd_extructed);
   marker_viz_pub_.publish(obstacle_pcd_stop_planner_.visualize());
 
 

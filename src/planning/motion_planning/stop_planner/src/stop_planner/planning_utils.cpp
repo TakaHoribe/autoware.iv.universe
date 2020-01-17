@@ -15,6 +15,8 @@
  */
 
 #include "stop_planner/planning_utils.h"
+#include "stop_planner/visualize.h"
+#include "stop_planner/interpolate.h"
 
 namespace planning_utils
 {
@@ -192,11 +194,6 @@ bool isInPolygon(const std::vector<geometry_msgs::Point> &polygon, const geometr
   tf2::Vector3 point_conv = tf2::Vector3(point.x, point.y, point.z);
 
   return isInPolygon<tf2::Vector3>(polygon_conv, point_conv);
-}
-
-double kmph2mps(double velocity_kmph)
-{
-  return (velocity_kmph * 1000) / (60 * 60);
 }
 
 double normalizeEulerAngle(double euler)
@@ -482,5 +479,64 @@ std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(
   return std::make_tuple(true, dst_idx, res);
 }
 
+void convertEulerAngleToMonotonic(std::vector<double> &a)
+{
+  for (unsigned int i = 1; i < a.size(); ++i)
+  {
+    const double da = a[i] - a[i - 1];
+    a[i] = a[i - 1] + normalizeEulerAngle(da);
+  }
+}
 
+bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
+                              const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory)
+{
+  std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
+  for (const auto &p : base_trajectory.points)
+  {
+    px.push_back(p.pose.position.x);
+    py.push_back(p.pose.position.y);
+    pz.push_back(p.pose.position.z);
+    pyaw.push_back(tf2::getYaw(p.pose.orientation));
+    tlx.push_back(p.twist.linear.x);
+    taz.push_back(p.twist.angular.z);
+    alx.push_back(p.accel.linear.x);
+    aaz.push_back(p.accel.angular.z);
+  }
+
+  convertEulerAngleToMonotonic(pyaw);
+
+  std::vector<double> px_p, py_p, pz_p, pyaw_p, tlx_p, taz_p, alx_p, aaz_p;
+
+  if (!LinearInterpolate::interpolate(base_index, px, out_index, px_p) ||
+      !LinearInterpolate::interpolate(base_index, py, out_index, py_p) ||
+      !LinearInterpolate::interpolate(base_index, pz, out_index, pz_p) ||
+      !LinearInterpolate::interpolate(base_index, pyaw, out_index, pyaw_p) ||
+      !LinearInterpolate::interpolate(base_index, tlx, out_index, tlx_p) ||
+      !LinearInterpolate::interpolate(base_index, taz, out_index, taz_p) ||
+      !LinearInterpolate::interpolate(base_index, alx, out_index, alx_p) ||
+      !LinearInterpolate::interpolate(base_index, aaz, out_index, aaz_p))
+  {
+    ROS_WARN("[linearInterpTrajectory] interpolation error!!");
+    return false;
+  }
+
+  out_trajectory.header = base_trajectory.header;
+  out_trajectory.points.clear();
+  autoware_planning_msgs::TrajectoryPoint point;
+  for (unsigned int i = 0; i < out_index.size(); ++i)
+  {
+    point.pose.position.x = px_p.at(i);
+    point.pose.position.y = py_p.at(i);
+    point.pose.position.z = pz_p.at(i);
+    point.pose.orientation = getQuaternionFromYaw(pyaw_p.at(i));
+    point.twist.linear.x = tlx_p.at(i);
+    point.twist.angular.z = taz_p.at(i);
+    point.accel.linear.x = alx_p.at(i);
+    point.accel.angular.z = aaz_p.at(i);
+    out_trajectory.points.push_back(point);
+  }
+  return true;
+
+}
 }  // namespace planning_utils
