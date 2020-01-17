@@ -184,6 +184,8 @@ std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::solve()
   // Result tuple
   std::tuple<std::vector<double>, std::vector<double>, int> result = std::make_tuple(sol_primal, sol_lagrange_multiplier, status_polish);
 
+  osqp_cleanup(work);
+
   return result;
 }
 
