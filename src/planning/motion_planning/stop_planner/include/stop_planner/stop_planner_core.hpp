@@ -49,7 +49,7 @@ private:
   ros::NodeHandle pnh_;
   ros::Publisher trajectory_pub_;
   ros::Publisher marker_viz_pub_;
-
+  ros::Publisher pcd_extructed_pub_;
   ros::Subscriber trajectory_sub_;
   ros::Subscriber obstacle_pcd_sub_;
 

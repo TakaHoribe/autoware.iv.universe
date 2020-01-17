@@ -31,29 +31,17 @@
 #include <chrono>
 #include <memory>
 
-namespace motion_planner
-{
-    
+
 using PolygonX = std::vector<geometry_msgs::Point>;
-typedef std::pair<int32_t, int8_t> StopFactorPair; // idx, kind
-
-
-// display the next waypoint by markers.
-visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t kind, int32_t id = 0);
-std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose, double height, double width,
-                                                double count);
 
 std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind);
 std_msgs::ColorRGBA setColorWhite();
 std_msgs::ColorRGBA setColorGray();
 std_msgs::ColorRGBA setColorYellow();
 
-std::pair<bool, int32_t> calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &lane, int32_t base_idx, double stop_offset_dist);
+visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t kind, int32_t id = 0);
+std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose, double height, double width, double count);
 
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointCloudInPolygon(const PolygonX &poly, const sensor_msgs::PointCloud2 &pc, int32_t points_thr);
-std::pair<bool, std::vector<geometry_msgs::Point>> findPointsInPolygon(const PolygonX &poly, const std::vector<geometry_msgs::Point> &points, int32_t points_thr = 1);
-
-
-geometry_msgs::Point calcClosestPointByXAxis(const geometry_msgs::Pose &pose, const std::vector<geometry_msgs::Point> &points);
-
-}  // namespace motion_planner
+visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind);
+visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind);
+visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &polygons, int8_t kind);
