@@ -61,6 +61,27 @@ lanelet::Point3d toLaneletPoint(const geometry_msgs::Point& point)
   return lanelet::Point3d(lanelet::InvalId, point.x, point.y, point.z);
 }
 
+bool isRouteLooped(const autoware_planning_msgs::Route& route_msg)
+{
+  const auto& route_sections = route_msg.route_sections;
+  for (std::size_t i = 0; i < route_sections.size(); i++)
+  {
+    const auto& route_section = route_sections.at(i);
+    for (const auto& lane_id : route_section.lane_ids)
+    {
+      for (std::size_t j = i + 1; j < route_sections.size(); j++)
+      {
+        const auto& future_route_section = route_sections.at(j);
+        if (exists(future_route_section.lane_ids, lane_id))
+        {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 namespace lane_change_planner
@@ -81,11 +102,17 @@ void RouteHandler::mapCallback(const autoware_lanelet2_msgs::MapBin& map_msg)
 
 void RouteHandler::routeCallback(const autoware_planning_msgs::Route& route_msg)
 {
-  route_msg_ = route_msg;
-  is_route_msg_ready_ = true;
-  is_handler_ready_ = false;
-
-  setRouteLanelets();
+  if (!isRouteLooped(route_msg))
+  {
+    route_msg_ = route_msg;
+    is_route_msg_ready_ = true;
+    is_handler_ready_ = false;
+    setRouteLanelets();
+  }
+  else
+  {
+    ROS_ERROR("Loop detected within route! Currently, no loop is allowed for route! Using previous route");
+  }
 }
 
 bool RouteHandler::isHandlerReady()

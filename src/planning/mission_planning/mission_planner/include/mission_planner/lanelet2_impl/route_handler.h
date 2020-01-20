@@ -29,14 +29,6 @@
 
 namespace mission_planner
 {
-enum MANEUVER
-{
-  NONE,
-  KEEP,
-  LEFT,
-  RIGHT
-};
-
 class RouteHandler
 {
 private:
@@ -48,7 +40,7 @@ private:
 
   void setRouteLanelets(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                         const lanelet::routing::RoutingGraphPtr& routing_graph_ptr,
-                        const lanelet::routing::Route& route);
+                        const lanelet::ConstLanelets& path_lanelets);
   bool isBijectiveConnection(const lanelet::ConstLanelets& lanelet_section1,
                              const lanelet::ConstLanelets& lanelet_section2) const;
 
@@ -56,7 +48,7 @@ public:
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
   RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-               const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::routing::Route& route);
+               const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::ConstLanelets& path_lanelets);
   lanelet::ConstLanelets getRouteLanelets() const;
 
   lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet) const;

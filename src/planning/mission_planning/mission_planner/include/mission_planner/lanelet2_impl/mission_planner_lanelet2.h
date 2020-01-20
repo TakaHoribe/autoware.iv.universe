@@ -33,9 +33,8 @@
 
 // others
 #include <string>
-#include <unordered_map>
 
-using LaneletToManuever = std::unordered_map<lanelet::Id, unsigned char>;
+using RouteSections = std::vector<autoware_planning_msgs::RouteSection>;
 
 namespace mission_planner
 {
@@ -56,16 +55,17 @@ private:
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
 
   // virtual functions
-  bool isRoutingGraphReady();
+  bool isRoutingGraphReady() const;
   autoware_planning_msgs::Route planRoute();
-  void visualizeRoute(const autoware_planning_msgs::Route& route);
+  void visualizeRoute(const autoware_planning_msgs::Route& route) const;
 
   // routing
-  lanelet::ConstLanelets getMainLanelets(lanelet::routing::Route& route, RouteHandler& lanelet_sequence_finder);
-  autoware_planning_msgs::Route createRouteMessage(lanelet::ConstLanelets main_path,
-                                                   const RouteHandler& route_handler,
-                                                   const LaneletToManuever& lane2maneuver);
-  LaneletToManuever setManeuversToLanes(const lanelet::routing::Route& route, const lanelet::ConstLanelets main_lanes);
+  bool planPathBetweenCheckpoints(const geometry_msgs::PoseStamped& start_checkpoint,
+                                  const geometry_msgs::PoseStamped& goal_checkpoint,
+                                  lanelet::ConstLanelets* path_lanelets_ptr) const;
+  lanelet::ConstLanelets getMainLanelets(const lanelet::ConstLanelets& path_lanelets,
+                                         const RouteHandler& lanelet_sequence_finder);
+  RouteSections createRouteSections(const lanelet::ConstLanelets& main_path, const RouteHandler& route_handler);
 };
 }  // namespace mission_planner
 
