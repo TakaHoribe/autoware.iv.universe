@@ -30,18 +30,34 @@ include/path/display.hpp
 src/path/display.cpp
 include/trajectory/display.hpp
 src/trajectory/display.cpp
+include/mission_checkpoint/mission_checkpoint.hpp
+src/mission_checkpoint/mission_checkpoint.cpp
 )
+
+# add_library(autoware_planning_rviz_tool_plugin
+# include/mission_checkpoint/mission_checkpoint.hpp
+# src/mission_checkpoint/mission_checkpoint.cpp
+# )
+
 
 target_link_libraries(autoware_planning_rviz_plugin
   ${catkin_LIBRARIES} ${QT_LIBRARIES}
 )
 
+# target_link_libraries(autoware_planning_rviz_tool_plugin
+#   ${catkin_LIBRARIES} ${QT_LIBRARIES}
+# )
+
 add_dependencies(autoware_planning_rviz_plugin
         ${catkin_EXPORTED_TARGETS})
+
+# add_dependencies(autoware_planning_rviz_tool_plugin
+# ${catkin_EXPORTED_TARGETS})
 
 install(TARGETS autoware_planning_rviz_plugin
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
+
 
 install(DIRECTORY plugins
   LIBRARY DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
