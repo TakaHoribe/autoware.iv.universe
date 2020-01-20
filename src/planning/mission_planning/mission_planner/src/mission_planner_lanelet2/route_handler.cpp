@@ -19,32 +19,30 @@
 namespace mission_planner
 {
 RouteHandler::RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                           const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::routing::Route& route)
+                           const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::ConstLanelets& path_lanelets)
 {
-  setRouteLanelets(lanelet_map_ptr, routing_graph, route);
+  setRouteLanelets(lanelet_map_ptr, routing_graph, path_lanelets);
 }
 
 void RouteHandler::setRouteLanelets(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                                     const lanelet::routing::RoutingGraphPtr& routing_graph,
-                                    const lanelet::routing::Route& route)
+                                    const lanelet::ConstLanelets& path_lanelets)
 {
   lanelet_map_ptr_ = lanelet_map_ptr;
   routing_graph_ptr_ = routing_graph;
 
-  const auto shortest_path = route.shortestPath();
-
-  if (!shortest_path.empty())
+  if (!path_lanelets.empty())
   {
-    auto first_lanelet = shortest_path.front();
+    auto first_lanelet = path_lanelets.front();
     start_lanelets_ = lanelet::utils::query::getAllNeighbors(routing_graph_ptr_, first_lanelet);
-    auto last_lanelet = shortest_path.back();
+    auto last_lanelet = path_lanelets.back();
     goal_lanelets_ = lanelet::utils::query::getAllNeighbors(routing_graph_ptr_, last_lanelet);
   }
 
   // set route lanelets
   std::unordered_set<lanelet::Id> route_lanelets_id;
   std::unordered_set<lanelet::Id> candidate_lanes_id;
-  for (const auto& lane : shortest_path)
+  for (const auto& lane : path_lanelets)
   {
     route_lanelets_id.insert(lane.id());
     const auto right_relations = routing_graph_ptr_->rightRelations(lane);

@@ -30,6 +30,47 @@
 
 #include <unordered_set>
 
+namespace
+{
+RouteSections combineConsecutiveRouteSections(const RouteSections& route_sections1,
+                                              const RouteSections& route_sections2)
+{
+  RouteSections route_sections;
+  route_sections.reserve(route_sections1.size() + route_sections2.size());
+  if (!route_sections1.empty())
+  {
+    // remove end route section because it is overlapping with first one in next route_section
+    route_sections.insert(route_sections.end(), route_sections1.begin(), route_sections1.end() - 1);
+  }
+  if (!route_sections2.empty())
+  {
+    route_sections.insert(route_sections.end(), route_sections2.begin(), route_sections2.end());
+  }
+  return route_sections;
+}
+
+bool isRouteLooped(const RouteSections& route_sections)
+{
+  for (std::size_t i = 0; i < route_sections.size(); i++)
+  {
+    const auto& route_section = route_sections.at(i);
+    for (const auto& lane_id : route_section.lane_ids)
+    {
+      for (std::size_t j = i + 1; j < route_sections.size(); j++)
+      {
+        const auto& future_route_section = route_sections.at(j);
+        if (exists(future_route_section.lane_ids, lane_id))
+        {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+}  // anonymous namespace
+
 namespace mission_planner
 {
 MissionPlannerLanelet2::MissionPlannerLanelet2() : is_graph_ready_(false)
@@ -44,12 +85,12 @@ void MissionPlannerLanelet2::mapCallback(const autoware_lanelet2_msgs::MapBin& m
   is_graph_ready_ = true;
 }
 
-bool MissionPlannerLanelet2::isRoutingGraphReady()
+bool MissionPlannerLanelet2::isRoutingGraphReady() const
 {
   return (is_graph_ready_);
 }
 
-void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route& route)
+void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route& route) const
 {
   lanelet::ConstLanelets route_lanelets;
   lanelet::ConstLanelets end_lanelets;
@@ -100,18 +141,61 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
 
 autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute()
 {
-  autoware_planning_msgs::Route route_msg;
-
-  lanelet::Lanelet start_lanelet;
-  if (!getClosestLanelet(start_pose_.pose, lanelet_map_ptr_, &start_lanelet))
+  std::stringstream ss;
+  for (const auto& checkpoint : checkpoints_)
   {
-    return route_msg;
+    ss << "x: " << checkpoint.pose.position.x << " "
+       << "y: " << checkpoint.pose.position.y << std::endl;
+  }
+  ROS_INFO_STREAM("start planning route with checkpoints: " << std::endl << ss.str());
+
+  autoware_planning_msgs::Route route_msg;
+  RouteSections route_sections;
+
+  for (std::size_t i = 1; i < checkpoints_.size(); i++)
+  {
+    const auto start_checkpoint = checkpoints_.at(i - 1);
+    const auto goal_checkpoint = checkpoints_.at(i);
+    lanelet::ConstLanelets path_lanelets;
+    if (!planPathBetweenCheckpoints(start_checkpoint, goal_checkpoint, &path_lanelets))
+    {
+      return route_msg;
+    }
+
+    RouteHandler route_handler(lanelet_map_ptr_, routing_graph_ptr_, path_lanelets);
+    const auto main_lanelets = getMainLanelets(path_lanelets, route_handler);
+
+    // //  create routesections
+    const auto local_route_sections = createRouteSections(main_lanelets, route_handler);
+    route_sections = combineConsecutiveRouteSections(route_sections, local_route_sections);
   }
 
-  lanelet::Lanelet goal_lanelet;
-  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &goal_lanelet))
+  if (isRouteLooped(route_sections))
   {
-    return route_msg;
+    ROS_WARN("Loop detected within route! Be aware that looped route is not debugged!");
+  }
+
+  route_msg.header.stamp = ros::Time::now();
+  route_msg.header.frame_id = map_frame_;
+  route_msg.route_sections = route_sections;
+  route_msg.goal_pose = goal_pose_.pose;
+
+  return route_msg;
+}
+
+bool MissionPlannerLanelet2::planPathBetweenCheckpoints(const geometry_msgs::PoseStamped& start_checkpoint,
+                                                        const geometry_msgs::PoseStamped& goal_checkpoint,
+                                                        lanelet::ConstLanelets* path_lanelets_ptr) const
+{
+  lanelet::Lanelet start_lanelet;
+  if (!getClosestLanelet(start_checkpoint.pose, lanelet_map_ptr_, &start_lanelet))
+  {
+    return false;
+  }
+  lanelet::Lanelet goal_lanelet;
+  if (!getClosestLanelet(goal_checkpoint.pose, lanelet_map_ptr_, &goal_lanelet))
+  {
+    return false;
   }
 
   // get all possible lanes that can be used to reach goal (including all possible lane change)
@@ -120,36 +204,25 @@ autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute()
   if (!optional_route)
   {
     ROS_ERROR_STREAM("Failed to find a proper path!" << std::endl
-                                                     << "start point: " << toString(start_pose_.pose) << std::endl
-                                                     << "goal point: " << toString(goal_pose_.pose) << std::endl
+                                                     << "start checkpoint: " << toString(start_pose_.pose) << std::endl
+                                                     << "goal checkpoint: " << toString(goal_pose_.pose) << std::endl
                                                      << "start lane id: " << start_lanelet.id() << std::endl
                                                      << "goal lane id: " << goal_lanelet.id() << std::endl);
-    return route_msg;
+    return false;
   }
 
-  RouteHandler route_handler(lanelet_map_ptr_, routing_graph_ptr_, optional_route.get());
-  auto main_lanelets = getMainLanelets(optional_route.get(), route_handler);
-
-  //  create unordered map of
-  //  first = lanelet id
-  //  second = desired maneuver in given lanelet
-  auto lane2maneuver = setManeuversToLanes(optional_route.get(), main_lanelets);
-
-  //  create lane sequence
-  route_msg = createRouteMessage(main_lanelets, route_handler, lane2maneuver);
-
-  route_msg.header.stamp = ros::Time::now();
-  route_msg.header.frame_id = map_frame_;
-  route_msg.goal_pose = goal_pose_.pose;
-
-  return route_msg;
+  const auto shortest_path = optional_route->shortestPath();
+  for (const auto& llt : shortest_path)
+  {
+    path_lanelets_ptr->push_back(llt);
+  }
+  return true;
 }
 
-lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(lanelet::routing::Route& route,
-                                                               RouteHandler& route_handler)
+lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(const lanelet::ConstLanelets& path_lanelets,
+                                                               const RouteHandler& route_handler)
 {
-  const auto shortest_path = route.shortestPath();
-  auto lanelet_sequence = route_handler.getLaneletSequence(shortest_path.back());
+  auto lanelet_sequence = route_handler.getLaneletSequence(path_lanelets.back());
   lanelet::ConstLanelets main_lanelets;
   while (!lanelet_sequence.empty())
   {
@@ -159,49 +232,20 @@ lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(lanelet::routing:
   return main_lanelets;
 }
 
-LaneletToManuever MissionPlannerLanelet2::setManeuversToLanes(const lanelet::routing::Route& route,
-                                                              const lanelet::ConstLanelets main_lanes)
+RouteSections MissionPlannerLanelet2::createRouteSections(const lanelet::ConstLanelets& main_path,
+                                                          const RouteHandler& route_handler)
 {
-  LaneletToManuever maneuvers;
-  for (const auto& main_lane : main_lanes)
-  {
-    maneuvers[main_lane.id()] = MANEUVER::KEEP;
-
-    auto right_relations = lanelet::utils::query::getAllNeighborsRight(routing_graph_ptr_,
-                                                                       main_lane);  // route_.rightRelations(main_lane);
-    for (const auto& right : right_relations)
-    {
-      // vehicle must lane change left to go to main_lane
-      maneuvers[right.id()] = MANEUVER::LEFT;
-    }
-
-    auto left_relations = lanelet::utils::query::getAllNeighborsLeft(routing_graph_ptr_,
-                                                                     main_lane);  // route_.leftRelations(main_lane);
-    for (const auto& left : left_relations)
-    {
-      // vehicle must lane change right to go to main_lane
-      maneuvers[left.id()] = MANEUVER::RIGHT;
-    }
-  }
-
-  return maneuvers;
-}
-
-autoware_planning_msgs::Route MissionPlannerLanelet2::createRouteMessage(const lanelet::ConstLanelets main_path,
-                                                                         const RouteHandler& route_handler,
-                                                                         const LaneletToManuever& lane2maneuver)
-{
-  autoware_planning_msgs::Route route_msg;
+  RouteSections route_sections;
 
   if (main_path.empty())
-    return route_msg;
+    return route_sections;
 
   for (const auto& main_llt : main_path)
   {
     autoware_planning_msgs::RouteSection route_section_msg;
-    lanelet::ConstLanelets route_section = route_handler.getNeighborsWithinRoute(main_llt);
+    lanelet::ConstLanelets route_section_lanelets = route_handler.getNeighborsWithinRoute(main_llt);
     route_section_msg.preferred_lane_id = main_llt.id();
-    for (const auto& section_llt : route_section)
+    for (const auto& section_llt : route_section_lanelets)
     {
       route_section_msg.lane_ids.push_back(section_llt.id());
       lanelet::ConstLanelet next_lanelet;
@@ -210,9 +254,9 @@ autoware_planning_msgs::Route MissionPlannerLanelet2::createRouteMessage(const l
         route_section_msg.continued_lane_ids.push_back(section_llt.id());
       }
     }
-    route_msg.route_sections.push_back(route_section_msg);
+    route_sections.push_back(route_section_msg);
   }
-  return route_msg;
+  return route_sections;
 }
 
 }  // namespace mission_planner

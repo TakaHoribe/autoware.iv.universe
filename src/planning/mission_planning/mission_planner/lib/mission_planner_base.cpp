@@ -32,6 +32,7 @@ MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_)
   pnh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
 
   goal_subscriber_ = nh_.subscribe("goal_pose", 10, &MissionPlanner::goalPoseCallback, this);
+  checkpoint_subscriber_ = nh_.subscribe("checkpoint", 10, &MissionPlanner::checkpointCallback, this);
 
   route_publisher_ = nh_.advertise<autoware_planning_msgs::Route>("route", 1, true);
   marker_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("route_marker", 1, true);
@@ -72,16 +73,24 @@ bool MissionPlanner::transformPose(const geometry_msgs::PoseStamped& input_pose,
 
 void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg_ptr)
 {
+  // set start pose
   if (!getEgoVehiclePose(&start_pose_))
   {
     ROS_ERROR("Failed to get ego vehicle pose in map frame. Aborting mission planning");
     return;
   }
+  // set goal pose
   if (!transformPose(*goal_msg_ptr, &goal_pose_, map_frame_))
   {
     ROS_ERROR("Failed to get goal pose in map frame. Aborting mission planning");
     return;
   }
+
+  ROS_INFO("New goal pose is set. Reset checkpoints.");
+  checkpoints_.clear();
+  checkpoints_.push_back(start_pose_);
+  checkpoints_.push_back(goal_pose_);
+
   if (!isRoutingGraphReady())
   {
     ROS_ERROR("RoutingGraph is not ready. Aborting mission planning");
@@ -89,6 +98,33 @@ void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& 
   }
 
   autoware_planning_msgs::Route route = planRoute();
+  publishRoute(route);
+}  // namespace mission_planner
+
+void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr& checkpoint_msg_ptr)
+{
+  if (checkpoints_.size() < 2)
+  {
+    ROS_ERROR("You must set start and goal before setting checkpoints. Aborting mission planning");
+    return;
+  }
+
+  geometry_msgs::PoseStamped transformed_checkpoint;
+  if (!transformPose(*checkpoint_msg_ptr, &transformed_checkpoint, map_frame_))
+  {
+    ROS_ERROR("Failed to get checkpoint pose in map frame. Aborting mission planning");
+    return;
+  }
+
+  // insert checkpoint before goal
+  checkpoints_.insert(checkpoints_.end() - 1, transformed_checkpoint);
+
+  autoware_planning_msgs::Route route = planRoute();
+  publishRoute(route);
+}
+
+void MissionPlanner::publishRoute(const autoware_planning_msgs::Route& route) const
+{
   if (!route.route_sections.empty())
   {
     ROS_INFO("Route successfuly planned. Publishing...");
@@ -99,20 +135,6 @@ void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& 
   {
     ROS_ERROR("Calculated route is empty!");
   }
-}
-
-bool MissionPlanner::isRoutingGraphReady()
-{
-  return true;
-}
-autoware_planning_msgs::Route MissionPlanner::planRoute()
-{
-  autoware_planning_msgs::Route empty_route;
-  return empty_route;
-}
-void MissionPlanner::visualizeRoute(const autoware_planning_msgs::Route& route)
-{
-  return;
 }
 
 }  // namespace mission_planner
