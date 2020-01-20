@@ -44,7 +44,6 @@ protected:
   std::string base_link_frame_;
   std::string map_frame_;
 
-  ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 
   ros::Publisher marker_publisher_;

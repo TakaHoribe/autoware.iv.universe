@@ -31,11 +31,11 @@ MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_)
   pnh_.param<std::string>("map_frame", map_frame_, "map");
   pnh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
 
-  goal_subscriber_ = nh_.subscribe("goal_pose", 10, &MissionPlanner::goalPoseCallback, this);
-  checkpoint_subscriber_ = nh_.subscribe("checkpoint", 10, &MissionPlanner::checkpointCallback, this);
+  goal_subscriber_ = pnh_.subscribe("input/goal_pose", 10, &MissionPlanner::goalPoseCallback, this);
+  checkpoint_subscriber_ = pnh_.subscribe("input/checkpoint", 10, &MissionPlanner::checkpointCallback, this);
 
-  route_publisher_ = nh_.advertise<autoware_planning_msgs::Route>("route", 1, true);
-  marker_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("route_marker", 1, true);
+  route_publisher_ = pnh_.advertise<autoware_planning_msgs::Route>("output/route", 1, true);
+  marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/route_marker", 1, true);
 }
 
 bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose)
