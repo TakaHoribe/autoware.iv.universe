@@ -56,6 +56,7 @@ class ScenarioSelectorNode {
   Output output_;
 
   autoware_planning_msgs::Route::ConstPtr route_;
+  autoware_planning_msgs::Scenario::_current_scenario_type current_scenario_;
   geometry_msgs::PoseStamped::ConstPtr current_pose_;
 
   std::shared_ptr<lanelet::LaneletMap> lanelet_map_ptr_;

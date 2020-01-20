@@ -60,12 +60,15 @@ bool isInParkingLot(const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr,
   return lanelet::geometry::within(search_point, nearest_parking_lot->basicPolygon());
 }
 
-bool isNearGoal(const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr,
-                const geometry_msgs::Pose& current_pose, const geometry_msgs::Pose& goal_pose) {
-  const auto& p1 = current_pose.position;
-  const auto& p2 = goal_pose.position;
+bool isNearTrajectoryEnd(const autoware_planning_msgs::Trajectory::ConstPtr& trajectory,
+                         const geometry_msgs::Pose& current_pose, const double th_dist) {
+  if (!trajectory || trajectory->points.empty()) {
+    return false;
+  }
 
-  constexpr double th_dist = 5.0;
+  const auto& p1 = current_pose.position;
+  const auto& p2 = trajectory->points.back().pose.position;
+
   const auto dist = std::hypot(p1.x - p2.x, p1.y - p2.y);
 
   return dist < th_dist;
@@ -73,22 +76,28 @@ bool isNearGoal(const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr,
 
 }  // namespace
 
+// TODO(Kenji Miyake): Manage states in mission_planner
 autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
   autoware_planning_msgs::Scenario scenario;
 
   scenario.activating_scenarios.push_back(autoware_planning_msgs::Scenario::LaneFollowing);
 
   const auto is_in_parking_lot = isInParkingLot(lanelet_map_ptr_, current_pose_->pose);
-  if (is_in_parking_lot) {
+  const auto is_near_trajectory_end =
+      isNearTrajectoryEnd(input_lane_following_.buf_trajectory, current_pose_->pose, 0.5);
+
+  if (is_in_parking_lot && is_near_trajectory_end) {
+    current_scenario_ = autoware_planning_msgs::Scenario::Parking;
+  }
+  if (!is_in_parking_lot) {
+    current_scenario_ = autoware_planning_msgs::Scenario::LaneFollowing;
+  }
+
+  if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
     scenario.activating_scenarios.push_back(autoware_planning_msgs::Scenario::Parking);
   }
 
-  const auto is_near_goal = isNearGoal(lanelet_map_ptr_, current_pose_->pose, route_->goal_pose);
-  if (is_in_parking_lot && is_near_goal) {
-    scenario.current_scenario = autoware_planning_msgs::Scenario::Parking;
-  } else {
-    scenario.current_scenario = autoware_planning_msgs::Scenario::LaneFollowing;
-  }
+  scenario.current_scenario = current_scenario_;
 
   return scenario;
 }
@@ -162,7 +171,11 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
   static_cast<boost::function<void(const decltype(buffer)&)>>( \
       boost::bind(onData<decltype(buffer)>, _1, &buffer))
 
-ScenarioSelectorNode::ScenarioSelectorNode() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_) {
+ScenarioSelectorNode::ScenarioSelectorNode()
+    : nh_(""),
+      private_nh_("~"),
+      tf_listener_(tf_buffer_),
+      current_scenario_(autoware_planning_msgs::Scenario::LaneFollowing) {
   // Input
   input_lane_following_.sub_trajectory = private_nh_.subscribe(
       "input/lane_following/trajectory", 1, CALLBACK(input_lane_following_.buf_trajectory));
