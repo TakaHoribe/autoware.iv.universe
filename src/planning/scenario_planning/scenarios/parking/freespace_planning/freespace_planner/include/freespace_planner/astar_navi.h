@@ -17,6 +17,7 @@
 #ifndef ASTAR_NAVI_H
 #define ASTAR_NAVI_H
 
+#include <deque>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -28,6 +29,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <autoware_planning_msgs/Route.h>
@@ -47,10 +49,12 @@ class AstarNavi {
 
   ros::Publisher trajectory_pub_;
   ros::Publisher debug_pose_array_pub_;
+  ros::Publisher debug_partial_pose_array_pub_;
 
   ros::Subscriber route_sub_;
   ros::Subscriber occupancy_grid_sub_;
   ros::Subscriber scenario_sub_;
+  ros::Subscriber twist_sub_;
 
   ros::Timer timer_;
 
@@ -60,9 +64,8 @@ class AstarNavi {
   // params
   double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
   double update_rate_;         // replanning and publishing rate [Hz]
-
-  // classes
-  AstarSearch astar_;
+  double wait_time_at_turning_point_;
+  double th_stopping_velocity_mps_;
 
   // variables
   bool is_active_;
@@ -71,23 +74,37 @@ class AstarNavi {
   geometry_msgs::PoseStamped current_pose_global_;
   geometry_msgs::PoseStamped goal_pose_local_;
   geometry_msgs::PoseStamped goal_pose_global_;
+  geometry_msgs::TwistStamped twist_;
 
-  bool occupancy_grid_initialized_;
-  bool route_initialized_;
+  std::deque<geometry_msgs::TwistStamped> twist_buffer_;
+
   bool current_pose_initialized_;
+  bool goal_pose_initialized_;
+  bool occupancy_grid_initialized_;
+  bool twist_initialized_;
+
+  autoware_planning_msgs::Trajectory trajectory_;
+  std::vector<size_t> reversing_indices_;
+  size_t prev_target_index_;
+  size_t target_index_;
 
   // functions, callback
-  void onOccupancyGrid(const nav_msgs::OccupancyGrid& msg);
   void onRoute(const autoware_planning_msgs::Route& msg);
+  void onOccupancyGrid(const nav_msgs::OccupancyGrid& msg);
   void onScenario(const autoware_planning_msgs::Scenario& msg);
+  void onTwist(const geometry_msgs::TwistStamped& msg);
 
   void onTimer(const ros::TimerEvent& event);
 
+  bool isPlanRequired();
+  void updateTarget();
+
   // fucntions
   geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
-  void publishTrajectory(const AstarWaypoints& astar_waypoints, const double& velocity);
-  void publishStopTrajectory();
-  void run();
+  autoware_planning_msgs::Trajectory createTrajectory(const AstarWaypoints& astar_waypoints,
+                                                      const double& velocity);
+  autoware_planning_msgs::Trajectory createStopTrajectory();
+  autoware_planning_msgs::Trajectory planTrajectory();
 };
 
 #endif
