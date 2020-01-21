@@ -56,8 +56,10 @@ std::vector<geometry_msgs::Point> poly2vector(const geometry_msgs::Polygon& poly
 CostmapGenerator::CostmapGenerator() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_) {}
 
 void CostmapGenerator::init() {
-  private_nh_.param<std::string>("costmap_frame", costmap_frame_, "base_link");
+  private_nh_.param<std::string>("costmap_frame", costmap_frame_, "map");
+  private_nh_.param<std::string>("vehicle_frame", vehicle_frame_, "base_link");
   private_nh_.param<std::string>("map_frame", map_frame_, "map");
+  private_nh_.param<double>("update_rate", update_rate_, 10.0);
   private_nh_.param<double>("grid_min_value", grid_min_value_, 0.0);
   private_nh_.param<double>("grid_max_value", grid_max_value_, 1.0);
   private_nh_.param<double>("grid_resolution", grid_resolution_, 0.2);
@@ -80,14 +82,15 @@ void CostmapGenerator::run() {
   pub_costmap_ = private_nh_.advertise<grid_map_msgs::GridMap>("output/costmap", 1);
   pub_occupancy_grid_ = private_nh_.advertise<nav_msgs::OccupancyGrid>("output/occupancy_grid", 1);
 
-  sub_objects_ =
-      private_nh_.subscribe("input/objects", 1, &CostmapGenerator::objectsCallback, this);
+  sub_objects_ = private_nh_.subscribe("input/objects", 1, &CostmapGenerator::onObjects, this);
 
   sub_points_ =
-      private_nh_.subscribe("input/points_no_ground", 1, &CostmapGenerator::pointsCallback, this);
+      private_nh_.subscribe("input/points_no_ground", 1, &CostmapGenerator::onPoints, this);
 
-  sub_lanelet_bin_map_ = private_nh_.subscribe("input/lanelet_map_bin", 1,
-                                               &CostmapGenerator::laneletBinMapCallback, this);
+  sub_lanelet_bin_map_ =
+      private_nh_.subscribe("input/lanelet_map_bin", 1, &CostmapGenerator::onLaneletMapBin, this);
+
+  timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &CostmapGenerator::onTimer, this);
 }
 
 void CostmapGenerator::loadRoadAreasFromLaneletMap(
@@ -129,7 +132,7 @@ void CostmapGenerator::loadParkingAreasFromLaneletMap(
   }
 }
 
-void CostmapGenerator::laneletBinMapCallback(const autoware_lanelet2_msgs::MapBin& msg) {
+void CostmapGenerator::onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg) {
   if (!use_wayarea_) {
     return;
   }
@@ -141,7 +144,7 @@ void CostmapGenerator::laneletBinMapCallback(const autoware_lanelet2_msgs::MapBi
   loadParkingAreasFromLaneletMap(lanelet_map_, &area_points_);
 }
 
-void CostmapGenerator::objectsCallback(
+void CostmapGenerator::onObjects(
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects) {
   if (!use_objects_) {
     return;
@@ -150,12 +153,9 @@ void CostmapGenerator::objectsCallback(
   costmap_[LayerName::objects] = generateObjectsCostmap(in_objects);
   costmap_[LayerName::wayarea] = generateWayAreaCostmap();
   costmap_[LayerName::combined] = generateCombinedCostmap();
-
-  std_msgs::Header in_header = in_objects->header;
-  publishRosMsg(costmap_, in_header);
 }
 
-void CostmapGenerator::pointsCallback(const sensor_msgs::PointCloud2::ConstPtr& in_points_msg) {
+void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points_msg) {
   if (!use_points_) {
     return;
   }
@@ -165,9 +165,25 @@ void CostmapGenerator::pointsCallback(const sensor_msgs::PointCloud2::ConstPtr& 
   costmap_[LayerName::points] = generatePointsCostmap(in_points);
   costmap_[LayerName::wayarea] = generateWayAreaCostmap();
   costmap_[LayerName::combined] = generateCombinedCostmap();
+}
 
-  std_msgs::Header in_header = in_points_msg->header;
-  publishRosMsg(costmap_, in_header);
+void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
+  // Get current pose
+  geometry_msgs::TransformStamped tf;
+  try {
+    tf = tf_buffer_.lookupTransform(costmap_frame_, vehicle_frame_, ros::Time(0),
+                                    ros::Duration(1.0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("[costmap_generator] %s", ex.what());
+  }
+
+  // Set grid center
+  grid_map::Position p;
+  p.x() = tf.transform.translation.x;
+  p.y() = tf.transform.translation.y;
+  costmap_.setPosition(p);
+
+  publishCostmap(costmap_);
 }
 
 void CostmapGenerator::initGridmap() {
@@ -253,17 +269,22 @@ grid_map::Matrix CostmapGenerator::generateCombinedCostmap() {
   return combined_costmap[LayerName::combined];
 }
 
-void CostmapGenerator::publishRosMsg(const grid_map::GridMap& costmap,
-                                     const std_msgs::Header& in_header) {
+void CostmapGenerator::publishCostmap(const grid_map::GridMap& costmap) {
+  // Set header
+  std_msgs::Header header;
+  header.frame_id = costmap_frame_;
+  header.stamp = ros::Time::now();
+
+  // Publish OccupancyGrid
   nav_msgs::OccupancyGrid out_occupancy_grid;
   grid_map::GridMapRosConverter::toOccupancyGrid(costmap, LayerName::combined, grid_min_value_,
                                                  grid_max_value_, out_occupancy_grid);
-  out_occupancy_grid.header = in_header;
-  out_occupancy_grid.header.frame_id = costmap_frame_;
+  out_occupancy_grid.header = header;
   pub_occupancy_grid_.publish(out_occupancy_grid);
 
+  // Publish GridMap
   grid_map_msgs::GridMap out_gridmap_msg;
   grid_map::GridMapRosConverter::toMessage(costmap, out_gridmap_msg);
-  out_gridmap_msg.info.header = in_header;
+  out_gridmap_msg.info.header = header;
   pub_costmap_.publish(out_gridmap_msg);
 }

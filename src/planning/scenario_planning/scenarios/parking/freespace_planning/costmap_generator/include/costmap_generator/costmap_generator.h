@@ -72,7 +72,10 @@ class CostmapGenerator {
   lanelet::LaneletMapPtr lanelet_map_;
 
   std::string costmap_frame_;
+  std::string vehicle_frame_;
   std::string map_frame_;
+
+  double update_rate_;
 
   double grid_min_value_;
   double grid_max_value_;
@@ -98,6 +101,8 @@ class CostmapGenerator {
   ros::Subscriber sub_points_;
   ros::Subscriber sub_objects_;
 
+  ros::Timer timer_;
+
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
@@ -113,29 +118,30 @@ class CostmapGenerator {
     static constexpr const char* combined = "combined";
   };
 
-  /// \brief callback for loading landlet2 map
-  void laneletBinMapCallback(const autoware_lanelet2_msgs::MapBin& msg);
-
   /// \brief wait for lanelet2 map to load and build routing graph
   void initLaneletMap();
+
+  /// \brief callback for loading landlet2 map
+  void onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg);
 
   /// \brief callback for DynamicObjectArray
   /// \param[in] in_objects input DynamicObjectArray usually from prediction or perception
   /// component
-  void objectsCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_ojects);
+  void onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_ojects);
 
   /// \brief callback for sensor_msgs::PointCloud2
   /// \param[in] in_points input sensot_msgs::PointCloud2. Assuming groud-fitered pointcloud
   /// by default
-  void pointsCallback(const sensor_msgs::PointCloud2::ConstPtr& in_points);
+  void onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points);
+
+  void onTimer(const ros::TimerEvent& event);
 
   /// \brief initialize gridmap parameters based on rosparam
   void initGridmap();
 
   /// \brief publish ros msg: grid_map::GridMap, and nav_msgs::OccupancyGrid
   /// \param[in] gridmap with calculated cost
-  /// \param[in] input ros header
-  void publishRosMsg(const grid_map::GridMap& gridmap, const std_msgs::Header& in_header);
+  void publishCostmap(const grid_map::GridMap& costmap);
 
   /// \brief set area_points from lanelet polygons
   /// \param [in] input lanelet_map

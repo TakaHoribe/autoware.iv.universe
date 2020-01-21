@@ -1,7 +1,9 @@
 <launch>
   <!-- node parameters -->
-  <arg name="costmap_frame" default="base_link" />
+  <arg name="costmap_frame" default="map" />
+  <arg name="vehicle_frame" default="base_link" />
   <arg name="map_frame" default="map" />
+  <arg name="update_rate" default="10.0" />
   <arg name="grid_min_value" default="0.0" />
   <arg name="grid_max_value" default="1.0" />
   <arg name="grid_resolution" default="0.2" />
@@ -26,7 +28,9 @@
   <!-- Launch node -->
   <node pkg="costmap_generator" type="costmap_generator" name="costmap_generator" output="screen">
     <param name="costmap_frame" value="$(arg costmap_frame)" />
+    <param name="vehicle_frame" value="$(arg vehicle_frame)" />
     <param name="map_frame" value="$(arg map_frame)" />
+    <param name="update_rate" value="$(arg update_rate)" />
     <param name="grid_min_value" value="$(arg grid_min_value)" />
     <param name="grid_max_value" value="$(arg grid_max_value)" />
     <param name="grid_resolution" value="$(arg grid_resolution)" />
