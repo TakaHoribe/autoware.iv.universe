@@ -276,7 +276,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   }
   // align
   Eigen::Affine3d initial_pose_affine;
-  Eigen::fromMsg(initial_pose_cov_msg.pose.pose, initial_pose_affine);
+  tf2::fromMsg(initial_pose_cov_msg.pose.pose, initial_pose_affine);
   const Eigen::Matrix4f initial_pose_matrix = initial_pose_affine.matrix().cast<float>();
 
   pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
@@ -426,7 +426,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(co
   for (const auto& initial_pose : initial_pose_array.poses)
   {
     Eigen::Affine3d initial_pose_affine;
-    Eigen::fromMsg(initial_pose, initial_pose_affine);
+    tf2::fromMsg(initial_pose, initial_pose_affine);
     const Eigen::Matrix4f initial_pose_matrix = initial_pose_affine.matrix().cast<float>();
 
     ndt_ptr->align(*output_cloud, initial_pose_matrix);
