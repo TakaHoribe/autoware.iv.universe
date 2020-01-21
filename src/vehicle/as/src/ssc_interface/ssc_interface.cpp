@@ -32,6 +32,7 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
   private_nh_.param<double>("agr_coef_a", agr_coef_a_, 15.713);
   private_nh_.param<double>("agr_coef_b", agr_coef_b_, 0.053);
   private_nh_.param<double>("agr_coef_c", agr_coef_c_, 0.042);
+  private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
 
   rate_ = new ros::Rate(loop_rate_);
 
@@ -134,7 +135,7 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   // current steering curvature
   double curvature = !use_adaptive_gear_ratio_ ?
                          (msg_curvature->curvature) :
-                         std::tan(msg_steering_wheel->output / adaptive_gear_ratio_) / wheel_base_;
+                         std::tan(msg_steering_wheel->output / adaptive_gear_ratio_ - steering_offset_) / wheel_base_;
 
   // constexpr double tread = 1.64;  // spec sheet 1.63
   // double omega =
@@ -205,7 +206,7 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   current_velocity_kmph_pub_.publish(vel_kmph);
 
   std_msgs::Float32 steer;
-  steer.data = vehicle_status.status.steering_angle;
+  steer.data = vehicle_status.status.steering_angle - steering_offset_;
   current_steer_pub_.publish(steer);
 
   std_msgs::Float32 steer_wheel_deg;
@@ -231,8 +232,8 @@ void SSCInterface::publishCommand()
 
   // Curvature for SSC steer_model
   double desired_steering_angle = !use_adaptive_gear_ratio_ ?
-                                      vehicle_cmd_.command.control.steering_angle :
-                                      vehicle_cmd_.command.control.steering_angle * ssc_gear_ratio_ / adaptive_gear_ratio_;
+                                      vehicle_cmd_.command.control.steering_angle + steering_offset_ :
+                                      (vehicle_cmd_.command.control.steering_angle + steering_offset_) * ssc_gear_ratio_ / adaptive_gear_ratio_;
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)

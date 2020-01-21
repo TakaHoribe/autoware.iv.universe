@@ -16,6 +16,7 @@
 	<arg name="min_brake" default="0.0"/>
 	<arg name="max_steering_wheel" default="8.48230"/>
 	<arg name="min_steering_wheel" default="-8.48230"/>
+	<arg name="steering_offset" default="0.0"/>
 
 	<arg name="vgr_coef_a" default="15.713"/>
 	<arg name="vgr_coef_b" default="0.053"/>
@@ -41,5 +42,6 @@
 		<param name="vgr_coef_a" value="$(arg vgr_coef_a)" />
 		<param name="vgr_coef_b" value="$(arg vgr_coef_b)" />
 		<param name="vgr_coef_c" value="$(arg vgr_coef_c)" />
+		<param name="steering_offset" value="$(arg steering_offset)" />
 	</node>
 </launch>

@@ -30,6 +30,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <pacmod_msgs/SystemCmdFloat.h>
+#include <pacmod_msgs/SystemCmdInt.h>
 #include <pacmod_msgs/SteerSystemCmd.h>
 #include <pacmod_msgs/SystemRptFloat.h>
 #include <pacmod_msgs/SystemRptInt.h>
@@ -75,6 +76,7 @@ private:
   ros::Publisher accel_cmd_pub_;
   ros::Publisher brake_cmd_pub_;
   ros::Publisher steer_cmd_pub_;
+  ros::Publisher shift_cmd_pub_;
   ros::Publisher vehicle_twist_pub_;
 
   /* ros param */
@@ -85,12 +87,13 @@ private:
   bool is_pacmod_enabled_;
   bool is_clear_override_needed_;
   bool show_debug_info_;
-  double loop_rate_;   // [Hz]
-  double tire_radius_; // [m]
-  double wheel_base_;  // [m]
-  double vgr_coef_a_;  // variable gear ratio coeffs
-  double vgr_coef_b_;  // variable gear ratio coeffs
-  double vgr_coef_c_;  // variable gear ratio coeffs
+  double loop_rate_;       // [Hz]
+  double tire_radius_;     // [m]
+  double wheel_base_;      // [m]
+  double steering_offset_; // [rad] def: measured = truth + offset
+  double vgr_coef_a_;      // variable gear ratio coeffs
+  double vgr_coef_b_;      // variable gear ratio coeffs
+  double vgr_coef_c_;      // variable gear ratio coeffs
 
   double acc_emergency_;           // acceleration when emergency [m/s^2]
   double max_throttle_;            // max throttle [0~1]
@@ -128,10 +131,10 @@ private:
 
   /*  functions */
   void publishCommands();
-  void publishShiftCmd();
   double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt, const pacmod_msgs::SystemRptInt& shift_rpt);
   bool calculateAccelMap(const double curr_wheel_speed, const double &desired_acc, double &desired_throttle, double &desired_brake);
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
+  uint16_t toPacmodShiftCmd(const autoware_control_msgs::Shift &shift);
 };
 
 #endif

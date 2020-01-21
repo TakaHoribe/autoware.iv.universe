@@ -102,6 +102,7 @@ private:
   double tire_radius_;            // [m] (NOTE: used by 'use_rear_wheel_speed' mode)
   double ssc_gear_ratio_;         // gr = const (NOTE: used by 'use_adaptive_gear_ratio' mode)
   double agr_coef_a_, agr_coef_b_, agr_coef_c_;  // gr = a + b * speed^2 + c * theta_sw
+  double steering_offset_; // [rad] def: measured = truth + offset
 
   // NOTE: default parameters in SSC
   // tire radius = 0.39             [m]
