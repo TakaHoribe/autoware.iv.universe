@@ -616,10 +616,12 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
 
     // convert lane polygons into cv type
     cv::Mat cv_image(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1, cv::Scalar(occupied_space));
-    std::vector<std::vector<cv::Point>> cv_polygons;
-    std::vector<int> cv_polygon_sizes;
     for (const auto& llt : lanes)
     {
+      std::vector<std::vector<cv::Point>> cv_polygons;
+      std::vector<int> cv_polygon_sizes;
+      cv::Mat cv_image_single_lane(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1,
+                                   cv::Scalar(occupied_space));
       std::vector<cv::Point> cv_polygon;
       for (const auto& llt_pt : llt.polygon3d())
       {
@@ -630,10 +632,11 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
       }
       cv_polygons.push_back(cv_polygon);
       cv_polygon_sizes.push_back(cv_polygon.size());
+      // fill in drivable area and copy to occupancy grid
+      cv::fillPoly(cv_image_single_lane, cv_polygons, cv::Scalar(free_space));
+      cv::bitwise_and(cv_image, cv_image_single_lane, cv_image);
     }
 
-    // fill in drivable area and copy to occupancy grid
-    cv::fillPoly(cv_image, cv_polygons, cv::Scalar(free_space));
     const auto& cv_image_reshaped = cv_image.reshape(1, 1);
     imageToOccupancyGrid(cv_image, &occupancy_grid);
     occupancy_grid.data[0] = 0;
