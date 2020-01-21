@@ -422,7 +422,7 @@ bool EBPathSmoother::generateOptimizedPath(
     }
     if(!flag)
     {
-      ROS_WARN("[EBPathPlanner] Could find corresponding velocity in path points. Insert 0 velocity");
+      ROS_WARN_THROTTLE(1, "[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
     }
     double roll = 0;
     double pitch = 0;
