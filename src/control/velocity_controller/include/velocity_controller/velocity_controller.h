@@ -170,6 +170,8 @@ private:
   double getDt();
   bool updateCurrentPose(const double timeout_sec);
   bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps);
+  double calcReferenceVelWithInterpolation(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
+                                           const double curr_vel, const int closest);
 
   enum Shift getCurrentShiftMode(const double target_velocity, const double target_acceleration);
   double getPitch(const geometry_msgs::Quaternion &quaternion) const;

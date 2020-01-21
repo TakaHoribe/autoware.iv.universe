@@ -51,7 +51,6 @@ double normalizeEulerAngle(double euler)
 bool calcClosestWithThr(const autoware_planning_msgs::Trajectory &trajectory, const geometry_msgs::Pose &pose,
                         const double angle_thr, const double dist_thr, int32_t &closest_idx){
 
-{
   double dist_squared_min = std::numeric_limits<double>::max();
   closest_idx = -1;
 
@@ -78,8 +77,24 @@ bool calcClosestWithThr(const autoware_planning_msgs::Trajectory &trajectory, co
   }
 
   return (closest_idx >= 0) ? true : false;
-}
-
 };
+
+geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point &point, const geometry_msgs::Pose &origin)
+{
+  // translation
+  geometry_msgs::Point trans_p;
+  trans_p.x = point.x - origin.position.x;
+  trans_p.y = point.y - origin.position.y;
+
+  // rotation (use inverse matrix of rotation)
+  double yaw = tf2::getYaw(origin.orientation);
+
+  geometry_msgs::Point res;
+  res.x = (std::cos(yaw) * trans_p.x) + (std::sin(yaw) * trans_p.y);
+  res.y = (-std::sin(yaw) * trans_p.x) + (std::cos(yaw) * trans_p.y);
+  res.z = origin.position.z;
+
+  return res;
+}
 
 } // namespace mathutils

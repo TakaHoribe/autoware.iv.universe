@@ -239,8 +239,10 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
     return;
   }
 
+
   double current_velocity = current_velocity_ptr_->twist.linear.x;
-  double target_velocity = trajectory_ptr_->points.at(closest_idx).twist.linear.x;
+  // double target_velocity = trajectory_ptr_->points.at(closest_idx).twist.linear.x;
+  double target_velocity = calcReferenceVelWithInterpolation(*trajectory_ptr_, *current_pose_ptr_, current_velocity, closest_idx);
   double target_acceleration;
   // delay compensation
   if (use_delay_compensation_)
@@ -475,6 +477,52 @@ double VelocityController::calculateAccelerationSmoothStop()
   }
 
   return cmd_acceleration;
+}
+
+double VelocityController::calcReferenceVelWithInterpolation(const autoware_planning_msgs::Trajectory &traj,
+                                                             const geometry_msgs::PoseStamped &curr_pose, const double curr_vel, const int closest)
+{
+  const double closest_vel = traj.points.at(closest).twist.linear.x;
+
+  if (traj.points.size() < 2)
+  {
+    return closest_vel;
+  }
+
+  /* If the current position is at the edge of the reference trajectory, use the edge velocity. Else, calc secondary closest index for interpolation */
+  int closest_second;
+  geometry_msgs::Point rel_pos = velocity_controller_mathutils::transformToRelativeCoordinate2D(curr_pose.pose.position, traj.points.at(closest).pose);
+  if (closest == 0)
+  {
+    if (rel_pos.x * curr_vel <= 0.0)
+    {
+      return closest_vel;
+    }
+    closest_second = 1;
+  }
+  else if (closest == traj.points.size() - 1)
+  {
+    if (rel_pos.x * curr_vel >= 0.0)
+    {
+      return closest_vel;
+    }
+    closest_second = traj.points.size() - 2;
+  }
+  else
+  {
+    const double dist1 = velocity_controller_mathutils::calcDistSquared2D(traj.points.at(closest).pose, traj.points.at(closest - 1).pose);
+    const double dist2 = velocity_controller_mathutils::calcDistSquared2D(traj.points.at(closest).pose, traj.points.at(closest + 1).pose);
+    closest_second = dist1 < dist2 ? closest - 1 : closest + 1;
+  }
+
+  /* apply linear interpolation */
+  const double dist_c1 = std::sqrt(velocity_controller_mathutils::calcDistSquared2D(curr_pose.pose, traj.points.at(closest).pose));
+  const double dist_c2 = std::sqrt(velocity_controller_mathutils::calcDistSquared2D(curr_pose.pose, traj.points.at(closest_second).pose));
+  const double v1 = traj.points.at(closest).twist.linear.x;
+  const double v2 = traj.points.at(closest_second).twist.linear.x;
+  const double vel_interp = (dist_c1 * v2 + dist_c2 * v1) / (dist_c1 + dist_c2);
+
+  return vel_interp;
 }
 
 double VelocityController::applyAccelerationLimitFilter(const double acceleration, const double max_acceleration,

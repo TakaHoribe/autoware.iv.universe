@@ -146,7 +146,7 @@ MPCFollower::MPCFollower()
   }
 
   /* for debug */
-  pub_debug_marker_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
+  pub_debug_marker_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
   pub_debug_mpc_calc_time_ = pnh_.advertise<std_msgs::Float32>("debug/mpc_calc_time", 1);
 
   pub_debug_values_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug/debug_values", 1);
@@ -247,7 +247,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   const double err_x = current_pose_ptr_->pose.position.x - nearest_pose.position.x;
   const double err_y = current_pose_ptr_->pose.position.y - nearest_pose.position.y;
   const double sp_yaw = tf2::getYaw(nearest_pose.orientation);
-  const double err_lat = -sin(sp_yaw) * err_x + cos(sp_yaw) * err_y;
+  const double err_lat = -std::sin(sp_yaw) * err_x + std::cos(sp_yaw) * err_y;
 
   /* get steering angle */
   const double steer = *current_steer_ptr_;
@@ -357,7 +357,8 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   /* predict dynamics for N times */
   for (int i = 0; i < N; ++i)
   {
-    const double ref_k = mpc_resampled_ref_traj.k[i];
+    const double sign_vx = mpc_resampled_ref_traj.vx[i] > 0 ? 1 : (mpc_resampled_ref_traj.vx[i] < 0 ? -1 : 0);
+    const double ref_k = mpc_resampled_ref_traj.k[i] * sign_vx;
     const double ref_vx = mpc_resampled_ref_traj.vx[i];
     const double ref_vx_squared = ref_vx * ref_vx;
 
@@ -508,9 +509,9 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   }
 
   /* publish for visualization */
-  visualization_msgs::Marker marker;
-  convertTrajToMarker(debug_mpc_predicted_traj, marker, "predicted_trajectory", 0.99, 0.99, 0.99, 0.2);
-  pub_debug_marker_.publish(marker);
+  visualization_msgs::MarkerArray markers;
+  convertTrajToMarker(debug_mpc_predicted_traj, markers, "predicted_trajectory", 0.99, 0.99, 0.99, 0.2);
+  pub_debug_marker_.publish(markers);
 
   /* publish debug values */
   {
@@ -618,37 +619,10 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
   ref_traj_ = traj;
 
   /* publish trajectory for visualize */
-  visualization_msgs::Marker markers;
+  visualization_msgs::MarkerArray markers;
   convertTrajToMarker(ref_traj_, markers, "filtered_reference_trajectory", 0.0, 0.5, 1.0, 0.05);
   pub_debug_marker_.publish(markers);
 };
-
-void MPCFollower::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::Marker &marker,
-                                      std::string ns, double r, double g, double b, double z)
-{
-  marker.points.clear();
-  marker.header.frame_id = current_trajectory_.header.frame_id;
-  marker.header.stamp = ros::Time();
-  marker.ns = ns;
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 0.15;
-  marker.scale.y = 0.3;
-  marker.scale.z = 0.3;
-  marker.color.a = 0.9;
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
-  for (unsigned int i = 0; i < traj.x.size(); ++i)
-  {
-    geometry_msgs::Point p;
-    p.x = traj.x.at(i);
-    p.y = traj.y.at(i);
-    p.z = traj.z.at(i) + z;
-    marker.points.push_back(p);
-  }
-}
 
 void MPCFollower::updateCurrentPose()
 {
@@ -706,3 +680,79 @@ MPCFollower::~MPCFollower()
     steer_cmd = *current_steer_ptr_;
   publishCtrlCmd(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
 };
+
+void MPCFollower::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
+                                      std::string ns, double r, double g, double b, double z)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = current_trajectory_.header.frame_id;
+  marker.header.stamp = ros::Time();
+  marker.ns = ns + "/line";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 0.15;
+  marker.color.a = 0.9;
+  marker.color.r = r;
+  marker.color.g = g;
+  marker.color.b = b;
+  marker.pose.orientation.w = 1.0;
+  for (unsigned int i = 0; i < traj.x.size(); ++i)
+  {
+    geometry_msgs::Point p;
+    p.x = traj.x.at(i);
+    p.y = traj.y.at(i);
+    p.z = traj.z.at(i) + z;
+    marker.points.push_back(p);
+  }
+  markers.markers.push_back(marker);
+
+  visualization_msgs::Marker marker_poses;
+  for (unsigned int i = 0; i < traj.size(); ++i)
+  {
+    marker_poses.header.frame_id = current_trajectory_.header.frame_id;
+    marker_poses.header.stamp = ros::Time();
+    marker_poses.ns = ns + "/poses";
+    marker_poses.id = i;
+    marker_poses.lifetime = ros::Duration(0.5);
+    marker_poses.type = visualization_msgs::Marker::ARROW;
+    marker_poses.action = visualization_msgs::Marker::ADD;
+    marker_poses.pose.position.x = traj.x.at(i);
+    marker_poses.pose.position.y = traj.y.at(i);
+    marker_poses.pose.position.z = traj.z.at(i);
+    marker_poses.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
+    marker_poses.scale.x = 0.1;
+    marker_poses.scale.y = 0.05;
+    marker_poses.scale.z = 0.1;
+    marker_poses.color.a = 0.99; // Don't forget to set the alpha!
+    marker_poses.color.r = r;
+    marker_poses.color.g = g;
+    marker_poses.color.b = b;
+    markers.markers.push_back(marker_poses);
+  }
+
+  visualization_msgs::Marker marker_text;
+  marker_text.header.frame_id = current_trajectory_.header.frame_id;
+  marker_text.header.stamp = ros::Time();
+  marker_text.ns = ns + "/text";
+  marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_text.action = visualization_msgs::Marker::ADD;
+  marker_text.scale.z = 0.2;
+  marker_text.color.a = 0.99; // Don't forget to set the alpha!
+  marker_text.color.r = r;
+  marker_text.color.g = g;
+  marker_text.color.b = b;
+
+  for (unsigned int i = 0; i < traj.size(); ++i)
+  {
+    marker_text.id = i;
+    marker_text.pose.position.x = traj.x.at(i);
+    marker_text.pose.position.y = traj.y.at(i);
+    marker_text.pose.position.z = traj.z.at(i);
+    marker_text.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << traj.vx.at(i) << ", " <<  i;
+    marker_text.text = oss.str();
+    markers.markers.push_back(marker_text);
+  }
+}

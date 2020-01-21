@@ -10,6 +10,7 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
+        - /Control1/Debug/MPC1/Namespaces1
         - /Vehicle1/VelocityHistory1/Constant Color1
       Splitter Ratio: 0.64552241563797
     Tree Height: 580
@@ -103,7 +104,6 @@ Visualization Manager:
               Alpha: 1
               Show Axes: false
               Show Trail: false
-              Value: true
             velodyne:
               Alpha: 1
               Show Axes: false
@@ -128,8 +128,6 @@ Visualization Manager:
             base_link:
               Value: true
             camera_link:
-              Value: true
-            camera_optical_link:
               Value: true
             imu_link:
               Value: true
@@ -203,8 +201,6 @@ Visualization Manager:
             crosswalk_lanelets: true
             lanelet direction: true
             left_lane_bound: true
-            parking_lots: true
-            parking_space: true
             right_lane_bound: true
             road_lanelets: true
             stop_lines: true
@@ -726,12 +722,17 @@ Visualization Manager:
       Name: Planning
     - Class: rviz/Group
       Displays:
-        - Class: rviz/Marker
+        - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: /control/mpc_follower/debug/predicted_trajectory
+          Marker Topic: /control/mpc_follower/debug/markers
           Name: Debug/MPC
           Namespaces:
-            {}
+            filtered_reference_trajectory/line: true
+            filtered_reference_trajectory/poses: false
+            filtered_reference_trajectory/text: false
+            predicted_trajectory/line: true
+            predicted_trajectory/poses: false
+            predicted_trajectory/text: false
           Queue Size: 100
           Value: true
       Enabled: true

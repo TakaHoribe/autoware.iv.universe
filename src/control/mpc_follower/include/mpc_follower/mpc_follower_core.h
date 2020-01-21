@@ -194,7 +194,7 @@ private:
   /**
    * @brief convert MPCTraj to visualizaton marker for visualization
    */
-  void convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::Marker &markers,
+  void convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
                            std::string ns, double r, double g, double b, double z);
 
   /**
