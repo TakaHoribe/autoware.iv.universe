@@ -1,0 +1,11 @@
+--- src/vehicle/as/README.md
++++ src/vehicle/as/README.md
+@@ -9,3 +9,8 @@ git submodule update --init --recursive
+ ```
+ roslaunch as ssc_interface.launch
+ ```
++or, 
++
++```
++roslaunch as pacmod_interface.launch
++```
