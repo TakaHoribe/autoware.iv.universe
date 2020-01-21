@@ -37,12 +37,15 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
 
     // search traffic light state
     bool found = false;
-    autoware_traffic_light_msgs::TrafficLightState tl_state;
-    for (const auto &traffic_light:traffic_lights){
+    double highest_confidence = 0.0;
+    autoware_traffic_light_msgs::TrafficLightState highest_confidence_tl_state;
+    for (const auto &traffic_light : traffic_lights)
+    {
         if (!traffic_light.isLineString()) // traffic ligth must be linestrings
             continue;
         const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
         std_msgs::Header header;
+        autoware_traffic_light_msgs::TrafficLightState tl_state;
         if (!getTrafficLightState(id, header, tl_state))
             continue;
         if (!((ros::Time::now() - header.stamp).toSec() < 1.0))
@@ -50,8 +53,12 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
         if (tl_state.lamp_states.empty() || tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::UNKNOWN)
             continue;
 
+        if (highest_confidence < tl_state.lamp_states.front().confidence)
+        {
+            highest_confidence = tl_state.lamp_states.front().confidence;
+            highest_confidence_tl_state = tl_state;
+        }
         found = true;
-        break;
     }
     if (!found)
     {
@@ -70,7 +77,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     // manager_ptr_->debuger.pushTrafficLightState(traffic_light_ptr_, tl_state);
 
     // if state is red, insert stop point into path
-    if (tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED)
+    if (highest_confidence_tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED)
     {
         if (!insertTargetVelocityPoint(input,
                                        stop_line,

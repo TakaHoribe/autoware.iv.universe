@@ -11,14 +11,6 @@
     <remap from="~input/image" to="$(arg input/image)" />
     <remap from="~input/rois" to="$(arg input/rois)" />
     <remap from="~output/traffic_light_states" to="$(arg output/traffic_light_states)" />
-    <rosparam subst_value="true">
-      green_max        : [150, 255, 255]
-      green_min        : [80,  50, 120]
-      yellow_max       : [40, 255, 255]
-      yellow_min       : [30, 50, 120]
-      red_max          : [20, 255, 255]
-      red_min          : [0  , 50 , 180]
-    </rosparam>
   </node>
 
 </launch>

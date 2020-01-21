@@ -14,7 +14,11 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   image_transport
   message_filters
+  dynamic_reconfigure
 )
+generate_dynamic_reconfigure_options(cfg/HSVFilter.cfg
+                                     )
+
 find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
@@ -109,7 +113,7 @@ find_package(OpenCV REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES traffic_light_classifier
-  CATKIN_DEPENDS autoware_traffic_light_msgs cv_bridge roscpp sensor_msgs image_transport message_filters
+  CATKIN_DEPENDS autoware_traffic_light_msgs cv_bridge roscpp sensor_msgs image_transport message_filters dynamic_reconfigure
 #  DEPENDS system_lib
 )
 

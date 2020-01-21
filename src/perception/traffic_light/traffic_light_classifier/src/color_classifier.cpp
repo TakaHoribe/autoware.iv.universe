@@ -3,58 +3,10 @@
 namespace traffic_light
 {
 ColorClassifier::ColorClassifier()
-    : nh_(""), pnh_("~"), ratio_threshold_(0.02)
+    : nh_(""), pnh_("~"), image_transport_(pnh_), ratio_threshold_(0.02)
 {
-    std::vector<int> green_max_hsv;
-    std::vector<int> green_min_hsv;
-    std::vector<int> red_max_hsv;
-    std::vector<int> red_min_hsv;
-    std::vector<int> yellow_max_hsv;
-    std::vector<int> yellow_min_hsv;
-
-    pnh_.getParam("green_max", green_max_hsv);
-    pnh_.getParam("green_min", green_min_hsv);
-    pnh_.getParam("yellow_max", yellow_max_hsv);
-    pnh_.getParam("yellow_min", yellow_min_hsv);
-    pnh_.getParam("red_max", red_max_hsv);
-    pnh_.getParam("red_min", red_min_hsv);
-
-    min_hsv_green_ = cv::Scalar(green_min_hsv.at(ColorClassifier::HSV::Hue),
-                                green_min_hsv.at(ColorClassifier::HSV::Sat),
-                                green_min_hsv.at(ColorClassifier::HSV::Val));
-    max_hsv_green_ = cv::Scalar(green_max_hsv.at(ColorClassifier::HSV::Hue),
-                                green_max_hsv.at(ColorClassifier::HSV::Sat),
-                                green_max_hsv.at(ColorClassifier::HSV::Val));
-
-    min_hsv_yellow_ = cv::Scalar(yellow_min_hsv.at(ColorClassifier::HSV::Hue),
-                                 yellow_min_hsv.at(ColorClassifier::HSV::Sat),
-                                 yellow_min_hsv.at(ColorClassifier::HSV::Val));
-    max_hsv_yellow_ = cv::Scalar(yellow_max_hsv.at(ColorClassifier::HSV::Hue),
-                                 yellow_max_hsv.at(ColorClassifier::HSV::Sat),
-                                 yellow_max_hsv.at(ColorClassifier::HSV::Val));
-
-    min_hsv_red_ = cv::Scalar(red_min_hsv.at(ColorClassifier::HSV::Hue),
-                              red_min_hsv.at(ColorClassifier::HSV::Sat),
-                              red_min_hsv.at(ColorClassifier::HSV::Val));
-    max_hsv_red_ = cv::Scalar(red_max_hsv.at(ColorClassifier::HSV::Hue),
-                              red_max_hsv.at(ColorClassifier::HSV::Sat),
-                              red_max_hsv.at(ColorClassifier::HSV::Val));
-#if 0
-    cv::namedWindow("raw");
-    cv::namedWindow("debug");
-    // cv::namedWindow("debug_green");
-    // cv::namedWindow("debug_yellow");
-    // cv::namedWindow("debug_red");
-    // cv::namedWindow("green_hsv");
-    // cv::namedWindow("yellow_hsv");
-    // cv::namedWindow("red_hsv");
-    // cv::namedWindow("green_bin");
-    // cv::namedWindow("yellow_bin");
-    // cv::namedWindow("red_bin");
-    // cv::namedWindow("green_filtered_bin");
-    // cv::namedWindow("yellow_filtered_bin");
-    // cv::namedWindow("red_filtered_bin");
-#endif
+    image_pub_ = image_transport_.advertise("output/debug/image", 1);
+    dynamic_reconfigure_.setCallback(boost::bind(&ColorClassifier::parametersCallback, this, _1, _2));
 }
 
 bool ColorClassifier::getLampState(const cv::Mat &input_image, std::vector<autoware_traffic_light_msgs::LampState> &states)
@@ -76,61 +28,78 @@ bool ColorClassifier::getLampState(const cv::Mat &input_image, std::vector<autow
     cv::Mat yellow_filtered_bin_image;
     cv::Mat red_filtered_bin_image;
     cv::Mat element4 = (cv::Mat_<uchar>(3, 3) << 0, 1, 0, 1, 1, 1, 0, 1, 0);
-    cv::erode(green_bin_image, green_filtered_bin_image, element4, cv::Point(-1,-1), 1);
-    cv::erode(yellow_bin_image, yellow_filtered_bin_image, element4, cv::Point(-1,-1), 1);
-    cv::erode(red_bin_image, red_filtered_bin_image, element4, cv::Point(-1,-1), 1);
-    cv::dilate(green_filtered_bin_image, green_filtered_bin_image, cv::Mat(), cv::Point(-1,-1), 1);
-    cv::dilate(yellow_filtered_bin_image, yellow_filtered_bin_image, cv::Mat(), cv::Point(-1,-1), 1);
-    cv::dilate(red_filtered_bin_image, red_filtered_bin_image, cv::Mat(), cv::Point(-1,-1), 1);
+    cv::erode(green_bin_image, green_filtered_bin_image, element4, cv::Point(-1, -1), 1);
+    cv::erode(yellow_bin_image, yellow_filtered_bin_image, element4, cv::Point(-1, -1), 1);
+    cv::erode(red_bin_image, red_filtered_bin_image, element4, cv::Point(-1, -1), 1);
+    cv::dilate(green_filtered_bin_image, green_filtered_bin_image, cv::Mat(), cv::Point(-1, -1), 1);
+    cv::dilate(yellow_filtered_bin_image, yellow_filtered_bin_image, cv::Mat(), cv::Point(-1, -1), 1);
+    cv::dilate(red_filtered_bin_image, red_filtered_bin_image, cv::Mat(), cv::Point(-1, -1), 1);
 
     /* debug */
-#if 0
-    cv::Mat debug_green_image;
-    cv::Mat debug_yellow_image;
-    cv::Mat debug_red_image;
-    cv::hconcat(green_image, green_bin_image, debug_green_image);
-    cv::hconcat(debug_green_image, green_filtered_bin_image, debug_green_image);
-    cv::hconcat(yellow_image, yellow_bin_image, debug_yellow_image);
-    cv::hconcat(debug_yellow_image, yellow_filtered_bin_image, debug_yellow_image);
-    cv::hconcat(red_image, red_bin_image, debug_red_image);
-    cv::hconcat(debug_red_image, red_filtered_bin_image, debug_red_image);
-    cv::Mat debug_image;
-    cv::rectangle(debug_green_image, cv::Point(0, 0),
-                  cv::Point(debug_green_image.cols-1, debug_green_image.rows-1),
-                  cv::Scalar(0, 0, 0), 1, CV_AA, 0);
-    cv::rectangle(debug_yellow_image, cv::Point(0, 0),
-                  cv::Point(debug_yellow_image.cols-1, debug_yellow_image.rows-1),
-                  cv::Scalar(0, 0, 0), 1, CV_AA, 0);
-    cv::rectangle(debug_red_image, cv::Point(0, 0),
-                  cv::Point(debug_red_image.cols-1, debug_red_image.rows-1),
-                  cv::Scalar(0, 0, 0), 1, CV_AA, 0);
-    cv::vconcat(debug_green_image, debug_yellow_image, debug_image);
-    cv::vconcat(debug_image, debug_red_image, debug_image);
+#if 1
+    if (0 < image_pub_.getNumSubscribers())
+    {
+        cv::Mat debug_raw_image;
+        cv::Mat debug_green_image;
+        cv::Mat debug_yellow_image;
+        cv::Mat debug_red_image;
+        cv::hconcat(input_image, input_image, debug_raw_image);
+        cv::hconcat(debug_raw_image, input_image, debug_raw_image);
+        cv::hconcat(green_image, green_bin_image, debug_green_image);
+        cv::hconcat(debug_green_image, green_filtered_bin_image, debug_green_image);
+        cv::hconcat(yellow_image, yellow_bin_image, debug_yellow_image);
+        cv::hconcat(debug_yellow_image, yellow_filtered_bin_image, debug_yellow_image);
+        cv::hconcat(red_image, red_bin_image, debug_red_image);
+        cv::hconcat(debug_red_image, red_filtered_bin_image, debug_red_image);
 
-    cv::imshow("raw", input_image);
-    cv::imshow("debug", debug_image);
-    // cv::imshow("debug_green", debug_green_image);
-    // cv::imshow("debug_yellow", debug_yellow_image);
-    // cv::imshow("debug_red", debug_red_image);
-    // cv::imshow("green_hsv", green_image);
-    // cv::imshow("yellow_hsv", yellow_image);
-    // cv::imshow("red_hsv", red_image);
-    // cv::imshow("green_bin", green_bin_image);
-    // cv::imshow("yellow_bin", yellow_bin_image);
-    // cv::imshow("red_bin", red_bin_image);
-    // cv::imshow("green_filtered_bin", green_filtered_bin_image);
-    // cv::imshow("yellow_filtered_bin", yellow_filtered_bin_image);
-    // cv::imshow("red_filtered_bin", red_filtered_bin_image);
-    cv::waitKey(0);
-    #endif
+        cv::Mat debug_image;
+        cv::vconcat(debug_green_image, debug_yellow_image, debug_image);
+        cv::vconcat(debug_image, debug_red_image, debug_image);
+        cv::cvtColor(debug_image, debug_image, cv::COLOR_GRAY2RGB);
+        cv::vconcat(debug_raw_image, debug_image, debug_image);
+        const int width = input_image.cols;
+        const int height = input_image.rows;
+        cv::line(debug_image, cv::Point(0, 0),
+                 cv::Point(debug_image.cols, 0),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(0, height),
+                 cv::Point(debug_image.cols, height),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(0, height * 2),
+                 cv::Point(debug_image.cols, height * 2),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(0, height * 3),
+                 cv::Point(debug_image.cols, height * 3),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+
+        cv::line(debug_image, cv::Point(0, 0),
+                 cv::Point(0, debug_image.rows),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(width, 0),
+                 cv::Point(width, debug_image.rows),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(width * 2, 0),
+                 cv::Point(width * 2, debug_image.rows),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+        cv::line(debug_image, cv::Point(width * 3, 0),
+                 cv::Point(width * 3, debug_image.rows),
+                 cv::Scalar(255, 255, 255), 1, CV_AA, 0);
+
+        cv::putText(debug_image, "green", cv::Point(0, height * 1.5), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 1, CV_AA);
+        cv::putText(debug_image, "yellow", cv::Point(0, height * 2.5), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 1, CV_AA);
+        cv::putText(debug_image, "red", cv::Point(0, height * 3.5), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 1, CV_AA);
+        sensor_msgs::ImagePtr debug_image_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_image).toImageMsg();
+        image_pub_.publish(debug_image_msg);
+    }
+#endif
     /* --- */
 
-    const int green_pixel_num = cv::countNonZero(green_bin_image);
-    const int yellow_pixel_num = cv::countNonZero(yellow_bin_image);
-    const int red_pixel_num = cv::countNonZero(red_bin_image);
-    const double green_ratio = (double)green_pixel_num / (double)(green_bin_image.rows * green_bin_image.cols);
-    const double yellow_ratio = (double)yellow_pixel_num / (double)(yellow_bin_image.rows * yellow_bin_image.cols);
-    const double red_ratio = (double)red_pixel_num / (double)(red_bin_image.rows * red_bin_image.cols);
+    const int green_pixel_num = cv::countNonZero(green_filtered_bin_image);
+    const int yellow_pixel_num = cv::countNonZero(yellow_filtered_bin_image);
+    const int red_pixel_num = cv::countNonZero(red_filtered_bin_image);
+    const double green_ratio = (double)green_pixel_num / (double)(green_filtered_bin_image.rows * green_filtered_bin_image.cols);
+    const double yellow_ratio = (double)yellow_pixel_num / (double)(yellow_filtered_bin_image.rows * yellow_filtered_bin_image.cols);
+    const double red_ratio = (double)red_pixel_num / (double)(red_filtered_bin_image.rows * red_filtered_bin_image.cols);
     if (yellow_ratio < green_ratio && red_ratio < green_ratio)
     {
         autoware_traffic_light_msgs::LampState state;
@@ -151,7 +120,9 @@ bool ColorClassifier::getLampState(const cv::Mat &input_image, std::vector<autow
         state.type = autoware_traffic_light_msgs::LampState::RED;
         state.confidence = red_ratio;
         states.push_back(state);
-    } else {
+    }
+    else
+    {
         autoware_traffic_light_msgs::LampState state;
         state.type = autoware_traffic_light_msgs::LampState::UNKNOWN;
         state.confidence = 1.0;
@@ -180,4 +151,26 @@ bool ColorClassifier::filterHSV(const cv::Mat &input_image,
     }
     return true;
 }
+void ColorClassifier::parametersCallback(traffic_light_classifier::HSVFilterConfig &config, uint32_t level)
+{
+    min_hsv_green_ = cv::Scalar(config.green_min_h,
+                                config.green_min_s,
+                                config.green_min_v);
+    max_hsv_green_ = cv::Scalar(config.green_max_h,
+                                config.green_max_s,
+                                config.green_max_v);
+    min_hsv_yellow_ = cv::Scalar(config.yellow_min_h,
+                                 config.yellow_min_s,
+                                 config.yellow_min_v);
+    max_hsv_yellow_ = cv::Scalar(config.yellow_max_h,
+                                 config.yellow_max_s,
+                                 config.yellow_max_v);
+    min_hsv_red_ = cv::Scalar(config.red_min_h,
+                              config.red_min_s,
+                              config.red_min_v);
+    max_hsv_red_ = cv::Scalar(config.red_max_h,
+                              config.red_max_s,
+                              config.red_max_v);
+}
+
 } // namespace traffic_light
