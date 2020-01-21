@@ -52,7 +52,7 @@ void FillPolygonAreas(grid_map::GridMap &out_grid_map,
                                                           in_layer_min_value, in_layer_max_value,
                                                           original_image);
 
-  cv::Mat filled_image = original_image.clone();
+  cv::Mat merged_filled_image = original_image.clone();
 
   geometry_msgs::TransformStamped transform;
   try {
@@ -64,11 +64,11 @@ void FillPolygonAreas(grid_map::GridMap &out_grid_map,
 
   // calculate out_grid_map position
   grid_map::Position map_pos = out_grid_map.getPosition();
-  double origin_x_offset = out_grid_map.getLength().x() / 2.0 - map_pos.x();
-  double origin_y_offset = out_grid_map.getLength().y() / 2.0 - map_pos.y();
+  const double origin_x_offset = out_grid_map.getLength().x() / 2.0 - map_pos.x();
+  const double origin_y_offset = out_grid_map.getLength().y() / 2.0 - map_pos.y();
 
   for (const auto &points : in_area_points) {
-    std::vector<cv::Point> cv_points;
+    std::vector<cv::Point> cv_polygon;
 
     for (const auto &p : points) {
       // transform to GridMap coordinate
@@ -76,19 +76,26 @@ void FillPolygonAreas(grid_map::GridMap &out_grid_map,
       tf2::doTransform(p, transformed_point, transform);
 
       // coordinate conversion for cv image
-      double cv_x = (out_grid_map.getLength().y() - origin_y_offset - transformed_point.y) /
-                    out_grid_map.getResolution();
-      double cv_y = (out_grid_map.getLength().x() - origin_x_offset - transformed_point.x) /
-                    out_grid_map.getResolution();
-      cv_points.emplace_back(cv::Point(cv_x, cv_y));
+      const double cv_x = (out_grid_map.getLength().y() - origin_y_offset - transformed_point.y) /
+                          out_grid_map.getResolution();
+      const double cv_y = (out_grid_map.getLength().x() - origin_x_offset - transformed_point.x) /
+                          out_grid_map.getResolution();
+      cv_polygon.emplace_back(cv_x, cv_y);
     }
 
-    cv::fillConvexPoly(filled_image, cv_points.data(), cv_points.size(), cv::Scalar(in_fill_color));
+    cv::Mat filled_image = original_image.clone();
+
+    std::vector<std::vector<cv::Point>> cv_polygons;
+    cv_polygons.push_back(cv_polygon);
+    cv::fillPoly(filled_image, cv_polygons, cv::Scalar(in_fill_color));
+
+    merged_filled_image &= filled_image;
   }
 
   // convert to ROS msg
   grid_map::GridMapCvConverter::addLayerFromImage<unsigned char, 1>(
-      filled_image, in_grid_layer_name, out_grid_map, in_layer_min_value, in_layer_max_value);
+      merged_filled_image, in_grid_layer_name, out_grid_map, in_layer_min_value,
+      in_layer_max_value);
 }
 
 }  // namespace object_map
