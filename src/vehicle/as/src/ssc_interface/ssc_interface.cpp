@@ -171,23 +171,23 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   // gearshift
   if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NONE)
   {
-    vehicle_status.status.gear.gear = -1;
+    vehicle_status.status.shift.shift = -1;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::PARK)
   {
-    vehicle_status.status.gear.gear = autoware_control_msgs::Gear::PARKING;
+    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::PARKING;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::REVERSE)
   {
-    vehicle_status.status.gear.gear = autoware_control_msgs::Gear::REVERSE;
+    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::REVERSE;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NEUTRAL)
   {
-    vehicle_status.status.gear.gear = autoware_control_msgs::Gear::NEUTRAL;
+    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::NEUTRAL;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::DRIVE)
   {
-    vehicle_status.status.gear.gear = autoware_control_msgs::Gear::DRIVE;
+    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::DRIVE;
   }
 
   // lamp/light cannot be obtain from SSC
@@ -236,7 +236,7 @@ void SSCInterface::publishCommand()
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)
-  unsigned char desired_gear = engage_ ? automotive_platform_msgs::Gear::DRIVE : automotive_platform_msgs::Gear::NONE;
+  unsigned char desired_shift = engage_ ? automotive_platform_msgs::Gear::DRIVE : automotive_platform_msgs::Gear::NONE;
 
   // Turn signal
   unsigned char desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
@@ -292,11 +292,11 @@ void SSCInterface::publishCommand()
   turn_signal.mode = desired_mode;
   turn_signal.turn_signal = desired_turn_signal;
 
-  // gear command
+  // gear_cmd command
   automotive_platform_msgs::GearCommand gear_cmd;
   gear_cmd.header.frame_id = BASE_FRAME_ID;
   gear_cmd.header.stamp = stamp;
-  gear_cmd.command.gear = desired_gear;
+  gear_cmd.command.gear = desired_shift;
 
   // publish
   speed_mode_pub_.publish(speed_mode);

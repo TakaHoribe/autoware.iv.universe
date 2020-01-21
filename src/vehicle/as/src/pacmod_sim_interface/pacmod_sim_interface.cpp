@@ -93,7 +93,7 @@ private:
 
     current_vehicle_cmd_.header.frame_id = "/base_link";
     current_vehicle_cmd_.header.stamp = ros::Time::now();
-    current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::DRIVE;
+    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::DRIVE;
     current_vehicle_cmd_.command.turn_signal.signal = autoware_control_msgs::TurnSignal::NONE;
     current_vehicle_cmd_.command.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
     current_vehicle_cmd_.command.control.steering_angle_velocity = 0.0;

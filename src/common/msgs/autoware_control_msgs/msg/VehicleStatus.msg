@@ -8,7 +8,7 @@ float64 steering_angle
 float64 steering_wheel_angle
 
 # gear shift
-autoware_control_msgs/Gear gear
+autoware_control_msgs/Shift shift
 
 # control mode : auto, manual, ...
 autoware_control_msgs/ControlMode mode

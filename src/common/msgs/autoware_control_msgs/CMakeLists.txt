@@ -18,7 +18,7 @@ add_message_files(
             VehicleCommandStamped.msg
             VehicleStatus.msg
             VehicleStatusStamped.msg
-            Gear.msg
+            Shift.msg
             ControlMode.msg
             TurnSignal.msg
 )

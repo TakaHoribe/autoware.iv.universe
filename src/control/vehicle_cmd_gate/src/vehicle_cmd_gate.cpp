@@ -76,11 +76,11 @@ void VehicleCmdGate::lonCtrlCmdCallback(const autoware_control_msgs::ControlComm
 
   if (vel > 0.0)
   {
-    current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::DRIVE;
+    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::DRIVE;
   }
   else if (vel < 0.0)
   {
-    current_vehicle_cmd_.command.gear.gear = autoware_control_msgs::Gear::REVERSE;
+    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::REVERSE;
   }
   
   vehicle_cmd_pub_.publish(current_vehicle_cmd_);
