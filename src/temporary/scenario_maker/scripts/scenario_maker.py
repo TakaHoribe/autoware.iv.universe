@@ -34,44 +34,44 @@ class ScenarioMaker():
         self.goal_th = 0.0
 
         #TODO: ->rosparam
-        self.goal_dist = 16.0#[m]
-        self.goal_th = 180#[deg]
-        self.goal_vel = 0.001#[m/s]
-        self.give_up_time = 300#[s]
+        self.goal_dist = 1.5 #[m]
+        self.goal_th = 10 #[deg]
+        self.goal_vel = 0.001 #[m/s]
+        self.give_up_time = 300 #[s]
 
         self.tfl = tf.TransformListener() #for get self-position
 
-        self.subvel = rospy.Subscriber(
+        self.sub_vel = rospy.Subscriber(
             "/vehicle/status", VehicleStatusStamped, self.CallBackVehicleStatus, queue_size=1, tcp_nodelay=True)#for get self-velocity
 
-        self.pubinitialpose = rospy.Publisher(
+        self.pub_initialpose = rospy.Publisher(
             "/initialpose", PoseWithCovarianceStamped, queue_size=1)
 
-        self.pubgoal = rospy.Publisher(
+        self.pub_goal = rospy.Publisher(
             "/move_base_simple/goal", PoseStamped, queue_size=1)
 
-        self.pubcheckpoint = rospy.Publisher(
+        self.pub_checkpoint = rospy.Publisher(
             "/checkpoint", PoseStamped, queue_size=1)
 
-        self.pubengage = rospy.Publisher(
+        self.pub_engage = rospy.Publisher(
             "/autoware/engage", Bool, queue_size=1)
 
-        self.pubpedestrianpose = rospy.Publisher(
+        self.pub_pedestrianpose = rospy.Publisher(
             "/initial_pedestrian_pose", PoseStamped,  queue_size=1)
 
-        self.pubpedestriantwist = rospy.Publisher(
+        self.pub_pedestriantwist = rospy.Publisher(
             "/initial_pedestrian_twist", TwistStamped,  queue_size=1)
 
-        self.pubcarpose = rospy.Publisher(
+        self.pub_carpose = rospy.Publisher(
             "/initial_car_pose", PoseStamped,  queue_size=1)
 
-        self.pubcartwist = rospy.Publisher(
+        self.pub_cartwist = rospy.Publisher(
             "/initial_car_twist", TwistStamped,  queue_size=1)
 
-        self.pubobjectid = rospy.Publisher(
+        self.pub_objectid = rospy.Publisher(
             "/object_id", Int32,  queue_size=1)
 
-        self.pubresetobjectid = rospy.Publisher(
+        self.pub_resetobjectid = rospy.Publisher(
             "/reset_object_id", Int32,  queue_size=1)
 
 
@@ -98,7 +98,7 @@ class ScenarioMaker():
                 self.scenario_obstacle_manager()
 
     def retry_senario_path(self):
-        self.pubengage.publish(False)#stop vehicle
+        self.pub_engage.publish(False)#stop vehicle
         self.reset_obstacle()
         self.scenario_obstacle()
         time.sleep(5.0)
@@ -107,12 +107,12 @@ class ScenarioMaker():
         self.scenario_path()
 
     def scenario_path(self, only_initial_pose=False):
-        self.pubengage.publish(False)#stop vehicle
+        self.pub_engage.publish(False)#stop vehicle
         self.start_time = rospy.Time.now().to_sec()
         #Publish Scenario
         self.scenario_path1(only_initial_pose)
         #Publish Engage
-        self.pubengage.publish(True)
+        self.pub_engage.publish(True)
         time.sleep(0.25)
 
     def scenario_obstacle(self):
@@ -125,27 +125,27 @@ class ScenarioMaker():
         time.sleep(0.25)
 
         #publish Start Position
-        self.pubinitialpose.publish(self.make_posstmp_with_cov(self.random_pose_maker(x=-139.1, y=-24.68, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0)))
+        self.pub_initialpose.publish(self.make_posstmp_with_cov(self.random_pose_maker(x=-139.1, y=-24.68, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0)))
         time.sleep(0.25)
         if only_inital_pose:
             return
 
         #Publish Goal Position
-        self.pubgoal.publish(self.make_posstmp(self.random_pose_maker(x=-117.8, y=4.553, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0, goal_record=True)))
+        self.pub_goal.publish(self.make_posstmp(self.random_pose_maker(x=-117.8, y=4.553, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0, goal_record=True)))
         time.sleep(0.25)
 
         #Publish Check Point
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-60.3, y=-23.6, th=-62.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 1
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=-60.3, y=-23.6, th=-62.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 1
         time.sleep(0.25)
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=1.4, y=5.4, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 2
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=1.4, y=5.4, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 2
         time.sleep(0.25)
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-83.5, y=14.5, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 3
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=-83.5, y=14.5, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 3
         time.sleep(0.25)
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-43.5, y=64.2, th=27.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 4
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=-43.5, y=64.2, th=27.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 4
         time.sleep(0.25)
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-5.8, y=-19.8, th=-152.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 5
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=-5.8, y=-19.8, th=-152.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 5
         time.sleep(0.25)
-        self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-119.1, y=-63.6, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 6
+        self.pub_checkpoint.publish(self.make_posstmp(self.random_pose_maker(x=-119.1, y=-63.6, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 6
         time.sleep(0.25)
 
     def scenario_obstacle1(self):
@@ -384,11 +384,11 @@ class ScenarioMaker():
 
     def PubObstacle(self, pose, vel, obstacle_type, obstacle_id, frame_id="world"):
         if obstacle_type == "pedestrian":
-            pubpose = self.pubpedestrianpose
-            pubtwist = self.pubpedestriantwist
+            pubpose = self.pub_pedestrianpose
+            pubtwist = self.pub_pedestriantwist
         elif obstacle_type == "car":
-            pubpose = self.pubcarpose
-            pubtwist = self.pubcartwist
+            pubpose = self.pub_carpose
+            pubtwist = self.pub_cartwist
         else:
             rospy.logwarn("invalid obstacle type")
             return False
@@ -401,12 +401,12 @@ class ScenarioMaker():
     def PubObjectId(self, id=0):
         idmsg = Int32()
         idmsg.data = id
-        self.pubobjectid.publish(idmsg)
+        self.pub_objectid.publish(idmsg)
 
     def PubResetObject(self, id=-1):#id=-1 -> reset all object
         idmsg = Int32()
         idmsg.data = id
-        self.pubresetobjectid.publish(idmsg)
+        self.pub_resetobjectid.publish(idmsg)
 
 
 def main():
