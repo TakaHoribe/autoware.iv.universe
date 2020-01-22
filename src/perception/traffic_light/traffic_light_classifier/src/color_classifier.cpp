@@ -104,28 +104,28 @@ bool ColorClassifier::getLampState(const cv::Mat &input_image, std::vector<autow
     {
         autoware_traffic_light_msgs::LampState state;
         state.type = autoware_traffic_light_msgs::LampState::GREEN;
-        state.confidence = green_ratio;
+        state.confidence = double(green_pixel_num) / (20.0 * 20.0);
         states.push_back(state);
     }
     else if (green_ratio < yellow_ratio && red_ratio < yellow_ratio)
     {
         autoware_traffic_light_msgs::LampState state;
         state.type = autoware_traffic_light_msgs::LampState::YELLOW;
-        state.confidence = yellow_ratio;
+        state.confidence = double(yellow_pixel_num) / (20.0 * 20.0);
         states.push_back(state);
     }
     else if (green_ratio < red_ratio && yellow_ratio < red_ratio)
     {
         autoware_traffic_light_msgs::LampState state;
         state.type = autoware_traffic_light_msgs::LampState::RED;
-        state.confidence = red_ratio;
+        state.confidence = double(red_pixel_num) / (20.0 * 20.0);
         states.push_back(state);
     }
     else
     {
         autoware_traffic_light_msgs::LampState state;
         state.type = autoware_traffic_light_msgs::LampState::UNKNOWN;
-        state.confidence = 1.0;
+        state.confidence = 0.0;
         states.push_back(state);
     }
     return true;

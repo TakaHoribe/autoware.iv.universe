@@ -7,4 +7,4 @@ uint8 RIGHT=5
 uint8 UP=6
 uint8 DOWN=7
 uint32 type
-int32 confidence
+float32 confidence
