@@ -6,7 +6,8 @@ DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(),
                                                                pnh_("~"),
                                                                tf_listener_(tf_buffer_),
                                                                pedestrian_sync_(SyncPolicy(10), pedestrian_pose_sub_, pedestrian_twist_sub_),
-                                                               car_sync_(SyncPolicy(10), car_pose_sub_, car_twist_sub_)
+                                                               car_sync_(SyncPolicy(10), car_pose_sub_, car_twist_sub_),
+                                                               object_id(0)
 {
     dynamic_object_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output/dynamic_object", 1, true);
     pointcloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("output/points_raw", 1, true);
@@ -18,6 +19,9 @@ DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(),
     car_pose_sub_.subscribe(pnh_, "input/car/pose", 1);
     car_twist_sub_.subscribe(pnh_, "input/car/twist", 1);
     car_sync_.registerCallback(boost::bind(&DummyPerceptionPublisherNode::carPoseCallback, this, _1, _2));
+
+    object_id_sub_ = pnh_.subscribe("input/object_id", 1, &DummyPerceptionPublisherNode::callbackObjectId, this);
+    object_reset_id_sub_ = pnh_.subscribe("input/object_reset_id", 1, &DummyPerceptionPublisherNode::callbackObjectResetId, this);
 
     timer_ = nh_.createTimer(ros::Duration(0.1), &DummyPerceptionPublisherNode::timerCallback, this);
     pnh_.param<double>("visible_range", visible_range_, double(100.0));
@@ -238,22 +242,23 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
 void DummyPerceptionPublisherNode::pedestrianPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
                                                           const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg)
 {
-    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped> tuple;
-    convert2Tuple(input_pose_msg, input_twist_msg, tuple);
+    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> tuple;
+    convert2Tuple(input_pose_msg, input_twist_msg, object_id, tuple);
     pedestrian_poses_.push_back(tuple);
 }
 
 void DummyPerceptionPublisherNode::carPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
                                                    const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg)
 {
-    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped> tuple;
-    convert2Tuple(input_pose_msg, input_twist_msg, tuple);
+    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> tuple;
+    convert2Tuple(input_pose_msg, input_twist_msg, object_id, tuple);
     car_poses_.push_back(tuple);
 }
 
 void DummyPerceptionPublisherNode::convert2Tuple(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
                                                  const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg,
-                                                 std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped> &output)
+                                                 int object_id,
+                                                 std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> &output)
 {
     geometry_msgs::PoseStamped pose_msg;
     pose_msg.header = input_pose_msg->header;
@@ -279,5 +284,55 @@ void DummyPerceptionPublisherNode::convert2Tuple(const geometry_msgs::PoseStampe
         tf_map2objet = tf_map2input_world * tf_input_world2object;
         tf2::toMsg(tf_map2objet, pose_msg.pose);
     }
-    output = std::make_tuple(pose_msg, *input_twist_msg);
+    output = std::make_tuple(pose_msg, *input_twist_msg, object_id);
+}
+
+void DummyPerceptionPublisherNode::callbackObjectId(const std_msgs::Int32ConstPtr &msg)
+{
+    int _object_id = msg->data;
+    if(_object_id < 0){
+        ROS_WARN("invalid object id. Ignore input.");
+    }else
+    {
+        object_id = _object_id;
+    }
+}
+
+void DummyPerceptionPublisherNode::callbackObjectResetId(const std_msgs::Int32ConstPtr &msg)
+{
+    int _object_id = msg->data;
+    if(_object_id < -1){
+        ROS_WARN("invalid object reset id. Ignore input.");
+    }else if(_object_id==-1)
+    {
+        ResetAllObject();
+    }else
+    {
+        ResetObject(_object_id);
+    }
+}
+
+void DummyPerceptionPublisherNode::ResetAllObject(void)
+{
+    car_poses_.clear();
+    pedestrian_poses_.clear();
+}
+
+void DummyPerceptionPublisherNode::ResetObject(int obj_id)
+{
+        for (int i = car_poses_.size()-1; i >= 0; --i)
+    {
+        if (obj_id == std::get<INT>(car_poses_.at(i)))
+        {
+            car_poses_.erase(car_poses_.begin() + i);//reset car object id i
+        }
+    }
+
+        for (int i = pedestrian_poses_.size()-1; i >= 0; --i)
+    {
+        if (obj_id == std::get<INT>(pedestrian_poses_.at(i)))
+        {
+            pedestrian_poses_.erase(pedestrian_poses_.begin() + i);//reset car object id i
+        }
+    }
 }

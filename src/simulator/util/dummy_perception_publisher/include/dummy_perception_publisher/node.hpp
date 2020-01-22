@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
+#include <std_msgs/Int32.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -26,6 +27,8 @@ private:
   ros::NodeHandle nh_, pnh_;
   ros::Publisher pointcloud_pub_;
   ros::Publisher dynamic_object_pub_;
+  ros::Subscriber object_id_sub_;
+  ros::Subscriber object_reset_id_sub_;
 
   message_filters::Subscriber<geometry_msgs::PoseStamped> pedestrian_pose_sub_;
   message_filters::Subscriber<geometry_msgs::TwistStamped> pedestrian_twist_sub_;
@@ -45,17 +48,24 @@ private:
   enum
   {
     POSE = 0,
-    TWIST = 1
+    TWIST = 1,
+    INT = 2
   };
-  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped>> pedestrian_poses_;
-  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped>> car_poses_;
+  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int>> pedestrian_poses_;
+  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int>> car_poses_;
   double visible_range_;
+
+  int object_id;
 
   void timerCallback(const ros::TimerEvent &);
   void pedestrianPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
   void carPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
-  void convert2Tuple(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg,
-                       std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped> &output);
+  void convert2Tuple(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg, int object_id,
+                       std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> &output);
+  void callbackObjectId(const std_msgs::Int32ConstPtr &msg);
+  void callbackObjectResetId(const std_msgs::Int32ConstPtr &msg);
+  void ResetAllObject(void);
+  void ResetObject(int obj_id);
 
 public:
   DummyPerceptionPublisherNode();

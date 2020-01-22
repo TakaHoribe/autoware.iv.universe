@@ -10,6 +10,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
+  std_msgs
   tf2
   tf2_geometry_msgs
   tf2_ros
