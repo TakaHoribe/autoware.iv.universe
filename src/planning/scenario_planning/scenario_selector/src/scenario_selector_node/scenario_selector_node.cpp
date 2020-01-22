@@ -117,7 +117,8 @@ bool isNearTrajectoryEnd(const autoware_planning_msgs::Trajectory::ConstPtr& tra
 Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
   if (scenario == autoware_planning_msgs::Scenario::LaneFollowing) return input_lane_following_;
   if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
-  throw std::invalid_argument("invalid scenario argument: " + scenario);
+  ROS_ERROR_STREAM("invalid scenario argument: " << scenario);
+  return input_lane_following_;
 }
 
 std::string ScenarioSelectorNode::selectScenarioByPosition() {
@@ -154,7 +155,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
 }
 
 autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
-  autoware_planning_msgs::Scenario scenario;
+  const auto prev_scenario = current_scenario_;
 
   const auto scenario_trajectory = getScenarioInput(current_scenario_).buf_trajectory;
 
@@ -171,17 +172,18 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
   }();
 
   if (is_near_trajectory_end && is_stopping) {
-    const auto prev_scenario = current_scenario_;
     current_scenario_ = selectScenarioByPosition();
-
-    if (current_scenario_ != prev_scenario)
-      ROS_INFO_STREAM("scenario changed: " << prev_scenario << " -> " << current_scenario_);
   }
 
+  autoware_planning_msgs::Scenario scenario;
   scenario.current_scenario = current_scenario_;
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
     scenario.activating_scenarios.push_back(current_scenario_);
+  }
+
+  if (current_scenario_ != prev_scenario) {
+    ROS_INFO_STREAM("scenario changed: " << prev_scenario << " -> " << current_scenario_);
   }
 
   return scenario;
@@ -195,6 +197,7 @@ void ScenarioSelectorNode::onMap(const autoware_lanelet2_msgs::MapBin& msg) {
 
 void ScenarioSelectorNode::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
   route_ = msg;
+  current_scenario_ = autoware_planning_msgs::Scenario::Empty;
 }
 
 void ScenarioSelectorNode::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {

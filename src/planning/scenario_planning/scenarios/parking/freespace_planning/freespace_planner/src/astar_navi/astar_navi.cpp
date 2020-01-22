@@ -18,6 +18,16 @@
 
 namespace {
 
+bool isActive(const autoware_planning_msgs::Scenario& scenario) {
+  const auto& s = scenario.activating_scenarios;
+  if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) !=
+      std::end(s)) {
+    return true;
+  }
+
+  return false;
+}
+
 std::vector<size_t> getReversingIndices(const autoware_planning_msgs::Trajectory& trajectory) {
   std::vector<size_t> indices;
 
@@ -142,15 +152,7 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
 
 }  // namespace
 
-AstarNavi::AstarNavi()
-    : nh_(),
-      private_nh_("~"),
-      tf_listener_(tf_buffer_),
-      goal_pose_initialized_(false),
-      occupancy_grid_initialized_(false),
-      current_pose_initialized_(false),
-      twist_initialized_(false),
-      is_active_(false) {
+AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
   private_nh_.param<double>("update_rate", update_rate_, 1.0);
   private_nh_.param<double>("th_stopping_time_sec", th_stopping_time_sec_, 1.0);
@@ -175,37 +177,31 @@ AstarNavi::AstarNavi()
   timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &AstarNavi::onTimer, this);
 }
 
-void AstarNavi::onRoute(const autoware_planning_msgs::Route& msg) {
-  goal_pose_global_.header = msg.header;
-  goal_pose_global_.pose = msg.goal_pose;
-  goal_pose_initialized_ = true;
+void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
+  route_ = msg;
+
+  goal_pose_global_.header = msg->header;
+  goal_pose_global_.pose = msg->goal_pose;
 
   trajectory_ = {};
 }
 
-void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid& msg) {
+void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
   occupancy_grid_ = msg;
-  occupancy_grid_initialized_ = true;
 }
 
-void AstarNavi::onScenario(const autoware_planning_msgs::Scenario& msg) {
-  const auto& s = msg.activating_scenarios;
-  if (std::find(std::begin(s), std::end(s), msg.Parking) != std::end(s)) {
-    is_active_ = true;
-  } else {
-    is_active_ = false;
-  }
+void AstarNavi::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) {
+  scenario_ = msg;
 }
 
-void AstarNavi::onTwist(const geometry_msgs::TwistStamped& msg) {
+void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   twist_ = msg;
-  twist_initialized_ = true;
 
   twist_buffer_.push_back(msg);
 
   // Delete old data in buffer
   while (true) {
-    const auto time_diff = msg.header.stamp - twist_buffer_.front().header.stamp;
+    const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
 
     if (time_diff.toSec() < th_stopping_time_sec_) {
       break;
@@ -234,7 +230,7 @@ void AstarNavi::updateTarget() {
 
   const auto is_stopping = [&]() {
     for (const auto& twist : twist_buffer_) {
-      if (std::abs(twist.twist.linear.x) > th_stopping_velocity_mps_) {
+      if (std::abs(twist->twist.linear.x) > th_stopping_velocity_mps_) {
         return false;
       }
     }
@@ -247,6 +243,7 @@ void AstarNavi::updateTarget() {
 
     // Finished publishing all partial trajectories
     if (new_target_index == target_index_) {
+      ROS_INFO("Astar completed");
       private_nh_.setParam("is_completed", true);
     } else {
       private_nh_.setParam("is_completed", false);
@@ -260,20 +257,19 @@ void AstarNavi::updateTarget() {
 }
 
 void AstarNavi::onTimer(const ros::TimerEvent& event) {
-  if (!is_active_) {
+  // Check all inputs are ready
+  if (!occupancy_grid_ || !route_ || !scenario_ || !twist_) {
+    return;
+  }
+
+  if (!isActive(*scenario_)) {
     trajectory_ = {};
     return;
   }
 
   // Calculate global current pose
   current_pose_global_ = tf2pose(getTransform(tf_buffer_, "map", "base_link"));
-  if (current_pose_global_.header.frame_id != "") {
-    current_pose_initialized_ = true;
-  }
-
-  // Check all inputs are ready
-  if (!occupancy_grid_initialized_ || !current_pose_initialized_ || !goal_pose_initialized_ ||
-      !twist_initialized_) {
+  if (current_pose_global_.header.frame_id == "") {
     return;
   }
 
@@ -315,22 +311,22 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
 
 void AstarNavi::planTrajectory() {
   // Calculate local goal pose
-  goal_pose_local_.pose = transformPose(
-      goal_pose_global_.pose,
-      getTransform(tf_buffer_, occupancy_grid_.header.frame_id, goal_pose_global_.header.frame_id));
-  goal_pose_local_.header.frame_id = occupancy_grid_.header.frame_id;
+  goal_pose_local_.pose = transformPose(goal_pose_global_.pose,
+                                        getTransform(tf_buffer_, occupancy_grid_->header.frame_id,
+                                                     goal_pose_global_.header.frame_id));
+  goal_pose_local_.header.frame_id = occupancy_grid_->header.frame_id;
   goal_pose_local_.header.stamp = goal_pose_global_.header.stamp;
 
   // Calculate local current pose
-  current_pose_local_.pose = transformPose(current_pose_global_.pose,
-                                           getTransform(tf_buffer_, occupancy_grid_.header.frame_id,
-                                                        current_pose_global_.header.frame_id));
-  current_pose_local_.header.frame_id = occupancy_grid_.header.frame_id;
+  current_pose_local_.pose = transformPose(
+      current_pose_global_.pose, getTransform(tf_buffer_, occupancy_grid_->header.frame_id,
+                                              current_pose_global_.header.frame_id));
+  current_pose_local_.header.frame_id = occupancy_grid_->header.frame_id;
   current_pose_local_.header.stamp = current_pose_global_.header.stamp;
 
   // initialize vector for A* search, this runs only once
   AstarSearch astar;
-  astar.initialize(occupancy_grid_);
+  astar.initialize(*occupancy_grid_);
 
   // execute astar search
   const ros::WallTime start = ros::WallTime::now();
