@@ -75,7 +75,7 @@ void LaneChanger::init()
   {
     while (!RouteHandler::getInstance().isHandlerReady() && ros::ok())
     {
-      ROS_WARN_THROTTLE(0.5, "waiting for route to be ready");
+      ROS_WARN_THROTTLE(5, "waiting for route to be ready");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
     }
@@ -84,13 +84,13 @@ void LaneChanger::init()
     std::shared_ptr<geometry_msgs::TwistStamped const> tmp_current_twist;
     while (!SingletonDataManager::getInstance().getCurrentSelfPose(tmp_current_pose) && ros::ok())
     {
-      ROS_WARN_THROTTLE(0.5, "waiting for vehicle pose");
+      ROS_WARN_THROTTLE(5, "waiting for vehicle pose");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
     }
     while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(tmp_current_twist) && ros::ok())
     {
-      ROS_WARN_THROTTLE(0.5, "waiting for vehicle velocity");
+      ROS_WARN_THROTTLE(5, "waiting for vehicle velocity");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
     }
