@@ -23,6 +23,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <std_msgs/Bool.h>
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
@@ -80,6 +81,7 @@ private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
+  bool lane_change_approval_;
 
   // ROS parameters
   LaneChangerParameters parameters_;
@@ -94,6 +96,7 @@ private:
   void velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
   void setLaneChangerParameters(const LaneChangerParameters& parameters);
+  void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
 
   friend class LaneChanger;
 
@@ -105,6 +108,7 @@ public:
   bool getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                      lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr);
   bool getLaneChangerParameters(LaneChangerParameters& parameters);
+  bool getLaneChangeApproval();
 };
 }  // namespace lane_change_planner
 

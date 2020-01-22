@@ -54,6 +54,7 @@ private:
   ros::Subscriber points_subscriber_;
   ros::Subscriber perception_subscriber_;
   ros::Subscriber velocity_subscriber_;
+  ros::Subscriber lane_change_approval_subscriber_;
 
   ros::Subscriber vector_map_subscriber_;
   ros::Subscriber route_subscriber_;

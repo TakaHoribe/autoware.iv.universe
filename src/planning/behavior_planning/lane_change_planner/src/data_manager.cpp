@@ -19,7 +19,7 @@
 
 namespace lane_change_planner
 {
-SingletonDataManager::SingletonDataManager() : is_parameter_set_(false)
+SingletonDataManager::SingletonDataManager() : is_parameter_set_(false), lane_change_approval_(false)
 {
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
@@ -43,6 +43,11 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& inp
 {
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
   lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
+}
+
+void SingletonDataManager::laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg)
+{
+  lane_change_approval_ = input_approval_msg.data;
 }
 
 void SingletonDataManager::setLaneChangerParameters(const LaneChangerParameters& parameters)
@@ -129,6 +134,11 @@ bool SingletonDataManager::getLaneChangerParameters(LaneChangerParameters& param
   }
   parameters = parameters_;
   return true;
+}
+
+bool SingletonDataManager::getLaneChangeApproval()
+{
+  return lane_change_approval_;
 }
 
 }  // namespace lane_change_planner
