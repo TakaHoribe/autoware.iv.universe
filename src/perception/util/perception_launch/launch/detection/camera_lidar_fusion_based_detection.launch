@@ -19,11 +19,11 @@
     <arg name="camera_info7" default=""/>
     <arg name="image_number" default="1"/>
     <arg name="use_vector_map" default="true"/>
-    <arg name="pointcloud_map" default="/points_map"/>
 
-    <include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch">
-        <arg name="input/map" default="$(arg pointcloud_map)"/>
-    </include>
+    <!-- <include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch"/> -->
+    <!-- or -->
+    <include file="$(find euclidean_cluster)/launch/voxel_grid_based_euclidean_cluster.launch" />
+
     <include file="$(find tensorrt_yolo3)/launch/yolo3.launch">
         <arg name="image_raw0" default="$(arg image_raw0)"/>
         <arg name="image_raw1" default="$(arg image_raw1)"/>

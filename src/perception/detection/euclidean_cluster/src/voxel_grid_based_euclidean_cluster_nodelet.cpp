@@ -65,7 +65,7 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> pcl_euclidean_cluster;
     pcl_euclidean_cluster.setClusterTolerance(tolerance_);
-    pcl_euclidean_cluster.setMinClusterSize(min_cluster_size_);
+    pcl_euclidean_cluster.setMinClusterSize(1);
     pcl_euclidean_cluster.setMaxClusterSize(max_cluster_size_);
     pcl_euclidean_cluster.setSearchMethod(tree);
     pcl_euclidean_cluster.setInputCloud(pointcloud_2d_ptr);
@@ -113,6 +113,8 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
             {
                 cloud_cluster->points.push_back(*point_itr);
             }
+            if (min_cluster_size_ <= cloud_cluster->points.size() && cloud_cluster->points.size() <= max_cluster_size_)
+                continue;
             cloud_cluster->width = cloud_cluster->points.size();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
