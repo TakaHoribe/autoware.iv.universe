@@ -64,7 +64,8 @@ class AstarNavi {
   // params
   double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
   double update_rate_;         // replanning and publishing rate [Hz]
-  double wait_time_at_turning_point_;
+  double th_stopping_time_sec_;
+  double th_stopping_distance_m_;
   double th_stopping_velocity_mps_;
 
   // variables
@@ -97,14 +98,8 @@ class AstarNavi {
   void onTimer(const ros::TimerEvent& event);
 
   bool isPlanRequired();
+  void planTrajectory();
   void updateTarget();
-
-  // fucntions
-  geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
-  autoware_planning_msgs::Trajectory createTrajectory(const AstarWaypoints& astar_waypoints,
-                                                      const double& velocity);
-  autoware_planning_msgs::Trajectory createStopTrajectory();
-  autoware_planning_msgs::Trajectory planTrajectory();
 };
 
 #endif

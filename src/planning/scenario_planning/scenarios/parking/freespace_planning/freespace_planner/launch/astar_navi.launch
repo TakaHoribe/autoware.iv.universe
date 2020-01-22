@@ -6,10 +6,12 @@
   <arg name="input_scenario" default="/planning/scenario_planning/scenario" />
   <arg name="input_twist" default="/vehicle/status/twist" />
   <arg name="output_trajectory" default="~trajectory" />
+  <arg name="is_completed" default="~is_completed" />
 
   <arg name="waypoints_velocity" default="5.0" />
   <arg name="update_rate" default="10.0" />
-  <arg name="wait_time_at_turning_point" default="1.0" />
+  <arg name="th_stopping_time_sec" default="1.0" />
+  <arg name="th_stopping_distance_m" default="1.0" />
   <arg name="th_stopping_velocity_mps" default="0.01" />
 
   <!-- A* search configurations -->
@@ -37,10 +39,12 @@
     <remap from="~input/scenario" to="$(arg input_scenario)" />
     <remap from="~input/twist" to="$(arg input_twist)" />
     <remap from="~output/trajectory" to="$(arg output_trajectory)" />
+    <remap from="~is_completed" to="$(arg is_completed)" />
 
     <param name="waypoints_velocity" value="$(arg waypoints_velocity)" />
     <param name="update_rate" value="$(arg update_rate)" />
-    <param name="wait_time_at_turning_point" value="$(arg wait_time_at_turning_point)" />
+    <param name="th_stopping_time_sec" value="$(arg th_stopping_time_sec)" />
+    <param name="th_stopping_distance_m" value="$(arg th_stopping_distance_m)" />
     <param name="th_stopping_velocity_mps" value="$(arg th_stopping_velocity_mps)" />
 
     <param name="use_back" value="$(arg use_back)" />
