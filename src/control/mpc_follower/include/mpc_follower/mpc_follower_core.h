@@ -45,6 +45,7 @@
 
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_control_msgs/ControlCommandStamped.h>
+#include <autoware_vehicle_msgs/Steering.h>
 
 #include "mpc_follower/mpc_utils.h"
 #include "mpc_follower/mpc_trajectory.h"
@@ -155,7 +156,7 @@ private:
   /**
    * @brief set curent_steer with receved message
    */
-  void callbackSteering(const std_msgs::Float32 &msg);
+  void callbackSteering(const autoware_vehicle_msgs::Steering &msg);
 
   /**
    * @brief set current_velocity with receved message

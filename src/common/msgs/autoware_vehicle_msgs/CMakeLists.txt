@@ -20,6 +20,7 @@ add_message_files(
             Shift.msg
             ControlMode.msg
             TurnSignal.msg
+            Steering.msg
 )
 
 ## Generate added messages and services with any dependencies listed here

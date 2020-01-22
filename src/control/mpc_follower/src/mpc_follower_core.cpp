@@ -647,7 +647,7 @@ void MPCFollower::updateCurrentPose()
   current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(ps);
 };
 
-void MPCFollower::callbackSteering(const std_msgs::Float32 &msg)
+void MPCFollower::callbackSteering(const autoware_vehicle_msgs::Steering &msg)
 {
   current_steer_ptr_ = std::make_shared<double>(msg.data);
 };

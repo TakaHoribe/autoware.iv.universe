@@ -45,6 +45,7 @@
 #include <autoware_vehicle_msgs/Shift.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
 #include <autoware_vehicle_msgs/ControlMode.h>
+#include <autoware_vehicle_msgs/Steering.h>
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 #include "simple_planning_simulator/vehicle_model/sim_model_ideal.hpp"
@@ -70,11 +71,8 @@ private:
   ros::NodeHandle pnh_;               //!< @brief private ros node handle
   ros::Publisher pub_pose_;           //!< @brief topic ros publisher for current pose
   ros::Publisher pub_twist_;          //!< @brief topic ros publisher for current twist
-  ros::Publisher pub_vehicle_status_; //!< @brief topic ros publisher for current vehicle status
   ros::Publisher pub_steer_;
-  ros::Publisher pub_steer_deg_;
   ros::Publisher pub_velocity_;
-  ros::Publisher pub_velocity_kmph_;
   ros::Publisher pub_turn_signal_;
   ros::Publisher pub_shift_;
 
