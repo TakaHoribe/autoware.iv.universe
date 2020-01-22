@@ -1,6 +1,8 @@
 #pragma once
 
+#include <deque>
 #include <memory>
+#include <string>
 
 #include <ros/ros.h>
 
@@ -12,6 +14,7 @@
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Scenario.h>
 #include <autoware_planning_msgs/Trajectory.h>
+#include <geometry_msgs/TwistStamped.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -19,7 +22,6 @@
 
 struct Input {
   ros::Subscriber sub_trajectory;
-
   autoware_planning_msgs::Trajectory::ConstPtr buf_trajectory;
 };
 
@@ -34,9 +36,13 @@ class ScenarioSelectorNode {
 
   void onMap(const autoware_lanelet2_msgs::MapBin& msg);
   void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
+  void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
+
   void onTimer(const ros::TimerEvent& event);
 
   autoware_planning_msgs::Scenario selectScenario();
+  std::string selectScenarioByPosition();
+  Input getScenarioInput(const std::string& scenario);
 
  private:
   ros::NodeHandle nh_;
@@ -49,6 +55,7 @@ class ScenarioSelectorNode {
 
   ros::Subscriber sub_lanelet_map_;
   ros::Subscriber sub_route_;
+  ros::Subscriber sub_twist_;
 
   Input input_lane_following_;
   Input input_parking_;
@@ -56,10 +63,20 @@ class ScenarioSelectorNode {
   Output output_;
 
   autoware_planning_msgs::Route::ConstPtr route_;
-  autoware_planning_msgs::Scenario::_current_scenario_type current_scenario_;
   geometry_msgs::PoseStamped::ConstPtr current_pose_;
+  geometry_msgs::TwistStamped::ConstPtr twist_;
+
+  std::string current_scenario_;
+  std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer_;
 
   std::shared_ptr<lanelet::LaneletMap> lanelet_map_ptr_;
   std::shared_ptr<lanelet::routing::RoutingGraph> routing_graph_ptr_;
   std::shared_ptr<lanelet::traffic_rules::TrafficRules> traffic_rules_ptr_;
+
+  // Parameters
+  double update_rate_;
+  double th_max_message_delay_sec_;
+  double th_stopping_time_sec_;
+  double th_stopping_distance_m_;
+  double th_stopping_velocity_mps_;
 };

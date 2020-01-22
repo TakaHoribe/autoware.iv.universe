@@ -45,6 +45,44 @@ std::shared_ptr<lanelet::ConstPolygon3d> findNearestParkinglot(
   }
 }
 
+geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_buffer) {
+  geometry_msgs::TransformStamped tf_current_pose;
+
+  try {
+    tf_current_pose =
+        tf_buffer.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(1.0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("[scenario_selector] %s", ex.what());
+    return nullptr;
+  }
+
+  geometry_msgs::PoseStamped::Ptr p(new geometry_msgs::PoseStamped());
+  p->header = tf_current_pose.header;
+  p->pose.orientation = tf_current_pose.transform.rotation;
+  p->pose.position.x = tf_current_pose.transform.translation.x;
+  p->pose.position.y = tf_current_pose.transform.translation.y;
+  p->pose.position.z = tf_current_pose.transform.translation.z;
+
+  return geometry_msgs::PoseStamped::ConstPtr(p);
+}
+
+bool isInLane(const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr,
+              const geometry_msgs::Pose& current_pose) {
+  const auto& p = current_pose.position;
+  const lanelet::Point3d search_point(lanelet::InvalId, p.x, p.y, p.z);
+
+  std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
+      lanelet::geometry::findNearest(lanelet_map_ptr->laneletLayer, search_point.basicPoint2d(), 1);
+
+  if (nearest_lanelets.empty()) {
+    return false;
+  }
+
+  const auto nearest_lanelet = nearest_lanelets.front().second;
+
+  return lanelet::geometry::within(search_point, nearest_lanelet.polygon3d());
+}
+
 bool isInParkingLot(const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr,
                     const geometry_msgs::Pose& current_pose) {
   const auto& p = current_pose.position;
@@ -76,28 +114,76 @@ bool isNearTrajectoryEnd(const autoware_planning_msgs::Trajectory::ConstPtr& tra
 
 }  // namespace
 
-// TODO(Kenji Miyake): Manage states in mission_planner
-autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
-  autoware_planning_msgs::Scenario scenario;
+Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
+  if (scenario == autoware_planning_msgs::Scenario::LaneFollowing) return input_lane_following_;
+  if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
+  throw std::invalid_argument("[scenario_selector] invalid scenario argument: " + scenario);
+}
 
-  scenario.activating_scenarios.push_back(autoware_planning_msgs::Scenario::LaneFollowing);
-
+std::string ScenarioSelectorNode::selectScenarioByPosition() {
+  const auto is_in_lane = isInLane(lanelet_map_ptr_, current_pose_->pose);
   const auto is_in_parking_lot = isInParkingLot(lanelet_map_ptr_, current_pose_->pose);
-  const auto is_near_trajectory_end =
-      isNearTrajectoryEnd(input_lane_following_.buf_trajectory, current_pose_->pose, 0.5);
 
-  if (is_in_parking_lot && is_near_trajectory_end) {
-    current_scenario_ = autoware_planning_msgs::Scenario::Parking;
+  if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
+    if (is_in_lane) {
+      return autoware_planning_msgs::Scenario::LaneFollowing;
+    } else {
+      return autoware_planning_msgs::Scenario::Parking;
+    }
   }
-  if (!is_in_parking_lot) {
-    current_scenario_ = autoware_planning_msgs::Scenario::LaneFollowing;
+
+  if (current_scenario_ == autoware_planning_msgs::Scenario::LaneFollowing) {
+    if (is_in_parking_lot) {
+      return autoware_planning_msgs::Scenario::Parking;
+    }
   }
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
-    scenario.activating_scenarios.push_back(autoware_planning_msgs::Scenario::Parking);
+    const auto is_parking_completed = nh_.param<bool>("is_parking_completed", false);
+    if (is_parking_completed && is_in_lane) {
+      nh_.setParam("is_parking_completed", false);
+      return autoware_planning_msgs::Scenario::LaneFollowing;
+    }
+
+    if (!is_in_parking_lot) {
+      return autoware_planning_msgs::Scenario::LaneFollowing;
+    }
+  }
+
+  return current_scenario_;
+}
+
+autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
+  autoware_planning_msgs::Scenario scenario;
+
+  const auto scenario_trajectory = getScenarioInput(current_scenario_).buf_trajectory;
+
+  const auto is_near_trajectory_end =
+      isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_stopping_distance_m_);
+
+  const auto is_stopping = [&]() {
+    for (const auto& twist : twist_buffer_) {
+      if (std::abs(twist->twist.linear.x) > th_stopping_velocity_mps_) {
+        return false;
+      }
+    }
+    return true;
+  }();
+
+  if (is_near_trajectory_end && is_stopping) {
+    const auto prev_scenario = current_scenario_;
+    current_scenario_ = selectScenarioByPosition();
+
+    if (current_scenario_ != prev_scenario)
+      ROS_INFO_STREAM("[scenario_selector] scenario changed: " << prev_scenario << " -> "
+                                                               << current_scenario_);
   }
 
   scenario.current_scenario = current_scenario_;
+
+  if (current_scenario_ == autoware_planning_msgs::Scenario::Parking) {
+    scenario.activating_scenarios.push_back(current_scenario_);
+  }
 
   return scenario;
 }
@@ -112,57 +198,49 @@ void ScenarioSelectorNode::onRoute(const autoware_planning_msgs::Route::ConstPtr
   route_ = msg;
 }
 
-void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
-  // Check activation conditions
-  if (!lanelet_map_ptr_ || !route_) {
-    return;
-  }
+void ScenarioSelectorNode::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+  twist_ = msg;
 
-  // Get current pose
-  {
-    geometry_msgs::TransformStamped tf_current_pose;
+  twist_buffer_.push_back(msg);
 
-    try {
-      tf_current_pose =
-          tf_buffer_.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(1.0));
-    } catch (tf2::TransformException ex) {
-      ROS_ERROR("[scenario_selector] %s", ex.what());
+  // Delete old data in buffer
+  while (true) {
+    const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
+
+    if (time_diff.toSec() < th_stopping_time_sec_) {
+      break;
     }
 
-    geometry_msgs::PoseStamped::Ptr p(new geometry_msgs::PoseStamped);
-    p->header = tf_current_pose.header;
-    p->pose.orientation = tf_current_pose.transform.rotation;
-    p->pose.position.x = tf_current_pose.transform.translation.x;
-    p->pose.position.y = tf_current_pose.transform.translation.y;
-    p->pose.position.z = tf_current_pose.transform.translation.z;
-    current_pose_ = geometry_msgs::PoseStamped::ConstPtr(p);
+    twist_buffer_.pop_front();
+  }
+}
+
+void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
+  current_pose_ = getCurrentPose(tf_buffer_);
+
+  // Check all inputs are ready
+  if (!current_pose_ || !lanelet_map_ptr_ || !route_ || !twist_) {
+    return;
   }
 
-  if (!current_pose_) {
-    return;
+  // Initialize Scenario
+  if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
+    current_scenario_ = selectScenarioByPosition();
   }
 
   // Select scenario
   const auto scenario = selectScenario();
   output_.pub_scenario.publish(scenario);
 
-  const auto& input = [&]() {
-    if (scenario.current_scenario == autoware_planning_msgs::Scenario::LaneFollowing) {
-      return input_lane_following_;
-    }
-    if (scenario.current_scenario == autoware_planning_msgs::Scenario::Parking) {
-      return input_parking_;
-    }
-  }();
+  const auto& input = getScenarioInput(scenario.current_scenario);
 
   if (!input.buf_trajectory) {
     return;
   }
 
   // Output
-  constexpr double max_delay = 0.5;
   const auto now = ros::Time::now();
-  if ((now - input.buf_trajectory->header.stamp).toSec() <= max_delay) {
+  if ((now - input.buf_trajectory->header.stamp).toSec() <= th_max_message_delay_sec_) {
     output_.pub_trajectory.publish(input.buf_trajectory);
   }
 }
@@ -175,7 +253,14 @@ ScenarioSelectorNode::ScenarioSelectorNode()
     : nh_(""),
       private_nh_("~"),
       tf_listener_(tf_buffer_),
-      current_scenario_(autoware_planning_msgs::Scenario::LaneFollowing) {
+      current_scenario_(autoware_planning_msgs::Scenario::Empty) {
+  // Parameters
+  private_nh_.param<double>("update_rate", update_rate_, 10.0);
+  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
+  private_nh_.param<double>("th_stopping_time_sec", th_stopping_time_sec_, 1.0);
+  private_nh_.param<double>("th_stopping_distance_m", th_stopping_distance_m_, 1.0);
+  private_nh_.param<double>("th_stopping_velocity_mps", th_stopping_velocity_mps_, 0.01);
+
   // Input
   input_lane_following_.sub_trajectory = private_nh_.subscribe(
       "input/lane_following/trajectory", 1, CALLBACK(input_lane_following_.buf_trajectory));
@@ -188,6 +273,8 @@ ScenarioSelectorNode::ScenarioSelectorNode()
 
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
 
+  sub_twist_ = private_nh_.subscribe("input/twist", 1, &ScenarioSelectorNode::onTwist, this);
+
   // Output
   output_.pub_scenario =
       private_nh_.advertise<autoware_planning_msgs::Scenario>("output/scenario", 1);
@@ -195,6 +282,5 @@ ScenarioSelectorNode::ScenarioSelectorNode()
       private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
 
   // Timer Callback
-  constexpr double update_rate = 10;
-  timer_ = private_nh_.createTimer(ros::Rate(update_rate), &ScenarioSelectorNode::onTimer, this);
+  timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &ScenarioSelectorNode::onTimer, this);
 }
