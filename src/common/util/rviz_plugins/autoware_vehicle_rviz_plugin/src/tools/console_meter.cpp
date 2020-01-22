@@ -128,7 +128,7 @@ void ConsoleMeterDisplay::onDisable()
   overlay_->hide();
 }
 
-void ConsoleMeterDisplay::processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void ConsoleMeterDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
 {
   if (!isEnabled())
   {

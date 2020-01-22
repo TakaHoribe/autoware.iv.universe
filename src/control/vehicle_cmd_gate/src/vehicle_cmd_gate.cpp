@@ -38,7 +38,8 @@ VehicleCmdGate::VehicleCmdGate()
   , is_engaged_(false)
 {
 
-  vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
+  vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
+  shift_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::Shift>("output/shift_cmd", 1, true);
   lat_control_cmd_sub_ = pnh_.subscribe("input/lateral/control_cmd", 1, &VehicleCmdGate::latCtrlCmdCallback, this);
   lon_control_cmd_sub_ = pnh_.subscribe("input/longitudinal/control_cmd", 1, &VehicleCmdGate::lonCtrlCmdCallback, this);
   engage_sub_ = pnh_.subscribe("input/engage", 1, &VehicleCmdGate::engageCallback, this);
@@ -72,18 +73,14 @@ void VehicleCmdGate::lonCtrlCmdCallback(const autoware_control_msgs::ControlComm
     current_vehicle_cmd_.command.control.acceleration = -1.5;
   }
   
-
-
-  if (vel > 0.0)
-  {
-    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::DRIVE;
-  }
-  else if (vel < 0.0)
-  {
-    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::REVERSE;
-  }
-  
   vehicle_cmd_pub_.publish(current_vehicle_cmd_);
+
+
+  autoware_vehicle_msgs::Shift shift_msg;
+  shift_msg.data = vel >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  shift_cmd_pub_.publish(shift_msg);
+
+  
 }
 
 

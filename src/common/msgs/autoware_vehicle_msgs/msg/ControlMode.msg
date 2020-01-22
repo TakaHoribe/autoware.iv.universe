@@ -2,4 +2,5 @@ uint8 MANUAL = 0
 uint8 AUTO = 1
 uint8 AUTO_STEER_ONLY = 2
 uint8 AUTO_PEDAL_ONLY = 3
-uint8 mode
+
+int32 data

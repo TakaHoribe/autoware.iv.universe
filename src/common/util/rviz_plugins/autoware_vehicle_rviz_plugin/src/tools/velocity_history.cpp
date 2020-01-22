@@ -85,7 +85,7 @@ void VelocityHistoryDisplay::reset()
   velocity_manual_object_->clear();
 }
 
-bool VelocityHistoryDisplay::validateFloats(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+bool VelocityHistoryDisplay::validateFloats(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
 {
   if (!rviz::validateFloats(msg_ptr->status.velocity))
     return false;
@@ -93,7 +93,7 @@ bool VelocityHistoryDisplay::validateFloats(const autoware_control_msgs::Vehicle
   return true;
 }
 
-void VelocityHistoryDisplay::processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void VelocityHistoryDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
 {
   if (!validateFloats(msg_ptr))
   {

@@ -125,7 +125,7 @@ void SteeringAngleDisplay::onDisable()
   overlay_->hide();
 }
 
-void SteeringAngleDisplay::processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
 {
   if (!isEnabled())
   {

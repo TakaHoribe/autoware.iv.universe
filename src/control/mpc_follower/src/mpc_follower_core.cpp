@@ -128,7 +128,7 @@ MPCFollower::MPCFollower()
   pub_steer_vel_ctrl_cmd_ = pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
   sub_ref_path_ = pnh_.subscribe("input/reference_trajectory", 1, &MPCFollower::callbackRefPath, this);
   sub_current_vel_ = pnh_.subscribe("input/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
-  sub_vehicle_status_ = pnh_.subscribe("input/vehicle_status", 1, &MPCFollower::callbackVehicleStatus, this);
+  sub_steering_ = pnh_.subscribe("input/current_steering", 1, &MPCFollower::callbackSteering, this);
 
   /* wait to get vehicle position */
   while (ros::ok())
@@ -647,9 +647,9 @@ void MPCFollower::updateCurrentPose()
   current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(ps);
 };
 
-void MPCFollower::callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped::ConstPtr &msg)
+void MPCFollower::callbackSteering(const std_msgs::Float32 &msg)
 {
-  current_steer_ptr_ = std::make_shared<double>(msg->status.steering_angle);
+  current_steer_ptr_ = std::make_shared<double>(msg.data);
 };
 
 void MPCFollower::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg)

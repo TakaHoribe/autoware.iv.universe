@@ -16,7 +16,8 @@
 
 #include "ssc_interface/ssc_interface.h"
 
-SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_initialized_(false)
+SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_initialized_(false),
+                               shift_cmd_initialized_(false), turn_signal_cmd_initialized_(false)
 {
   // setup parameters
   private_nh_.param<bool>("use_rear_wheel_speed", use_rear_wheel_speed_, true);
@@ -38,6 +39,8 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
 
   // subscribers from autoware
   vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromVehicleCmd, this);
+  shift_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromShiftCmd, this);
+  turn_signal_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromTurnSignalCmd, this);
   engage_sub_ = nh_.subscribe("vehicle/engage", 1, &SSCInterface::callbackFromEngage, this);
 
   // subscribers from SSC
@@ -64,7 +67,8 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
       boost::bind(&SSCInterface::callbackFromSSCFeedbacks, this, _1, _2, _3, _4, _5, _6, _7));
 
   // publishers to autoware
-  vehicle_status_pub_ = nh_.advertise<autoware_control_msgs::VehicleStatusStamped>("/vehicle/status", 10);
+  vehicle_status_pub_ = nh_.advertise<autoware_vehicle_msgs::VehicleStatusStamped>("/vehicle/status", 10);
+  control_mode_pub_ = nh_.advertise<autoware_vehicle_msgs::ControlMode>("/vehicle/status/control_mode", 10);
   current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 10);
   current_steer_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering", 10);
   current_steer_wheel_deg_pub_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering_wheel_deg", 10);
@@ -92,13 +96,22 @@ void SSCInterface::run()
   }
 }
 
-void SSCInterface::callbackFromVehicleCmd(const autoware_control_msgs::VehicleCommandStampedConstPtr& msg)
+void SSCInterface::callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr& msg)
 {
   command_time_ = ros::Time::now();
   vehicle_cmd_ = *msg;
   command_initialized_ = true;
 }
-
+void SSCInterface::callbackFromShiftCmd(const autoware_vehicle_msgs::ShiftConstPtr& msg)
+{
+  shift_cmd_ = *msg;
+  shift_cmd_initialized_ = true;
+}
+void SSCInterface::callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr& msg)
+{
+  turn_signal_cmd_ = *msg;
+  turn_signal_cmd_initialized_ = true;
+}
 void SSCInterface::callbackFromEngage(const std_msgs::BoolConstPtr& msg)
 {
   engage_ = msg->data;
@@ -150,14 +163,12 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   // twist.twist.angular.z = omega;  // [rad/s]
   current_twist_pub_.publish(twist);
 
-  // vehicle_status (autoware_control_msgs::VehicleStatus)
-  autoware_control_msgs::VehicleStatusStamped vehicle_status;
+  // vehicle_status (autoware_vehicle_msgs::VehicleStatus)
+  autoware_vehicle_msgs::VehicleStatusStamped vehicle_status;
   vehicle_status.header.frame_id = BASE_FRAME_ID;
   vehicle_status.header.stamp = stamp;
 
-  // drive/steeringmode
-  vehicle_status.status.mode.mode = (module_states_.state == "active") ? autoware_control_msgs::ControlMode::AUTO :
-                                                                  autoware_control_msgs::ControlMode::MANUAL;
+
 
   // speed [km/h]
   vehicle_status.status.velocity = speed;
@@ -169,33 +180,43 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   // steering angle [rad]
   vehicle_status.status.steering_angle = std::atan(curvature * wheel_base_);
 
+  // drive/steeringmode
+  vehicle_status.status.shift.data = (module_states_.state == "active") ? autoware_vehicle_msgs::ControlMode::AUTO
+                                                                 : autoware_vehicle_msgs::ControlMode::MANUAL;
+  vehicle_status_pub_.publish(vehicle_status);
+
   // gearshift
   if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NONE)
   {
-    vehicle_status.status.shift.shift = -1;
+    vehicle_status.status.shift.data = -1;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::PARK)
   {
-    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::PARKING;
+    vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::PARKING;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::REVERSE)
   {
-    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::REVERSE;
+    vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::REVERSE;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NEUTRAL)
   {
-    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::NEUTRAL;
+    vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::NEUTRAL;
   }
   else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::DRIVE)
   {
-    vehicle_status.status.shift.shift = autoware_control_msgs::Shift::DRIVE;
+    vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::DRIVE;
   }
 
   // lamp/light cannot be obtain from SSC
   // vehicle_status.lamp
   // vehicle_status.light
 
-  vehicle_status_pub_.publish(vehicle_status);
+
+
+  autoware_vehicle_msgs::ControlMode mode;
+  mode.data = (module_states_.state == "active") ? autoware_vehicle_msgs::ControlMode::AUTO
+                                                 : autoware_vehicle_msgs::ControlMode::MANUAL;
+  control_mode_pub_.publish(mode);
 
   std_msgs::Float32 vel;
   vel.data = twist.twist.linear.x;
@@ -237,27 +258,46 @@ void SSCInterface::publishCommand()
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)
-  unsigned char desired_shift = engage_ ? automotive_platform_msgs::Gear::DRIVE : automotive_platform_msgs::Gear::NONE;
+  unsigned char desired_shift = automotive_platform_msgs::Gear::NONE;
+  if (shift_cmd_initialized_ || engage_)
+  {
+    if (shift_cmd_.data = autoware_vehicle_msgs::Shift::DRIVE)
+    {
+      desired_shift = automotive_platform_msgs::Gear::DRIVE;
+    }
+    else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::PARKING)
+    {
+      desired_shift = automotive_platform_msgs::Gear::PARK;
+    }
+    else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::REVERSE)
+    {
+      desired_shift = automotive_platform_msgs::Gear::REVERSE;
+    }
+  }
 
   // Turn signal
   unsigned char desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
 
-  if (vehicle_cmd_.command.turn_signal.signal == autoware_control_msgs::TurnSignal::NONE)
+  if (turn_signal_cmd_initialized_)
   {
-    desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
+    if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::NONE)
+    {
+      desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
+    }
+    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::LEFT)
+    {
+      desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::LEFT;
+    }
+    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::RIGHT)
+    {
+      desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::RIGHT;
+    }
+    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::HAZARD)
+    {
+      // NOTE: HAZARD signal cannot be used in automotive_platform_msgs::TurnSignalCommand
+    }
   }
-  else if (vehicle_cmd_.command.turn_signal.signal == autoware_control_msgs::TurnSignal::LEFT)
-  {
-    desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::LEFT;
-  }
-  else if (vehicle_cmd_.command.turn_signal.signal == autoware_control_msgs::TurnSignal::RIGHT)
-  {
-    desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::RIGHT;
-  }
-  else if (vehicle_cmd_.command.turn_signal.signal == autoware_control_msgs::TurnSignal::HAZARD)
-  {
-    // NOTE: HAZARD signal cannot be used in automotive_platform_msgs::TurnSignalCommand
-  }
+
 
   // Override desired speed to ZERO by emergency/timeout
   bool emergency = (vehicle_cmd_.command.emergency == 1);

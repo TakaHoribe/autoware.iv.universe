@@ -3,4 +3,4 @@ uint8 LEFT = 1
 uint8 RIGHT = 2
 uint8 HAZARD = 3
 
-uint8 signal
+int32 data

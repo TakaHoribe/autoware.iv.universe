@@ -17,12 +17,12 @@
 #include <memory>
 #include <tuple>
 
-#include "autoware_control_msgs/VehicleStatusStamped.h"
+#include "autoware_vehicle_msgs/VehicleStatusStamped.h"
 
 namespace rviz_plugins
 {
 
-class VelocityHistoryDisplay : public rviz::MessageFilterDisplay<autoware_control_msgs::VehicleStatusStamped>
+class VelocityHistoryDisplay : public rviz::MessageFilterDisplay<autoware_vehicle_msgs::VehicleStatusStamped>
 {
   Q_OBJECT
 
@@ -37,7 +37,7 @@ private Q_SLOTS:
   void updateVisualization();
 
 protected:
-  void processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr) override;
+  void processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr) override;
   std::unique_ptr<Ogre::ColourValue> setColorDependsOnVelocity(const double vel_max, const double cmd_vel);
   std::unique_ptr<Ogre::ColourValue> gradation(const QColor &color_min, const QColor &color_max,
                                                const double ratio);
@@ -51,8 +51,8 @@ protected:
   rviz::FloatProperty *property_vel_max_;
 
 private:
-  std::deque<std::tuple<autoware_control_msgs::VehicleStatusStampedConstPtr, Ogre::Vector3>> history_;
-  bool validateFloats(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr);
+  std::deque<std::tuple<autoware_vehicle_msgs::VehicleStatusStampedConstPtr, Ogre::Vector3>> history_;
+  bool validateFloats(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr);
 };
 
 } // namespace rviz_plugins

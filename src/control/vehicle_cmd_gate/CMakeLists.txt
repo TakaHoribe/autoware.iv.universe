@@ -4,6 +4,7 @@ project(vehicle_cmd_gate)
 find_package(
   catkin REQUIRED COMPONENTS
     autoware_control_msgs
+    autoware_vehicle_msgs
     geometry_msgs
     roscpp
     rostest
@@ -16,6 +17,7 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
     autoware_control_msgs
+    autoware_vehicle_msgs
     geometry_msgs
     std_msgs
 )

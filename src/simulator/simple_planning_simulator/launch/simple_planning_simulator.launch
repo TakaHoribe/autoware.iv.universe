@@ -35,7 +35,7 @@
   <node pkg="simple_planning_simulator" type="simple_planning_simulator" name="simple_planning_simulator" output="screen">
     <remap from="/base_trajectory" to="/planning/motion_planning/trajectory" />
     <remap from="~output/current_pose" to="current_pose" />
-    <remap from="~output/current_velocity" to="/vehicle/status/twist" />
+    <remap from="~output/current_twist" to="/vehicle/status/twist" />
     <remap from="~output/status" to="/vehicle/status" />
     <remap from="~input/vehicle_cmd" to="/control/vehicle_cmd" />
 

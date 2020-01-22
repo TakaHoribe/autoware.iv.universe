@@ -40,8 +40,11 @@
 #include <random>
 
 #include <autoware_planning_msgs/Trajectory.h>
-#include <autoware_control_msgs/VehicleCommandStamped.h>
-#include <autoware_control_msgs/VehicleStatusStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/VehicleStatusStamped.h>
+#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/TurnSignal.h>
+#include <autoware_vehicle_msgs/ControlMode.h>
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 #include "simple_planning_simulator/vehicle_model/sim_model_ideal.hpp"
@@ -69,9 +72,11 @@ private:
   ros::Publisher pub_twist_;          //!< @brief topic ros publisher for current twist
   ros::Publisher pub_vehicle_status_; //!< @brief topic ros publisher for current vehicle status
   ros::Publisher pub_steer_;
-  ros::Publisher pub_steer_wheel_deg_;
+  ros::Publisher pub_steer_deg_;
   ros::Publisher pub_velocity_;
   ros::Publisher pub_velocity_kmph_;
+  ros::Publisher pub_turn_signal_;
+  ros::Publisher pub_shift_;
 
   ros::Subscriber sub_vehicle_cmd_;   //!< @brief topic subscriber for vehicle_cmd
   ros::Subscriber sub_trajectory_;    //!< @brief topic subscriber for trajectory used for z ppsition
@@ -81,7 +86,7 @@ private:
   /* received & published topics */
   geometry_msgs::Pose current_pose_;                                                      //!< @brief current vehicle position ang angle with pose message class
   geometry_msgs::Twist current_twist_;                                                    //!< @brief current vehicle velocity with twist message class
-  std::shared_ptr<autoware_control_msgs::VehicleCommandStamped> current_vehicle_cmd_ptr_; //!< @brief latest received vehicle_cmd
+  std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> current_vehicle_cmd_ptr_; //!< @brief latest received vehicle_cmd
   std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;            //!< @brief latest received trajectory
   double closest_pos_z_;                                                                  //!< @brief z position on closest trajectory
 
@@ -131,7 +136,7 @@ private:
   /**
    * @brief set current_vehicle_cmd_ptr_ with received message
    */
-  void callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStampedConstPtr &msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr &msg);
 
   /**
    * @brief set current_trajectory_ptr_ with received message

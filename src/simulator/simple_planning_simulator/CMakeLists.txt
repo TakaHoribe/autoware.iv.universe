@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
         geometry_msgs
         autoware_planning_msgs
         autoware_control_msgs
+        autoware_vehicle_msgs
         rostest
         rosunit
 )
@@ -31,6 +32,7 @@ catkin_package(
         geometry_msgs
         autoware_planning_msgs
         autoware_control_msgs
+        autoware_vehicle_msgs
 )
 
 ###########

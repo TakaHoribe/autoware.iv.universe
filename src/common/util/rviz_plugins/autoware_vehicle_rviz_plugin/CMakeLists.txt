@@ -9,13 +9,13 @@ add_compile_options(-std=c++14)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rviz
-  autoware_control_msgs
+  autoware_vehicle_msgs
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
   LIBRARIES autoware_vehicle_rviz_plugin
-  CATKIN_DEPENDS rviz autoware_control_msgs
+  CATKIN_DEPENDS rviz autoware_vehicle_msgs
 #  DEPENDS system_lib
 )
 

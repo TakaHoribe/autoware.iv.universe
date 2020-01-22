@@ -22,7 +22,8 @@
 #include <std_msgs/Bool.h>
 
 #include "autoware_control_msgs/ControlCommandStamped.h"
-#include "autoware_control_msgs/VehicleCommandStamped.h"
+#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
+#include "autoware_vehicle_msgs/Shift.h"
 
 
 class VehicleCmdGate
@@ -41,11 +42,12 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher vehicle_cmd_pub_;
+  ros::Publisher shift_cmd_pub_;
   ros::Subscriber lat_control_cmd_sub_;
   ros::Subscriber lon_control_cmd_sub_;
   ros::Subscriber engage_sub_;
 
-  autoware_control_msgs::VehicleCommandStamped current_vehicle_cmd_;
+  autoware_vehicle_msgs::VehicleCommandStamped current_vehicle_cmd_;
   bool is_engaged_;
 
 

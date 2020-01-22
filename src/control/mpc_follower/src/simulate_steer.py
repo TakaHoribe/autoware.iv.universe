@@ -4,7 +4,7 @@
 import rospy
 import math
 from autoware_control_msgs.msg import VehicleCommandStamped
-from autoware_control_msgs.msg import VehicleStatusStamped
+from autoware_vehicle_msgs.msg import VehicleStatusStamped
 
 delay_compensation_time = 0.45 #TODO: ->rosparam (subscribe?)
 steer_tau = 0.01 #TODO ->rosparam (subscribe?)

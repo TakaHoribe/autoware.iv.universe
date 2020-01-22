@@ -27,8 +27,8 @@
 #include <pacmod_msgs/SystemRptFloat.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_control_msgs/VehicleCommandStamped.h>
-#include <autoware_control_msgs/VehicleStatusStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/VehicleStatusStamped.h>
 
 const double STEERING_GEAR_RATIO = 18.0;
 const double RAD2DEG = 180.0 / 3.14159265;
@@ -40,7 +40,7 @@ public:
   {
     nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, double(0.341));
     timer_ = nh_.createTimer(ros::Duration(0.03), &PacmodSimInterface::timerCallback, this);
-    sim_vehicle_cmd_pub_ = pnh_.advertise<autoware_control_msgs::VehicleCommandStamped>("/sim/vehicle_cmd", 1);
+    sim_vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommandStamped>("/sim/vehicle_cmd", 1);
     steer_rpt_pub_ = pnh_.advertise<pacmod_msgs::SystemRptFloat>("/pacmod/parsed_tx/steer_rpt", 1);
     wheel_speed_rpt_pub_ = pnh_.advertise<pacmod_msgs::WheelSpeedRpt>("/pacmod/parsed_tx/wheel_speed_rpt", 1);
     sim_status_sub_ = pnh_.subscribe("/sim/status", 1, &PacmodSimInterface::callbackSimStatus, this);
@@ -75,7 +75,7 @@ private:
 
   double tire_radius_;
 
-  autoware_control_msgs::VehicleCommandStamped current_vehicle_cmd_;
+  autoware_vehicle_msgs::VehicleCommandStamped current_vehicle_cmd_;
   pacmod_msgs::SystemCmdFloat current_accel_cmd_;
   pacmod_msgs::SystemCmdFloat current_brake_cmd_;
   pacmod_msgs::SteerSystemCmd current_steer_cmd_;
@@ -93,8 +93,8 @@ private:
 
     current_vehicle_cmd_.header.frame_id = "/base_link";
     current_vehicle_cmd_.header.stamp = ros::Time::now();
-    current_vehicle_cmd_.command.shift.shift = autoware_control_msgs::Shift::DRIVE;
-    current_vehicle_cmd_.command.turn_signal.signal = autoware_control_msgs::TurnSignal::NONE;
+    // current_vehicle_cmd_.command.shift.data = autoware_vehicle_msgs::Shift::DRIVE;
+    // current_vehicle_cmd_.command.turn_signal.signal = autoware_vehicle_msgs::TurnSignal::NONE;
     current_vehicle_cmd_.command.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
     current_vehicle_cmd_.command.control.steering_angle_velocity = 0.0;
     current_vehicle_cmd_.command.control.velocity = 0.0;
@@ -106,7 +106,7 @@ private:
     return;
   };
 
-  void callbackSimStatus(const autoware_control_msgs::VehicleStatusStamped &msg)
+  void callbackSimStatus(const autoware_vehicle_msgs::VehicleStatusStamped &msg)
   {
     /* wheel ratation speed [rad/s] */
     pacmod_msgs::WheelSpeedRpt wheel_speed;

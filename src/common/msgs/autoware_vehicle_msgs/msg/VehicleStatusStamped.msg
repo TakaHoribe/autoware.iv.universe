@@ -1,0 +1,2 @@
+Header header
+autoware_vehicle_msgs/VehicleStatus status

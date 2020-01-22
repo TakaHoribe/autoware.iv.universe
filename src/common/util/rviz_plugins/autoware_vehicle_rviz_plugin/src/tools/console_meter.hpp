@@ -21,7 +21,7 @@
 #include <deque>
 #include <memory>
 
-#include "autoware_control_msgs/VehicleStatusStamped.h"
+#include "autoware_vehicle_msgs/VehicleStatusStamped.h"
 
 #include "jsk_overlay_utils.hpp"
 #endif
@@ -29,7 +29,7 @@
 namespace rviz_plugins
 {
 
-class ConsoleMeterDisplay : public rviz::MessageFilterDisplay<autoware_control_msgs::VehicleStatusStamped>
+class ConsoleMeterDisplay : public rviz::MessageFilterDisplay<autoware_vehicle_msgs::VehicleStatusStamped>
 {
   Q_OBJECT
 
@@ -45,7 +45,7 @@ private Q_SLOTS:
   void updateVisualization();
 
 protected:
-  void processMessage(const autoware_control_msgs::VehicleStatusStampedConstPtr &msg_ptr) override;
+  void processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr) override;
   std::unique_ptr<Ogre::ColourValue> setColorDependsOnVelocity(const double vel_max, const double cmd_vel);
   std::unique_ptr<Ogre::ColourValue> gradation(const QColor &color_min, const QColor &color_max,
                                                const double ratio);
@@ -63,7 +63,7 @@ private:
   const double meter_max_velocity_;
   const double meter_min_angle_;
   const double meter_max_angle_;
-  autoware_control_msgs::VehicleStatusStampedConstPtr last_msg_ptr_;
+  autoware_vehicle_msgs::VehicleStatusStampedConstPtr last_msg_ptr_;
 };
 
 } // namespace rviz_plugins

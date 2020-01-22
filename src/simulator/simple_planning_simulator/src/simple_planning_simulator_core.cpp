@@ -32,14 +32,15 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
 
   /* set pub sub topic name */
   pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/current_pose", 1);
-  pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_velocity", 1);
-  pub_vehicle_status_ = pnh_.advertise<autoware_control_msgs::VehicleStatusStamped>("output/status", 1);
+  pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_twist", 1);
+  pub_vehicle_status_ = pnh_.advertise<autoware_vehicle_msgs::VehicleStatusStamped>("output/status", 1);
   pub_steer_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering", 1);
-  pub_steer_wheel_deg_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering_wheel_deg", 1);
   pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
-  pub_velocity_kmph_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity_kmph", 1);
+  pub_turn_signal_ = nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
+  pub_shift_ = nh_.advertise<autoware_vehicle_msgs::Shift>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
+
 
   bool use_trajectory_for_z_position_source;
   pnh_.param("use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(true));
@@ -199,7 +200,14 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
     roll += (*rpy_norm_dist_ptr_)(*rand_engine_ptr_);
     pitch += (*rpy_norm_dist_ptr_)(*rand_engine_ptr_);
     yaw += (*rpy_norm_dist_ptr_)(*rand_engine_ptr_);
-    current_twist_.linear.x += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
+    if (current_twist_.linear.x >= 0.0)
+    {
+      current_twist_.linear.x += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
+    }
+    else
+    {
+      current_twist_.linear.x -= (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
+    }
     current_twist_.angular.z += (*angvel_norm_dist_ptr_)(*rand_engine_ptr_);
   }
 
@@ -210,12 +218,11 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   publishTF(current_pose_);
 
   /* publish vehicle_statue for steering vehicle */
-  autoware_control_msgs::VehicleStatusStamped vs;
+  autoware_vehicle_msgs::VehicleStatusStamped vs;
   vs.header.stamp = ros::Time::now();
   vs.header.frame_id = simulation_frame_id_;
   vs.status.velocity = vehicle_model_ptr_->getVx();
   vs.status.steering_angle = vehicle_model_ptr_->getSteer();
-  vs.status.steering_wheel_angle = vehicle_model_ptr_->getSteer() * sim_steering_gear_ratio_;
   if (add_measurement_noise_)
   {
     vs.status.velocity += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
@@ -228,24 +235,22 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   steer_msg.data = vs.status.steering_angle;
   pub_steer_.publish(steer_msg);
 
-  std_msgs::Float32 steer_wheel_deg_msg;
-  const double rad2deg = 180.0 / 3.14159265;
-  steer_wheel_deg_msg.data = vs.status.steering_wheel_angle * rad2deg;
-  pub_steer_wheel_deg_.publish(steer_wheel_deg_msg);
-
   std_msgs::Float32 velocity_msg;
   velocity_msg.data = current_twist_.linear.x;
   pub_velocity_.publish(velocity_msg);
 
-  std_msgs::Float32 velocity_kmph_msg;
-  const double mps2kmph = 3.6;
-  velocity_kmph_msg.data = current_twist_.linear.x * mps2kmph;
-  pub_velocity_kmph_.publish(velocity_kmph_msg);
+  autoware_vehicle_msgs::TurnSignal turn_signal_msg;
+  turn_signal_msg.data = autoware_vehicle_msgs::TurnSignal::NONE;
+  pub_turn_signal_.publish(turn_signal_msg);
+
+  autoware_vehicle_msgs::Shift shift_msg;
+  shift_msg.data = current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  pub_shift_.publish(shift_msg);
 }
 
-void Simulator::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStampedConstPtr &msg)
+void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr &msg)
 {
-  current_vehicle_cmd_ptr_ = std::make_shared<autoware_control_msgs::VehicleCommandStamped>(*msg);
+  current_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommandStamped>(*msg);
 
   if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER || vehicle_model_type_ == VehicleModelType::DELAY_STEER)
   {

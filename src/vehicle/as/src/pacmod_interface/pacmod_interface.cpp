@@ -36,8 +36,8 @@ PacmodInterface::PacmodInterface()
 
   // parameters for accel/brake map
   std::string csv_path_accel_map, csv_path_brake_map;
-  private_nh_.param<std::string>("csv_path_accel_map", csv_path_accel_map, std::string(""));
-  private_nh_.param<std::string>("csv_path_brake_map", csv_path_brake_map, std::string(""));
+  private_nh_.param<std::string>("csv_path_accel_map", csv_path_accel_map, std::string("empty"));
+  private_nh_.param<std::string>("csv_path_brake_map", csv_path_brake_map, std::string("empty"));
   if (!accel_map_.readAccelMapFromCSV(csv_path_accel_map))
   {
     ROS_ERROR("Cannot read accelmap. csv path = %s. stop calculation.", csv_path_accel_map.c_str());
@@ -100,14 +100,14 @@ void PacmodInterface::run()
   }
 }
 
-void PacmodInterface::callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStamped::ConstPtr &msg)
+void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStamped::ConstPtr &msg)
 {
   command_received_time_ = ros::Time::now();
-  vehicle_cmd_ptr_ = std::make_shared<autoware_control_msgs::VehicleCommandStamped>(*msg);
+  vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommandStamped>(*msg);
 }
-void PacmodInterface::callbackShiftCmd(const autoware_control_msgs::Shift::ConstPtr &msg)
+void PacmodInterface::callbackShiftCmd(const autoware_vehicle_msgs::Shift::ConstPtr &msg)
 {
-  shift_cmd_ptr_ = std::make_shared<autoware_control_msgs::Shift>(*msg);
+  shift_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::Shift>(*msg);
 }
 void PacmodInterface::callbackEngage(const std_msgs::BoolConstPtr &msg)
 {
@@ -301,28 +301,28 @@ double PacmodInterface::calculateVariableGearRatio(const double vel, const doubl
   return std::max(1e-5, vgr_coef_a_ + vgr_coef_b_ * vel * vel - vgr_coef_c_ * steer_wheel);
 }
 
-uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_control_msgs::Shift &shift)
+uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift)
 {
-  if (shift.shift == autoware_control_msgs::Shift::PARKING)
+  if (shift.data == autoware_vehicle_msgs::Shift::PARKING)
   {
     return pacmod_msgs::SystemCmdInt::SHIFT_PARK;
   }
-  if (shift.shift == autoware_control_msgs::Shift::REVERSE)
+  if (shift.data == autoware_vehicle_msgs::Shift::REVERSE)
   {
     return pacmod_msgs::SystemCmdInt::SHIFT_REVERSE;
 
   }
-  if (shift.shift == autoware_control_msgs::Shift::NEUTRAL)
+  if (shift.data == autoware_vehicle_msgs::Shift::NEUTRAL)
   {
     return pacmod_msgs::SystemCmdInt::SHIFT_NEUTRAL;
 
   }
-  if (shift.shift == autoware_control_msgs::Shift::DRIVE)
+  if (shift.data == autoware_vehicle_msgs::Shift::DRIVE)
   {
     return pacmod_msgs::SystemCmdInt::SHIFT_FORWARD;
 
   }
-  if (shift.shift == autoware_control_msgs::Shift::LOW)
+  if (shift.data == autoware_vehicle_msgs::Shift::LOW)
   {
     return pacmod_msgs::SystemCmdInt::SHIFT_LOW;
   }

@@ -31,6 +31,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -44,7 +45,6 @@
 
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_control_msgs/ControlCommandStamped.h>
-#include <autoware_control_msgs/VehicleStatusStamped.h>
 
 #include "mpc_follower/mpc_utils.h"
 #include "mpc_follower/mpc_trajectory.h"
@@ -78,9 +78,9 @@ private:
   ros::Publisher pub_steer_vel_ctrl_cmd_; //!< @brief topic publisher for control command
   ros::Publisher pub_twist_cmd_;          //!< @brief topic publisher for twist command
   ros::Subscriber sub_ref_path_;          //!< @brief topic subscriber for reference waypoints
-  ros::Subscriber sub_vehicle_status_;    //!< @brief subscriber for currrent vehicle status
+  ros::Subscriber sub_steering_;          //!< @brief subscriber for currrent steering
   ros::Subscriber sub_current_vel_;
-  ros::Timer timer_control_;              //!< @brief timer for control command computation
+  ros::Timer timer_control_; //!< @brief timer for control command computation
 
   MPCTrajectory ref_traj_;                                   //!< @brief reference trajectory to be followed
   Butterworth2dFilter lpf_steering_cmd_;                     //!< @brief lowpass filter for steering command
@@ -121,7 +121,7 @@ private:
     double weight_terminal_lat_error;               //< @brief terminal lateral error weight in matrix Q
     double weight_terminal_heading_error;           //< @brief terminal heading error weight in matrix Q
     double zero_ff_steer_deg;                       //< @brief threshold that feed-forward angle becomes zero
-    double delay_compensation_time;                //< @brief delay time for steering input to be compensated
+    double delay_compensation_time;                 //< @brief delay time for steering input to be compensated
   };
   MPCParam mpc_param_; // for mpc design parameter
 
@@ -135,7 +135,7 @@ private:
   double yaw_error_prev_;     //< @brief previous lateral error for derivative
 
   tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+  tf2_ros::TransformListener tf_listener_; //!< @brief tf listener
 
   /**
    * @brief compute and publish control command for path follow with a constant control period
@@ -151,11 +151,11 @@ private:
    * @brief update current_pose from tf
    */
   void updateCurrentPose();
- 
+
   /**
    * @brief set curent_steer with receved message
    */
-  void callbackVehicleStatus(const autoware_control_msgs::VehicleStatusStamped::ConstPtr &msg);
+  void callbackSteering(const std_msgs::Float32 &msg);
 
   /**
    * @brief set current_velocity with receved message
@@ -179,14 +179,12 @@ private:
    */
   bool calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd);
 
-
-
   /* debug */
-  bool show_debug_info_;      //!< @brief flag to display debug info
+  bool show_debug_info_; //!< @brief flag to display debug info
 
   ros::Publisher pub_debug_marker_;
-  ros::Publisher pub_debug_values_;               //!< @brief publisher for debug info
-  ros::Publisher pub_debug_mpc_calc_time_;        //!< @brief publisher for debug info
+  ros::Publisher pub_debug_values_;        //!< @brief publisher for debug info
+  ros::Publisher pub_debug_mpc_calc_time_; //!< @brief publisher for debug info
 
   ros::Subscriber sub_estimate_twist_;         //!< @brief subscriber for /estimate_twist for debug
   geometry_msgs::TwistStamped estimate_twist_; //!< @brief received /estimate_twist for debug

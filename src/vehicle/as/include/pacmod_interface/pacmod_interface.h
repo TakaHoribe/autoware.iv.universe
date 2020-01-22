@@ -37,7 +37,9 @@
 #include <pacmod_msgs/GlobalRpt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_control_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/TurnSignal.h>
 
 #include <accel_map_converter/accel_map.h>
 #include <accel_map_converter/brake_map.h>
@@ -101,8 +103,8 @@ private:
   double max_steering_wheel_;      // max steering wheel angle [rad]
 
   /* input values */
-  std::shared_ptr<autoware_control_msgs::VehicleCommandStamped> vehicle_cmd_ptr_;
-  std::shared_ptr<autoware_control_msgs::Shift> shift_cmd_ptr_;
+  std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> vehicle_cmd_ptr_;
+  std::shared_ptr<autoware_vehicle_msgs::Shift> shift_cmd_ptr_;
 
   std::shared_ptr<pacmod_msgs::SystemRptFloat> steer_wheel_rpt_ptr_; // [rad]
   std::shared_ptr<pacmod_msgs::WheelSpeedRpt> wheel_speed_rpt_ptr_;  // [m/s]
@@ -119,8 +121,8 @@ private:
   bool acc_map_initialized_;
 
   /* callbacks */
-  void callbackVehicleCmd(const autoware_control_msgs::VehicleCommandStamped::ConstPtr &msg);
-  void callbackShiftCmd(const autoware_control_msgs::Shift::ConstPtr &msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStamped::ConstPtr &msg);
+  void callbackShiftCmd(const autoware_vehicle_msgs::Shift::ConstPtr &msg);
   void callbackEngage(const std_msgs::BoolConstPtr &msg);
   void callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr &steer_wheel_rpt,
                          const pacmod_msgs::WheelSpeedRptConstPtr &wheel_speed_rpt,
@@ -134,7 +136,7 @@ private:
   double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt, const pacmod_msgs::SystemRptInt& shift_rpt);
   bool calculateAccelMap(const double curr_wheel_speed, const double &desired_acc, double &desired_throttle, double &desired_brake);
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
-  uint16_t toPacmodShiftCmd(const autoware_control_msgs::Shift &shift);
+  uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift);
 };
 
 #endif
