@@ -33,8 +33,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   /* set pub sub topic name */
   pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/current_pose", 1);
   pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_twist", 1);
-  pub_vehicle_status_ = pnh_.advertise<autoware_vehicle_msgs::VehicleStatusStamped>("output/status", 1);
-  pub_steer_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/steering", 1);
+  pub_steer_ = nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
   pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
   pub_turn_signal_ = nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
   pub_shift_ = nh_.advertise<autoware_vehicle_msgs::Shift>("/vehicle/status/shift", 1);
@@ -217,24 +216,18 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   publishPoseTwist(current_pose_, current_twist_);
   publishTF(current_pose_);
 
-  /* publish vehicle_statue for steering vehicle */
-  autoware_vehicle_msgs::VehicleStatusStamped vs;
-  vs.header.stamp = ros::Time::now();
-  vs.header.frame_id = simulation_frame_id_;
-  vs.status.velocity = vehicle_model_ptr_->getVx();
-  vs.status.steering_angle = vehicle_model_ptr_->getSteer();
+  /* publish steering */
+  autoware_vehicle_msgs::Steering steer_msg;
+  steer_msg.header.frame_id = simulation_frame_id_;
+  steer_msg.header.stamp = ros::Time::now();
+  steer_msg.data =  vehicle_model_ptr_->getSteer();
   if (add_measurement_noise_)
   {
-    vs.status.velocity += (*vel_norm_dist_ptr_)(*rand_engine_ptr_);
-    vs.status.steering_angle += (*steer_norm_dist_ptr_)(*rand_engine_ptr_);
+    steer_msg.data += (*steer_norm_dist_ptr_)(*rand_engine_ptr_);
   }
-  pub_vehicle_status_.publish(vs);
-
-  /* float info publishers */
-  std_msgs::Float32 steer_msg;
-  steer_msg.data = vs.status.steering_angle;
   pub_steer_.publish(steer_msg);
 
+  /* float info publishers */
   std_msgs::Float32 velocity_msg;
   velocity_msg.data = current_twist_.linear.x;
   pub_velocity_.publish(velocity_msg);

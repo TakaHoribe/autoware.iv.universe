@@ -15,6 +15,7 @@ find_package(
   tf2_ros
   autoware_planning_msgs
   autoware_control_msgs
+  autoware_vehicle_msgs
 )
 
 catkin_package(
@@ -28,6 +29,7 @@ catkin_package(
     tf2_ros
     autoware_planning_msgs
     autoware_control_msgs
+    autoware_vehicle_msgs
 )
 
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")

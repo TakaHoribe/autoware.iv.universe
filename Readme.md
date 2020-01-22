@@ -27,6 +27,29 @@ front_overhang: 1.29 # between front wheel center and vehicle front
 rear_overhang: 1.1 # between rear wheel center and vehicle rear 
 vehicle_height: 2.0
 ```
+In src/sensing/util/sensing_launch/data/traffic_light_camera.yaml
+```
+image_width: 1920
+image_height: 1080
+camera_name: traffic_light/camera
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [2410.755261, 0.000000, 922.621401, 0.000000, 2403.573140, 534.752500, 0.000000, 0.000000, 1.000000]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.126600, 0.152594, 0.002432, -0.001244, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 1.000000]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [2370.254883, 0.000000, 920.136018, 0.000000, 0.000000, 2388.885254, 535.599668, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]
+```
 
 ### Run
 1. launch Autoware
