@@ -10,7 +10,10 @@
         <remap from="~input/pedestrian/twist" to="initial_pedestrian_twist" />
         <remap from="~input/car/pose" to="initial_car_pose" />
         <remap from="~input/car/twist" to="initial_car_twist" />
+        <remap from="~input/object_id" to="object_id" />
+        <remap from="~input/object_reset_id" to="reset_object_id" />
         <param name="~velocity" value="1.0" />
+        <param name="~visible_range" value="300" />
     </node>
     <include file="$(find dynamic_object_visualization)/launch/dynamic_object_visualizer.launch">
         <arg name="input" value="/perception/detection/objects" />

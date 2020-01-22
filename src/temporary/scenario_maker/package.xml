@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>dummy_perception_publisher</name>
+  <name>scenario_maker</name>
   <version>0.0.0</version>
-  <description>The dummy_perception_publisher package</description>
+  <description>The scenario_maker package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="tier4@todo.todo">tier4</maintainer>
+  <maintainer email="kimura@todo.todo">kimura</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/dummy_perception_publisher</url> -->
+  <!-- <url type="website">http://wiki.ros.org/scenario_maker</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -49,33 +49,8 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>tf2_ros</build_depend>
-  <build_depend>autoware_perception_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>message_filters</build_depend>
-  <build_export_depend>roscpp</build_export_depend>
-  <build_export_depend>sensor_msgs</build_export_depend>
-  <build_export_depend>tf2</build_export_depend>
-  <build_export_depend>tf2_geometry_msgs</build_export_depend>
-  <build_export_depend>tf2_ros</build_export_depend>
-  <build_export_depend>autoware_perception_msgs</build_export_depend>
-  <build_export_depend>pcl_ros</build_export_depend>
-  <build_export_depend>message_filters</build_export_depend>
-  <exec_depend>roscpp</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>tf2</exec_depend>
-  <exec_depend>tf2_geometry_msgs</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>autoware_perception_msgs</exec_depend>
-  <exec_depend>pcl_ros</exec_depend>
-  <exec_depend>message_filters</exec_depend>
-  
-  
+
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
