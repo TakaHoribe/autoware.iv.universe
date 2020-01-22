@@ -458,10 +458,6 @@ void MotionVelocityPlanner::replanVelocity(const autoware_planning_msgs::Traject
 
   /* debug */
   publishPlanningJerk(stop_planning_jerk); // for debug
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  if (show_figure_)
-    MotionVelocityPlanner::plotAll(stop_idx_zero_vel, input_closest, input, latacc_filtered_traj, moveave_filtered_traj, jerk_filtered_traj, output);
-#endif
 }
 
 void MotionVelocityPlanner::publishIsEmergency(const double &jerk_value) const
@@ -977,100 +973,6 @@ void MotionVelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, au
     }
   }
 }
-
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-void MotionVelocityPlanner::plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &base,
-                              const autoware_planning_msgs::Trajectory &latacc_filtered, const autoware_planning_msgs::Trajectory &moveave_filtered,
-                              const autoware_planning_msgs::Trajectory &jerk_filtered,
-                              const autoware_planning_msgs::Trajectory &final) const
-{
-  matplotlibcpp::clf();
-
-  /* stop line */
-  int stop_idx_plot[] = { stop_idx_zero_vel, stop_idx_zero_vel };
-  int closest_idx_plot[] = { input_closest, input_closest };
-  double y_plot1[] = { 0.0, 10.0 };
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(stop_idx_plot, y_plot1, "k--");
-  matplotlibcpp::plot(closest_idx_plot, y_plot1, "k");
-  double y_plot2[] = { planning_param_.min_decel, planning_param_.max_accel };
-  matplotlibcpp::subplot(3, 1, 2);
-  matplotlibcpp::plot(stop_idx_plot, y_plot2, "k--");
-  matplotlibcpp::plot(closest_idx_plot, y_plot2, "k");
-  double y_plot3[] = { planning_param_.dec_jerk_nominal, planning_param_.acc_jerk };
-  matplotlibcpp::subplot(3, 1, 3);
-  matplotlibcpp::plot(stop_idx_plot, y_plot3, "k--");
-  matplotlibcpp::plot(closest_idx_plot, y_plot3, "k");
-
-  /* velocity */
-  MotionVelocityPlanner::plotWaypoint(base, "r", "base");
-  MotionVelocityPlanner::plotWaypoint(latacc_filtered, "m", "latacc_filtered");
-  MotionVelocityPlanner::plotWaypoint(moveave_filtered, "c", "moveave_filtered");
-  MotionVelocityPlanner::plotWaypoint(jerk_filtered, "g", "jerk_filtered");
-  MotionVelocityPlanner::plotWaypoint(final, "b", "filtered_stoped");
-  MotionVelocityPlanner::plotMotionVelocity("k--");
-  MotionVelocityPlanner::plotMotionAcceleration("c");
-  MotionVelocityPlanner::plotMotionJerk("m");
-
-  std::vector<double> xv, yv;
-  xv.push_back((double)input_closest);
-  yv.push_back(std::fabs(current_velocity_ptr_->twist.linear.x));
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(xv, yv, "k*");  // current vehicle velocity
-  yv.clear();
-  yv.push_back(std::fabs(replanned_traj_.points.at(input_closest).twist.linear.x));
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(xv, yv, "bo");  // current planning initial velocity
-  matplotlibcpp::ylim(0.0, 5.0);
-  matplotlibcpp::pause(.01);  // plot all
-}
-
-void MotionVelocityPlanner::plotWaypoint(const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str,
-                                   const std::string &label_str) const
-{
-  // std::vector<double> dist;
-  // calcWaypointsArclength(trajectory, dist);
-  
-  std::vector<double> vec;
-  for (const auto &wp : trajectory.points)
-  {
-    vec.push_back(wp.twist.linear.x);
-  }
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::named_plot(label_str, vec, color_str);
-}
-void MotionVelocityPlanner::plotMotionVelocity(const std::string &color_str) const
-{
-  std::vector<double> vec;
-  for (int i = 0; i < (int)replanned_traj_motion_.size(); ++i)
-  {
-    vec.push_back(replanned_traj_motion_.at(i).vel);
-  }
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(vec, color_str);
-}
-void MotionVelocityPlanner::plotMotionAcceleration(const std::string &color_str) const
-{
-  std::vector<double> vec;
-  for (int i = 0; i < (int)replanned_traj_motion_.size(); ++i)
-  {
-    vec.push_back(replanned_traj_motion_.at(i).acc);
-  }
-  matplotlibcpp::subplot(3, 1, 2);
-  matplotlibcpp::plot(vec, color_str);
-}
-
-void MotionVelocityPlanner::plotMotionJerk(const std::string &color_str) const
-{
-  std::vector<double> vec;
-  for (int i = 0; i < (int)replanned_traj_motion_.size(); ++i)
-  {
-    vec.push_back(replanned_traj_motion_.at(i).jerk);
-  }
-  matplotlibcpp::subplot(3, 1, 3);
-  matplotlibcpp::plot(vec, color_str);
-}
-#endif
 
 void MotionVelocityPlanner::publishClosestVelocity(const double &vel) const
 {

@@ -5,7 +5,7 @@
   <!-- debug flags -->
   <arg name="show_debug_info" default="false"/>
   <arg name="show_debug_info_all" default="false"/>
-  <arg name="show_figure" default="false"/>
+  <arg name="publish_debug_trajs" default="true"/>
 
 
   <!-- planning parameters -->
@@ -39,7 +39,7 @@
 
     <param name="show_debug_info" value="$(arg show_debug_info)"/>
     <param name="show_debug_info_all" value="$(arg show_debug_info_all)"/>
-    <param name="show_figure" value="$(arg show_figure)"/>
+    <param name="publish_debug_trajs" value="$(arg publish_debug_trajs)"/>
 
     <param name="max_velocity" value="$(arg max_velocity)"/>
     <param name="max_accel" value="$(arg max_accel)"/>

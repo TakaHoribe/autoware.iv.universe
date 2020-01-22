@@ -33,11 +33,6 @@
 #include <stop_planner/planning_utils.h>
 
 
-// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-#include "matplotlibcpp.h"
-#endif
-
 class MotionVelocityPlanner
 {
 public:
@@ -249,13 +244,4 @@ private:
   ros::Publisher pub_debug_planning_jerk_;
   void publishClosestVelocity(const double &vel) const;
   void publishPlanningJerk(const double &jerk) const;
-
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  void plotMotionVelocity(const std::string &color_str) const;
-  void plotMotionAcceleration(const std::string &color_str) const;
-  void plotMotionJerk(const std::string &color_str) const;
-  void plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &base,
-               const autoware_planning_msgs::Trajectory &latacc_base, const autoware_planning_msgs::Trajectory &moveave_filtered,
-               const autoware_planning_msgs::Trajectory &jerk_filtered, const autoware_planning_msgs::Trajectory &final) const;
-#endif
 };

@@ -33,11 +33,6 @@
 #include <osqp_interface/osqp_interface.h>
 
 
-// #define USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-#include "matplotlibcpp.h"
-#endif
-
 class MotionVelocityPlanner
 {
 public:
@@ -69,6 +64,7 @@ private:
   bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
   bool show_figure_;          // for plot visualize
+  bool publish_debug_trajs_;
 
   struct MotionVelocityPlannerParam
   {
@@ -138,15 +134,10 @@ private:
   }
 
   /* debug */
+  ros::Publisher pub_trajectory_raw_;
+  ros::Publisher pub_trajectory_vel_lim_;
+  ros::Publisher pub_trajectory_latcc_filtered_;
+  ros::Publisher pub_trajectory_resampled_;
   ros::Publisher debug_closest_velocity_;
   void publishClosestVelocity(const double &vel) const;
-
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  void plotWaypoint(const double s_max, const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str, const std::string &label_str) const;
-  void plotVelocity(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotAcceleration(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotJerk(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const;
-  void plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &t1,
-               const autoware_planning_msgs::Trajectory &t2, const autoware_planning_msgs::Trajectory &t3) const;
-#endif
 };

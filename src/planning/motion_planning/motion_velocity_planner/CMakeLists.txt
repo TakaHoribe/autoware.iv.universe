@@ -22,7 +22,6 @@ generate_dynamic_reconfigure_options(cfg/MotionVelocityPlanner.cfg)
 
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(PythonLibs REQUIRED) # for matplotlib
 
 
 catkin_package(
@@ -42,7 +41,6 @@ include_directories(
 include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
-  ${PYTHON_INCLUDE_DIRS}  # for matplotlib
 )
 
 add_executable(motion_velocity_planner src/motion_velocity_planner.cpp src/motion_velocity_planner_utils.cpp src/interpolate.cpp)
@@ -52,3 +50,4 @@ target_link_libraries(motion_velocity_planner ${catkin_LIBRARIES} ${PYTHON_LIBRA
 add_executable(motion_velocity_planner_osqp src/motion_velocity_planner_osqp.cpp src/motion_velocity_planner_utils.cpp src/interpolate.cpp)
 add_dependencies(motion_velocity_planner_osqp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} motion_velocity_planner_gencfg)
 target_link_libraries(motion_velocity_planner_osqp ${catkin_LIBRARIES} ${PYTHON_LIBRARIES})
+

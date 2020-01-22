@@ -43,6 +43,7 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("show_debug_info", show_debug_info_, bool(true));
   pnh_.param("show_debug_info_all", show_debug_info_all_, bool(false));
   pnh_.param("show_figure", show_figure_, bool(false));
+  pnh_.param("publish_debug_trajs", publish_debug_trajs_, bool(false));
 
   pnh_.param("pseudo_jerk_weight", qp_param_.pseudo_jerk_weight, double(1000.0));
   pnh_.param("over_v_weight", qp_param_.over_v_weight, double(100000.0));
@@ -61,6 +62,10 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
 
   /* debug */
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
+  pub_trajectory_raw_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_raw", 1);
+  pub_trajectory_vel_lim_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_external_velocity_limitted", 1);
+  pub_trajectory_latcc_filtered_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_lateral_acc_filtered", 1);
+  pub_trajectory_resampled_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_time_resampled", 1);
 
   /* wait to get vehicle position */
   while (ros::ok())
@@ -76,6 +81,8 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
       continue;
     }
   }
+
+
 
 };
 MotionVelocityPlanner::~MotionVelocityPlanner(){};
@@ -165,6 +172,10 @@ void MotionVelocityPlanner::run()
   DEBUG_INFO("[extractPathAroundIndex] : base_raw.size() = %lu, base_closest = %d, "
              "base_raw_extracted.size() = %lu",
              base_traj_raw_ptr_->points.size(), base_raw_closest, base_traj_extracted.points.size());
+  if (publish_debug_trajs_)
+  {
+    pub_trajectory_raw_.publish(base_traj_extracted);
+  }
 
   /* (3) Apply external velocity limit */
   if (external_velocity_limit_ptr_ != nullptr)
@@ -174,13 +185,20 @@ void MotionVelocityPlanner::run()
                base_traj_raw_ptr_->points.at(base_raw_closest).twist.linear.x);
     vpu::maximumVelocityFilter(external_velocity_limit_ptr_->data, base_traj_extracted);
   }
+  if (publish_debug_trajs_)
+  {
+    pub_trajectory_vel_lim_.publish(base_traj_extracted);
+  }
 
   /* apply lateral acceleration filter */
   const double curvature_calc_dist = 3.0;
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / std::max(0.1, 0.001)), 1);
   autoware_planning_msgs::Trajectory base_traj_latacc_filtered;
   lateralAccelerationFilter(base_traj_extracted, planning_param_.max_lateral_accel, idx_dist, /* out */ base_traj_latacc_filtered);
-
+  if (publish_debug_trajs_)
+  {
+    pub_trajectory_latcc_filtered_.publish(base_traj_latacc_filtered);
+  }
 
   /* (4) Resample extructed-waypoints with interpolation */
   autoware_planning_msgs::Trajectory base_traj_resampled;
@@ -190,7 +208,10 @@ void MotionVelocityPlanner::run()
     return;
   }
   int base_traj_resampled_closest = vpu::calcClosestWaypoint(base_traj_resampled, current_pose_ptr_->pose);
-
+  if (publish_debug_trajs_)
+  {
+    pub_trajectory_resampled_.publish(base_traj_resampled);
+  }
 
   /* publish stop distance */
   publishStopDistance(base_traj_resampled, base_traj_resampled_closest);
@@ -240,17 +261,6 @@ void MotionVelocityPlanner::run()
 
   /* for debug */
   MotionVelocityPlanner::publishClosestVelocity(output_trajectory.points.at(base_traj_resampled_closest).twist.linear.x);
-
-
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-  if (show_figure_)
-  {
-    int stop_idx_zero_vel = 0;
-    vpu::searchZeroVelocityIdx(output_trajectory, stop_idx_zero_vel);
-    MotionVelocityPlanner::plotAll(stop_idx_zero_vel, base_traj_resampled_closest,
-                                   base_traj_extracted, base_traj_latacc_filtered, output_trajectory);
-  }
-#endif
 
   auto t_end = std::chrono::system_clock::now();
   double elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count() * 1.0e-6;
@@ -647,129 +657,6 @@ void MotionVelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, co
                 current_velocity_ptr_->twist.linear.x, dist_to_stopline, move_dist_min, stop_idx, closest);
   }
 }
-
-#ifdef USE_MATPLOTLIB_FOR_VELOCITY_VIZ
-void MotionVelocityPlanner::plotAll(const int &stop_idx_zero_vel, const int &input_closest, const autoware_planning_msgs::Trajectory &t1,
-                                    const autoware_planning_msgs::Trajectory &t2, const autoware_planning_msgs::Trajectory &t3) const
-{
-  matplotlibcpp::clf();
-
-  std::vector<double> arclength;
-  vpu::calcWaypointsArclength(t3, arclength);
-  const double s_max = arclength.back();
-
-  /* stop line */
-  double stop_point_plot[] = { arclength.at(stop_idx_zero_vel), arclength.at(stop_idx_zero_vel) };
-  double closest_point_plot[] = { arclength.at(input_closest), arclength.at(input_closest) };
-  double y_plot1[] = { 0.0, 10.0 };
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(stop_point_plot, y_plot1, "k--");
-  matplotlibcpp::plot(closest_point_plot, y_plot1, "k");
-  double y_plot2[] = { -2.0, 2.0 };
-  matplotlibcpp::subplot(3, 1, 2);
-  matplotlibcpp::plot(stop_point_plot, y_plot2, "k--");
-  matplotlibcpp::plot(closest_point_plot, y_plot2, "k");
-  double y_plot3[] = { -1.0, 1.0 };
-  matplotlibcpp::subplot(3, 1, 3);
-  matplotlibcpp::plot(stop_point_plot, y_plot3, "k--");
-  matplotlibcpp::plot(closest_point_plot, y_plot3, "k");
-
-  /* velocity */
-  // printf("------------------ base extructed --------------\n");
-  MotionVelocityPlanner::plotWaypoint(s_max, t1, "r", "base");
-  // printf("------------------ lateral acc limit --------------\n");
-  MotionVelocityPlanner::plotWaypoint(s_max, t2, "m--", "latacc_filtered");
-  // printf("------------------ optimized --------------\n");
-  MotionVelocityPlanner::plotWaypoint(s_max, t3, "b", "optimized");
-  MotionVelocityPlanner::plotAcceleration(s_max, "c", t3);
-  MotionVelocityPlanner::plotJerk(s_max, "m", t3);
-
-  std::vector<double> xv, yv;
-  xv.push_back(arclength.at(input_closest));
-  yv.push_back(std::fabs(current_velocity_ptr_->twist.linear.x));
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(xv, yv, "k*");  // current vehicle velocity
-  yv.clear();
-  yv.push_back(std::fabs(t3.points.at(input_closest).twist.linear.x));
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(xv, yv, "bo");  // current planning initial velocity
-  matplotlibcpp::ylim(0.0, 15.0);
-  matplotlibcpp::pause(.01);  // plot all
-}
-
-void MotionVelocityPlanner::plotWaypoint(const double s_max, const autoware_planning_msgs::Trajectory &trajectory, const std::string &color_str,
-                                   const std::string &label_str) const
-{
-  std::vector<double> arclength;
-  vpu::calcWaypointsArclength(trajectory, arclength);
-  // printf("s_max = %f, arclength.back() = %f\n", s_max, arclength.back());
-
-  std::vector<double> plot_vel, plot_arclength;
-  for (unsigned int i = 0; i < trajectory.points.size(); ++i)
-  {
-    // printf("i = %d, arclength.at(i) = %f, trajectory.points.at(i).twist.linear.x = %f\n",
-    //        i, arclength.at(i), trajectory.points.at(i).twist.linear.x);
-    plot_arclength.push_back(arclength.at(i));
-    plot_vel.push_back(trajectory.points.at(i).twist.linear.x);
-    if (arclength.at(i) > s_max)
-    {
-      break;
-    }
-  }
-
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::named_plot(label_str, plot_arclength, plot_vel, color_str);
-}
-void MotionVelocityPlanner::plotVelocity(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const
-{
-  std::vector<double> vec;
-  for (const auto &p : traj.points)
-  {
-    vec.push_back(p.twist.linear.x);
-  }
-  matplotlibcpp::subplot(3, 1, 1);
-  matplotlibcpp::plot(vec, color_str);
-}
-void MotionVelocityPlanner::plotAcceleration(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const
-{
-  std::vector<double> arclength;
-  vpu::calcWaypointsArclength(traj, arclength);
-
-  std::vector<double> plot_acc, plot_arclength;
-  for (unsigned int i = 0; i < traj.points.size(); ++i)
-  {
-    plot_arclength.push_back(arclength.at(i));
-    plot_acc.push_back(traj.points.at(i).accel.linear.x);
-    if (arclength.at(i) > s_max)
-    {
-      break;
-    }
-  }
-
-  matplotlibcpp::subplot(3, 1, 2);
-  matplotlibcpp::plot(plot_arclength, plot_acc, color_str);
-}
-
-void MotionVelocityPlanner::plotJerk(const double s_max, const std::string &color_str, const autoware_planning_msgs::Trajectory &traj) const
-{
-
-  std::vector<double> arclength;
-  vpu::calcWaypointsArclength(traj, arclength);
-
-  std::vector<double> plot_jerk, plot_arclength;
-  for (unsigned int i = 0; i < traj.points.size(); ++i)
-  {
-    plot_arclength.push_back(arclength.at(i));
-    plot_jerk.push_back(vpu::getTrajectoryJerk(traj, i));
-    if (arclength.at(i) > s_max)
-    {
-      break;
-    }
-  }
-  matplotlibcpp::subplot(3, 1, 3);
-  matplotlibcpp::plot(plot_arclength, plot_jerk, color_str);
-}
-#endif
 
 void MotionVelocityPlanner::publishClosestVelocity(const double &vel) const
 {
