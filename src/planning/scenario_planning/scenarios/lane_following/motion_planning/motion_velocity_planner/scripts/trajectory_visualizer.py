@@ -16,10 +16,6 @@ class TrajectoryVisualizer():
         self.trajectory_time_resamped = Trajectory()
         self.trajectory_final = Trajectory()
 
-        self.v_list = []
-
-        #subscriberでは????????????:::TODO by kimura
-
         self.substatus1 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_external_velocity_limitted", Trajectory, self.CallBackTrajExVelLim, queue_size=1, tcp_nodelay=True)
         self.substatus2 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_lateral_acc_filtered", Trajectory, self.CallBackTrajLatAccFiltered, queue_size=1, tcp_nodelay=True)
         self.substatus3 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_raw", Trajectory, self.CallBackTrajRaw, queue_size=1, tcp_nodelay=True)
@@ -50,7 +46,6 @@ class TrajectoryVisualizer():
         if len(traj.points) > 0:
             s_arr.append(s_sum)
 
-        #for p in traj.points:
         for i in range(1, len(traj.points)):
             p0 = traj.points[i-1]
             p1 = traj.points[i]
@@ -118,23 +113,23 @@ class TrajectoryVisualizer():
         return j_arr
 
     def plotTrajectory(self):
-        #x = []; x.append(data)..........
         plt.clf()
         ax1 = plt.subplot(3,1,1)#row, col, index(<raw*col)
-        ax1.plot(self.CalcArcLength(self.trajectory_external_velocity_limitted), self.ToVelList(self.trajectory_external_velocity_limitted), label="trajectory_external_velocity_limitted")
-        ax1.plot(self.CalcArcLength(self.trajectory_lateral_acc_filtered), self.ToVelList(self.trajectory_lateral_acc_filtered), label="trajectory_lateral_acc_filtered")
-        ax1.plot(self.CalcArcLength(self.trajectory_raw), self.ToVelList(self.trajectory_raw), label="trajectory_raw")
-        ax1.plot(self.CalcArcLength(self.trajectory_time_resamped), self.ToVelList(self.trajectory_time_resamped), label="trajectory_time_resamped")
-        ax1.plot(self.CalcArcLength(self.trajectory_final), self.ToVelList(self.trajectory_final), label="trajectory_final")
-        #ax1.plot(x, y2, label="sample2")
+        ax1.plot(self.CalcArcLength(self.trajectory_raw), self.ToVelList(self.trajectory_raw), label="0raw")
+        ax1.plot(self.CalcArcLength(self.trajectory_external_velocity_limitted), self.ToVelList(self.trajectory_external_velocity_limitted), label="1external_velocity_limitted")
+        ax1.plot(self.CalcArcLength(self.trajectory_lateral_acc_filtered), self.ToVelList(self.trajectory_lateral_acc_filtered), label="2lateral_acc_filtered")
+        ax1.plot(self.CalcArcLength(self.trajectory_time_resamped), self.ToVelList(self.trajectory_time_resamped), label="3time_resamped")
+        ax1.plot(self.CalcArcLength(self.trajectory_final), self.ToVelList(self.trajectory_final), label="4final")
         ax1.set_title("sample2")
         ax1.legend()
 
         ax2 = plt.subplot(3,1,2)
-        ax2.plot(self.CalcArcLength(self.trajectory_final), self.CalcAcceleration(self.trajectory_final), label="trajectory_final")
+        ax2.plot(self.CalcArcLength(self.trajectory_final), self.CalcAcceleration(self.trajectory_final), label="final")
+        # ax2.legend()
 
         ax3 = plt.subplot(3,1,3)
-        ax3.plot(self.CalcArcLength(self.trajectory_final), self.CalcJerk(self.trajectory_final), label="trajectory_final")
+        ax3.plot(self.CalcArcLength(self.trajectory_final), self.CalcJerk(self.trajectory_final), label="final")
+        # ax3.legend()
 
         #plt.show()
         plt.pause(.01)
