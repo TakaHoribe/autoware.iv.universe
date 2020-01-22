@@ -54,6 +54,20 @@ private:
   tf2_ros::TransformListener tf_listener_;
 };
 
+struct BoolStamped
+{
+  BoolStamped(bool data)
+  {
+    data = data;
+  }
+  BoolStamped()
+  {
+    data = false;
+  }
+  bool data;
+  ros::Time stamp;
+};
+
 class SingletonDataManager
 {
 private:
@@ -81,7 +95,8 @@ private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
-  bool lane_change_approval_;
+  BoolStamped lane_change_approval_;
+  BoolStamped force_lane_change_;
 
   // ROS parameters
   LaneChangerParameters parameters_;
@@ -97,6 +112,7 @@ private:
   void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
   void setLaneChangerParameters(const LaneChangerParameters& parameters);
   void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
+  void forceLaneChangeSignalCallback(const std_msgs::Bool& input_approval_msg);
 
   friend class LaneChanger;
 
@@ -109,6 +125,7 @@ public:
                      lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr);
   bool getLaneChangerParameters(LaneChangerParameters& parameters);
   bool getLaneChangeApproval();
+  bool getForceLaneChangeSignal();
 };
 }  // namespace lane_change_planner
 

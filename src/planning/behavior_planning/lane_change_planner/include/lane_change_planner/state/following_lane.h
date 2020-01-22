@@ -33,10 +33,12 @@ private:
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
   bool lane_change_approved_;
+  bool force_lane_change_;
 
   // State transition conditions
   bool isVehicleInPreferredLane() const;
   bool isTooCloseToDeadEnd() const;
+  bool laneChangeForcedByOperator() const;
   bool isLaneChangeable() const;
 
   // minor conditions
