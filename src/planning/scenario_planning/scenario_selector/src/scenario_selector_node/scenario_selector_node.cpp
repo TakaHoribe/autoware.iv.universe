@@ -117,7 +117,7 @@ bool isNearTrajectoryEnd(const autoware_planning_msgs::Trajectory::ConstPtr& tra
 Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
   if (scenario == autoware_planning_msgs::Scenario::LaneFollowing) return input_lane_following_;
   if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
-  throw std::invalid_argument("[scenario_selector] invalid scenario argument: " + scenario);
+  throw std::invalid_argument("invalid scenario argument: " + scenario);
 }
 
 std::string ScenarioSelectorNode::selectScenarioByPosition() {
@@ -175,8 +175,7 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
     current_scenario_ = selectScenarioByPosition();
 
     if (current_scenario_ != prev_scenario)
-      ROS_INFO_STREAM("[scenario_selector] scenario changed: " << prev_scenario << " -> "
-                                                               << current_scenario_);
+      ROS_INFO_STREAM("scenario changed: " << prev_scenario << " -> " << current_scenario_);
   }
 
   scenario.current_scenario = current_scenario_;
@@ -283,4 +282,14 @@ ScenarioSelectorNode::ScenarioSelectorNode()
 
   // Timer Callback
   timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &ScenarioSelectorNode::onTimer, this);
+
+  // Wait for first tf
+  while (ros::ok()) {
+    try {
+      tf_buffer_.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(10.0));
+      break;
+    } catch (tf2::TransformException ex) {
+      ROS_DEBUG("waiting for initial pose...");
+    }
+  }
 }

@@ -76,6 +76,16 @@ void CostmapGenerator::init() {
   private_nh_.param<int>("size_of_expansion_kernel", size_of_expansion_kernel_, 9);
 
   initGridmap();
+
+  // Wait for first tf
+  while (ros::ok()) {
+    try {
+      tf_buffer_.lookupTransform(map_frame_, vehicle_frame_, ros::Time(0), ros::Duration(10.0));
+      break;
+    } catch (tf2::TransformException ex) {
+      ROS_DEBUG("waiting for initial pose...");
+    }
+  }
 }
 
 void CostmapGenerator::run() {
@@ -174,7 +184,7 @@ void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
     tf = tf_buffer_.lookupTransform(costmap_frame_, vehicle_frame_, ros::Time(0),
                                     ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("[costmap_generator] %s", ex.what());
+    ROS_ERROR("%s", ex.what());
   }
 
   // Set grid center
@@ -218,7 +228,7 @@ autoware_perception_msgs::DynamicObjectArray::ConstPtr transformObjects(
     objects2costmap =
         tf_buffer.lookupTransform(target_frame_id, src_frame_id, ros::Time(0), ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("[costmap_generator] %s", ex.what());
+    ROS_ERROR("%s", ex.what());
   }
 
   for (auto& object : objects->objects) {

@@ -92,7 +92,7 @@ geometry_msgs::TransformStamped getTransform(const tf2_ros::Buffer& tf_buffer,
   try {
     tf = tf_buffer.lookupTransform(from, to, ros::Time(0), ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("[astar_navi] %s", ex.what());
+    ROS_ERROR("%s", ex.what());
   }
   return tf;
 }
@@ -337,14 +337,14 @@ void AstarNavi::planTrajectory() {
   const bool result = astar.makePlan(current_pose_local_.pose, goal_pose_local_.pose);
   const ros::WallTime end = ros::WallTime::now();
 
-  ROS_INFO("[astar_navi] Astar planning: %f [s]", (end - start).toSec());
+  ROS_INFO("Astar planning: %f [s]", (end - start).toSec());
 
   if (result) {
-    ROS_INFO("[astar_navi] Found GOAL!");
+    ROS_INFO("Found goal!");
     trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar.getWaypoints(),
                                    waypoints_velocity_);
   } else {
-    ROS_INFO("[astar_navi] Can't find goal...");
+    ROS_INFO("Can't find goal...");
     trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
   }
 
