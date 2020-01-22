@@ -32,6 +32,7 @@ private:
   geometry_msgs::PoseStamped current_pose_;
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
+  bool lane_change_approved_;
 
   // State transition conditions
   bool isVehicleInPreferredLane() const;
@@ -41,6 +42,7 @@ private:
   // minor conditions
   bool hasEnoughDistance() const;
   bool isLaneChangePathSafe() const;
+  bool isLaneChangeApproved() const;
 
 public:
   FollowingLaneState() = default;

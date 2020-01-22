@@ -37,6 +37,8 @@ void LaneChanger::init()
                                         &SingletonDataManager::getInstance());
   perception_subscriber_ = pnh_.subscribe("input/perception", 1, &SingletonDataManager::perceptionCallback,
                                           &SingletonDataManager::getInstance());
+  lane_change_approval_subscriber_ = pnh_.subscribe("input/lane_change_approval", 1, &SingletonDataManager::laneChangeApprovalCallback,
+                                          &SingletonDataManager::getInstance());
 
   // ROS parameters
   LaneChangerParameters parameters;

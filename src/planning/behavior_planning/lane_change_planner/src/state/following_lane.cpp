@@ -32,6 +32,7 @@ void FollowingLaneState::entry()
   {
     ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
   }
+  lane_change_approved_ = false;
 }
 
 autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const
@@ -55,6 +56,7 @@ void FollowingLaneState::update()
     {
       ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects.");
     }
+    lane_change_approved_ = SingletonDataManager::getInstance().getLaneChangeApproval();
   }
 
   // update path
@@ -112,6 +114,11 @@ bool FollowingLaneState::isTooCloseToDeadEnd() const
   return false;
 }
 
+bool FollowingLaneState::isLaneChangeApproved() const
+{
+  return lane_change_approved_;
+}
+
 bool FollowingLaneState::isLaneChangeable() const
 {
   if (!hasEnoughDistance())
@@ -121,6 +128,14 @@ bool FollowingLaneState::isLaneChangeable() const
   if (!isLaneChangePathSafe())
   {
     return false;
+  }
+  if (!isLaneChangeApproved())
+  {
+    return false;
+  }
+  else
+  {
+    ROS_INFO("waiting for lane change approval");
   }
   return true;
 }
@@ -139,7 +154,7 @@ bool FollowingLaneState::hasEnoughDistance() const
     return false;
   }
 
-  if(lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes))
+  if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes))
   {
     return false;
   }
