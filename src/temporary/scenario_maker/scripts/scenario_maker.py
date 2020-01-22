@@ -7,9 +7,13 @@ import numpy as np
 import tf
 from geometry_msgs.msg import Quaternion, Pose, Twist, PoseWithCovarianceStamped, PoseStamped, TwistStamped
 from std_msgs.msg import Bool, Header, Int32
-from autoware_control_msgs.msg import VehicleStatusStamped
+from autoware_vehicle_msgs.msg import VehicleStatusStamped
 
 OBSTACLE_NUM = 10
+
+GENERATE_ALLWAYS = 0
+GENERATE_INAREA = 1
+GENERATE_OUTAREA = 2
 
 class ScenarioMaker():
 
@@ -105,7 +109,11 @@ class ScenarioMaker():
     def scenario_path(self, only_initial_pose=False):
         self.pubengage.publish(False)#stop vehicle
         self.start_time = rospy.Time.now().to_sec()
-        return self.scenario_path1(only_initial_pose)
+        #Publish Scenario
+        self.scenario_path1(only_initial_pose)
+        #Publish Engage
+        self.pubengage.publish(True)
+        time.sleep(0.25)
 
     def scenario_obstacle(self):
         self.scenario_obstacle1()
@@ -140,10 +148,6 @@ class ScenarioMaker():
         self.pubcheckpoint.publish(self.make_posstmp(self.random_pose_maker(x=-119.1, y=-63.6, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)))#checkpoint 6
         time.sleep(0.25)
 
-        #Publish Engage
-        self.pubengage.publish(True)
-        time.sleep(0.25)
-
     def scenario_obstacle1(self):
         ###obstacle 0: fixed pedestrian
         self.PubObjectId(0)
@@ -155,127 +159,46 @@ class ScenarioMaker():
 
     def scenario_obstacle_manager1(self):
         #obstacle 1: obstacle car in lane change
-        if self.obstacle_generate_judge_dist(-56.7, 57.3, 27.2, 18.0, 20.0):
-            if self.obstacle_generated[1] == 0:
-                self.PubObjectId(1)#TODO -> in PubObstacle
-                time.sleep(0.25)#TODO -> in PubObstacle
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-56.7, y=57.3, th=27.2, ver_sigma=2.0, lat_sigma=0.0, th_sigma=0.0),\
-                                vel = self.random_velocity_maker(v=5.0, v_sigma=1.5), \
-                                obstacle_type="car", obstacle_id=1)
-                self.obstacle_generated[1] = 1#TODO -> in PubObstacle
-                self.obstacle_generated_time[1] = rospy.Time.now().to_sec()#TODO -> in PubObstacle
-            else:
-                if rospy.Time.now().to_sec() - self.obstacle_generated_time[1] > 8.0:
-                    self.reset_id_obstacle(1)
-                    time.sleep(0.25)
-                    self.obstacle_generated[1] = 1#no more publish(publish once)
+        self.PubPatternedObstacle(\
+            pose=(-56.7, 57.3, 27.2), vel=5.0, ver_sigma = 2.0, lat_sigma=0.0, th_sigma=0.0, vel_sigma=1.5,\
+            judge_pose=(-56.7, 57.3, 27.2), judge_dist_xy=18.0, judge_dist_th=45.0, generate_mode=GENERATE_INAREA,\
+            generate_once=False, generate_loop=8.0,
+            obstacle_type="car", obstacle_id=1)
 
         #obstacle 2: sudden pedestrian
-        if self.obstacle_generate_judge_dist(-95.0, -67.0, -152.8, 25.0, 50.0):
-            if self.obstacle_generated[2] == 0:
-                self.PubObjectId(2)
-                time.sleep(0.25)
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-95.0, y=-67.0, th=117.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=2.0),\
-                                vel = self.random_velocity_maker(v=0.5, v_sigma=0.1), \
-                                obstacle_type="pedestrian", obstacle_id=2)
-                self.obstacle_generated[2] = 1
-                self.obstacle_generated_time[2] = rospy.Time.now().to_sec()
-            else:
-                if rospy.Time.now().to_sec() - self.obstacle_generated_time[2] > 12.0:
-                    self.reset_id_obstacle(2)
-                    time.sleep(0.25)
-                    self.obstacle_generated[2] = 1#no more publish(publish once)
+        self.PubPatternedObstacle(\
+            pose=(-95.0, -67.0, 117.2), vel=0.5, ver_sigma = 0.1, lat_sigma=0.1, th_sigma=1.0, vel_sigma=0.1,\
+            judge_pose=(-95.0, -67.0, -152.8), judge_dist_xy=25.0, judge_dist_th=45.0, generate_mode=GENERATE_INAREA,\
+            generate_once=False, generate_loop=12.0,
+            obstacle_type="pedestrian", obstacle_id=2)
 
         #obstacle 3: crossing car 1(crossing with traffic light)
-        if not self.obstacle_generate_judge_dist(-121.8, -25.6, 27.2, 45.0, 45.0):#if car is near the generate area, not genetate the obstacle
-            if self.obstacle_generated[3] == 0:
-                self.PubObjectId(3)
-                time.sleep(0.25)
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-121.8, y=-25.6, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                                vel = self.random_velocity_maker(v=8.0, v_sigma=1.0), \
-                                obstacle_type="car", obstacle_id=3)
-                self.obstacle_generated[3] = 1
-                self.obstacle_generated_time[3] = rospy.Time.now().to_sec()
-            else:
-                if rospy.Time.now().to_sec() - self.obstacle_generated_time[3] > 10.0:
-                    self.reset_id_obstacle(3)
-                    time.sleep(0.25)
-                    self.PubObjectId(3)
-                    time.sleep(0.25)
-                    self.PubObstacle(\
-                                    pose = self.random_pose_maker(x=-121.8, y=-25.6, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                                    vel = self.random_velocity_maker(v=8.0, v_sigma=1.0), \
-                                    obstacle_type="car", obstacle_id=3)
-                    self.obstacle_generated[3] = 1
-                    self.obstacle_generated_time[3] = rospy.Time.now().to_sec()
+        self.PubPatternedObstacle(\
+            pose=(-121.8, -25.6, 27.2), vel=8.0, ver_sigma = 5.0, lat_sigma=0.1, th_sigma=0.0, vel_sigma=1.0,\
+            judge_pose=(-121.8, -25.6, 27.2), judge_dist_xy=30.0, judge_dist_th=30.0, generate_mode=GENERATE_OUTAREA,\
+            generate_once=False, generate_loop=10.0,
+            obstacle_type="car", obstacle_id=3)
 
         #obstacle 4: crossing car 1(crossing without traffic light)
-        if not self.obstacle_generate_judge_dist(-101.6, -65.2, 27.2, 20.0, 10.0):#if car is near the generate area, not genetate the obstacle
-            if self.obstacle_generated[4] == 0:
-                self.PubObjectId(4)
-                time.sleep(0.25)
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-101.6, y=-65.2, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                                vel = self.random_velocity_maker(v=8.0, v_sigma=1.0), \
-                                obstacle_type="car", obstacle_id=4)
-                self.obstacle_generated[4] = 1
-                self.obstacle_generated_time[4] = rospy.Time.now().to_sec()
-            else:
-                if rospy.Time.now().to_sec() - self.obstacle_generated_time[4] > 11.0:
-                    self.reset_id_obstacle(4)
-                    time.sleep(0.25)
-                    self.PubObjectId(4)
-                    time.sleep(0.25)
-                    self.PubObstacle(\
-                                    pose = self.random_pose_maker(x=-101.6, y=-65.2, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                                    vel = self.random_velocity_maker(v=8.0, v_sigma=1.0), \
-                                    obstacle_type="car", obstacle_id=4)
-                    self.obstacle_generated[4] = 1
-                    self.obstacle_generated_time[4] = rospy.Time.now().to_sec()
+        self.PubPatternedObstacle(\
+            pose=(-101.6, -65.2, 27.2), vel=8.0, ver_sigma = 5.0, lat_sigma=0.1, th_sigma=0.0, vel_sigma=1.0,\
+            judge_pose=(-101.6, -65.2, 27.2), judge_dist_xy=30.0, judge_dist_th=30.0, generate_mode=GENERATE_OUTAREA,\
+            generate_once=False, generate_loop=11.0,
+            obstacle_type="car", obstacle_id=4)
 
         #obstacle 5: crossing pedestrian(crossing with traffic light)
-        if self.obstacle_generated[5] == 0:
-            self.PubObjectId(5)
-            time.sleep(0.25)
-            self.PubObstacle(\
-                            pose = self.random_pose_maker(x=-83.8, y=2.0, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                            vel = self.random_velocity_maker(v=1.8, v_sigma=0.2), \
-                            obstacle_type="pedestrian", obstacle_id=5)
-            self.obstacle_generated[5] = 1
-            self.obstacle_generated_time[5] = rospy.Time.now().to_sec()
-        else:
-            if rospy.Time.now().to_sec() - self.obstacle_generated_time[5] > 14.0:
-                self.reset_id_obstacle(5)
-                time.sleep(0.25)
-                self.PubObjectId(5)
-                time.sleep(0.25)
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-83.8, y=2.0, th=27.2, ver_sigma=0.1, lat_sigma=0.1, th_sigma=0.0),\
-                                vel = self.random_velocity_maker(v=1.8, v_sigma=0.2), \
-                                obstacle_type="pedestrian", obstacle_id=5)
-                self.obstacle_generated[5] = 1
-                self.obstacle_generated_time[5] = rospy.Time.now().to_sec()
+        self.PubPatternedObstacle(\
+            pose=(-83.8, 2.0, 27.2), vel=2.0, ver_sigma = 0.5, lat_sigma=0.5, th_sigma=1.0, vel_sigma=0.2,\
+            judge_pose=(-83.8, 2.0, 27.2), judge_dist_xy=0, judge_dist_th=0, generate_mode=GENERATE_ALLWAYS,\
+            generate_once=False, generate_loop=14.0,
+            obstacle_type="pedestrian", obstacle_id=5)
 
         #obstacle 6: pause and vanish car
-        if self.obstacle_generate_judge_dist(-33.1, -33.6, -152.8, 25.0, 20.0):
-            if self.obstacle_generated[6] == 0:
-                self.PubObjectId(6)
-                time.sleep(0.25)
-                self.PubObstacle(\
-                                pose = self.random_pose_maker(x=-33.1, y=-33.6, th=-152.8, ver_sigma=0.1, lat_sigma=0.1, th_sigma=2.0),\
-                                vel = self.random_velocity_maker(v=0.0, v_sigma=0.0), \
-                                obstacle_type="car", obstacle_id=6)
-                self.obstacle_generated[6] = 1
-                self.obstacle_generated_time[6] = rospy.Time.now().to_sec()
-            else:
-                if rospy.Time.now().to_sec() - self.obstacle_generated_time[6] > 10.0:
-                    self.reset_id_obstacle(6)
-                    time.sleep(0.25)
-                    self.obstacle_generated[6] = 1#no more publish(publish once)
-
+        self.PubPatternedObstacle(\
+            pose=(-33.1, -33.6, -152.8), vel=0.0, ver_sigma = 0.1, lat_sigma=0.1, th_sigma=2.0, vel_sigma=0.0,\
+            judge_pose=(-33.1, -33.6, -152.8), judge_dist_xy=30.0, judge_dist_th=45.0, generate_mode=GENERATE_INAREA,\
+            generate_once=True, generate_loop=10.0,
+            obstacle_type="car", obstacle_id=6)
 
     def reset_id_obstacle(self, obs_id):
         self.obstacle_generated[obs_id] = 0
@@ -414,6 +337,50 @@ class ScenarioMaker():
 
     def CallBackVehicleStatus(self, vsmsg):
         self.self_vel = vsmsg.status.velocity
+
+    def PubPatternedObstacle(self, pose, vel, ver_sigma, lat_sigma, th_sigma, vel_sigma, \
+                            judge_pose, judge_dist_xy, judge_dist_th, generate_mode, \
+                            generate_once, generate_loop, \
+                            obstacle_type, obstacle_id, \
+                            frame_id="world"):
+        x_obj, y_obj, th_obj = pose
+        x_jdg, y_jdg, th_jdg = judge_pose
+        if generate_mode == GENERATE_ALLWAYS:
+            generate_now = True
+        elif generate_mode == GENERATE_INAREA:
+            generate_now  = self.obstacle_generate_judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
+        elif generate_mode == GENERATE_OUTAREA:
+            generate_now  = not self.obstacle_generate_judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
+        else:
+            #Error; rospy.logerror("invalid generate mode")
+            generate_now = False
+
+        if generate_now:
+            if self.obstacle_generated[obstacle_id] == 0:
+                self.PubObjectId(obstacle_id)
+                time.sleep(0.25)
+                self.PubObstacle(\
+                    pose = self.random_pose_maker(x=x_obj, y=y_obj, th=th_obj, ver_sigma=ver_sigma, lat_sigma=lat_sigma, th_sigma=th_sigma),\
+                    vel = self.random_velocity_maker(v=vel, v_sigma=vel_sigma), \
+                    obstacle_type=obstacle_type, obstacle_id=obstacle_id)
+                self.obstacle_generated[obstacle_id] = 1
+                self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
+            else:
+                if rospy.Time.now().to_sec() - self.obstacle_generated_time[obstacle_id] > generate_loop:
+                    self.reset_id_obstacle(obstacle_id)
+                    if generate_once:
+                        self.obstacle_generated[obstacle_id] = 1#no more generate(generate once)
+                    else:
+                        self.PubObjectId(obstacle_id)
+                        time.sleep(0.25)
+                        self.PubObstacle(\
+                            pose = self.random_pose_maker(x=x_obj, y=y_obj, th=th_obj, ver_sigma=ver_sigma, lat_sigma=lat_sigma, th_sigma=th_sigma),\
+                            vel = self.random_velocity_maker(v=vel, v_sigma=vel_sigma), \
+                            obstacle_type=obstacle_type, obstacle_id=obstacle_id)
+                        self.obstacle_generated[obstacle_id] = 1
+                        self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
+                    time.sleep(0.25)
+
 
     def PubObstacle(self, pose, vel, obstacle_type, obstacle_id, frame_id="world"):
         if obstacle_type == "pedestrian":
