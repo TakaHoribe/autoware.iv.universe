@@ -6,10 +6,10 @@
 	<arg name="enable_yaw_recalculation" default="false" doc="flag for recalculation of yaw angle after resampling"/>
 	<arg name="admisible_position_error" default="5.0" doc="stop mpc calculation when error is larger than the following value"/>
 	<arg name="admisible_yaw_error_deg" default="90.0" doc="stop mpc calculation when error is larger than the following value"/>
-	<arg name="enable_path_smoothing" default="true" doc="flag for path smoothing"/>
+	<arg name="enable_path_smoothing" default="false" doc="flag for path smoothing"/>
 	<arg name="path_smoothing_times" default="1" doc="number of times of applying path smoothing filter"/>
 	<arg name="path_filter_moving_ave_num" default="35" doc="param of moving average filter for path smoothing "/>
-	<arg name="curvature_smoothing_num" default="35" doc="point-to-point index distance used in curvature calculation : curvature is calculated from three points p(i-num), p(i), p(i+num)"/>
+	<arg name="curvature_smoothing_num" default="15" doc="point-to-point index distance used in curvature calculation : curvature is calculated from three points p(i-num), p(i), p(i+num)"/>
 	<arg name="steering_lpf_cutoff_hz" default="3.0" doc="cutoff frequency of lowpass filter for steering command [Hz]"/>
 	<arg name="qp_solver_type" default="unconstraint_fast" doc="optimization solver type. option is unconstraint_fast, unconstraint, and qpoases_hotstart"/>
 	<arg name="qpoases_max_iter" default="500" doc="max iteration number for quadratic programming"/>
@@ -38,7 +38,7 @@
 		
 
 		<!-- system -->
-		<remap from="~input/reference_trajectory" to="/planning/motion_planning/trajectory"/>
+		<remap from="~input/reference_trajectory" to="/planning/scenario_planning/trajectory"/>
 		<remap from="~input/current_velocity" to="/vehicle/status/twist"/>
 		<remap from="~input/current_steering" to="/vehicle/status/steering"/>
 		<remap from="~output/twist_raw" to="lateral/twist_raw"/>

@@ -32,7 +32,7 @@
 
   <!-- simple_planning_simulator node -->
   <node pkg="simple_planning_simulator" type="simple_planning_simulator" name="simple_planning_simulator" output="screen">
-    <remap from="/base_trajectory" to="/planning/motion_planning/trajectory" />
+    <remap from="/base_trajectory" to="/planning/scenario_planning/trajectory" />
     <remap from="~output/current_pose" to="current_pose" />
     <remap from="~output/current_velocity" to="/sim/velocity" />
     <remap from="~output/status" to="/sim/status" />

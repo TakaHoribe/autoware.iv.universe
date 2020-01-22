@@ -1,0 +1,3 @@
+- name: /costmap_generator
+  publish: [~output/costmap, ~output/occupancy_grid]
+  subscribe: [~input/objects, ~input/points_no_ground, ~input/lanelet_map_bin]

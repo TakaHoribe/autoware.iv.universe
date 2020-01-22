@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="topic_tools" type="relay" name="scenario_trajectory_relay" args="/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory /planning/scenario_planning/trajectory" output="screen"/>
+  <node pkg="rostopic" type="rostopic" name="scenario_pub" args="pub /planning/scenario_planning/scenario autoware_planning_msgs/Scenario '{current_scenario: LaneFollowing, activating_scenarios: [LaneFollowing]}'" output="screen"/>
+</launch>

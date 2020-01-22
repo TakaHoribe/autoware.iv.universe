@@ -20,6 +20,7 @@ add_message_files(
             PathPointWithLaneId.msg
             Route.msg
             RouteSection.msg
+            Scenario.msg
             Trajectory.msg
             TrajectoryPoint.msg
 )
