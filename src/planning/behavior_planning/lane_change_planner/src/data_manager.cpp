@@ -19,7 +19,8 @@
 
 namespace lane_change_planner
 {
-SingletonDataManager::SingletonDataManager() : is_parameter_set_(false), lane_change_approval_(false)
+SingletonDataManager::SingletonDataManager()
+  : is_parameter_set_(false), lane_change_approval_(false), force_lane_change_(false)
 {
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
@@ -47,7 +48,14 @@ void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& inp
 
 void SingletonDataManager::laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg)
 {
-  lane_change_approval_ = input_approval_msg.data;
+  lane_change_approval_.data = input_approval_msg.data;
+  lane_change_approval_.stamp = ros::Time::now();
+}
+
+void SingletonDataManager::forceLaneChangeSignalCallback(const std_msgs::Bool& input_force_lane_change_msg)
+{
+  force_lane_change_.data = input_force_lane_change_msg.data;
+  force_lane_change_.stamp = ros::Time::now();
 }
 
 void SingletonDataManager::setLaneChangerParameters(const LaneChangerParameters& parameters)
@@ -55,7 +63,6 @@ void SingletonDataManager::setLaneChangerParameters(const LaneChangerParameters&
   is_parameter_set_ = true;
   parameters_ = parameters;
 }
-
 
 bool SingletonDataManager::getDynamicObjects(
     std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects)
@@ -138,7 +145,28 @@ bool SingletonDataManager::getLaneChangerParameters(LaneChangerParameters& param
 
 bool SingletonDataManager::getLaneChangeApproval()
 {
-  return lane_change_approval_;
+  constexpr double timeout = 0.5;
+  if (ros::Time::now() - lane_change_approval_.stamp > ros::Duration(timeout))
+  {
+    return false;
+  }
+  else
+  {
+    return lane_change_approval_.data;
+  }
+}
+
+bool SingletonDataManager::getForceLaneChangeSignal()
+{
+  constexpr double timeout = 0.5;
+  if (ros::Time::now() - force_lane_change_.stamp > ros::Duration(timeout))
+  {
+    return false;
+  }
+  else
+  {
+    return force_lane_change_.data;
+  }
 }
 
 }  // namespace lane_change_planner

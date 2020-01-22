@@ -33,6 +33,7 @@ void FollowingLaneState::entry()
     ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
   }
   lane_change_approved_ = false;
+  force_lane_change_ = false;
 }
 
 autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const
@@ -57,6 +58,7 @@ void FollowingLaneState::update()
       ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects.");
     }
     lane_change_approved_ = SingletonDataManager::getInstance().getLaneChangeApproval();
+    force_lane_change_ = SingletonDataManager::getInstance().getForceLaneChangeSignal();
   }
 
   // update path
@@ -93,7 +95,7 @@ State FollowingLaneState::getNextState() const
   {
     return State::FOLLOWING_LANE;
   }
-  if (isTooCloseToDeadEnd())
+  if (isTooCloseToDeadEnd() || laneChangeForcedByOperator())
   {
     return State::FORCING_LANE_CHANGE;
   }
@@ -117,6 +119,11 @@ bool FollowingLaneState::isTooCloseToDeadEnd() const
 bool FollowingLaneState::isLaneChangeApproved() const
 {
   return lane_change_approved_;
+}
+
+bool FollowingLaneState::laneChangeForcedByOperator() const
+{
+  return force_lane_change_;
 }
 
 bool FollowingLaneState::isLaneChangeable() const

@@ -15,6 +15,10 @@
  */
 
 #include <lane_change_planner/state/forcing_lane_change.h>
+#include <lane_change_planner/data_manager.h>
+#include <lane_change_planner/route_handler.h>
+#include <lane_change_planner/utilities.h>
+
 namespace lane_change_planner
 {
 State ForcingLaneChangeState::getCurrentState() const
@@ -24,7 +28,32 @@ State ForcingLaneChangeState::getCurrentState() const
 
 void ForcingLaneChangeState::entry()
 {
-  // locked_path = getReferenceLine(current_pose, original_lane);
+  while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
+  {
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
+    ros::Duration(0.01);
+  }
+  while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_) && ros::ok())
+  {
+    ROS_ERROR_THROTTLE(0.5, "waiting for current_velocity");
+    ros::Duration(0.01);
+  }
+  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_))
+  {
+    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
+  }
+
+  original_lanes_ = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
+  target_lanes_ = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
+
+  const double backward_path_length = ros_parameters_.backward_path_length;
+  const double forward_path_length = ros_parameters_.forward_path_length;
+  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+
+  status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+      current_pose_.pose, current_twist_->twist, backward_path_length, forward_path_length,
+      lane_change_prepare_duration, lane_changing_duration);
 }
 
 autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
@@ -34,7 +63,26 @@ autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
 
 void ForcingLaneChangeState::update()
 {
-  // return locked_path;
+  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
+  {
+    ROS_ERROR("failed to get current pose");
+  }
+  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
+  {
+    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
+  }
+
+  // update path
+  {
+    const double width = ros_parameters_.drivable_area_width;
+    const double height = ros_parameters_.drivable_area_height;
+    const double resolution = ros_parameters_.drivable_area_resolution;
+    lanelet::ConstLanelets lanes;
+    lanes.insert(lanes.end(), original_lanes_.begin(), original_lanes_.end());
+    lanes.insert(lanes.end(), target_lanes_.begin(), target_lanes_.end());
+    status_.lane_change_path.drivable_area =
+        util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
+  }
 }
 
 State ForcingLaneChangeState::getNextState() const
@@ -48,6 +96,16 @@ State ForcingLaneChangeState::getNextState() const
 
 bool ForcingLaneChangeState::hasFinishedLaneChange() const
 {
+  static ros::Time start_time = ros::Time::now();
+
+  if (RouteHandler::getInstance().isInTargetLane(current_pose_, target_lanes_))
+  {
+    return (ros::Time::now() - start_time > ros::Duration(2));
+  }
+  else
+  {
+    start_time = ros::Time::now();
+  }
   return false;
 }
 
