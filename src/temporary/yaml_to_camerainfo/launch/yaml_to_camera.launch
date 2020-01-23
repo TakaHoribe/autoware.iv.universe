@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<launch>
+  <node pkg="yaml_to_camerainfo" type="yaml_to_camera_info.py" name="front_camera_info_publisher" output="log" respawn="false" respawn_delay="0" args="">
+    <param name="filename" value="$(find sensing_launch)/data/traffic_light_camera.yaml" />
+    <param name="cameraname" value="traffic_light/camera" />
+    <param name="frame_id" value="traffic_light/camera_optical_link" />
+  </node>
+
+  <node name="camera_info_relay" pkg="topic_tools" type="relay" args="/traffic_light/camera/camera_info /sensor/camera/traffic_light/camera_info" />
+
+</launch>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<launch>
+
+    <!-- publish camera info -->
+    <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
+
+    <!-- publish collision detection information -->
+    <rosparam command="load" file="$(find vehicle_description)/config/vehicle_info.yaml" /> <!-- load vehicle info(body size) -->
+    <node pkg="scenario_maker" type="collision_detection.py" name="collision_detection" output="screen">
+        <param name="margin" value="0.1" /> <!-- expand self-body used for collision detection[m] -->
+    </node>
+
+    <!-- scenario -->
+    <node pkg="scenario_maker" type="scenario_maker.py" name="scenario_maker" output="screen"></node>
+
+</launch>
