@@ -140,7 +140,19 @@ void RouteHandler::setRouteLanelets()
       }
     }
   }
-
+  if (!route_msg_.route_sections.empty())
+  {
+    for (const auto& id : route_msg_.route_sections.back().lane_ids)
+    {
+      const auto& llt = lanelet_map_ptr_->laneletLayer.get(id);
+      goal_lanelets_.push_back(llt);
+    }
+    for (const auto& id : route_msg_.route_sections.front().lane_ids)
+    {
+      const auto& llt = lanelet_map_ptr_->laneletLayer.get(id);
+      start_lanelets_.push_back(llt);
+    }
+  }
   is_handler_ready_ = true;
 }
 
