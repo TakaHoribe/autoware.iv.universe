@@ -6,23 +6,38 @@ import math, time
 import numpy as np
 import tf
 from geometry_msgs.msg import Quaternion, Pose, Twist, PoseWithCovarianceStamped, PoseStamped, TwistStamped
-from std_msgs.msg import Bool, Header, Int32
-from autoware_vehicle_msgs.msg import VehicleStatusStamped
+from std_msgs.msg import Bool, Header, Int32, Float32
+from sensor_msgs.msg import Image, CameraInfo
 
-OBSTACLE_NUM = 10
+OBSTACLE_NUM = 4096
 
 GENERATE_ALLWAYS = 0
 GENERATE_INAREA = 1
 GENERATE_OUTAREA = 2
 
+COLOR_GREEN = 0
+COLOR_YELLOW = 1
+COLOR_RED = 2
+COLOR_BRACK = 3
+
 class ScenarioMaker():
 
     def __init__(self):
-        self.trial_num = 0
 
-        self.start_time = 0
+        #TODO: ->rosparam
+        self.goal_dist = 1.0 #[m]
+        self.goal_th = 10 #[deg]
+        self.goal_vel = 0.001 #[m/s]
+        self.give_up_time = 300 #[s]
+        self.traffic_light_time = 50 #[s]
+
         self.obstacle_generated = np.zeros((OBSTACLE_NUM+1))
         self.obstacle_generated_time = np.zeros((OBSTACLE_NUM+1))
+
+        self.trial_num = 0
+        self.start_time = 0
+        self.traffic_light_start_time = rospy.Time.now().to_sec()
+        self.traffic_light = COLOR_GREEN
 
         self.self_x = 0.0
         self.self_y = 0.0
@@ -33,16 +48,15 @@ class ScenarioMaker():
         self.goal_y = 0.0
         self.goal_th = 0.0
 
-        #TODO: ->rosparam
-        self.goal_dist = 1.5 #[m]
-        self.goal_th = 10 #[deg]
-        self.goal_vel = 0.001 #[m/s]
-        self.give_up_time = 300 #[s]
+        self.camera_header = Header()
 
         self.tfl = tf.TransformListener() #for get self-position
 
         self.sub_vel = rospy.Subscriber(
-            "/vehicle/status", VehicleStatusStamped, self.CallBackVehicleStatus, queue_size=1, tcp_nodelay=True)#for get self-velocity
+            "/vehicle/status/velocity", Float32, self.CallBackVehicleVelocity, queue_size=1, tcp_nodelay=True)#for get self-velocity
+
+        self.sub_camerainfo = rospy.Subscriber(
+            "/sensor/camera/traffic_light/camera_info", CameraInfo, self.CallBackCameraInfoTime, queue_size=1, tcp_nodelay=True)#for publish time-sync image
 
         self.pub_initialpose = rospy.Publisher(
             "/initialpose", PoseWithCovarianceStamped, queue_size=1)
@@ -74,6 +88,8 @@ class ScenarioMaker():
         self.pub_resetobjectid = rospy.Publisher(
             "/reset_object_id", Int32,  queue_size=1)
 
+        self.pub_traffic_light_image = rospy.Publisher(
+            "/sensor/camera/traffic_light/image_raw", Image, queue_size=1)
 
         time.sleep(0.5)#wait for ready to publish/subscribe#TODO: fix this
 
@@ -90,12 +106,16 @@ class ScenarioMaker():
             self.GetSelfPos()
             if self.goal_judge(self.goal_dist, self.goal_th, self.goal_vel):
                 print("Scenario Clear!", self.trial_num)
+                time.sleep(5.0)
                 self.retry_senario_path()
             elif self.give_up_judge(self.give_up_time):
                 print("Failed...", self.trial_num)
                 self.retry_senario_path()
             else:
                 self.scenario_obstacle_manager()
+            
+            self.traffic_light_manager()
+            self.traffic_light_publisher()
 
     def retry_senario_path(self):
         self.pub_engage.publish(False)#stop vehicle
@@ -200,6 +220,35 @@ class ScenarioMaker():
             generate_once=True, generate_loop=10.0,
             obstacle_type="car", obstacle_id=6)
 
+    def traffic_light_manager(self):
+        if rospy.Time.now().to_sec() - self.traffic_light_start_time > self.traffic_light_time:
+            if self.traffic_light == COLOR_GREEN:
+                self.traffic_light = COLOR_RED
+            elif self.traffic_light == COLOR_RED:
+                self.traffic_light = COLOR_GREEN
+            else:
+                pass#no time to be yellow
+            self.traffic_light_start_time = rospy.Time.now().to_sec()
+
+    def traffic_light_publisher(self):
+        self.PubTrafficLightImage(self.traffic_light_changer(self.traffic_light))
+
+    def traffic_light_changer(self, traffic_light):#according to self posture, change the traffic light to reference
+        #temporary function!!!
+        if not self.judge_dist(-72.7, -2.31, 0, 45.0, 180.0):
+            return COLOR_BRACK#no traffic light
+
+        if np.abs(np.cos((np.deg2rad(self.self_th - 117.2))))> np.sqrt(2.0)/2.0:
+            return traffic_light
+        else:
+            if traffic_light == COLOR_RED:
+                return COLOR_GREEN
+            elif traffic_light == COLOR_GREEN:
+                return COLOR_RED
+            else:
+                return traffic_light
+
+
     def reset_id_obstacle(self, obs_id):
         self.obstacle_generated[obs_id] = 0
         self.obstacle_generated_time[obs_id] = 0
@@ -291,7 +340,7 @@ class ScenarioMaker():
         th_dist = np.abs(th1 - th2) % 360
         return xy_dist, th_dist
 
-    def obstacle_generate_judge_dist(self, x, y, th, dist_area, th_dist_area):
+    def judge_dist(self, x, y, th, dist_area, th_dist_area):
         now_dist, now_th_dist = self.calc_dist(self.self_x, self.self_y, self.self_th, x, y, th)
         if now_dist < dist_area and now_th_dist < th_dist_area:
             return True
@@ -335,8 +384,11 @@ class ScenarioMaker():
             rospy.logwarn("cannot get position")
             return trans, quat
 
-    def CallBackVehicleStatus(self, vsmsg):
-        self.self_vel = vsmsg.status.velocity
+    def CallBackVehicleVelocity(self, vsmsg):
+        self.self_vel = vsmsg.data
+
+    def CallBackCameraInfoTime(self, cimsg):
+        self.camera_header = cimsg.header
 
     def PubPatternedObstacle(self, pose, vel, ver_sigma, lat_sigma, th_sigma, vel_sigma, \
                             judge_pose, judge_dist_xy, judge_dist_th, generate_mode, \
@@ -348,9 +400,9 @@ class ScenarioMaker():
         if generate_mode == GENERATE_ALLWAYS:
             generate_now = True
         elif generate_mode == GENERATE_INAREA:
-            generate_now  = self.obstacle_generate_judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
+            generate_now  = self.judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
         elif generate_mode == GENERATE_OUTAREA:
-            generate_now  = not self.obstacle_generate_judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
+            generate_now  = not self.judge_dist(x_jdg, y_jdg, th_jdg, judge_dist_xy, judge_dist_th)
         else:
             #Error; rospy.logerror("invalid generate mode")
             generate_now = False
@@ -408,6 +460,29 @@ class ScenarioMaker():
         idmsg.data = id
         self.pub_resetobjectid.publish(idmsg)
 
+    def PubTrafficLightImage(self, color):
+        imgmsg = Image()
+        imgmsg.header = self.camera_header#newest header
+        imgmsg.encoding = "bgr8"
+        imgmsg.height = 1080
+        imgmsg.width = 1920
+        imgmsg.is_bigendian = False
+        imgmsg.step = 3 * imgmsg.width
+        imgsize = imgmsg.height*imgmsg.width*3#pixel*3(bgr)
+        img = np.zeros((imgsize)).astype(np.uint8)
+        if color == COLOR_GREEN:
+            img[np.arange(1,imgsize,3)]=255#green
+        elif color == COLOR_YELLOW:
+            img[np.arange(2,imgsize,3)]=255#red
+            img[np.arange(1,imgsize,3)]=217#green
+        elif color == COLOR_RED:
+            img[np.arange(2,imgsize,3)]=255#red
+        else:
+            pass
+
+        imgmsg.data = list(img)
+
+        self.pub_traffic_light_image.publish(imgmsg)
 
 def main():
     rospy.init_node("scenario_maker")
