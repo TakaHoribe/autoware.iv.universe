@@ -28,6 +28,18 @@ bool isActive(const autoware_planning_msgs::Scenario& scenario) {
   return false;
 }
 
+geometry_msgs::PoseArray trajectory2posearray(
+    const autoware_planning_msgs::Trajectory& trajectory) {
+  geometry_msgs::PoseArray pose_array;
+  pose_array.header = trajectory.header;
+
+  for (const auto& point : trajectory.points) {
+    pose_array.poses.push_back(point.pose);
+  }
+
+  return pose_array;
+}
+
 std::vector<size_t> getReversingIndices(const autoware_planning_msgs::Trajectory& trajectory) {
   std::vector<size_t> indices;
 
@@ -127,7 +139,7 @@ autoware_planning_msgs::Trajectory createTrajectory(
     point.twist.linear.x = velocity / 3.6;                        // velocity = const
 
     // switch sign by forward/backward
-    point.twist.linear.x = (awp.back ? -1 : 1) * point.twist.linear.x;
+    point.twist.linear.x = (awp.is_back ? -1 : 1) * point.twist.linear.x;
 
     trajectory.points.push_back(point);
   }
@@ -144,7 +156,7 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
   waypoints.header.frame_id = current_pose_global.header.frame_id;
   waypoint.pose.header = waypoints.header;
   waypoint.pose.pose = current_pose_global.pose;
-  waypoint.back = false;
+  waypoint.is_back = false;
   waypoints.waypoints.push_back(waypoint);
 
   return createTrajectory(tf_buffer, current_pose_global, waypoints, 0.0);
@@ -223,7 +235,7 @@ bool AstarNavi::isPlanRequired() {
   return false;
 }
 
-void AstarNavi::updateTarget() {
+void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
       th_stopping_distance_m_;
@@ -274,39 +286,23 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   if (isPlanRequired()) {
+    trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
+
+    trajectory_pub_.publish(trajectory_);
+    debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
+    debug_partial_pose_array_pub_.publish(trajectory2posearray(trajectory_));
+
     planTrajectory();
   }
 
-  updateTarget();
+  updateTargetIndex();
 
   const auto partial_trajectory =
       getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
 
   trajectory_pub_.publish(partial_trajectory);
-
-  // [debug] pose array
-  {
-    geometry_msgs::PoseArray pose_array;
-    pose_array.header = trajectory_.header;
-
-    for (const auto& point : trajectory_.points) {
-      pose_array.poses.push_back(point.pose);
-    }
-
-    debug_pose_array_pub_.publish(pose_array);
-  }
-
-  // [debug] partial pose array
-  {
-    geometry_msgs::PoseArray partial_pose_array;
-    partial_pose_array.header = partial_trajectory.header;
-
-    for (const auto& point : partial_trajectory.points) {
-      partial_pose_array.poses.push_back(point.pose);
-    }
-
-    debug_partial_pose_array_pub_.publish(partial_pose_array);
-  }
+  debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
+  debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory));
 }
 
 void AstarNavi::planTrajectory() {
@@ -325,19 +321,19 @@ void AstarNavi::planTrajectory() {
   current_pose_local_.header.stamp = current_pose_global_.header.stamp;
 
   // initialize vector for A* search, this runs only once
-  AstarSearch astar;
-  astar.initialize(*occupancy_grid_);
+  astar_.reset();
+  astar_.initialize(*occupancy_grid_);
 
   // execute astar search
   const ros::WallTime start = ros::WallTime::now();
-  const bool result = astar.makePlan(current_pose_local_.pose, goal_pose_local_.pose);
+  const bool result = astar_.makePlan(current_pose_local_.pose, goal_pose_local_.pose);
   const ros::WallTime end = ros::WallTime::now();
 
   ROS_INFO("Astar planning: %f [s]", (end - start).toSec());
 
   if (result) {
     ROS_INFO("Found goal!");
-    trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar.getWaypoints(),
+    trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_.getWaypoints(),
                                    waypoints_velocity_);
   } else {
     ROS_INFO("Can't find goal...");

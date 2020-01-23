@@ -69,6 +69,7 @@ class AstarNavi {
   double th_stopping_velocity_mps_;
 
   // variables
+  AstarSearch astar_;
   geometry_msgs::PoseStamped current_pose_local_;
   geometry_msgs::PoseStamped current_pose_global_;
   geometry_msgs::PoseStamped goal_pose_local_;
@@ -96,7 +97,7 @@ class AstarNavi {
 
   bool isPlanRequired();
   void planTrajectory();
-  void updateTarget();
+  void updateTargetIndex();
 };
 
 #endif

@@ -28,19 +28,30 @@
 
 enum class STATUS : uint8_t { NONE, OPEN, CLOSED, OBS };
 
+struct IndexXYT {
+  int x;
+  int y;
+  int theta;
+};
+
+struct IndexXY {
+  int x;
+  int y;
+};
+
 struct AstarNode {
   double x, y, theta;            // Coordinate of each node
   STATUS status = STATUS::NONE;  // NONE, OPEN, CLOSED or OBS
   double gc = 0;                 // Actual cost
   double hc = 0;                 // heuristic cost
   double move_distance = 0;      // actual move distance
-  bool back;                     // true if the current direction of the vehicle is back
-  AstarNode* parent = NULL;      // parent node
+  bool is_back;                  // true if the current direction of the vehicle is back
+  AstarNode* parent = nullptr;   // parent node
 };
 
 struct AstarWaypoint {
   geometry_msgs::PoseStamped pose;
-  bool back = false;
+  bool is_back = false;
 };
 
 struct AstarWaypoints {
@@ -49,12 +60,8 @@ struct AstarWaypoints {
 };
 
 struct WaveFrontNode {
-  int index_x;
-  int index_y;
+  IndexXY index;
   double hc;
-
-  WaveFrontNode();
-  WaveFrontNode(int x, int y, double cost);
 };
 
 struct NodeUpdate {
@@ -63,25 +70,29 @@ struct NodeUpdate {
   double rotation;
   double step;
   int index_theta;
-  bool curve;
-  bool back;
+  bool is_curve;
+  bool is_back;
 };
 
 // For open list and goal list
 struct SimpleNode {
-  int index_x;
-  int index_y;
-  int index_theta;
+  IndexXYT index;
   double cost;
 
   bool operator>(const SimpleNode& right) const { return cost > right.cost; }
-
-  SimpleNode();
-  SimpleNode(int x, int y, int theta, double gc, double hc);
 };
 
-inline double calcDistance(double x1, double y1, double x2, double y2) {
-  return std::hypot(x2 - x1, y2 - y1);
+inline double calcDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+  return std::hypot(p2.x - p1.x, p2.y - p1.y);
+}
+
+inline double calcDistance(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  return calcDistance(p1.position, p2.position);
+}
+
+inline double calcDistance(const geometry_msgs::PoseStamped& p1,
+                           const geometry_msgs::PoseStamped& p2) {
+  return calcDistance(p1.pose, p2.pose);
 }
 
 inline double modifyTheta(double theta) {
@@ -97,12 +108,6 @@ inline geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose,
   tf2::doTransform(pose, transformed_pose, transform);
 
   return transformed_pose;
-}
-
-inline WaveFrontNode getWaveFrontNode(int x, int y, double cost) {
-  WaveFrontNode node(x, y, cost);
-
-  return node;
 }
 
 inline geometry_msgs::Point calcRelativeCoordinate(geometry_msgs::Pose pose,

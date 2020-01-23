@@ -17,11 +17,11 @@
 #ifndef ASTER_PLANNER_H
 #define ASTER_PLANNER_H
 
-#include <chrono>
 #include <functional>
 #include <iostream>
 #include <queue>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <geometry_msgs/PoseArray.h>
@@ -35,29 +35,29 @@ class AstarSearch {
   friend class TestClass;
 
  public:
+  using StateUpdateTable = std::vector<std::vector<NodeUpdate>>;
+
   AstarSearch();
 
   void initialize(const nav_msgs::OccupancyGrid& costmap);
-  bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
   void reset();
+  bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
 
   const nav_msgs::Path& getPath() const { return path_; }
   const AstarWaypoints& getWaypoints() const { return waypoints_; }
 
  private:
-  void createStateUpdateTable();
   bool search();
-  void poseToIndex(const geometry_msgs::Pose& pose, int* index_x, int* index_y, int* index_theta);
-  void pointToIndex(const geometry_msgs::Point& point, int* index_x, int* index_y);
-  bool isOutOfRange(int index_x, int index_y);
   void setPath(const SimpleNode& goal);
   bool setStartNode(const geometry_msgs::Pose& start_pose);
   bool setGoalNode(const geometry_msgs::Pose& goal_pose);
-  bool isGoal(double x, double y, double theta);
-  bool isObs(int index_x, int index_y);
   bool detectCollision(const SimpleNode& sn);
   bool calcWaveFrontHeuristic(const SimpleNode& sn);
   bool detectCollisionWaveFront(const WaveFrontNode& sn);
+
+  bool isOutOfRange(const int index_x, const int index_y);
+  bool isObs(const int index_x, const int index_y);
+  bool isGoal(const double x, const double y, const double theta);
 
   // ros param
   ros::NodeHandle nh_;
@@ -89,7 +89,7 @@ class AstarSearch {
   double distance_heuristic_weight_;  // obstacle threshold on grid [0,255]
 
   // hybrid astar variables
-  std::vector<std::vector<NodeUpdate>> state_update_table_;
+  StateUpdateTable state_update_table_;
   std::vector<std::vector<std::vector<AstarNode>>> nodes_;
   std::priority_queue<SimpleNode, std::vector<SimpleNode>, std::greater<SimpleNode>> openlist_;
   std::vector<SimpleNode> goallist_;
