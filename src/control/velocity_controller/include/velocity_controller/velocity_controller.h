@@ -39,6 +39,11 @@
 #include "lowpass_filter.h"
 #include "velocity_controller_mathutils.h"
 
+struct CtrlCmd {
+  double vel;
+  double acc;
+};
+
 class VelocityController
 {
 public:
@@ -48,9 +53,8 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  ros::Subscriber sub_current_velocity_;
+  ros::Subscriber sub_current_vel_;
   ros::Subscriber sub_trajectory_;
-  ros::Subscriber sub_is_sudden_stop_;
   ros::Publisher pub_control_cmd_;
   ros::Publisher pub_debug_;
   ros::Timer timer_control_;
@@ -61,9 +65,8 @@ private:
   // parameters
   // enabled flags
   bool show_debug_info_; //!< @brief flag to show debug info
-  bool enable_sudden_stop_;
   bool enable_smooth_stop_;
-  bool enable_delay_compensation_;
+  bool enable_overshoot_emergency_;
   bool enable_slope_compensation_;
 
   // timer callback
@@ -74,26 +77,19 @@ private:
   double closest_angle_thr_;
 
   // stop state
-  double stop_state_velocity_;
-  double stop_state_acceleration_;
+  double stop_state_vel_;
+  double stop_state_acc_;
   double stop_state_entry_ego_speed_;
   double stop_state_entry_target_speed_;
-
-  // sudden stop
-  double sudden_stop_velocity_;
-  double sudden_stop_acceleration_;
-  double sudden_stop_max_jerk_;
-  double sudden_stop_min_jerk_;
 
   // delay compensation
   double delay_compensation_time_;
 
   // emergency stop
-  double emergency_stop_acc_lim_;
-  double emergency_stop_jerk_lim_;
+  double emergency_stop_acc_;
+  double emergency_stop_jerk_;
 
   // smooth stop
-  double velocity_threshold_drive_;
   struct SmoothStopParam
   {
     double exit_ego_speed;
@@ -106,12 +102,13 @@ private:
     double increasing_brake_time;
     double stop_brake_time;
     double stop_brake_acc;
+    double stop_dist_;
   } smooth_stop_param_;
 
 
   // acceleration limit
-  double max_acceleration_;
-  double min_acceleration_;
+  double max_acc_;
+  double min_acc_;
 
   // jerk limit
   double max_jerk_;
@@ -122,11 +119,23 @@ private:
   double min_pitch_rad_;
 
   // velocity feedback
-  double current_velocity_threshold_pid_integrate_;
+  double current_vel_threshold_pid_integrate_;
+
+  // controller mode (0: init check, 1: PID, 2: Stop, 3: Smooth stop, 4: Emergency stop, 5: Error) 
+  enum class ControlMode
+  {
+    INIT = 0,
+    PID_CONTROL = 1,
+    STOPPED = 2,
+    SMOOTH_STOP = 3,
+    EMERGENCY_STOP = 4,
+    ERROR = 5,
+  };
+  ControlMode controller_mode_;
 
   // variables
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;
-  std::shared_ptr<geometry_msgs::TwistStamped> current_velocity_ptr_;
+  std::shared_ptr<geometry_msgs::TwistStamped> current_vel_ptr_;
   std::shared_ptr<autoware_planning_msgs::Trajectory> trajectory_ptr_;
 
   // calculate dt
@@ -139,24 +148,21 @@ private:
     Reverse,
   } prev_shift_;
 
-  // sudden stop
-  bool is_sudden_stop_;
-
   // smooth stop
   bool is_smooth_stop_;
   bool drive_after_smooth_stop_;
-  bool is_emergency_stop_smooth_stop_;
-  ros::Time start_time_smooth_stop_;
+  bool is_emergency_stop_;
+  std::shared_ptr<ros::Time> start_time_smooth_stop_;
 
   // jerk limit
-  double prev_acceleration_;
+  double prev_cmd_acc_;
 
   // slope compensation
-  Lpf1d lpf_pitch;
+  Lpf1d lpf_pitch_;
 
   // velocity feedback
-  PIDController pid_velocity_;
-  Lpf1d lpf_velocity_error;
+  PIDController pid_vel_;
+  Lpf1d lpf_vel_error_;
 
   // methods
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
@@ -164,14 +170,19 @@ private:
   void callbackIsSuddenStop(const std_msgs::Bool msg);
   void callbackTimerControl(const ros::TimerEvent &event);
 
-  void publishCtrlCmd(const double velocity, const double acceleration, const int controller_mode);
+  CtrlCmd calcCtrlCmd();
+
+  void publishCtrlCmd(const double velocity, const double acceleration);
+  bool checkEmergency();
+  bool isInSmoothStopRange(const int closest);
 
   double getDt();
   bool updateCurrentPose(const double timeout_sec);
   bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps);
   double calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
                                         const double curr_vel, const int closest);
-
+  void resetHandling(ControlMode control_mode);
+  
   enum Shift getCurrentShiftMode(const double target_velocity, const double target_acceleration);
   double getPitch(const geometry_msgs::Quaternion &quaternion) const;
   double calcSmoothStopAcc();
@@ -179,10 +190,10 @@ private:
                                       const double min_acceleration);
   double applyJerkFilter(const double acceleration, const double dt, const double max_jerk, const double min_jerk);
   double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
-  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt,
-                               const bool is_integrated);
+  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt, const double current_vel);
   void resetSmoothStop();
   void resetEmergencyStop();
+  double calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift);
 
   /* Debug */
   std_msgs::Float32MultiArray debug_values_;
@@ -209,7 +220,7 @@ private:
    * [17]: closest waypoint target acceleration
    **/
   void writeDebugValues(const double dt, const double current_velocity, const double target_vel, const double target_acc,
-                        const Shift shift, const double pitch, const double error_velocity, const int32_t closest_waypoint_index);
+                        const Shift shift, const double pitch, const int32_t closest_waypoint_index);
 };
 
 #endif
