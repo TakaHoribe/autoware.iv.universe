@@ -2,7 +2,7 @@
  * Copyright 2018-2019 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not enable this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
@@ -16,6 +16,8 @@
 
 #ifndef VELOCITY_CONTROLLER
 #define VELOCITY_CONTROLLER
+
+#include <memory>
 
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
@@ -58,68 +60,66 @@ private:
 
   // parameters
   // enabled flags
-  bool use_sudden_stop_;
-  bool use_smooth_stop_;
-  bool use_delay_compensation_;
-  bool use_velocity_feedback_;
-  bool use_acceleration_limit_;
-  bool use_jerk_limit_;
-  bool use_slope_compensation_;
   bool show_debug_info_; //!< @brief flag to show debug info
+  bool enable_sudden_stop_;
+  bool enable_smooth_stop_;
+  bool enable_delay_compensation_;
+  bool enable_slope_compensation_;
 
   // timer callback
   double control_rate_;
 
-  // dt
-  double max_dt_; //!< @brief max value of dt
-  double min_dt_; //!< @brief min value of dt
-
   // closest waypoint
-  double distance_threshold_closest_;
-  double angle_threshold_closest_;
+  double closest_dist_thr_;
+  double closest_angle_thr_;
 
   // stop state
   double stop_state_velocity_;
   double stop_state_acceleration_;
-  double current_velocity_threshold_stop_state_;
-  double target_velocity_threshold_stop_state_;
+  double stop_state_entry_ego_speed_;
+  double stop_state_entry_target_speed_;
 
   // sudden stop
   double sudden_stop_velocity_;
   double sudden_stop_acceleration_;
-  double max_jerk_sudden_stop_;
-  double min_jerk_sudden_stop_;
+  double sudden_stop_max_jerk_;
+  double sudden_stop_min_jerk_;
 
   // delay compensation
   double delay_compensation_time_;
 
   // emergency stop
-  double emergency_stop_velocity_;
-  double emergency_stop_acceleration_;
-  double max_jerk_emergency_stop_;
-  double min_jerk_emergency_stop_;
+  double emergency_stop_acc_lim_;
+  double emergency_stop_jerk_lim_;
 
   // smooth stop
   double velocity_threshold_drive_;
-  double current_velocity_threshold_high_smooth_stop_;
-  double current_velocity_threshold_low_smooth_stop_;
-  double target_velocity_threshold_high_smooth_stop_;
-  double target_velocity_threshold_low_smooth_stop_;
-  double weak_brake_time_;
-  double increasing_brake_time_;
-  double stop_brake_time_;
-  double weak_brake_acceleration_;
-  double increasing_brake_gradient_;
-  double stop_brake_acceleration_;
+  struct SmoothStopParam
+  {
+    double exit_ego_speed;
+    double entry_ego_speed;
+    double exit_target_speed;
+    double entry_target_speed;
+    double weak_brake_time;
+    double weak_brake_acc;
+    double increasing_brake_gradient;
+    double increasing_brake_time;
+    double stop_brake_time;
+    double stop_brake_acc;
+  } smooth_stop_param_;
+
 
   // acceleration limit
-  double max_acceleration_, min_acceleration_;
+  double max_acceleration_;
+  double min_acceleration_;
 
   // jerk limit
-  double max_jerk_, min_jerk_;
+  double max_jerk_;
+  double min_jerk_;
 
   // slope compensation
-  double max_pitch_rad_, min_pitch_rad_;
+  double max_pitch_rad_;
+  double min_pitch_rad_;
 
   // velocity feedback
   double current_velocity_threshold_pid_integrate_;
@@ -130,8 +130,7 @@ private:
   std::shared_ptr<autoware_planning_msgs::Trajectory> trajectory_ptr_;
 
   // calculate dt
-  bool first_time_control_;
-  ros::Time prev_control_time_;
+  std::shared_ptr<ros::Time> prev_control_time_;
 
   // shift mode
   enum Shift
@@ -165,20 +164,20 @@ private:
   void callbackIsSuddenStop(const std_msgs::Bool msg);
   void callbackTimerControl(const ros::TimerEvent &event);
 
-  void publishControlCommandStamped(const double velocity, const double acceleration);
+  void publishCtrlCmd(const double velocity, const double acceleration, const int controller_mode);
 
   double getDt();
   bool updateCurrentPose(const double timeout_sec);
   bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps);
-  double calcReferenceVelWithInterpolation(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
-                                           const double curr_vel, const int closest);
+  double calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
+                                        const double curr_vel, const int closest);
 
   enum Shift getCurrentShiftMode(const double target_velocity, const double target_acceleration);
   double getPitch(const geometry_msgs::Quaternion &quaternion) const;
-  double calculateAccelerationSmoothStop();
-  double applyAccelerationLimitFilter(const double acceleration, const double max_acceleration,
+  double calcSmoothStopAcc();
+  double applyAccFilter(const double acceleration, const double max_acceleration,
                                       const double min_acceleration);
-  double applyJerkLimitFilter(const double acceleration, const double dt, const double max_jerk, const double min_jerk);
+  double applyJerkFilter(const double acceleration, const double dt, const double max_jerk, const double min_jerk);
   double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
   double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt,
                                const bool is_integrated);
@@ -197,7 +196,7 @@ private:
    * [4]: shift
    * [5]: pitch after LPF [rad]
    * [6]: error velocity after LPF
-   * [7]: mode (0: init check, 1: PID, 2: Stop, 3: Sudden stop, 4: Smooth stop, 5: Closest waypoint error, 6: Emergency stop) 
+   * [7]: controller_mode (0: init check, 1: PID, 2: Stop, 3: Sudden stop, 4: Smooth stop, 5: Closest waypoint error, 6: Emergency stop) 
    * [8]: acceleration after PID
    * [9]: acceleration after acceleration limit
    * [10]: acceleration after jerk limit
@@ -209,12 +208,8 @@ private:
    * [16]: raw pitch [deg]
    * [17]: closest waypoint target acceleration
    **/
-  void writeDebugValuesParameters(const double dt, const double current_velocity, const double target_velocity,
-                                  const double target_acceleration, const Shift shift, const double pitch,
-                                  const double error_velocity, const int32_t closest_waypoint_index);
-  void writeDebugValuesCmdAcceleration(const double cmd_acceleration, const double mode);
-  void resetDebugValues();
-  void publishDebugValues();
+  void writeDebugValues(const double dt, const double current_velocity, const double target_vel, const double target_acc,
+                        const Shift shift, const double pitch, const double error_velocity, const int32_t closest_waypoint_index);
 };
 
 #endif

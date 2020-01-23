@@ -35,8 +35,7 @@ public:
     double sum_distance = 0.0;
     for (unsigned int i = closest_waypoint_index; i < trajectory.points.size() - 1; ++i)
     {
-      sum_distance +=
-          velocity_controller_mathutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
+      sum_distance += vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
       if (sum_distance > delay_distance)
       {
         return trajectory.points.at(i).accel.linear.x;
