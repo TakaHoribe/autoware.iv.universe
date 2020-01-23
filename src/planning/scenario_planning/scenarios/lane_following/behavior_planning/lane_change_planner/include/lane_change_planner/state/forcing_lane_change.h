@@ -42,7 +42,7 @@ private:
 public:
   ForcingLaneChangeState() = default;
   // override virtual functions
-  void entry() override;
+  void entry(const Status& status) override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;

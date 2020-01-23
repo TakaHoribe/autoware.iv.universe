@@ -34,7 +34,8 @@ StateMachine::StateMachine() : pnh_("~")
 void StateMachine::init()
 {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
-  state_obj_ptr_->entry();
+  Status empty_status;
+  state_obj_ptr_->entry(empty_status);
   path_.points.clear();
 }
 void StateMachine::init(const autoware_planning_msgs::Route& route)
@@ -52,6 +53,7 @@ void StateMachine::updateState()
   if (next_state != current_state)
   {
     ROS_INFO_STREAM("changing state: " << current_state << " => " << next_state);
+    const auto previous_status = state_obj_ptr_->getStatus();
     switch (next_state)
     {
       case State::FOLLOWING_LANE:
@@ -67,7 +69,7 @@ void StateMachine::updateState()
         state_obj_ptr_ = std::make_unique<ForcingLaneChangeState>();
         break;
     }
-    state_obj_ptr_->entry();
+    state_obj_ptr_->entry(previous_status);
     state_obj_ptr_->update();
   }
 }

@@ -79,14 +79,20 @@ public:
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
   bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose,
                                     lanelet::ConstLanelet* closest_lanelet) const;
+  bool getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const;
+  geometry_msgs::Pose getGoalPose() const;
+  lanelet::Id getGoalLaneId() const;
+  lanelet::ConstLanelets getLaneletsFromIds(const std::vector<uint64_t> ids) const;
 
   bool isDeadEndLanelet(const lanelet::ConstLanelet& lanelet) const;
+  bool isInTargetLane(const geometry_msgs::PoseStamped& pose, const lanelet::ConstLanelets& target) const;
 
   lanelet::ConstLanelets getRouteLanelets() const;
   lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet) const;
   lanelet::ConstLanelets getLaneletSequenceUpTo(const lanelet::ConstLanelet& lanelet) const;
   lanelet::ConstLanelets getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet) const;
   lanelet::ConstLanelets getPreviousLaneletSequence(const lanelet::ConstLanelets& lanelet_sequence) const;
+  lanelet::ConstLanelets getClosestLaneletSequence(const geometry_msgs::Pose& pose) const;
   lanelet::ConstLanelets getNeighborsWithinRoute(const lanelet::ConstLanelet& lanelet) const;
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet& lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped& pose) const;
@@ -102,13 +108,8 @@ public:
   autoware_planning_msgs::PathWithLaneId getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                                           const double s_start, const double s_end,
                                                           bool use_exact = true) const;
-  lanelet::ConstLanelets getClosestLaneletSequence(const geometry_msgs::Pose& pose) const;
   bool getLaneChangeTarget(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* target_lanelet) const;
   lanelet::ConstLanelets getLaneChangeTarget(const geometry_msgs::Pose& pose) const;
-  bool isInTargetLane(const geometry_msgs::PoseStamped& pose, const lanelet::ConstLanelets& target) const;
-  geometry_msgs::Pose getGoalPose() const;
-  lanelet::Id getGoalLaneId() const;
-  bool getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const;
 };
 }  // namespace lane_change_planner
 #endif  // LANE_CHANGE_PLANNER_ROUTE_HANDLER_H
