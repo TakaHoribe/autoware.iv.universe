@@ -152,7 +152,17 @@ Visualization Manager:
           Tree:
             world:
               map:
-                {}
+                base_link:
+                  gnss:
+                    {}
+                  imu_link:
+                    {}
+                  traffic_light/camera_link:
+                    traffic_light/camera_optical_link:
+                      {}
+                  velodyne_base_link:
+                    velodyne:
+                      {}
           Update Interval: 0
           Value: true
       Enabled: true
@@ -634,7 +644,10 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                {}
+                goal_lanelets: true
+                left_lane_bound: true
+                right_lane_bound: true
+                route_lanelets: true
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -658,11 +671,11 @@ Visualization Manager:
           Displays:
             - Class: rviz_plugins/Trajectory
               Color Border Vel Max: 3
-              Enabled: true
+              Enabled: false
               Name: ScenarioTrajectory
               Topic: /planning/scenario_planning/trajectory
               Unreliable: false
-              Value: true
+              Value: false
               View Path:
                 Alpha: 1
                 Color: 0; 0; 0
@@ -770,31 +783,31 @@ Visualization Manager:
             - Alpha: 1
               Arrow Length: 0.30000001192092896
               Axes Length: 0.30000001192092896
-              Axes Radius: 0.009999999776482582
+              Axes Radius: 0.05000000074505806
               Class: rviz/PoseArray
               Color: 255; 25; 0
               Enabled: true
-              Head Length: 0.07000000029802322
-              Head Radius: 0.029999999329447746
+              Head Length: 0.10000000149011612
+              Head Radius: 0.20000000298023224
               Name: PartialPoseArray
-              Shaft Length: 0.23000000417232513
-              Shaft Radius: 0.009999999776482582
-              Shape: Arrow (Flat)
+              Shaft Length: 0.20000000298023224
+              Shaft Radius: 0.05000000074505806
+              Shape: Arrow (3D)
               Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/partial_pose_array
               Unreliable: false
               Value: true
             - Alpha: 1
-              Arrow Length: 0.30000001192092896
+              Arrow Length: 0.5
               Axes Length: 0.30000001192092896
               Axes Radius: 0.009999999776482582
               Class: rviz/PoseArray
               Color: 0; 0; 255
               Enabled: true
-              Head Length: 0.07000000029802322
-              Head Radius: 0.029999999329447746
+              Head Length: 0.10000000149011612
+              Head Radius: 0.20000000298023224
               Name: PoseArray
-              Shaft Length: 0.23000000417232513
-              Shaft Radius: 0.009999999776482582
+              Shaft Length: 0.20000000298023224
+              Shaft Radius: 0.05000000074505806
               Shape: Arrow (Flat)
               Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/pose_array
               Unreliable: false
@@ -806,13 +819,13 @@ Visualization Manager:
     - Class: rviz/Group
       Displays:
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: /control/mpc_follower/debug/markers
           Name: Debug/MPC
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
       Name: Control
     - Class: rviz/Group
@@ -927,7 +940,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -8.955010414123535
+      Angle: -8.95501708984375
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -937,11 +950,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 17.7842960357666
+      Scale: 18.083356857299805
       Target Frame: world
       Value: TopDownOrtho (rviz)
-      X: -76.1827392578125
-      Y: -2.1654326915740967
+      X: -74.35234832763672
+      Y: -2.907951593399048
     Saved: ~
 Window Geometry:
   Displays:

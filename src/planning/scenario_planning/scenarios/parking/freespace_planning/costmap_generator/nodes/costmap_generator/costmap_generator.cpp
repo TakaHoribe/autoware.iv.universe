@@ -185,6 +185,7 @@ void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
                                     ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
     ROS_ERROR("%s", ex.what());
+    return;
   }
 
   // Set grid center
