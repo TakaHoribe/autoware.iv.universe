@@ -23,8 +23,8 @@
 
 namespace {
 
-IndexXYT poseToIndex(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Pose& pose,
-                     const int theta_size) {
+IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Pose& pose,
+                    const int theta_size) {
   tf2::Transform orig_tf;
   tf2::convert(costmap.info.origin, orig_tf);
 
@@ -49,10 +49,10 @@ IndexXYT poseToIndex(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs
   return {index_x, index_y, index_theta};
 }
 
-IndexXY pointToIndex(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Point& point) {
+IndexXY point2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Point& point) {
   geometry_msgs::Pose pose;
   pose.position = point;
-  const auto index = poseToIndex(costmap, pose, 1);
+  const auto index = pose2index(costmap, pose, 1);
   return {index.x, index.y};
 }
 
@@ -195,7 +195,7 @@ AstarSearch::AstarSearch() : nh_(""), private_nh_("~") {
   state_update_table_ = createStateUpdateTable(minimum_turning_radius_, theta_size_, use_back_);
 }
 
-void AstarSearch::initialize(const nav_msgs::OccupancyGrid& costmap) {
+void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
   costmap_ = costmap;
 
   const auto height = costmap_.info.height;
@@ -226,32 +226,13 @@ void AstarSearch::initialize(const nav_msgs::OccupancyGrid& costmap) {
 
       // obstacle or unknown area
       if (cost < 0 || obstacle_threshold_ <= cost) {
-        nodes_[i][j][0].status = STATUS::OBS;
+        nodes_[i][j][0].status = Status::OBS;
       }
 
       // the cost more than threshold is regarded almost same as an obstacle
       // because of its very high cost
       if (use_potential_heuristic_) {
         nodes_[i][j][0].hc = cost * potential_weight_;
-      }
-    }
-  }
-}
-
-void AstarSearch::reset() {
-  path_.poses.clear();
-
-  // Clear queue
-  std::priority_queue<SimpleNode, std::vector<SimpleNode>, std::greater<SimpleNode>> empty;
-  std::swap(openlist_, empty);
-
-  // Reset node info here ...?
-  for (size_t i = 0; i < costmap_.info.height; i++) {
-    for (size_t j = 0; j < costmap_.info.width; j++) {
-      for (int k = 0; k < theta_size_; k++) {
-        // other values will be updated during the search
-        nodes_[i][j][k].status = STATUS::NONE;
-        nodes_[i][j][k].hc = 0;
       }
     }
   }
@@ -274,7 +255,7 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   start_pose_local_.pose = start_pose;
 
   // Get index of start pose
-  const auto index = poseToIndex(costmap_, start_pose_local_.pose, theta_size_);
+  const auto index = pose2index(costmap_, start_pose_local_.pose, theta_size_);
   SimpleNode start_sn{index, 0};
 
   if (isOutOfRange(start_sn.index.x, start_sn.index.y)) {
@@ -293,7 +274,7 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   start_node.gc = 0;
   start_node.move_distance = 0;
   start_node.is_back = false;
-  start_node.status = STATUS::OPEN;
+  start_node.status = Status::OPEN;
   start_node.parent = nullptr;
 
   // set euclidean distance heuristic cost
@@ -316,7 +297,7 @@ bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
   goal_yaw_ = modifyTheta(tf2::getYaw(goal_pose_local_.pose.orientation));
 
   // Get index of goal pose
-  const auto index = poseToIndex(costmap_, goal_pose_local_.pose, theta_size_);
+  const auto index = pose2index(costmap_, goal_pose_local_.pose, theta_size_);
   const SimpleNode goal_sn{index, 0};
 
   if (isOutOfRange(goal_sn.index.x, goal_sn.index.y)) {
@@ -355,7 +336,7 @@ bool AstarSearch::search() {
 
     // Expand nodes from this node
     AstarNode* current_an = &nodes_[top_sn.index.y][top_sn.index.x][top_sn.index.theta];
-    current_an->status = STATUS::CLOSED;
+    current_an->status = Status::CLOSED;
 
     if (isGoal(current_an->x, current_an->y, current_an->theta)) {
       setPath(top_sn);
@@ -378,7 +359,7 @@ bool AstarSearch::search() {
       next_pos.x = next_x;
       next_pos.y = next_y;
 
-      const auto index = pointToIndex(costmap_, next_pos);
+      const auto index = point2index(costmap_, next_pos);
 
       SimpleNode next_sn{IndexXYT{index.x, index.y, top_sn.index.theta + state.index_theta}, 0};
 
@@ -412,8 +393,8 @@ bool AstarSearch::search() {
             calcDistance(next_pos, goal_pose_local_.pose.position) * distance_heuristic_weight_;
       }
 
-      if (next_an->status == STATUS::NONE) {
-        next_an->status = STATUS::OPEN;
+      if (next_an->status == Status::NONE) {
+        next_an->status = Status::OPEN;
         next_an->x = next_x;
         next_an->y = next_y;
         next_an->theta = next_theta;
@@ -427,9 +408,9 @@ bool AstarSearch::search() {
         continue;
       }
 
-      if (next_an->status == STATUS::OPEN || next_an->status == STATUS::CLOSED) {
+      if (next_an->status == Status::OPEN || next_an->status == Status::CLOSED) {
         if (next_gc < next_an->gc) {
-          next_an->status = STATUS::OPEN;
+          next_an->status = Status::OPEN;
           next_an->x = next_x;
           next_an->y = next_y;
           next_an->theta = next_theta;
@@ -552,7 +533,7 @@ bool AstarSearch::calcWaveFrontHeuristic(const SimpleNode& sn) {
       WaveFrontNode{IndexXY{1, -1}, std::hypot(resolution, resolution)},
   };
 
-  const auto start_index = poseToIndex(costmap_, start_pose_local_.pose, theta_size_);
+  const auto start_index = pose2index(costmap_, start_pose_local_.pose, theta_size_);
 
   // Whether the robot can reach goal
   bool is_reachable = false;
@@ -627,6 +608,17 @@ bool AstarSearch::detectCollisionWaveFront(const WaveFrontNode& ref) {
   return false;
 }
 
+bool AstarSearch::hasObstacleOnPath() {
+  for (const auto& p : waypoints_.waypoints) {
+    const auto index = pose2index(costmap_, p.pose.pose, theta_size_);
+    if (isObs(index.x, index.y)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool AstarSearch::isOutOfRange(const int index_x, const int index_y) {
   if (index_x < 0 || index_x >= static_cast<int>(costmap_.info.width)) return true;
   if (index_y < 0 || index_y >= static_cast<int>(costmap_.info.height)) return true;
@@ -634,7 +626,7 @@ bool AstarSearch::isOutOfRange(const int index_x, const int index_y) {
 }
 
 bool AstarSearch::isObs(const int index_x, const int index_y) {
-  return (nodes_[index_y][index_x][0].status == STATUS::OBS);
+  return (nodes_[index_y][index_x][0].status == Status::OBS);
 }
 
 // Check if the next state is the goal

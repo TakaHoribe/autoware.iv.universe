@@ -26,7 +26,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Header.h>
 
-enum class STATUS : uint8_t { NONE, OPEN, CLOSED, OBS };
+enum class Status : uint8_t { NONE, OPEN, CLOSED, OBS };
 
 struct IndexXYT {
   int x;
@@ -40,8 +40,10 @@ struct IndexXY {
 };
 
 struct AstarNode {
-  double x, y, theta;            // Coordinate of each node
-  STATUS status = STATUS::NONE;  // NONE, OPEN, CLOSED or OBS
+  double x;                      // x
+  double y;                      // y
+  double theta;                  // theta
+  Status status = Status::NONE;  // NONE, OPEN, CLOSED or OBS
   double gc = 0;                 // Actual cost
   double hc = 0;                 // heuristic cost
   double move_distance = 0;      // actual move distance

@@ -96,6 +96,20 @@ double calculateDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::P
   return calculateDistance2d(p1.position, p2.position);
 }
 
+double calculateDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
+                           const geometry_msgs::Pose& pose) {
+  std::vector<double> distances;
+  distances.reserve(trajectory.points.size());
+
+  std::transform(
+      std::begin(trajectory.points), std::end(trajectory.points), std::back_inserter(distances),
+      [&](const auto& point) { return calculateDistance2d(point.pose.position, pose.position); });
+
+  const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
+
+  return *min_itr;
+}
+
 geometry_msgs::PoseStamped tf2pose(const geometry_msgs::TransformStamped& tf) {
   geometry_msgs::PoseStamped pose;
 
@@ -228,9 +242,19 @@ bool AstarNavi::isPlanRequired() {
     return true;
   }
 
-  // TODO: obstacles
+  astar_->initializeNodes(*occupancy_grid_);
+  // TODO(Kenji Miyake): Consider current position(index) and velocity
+  const bool is_obstacle_found = astar_->hasObstacleOnPath();
+  if (is_obstacle_found) {
+    return true;
+  }
 
-  // TODO: course out
+  constexpr double th_course_out_distance_m = 3.0;
+  const bool is_course_out =
+      calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m;
+  if (is_course_out) {
+    return true;
+  }
 
   return false;
 }
@@ -321,19 +345,19 @@ void AstarNavi::planTrajectory() {
   current_pose_local_.header.stamp = current_pose_global_.header.stamp;
 
   // initialize vector for A* search, this runs only once
-  astar_.reset();
-  astar_.initialize(*occupancy_grid_);
+  astar_.reset(new AstarSearch());
+  astar_->initializeNodes(*occupancy_grid_);
 
   // execute astar search
   const ros::WallTime start = ros::WallTime::now();
-  const bool result = astar_.makePlan(current_pose_local_.pose, goal_pose_local_.pose);
+  const bool result = astar_->makePlan(current_pose_local_.pose, goal_pose_local_.pose);
   const ros::WallTime end = ros::WallTime::now();
 
   ROS_INFO("Astar planning: %f [s]", (end - start).toSec());
 
   if (result) {
     ROS_INFO("Found goal!");
-    trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_.getWaypoints(),
+    trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_->getWaypoints(),
                                    waypoints_velocity_);
   } else {
     ROS_INFO("Can't find goal...");

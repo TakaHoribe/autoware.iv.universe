@@ -19,6 +19,7 @@
 
 #include <deque>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -69,7 +70,7 @@ class AstarNavi {
   double th_stopping_velocity_mps_;
 
   // variables
-  AstarSearch astar_;
+  std::unique_ptr<AstarSearch> astar_;
   geometry_msgs::PoseStamped current_pose_local_;
   geometry_msgs::PoseStamped current_pose_global_;
   geometry_msgs::PoseStamped goal_pose_local_;

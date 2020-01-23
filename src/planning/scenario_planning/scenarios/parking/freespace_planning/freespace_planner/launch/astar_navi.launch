@@ -1,5 +1,5 @@
 <launch>
-
+  <!-- <group ns="planning/scenario_planning/scenarios/parking/freespace_planning"> -->
   <!-- Navi configurations -->
   <arg name="input_route" default="/planning/mission_planning/route" />
   <arg name="input_occupancy_grid" default="costmap_generator/occupancy_grid" />
@@ -65,5 +65,5 @@
     <param name="potential_weight" value="$(arg potential_weight)" />
     <param name="distance_heuristic_weight" value="$(arg distance_heuristic_weight)" />
   </node>
-
+  <!-- </group> -->
 </launch>
