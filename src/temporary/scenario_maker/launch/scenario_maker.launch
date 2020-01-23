@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- publish camera info -->
+    <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
+
+    <!-- scenario -->
+    <node pkg="scenario_maker" type="scenario_maker.py" name="scenario_maker" output="screen">
+    </node>
+
+</launch>
