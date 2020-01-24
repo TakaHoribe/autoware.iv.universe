@@ -308,7 +308,6 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
   ROS_INFO_COND(show_debug_info_, "[feedback control]  vel: %f, acc: %f", target_vel, acc_cmd);
-  printf("\n");
   return CtrlCmd{target_vel, acc_cmd};
 }
 
