@@ -14,7 +14,10 @@
     <remap from="~input/perception" to="/perception/prediction/objects"/>
     <remap from="~input/velocity" to="/vehicle/status/twist"/>
     <remap from="~output/lane_change_path" to="path_with_lane_id"/>
+    <remap from="~input/lane_change_approval" to="/lane_change_approval"/>
   </node>
+
+  <node pkg="rostopic" type="rostopic" name="auto_approve_lane_change" args='pub /lane_change_approval std_msgs/Bool "data: true" -r 10'/>
 
   <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
     <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
