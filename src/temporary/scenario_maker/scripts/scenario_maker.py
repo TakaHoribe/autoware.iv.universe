@@ -44,27 +44,42 @@ class ScenarioMaker:
     def __init__(self):
 
         # TODO: ->rosparam
-        self.goal_dist = rospy.get_param("goal_dist", 1.0)  # [m]
-        self.goal_th = rospy.get_param("goal_theta", 10)  # [deg]
-        self.goal_vel = rospy.get_param("goal_velocity", 0.001)  # [m/s]
-        self.give_up_time = rospy.get_param("give_up_time", 300)  # [s]
-        self.retry_scenario = rospy.get_param("retry_scenario", True)
-        self.traffic_light_time = rospy.get_param("traffic_light_time", 35)  # [s]
-        self.is_record_rosbag = rospy.get_param("record_rosbag", False)
-        self.rosbag_node_name = rospy.get_param("rosbag_node_name", "rosbag_node")
-        self.delete_success_rosbag = rospy.get_param("delete_success_rosbag", True)
+        self.goal_dist = rospy.get_param("~goal_dist", 1.0)  # Goal criteria(xy-distance) [m]
+        self.goal_th = rospy.get_param("~goal_theta", 10)  # Goal criteria(theta-distance)[deg]
+        self.goal_vel = rospy.get_param("~goal_velocity", 0.001)  # Goal criteria(velocity)[m/s]
+        self.give_up_time = rospy.get_param("~give_up_time", 600)  # Goal criteria(time)[s]
+        self.generate_obstacle = rospy.get_param("~generate_obstacle", True)  # Generate obstacle or not
+        self.auto_engage = rospy.get_param("~auto_engage", True)  # Engage automaticlly or not
+        self.retry_scenario = rospy.get_param("~retry_scenario", True)  # Retry scenario or not
+        self.max_scenario_num = rospy.get_param("~max_scenario_num", 10)  # Numober of scenarios to try
+        self.traffic_light_time = rospy.get_param("~traffic_light_time", 35)  # Time until the traffic light changes[s]
+        self.initial_traffic_light = rospy.get_param(
+            "~initial_traffic_light", "green"
+        )  # initial traffic light. green or red.
+        self.is_record_rosbag = rospy.get_param(
+            "~record_rosbag", False
+        )  # Record rosbag or not **Rosbag file is very large. Be careful!
+        self.rosbag_node_name = rospy.get_param("~rosbag_node_name", "rosbag_node")  # The node name of rosbag-record
+        self.delete_success_rosbag = rospy.get_param(
+            "~delete_success_rosbag", True
+        )  # delete rosbag of success scenario or not
         self.rosbag_file_name = rospy.get_param(
-            "rosbag_file_name", "/media/kimura/extra_ssd/rosbag/scenario"
-        )  # must be absolute path
-
-        self.obstacle_generated = np.zeros((OBSTACLE_NUM + 1))
-        self.obstacle_generated_time = np.zeros((OBSTACLE_NUM + 1))
-        self.obstacle_generated_count = np.zeros((OBSTACLE_NUM + 1))
+            "~rosbag_file_name", "/media/kimura/extra_ssd/rosbag/scenario"
+        )  # dir/file name of rosbag file(**it must be absolute path ** )
 
         self.trial_num = 0
         self.start_time = 0
         self.traffic_light_start_time = rospy.Time.now().to_sec()
-        self.traffic_light = COLOR_GREEN
+        if self.initial_traffic_light == "green":
+            self.traffic_light = COLOR_GREEN
+        elif self.initial_traffic_light == "red":
+            self.traffic_light = COLOR_RED
+        else:
+            self.traffic_light = COLOR_GREEN  # exception
+
+        self.obstacle_generated = np.zeros((OBSTACLE_NUM + 1))
+        self.obstacle_generated_time = np.zeros((OBSTACLE_NUM + 1))
+        self.obstacle_generated_count = np.zeros((OBSTACLE_NUM + 1))
 
         self.self_x = 0.0
         self.self_y = 0.0
@@ -134,7 +149,8 @@ class ScenarioMaker:
         time.sleep(1.0)
         self.reset_obstacle()
         time.sleep(1.0)
-        self.scenario_obstacle()  # obstacle is valid only when self-position is given
+        if self.generate_obstacle:
+            self.scenario_obstacle()  # obstacle is valid only when self-position is given
         time.sleep(3.0)
         self.scenario_path()
 
@@ -169,7 +185,8 @@ class ScenarioMaker:
                     self.pub_engage.publish(False)  # stop vehicle
                     sys.exit()
             else:
-                self.scenario_obstacle_manager()
+                if self.generate_obstacle:
+                    self.scenario_obstacle_manager()
             self.traffic_light_manager()
             # self.traffic_light_publisher()
 
@@ -177,6 +194,9 @@ class ScenarioMaker:
 
     def retry_senario_path(self):
         self.trial_num += 1
+        if self.trial_num > self.max_scenario_num:
+            sys.exit()
+
         if self.is_record_rosbag:
             self.record_rosbag(self.trial_num, self.rosbag_node_name, self.rosbag_file_name)
         self.pub_engage.publish(False)  # stop vehicle
@@ -194,8 +214,9 @@ class ScenarioMaker:
         # Publish Scenario
         self.scenario_path1(only_initial_pose)
         # Publish Engage
-        self.pub_engage.publish(True)
-        time.sleep(0.25)
+        if self.auto_engage:
+            self.pub_engage.publish(True)
+            time.sleep(0.25)
 
     def scenario_obstacle(self):
         self.scenario_obstacle1()
@@ -845,7 +866,13 @@ class ScenarioMaker:
 
     def record_rosbag(self, id, node_name, file_name):
         # no error handling: TODO
-        rosbag_record = "rosbag record -O " + file_name + str(id) + ".bag -a __name:=" + node_name
+        rosbag_record = (
+            "rosbag record -O "
+            + file_name
+            + str(id)
+            + '.bag -a -x "/debug/(.*)|/sensing/(.*)|/sensor/(.*)|/traffic_light_classifier/(.*)|/rosout|/rosout_agg|(.*)/pcd|(.*)/costmap|(.*)/occupancy_grid|(.*)/drivable_area" __name:='
+            + node_name
+        )
         subprocess.Popen(rosbag_record, shell=True)
 
     def end_rosbag(self, node_name):

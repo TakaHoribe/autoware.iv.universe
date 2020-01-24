@@ -39,19 +39,32 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     bool found = false;
     double highest_confidence = 0.0;
     autoware_traffic_light_msgs::TrafficLightState highest_confidence_tl_state;
+    std::string debug_msg = 0;
     for (const auto &traffic_light : traffic_lights)
     {
         if (!traffic_light.isLineString()) // traffic ligth must be linestrings
+        {
+            debug_msg ="traffic_light is not line string";
             continue;
+        }
         const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
         std_msgs::Header header;
         autoware_traffic_light_msgs::TrafficLightState tl_state;
         if (!getTrafficLightState(id, header, tl_state))
+        {
+            debug_msg = "fail getTrafficLightState()";
             continue;
+        }
         if (!((ros::Time::now() - header.stamp).toSec() < 1.0))
+        {
+            debug_msg ="TL time stamp is too old";
             continue;
+        }
         if (tl_state.lamp_states.empty() || tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::UNKNOWN)
+        {
+            debug_msg = "LampState is UNKNOWN or EMPTY";
             continue;
+        }
 
         if (highest_confidence < tl_state.lamp_states.front().confidence)
         {
@@ -62,7 +75,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     }
     if (!found)
     {
-        ROS_WARN_THROTTLE(1.0, "cannot find traffic light lamp state");
+        ROS_WARN_THROTTLE(1.0, "cannot find traffic light lamp state. debug_msg = %s", debug_msg.c_str());
         return false;
     }
 

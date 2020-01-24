@@ -684,5 +684,16 @@ double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, co
   return std::numeric_limits<double>::max();
 }
 
+std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets)
+{
+  std::vector<uint64_t> ids;
+  for(const auto& llt: lanelets)
+  {
+    ids.push_back(llt.id());
+  }
+  return ids;
+}
+
+
 }  // namespace util
 }  // namespace lane_change_planner

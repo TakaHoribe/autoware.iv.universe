@@ -23,7 +23,7 @@ State AbortingLaneChangeState::getCurrentState() const
   return State::ABORTING_LANE_CHANGE;
 }
 
-void AbortingLaneChangeState::entry()
+void AbortingLaneChangeState::entry(const Status& status)
 {
 }
 

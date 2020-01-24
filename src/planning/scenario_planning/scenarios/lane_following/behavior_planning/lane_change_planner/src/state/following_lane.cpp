@@ -26,8 +26,9 @@ State FollowingLaneState::getCurrentState() const
   return State::FOLLOWING_LANE;
 }
 
-void FollowingLaneState::entry()
+void FollowingLaneState::entry(const Status& status)
 {
+  status_ = status;
   if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_))
   {
     ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
@@ -76,6 +77,10 @@ void FollowingLaneState::update()
           current_pose_.pose, current_twist_->twist, backward_path_length, forward_path_length,
           lane_change_prepare_duration, lane_changing_duration);
     }
+    const auto& lane_change_target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
+    const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
+    status_.lane_follow_lane_ids = util::getIds(current_lanes);
+    status_.lane_change_lane_ids = util::getIds(lane_change_target_lanes);
   }
 
   // update drivable area
