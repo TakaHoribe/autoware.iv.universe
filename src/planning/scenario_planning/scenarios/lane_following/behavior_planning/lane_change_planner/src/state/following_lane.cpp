@@ -86,11 +86,22 @@ void FollowingLaneState::update()
   // update drivable area
   {
     const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
+    lanelet::ConstLanelet closest_lane;
+    if (!lanelet::utils::query::getClosestLanelet(current_lanes, current_pose_.pose, &closest_lane))
+    {
+      return;
+    }
+
+    double backward_length = ros_parameters_.backward_path_length;
+    double forward_length = ros_parameters_.forward_path_length;
+    const auto trimmed_current_lanes = RouteHandler::getInstance().getLaneletSequence(
+        closest_lane, current_pose_.pose, backward_length, forward_length);
+
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
     status_.lane_follow_path.drivable_area =
-        util::convertLanesToDrivableArea(current_lanes, current_pose_, width, height, resolution);
+        util::convertLanesToDrivableArea(trimmed_current_lanes, current_pose_, width, height, resolution);
   }
 }
 

@@ -237,7 +237,7 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   {
     vehicle_speed = min_speed;
     ROS_DEBUG_STREAM_THROTTLE(1, "cannot convert PathWithLaneId with zero velocity, using minimum value "
-                                    << min_speed << " [m/s] instead");
+                                     << min_speed << " [m/s] instead");
   }
   double accumulated_distance = 0;
 
@@ -616,14 +616,33 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
 
     // convert lane polygons into cv type
     cv::Mat cv_image(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1, cv::Scalar(occupied_space));
-    for (const auto& llt : lanes)
+    for (std::size_t i = 0; i < lanes.size(); i++)
     {
+      const auto lane = lanes.at(i);
+
+      // skip if it overlaps with past lane
+      bool overlaps_with_past_lane = false;
+      for (std::size_t j = 0; j < i; j++)
+      {
+        const auto past_lane = lanes.at(j);
+        if (boost::geometry::overlaps(lane.polygon2d().basicPolygon(), past_lane.polygon2d().basicPolygon()))
+        {
+          overlaps_with_past_lane = true;
+          break;
+        }
+      }
+      if (overlaps_with_past_lane)
+      {
+        continue;
+      }
+
+      // create drivable area using opencv
       std::vector<std::vector<cv::Point>> cv_polygons;
       std::vector<int> cv_polygon_sizes;
       cv::Mat cv_image_single_lane(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1,
                                    cv::Scalar(occupied_space));
       std::vector<cv::Point> cv_polygon;
-      for (const auto& llt_pt : llt.polygon3d())
+      for (const auto& llt_pt : lane.polygon3d())
       {
         geometry_msgs::Point geom_pt = lanelet::utils::conversion::toGeomMsgPt(llt_pt);
         geometry_msgs::Point transformed_geom_pt;
@@ -687,13 +706,12 @@ double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, co
 std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets)
 {
   std::vector<uint64_t> ids;
-  for(const auto& llt: lanelets)
+  for (const auto& llt : lanelets)
   {
     ids.push_back(llt.id());
   }
   return ids;
 }
-
 
 }  // namespace util
 }  // namespace lane_change_planner

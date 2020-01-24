@@ -175,7 +175,8 @@ bool RouteHandler::isDeadEndLanelet(const lanelet::ConstLanelet& lanelet) const
   return true;
 }
 
-lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet) const
+lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet,
+                                                             const double min_length) const
 {
   lanelet::ConstLanelets lanelet_sequence_forward;
   if (!exists(route_lanelets_, lanelet))
@@ -184,9 +185,9 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::Cons
   }
 
   lanelet_sequence_forward.push_back(lanelet);
-
+  double length = boost::geometry::length(lanelet.centerline().basicLineString());
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (ros::ok())
+  while (ros::ok() && length < min_length)
   {
     lanelet::ConstLanelet next_lanelet;
     if (!getNextLaneletWithinRoute(current_lanelet, &next_lanelet))
@@ -195,12 +196,14 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::Cons
     }
     lanelet_sequence_forward.push_back(next_lanelet);
     current_lanelet = next_lanelet;
+    length += boost::geometry::length(next_lanelet.centerline().basicLineString());
   }
 
   return lanelet_sequence_forward;
 }
 
-lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::ConstLanelet& lanelet) const
+lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::ConstLanelet& lanelet,
+                                                            const double min_length) const
 {
   lanelet::ConstLanelets lanelet_sequence_backward;
   if (!exists(route_lanelets_, lanelet))
@@ -209,7 +212,9 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::Const
   }
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (ros::ok())
+  double length = 0;
+
+  while (ros::ok() && length < min_length)
   {
     lanelet::ConstLanelet prev_lanelet;
     if (!getPreviousLaneletWithinRoute(current_lanelet, &prev_lanelet))
@@ -217,6 +222,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::Const
       break;
     }
     lanelet_sequence_backward.push_back(prev_lanelet);
+    length += boost::geometry::length(prev_lanelet.centerline().basicLineString());
     current_lanelet = prev_lanelet;
   }
 
@@ -236,6 +242,42 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequence(const lanelet::ConstLane
 
   lanelet_sequence_forward = getLaneletSequenceAfter(lanelet);
   lanelet_sequence_backward = getLaneletSequenceUpTo(lanelet);
+
+  // loop check
+  if (lanelet_sequence_forward.empty() > 1 && lanelet_sequence_backward.empty() > 1)
+  {
+    if (lanelet_sequence_backward.back().id() == lanelet_sequence_forward.front().id())
+    {
+      return lanelet_sequence_forward;
+    }
+  }
+
+  lanelet_sequence.insert(lanelet_sequence.end(), lanelet_sequence_backward.begin(), lanelet_sequence_backward.end());
+  lanelet_sequence.insert(lanelet_sequence.end(), lanelet_sequence_forward.begin(), lanelet_sequence_forward.end());
+
+  return lanelet_sequence;
+}
+
+lanelet::ConstLanelets RouteHandler::getLaneletSequence(const lanelet::ConstLanelet& lanelet,
+                                                        const geometry_msgs::Pose& current_pose,
+                                                        const double backward_distance,
+                                                        const double forward_distance) const
+{
+  lanelet::ConstLanelets lanelet_sequence;
+  lanelet::ConstLanelets lanelet_sequence_backward;
+  lanelet::ConstLanelets lanelet_sequence_forward;
+  if (!exists(route_lanelets_, lanelet))
+  {
+    return lanelet_sequence;
+  }
+
+  lanelet_sequence_forward = getLaneletSequenceAfter(lanelet, forward_distance);
+
+  const auto arc_coordinate = lanelet::utils::getArcCoordinates({ lanelet }, current_pose);
+  if (arc_coordinate.length < backward_distance)
+  {
+    lanelet_sequence_backward = getLaneletSequenceUpTo(lanelet, backward_distance);
+  }
 
   // loop check
   if (lanelet_sequence_forward.empty() > 1 && lanelet_sequence_backward.empty() > 1)

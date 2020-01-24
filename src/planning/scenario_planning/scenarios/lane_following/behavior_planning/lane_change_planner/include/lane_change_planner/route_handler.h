@@ -89,8 +89,13 @@ public:
 
   lanelet::ConstLanelets getRouteLanelets() const;
   lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet) const;
-  lanelet::ConstLanelets getLaneletSequenceUpTo(const lanelet::ConstLanelet& lanelet) const;
-  lanelet::ConstLanelets getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet) const;
+  lanelet::ConstLanelets getLaneletSequence(const lanelet::ConstLanelet& lanelet,
+                                            const geometry_msgs::Pose& current_pose, const double backward_distance,
+                                            const double forward_distance) const;
+  lanelet::ConstLanelets getLaneletSequenceUpTo(const lanelet::ConstLanelet& lanelet,
+                                                const double min_length = std::numeric_limits<double>::max()) const;
+  lanelet::ConstLanelets getLaneletSequenceAfter(const lanelet::ConstLanelet& lanelet,
+                                                 const double min_length = std::numeric_limits<double>::max()) const;
   lanelet::ConstLanelets getPreviousLaneletSequence(const lanelet::ConstLanelets& lanelet_sequence) const;
   lanelet::ConstLanelets getClosestLaneletSequence(const geometry_msgs::Pose& pose) const;
   lanelet::ConstLanelets getNeighborsWithinRoute(const lanelet::ConstLanelet& lanelet) const;
