@@ -323,7 +323,7 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
   for (int i = 1; i <= N; ++i)
   {
     double ds = ds_nominal;
-    if (i > Ns)
+    if (i > Nt)
     {
       ds = std::max(1.0, ds_nominal); // if the planning time is not enough to see the desired distance, change the interval distance to see far.
     }
@@ -476,17 +476,14 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) // bi
   {
-    // The lower the speed, the higher the demand of speed accuracy
-    const double velocity_weight = 10.0 / (std::max(std::min(vmax[i], /*max=*/10.0), /*min=*/2.0));
-
-    // w_v * |vmax^2 - b| -> minimize (-w_v * bi)
-    q[i] = -velocity_weight;
+    q[i] = -1.0; // |vmax^2 - b| -> minimize (-bi)
   }
 
-  for (unsigned int i = N; i < 2 * N - 1; ++i) // pseudo jerk: d(ai)/ds
+  for (unsigned int i = N; i < 2 * N - 1; ++i) // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
   {
     unsigned int j = i - N;
-    const double w_x_dsinv = smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001));
+    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+    const double w_x_dsinv = smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001)) * vel * vel;
     P(i, i) += w_x_dsinv;
     P(i, i + 1) -= w_x_dsinv;
     P(i + 1, i) -= w_x_dsinv;

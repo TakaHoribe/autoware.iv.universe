@@ -32,7 +32,7 @@
   <arg name="min_trajectory_interval_distance" default="0.1"/>
 
 
-  <arg name="pseudo_jerk_weight" default="1000.0"/>
+  <arg name="pseudo_jerk_weight" default="100.0"/>
   <arg name="over_v_weight" default="100000.0"/>
   <arg name="over_a_weight" default="1000.0"/>
 

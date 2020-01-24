@@ -139,20 +139,52 @@ class TrajectoryVisualizer():
     def plotTrajectory(self):
         plt.clf()
         ax1 = plt.subplot(3,1,1)#row, col, index(<raw*col)
-        ax1.plot(self.CalcArcLength(self.trajectory_raw), self.ToVelList(self.trajectory_raw), label="0raw")
-        ax1.plot(self.CalcArcLength(self.trajectory_external_velocity_limitted), self.ToVelList(self.trajectory_external_velocity_limitted), label="1external_velocity_limitted")
-        ax1.plot(self.CalcArcLength(self.trajectory_lateral_acc_filtered), self.ToVelList(self.trajectory_lateral_acc_filtered), label="2lateral_acc_filtered")
-        ax1.plot(self.CalcArcLength(self.trajectory_time_resamped), self.ToVelList(self.trajectory_time_resamped), label="3time_resamped")
-        ax1.plot(self.CalcArcLength(self.trajectory_final), self.ToVelList(self.trajectory_final), label="4final")
+        x = self.CalcArcLength(self.trajectory_raw)
+        y = self.ToVelList(self.trajectory_raw)
+        if len(x) == len(y):
+            ax1.plot(x, y, label="0raw", marker="")
+
+        x = self.CalcArcLength(self.trajectory_external_velocity_limitted)
+        y = self.ToVelList(self.trajectory_external_velocity_limitted)
+        if len(x) == len(y):
+            ax1.plot(x, y, label="1external_velocity_limitted", marker="")
+
+        x = self.CalcArcLength(self.trajectory_lateral_acc_filtered)
+        y = self.ToVelList(self.trajectory_lateral_acc_filtered)
+        if len(x) == len(y):
+            ax1.plot(x, y, label="2lateral_acc_filtered", marker="*")
+
+        x = self.CalcArcLength(self.trajectory_time_resamped)
+        y = self.ToVelList(self.trajectory_time_resamped)
+        if len(x) == len(y):
+            ax1.plot(x, y, label="3time_resamped", marker="*")
+
+        x = self.CalcArcLength(self.trajectory_final)
+        y = self.ToVelList(self.trajectory_final)
+        if len(x) == len(y):
+            ax1.plot(x, y, label="4final", marker="*")
         ax1.set_title("trajectorys velocity")
         ax1.legend()
+        ax1.set_xlim([0, 50])
 
         ax2 = plt.subplot(3,1,2)
-        ax2.plot(self.CalcArcLength(self.trajectory_final), self.CalcAcceleration(self.trajectory_final), label="final")
+        x = self.CalcArcLength(self.trajectory_final)
+        y = self.CalcAcceleration(self.trajectory_final)
+        if len(x) == len(y):
+            ax2.plot(x, y, label="final")
+            ax2.set_xlim([0, 50])
+            ax2.set_ylim([-5, 5])
+
         # ax2.legend()
 
         ax3 = plt.subplot(3,1,3)
-        ax3.plot(self.CalcArcLength(self.trajectory_final), self.CalcJerk(self.trajectory_final), label="final")
+        x = self.CalcArcLength(self.trajectory_final)
+        y = self.CalcJerk(self.trajectory_final)
+        if len(x) == len(y):
+            ax3.plot(x, y, label="final")
+            ax3.set_xlim([0, 50])
+            ax3.set_ylim([-2, 2])
+
         # ax3.legend()
 
         #plt.show()
