@@ -317,13 +317,26 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
     ROS_WARN_STREAM("Empty path. Failed to interpolate path by time!");
     return false;
   }
-  if (t < path.path.front().header.stamp || t > path.path.back().header.stamp)
+  if (t < path.path.front().header.stamp)
   {
-    ROS_WARN_STREAM("failed to interpolate path by time!"
-                    << std::endl
-                    << "path start time: " << path.path.front().header.stamp << std::endl
-                    << "path end time  : " << path.path.back().header.stamp << std::endl
-                    << "query time     : " << t);
+    ROS_DEBUG_STREAM("failed to interpolate path by time!" << std::endl
+                                                    << "path start time: " << path.path.front().header.stamp
+                                                    << std::endl
+                                                    << "path end time  : " << path.path.back().header.stamp << std::endl
+                                                    << "query time     : " << t);
+    *lerped_pt = path.path.front().pose.pose;
+    return false;
+  }
+
+  if (t > path.path.back().header.stamp)
+  {
+    ROS_DEBUG_STREAM("failed to interpolate path by time!" << std::endl
+                                                    << "path start time: " << path.path.front().header.stamp
+                                                    << std::endl
+                                                    << "path end time  : " << path.path.back().header.stamp << std::endl
+                                                    << "query time     : " << t);
+    *lerped_pt = path.path.back().pose.pose;
+
     return false;
   }
 

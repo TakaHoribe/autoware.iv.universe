@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-#include <lane_change_planner/state/following_lane.h>
+#include <lane_change_planner/state/blocked_by_obstacle.h>
 #include <lane_change_planner/data_manager.h>
 #include <lane_change_planner/route_handler.h>
 #include <lane_change_planner/utilities.h>
+
 #include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 
 namespace lane_change_planner
 {
-State FollowingLaneState::getCurrentState() const
+State BlockedByObstacleState::getCurrentState() const
 {
-  return State::FOLLOWING_LANE;
+  return State::BLOCKED_BY_OBSTACLE;
 }
 
-void FollowingLaneState::entry(const Status& status)
+void BlockedByObstacleState::entry(const Status& status)
 {
   status_ = status;
   if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_))
@@ -37,14 +38,16 @@ void FollowingLaneState::entry(const Status& status)
   }
   lane_change_approved_ = false;
   force_lane_change_ = false;
+  found_safe_path_ = false;
+  current_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
 }
 
-autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const
+autoware_planning_msgs::PathWithLaneId BlockedByObstacleState::getPath() const
 {
   return status_.lane_follow_path;
 }
 
-void FollowingLaneState::update()
+void BlockedByObstacleState::update()
 {
   // update input data
   {
@@ -65,7 +68,8 @@ void FollowingLaneState::update()
   }
 
   lanelet::ConstLanelet current_lane;
-  lanelet::ConstLanelets lane_change_lanes;
+  lanelet::ConstLanelets right_lanes;
+  lanelet::ConstLanelets left_lanes;
   const double backward_path_length = ros_parameters_.backward_path_length;
   const double forward_path_length = ros_parameters_.forward_path_length;
   // update lanes
@@ -75,13 +79,20 @@ void FollowingLaneState::update()
       ROS_ERROR("failed to find closest lanelet within route!!!");
       return;
     }
-    current_lanes_ = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
-                                                                    backward_path_length, forward_path_length);
-    lanelet::ConstLanelet lane_change_lane;
-    if (RouteHandler::getInstance().getLaneChangeTarget(current_lane, &lane_change_lane))
+    // current_lanes_ = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
+    //                                                                 backward_path_length, forward_path_length);
+    lanelet::ConstLanelet right_lane;
+    if (RouteHandler::getInstance().getRightLaneletWithinRoute(current_lane, &right_lane))
     {
-      lane_change_lanes = RouteHandler::getInstance().getLaneletSequence(lane_change_lane, current_pose_.pose,
-                                                                         backward_path_length, forward_path_length);
+      right_lanes = RouteHandler::getInstance().getLaneletSequence(right_lane, current_pose_.pose, backward_path_length,
+                                                                   forward_path_length);
+    }
+
+    lanelet::ConstLanelet left_lane;
+    if (RouteHandler::getInstance().getLeftLaneletWithinRoute(current_lane, &left_lane))
+    {
+      left_lanes = RouteHandler::getInstance().getLaneletSequence(left_lane, current_pose_.pose, backward_path_length,
+                                                                  forward_path_length);
     }
   }
 
@@ -89,17 +100,7 @@ void FollowingLaneState::update()
   {
     status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(current_lanes_, current_pose_.pose,
                                                                             backward_path_length, forward_path_length);
-
-    if (!lane_change_lanes.empty())
-    {
-      const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
-      const double lane_changing_duration = ros_parameters_.lane_changing_duration;
-      status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
-          current_lanes_, lane_change_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
-          forward_path_length, lane_change_prepare_duration, lane_changing_duration);
-    }
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
-    status_.lane_change_lane_ids = util::getIds(lane_change_lanes);
   }
 
   // update drivable area
@@ -110,30 +111,73 @@ void FollowingLaneState::update()
     status_.lane_follow_path.drivable_area =
         util::convertLanesToDrivableArea(current_lanes_, current_pose_, width, height, resolution);
   }
+
+  // update lane_change_lane
+  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+  status_.lane_change_path = autoware_planning_msgs::PathWithLaneId();  // clear path
+  if (!right_lanes.empty())
+  {
+    const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+        current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
+        forward_path_length, lane_change_prepare_duration, lane_changing_duration);
+    if (isLaneChangePathSafe(right_lanes, lane_change_path))
+    {
+      status_.lane_change_lane_ids = util::getIds(right_lanes);
+      status_.lane_change_path = lane_change_path;
+      found_safe_path_ = true;
+    }
+  }
+  if (!left_lanes.empty())
+  {
+    const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+        current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
+        forward_path_length, lane_change_prepare_duration, lane_changing_duration);
+    if (isLaneChangePathSafe(left_lanes, lane_change_path))
+    {
+      status_.lane_change_lane_ids = util::getIds(left_lanes);
+      status_.lane_change_path = lane_change_path;
+      found_safe_path_ = true;
+    }
+  }
 }
 
-State FollowingLaneState::getNextState() const
+State BlockedByObstacleState::getNextState() const
 {
-  if (isLaneBlocked())
-  {
-    return State::BLOCKED_BY_OBSTACLE;
-  }
-  if (RouteHandler::getInstance().isInPreferredLane(current_pose_))
+  if (isOutOfCurrentLanes())
   {
     return State::FOLLOWING_LANE;
   }
-  if (isTooCloseToDeadEnd() || laneChangeForcedByOperator())
+  if (!isLaneBlocked())
   {
-    return State::FORCING_LANE_CHANGE;
+    return State::FOLLOWING_LANE;
   }
-  if (isLaneChangeable())
+
+  if (isLaneChangeApproved() && hasEnoughDistance() && foundSafeLaneChangePath())
   {
     return State::EXECUTING_LANE_CHANGE;
   }
-  return State::FOLLOWING_LANE;
+  return State::BLOCKED_BY_OBSTACLE;
+}
+bool BlockedByObstacleState::isOutOfCurrentLanes() const
+{
+  lanelet::ConstLanelet closest_lane;
+  if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &closest_lane))
+  {
+    ROS_ERROR("failed to find closest lanelet within route!!!");
+    return true;
+  }
+  for (const auto& llt : current_lanes_)
+  {
+    if (llt == closest_lane)
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool FollowingLaneState::isLaneBlocked() const
+bool BlockedByObstacleState::isLaneBlocked() const
 {
   const auto arc = lanelet::utils::getArcCoordinates(current_lanes_, current_pose_.pose);
   constexpr double check_distance = 30;
@@ -158,87 +202,36 @@ bool FollowingLaneState::isLaneBlocked() const
   return false;
 }
 
-bool FollowingLaneState::isVehicleInPreferredLane() const
-{
-  return RouteHandler::getInstance().isInPreferredLane(current_pose_);
-}
-
-bool FollowingLaneState::isTooCloseToDeadEnd() const
-{
-  return false;
-}
-
-bool FollowingLaneState::isLaneChangeApproved() const
+bool BlockedByObstacleState::isLaneChangeApproved() const
 {
   return lane_change_approved_;
 }
-
-bool FollowingLaneState::laneChangeForcedByOperator() const
-{
-  return force_lane_change_;
-}
-
-bool FollowingLaneState::isLaneChangeable() const
-{
-  if (!hasEnoughDistance())
-  {
-    return false;
-  }
-  if (!isLaneChangePathSafe())
-  {
-    return false;
-  }
-  if (!isLaneChangeApproved())
-  {
-    return false;
-  }
-  else
-  {
-    ROS_INFO("waiting for lane change approval");
-  }
-  return true;
-}
-
-bool FollowingLaneState::hasEnoughDistance() const
+bool BlockedByObstacleState::hasEnoughDistance() const
 {
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
   const double lane_changing_duration = ros_parameters_.lane_changing_duration;
   const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
   const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
-  const double lane_change_total_distance = lane_change_total_duration * vehicle_speed;
+  const double lane_change_total_distance =
+      lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
 
-  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, current_lanes_))
+  if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
   {
     return false;
   }
 
-  if (lane_change_prepare_duration * vehicle_speed >
-      util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
-  {
-    return false;
-  }
-
-  // if(lane_change_total_distance > getDistanceToNextTrafficLight())
-  // {
-  //   return false;
-  // }
-
-  // if(lane_change_total_distance > getDistanceToNextCrosswalk())
-  // {
-  //   return false;
-  // }
-
-  // if(lane_change_total_distance > getDistanceToNextStopSign())
-  // {
-  //   return false;
-  // }
   return true;
 }
 
-bool FollowingLaneState::isLaneChangePathSafe() const
+bool BlockedByObstacleState::foundSafeLaneChangePath() const
 {
-  const auto& target_lanelets = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
-  if (target_lanelets.empty())
+  return found_safe_path_;
+}
+
+bool BlockedByObstacleState::isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
+                                                  const autoware_planning_msgs::PathWithLaneId& path) const
+{
+  if (target_lanes.empty())
   {
     return false;
   }
@@ -246,7 +239,7 @@ bool FollowingLaneState::isLaneChangePathSafe() const
   {
     return true;
   }
-  auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanelets);
+  auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanes);
 
   const double min_thresh = ros_parameters_.min_stop_distance;
   const double stop_time = ros_parameters_.stop_time;
@@ -254,8 +247,7 @@ bool FollowingLaneState::isLaneChangePathSafe() const
   const double time_resolution = ros_parameters_.prediction_time_resolution;
   const double prediction_duration = ros_parameters_.prediction_duration;
 
-  const auto& vehicle_predicted_path =
-      util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
+  const auto& vehicle_predicted_path = util::convertToPredictedPath(path, current_twist_->twist, current_pose_.pose);
 
   for (const auto& i : object_indices)
   {

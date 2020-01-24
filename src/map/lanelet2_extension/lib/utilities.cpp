@@ -174,6 +174,87 @@ std::vector<lanelet::BasicPoint3d> resamplePoints(const lanelet::ConstLineString
 
   return resampled_points;
 }
+lanelet::LineString3d getLineStringFromArcLength(const lanelet::ConstLineString3d& linestring, const double s1,
+                                                 const double s2)
+{
+  lanelet::Points3d points;
+  double accumulated_length = 0;
+  size_t start_index = linestring.size();
+  for (size_t i = 0; i < linestring.size() - 1; i++)
+  {
+    const auto p1 = linestring[i];
+    const auto p2 = linestring[i + 1];
+    const double length = boost::geometry::distance(p1.basicPoint(), p2.basicPoint());
+    if (accumulated_length + length > s1)
+    {
+      start_index = i;
+      break;
+    }
+    accumulated_length += length;
+  }
+  if (start_index < linestring.size() - 1)
+  {
+    const auto p1 = linestring[start_index];
+    const auto p2 = linestring[start_index + 1];
+    const double residue = s1 - accumulated_length;
+    const auto direction_vector = (p2.basicPoint() - p1.basicPoint()).normalized();
+    const auto start_basic_point = p1.basicPoint() + residue * direction_vector;
+    const auto start_point = lanelet::Point3d(lanelet::InvalId, start_basic_point);
+    points.push_back(start_point);
+  }
+
+  accumulated_length = 0;
+  size_t end_index = linestring.size();
+  for (size_t i = 0; i < linestring.size() - 1; i++)
+  {
+    const auto p1 = linestring[i];
+    const auto p2 = linestring[i + 1];
+    const double length = boost::geometry::distance(p1.basicPoint(), p2.basicPoint());
+    if (accumulated_length + length > s2)
+    {
+      end_index = i;
+      break;
+    }
+    accumulated_length += length;
+  }
+
+  for (size_t i = start_index + 1; i < end_index; i++)
+  {
+    const auto p = lanelet::Point3d(linestring[i]);
+    points.push_back(p);
+  }
+  if (end_index < linestring.size() - 1)
+  {
+    const auto p1 = linestring[end_index];
+    const auto p2 = linestring[end_index + 1];
+    const double residue = s2 - accumulated_length;
+    const auto direction_vector = (p2.basicPoint() - p1.basicPoint()).normalized();
+    const auto end_basic_point = p1.basicPoint() + residue * direction_vector;
+    const auto end_point = lanelet::Point3d(lanelet::InvalId, end_basic_point);
+    points.push_back(end_point);
+  }
+  return lanelet::LineString3d(lanelet::InvalId, points);
+}
+
+lanelet::ConstLanelet combineLanelets(const lanelet::ConstLanelets lanelets)
+{
+  lanelet::Points3d lefts, rights;
+  for (const auto& llt : lanelets)
+  {
+    for (const auto& pt : llt.leftBound())
+    {
+      lefts.push_back(lanelet::Point3d(pt));
+    }
+    for (const auto& pt : llt.rightBound())
+    {
+      rights.push_back(lanelet::Point3d(pt));
+    }
+  }
+  const auto left_bound = lanelet::LineString3d(lanelet::InvalId, lefts);
+  const auto right_bound = lanelet::LineString3d(lanelet::InvalId, rights);
+  return lanelet::Lanelet(lanelet::InvalId, left_bound, right_bound);
+}
+
 }  // namespace
 
 lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj, const double resolution)
@@ -352,6 +433,25 @@ lanelet::ConstLineString3d getClosestSegment(const lanelet::BasicPoint2d& search
     }
   }
   return closest_segment;
+}
+
+lanelet::CompoundPolygon3d getPolygonFromArcLength(const lanelet::ConstLanelets& lanelets, const double s1,
+                                                   const double s2)
+{
+  const auto combined_lanelet = combineLanelets(lanelets);
+  const auto ratio_s1 = s1 / getLaneletLength2d(combined_lanelet);
+  const auto ratio_s2 = s2 / getLaneletLength2d(combined_lanelet);
+
+  const auto s1_left = ratio_s1 * boost::geometry::length(combined_lanelet.leftBound().basicLineString());
+  const auto s2_left = ratio_s2 * boost::geometry::length(combined_lanelet.leftBound().basicLineString());
+  const auto s1_right = ratio_s1 * boost::geometry::length(combined_lanelet.rightBound().basicLineString());
+  const auto s2_right = ratio_s2 * boost::geometry::length(combined_lanelet.rightBound().basicLineString());
+
+  const auto left_bound = getLineStringFromArcLength(combined_lanelet.leftBound(), s1_left, s2_left);
+  const auto right_bound = getLineStringFromArcLength(combined_lanelet.rightBound(), s1_right, s2_right);
+
+  const auto& lanelet = lanelet::Lanelet(lanelet::InvalId, left_bound, right_bound);
+  return lanelet.polygon3d();
 }
 
 }  // namespace utils
