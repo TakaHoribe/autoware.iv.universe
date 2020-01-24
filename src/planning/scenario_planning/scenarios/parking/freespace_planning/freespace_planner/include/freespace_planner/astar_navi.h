@@ -19,6 +19,7 @@
 
 #include <deque>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -69,37 +70,35 @@ class AstarNavi {
   double th_stopping_velocity_mps_;
 
   // variables
-  bool is_active_;
-  nav_msgs::OccupancyGrid occupancy_grid_;
+  std::unique_ptr<AstarSearch> astar_;
   geometry_msgs::PoseStamped current_pose_local_;
   geometry_msgs::PoseStamped current_pose_global_;
   geometry_msgs::PoseStamped goal_pose_local_;
   geometry_msgs::PoseStamped goal_pose_global_;
-  geometry_msgs::TwistStamped twist_;
-
-  std::deque<geometry_msgs::TwistStamped> twist_buffer_;
-
-  bool current_pose_initialized_;
-  bool goal_pose_initialized_;
-  bool occupancy_grid_initialized_;
-  bool twist_initialized_;
 
   autoware_planning_msgs::Trajectory trajectory_;
   std::vector<size_t> reversing_indices_;
   size_t prev_target_index_;
   size_t target_index_;
 
+  autoware_planning_msgs::Route::ConstPtr route_;
+  nav_msgs::OccupancyGrid::ConstPtr occupancy_grid_;
+  autoware_planning_msgs::Scenario::ConstPtr scenario_;
+  geometry_msgs::TwistStamped::ConstPtr twist_;
+
+  std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer_;
+
   // functions, callback
-  void onRoute(const autoware_planning_msgs::Route& msg);
-  void onOccupancyGrid(const nav_msgs::OccupancyGrid& msg);
-  void onScenario(const autoware_planning_msgs::Scenario& msg);
-  void onTwist(const geometry_msgs::TwistStamped& msg);
+  void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
+  void onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg);
+  void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
   void onTimer(const ros::TimerEvent& event);
 
   bool isPlanRequired();
   void planTrajectory();
-  void updateTarget();
+  void updateTargetIndex();
 };
 
 #endif

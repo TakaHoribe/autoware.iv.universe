@@ -15,6 +15,7 @@
  */
 
 #include <mission_planner/lanelet2_impl/route_handler.h>
+#include <ros/ros.h>
 
 namespace mission_planner
 {
@@ -165,7 +166,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::Cons
   lanelet_sequence_forward.push_back(lanelet);
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet next_lanelet;
     if (!getNextLaneletWithinRoute(current_lanelet, &next_lanelet))
@@ -188,7 +189,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::Const
   }
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet prev_lanelet;
     if (!getPreviousLaneletWithinRoute(current_lanelet, &prev_lanelet))
@@ -285,7 +286,7 @@ lanelet::ConstLanelets RouteHandler::getLaneSequenceUpTo(const lanelet::ConstLan
   }
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet prev_lanelet;
     if (!getPreviousLaneletWithinRoute(current_lanelet, &prev_lanelet))
@@ -317,7 +318,7 @@ lanelet::ConstLanelets RouteHandler::getLaneSequenceAfter(const lanelet::ConstLa
   lane_sequence_forward.push_back(lanelet);
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet next_lanelet;
     if (!getNextLaneletWithinRoute(current_lanelet, &next_lanelet))

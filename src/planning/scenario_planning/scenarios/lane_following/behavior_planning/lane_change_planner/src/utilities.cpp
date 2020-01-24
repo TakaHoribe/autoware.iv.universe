@@ -236,7 +236,7 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   if (vehicle_speed < min_speed)
   {
     vehicle_speed = min_speed;
-    ROS_WARN_STREAM_THROTTLE(1, "cannot convert PathWithLaneId with zero velocity, using minimum value "
+    ROS_DEBUG_STREAM_THROTTLE(1, "cannot convert PathWithLaneId with zero velocity, using minimum value "
                                     << min_speed << " [m/s] instead");
   }
   double accumulated_distance = 0;

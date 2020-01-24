@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<launch>
+
+    <!-- publish camera info -->
+    <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
+
+    <!-- publish collision detection information -->
+    <rosparam command="load" file="$(find vehicle_description)/config/vehicle_info.yaml" /> <!-- load vehicle info(body size) -->
+    <node pkg="scenario_maker" type="collision_detection.py" name="collision_detection" output="screen">
+        <param name="margin" value="0.1" /> <!-- Expand self-body used for collision detection[m] -->
+    </node>
+
+    <!-- scenario -->
+    <node pkg="scenario_maker" type="scenario_maker.py" name="scenario_maker" output="screen">
+        <param name="goal_dist" value="0.1" /> <!-- Goal criteria(xy-distance) [m] -->
+        <param name="goal_theta" value="10" /> <!-- Goal criteria(theta-distance)[deg] -->
+        <param name="goal_velocity" value="0.001" /> <!-- Goal criteria(velocity)[m/s] -->
+        <param name="give_up_time" value="600" /> <!-- Goal criteria(time)[s] -->
+        <param name="generate_obstacle" value="true" /> <!-- Generate obstacle or not -->
+        <param name="auto_engage" value="true" /> <!-- Engage automaticlly or not -->
+        <param name="retry_scenario" value="true" /> <!-- Retry scenario or not -->
+        <param name="max_scenario_num" value="10" /> <!-- Numober of scenarios to try -->
+        <param name="traffic_light_time" value="35" /> <!-- Time until the traffic light changes[s] (larger than 0)-->
+        <param name="initial_traffic_light" value="green" /> <!-- initial traffic light. green or red.H -->
+        <param name="record_rosbag" value="false" /> <!-- Record rosbag or not **Rosbag file is very large. Be careful! -->
+        <param name="rosbag_node_name" value="rosbag_node" /> <!-- The node name of rosbag-record -->
+        <param name="delete_success_rosbag" value="true" /> <!-- delete rosbag of success scenario or not -->
+        <param name="rosbag_file_name" value="/media/kimura/extra_ssd/rosbag/scenario" /> <!-- dir/file name of rosbag file(**it must be absolute path ** ) -->
+    </node>
+
+</launch>

@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   roscpp
   image_transport
+  message_filters
   sensor_msgs
   std_msgs
   autoware_traffic_light_msgs
@@ -145,6 +146,16 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   add_dependencies(traffic_light_fine_detector
     ${catkin_EXPORTED_TARGETS}
     )
+
+  add_executable(traffic_light_roi_image_saver_node 
+    src/roi_image_saver/node.cpp
+    src/roi_image_saver/main.cpp)
+  add_dependencies(traffic_light_roi_image_saver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(traffic_light_roi_image_saver_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+  )
+
   install(TARGETS traffic_light_fine_detector
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

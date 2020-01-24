@@ -25,7 +25,6 @@ include_directories(
 
 add_library(astar_search
   src/astar_search.cpp
-  src/astar_util.cpp
 )
 
 target_link_libraries(astar_search

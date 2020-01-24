@@ -75,9 +75,16 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
                     tf2::Transform tf_base_link2map;
 
                     geometry_msgs::TransformStamped ros_base_link2map;
-                    ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                                   header.stamp, ros::Duration(0.5));
-                    tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+                    try{
+                        ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
+                                                                        header.stamp, ros::Duration(0.5));
+                        tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+                    }
+                    catch (tf2::TransformException &ex)
+                    {
+                        // ROS_WARN("%s", ex.what());
+                        return;
+                    }
 
                     geometry_msgs::Transform ros_moved_object2point;
                     ros_moved_object2point.translation.x = x;
@@ -117,9 +124,16 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
             tf2::Transform tf_base_link2moved_object;
             tf2::Transform tf_base_link2map;
             geometry_msgs::TransformStamped ros_base_link2map;
-            ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                           header.stamp, ros::Duration(0.5));
-            tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+            try{
+                ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
+                                                            header.stamp, ros::Duration(0.5));
+                tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+            }
+            catch (tf2::TransformException &ex)
+            {
+                ROS_WARN("%s", ex.what());
+                return;
+            }
             tf_base_link2moved_object = tf_base_link2map * tf_map2moved_object;
             double dist = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
                                     tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());
@@ -170,10 +184,16 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
                     tf2::Transform tf_base_link2map;
 
                     geometry_msgs::TransformStamped ros_base_link2map;
-                    ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                                   header.stamp, ros::Duration(0.5));
-                    tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
-
+                    try{
+                        ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
+                                                                    header.stamp, ros::Duration(0.5));
+                        tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+                    }
+                    catch (tf2::TransformException &ex)
+                    {
+                        ROS_WARN("%s", ex.what());
+                        return;
+                    }
                     geometry_msgs::Transform ros_moved_object2point;
                     ros_moved_object2point.translation.x = x;
                     ros_moved_object2point.translation.y = y;
@@ -212,9 +232,16 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
             tf2::Transform tf_base_link2moved_object;
             tf2::Transform tf_base_link2map;
             geometry_msgs::TransformStamped ros_base_link2map;
-            ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                           header.stamp, ros::Duration(0.5));
-            tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+            try{
+                ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
+                                                            header.stamp, ros::Duration(0.5));
+                tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+                }
+                catch (tf2::TransformException &ex)
+                {
+                    ROS_WARN("%s", ex.what());
+                    return;
+                }
             tf_base_link2moved_object = tf_base_link2map * tf_map2moved_object;
             double dist = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
                                     tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());

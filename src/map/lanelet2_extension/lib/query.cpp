@@ -226,8 +226,7 @@ lanelet::ConstLineStrings3d query::getAllParkingSpaces(const lanelet::LaneletMap
 }
 
 bool query::getLinkedLanelet(const lanelet::ConstLineString3d& parking_space,
-                             const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                             lanelet::ConstLanelet* linked_lanelet)
+                             const lanelet::LaneletMapConstPtr& lanelet_map_ptr, lanelet::ConstLanelet* linked_lanelet)
 {
   const auto& all_lanelets = query::laneletLayer(lanelet_map_ptr);
   const auto& all_road_lanelets = query::roadLanelets(all_lanelets);
@@ -648,6 +647,11 @@ bool query::getClosestLanelet(const ConstLanelets& lanelets, const geometry_msgs
   if (closest_lanelet_ptr == nullptr)
   {
     ROS_ERROR("argument closest_lanelet_ptr is null! Failed to find closest lanelet");
+    return false;
+  }
+
+  if (lanelets.empty())
+  {
     return false;
   }
 

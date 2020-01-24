@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="lanelet_map_path" default="$(arg city_config_path)/SanFrancisco.osm"/>
+  <arg name="pointcloud_map_path" default="$(arg city_config_path)/SanFrancisco.pcd"/>
+  <arg name="map_tf_path" default="$(arg city_config_path)/SanFrancisco.launch"/>
+  <arg name="num_lookup_lanelet_for_drivealble_area" default="8"/>
+  
+  <include file="$(find autoware_launch)/launch/planning_simulator.launch" >
+    <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
+    <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
+    <arg name="map_tf_path" value="$(arg map_tf_path)"/>
+    <arg name="num_lookup_lanelet_for_drivealble_area" value="$(arg num_lookup_lanelet_for_drivealble_area)"/>
+  </include>
+</launch>

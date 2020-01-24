@@ -140,7 +140,19 @@ void RouteHandler::setRouteLanelets()
       }
     }
   }
-
+  if (!route_msg_.route_sections.empty())
+  {
+    for (const auto& id : route_msg_.route_sections.back().lane_ids)
+    {
+      const auto& llt = lanelet_map_ptr_->laneletLayer.get(id);
+      goal_lanelets_.push_back(llt);
+    }
+    for (const auto& id : route_msg_.route_sections.front().lane_ids)
+    {
+      const auto& llt = lanelet_map_ptr_->laneletLayer.get(id);
+      start_lanelets_.push_back(llt);
+    }
+  }
   is_handler_ready_ = true;
 }
 
@@ -172,7 +184,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::Cons
   lanelet_sequence_forward.push_back(lanelet);
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet next_lanelet;
     if (!getNextLaneletWithinRoute(current_lanelet, &next_lanelet))
@@ -195,7 +207,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceUpTo(const lanelet::Const
   }
 
   lanelet::ConstLanelet current_lanelet = lanelet;
-  while (true)
+  while (ros::ok())
   {
     lanelet::ConstLanelet prev_lanelet;
     if (!getPreviousLaneletWithinRoute(current_lanelet, &prev_lanelet))
