@@ -279,7 +279,7 @@ void AstarNavi::updateTargetIndex() {
 
     // Finished publishing all partial trajectories
     if (new_target_index == target_index_) {
-      ROS_INFO("Astar completed");
+      ROS_INFO_THROTTLE(1, "Astar completed");
       private_nh_.setParam("is_completed", true);
     } else {
       private_nh_.setParam("is_completed", false);
