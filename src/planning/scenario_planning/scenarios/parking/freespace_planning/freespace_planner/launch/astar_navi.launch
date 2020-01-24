@@ -1,13 +1,13 @@
 <launch>
-  <!-- <group ns="planning/scenario_planning/scenarios/parking/freespace_planning"> -->
-  <!-- Navi configurations -->
-  <arg name="input_route" default="/planning/mission_planning/route" />
-  <arg name="input_occupancy_grid" default="costmap_generator/occupancy_grid" />
-  <arg name="input_scenario" default="/planning/scenario_planning/scenario" />
+  <!-- Interfaces -->
+  <arg name="input_route" />
+  <arg name="input_occupancy_grid" />
+  <arg name="input_scenario" />
   <arg name="input_twist" default="/vehicle/status/twist" />
-  <arg name="output_trajectory" default="~trajectory" />
-  <arg name="is_completed" default="~is_completed" />
+  <arg name="output_trajectory" />
+  <arg name="is_completed" />
 
+  <!-- Node configurations -->
   <arg name="waypoints_velocity" default="5.0" />
   <arg name="update_rate" default="10.0" />
   <arg name="th_stopping_time_sec" default="1.0" />
@@ -65,5 +65,4 @@
     <param name="potential_weight" value="$(arg potential_weight)" />
     <param name="distance_heuristic_weight" value="$(arg distance_heuristic_weight)" />
   </node>
-  <!-- </group> -->
 </launch>

@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find scenario_selector)/launch/scenario_selector.launch">
+    <arg name="input_lane_following_trajectory" value="/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory"/>
+    <arg name="input_parking_trajectory" value="/planning/scenario_planning/scenarios/parking/freespace_planning/trajectory"/>
+    <arg name="input_lanelet_map" value="/lanelet_map_bin"/>
+    <arg name="input_route" value="/planning/mission_planning/route"/>
+    <arg name="input_twist" value="/vehicle/status/twist"/>
+    <arg name="output_scenario" value="/planning/scenario_planning/scenario"/>
+    <arg name="output_trajectory" value="/planning/scenario_planning/trajectory"/>
+    <arg name="is_parking_completed" value="/planning/scenario_planning/scenarios/parking/freespace_planning/is_completed"/>
+  </include>
+</launch>
