@@ -30,9 +30,6 @@
     <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
-  <!-- Traffic Light Recognition -->
-
-
   <!-- Rviz -->
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
 />
