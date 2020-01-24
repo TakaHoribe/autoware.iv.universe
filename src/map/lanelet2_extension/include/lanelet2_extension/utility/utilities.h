@@ -54,6 +54,10 @@ lanelet::ArcCoordinates getArcCoordinates(const lanelet::ConstLanelets& lanelet_
 
 lanelet::ConstLineString3d getClosestSegment(const lanelet::BasicPoint2d& search_pt,
                                              const lanelet::ConstLineString3d& linestring);
+
+lanelet::CompoundPolygon3d getPolygonFromArcLength(const lanelet::ConstLanelets& lanelets, const double s1,
+                                                const double s2);
+
 }  // namespace utils
 }  // namespace lanelet
 

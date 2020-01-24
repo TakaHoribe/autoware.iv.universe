@@ -385,6 +385,34 @@ bool RouteHandler::getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& la
   return false;
 }
 
+bool RouteHandler::getRightLaneletWithinRoute(const lanelet::ConstLanelet& lanelet,
+                                              lanelet::ConstLanelet* right_lanelet)
+{
+  auto opt_right_lanelet = routing_graph_ptr_->right(lanelet);
+  if (!!opt_right_lanelet)
+  {
+    *right_lanelet = opt_right_lanelet.get();
+    return exists(route_lanelets_, *right_lanelet);
+  }
+  else
+  {
+    return false;
+  }
+}
+bool RouteHandler::getLeftLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* left_lanelet)
+{
+  auto opt_left_lanelet = routing_graph_ptr_->left(lanelet);
+  if (!!opt_left_lanelet)
+  {
+    *left_lanelet = opt_left_lanelet.get();
+    return exists(route_lanelets_, *left_lanelet);
+  }
+  else
+  {
+    return false;
+  }
+}
+
 bool RouteHandler::getLaneChangeTarget(const lanelet::ConstLanelet& lanelet,
                                        lanelet::ConstLanelet* target_lanelet) const
 {

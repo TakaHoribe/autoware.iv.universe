@@ -21,6 +21,9 @@ std::ostream& operator<<(std::ostream& ostream, const State& state)
     case State::FORCING_LANE_CHANGE:
       ostream << std::string("FORCING_LANE_CHANGE");
       break;
+    case State::BLOCKED_BY_OBSTACLE:
+      ostream << std::string("BLOCKED_BY_OBSTACLE");
+      break;
     default:
       ostream << std::string("NO_STATE");
       break;

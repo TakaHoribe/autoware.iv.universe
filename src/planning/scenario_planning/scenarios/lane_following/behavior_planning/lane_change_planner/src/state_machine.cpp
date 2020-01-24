@@ -20,6 +20,7 @@
 #include <lane_change_planner/state/aborting_lane_change.h>
 #include <lane_change_planner/state/forcing_lane_change.h>
 #include <lane_change_planner/state/executing_lane_change.h>
+#include <lane_change_planner/state/blocked_by_obstacle.h>
 
 #include <visualization_msgs/Marker.h>
 
@@ -67,6 +68,9 @@ void StateMachine::updateState()
         break;
       case State::FORCING_LANE_CHANGE:
         state_obj_ptr_ = std::make_unique<ForcingLaneChangeState>();
+        break;
+      case State::BLOCKED_BY_OBSTACLE:
+        state_obj_ptr_ = std::make_unique<BlockedByObstacleState>();
         break;
     }
     state_obj_ptr_->entry(previous_status);

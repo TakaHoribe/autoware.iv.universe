@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-#ifndef LANE_CHANGE_PLANNER_STATE_FOLLOWING_LANE_H
-#define LANE_CHANGE_PLANNER_STATE_FOLLOWING_LANE_H
+#ifndef LANE_CHANGE_PLANNER_STATE_BLOCKED_BY_OBSTACLE_H
+#define LANE_CHANGE_PLANNER_STATE_BLOCKED_BY_OBSTACLE_H
 
 #include <lane_change_planner/state/state_base_class.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <lanelet2_core/primitives/Primitive.h>
-
 #include <memory>
 
 namespace lane_change_planner
 {
-class FollowingLaneState : public StateBase
+class BlockedByObstacleState : public StateBase
 {
 private:
   geometry_msgs::PoseStamped current_pose_;
@@ -35,21 +34,20 @@ private:
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
   bool lane_change_approved_;
   bool force_lane_change_;
+  bool found_safe_path_;
   lanelet::ConstLanelets current_lanes_;
 
   // State transition conditions
-  bool isVehicleInPreferredLane() const;
-  bool isTooCloseToDeadEnd() const;
-  bool laneChangeForcedByOperator() const;
-  bool isLaneChangeable() const;
-  bool isLaneBlocked() const;
-  // minor conditions
+  bool foundSafeLaneChangePath() const;
   bool hasEnoughDistance() const;
-  bool isLaneChangePathSafe() const;
   bool isLaneChangeApproved() const;
+  bool isLaneBlocked() const;
+
+  bool isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
+                            const autoware_planning_msgs::PathWithLaneId& path) const;
 
 public:
-  FollowingLaneState() = default;
+  BlockedByObstacleState() = default;
 
   // override virtual functions
   void entry(const Status& status) override;
@@ -60,4 +58,4 @@ public:
 };
 }  // namespace lane_change_planner
 
-#endif  // LANE_CHANGE_PLANNER_STATE_FOLLOWING_LANE_H
+#endif  // LANE_CHANGE_PLANNER_STATE_BLOCKED_BY_OBSTACLE_H

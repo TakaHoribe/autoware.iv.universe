@@ -77,6 +77,9 @@ public:
 
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
+  bool getRightLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* right_lanelet);
+  bool getLeftLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* left_lanelet);
+
   bool getClosestLaneletWithinRoute(const geometry_msgs::Pose& search_pose,
                                     lanelet::ConstLanelet* closest_lanelet) const;
   bool getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const;
@@ -99,6 +102,7 @@ public:
   lanelet::ConstLanelets getPreviousLaneletSequence(const lanelet::ConstLanelets& lanelet_sequence) const;
   lanelet::ConstLanelets getClosestLaneletSequence(const geometry_msgs::Pose& pose) const;
   lanelet::ConstLanelets getNeighborsWithinRoute(const lanelet::ConstLanelet& lanelet) const;
+
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet& lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped& pose) const;
   autoware_planning_msgs::PathWithLaneId

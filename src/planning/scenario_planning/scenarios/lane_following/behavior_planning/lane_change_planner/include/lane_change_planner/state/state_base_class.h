@@ -31,6 +31,7 @@ enum State
   EXECUTING_LANE_CHANGE,
   ABORTING_LANE_CHANGE,
   FORCING_LANE_CHANGE,
+  BLOCKED_BY_OBSTACLE
 };
 std::ostream& operator<<(std::ostream& ostream, const State& state);
 
