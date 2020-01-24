@@ -62,46 +62,52 @@ void FollowingLaneState::update()
     force_lane_change_ = SingletonDataManager::getInstance().getForceLaneChangeSignal();
   }
 
-  // update path
+  lanelet::ConstLanelet current_lane;
+  lanelet::ConstLanelets current_lanes;
+  lanelet::ConstLanelets lane_change_lanes;
+  const double backward_path_length = ros_parameters_.backward_path_length;
+  const double forward_path_length = ros_parameters_.forward_path_length;
+  // update lanes
   {
-    const double backward_path_length = ros_parameters_.backward_path_length;
-    const double forward_path_length = ros_parameters_.forward_path_length;
-    status_.lane_follow_path =
-        RouteHandler::getInstance().getReferencePath(current_pose_.pose, backward_path_length, forward_path_length);
+    if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &current_lane))
+    {
+      ROS_ERROR("failed to find closest lanelet within route!!!");
+      return;
+    }
+    current_lanes = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
+                                                                   backward_path_length, forward_path_length);
+    lanelet::ConstLanelet lane_change_lane;
+    if (RouteHandler::getInstance().getLaneChangeTarget(current_lane, &lane_change_lane))
+    {
+      lane_change_lanes = RouteHandler::getInstance().getLaneletSequence(lane_change_lane, current_pose_.pose,
+                                                                         backward_path_length, forward_path_length);
+    }
+  }
 
-    if (!RouteHandler::getInstance().isInPreferredLane(current_pose_) && current_twist_ != nullptr)
+  // update lane_follow_path
+  {
+    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(current_lanes, current_pose_.pose,
+                                                                            backward_path_length, forward_path_length);
+
+    if (!lane_change_lanes.empty())
     {
       const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
       const double lane_changing_duration = ros_parameters_.lane_changing_duration;
       status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
-          current_pose_.pose, current_twist_->twist, backward_path_length, forward_path_length,
-          lane_change_prepare_duration, lane_changing_duration);
+          current_lanes, lane_change_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
+          forward_path_length, lane_change_prepare_duration, lane_changing_duration);
     }
-    const auto& lane_change_target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
-    const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
     status_.lane_follow_lane_ids = util::getIds(current_lanes);
-    status_.lane_change_lane_ids = util::getIds(lane_change_target_lanes);
+    status_.lane_change_lane_ids = util::getIds(lane_change_lanes);
   }
 
   // update drivable area
   {
-    const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
-    lanelet::ConstLanelet closest_lane;
-    if (!lanelet::utils::query::getClosestLanelet(current_lanes, current_pose_.pose, &closest_lane))
-    {
-      return;
-    }
-
-    double backward_length = ros_parameters_.backward_path_length;
-    double forward_length = ros_parameters_.forward_path_length;
-    const auto trimmed_current_lanes = RouteHandler::getInstance().getLaneletSequence(
-        closest_lane, current_pose_.pose, backward_length, forward_length);
-
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
     status_.lane_follow_path.drivable_area =
-        util::convertLanesToDrivableArea(trimmed_current_lanes, current_pose_, width, height, resolution);
+        util::convertLanesToDrivableArea(current_lanes, current_pose_, width, height, resolution);
   }
 }
 
