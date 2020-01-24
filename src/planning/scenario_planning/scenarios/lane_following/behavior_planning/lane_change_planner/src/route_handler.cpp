@@ -140,6 +140,8 @@ void RouteHandler::setRouteLanelets()
       }
     }
   }
+  goal_lanelets_.clear();
+  start_lanelets_.clear();
   if (!route_msg_.route_sections.empty())
   {
     for (const auto& id : route_msg_.route_sections.back().lane_ids)
