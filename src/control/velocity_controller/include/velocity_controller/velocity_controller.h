@@ -150,12 +150,12 @@ private:
 
   // smooth stop
   bool is_smooth_stop_;
-  bool drive_after_smooth_stop_;
   bool is_emergency_stop_;
   std::shared_ptr<ros::Time> start_time_smooth_stop_;
 
-  // jerk limit
-  double prev_cmd_acc_;
+  // diff limit
+  double prev_acc_cmd_;
+  double prev_vel_cmd_;
 
   // slope compensation
   Lpf1d lpf_pitch_;
@@ -167,37 +167,39 @@ private:
   // methods
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
   void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr &msg);
-  void callbackIsSuddenStop(const std_msgs::Bool msg);
   void callbackTimerControl(const ros::TimerEvent &event);
 
-  CtrlCmd calcCtrlCmd();
-
-  void publishCtrlCmd(const double velocity, const double acceleration);
-  bool checkEmergency();
-  bool isInSmoothStopRange(const int closest);
-
-  double getDt();
   bool updateCurrentPose(const double timeout_sec);
   bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps);
+  double getPitch(const geometry_msgs::Quaternion &quaternion) const;
+
+
+  CtrlCmd calcCtrlCmd();
+  void publishCtrlCmd(const double velocity, const double acceleration);
+
+  bool checkEmergency();
+  void resetEmergencyStop();
+
+  double getDt();
   double calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
                                         const double curr_vel, const int closest);
   void resetHandling(ControlMode control_mode);
   
-  enum Shift getCurrentShiftMode(const double target_velocity, const double target_acceleration);
-  double getPitch(const geometry_msgs::Quaternion &quaternion) const;
+  enum Shift getCurrentShift(const double target_velocity, const double target_acceleration);
+
   double calcSmoothStopAcc();
-  double applyAccFilter(const double acceleration, const double max_acceleration,
-                                      const double min_acceleration);
-  double applyJerkFilter(const double acceleration, const double dt, const double max_jerk, const double min_jerk);
-  double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
-  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt, const double current_vel);
+  bool isInSmoothStopRange(const int closest);
   void resetSmoothStop();
-  void resetEmergencyStop();
+
   double calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift);
+  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt, const double current_vel);
+  double applyLimitFilter(const double input_val, const double max_val, const double min_val);
+  double applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val, const double min_val);
+  double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
 
   /* Debug */
   std_msgs::Float32MultiArray debug_values_;
-  unsigned int num_debug_values_ = 21;
+  unsigned int num_debug_values_;
 
   /**
    * [0]: dt
@@ -214,13 +216,13 @@ private:
    * [11]: acceleration after slope compensation
    * [12]: published acceleration
    * [13]: raw pitch [rad]
-   * [14]: raw error velocity
+   * [14]: filtered error velocity
    * [15]: pitch after LPF [deg]
    * [16]: raw pitch [deg]
    * [17]: closest waypoint target acceleration
    **/
   void writeDebugValues(const double dt, const double current_velocity, const double target_vel, const double target_acc,
-                        const Shift shift, const double pitch, const int32_t closest_waypoint_index);
+                        const Shift shift, const double pitch, const int32_t closest_waypoint_index, const double error_vel_filtered);
 };
 
 #endif

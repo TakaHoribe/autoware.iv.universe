@@ -16,13 +16,13 @@
 
 #include "velocity_controller.h"
 
-VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_),
-                                           is_smooth_stop_(false), is_emergency_stop_(false), prev_cmd_acc_(0.0)
+VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_smooth_stop_(false),
+                                           is_emergency_stop_(false), prev_acc_cmd_(0.0), num_debug_values_(21)
 {
   // parameters
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
 
-  // parameters for subscriber, publisher and timer
+  // parameters timer
   pnh_.param("control_rate", control_rate_, double(30.0));
 
   // parameters to enable functions
@@ -35,8 +35,8 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("closest_waypoint_angle_threshold", closest_angle_thr_, double(M_PI_4));
 
   // parameters for stop state
-  pnh_.param("stop_state_vel", stop_state_vel_, double(0.0));                     // [m/s]
-  pnh_.param("stop_state_acc", stop_state_acc_, double(-2.0));            // [m/s^2]
+  pnh_.param("stop_state_vel", stop_state_vel_, double(0.0));                               // [m/s]
+  pnh_.param("stop_state_acc", stop_state_acc_, double(-2.0));                              // [m/s^2]
   pnh_.param("stop_state_entry_ego_speed", stop_state_entry_ego_speed_, double(0.2));       // [m/s]
   pnh_.param("stop_state_entry_target_speed", stop_state_entry_target_speed_, double(0.1)); // [m/s]
 
@@ -44,7 +44,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("delay_compensation_time", delay_compensation_time_, double(0.17)); // [sec]
 
   // parameters for emergency stop by this controller
-  pnh_.param("emergency_stop_acc", emergency_stop_acc_, double(-2.0));  // [m/s^2]
+  pnh_.param("emergency_stop_acc", emergency_stop_acc_, double(-2.0));   // [m/s^2]
   pnh_.param("emergency_stop_jerk", emergency_stop_jerk_, double(-1.5)); // [m/s^3]
 
   // parameters for smooth stop
@@ -58,7 +58,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("smooth_stop/increasing_brake_gradient", smooth_stop_param_.increasing_brake_gradient, double(-0.05)); // [m/s^3]
   pnh_.param("smooth_stop/stop_brake_time", smooth_stop_param_.stop_brake_time, double(2.0));                       // [sec]
   pnh_.param("smooth_stop/stop_brake_acc", smooth_stop_param_.stop_brake_acc, double(-1.7));                        // [m/s^2]
-  pnh_.param("smooth_stop/stop_dist_", smooth_stop_param_.stop_dist_, double(3.0));                        // [m/s^2]
+  pnh_.param("smooth_stop/stop_dist_", smooth_stop_param_.stop_dist_, double(3.0));                                 // [m/s^2]
 
   // parameters for acceleration limit
   pnh_.param("max_acc", max_acc_, double(2.0));  // [m/s^2]
@@ -169,16 +169,13 @@ bool VelocityController::updateCurrentPose(const double timeout_sec)
 
 void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
 {
-  if (!updateCurrentPose(0.0))
-  {
-    return;
-  }
+  const bool is_pose_updated = updateCurrentPose(0.0);
 
   /* gurad */
-  if (!current_pose_ptr_ || !current_vel_ptr_ || !trajectory_ptr_)
+  if (!is_pose_updated || !current_pose_ptr_ || !current_vel_ptr_ || !trajectory_ptr_)
   {
-    ROS_INFO_COND(show_debug_info_, "[velcon] Waiting topics, Publish stop command. pose: %d, vel: %d, trajectory: %d",
-                  current_pose_ptr_ != nullptr, current_vel_ptr_ != nullptr, trajectory_ptr_ != nullptr);
+    ROS_INFO_COND(show_debug_info_, "[velcon] Waiting topics, Publish stop command. pose_update: %d, pose: %d, vel: %d, trajectory: %d",
+                  is_pose_updated, current_pose_ptr_ != nullptr, current_vel_ptr_ != nullptr, trajectory_ptr_ != nullptr);
     controller_mode_ = ControlMode::INIT;
     publishCtrlCmd(stop_state_vel_, stop_state_acc_);
     return;
@@ -192,6 +189,125 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
 
   /* reset parameters depending on the current control mode */
   resetHandling(controller_mode_);
+}
+
+
+CtrlCmd VelocityController::calcCtrlCmd()
+{
+  /* initialize parameters */
+  const double dt = getDt();
+
+  /* -- find a closest waypoint index --
+   *
+   * If the closest is not found (when the threshold is exceeded), it is treated as an emergency stop.
+   * 
+   * Outout velocity : "0" with maximum acceleration constraint
+   * Output acceleration : "emergency_stop_acc_" with maximum jerk constraint
+   * 
+   */
+  int closest_idx;
+  if (!vcutils::calcClosestWithThr(*trajectory_ptr_, current_pose_ptr_->pose, closest_angle_thr_, closest_dist_thr_, closest_idx))
+  {
+    ROS_ERROR_DELAYED_THROTTLE(5.0, "[velcon] calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
+                               closest_dist_thr_, closest_angle_thr_);
+    double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
+    double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
+    controller_mode_ = ControlMode::ERROR;
+    return CtrlCmd{vel_cmd, acc_cmd};
+  }
+
+  double current_vel = current_vel_ptr_->twist.linear.x;
+  double target_vel = calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx);
+  double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(*trajectory_ptr_, closest_idx, delay_compensation_time_,
+                                                                      current_vel_ptr_->twist.linear.x);
+
+  /* shift check */
+  const Shift shift = getCurrentShift(target_vel, target_acc);
+  if (shift != prev_shift_)
+    pid_vel_.reset();
+  prev_shift_ = shift;
+
+  const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
+  const double error_vel_filtered = lpf_vel_error_.filter(target_vel - current_vel);
+  ROS_INFO_COND(show_debug_info_, "[velcon] current_vel = %f, target_vel = %f, target_acc = %f, pitch_filtered = %f",
+                current_vel, target_vel, target_acc, pitch_filtered);
+  writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx, error_vel_filtered);
+
+  /* -- stop state --
+   *
+   * If the current velocity and target velocity is almost zero,
+   * and the smooth stop is not working, enter the stop state.
+   *
+   * Outout velocity : "stop_state_vel_" (assumed to be zero, depending on the vehicle interface)
+   * Output acceleration : "stop_state_acc_" with max_jerk limit. (depending on the vehicle interface)
+   * 
+   */
+  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ &&
+      std::fabs(target_vel) < stop_state_entry_target_speed_ && !is_smooth_stop_)
+  {
+    double acc_cmd = calcFilteredAcc(stop_state_acc_, pitch_filtered, dt, shift);
+    controller_mode_ = ControlMode::STOPPED;
+    ROS_INFO_COND(show_debug_info_, "[velcon] Stopping. vel: %f, acc: %f", stop_state_vel_, acc_cmd);
+    return CtrlCmd{stop_state_vel_, acc_cmd};
+  }
+
+  /* -- emergency state --
+   *
+   * If the emergency flag is true, enter the emergency state.
+   * The condition of the energency is checked in checkEmergency() function.
+   * The flag is reset when the vehicle is stopped.
+   *
+   * Outout velocity : "0" with maximum acceleration constraint
+   * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
+   * 
+   */
+  is_emergency_stop_ = checkEmergency();
+  if (is_emergency_stop_)
+  {
+    double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
+    double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
+    controller_mode_ = ControlMode::EMERGENCY_STOP;
+    ROS_INFO_COND(show_debug_info_, "[velcon] Emergency stop!!!. vel: %f, acc: %f", 0.0, acc_cmd);
+    return CtrlCmd{vel_cmd, acc_cmd};
+  }
+
+  /* -- smooth stop state --
+   *
+   * If the vehicle veloicity & target velocity is low ehough, and there is a stop point nearby the ego vehicle,
+   * enter the smooth stop state.
+   *
+   * Outout velocity : "target_vel" from the reference trajectory
+   * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
+   * 
+   */  
+  if (enable_smooth_stop_ && std::fabs(current_vel) < smooth_stop_param_.entry_ego_speed &&
+      std::fabs(target_vel) < smooth_stop_param_.entry_target_speed && isInSmoothStopRange(closest_idx))
+  {
+    is_smooth_stop_ = true;
+    if (!start_time_smooth_stop_)
+    {
+      start_time_smooth_stop_ = std::make_shared<ros::Time>(ros::Time::now());
+    }
+    double smooth_stop_acc_cmd = calcSmoothStopAcc();
+    double acc_cmd = calcFilteredAcc(smooth_stop_acc_cmd, pitch_filtered, dt, shift);
+    controller_mode_ = ControlMode::SMOOTH_STOP;
+    ROS_INFO_COND(show_debug_info_, "[velcon] smooth stop: Smooth stopping. vel: %f, acc: %f", target_vel, acc_cmd);
+    return CtrlCmd{target_vel, acc_cmd};
+  }
+
+  /* -- feedback control state --
+   *
+   * Execute PID feedback control. 
+   *
+   * Outout velocity : "target_vel" from the reference trajectory
+   * Output acceleration : calculated by PID controller with max_acceleration & max_jerk limit.
+   * 
+   */ 
+  double feedback_acc_cmd = applyVelocityFeedback(target_acc, error_vel_filtered, dt, current_vel);
+  double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
+  controller_mode_ = ControlMode::PID_CONTROL;
+  ROS_INFO_COND(show_debug_info_, "[velcon] feedback control.  vel: %f, acc: %f", target_vel, acc_cmd);
+  return CtrlCmd{target_vel, acc_cmd};
 }
 
 void VelocityController::resetHandling(const ControlMode control_mode)
@@ -213,101 +329,27 @@ void VelocityController::resetHandling(const ControlMode control_mode)
   }
 }
 
-CtrlCmd VelocityController::calcCtrlCmd()
+void VelocityController::publishCtrlCmd(const double vel, const double acc)
 {
-  /* initialize parameters */
-  const double dt = getDt();
+  prev_acc_cmd_ = acc;
+  prev_vel_cmd_ = vel;
 
-  /* find a closest waypoint index */
-  int closest_idx;
-  if (!vcutils::calcClosestWithThr(*trajectory_ptr_, current_pose_ptr_->pose, closest_angle_thr_, closest_dist_thr_, closest_idx))
-  {
-    ROS_ERROR_DELAYED_THROTTLE(5.0, "[velcon] calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
-                               closest_dist_thr_, closest_angle_thr_);
-    double cmd_acc = applyJerkFilter(emergency_stop_acc_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
-    controller_mode_ = ControlMode::ERROR;
-    return CtrlCmd{0.0, cmd_acc};
-  }
+  autoware_control_msgs::ControlCommandStamped cmd;
+  cmd.header.stamp = ros::Time::now();
+  cmd.header.frame_id = "base_link";
+  cmd.control.velocity = vel;
+  cmd.control.acceleration = acc;
+  pub_control_cmd_.publish(cmd);
 
-  double current_vel = current_vel_ptr_->twist.linear.x;
-  double target_vel = calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx);
-  double target_acc = DelayCompensator::computeCommandAccelerationAfterDelayTime(*trajectory_ptr_, closest_idx, delay_compensation_time_,
-                                                                                 current_vel_ptr_->twist.linear.x);
-
-  /* shift check */
-  const Shift shift = getCurrentShiftMode(target_vel, target_acc);
-  if (shift != prev_shift_)
-    pid_vel_.reset();
-  prev_shift_ = shift;
-
-  const double pitch = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
-  const double error_vel = lpf_vel_error_.filter(target_vel - current_vel);
-  ROS_INFO_COND(show_debug_info_, "[velcon] current_vel = %f, target_vel = %f, target_acc = %f, pitch = %f",
-                current_vel, target_vel, target_acc, pitch);
-  writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch, closest_idx);
-
-
-  /* stop state */
-  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ &&
-      std::fabs(target_vel) < stop_state_entry_target_speed_ && !is_smooth_stop_)
-  {
-    double cmd_acc = calcFilteredAcc(stop_state_acc_, pitch, dt, shift);
-    controller_mode_ = ControlMode::STOPPED;
-    ROS_INFO_COND(show_debug_info_, "[velcon] Stopping. vel: %f, acc: %f", stop_state_vel_, cmd_acc);
-    return CtrlCmd{stop_state_vel_, cmd_acc};
-  }
-
-  /* emergency stop */
-  is_emergency_stop_ = checkEmergency();
-  if (is_emergency_stop_)
-  {
-    double cmd_acc = applyJerkFilter(emergency_stop_acc_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
-    controller_mode_ = ControlMode::EMERGENCY_STOP;
-    ROS_INFO_COND(show_debug_info_, "[velcon] Emergency stop!!!. vel: %f, acc: %f", 0.0, cmd_acc);
-    return CtrlCmd{0.0, cmd_acc};
-  }
-
-  /* smooth stop */
-  if (enable_smooth_stop_ && std::fabs(current_vel) < smooth_stop_param_.entry_ego_speed &&
-      std::fabs(target_vel) < smooth_stop_param_.entry_target_speed && isInSmoothStopRange(closest_idx))
-  {
-    is_smooth_stop_ = true;
-    if (!start_time_smooth_stop_)
-    {
-      start_time_smooth_stop_ = std::make_shared<ros::Time>(ros::Time::now());
-    }
-    double smooth_stop_cmd_acc = calcSmoothStopAcc();
-    double cmd_acc = calcFilteredAcc(smooth_stop_cmd_acc, pitch, dt, shift);
-    controller_mode_ = ControlMode::SMOOTH_STOP;
-    ROS_INFO_COND(show_debug_info_, "[velcon] smooth stop: Smooth stopping. vel: %f, acc: %f", target_vel, cmd_acc);
-    return CtrlCmd{target_vel, cmd_acc};
-  }
-
-  /* velocity feedback */
-  double feedback_acc_cmd = applyVelocityFeedback(target_acc, error_vel, dt, current_vel);
-  double cmd_acc = calcFilteredAcc(feedback_acc_cmd, pitch, dt, shift);
-  controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[velcon] feedback control.  vel: %f, acc: %f", target_vel, cmd_acc);
-  return CtrlCmd{target_vel, cmd_acc};
+  // debug
+  debug_values_.data.at(7) = (double)controller_mode_;
+  debug_values_.data.at(12) = acc;
+  pub_debug_.publish(debug_values_);
+  debug_values_.data.clear();
+  debug_values_.data.resize(num_debug_values_, 0.0);
 }
 
-bool VelocityController::isInSmoothStopRange(const int closest)
-{
-  const double zero_velocity = 0.01;
-  for (uint i = 0; i < trajectory_ptr_->points.size(); ++i)
-  {
-    const double vel = trajectory_ptr_->points.at(i).twist.linear.x;
-    if (std::fabs(vel) < zero_velocity)
-    {
-      const double dist = vcutils::calcDistance2D(trajectory_ptr_->points.at(i).pose, current_pose_ptr_->pose);
-      if (dist < smooth_stop_param_.stop_dist_)
-      {
-        return true; // stop point is found around ego position.
-      }
-    }
-  }
-  return false; // stop point is not found around ego position. (threshold = smooth_stop_param_.stop_dist_)
-}
+
 
 bool VelocityController::checkEmergency()
 {
@@ -334,30 +376,17 @@ bool VelocityController::checkEmergency()
 
 double VelocityController::calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift)
 {
-  double acc = applySlopeCompensation(raw_acc, pitch, shift);
-  acc = applyAccFilter(acc, max_acc_, min_acc_);
-  acc = applyJerkFilter(acc, dt, max_jerk_, min_jerk_);
-  return acc;
+  double acc_max_filtered = applyLimitFilter(raw_acc, max_acc_, min_acc_);
+  debug_values_.data.at(9) = acc_max_filtered;
+
+  double acc_jerk_filtered = applyRateFilter(acc_max_filtered, prev_acc_cmd_, dt, max_jerk_, min_jerk_);
+  debug_values_.data.at(10) = acc_jerk_filtered;
+
+  double acc_slope_filtered = applySlopeCompensation(acc_jerk_filtered, pitch, shift);
+  debug_values_.data.at(11) = acc_slope_filtered;
+  return acc_slope_filtered;
 }
 
-void VelocityController::publishCtrlCmd(const double vel, const double acc)
-{
-  prev_cmd_acc_ = acc;
-
-  autoware_control_msgs::ControlCommandStamped cmd;
-  cmd.header.stamp = ros::Time::now();
-  cmd.header.frame_id = "base_link";
-  cmd.control.velocity = vel;
-  cmd.control.acceleration = acc;
-  pub_control_cmd_.publish(cmd);
-
-  // debug
-  debug_values_.data.at(7) = (double)controller_mode_;
-  debug_values_.data.at(12) = acc;
-  pub_debug_.publish(debug_values_);
-  debug_values_.data.clear();
-  debug_values_.data.resize(num_debug_values_, 0.0);
-}
 
 double VelocityController::getDt()
 {
@@ -377,7 +406,7 @@ double VelocityController::getDt()
   return std::max(std::min(dt, max_dt), min_dt);
 }
 
-enum VelocityController::Shift VelocityController::getCurrentShiftMode(const double target_vel,
+enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel,
                                                                        const double target_acc)
 {
   const double ep = 1.0e-5;
@@ -397,31 +426,49 @@ double VelocityController::calcSmoothStopAcc()
 {
   const double elapsed_time = (ros::Time::now() - *start_time_smooth_stop_).toSec();
 
-  double cmd_acc;
+  double acc_cmd;
   if (elapsed_time < smooth_stop_param_.weak_brake_time)
   {
-    cmd_acc = smooth_stop_param_.weak_brake_acc;
-    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] weak breaking! acc = %f", cmd_acc);
+    acc_cmd = smooth_stop_param_.weak_brake_acc;
+    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] weak breaking! acc = %f", acc_cmd);
   }
   else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time))
   {
     const double dt = elapsed_time - smooth_stop_param_.weak_brake_time;
-    cmd_acc = smooth_stop_param_.weak_brake_acc + smooth_stop_param_.increasing_brake_gradient * dt;
-    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] break increasing! acc = %f", cmd_acc);
+    acc_cmd = smooth_stop_param_.weak_brake_acc + smooth_stop_param_.increasing_brake_gradient * dt;
+    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] break increasing! acc = %f", acc_cmd);
   }
   else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time + smooth_stop_param_.stop_brake_time))
   {
-    cmd_acc = smooth_stop_param_.stop_brake_acc;
-    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] stop breaking! acc = %f", cmd_acc);
+    acc_cmd = smooth_stop_param_.stop_brake_acc;
+    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] stop breaking! acc = %f", acc_cmd);
   }
   else
   {
-    cmd_acc = smooth_stop_param_.stop_brake_acc;
-    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] finish smooth stopping! acc = %f", cmd_acc);
+    acc_cmd = smooth_stop_param_.stop_brake_acc;
+    ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] finish smooth stopping! acc = %f", acc_cmd);
     resetSmoothStop();
   }
 
-  return cmd_acc;
+  return acc_cmd;
+}
+
+bool VelocityController::isInSmoothStopRange(const int closest)
+{
+  const double zero_velocity = 0.01;
+  for (uint i = 0; i < trajectory_ptr_->points.size(); ++i)
+  {
+    const double vel = trajectory_ptr_->points.at(i).twist.linear.x;
+    if (std::fabs(vel) < zero_velocity)
+    {
+      const double dist = vcutils::calcDistance2D(trajectory_ptr_->points.at(i).pose, current_pose_ptr_->pose);
+      if (dist < smooth_stop_param_.stop_dist_)
+      {
+        return true; // stop point is found around ego position.
+      }
+    }
+  }
+  return false; // stop point is not found around ego position. (threshold = smooth_stop_param_.stop_dist_)
 }
 
 double VelocityController::calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj,
@@ -470,22 +517,20 @@ double VelocityController::calcInterpolatedTargetVelocity(const autoware_plannin
   return vel_interp;
 }
 
-double VelocityController::applyAccFilter(const double input_acc, const double max_acc,
-                                          const double min_acc)
+double VelocityController::applyLimitFilter(const double input_val, const double max_val,
+                                            const double min_val)
 {
-  const double filtered_acc = std::min(std::max(input_acc, min_acc), max_acc);
-  debug_values_.data.at(9) = filtered_acc;
-  return filtered_acc;
+  const double limitted_val = std::min(std::max(input_val, min_val), max_val);
+  return limitted_val;
 }
 
-double VelocityController::applyJerkFilter(const double input_acc, const double dt, const double max_jerk,
-                                           const double min_jerk)
+double VelocityController::applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val,
+                                           const double min_val)
 {
-  const double jerk = (input_acc - prev_cmd_acc_) / dt;
-  const double filtered_jerk = std::min(std::max(jerk, min_jerk), max_jerk);
-  const double filtered_acc = prev_cmd_acc_ + (filtered_jerk * dt);
-  debug_values_.data.at(10) = filtered_acc;
-  return filtered_acc;
+  const double diff_raw = (input_val - prev_val) / dt;
+  const double diff = std::min(std::max(diff_raw, min_val), max_val);
+  const double filtered_val = prev_val + (diff * dt);
+  return filtered_val;
 }
 
 double VelocityController::applySlopeCompensation(const double input_acc, const double pitch,
@@ -499,7 +544,6 @@ double VelocityController::applySlopeCompensation(const double input_acc, const 
   const double pitch_limited = std::min(std::max(pitch, min_pitch_rad_), max_pitch_rad_);
   double sign = (shift == Shift::Forward) ? -1 : (shift == Shift::Reverse ? 1 : 0);
   double compensated_acc = input_acc + sign * gravity * std::sin(pitch_limited);
-  debug_values_.data.at(11) = compensated_acc;
   return compensated_acc;
 }
 
@@ -530,7 +574,7 @@ void VelocityController::resetEmergencyStop()
 }
 
 void VelocityController::writeDebugValues(const double dt, const double current_vel, const double target_vel, const double target_acc,
-                                          const Shift shift, const double pitch, const int32_t closest)
+                                          const Shift shift, const double pitch, const int32_t closest, const double error_vel_filtered)
 {
   const double rad2deg = 180.0 / 3.141592;
   const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
@@ -541,7 +585,7 @@ void VelocityController::writeDebugValues(const double dt, const double current_
   debug_values_.data.at(4) = double(shift);
   debug_values_.data.at(5) = pitch;
   debug_values_.data.at(13) = raw_pitch;
-  debug_values_.data.at(14) = target_vel - current_vel;
+  debug_values_.data.at(14) = error_vel_filtered;
   debug_values_.data.at(15) = pitch * rad2deg;
   debug_values_.data.at(16) = raw_pitch * rad2deg;
   debug_values_.data.at(17) = trajectory_ptr_->points.at(closest).accel.linear.x;

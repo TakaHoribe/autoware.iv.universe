@@ -26,7 +26,7 @@ public:
   DelayCompensator();
   ~DelayCompensator();
 
-  static double computeCommandAccelerationAfterDelayTime(
+  static double getAccelerationAfterTimeDelay(
       const autoware_planning_msgs::Trajectory& trajectory, int32_t closest_waypoint_index,
       double delay_time, double current_velocity)
   {

@@ -3,6 +3,7 @@
 
 import rospy
 import math
+import time
 from autoware_planning_msgs.msg import Trajectory
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,28 +16,51 @@ class TrajectoryVisualizer():
         self.trajectory_raw = Trajectory()
         self.trajectory_time_resamped = Trajectory()
         self.trajectory_final = Trajectory()
+        self.plot_done1 = True
+        self.plot_done2 = True
+        self.plot_done3 = True
+        self.plot_done4 = True
+        self.plot_done5 = True
 
-        self.substatus1 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_external_velocity_limitted", Trajectory, self.CallBackTrajExVelLim, queue_size=1, tcp_nodelay=True)
-        self.substatus2 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_lateral_acc_filtered", Trajectory, self.CallBackTrajLatAccFiltered, queue_size=1, tcp_nodelay=True)
-        self.substatus3 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_raw", Trajectory, self.CallBackTrajRaw, queue_size=1, tcp_nodelay=True)
-        self.substatus4 = rospy.Subscriber("/planning/motion_planning/motion_velocity_planner_osqp/debug/trajectory_time_resampled", Trajectory,self.CallBackTrajTimeResampled, queue_size=1, tcp_nodelay=True)
-        self.substatus5 = rospy.Subscriber("/planning/motion_planning/trajectory", Trajectory,self.CallBackTrajFinal, queue_size=1, tcp_nodelay=True)
+        self.substatus1 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/motion_velocity_planner_osqp/debug/trajectory_external_velocity_limitted", Trajectory, self.CallBackTrajExVelLim, queue_size=1, tcp_nodelay=True)
+        self.substatus2 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/motion_velocity_planner_osqp/debug/trajectory_lateral_acc_filtered", Trajectory, self.CallBackTrajLatAccFiltered, queue_size=1, tcp_nodelay=True)
+        self.substatus3 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/motion_velocity_planner_osqp/debug/trajectory_raw", Trajectory, self.CallBackTrajRaw, queue_size=1, tcp_nodelay=True)
+        self.substatus4 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/motion_velocity_planner_osqp/debug/trajectory_time_resampled", Trajectory, self.CallBackTrajTimeResampled, queue_size=1, tcp_nodelay=True)
+        self.substatus5 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory", Trajectory, self.CallBackTrajFinal, queue_size=1, tcp_nodelay=True)
+        rospy.Timer(rospy.Duration(0.3), self.timerCallback)
 
     def CallBackTrajExVelLim(self, cmd):
-        self.trajectory_external_velocity_limitted = cmd
+        if (self.plot_done1):
+            self.trajectory_external_velocity_limitted = cmd
+            self.plot_done1 = False
 
     def CallBackTrajLatAccFiltered(self, cmd):
-        self.trajectory_lateral_acc_filtered = cmd
+        if (self.plot_done2):
+            self.trajectory_lateral_acc_filtered = cmd
+            self.plot_done2 = False
 
     def CallBackTrajRaw(self, cmd):
-        self.trajectory_raw = cmd
+        if (self.plot_done3):
+            self.trajectory_raw = cmd
+            self.plot_done3 = False
 
     def CallBackTrajTimeResampled(self, cmd):
-        self.trajectory_time_resamped = cmd
+        if (self.plot_done4):
+            self.trajectory_time_resamped = cmd
+            self.plot_done4 = False
 
     def CallBackTrajFinal(self, cmd):
-        self.trajectory_final = cmd
+        if (self.plot_done5):
+            self.trajectory_final = cmd
+            self.plot_done5 = False
+        
+    def timerCallback(self, event):
         self.plotTrajectory()
+        self.plot_done1 = True
+        self.plot_done2 = True
+        self.plot_done3 = True
+        self.plot_done4 = True
+        self.plot_done5 = True
 
     def CalcArcLength(self, traj):
         s_arr = []
@@ -120,7 +144,7 @@ class TrajectoryVisualizer():
         ax1.plot(self.CalcArcLength(self.trajectory_lateral_acc_filtered), self.ToVelList(self.trajectory_lateral_acc_filtered), label="2lateral_acc_filtered")
         ax1.plot(self.CalcArcLength(self.trajectory_time_resamped), self.ToVelList(self.trajectory_time_resamped), label="3time_resamped")
         ax1.plot(self.CalcArcLength(self.trajectory_final), self.ToVelList(self.trajectory_final), label="4final")
-        ax1.set_title("sample2")
+        ax1.set_title("trajectorys velocity")
         ax1.legend()
 
         ax2 = plt.subplot(3,1,2)

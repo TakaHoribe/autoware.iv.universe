@@ -333,7 +333,7 @@ void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &path, std:
   }
 }
 
-void zeroVelocity(autoware_planning_msgs::Trajectory &trajectory)
+void setZeroVelocity(autoware_planning_msgs::Trajectory &trajectory)
 {
   for (auto &tp : trajectory.points)
   {

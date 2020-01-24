@@ -55,8 +55,8 @@ private:
   boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_; // current base_waypoints
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;        // current external_velocity_limit
 
-  autoware_planning_msgs::Trajectory prev_output_trajectory_;  // velocity replanned waypoints (output of this node)
-
+  autoware_planning_msgs::Trajectory prev_output_;  // velocity replanned waypoints (output of this node)
+  int planning_type_;
 
 
   osqp::OSQPInterface qp_solver_;
@@ -102,13 +102,14 @@ private:
   /* non-const methods */
   void run();
   void updateCurrentPose();
+  autoware_planning_msgs::Trajectory calcTrajectoryVelocity(const autoware_planning_msgs::Trajectory &base_traj);
 
-  void replanVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
+  void optimizeVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                       const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest,
                       const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
-                         double &initial_vel, double &initial_acc, int &init_type) const;
+                         double &initial_vel, double &initial_acc);
 
   bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output,
                           std::vector<double> &interval_dist_arr) const;
@@ -120,8 +121,10 @@ private:
   void preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const;
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
-  void optimizeVelocity(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
+  void solveOptimization(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
                         const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
+  void insertBehindVelocity(const int prev_out_closest, const autoware_planning_msgs::Trajectory &prev_output,
+                            const int output_closest, autoware_planning_msgs::Trajectory &output);
 
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;

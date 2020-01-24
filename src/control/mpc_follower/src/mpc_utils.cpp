@@ -429,7 +429,7 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
   }
   if (nearest_index_tmp == -1)
   {
-    ROS_WARN("[calcNearestPoseInterp] yaw error is over PI/3 for all waypoints. no closest waypoint found.");
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[calcNearestPoseInterp] yaw error is over PI/3 for all waypoints. no closest waypoint found.");
     return false;
   }
 
