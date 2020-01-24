@@ -13,11 +13,14 @@
     <arg name="output_trajectory" value="/planning/scenario_planning/trajectory"/>
     <arg name="is_parking_completed" value="/planning/scenario_planning/scenarios/parking/freespace_planning/is_completed"/>
   </include>
-  <!-- lane following -->
-  <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/lane_following.launch">
-  </include>
-  <!-- parking -->
-  <include file="$(find planning_launch)/launch/scenario_planning/scenarios/parking/parking.launch">
-  </include>
 
+  <!-- scenarios-->
+  <group ns="scenarios">
+    <!-- lane following -->
+    <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/lane_following.launch">
+    </include>
+    <!-- parking -->
+    <include file="$(find planning_launch)/launch/scenario_planning/scenarios/parking/parking.launch">
+    </include>
+  </group>
 </launch>
