@@ -569,7 +569,7 @@ bool ObstacleConsideredLane::findClosestPointPosAndIdx(const autoware_planning_m
       continue;
     }
 
-    ROS_ERROR("nothing is polygon");
+    // ROS_ERROR("nothing is polygon");
     closest_idx = -1;
     closest_point = geometry_msgs::Point();
     return false;

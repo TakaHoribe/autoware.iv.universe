@@ -85,7 +85,7 @@ visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t k
     marker.points = createLattice(pose, 2.0, 8.0, 6);
 
   }
-  marker.lifetime = ros::Duration(10.0);
+  marker.lifetime = ros::Duration(1.0);
   marker.scale.x = 0.1;
   marker.frame_locked = true;
   marker.color = *setColorDependsOnObstacleKind(kind);
@@ -102,6 +102,7 @@ visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs
   marker.header.stamp = ros::Time::now();
   marker.ns = "obstacle_perpendicular_point";
   marker.id = 0;
+  marker.lifetime = ros::Duration(1.0);
   marker.type = visualization_msgs::Marker::CUBE;
   if (kind == 0 /* no obstacle */)
   {
@@ -130,6 +131,7 @@ visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose,
   marker.header.stamp = ros::Time::now();
   marker.ns = "obstacle_point";
   marker.id = 0;
+  marker.lifetime = ros::Duration(1.0);
   marker.type = visualization_msgs::Marker::SPHERE;
   if (kind == 0 /* no obstacle */)
   {
@@ -162,6 +164,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   m_poly.type = visualization_msgs::Marker::LINE_STRIP;
   m_poly.scale.x = 0.05;
   m_poly.frame_locked = true;
+  m_poly.lifetime = ros::Duration(1.0);
 
   visualization_msgs::Marker m_point;
   m_point.header.frame_id = "map";
@@ -172,6 +175,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   m_point.scale.x = 0.1;
   m_point.scale.y = 0.1;
   m_point.frame_locked = true;
+  m_point.lifetime = ros::Duration(1.0);
 
 
   if (!poly.empty())  // visualize active polygons

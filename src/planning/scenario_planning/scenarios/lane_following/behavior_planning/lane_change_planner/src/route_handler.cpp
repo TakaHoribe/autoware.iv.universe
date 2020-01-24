@@ -610,8 +610,7 @@ lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Po
   lanelet::ConstLanelets target_lanelets;
   if (!getClosestLaneletWithinRoute(pose, &lanelet))
   {
-    lanelet::ConstLanelets empty_lanelets;
-    return empty_lanelets;
+    return target_lanelets;
   }
 
   int num = getNumLaneToPreferredLane(lanelet);
@@ -619,15 +618,15 @@ lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Po
   {
     auto right_lanelet = (!!routing_graph_ptr_->right(lanelet)) ? routing_graph_ptr_->right(lanelet) :
                                                                   routing_graph_ptr_->adjacentRight(lanelet);
-    return getLaneletSequence(right_lanelet.get());
+    target_lanelets = getLaneletSequence(right_lanelet.get());
   }
   if (num > 0)
   {
     auto left_lanelet = (!!routing_graph_ptr_->left(lanelet)) ? routing_graph_ptr_->left(lanelet) :
                                                                 routing_graph_ptr_->adjacentLeft(lanelet);
-    return getLaneletSequence(left_lanelet.get());
+    target_lanelets = getLaneletSequence(left_lanelet.get());
   }
-  return getLaneletSequence(lanelet);
+  return target_lanelets;
 }
 
 PathWithLaneId RouteHandler::getLaneChangePath(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist,
@@ -726,4 +725,13 @@ bool RouteHandler::getGoalLanelet(lanelet::ConstLanelet* goal_lanelet) const
   return false;
 }
 
+lanelet::ConstLanelets RouteHandler::getLaneletsFromIds(const std::vector<uint64_t> ids) const
+{
+  lanelet::ConstLanelets lanelets;
+  for (const auto& id : ids)
+  {
+    lanelets.push_back(lanelet_map_ptr_->laneletLayer.get(id));
+  }
+  return lanelets;
+}
 }  // namespace lane_change_planner

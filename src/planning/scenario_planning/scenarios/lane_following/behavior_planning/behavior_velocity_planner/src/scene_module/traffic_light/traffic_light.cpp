@@ -39,7 +39,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     bool found = false;
     double highest_confidence = 0.0;
     autoware_traffic_light_msgs::TrafficLightState highest_confidence_tl_state;
-    std::string debug_msg = 0;
+    std::string debug_msg = "";
     for (const auto &traffic_light : traffic_lights)
     {
         if (!traffic_light.isLineString()) // traffic ligth must be linestrings

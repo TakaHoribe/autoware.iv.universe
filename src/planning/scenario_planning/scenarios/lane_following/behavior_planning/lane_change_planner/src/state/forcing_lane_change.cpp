@@ -26,34 +26,15 @@ State ForcingLaneChangeState::getCurrentState() const
   return State::FORCING_LANE_CHANGE;
 }
 
-void ForcingLaneChangeState::entry()
+void ForcingLaneChangeState::entry(const Status& status)
 {
-  while (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_) && ros::ok())
-  {
-    ROS_ERROR_THROTTLE(0.5, "waiting for current_pose");
-    ros::Duration(0.01);
-  }
-  while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_) && ros::ok())
-  {
-    ROS_ERROR_THROTTLE(0.5, "waiting for current_velocity");
-    ros::Duration(0.01);
-  }
+  status_ = status;
   if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_))
   {
     ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
   }
-
-  original_lanes_ = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
-  target_lanes_ = RouteHandler::getInstance().getLaneChangeTarget(current_pose_.pose);
-
-  const double backward_path_length = ros_parameters_.backward_path_length;
-  const double forward_path_length = ros_parameters_.forward_path_length;
-  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
-  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
-
-  status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
-      current_pose_.pose, current_twist_->twist, backward_path_length, forward_path_length,
-      lane_change_prepare_duration, lane_changing_duration);
+  original_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
+  target_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
 }
 
 autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
@@ -66,10 +47,6 @@ void ForcingLaneChangeState::update()
   if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_))
   {
     ROS_ERROR("failed to get current pose");
-  }
-  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_))
-  {
-    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
   }
 
   // update path

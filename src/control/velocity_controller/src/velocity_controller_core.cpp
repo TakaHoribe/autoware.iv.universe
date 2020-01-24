@@ -117,7 +117,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   {
     if (!updateCurrentPose(5.0))
     {
-      ROS_INFO("[velcon] waiting map to base_link at initialize.");
+      ROS_INFO("waiting map to base_link at initialize.");
     }
     else
     {
@@ -145,7 +145,7 @@ bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_
   }
   catch (tf2::TransformException &ex)
   {
-    ROS_WARN_DELAYED_THROTTLE(3.0, "[velcon] cannot get map to base_link transform. %s", ex.what());
+    ROS_WARN_DELAYED_THROTTLE(3.0, "cannot get map to base_link transform. %s", ex.what());
     return false;
   }
   ps.header = transform.header;
@@ -174,7 +174,7 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   /* gurad */
   if (!is_pose_updated || !current_pose_ptr_ || !current_vel_ptr_ || !trajectory_ptr_)
   {
-    ROS_INFO_COND(show_debug_info_, "[velcon] Waiting topics, Publish stop command. pose_update: %d, pose: %d, vel: %d, trajectory: %d",
+    ROS_INFO_COND(show_debug_info_, "Waiting topics, Publish stop command. pose_update: %d, pose: %d, vel: %d, trajectory: %d",
                   is_pose_updated, current_pose_ptr_ != nullptr, current_vel_ptr_ != nullptr, trajectory_ptr_ != nullptr);
     controller_mode_ = ControlMode::INIT;
     publishCtrlCmd(stop_state_vel_, stop_state_acc_);
@@ -208,11 +208,12 @@ CtrlCmd VelocityController::calcCtrlCmd()
   int closest_idx;
   if (!vcutils::calcClosestWithThr(*trajectory_ptr_, current_pose_ptr_->pose, closest_angle_thr_, closest_dist_thr_, closest_idx))
   {
-    ROS_ERROR_DELAYED_THROTTLE(5.0, "[velcon] calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
+    ROS_ERROR_DELAYED_THROTTLE(5.0, "calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
                                closest_dist_thr_, closest_angle_thr_);
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
     double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::ERROR;
+    ROS_INFO_COND(show_debug_info_, "[closest error]. vel: %f, acc: %f", vel_cmd, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
@@ -229,8 +230,8 @@ CtrlCmd VelocityController::calcCtrlCmd()
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
   const double error_vel_filtered = lpf_vel_error_.filter(target_vel - current_vel);
-  ROS_INFO_COND(show_debug_info_, "[velcon] current_vel = %f, target_vel = %f, target_acc = %f, pitch_filtered = %f",
-                current_vel, target_vel, target_acc, pitch_filtered);
+  ROS_INFO_COND(show_debug_info_, "current_vel = %f, target_vel = %f, target_acc = %f, pitch_filtered = %f, is_smooth_stop_ = %d",
+                current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_);
   writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx, error_vel_filtered);
 
   /* -- stop state --
@@ -247,7 +248,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
   {
     double acc_cmd = calcFilteredAcc(stop_state_acc_, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::STOPPED;
-    ROS_INFO_COND(show_debug_info_, "[velcon] Stopping. vel: %f, acc: %f", stop_state_vel_, acc_cmd);
+    ROS_INFO_COND(show_debug_info_, "[Stopped]. vel: %f, acc: %f", stop_state_vel_, acc_cmd);
     return CtrlCmd{stop_state_vel_, acc_cmd};
   }
 
@@ -267,7 +268,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
     double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::EMERGENCY_STOP;
-    ROS_INFO_COND(show_debug_info_, "[velcon] Emergency stop!!!. vel: %f, acc: %f", 0.0, acc_cmd);
+    ROS_INFO_COND(show_debug_info_, "[Emergency stop] vel: %f, acc: %f", 0.0, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
@@ -291,7 +292,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     double smooth_stop_acc_cmd = calcSmoothStopAcc();
     double acc_cmd = calcFilteredAcc(smooth_stop_acc_cmd, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::SMOOTH_STOP;
-    ROS_INFO_COND(show_debug_info_, "[velcon] smooth stop: Smooth stopping. vel: %f, acc: %f", target_vel, acc_cmd);
+    ROS_INFO_COND(show_debug_info_, "[smooth stop]: Smooth stopping. vel: %f, acc: %f", target_vel, acc_cmd);
     return CtrlCmd{target_vel, acc_cmd};
   }
 
@@ -306,7 +307,8 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double feedback_acc_cmd = applyVelocityFeedback(target_acc, error_vel_filtered, dt, current_vel);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[velcon] feedback control.  vel: %f, acc: %f", target_vel, acc_cmd);
+  ROS_INFO_COND(show_debug_info_, "[feedback control]  vel: %f, acc: %f", target_vel, acc_cmd);
+  printf("\n");
   return CtrlCmd{target_vel, acc_cmd};
 }
 
@@ -316,6 +318,10 @@ void VelocityController::resetHandling(const ControlMode control_mode)
   {
     pid_vel_.reset();
     resetSmoothStop();
+    if (std::fabs(current_vel_ptr_->twist.linear.x) < stop_state_entry_ego_speed_)
+    {
+      is_emergency_stop_ = false;
+    }
   }
   else if (control_mode == ControlMode::STOPPED)
   {

@@ -13,7 +13,6 @@ TrafficLightRoiImageSaver::TrafficLightRoiImageSaver() : nh_(""),
                                                          roi_sub_(pnh_, "input/rois", 1),
                                                          sync_(SyncPolicy(10), image_sub_, roi_sub_)
 {
-    image_pub_ = image_transport_.advertise("output/image", 1);
     sync_.registerCallback(boost::bind(&TrafficLightRoiImageSaver::imageRoiCallback, this, _1, _2));
 
     pnh_.getParam("save_dir", save_dir_);
@@ -37,17 +36,17 @@ void TrafficLightRoiImageSaver::imageRoiCallback(const sensor_msgs::ImageConstPt
             const sensor_msgs::RegionOfInterest &roi = input_tl_roi_msg->rois.at(i).roi;
             cv::Mat cliped_image(cv_ptr->image, cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
             std::stringstream save_fine_name_stream;
-            save_fine_name_stream << "/" << input_tl_roi_msg->rois.at(i).id << "_" << current_time.toSec() << ".png";
+            save_fine_name_stream <<std::fixed<< save_dir_ << "/" << input_tl_roi_msg->rois.at(i).id << "_" << current_time.toSec() << ".png";
             std::string save_fine_name;
             save_fine_name_stream >> save_fine_name;
             cv::imwrite(save_fine_name, cliped_image);
+            ROS_INFO("%s", save_fine_name.c_str());
         }
     }
     catch (cv_bridge::Exception &e)
     {
         ROS_ERROR("Could not convert from '%s' to 'bgr8'.", input_image_msg->encoding.c_str());
     }
-    image_pub_.publish(cv_ptr->toImageMsg());
     save_rate_ptr_->sleep();
 }
 } // namespace traffic_light

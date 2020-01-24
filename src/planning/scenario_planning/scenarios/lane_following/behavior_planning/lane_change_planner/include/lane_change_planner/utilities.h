@@ -86,6 +86,8 @@ double getDistanceToEndOfLane(const geometry_msgs::Pose& current_pose, const lan
 
 double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets);
 
+std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets);
+
 }  // namespace util
 }  // namespace lane_change_planner
 

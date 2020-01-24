@@ -5,7 +5,7 @@
   <arg name="control_rate" default="30" doc="controller execution rate [Hz]" />
 
   <!-- enable flags -->
-  <arg name="show_debug_info" default="false" />
+  <arg name="show_debug_info" default="true" />
   <arg name="enable_smooth_stop" default="true" />
   <arg name="enable_slope_compensation" default="false" />
   <arg name="enable_pub_debug" default="true" />
