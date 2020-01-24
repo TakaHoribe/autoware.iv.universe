@@ -59,12 +59,31 @@ void ExecutingLaneChangeState::update()
 
   // update path
   {
+    lanelet::ConstLanelet closest_original_lane;
+    lanelet::ConstLanelet closest_target_lane;
+    if (!lanelet::utils::query::getClosestLanelet(original_lanes_, current_pose_.pose, &closest_original_lane))
+    {
+      return;
+    }
+    if (!lanelet::utils::query::getClosestLanelet(target_lanes_, current_pose_.pose, &closest_target_lane))
+    {
+      return;
+    }
+
+    double backward_length = ros_parameters_.backward_path_length;
+    double forward_length = ros_parameters_.forward_path_length;
+    const auto trimmed_original_lanes = RouteHandler::getInstance().getLaneletSequence(
+        closest_original_lane, current_pose_.pose, backward_length, forward_length);
+    const auto trimmed_target_lanes = RouteHandler::getInstance().getLaneletSequence(
+        closest_target_lane, current_pose_.pose, backward_length, forward_length);
+
+    lanelet::ConstLanelets lanes;
+    lanes.insert(lanes.end(), trimmed_original_lanes.begin(), trimmed_original_lanes.end());
+    lanes.insert(lanes.end(), trimmed_target_lanes.begin(), trimmed_target_lanes.end());
+
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
-    lanelet::ConstLanelets lanes;
-    lanes.insert(lanes.end(), original_lanes_.begin(), original_lanes_.end());
-    lanes.insert(lanes.end(), target_lanes_.begin(), target_lanes_.end());
     status_.lane_change_path.drivable_area =
         util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
   }
