@@ -3,7 +3,7 @@
     <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
   
     <!-- lane_following scenario -->
-    <group ns="lane_following_planning">
+    <group ns="lane_following">
         <!-- behavior planning module -->
         <group ns="behavior_planning">
             <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/behavior_planning/behavior_planning.launch"></include>
