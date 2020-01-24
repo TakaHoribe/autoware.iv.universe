@@ -21,5 +21,6 @@
       <remap from="~input/rois" to="$(arg input/rois)"/>
       <remap from="~output/image" to="saved_image"/>
       <param name="save_fine_name" value="$(find traffic_light_fine_detector)/data"/>
-    </node>
+      <param name="save_rate" value="1.0"/>
+  </node>
 </launch>

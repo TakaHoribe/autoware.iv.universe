@@ -31,6 +31,7 @@ private:
   message_filters::Subscriber<autoware_traffic_light_msgs::TrafficLightRoiArray> roi_sub_;
   image_transport::Publisher image_pub_;
   std::string save_dir_;
+  std::shared_ptr<ros::Rate> save_rate_ptr_;
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
                                                           autoware_traffic_light_msgs::TrafficLightRoiArray>
       SyncPolicy;

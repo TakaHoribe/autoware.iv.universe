@@ -15,8 +15,11 @@ TrafficLightRoiImageSaver::TrafficLightRoiImageSaver() : nh_(""),
 {
     image_pub_ = image_transport_.advertise("output/image", 1);
     sync_.registerCallback(boost::bind(&TrafficLightRoiImageSaver::imageRoiCallback, this, _1, _2));
-    
+
     pnh_.getParam("save_dir", save_dir_);
+    double save_rate;
+    pnh_.param("save_rate", save_rate, 1.0);
+    save_rate_ptr_ = std::make_shared<ros::Rate>(save_rate);
 }
 TrafficLightRoiImageSaver::~TrafficLightRoiImageSaver()
 {
@@ -45,5 +48,6 @@ void TrafficLightRoiImageSaver::imageRoiCallback(const sensor_msgs::ImageConstPt
         ROS_ERROR("Could not convert from '%s' to 'bgr8'.", input_image_msg->encoding.c_str());
     }
     image_pub_.publish(cv_ptr->toImageMsg());
+    save_rate_ptr_->sleep();
 }
 } // namespace traffic_light
