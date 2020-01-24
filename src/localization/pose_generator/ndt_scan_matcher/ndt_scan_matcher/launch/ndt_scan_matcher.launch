@@ -42,7 +42,7 @@
     <remap from="pointcloud_map" to="$(arg input_map_points_topic)" />
 
     <param name="base_frame" value="$(arg base_frame)" />
- 
+
     <param name="ndt_implement_type" value="$(arg ndt_implement_type)" />
 
     <param name="trans_epsilon" value="$(arg trans_epsilon)" />

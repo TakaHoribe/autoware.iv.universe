@@ -10,7 +10,7 @@
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
   <!-- Map -->
-  <include file="$(find map_launch)/launch/map.launch" >
+  <include file="$(find map_launch)/launch/map.launch">
     <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
     <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
     <arg name="map_tf_path" value="$(arg map_tf_path)"/>
@@ -22,21 +22,21 @@
   <!-- Dummy Perception -->
   <include file="$(find dummy_perception_publisher)/launch/dummy_perception_publisher.launch" />
 
-  <!-- Planning -->  
-  <include file="$(find planning_launch)/launch/planning.launch" >
-    <arg name="is_online_path_update"  default="true"/>
+  <!-- Planning -->
+  <include file="$(find planning_launch)/launch/planning.launch">
+    <arg name="is_online_path_update" default="true"/>
     <arg name="num_lookup_lanelet_for_drivealble_area" value="$(arg num_lookup_lanelet_for_drivealble_area)"/>
   </include>
 
   <!-- Control -->
-  <include file="$(find control_launch)/launch/control.launch" >
+  <include file="$(find control_launch)/launch/control.launch">
   </include>
-  
+
   <!-- Rviz -->
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
 
   <!-- Web Controller -->
-  <include file="$(find roswww)/launch/roswww.launch" >
+  <include file="$(find roswww)/launch/roswww.launch">
     <arg name="cached" default="false"/>
   </include>
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />

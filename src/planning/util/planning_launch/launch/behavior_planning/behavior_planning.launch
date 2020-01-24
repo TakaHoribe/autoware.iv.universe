@@ -1,33 +1,32 @@
 <launch>
-    <arg name="intput_route_topic_name" default="/planning/mission_planning/route"/>
-    <arg name="map_topic_name" default="/lanelet_map_bin"/>
+  <arg name="intput_route_topic_name" default="/planning/mission_planning/route"/>
+  <arg name="map_topic_name" default="/lanelet_map_bin"/>
 
-    <!-- <node pkg="behavior_path_planner" type="behavior_path_planner_node" name="behavior_path_planner" output="screen">
+  <!-- <node pkg="behavior_path_planner" type="behavior_path_planner_node" name="behavior_path_planner" output="screen">
       <remap from="~input/route" to="$(arg intput_route_topic_name)"/>
       <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
       <remap from="~output/path_with_lane_id" to="path_with_lane_id"/>
     </node> -->
 
-    <node pkg="lane_change_planner" type="lane_change_planner" name="lane_change_planner" output="screen">
-      <remap from="~input/route" to="$(arg intput_route_topic_name)"/>
-      <remap from="~input/vector_map" to="$(arg map_topic_name)"/>
-      <remap from="~input/perception" to="/perception/prediction/objects"/>
-      <remap from="~input/velocity" to="/vehicle/status/twist"/>
-      <remap from="~output/lane_change_path" to="path_with_lane_id"/>
-    </node>
+  <node pkg="lane_change_planner" type="lane_change_planner" name="lane_change_planner" output="screen">
+    <remap from="~input/route" to="$(arg intput_route_topic_name)"/>
+    <remap from="~input/vector_map" to="$(arg map_topic_name)"/>
+    <remap from="~input/perception" to="/perception/prediction/objects"/>
+    <remap from="~input/velocity" to="/vehicle/status/twist"/>
+    <remap from="~output/lane_change_path" to="path_with_lane_id"/>
+  </node>
 
-    <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
-      <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
-    </node>
+  <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
+    <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
+  </node>
 
-    <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
-      <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
-      <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
-      <remap from="~input/vehicle/velocity" to="/vehicle/status/twist"/>
-      <remap from="~input/perception" to="/perception/prediction/objects"/>
-      <remap from="~input/pointcloud" to="/sensing/preprocess/lidar/no_ground/pointcloud"/>
-      <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
-      <remap from="~output/path" to="path"/>
-    </node>
-  </launch>
-  
+  <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
+    <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
+    <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
+    <remap from="~input/vehicle/velocity" to="/vehicle/status/twist"/>
+    <remap from="~input/perception" to="/perception/prediction/objects"/>
+    <remap from="~input/pointcloud" to="/sensing/preprocess/lidar/no_ground/pointcloud"/>
+    <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
+    <remap from="~output/path" to="path"/>
+  </node>
+</launch>

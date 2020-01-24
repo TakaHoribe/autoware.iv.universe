@@ -4,7 +4,7 @@
   <arg name="input_topic_fix" default="/ublox/fix" />
   <arg name="input_topic_navpvt" default="/ublox/navpvt" />
 
-  <include file="$(find gnss_poser)/launch/gnss_poser.launch" >
+  <include file="$(find gnss_poser)/launch/gnss_poser.launch">
     <arg name="input_topic_fix" value="$(arg input_topic_fix)" />
     <arg name="input_topic_navpvt" value="$(arg input_topic_navpvt)" />
     <arg name="coordinate_system" value="1" doc="0:UTM, 1:MGRS, 2:PLANE" />

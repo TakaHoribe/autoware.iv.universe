@@ -8,7 +8,7 @@
   <!-- load parameters -->
   <group ns="/vehicle_info">
     <rosparam file="$(find vehicle_description)/config/vehicle_info.yaml" command="load"/>
-    <node name="additional_vehicle_info_generator" pkg="vehicle_description" type="additional_vehicle_info_generator" output="screen"/>    
+    <node name="additional_vehicle_info_generator" pkg="vehicle_description" type="additional_vehicle_info_generator" output="screen"/>
   </group>
   <!-- tf publisher -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />

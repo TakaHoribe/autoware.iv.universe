@@ -8,44 +8,45 @@
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
   <!-- Map -->
-  <include file="$(find map_launch)/launch/map.launch" >
+  <include file="$(find map_launch)/launch/map.launch">
     <arg name="lanelet_map_path" default=""/>
     <arg name="pointcloud_map_path" default=""/>
     <arg name="map_tf_path" default=""/>
   </include>
 
   <!-- Sensing -->
-  <include file="$(find sensing_launch)/launch/sensing.launch" >
+  <include file="$(find sensing_launch)/launch/sensing.launch">
     <arg name="launch_driver" value="true" unless="$(arg rosbag)"/>
     <arg name="launch_driver" value="false" if="$(arg rosbag)"/>
   </include>
 
   <!-- Localization -->
-  <include file="$(find localization_launch)/launch/localization.launch" >
+  <include file="$(find localization_launch)/launch/localization.launch">
   </include>
 
   <!-- Perception -->
-  <include file="$(find perception_launch)/launch/perception.launch" >
-    <arg name="mode" default="lidar"/>  <!-- "camera_lidar_fusion", "lidar" or "camera" -->
+  <include file="$(find perception_launch)/launch/perception.launch">
+    <arg name="mode" default="lidar"/>
+    <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
   <!-- Traffic Light Recognition -->
 
   <!-- Planning -->
-  <include file="$(find planning_launch)/launch/planning.launch" >
-    <arg name="is_online_path_update"  default="true"/>
-    <arg name="num_lookup_lanelet_for_drivealble_area"  default="4"/>
+  <include file="$(find planning_launch)/launch/planning.launch">
+    <arg name="is_online_path_update" default="true"/>
+    <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
   </include>
 
   <!-- Control -->
-  <include file="$(find control_launch)/launch/control.launch" >
+  <include file="$(find control_launch)/launch/control.launch">
   </include>
 
   <!-- Rviz -->
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
 
   <!-- Web Controller -->
-  <include file="$(find roswww)/launch/roswww.launch" >
+  <include file="$(find roswww)/launch/roswww.launch">
     <arg name="cached" default="false"/>
   </include>
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />

@@ -12,14 +12,11 @@
 
   <!-- For setting debug level to debug -->
   <group if="$(arg debug)">
-    <env name="ROSCONSOLE_CONFIG_FILE"
-       value="$(find microstrain_mips)/config/custom_rosconsole.conf"/>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find microstrain_mips)/config/custom_rosconsole.conf"/>
   </group>
 
   <!-- Microstrain sensor node -->
-  <node name="microstrain_mips_node"
-  pkg="microstrain_mips"
-  type="microstrain_mips_node" output="screen" ns="gx5">
+  <node name="microstrain_mips_node" pkg="microstrain_mips" type="microstrain_mips_node" output="screen" ns="gx5">
     <param name="port" value="$(arg port)" type="str" />
     <param name="baudrate" value="$(arg baudrate)" type="int" />
 
@@ -29,7 +26,7 @@
     <param name="save_settings" value="true" type="bool" />
     <param name="auto_init" value="true" type="bool" />
 
-    <!-- This parameter is to set wether the device orientation uses a basic 
+    <!-- This parameter is to set wether the device orientation uses a basic
       NED->ENU orientation swap or not. If true, the ENU reported should
       match the label printed on the device. If false X & Y are swapped
       and Z is negated. -->
@@ -69,8 +66,7 @@
   <!-- Diagnostics -->
   <group if="$(arg diagnostics)">
     <!--<node pkg="rqt_topic" type="rqt_topic" name="rqt_topic"/>-->
-    <!--<node pkg="rqt_plot" type="rqt_plot" name="pid_setpoints"
-      args="/yaw_pid_debug/Setpoint /vel_pid_debug/Setpoint"/>-->
+    <!--<node pkg="rqt_plot" type="rqt_plot" name="pid_setpoints" args="/yaw_pid_debug/Setpoint /vel_pid_debug/Setpoint"/>-->
     <!-- Diagnostic Aggregator for robot monitor usage -->
     <node pkg="diagnostic_aggregator" type="aggregator_node" name="imu_diagnostic_aggregator">
       <rosparam command="load" file="$(find microstrain_mips)/config/diagnostic_analyzers.yaml" />

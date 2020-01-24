@@ -26,8 +26,7 @@
     </node>
 
     <!-- rosrun rosservice rosservice call /[node name]/set_logger_level ros.[package name] DEBUG -->
-    <!--<node pkg="rosservice" type="rosservice" name="stop_factor_search_set_logger_level_debug"
-          args="call stop_factor_search/set_logger_level ros.stop_factor_search DEBUG"/>
+    <!--<node pkg="rosservice" type="rosservice" name="stop_factor_search_set_logger_level_debug" args="call stop_factor_search/set_logger_level ros.stop_factor_search DEBUG"/>
     -->
   </group>
 
@@ -112,8 +111,7 @@
 
   <group ns="$(arg ns)">
     <!-- rosrun waypoint_follower pure_pursuit -->
-    <node pkg="rostopic" type="rostopic" name="config_waypoint_follower_rostopic"
-        args="pub -l /config/waypoint_follower autoware_config_msgs/ConfigWaypointFollower
+    <node pkg="rostopic" type="rostopic" name="config_waypoint_follower_rostopic" args="pub -l /config/waypoint_follower autoware_config_msgs/ConfigWaypointFollower
         '{ header: auto,
            param_flag: 0,
            velocity: 1,
@@ -122,8 +120,7 @@
            minimum_lookahead_distance: 2.5,
            displacement_threshold: 0.0,
            relative_angle_threshold: 0.0
-         }' "
-    />
+         }' " />
     <node pkg="pure_pursuit" type="pure_pursuit_rev2" name="pure_pursuit" output="log">
       <param name="uses_lerp" value="$(arg uses_lerp)"/>
       <param name="publish_twist_cmd" value="$(arg publish_twist_cmd)"/>
@@ -134,8 +131,7 @@
     </node>
 
     <!-- rosrun rosservice rosservice call /pure_pursuit/set_logger_level ros.pure_pursuit DEBUG -->
-    <!--<node pkg="rosservice" type="rosservice" name="pure_pursuit_set_logger_level_debug"
-          args="call pure_pursuit/set_logger_level ros.pure_pursuit DEBUG"/>
+    <!--<node pkg="rosservice" type="rosservice" name="pure_pursuit_set_logger_level_debug" args="call pure_pursuit/set_logger_level ros.pure_pursuit DEBUG"/>
     -->
   </group>
 

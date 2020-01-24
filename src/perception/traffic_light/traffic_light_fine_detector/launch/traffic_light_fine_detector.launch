@@ -17,9 +17,9 @@
   </node>
 
   <node if="$(eval save_rough_roi_image)" pkg="traffic_light_fine_detector" type="traffic_light_roi_image_saver_node" name="$(anon traffic_light_roi_image_saver)" output="screen">
-      <remap from="~input/image" to="$(arg input/image)"/>
-      <remap from="~input/rois" to="$(arg input/rois)"/>
-      <param name="save_dir" value="$(find traffic_light_fine_detector)/train_image"/>
-      <param name="save_rate" value="1.0"/>
+    <remap from="~input/image" to="$(arg input/image)"/>
+    <remap from="~input/rois" to="$(arg input/rois)"/>
+    <param name="save_dir" value="$(find traffic_light_fine_detector)/train_image"/>
+    <param name="save_rate" value="1.0"/>
   </node>
 </launch>
