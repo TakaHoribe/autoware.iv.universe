@@ -47,8 +47,9 @@ class ScenarioMaker:
         self.goal_dist = rospy.get_param("~goal_dist", 1.0)  # Goal criteria(xy-distance) [m]
         self.goal_th = rospy.get_param("~goal_theta", 10)  # Goal criteria(theta-distance)[deg]
         self.goal_vel = rospy.get_param("~goal_velocity", 0.001)  # Goal criteria(velocity)[m/s]
-        self.give_up_time = rospy.get_param("~give_up_time", 300)  # Goal criteria(time)[s]
+        self.give_up_time = rospy.get_param("~give_up_time", 600)  # Goal criteria(time)[s]
         self.generate_obstacle = rospy.get_param("~generate_obstacle", True)  # Generate obstacle or not
+        self.auto_engage = rospy.get_param("~auto_engage", True)  # Engage automaticlly or not
         self.retry_scenario = rospy.get_param("~retry_scenario", True)  # Retry scenario or not
         self.max_scenario_num = rospy.get_param("~max_scenario_num", 10)  # Numober of scenarios to try
         self.traffic_light_time = rospy.get_param("~traffic_light_time", 35)  # Time until the traffic light changes[s]
@@ -213,8 +214,9 @@ class ScenarioMaker:
         # Publish Scenario
         self.scenario_path1(only_initial_pose)
         # Publish Engage
-        self.pub_engage.publish(True)
-        time.sleep(0.25)
+        if self.auto_engage:
+            self.pub_engage.publish(True)
+            time.sleep(0.25)
 
     def scenario_obstacle(self):
         self.scenario_obstacle1()
