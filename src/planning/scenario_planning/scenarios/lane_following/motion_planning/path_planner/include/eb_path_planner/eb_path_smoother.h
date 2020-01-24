@@ -13,18 +13,27 @@ namespace autoware_planning_msgs
   ROS_DECLARE_MESSAGE(TrajectoryPoint);
 }
 
+namespace cv
+{
+  class Mat;
+}
+
 class EBPathSmoother 
 {
 private:
   const int number_of_sampling_points_;
+  const int number_of_fixing_points_;
+  const int number_of_diff_optimization_points_for_cold_start_;
   const double exploring_minimum_radius_;
   const double backward_distance_;
   const double fixing_distance_;
-  const double sampling_resolution_;
-  std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
-  std::unique_ptr<std::vector<double>> previous_interpolated_x_ptr_;
-  std::unique_ptr<std::vector<double>> previous_interpolated_y_ptr_;
-  std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
+  const double delta_arc_length_;
+  const double constrain_buffer_;
+  std::unique_ptr<int> previous_number_of_optimized_points_ptr_;
+  // std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
+  // std::unique_ptr<std::vector<double>> previous_interpolated_x_ptr_;
+  // std::unique_ptr<std::vector<double>> previous_interpolated_y_ptr_;
+  // std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   
   bool preprocessExploredPoints(
     const std::vector<geometry_msgs::Point>& current_explored_points,
@@ -38,9 +47,19 @@ private:
     int& farrest_idx,
     int& nearest_idx_in_previous_optimized_points,
     std::vector<geometry_msgs::Point>& debug_interpolated_points);
+  
+  bool preprocessExploredPoints(
+    const std::vector<geometry_msgs::Point>& explored_points,
+    const geometry_msgs::Pose& ego_pose,
+    std::vector<double>& interpolated_x,
+    std::vector<double>& interpolated_y,
+    int& nearest_idx,
+    int& farrest_idx,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points);
     
 public:
    EBPathSmoother(
+     int number_of_fixing_points,
      double exploring_minimum_raidus,
      double backward_distance,
      double fixing_distance,
@@ -49,9 +68,15 @@ public:
   bool generateOptimizedPath(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<geometry_msgs::Point>& explored_points,
+    const geometry_msgs::Pose& start_exploring_pose,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
     const geometry_msgs::Pose& ego_pose,
+    const cv::Mat& clearance_map,
     std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
     std::vector<geometry_msgs::Point>& debug_cached_explored_points,                  
+    std::vector<geometry_msgs::Point>& debug_boundary_points,                  
+    std::vector<geometry_msgs::Point>& debug_fixed_optimization_points,                  
+    std::vector<geometry_msgs::Point>& debug_variable_optimization_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
 };
 
