@@ -1,4 +1,8 @@
 <launch>
+  <arg name="is_online_path_update" default="true"/>
+  <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
+
+  <!-- scenario selector -->
   <include file="$(find scenario_selector)/launch/scenario_selector.launch">
     <arg name="input_lane_following_trajectory" value="/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory"/>
     <arg name="input_parking_trajectory" value="/planning/scenario_planning/scenarios/parking/freespace_planning/trajectory"/>
@@ -9,4 +13,11 @@
     <arg name="output_trajectory" value="/planning/scenario_planning/trajectory"/>
     <arg name="is_parking_completed" value="/planning/scenario_planning/scenarios/parking/freespace_planning/is_completed"/>
   </include>
+  <!-- lane following -->
+  <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/lane_following.launch">
+  </include>
+  <!-- parking -->
+  <include file="$(find planning_launch)/launch/scenario_planning/scenarios/parking/parking.launch">
+  </include>
+
 </launch>
