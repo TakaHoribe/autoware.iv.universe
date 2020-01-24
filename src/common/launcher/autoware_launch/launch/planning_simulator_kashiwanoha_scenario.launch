@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
-  <include file="$(find autoware_launch)/launch/planning_simulator_kashiwanoha_scenario.launch">
+  <include file="$(find autoware_launch)/launch/planning_simulator_kashiwanoha.launch">
   </include>
 
   <!-- traffic light classifier -->
