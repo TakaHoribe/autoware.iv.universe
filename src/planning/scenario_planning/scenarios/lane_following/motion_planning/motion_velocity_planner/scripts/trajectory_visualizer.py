@@ -142,30 +142,31 @@ class TrajectoryVisualizer():
         x = self.CalcArcLength(self.trajectory_raw)
         y = self.ToVelList(self.trajectory_raw)
         if len(x) == len(y):
-            ax1.plot(x, y, label="0raw", marker="")
+            ax1.plot(x, y, label="0: raw", marker="")
 
         x = self.CalcArcLength(self.trajectory_external_velocity_limitted)
         y = self.ToVelList(self.trajectory_external_velocity_limitted)
         if len(x) == len(y):
-            ax1.plot(x, y, label="1external_velocity_limitted", marker="")
+            ax1.plot(x, y, label="1: external_velocity_limitted", marker="")
 
         x = self.CalcArcLength(self.trajectory_lateral_acc_filtered)
         y = self.ToVelList(self.trajectory_lateral_acc_filtered)
         if len(x) == len(y):
-            ax1.plot(x, y, label="2lateral_acc_filtered", marker="*")
+            ax1.plot(x, y, label="2: lateral_acc_filtered", marker="*")
 
         x = self.CalcArcLength(self.trajectory_time_resamped)
         y = self.ToVelList(self.trajectory_time_resamped)
         if len(x) == len(y):
-            ax1.plot(x, y, label="3time_resamped", marker="*")
+            ax1.plot(x, y, label="3: time_resamped", marker="*")
 
         x = self.CalcArcLength(self.trajectory_final)
         y = self.ToVelList(self.trajectory_final)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4final", marker="*")
+            ax1.plot(x, y, label="4: final", marker="*")
         ax1.set_title("trajectorys velocity")
         ax1.legend()
         ax1.set_xlim([0, 50])
+        ax1.set_ylabel("vel [m/s]")
 
         ax2 = plt.subplot(3,1,2)
         x = self.CalcArcLength(self.trajectory_final)
@@ -174,6 +175,8 @@ class TrajectoryVisualizer():
             ax2.plot(x, y, label="final")
             ax2.set_xlim([0, 50])
             ax2.set_ylim([-5, 5])
+        ax2.set_ylabel("acc [m/ss]")
+
 
         # ax2.legend()
 
@@ -184,6 +187,8 @@ class TrajectoryVisualizer():
             ax3.plot(x, y, label="final")
             ax3.set_xlim([0, 50])
             ax3.set_ylim([-2, 2])
+        ax3.set_xlabel("arclength [m]")
+        ax3.set_ylabel("jerk [m/sss]")
 
         # ax3.legend()
 
