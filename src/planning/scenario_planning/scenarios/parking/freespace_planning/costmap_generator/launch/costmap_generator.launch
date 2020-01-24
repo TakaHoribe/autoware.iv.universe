@@ -1,5 +1,10 @@
 <launch>
-  <!-- node parameters -->
+  <arg name="input_objects" />
+  <arg name="input_points" />
+  <arg name="input_lanelet_map_bin" />
+  <arg name="output_costmap" />
+  <arg name="output_occupancy_grid" />
+
   <arg name="costmap_frame" default="map" />
   <arg name="vehicle_frame" default="base_link" />
   <arg name="map_frame" default="map" />
@@ -19,13 +24,6 @@
   <arg name="use_points" default="true" />
   <arg name="use_wayarea" default="true" />
 
-  <arg name="input_objects" default="/perception/prediction/objects" />
-  <arg name="input_points" default="/sensing/preprocess/lidar/no_ground/pointcloud" />
-  <arg name="input_lanelet_map_bin" default="/lanelet_map_bin" />
-  <arg name="output_costmap" default="~costmap"/>
-  <arg name="output_occupancy_grid" default="~occupancy_grid"/>
-
-  <!-- Launch node -->
   <node pkg="costmap_generator" type="costmap_generator" name="costmap_generator" output="screen">
     <param name="costmap_frame" value="$(arg costmap_frame)" />
     <param name="vehicle_frame" value="$(arg vehicle_frame)" />
