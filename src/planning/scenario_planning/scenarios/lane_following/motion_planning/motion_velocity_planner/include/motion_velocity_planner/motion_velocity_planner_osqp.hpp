@@ -56,7 +56,15 @@ private:
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;        // current external_velocity_limit
 
   autoware_planning_msgs::Trajectory prev_output_;  // velocity replanned waypoints (output of this node)
-  int planning_type_;
+
+  enum class InitializeType
+  {
+    INIT = 0,
+    LARGE_DEVIATION_REPLAN = 1,
+    ENGAGING = 2,
+    NORMAL = 3,
+  };
+  InitializeType initialize_type_;
 
 
   osqp::OSQPInterface qp_solver_;

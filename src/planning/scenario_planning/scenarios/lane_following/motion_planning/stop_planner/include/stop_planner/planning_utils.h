@@ -43,16 +43,9 @@ double calcDistance2D(const geometry_msgs::Point &p, const geometry_msgs::Point 
 double calcDistSquared2D(const geometry_msgs::Point &p, const geometry_msgs::Point &q);
 double calcLateralError2D(const geometry_msgs::Point &a_start, const geometry_msgs::Point &a_end,
                           const geometry_msgs::Point &b);
-std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Trajectory &lane);
-std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry_msgs::Pose> &curr_ps,
-                                                      const geometry_msgs::Pose &curr_pose,
-                                                      double dist_thr = 3.0,
-                                                      double angle_thr = M_PI_2); // TODO: more test
-
-// 0 : front, 1 : reverse, 2 :invalid
-int8_t getLaneDirection(const std::vector<geometry_msgs::Pose> &poses, double dist_thr = 0.05);
-bool isDirectionForward(const geometry_msgs::Pose &prev, const geometry_msgs::Pose &next);
-bool isDirectionForward(const geometry_msgs::Pose &prev, const geometry_msgs::Point &next);
+bool findClosestIdxWithDistAngThr(const autoware_planning_msgs::Trajectory &in_trajectory,
+                                  const geometry_msgs::Pose &curr_pose, int32_t &out_idx,
+                                  double dist_thr = 3.0, double angle_thr = M_PI_2); // TODO: more test
 
 // refer from apache's pointinpoly in http://www.visibone.com/inpoly/
 template <typename T>
@@ -60,27 +53,14 @@ bool isInPolygon(const std::vector<T> &polygon, const T &point);
 template <>
 bool isInPolygon(const std::vector<geometry_msgs::Point> &polygon, const geometry_msgs::Point &point);
 
-double normalizeEulerAngle(double euler);
 geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point &point, const geometry_msgs::Pose &current_pose);
 geometry_msgs::Point transformToAbsoluteCoordinate3D(const geometry_msgs::Point &point, const geometry_msgs::Pose &origin); // TODO: test
 geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point &point, const geometry_msgs::Pose &current_pose);
 geometry_msgs::Point transformToRelativeCoordinate3D(const geometry_msgs::Point &point, const geometry_msgs::Pose &current_pose); // TODO: test
 geometry_msgs::Quaternion getQuaternionFromYaw(const double &_yaw);
 
-std::pair<bool, geometry_msgs::Point> calcFootOfPerpendicular(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e, const geometry_msgs::Point &point);
-
-// which_point: 0 = forward, 1 = backward
-std::pair<bool, geometry_msgs::Point> findIntersectionWithLineCircle(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e,
-                                                                     const geometry_msgs::Point &point, double range, int8_t which_point = 0);
-
-// which_dir: 0 = forward, 1 = backward
-std::pair<bool, int32_t> findFirstIdxOutOfRange(const std::vector<geometry_msgs::Pose> &pose_v, const geometry_msgs::Point &point,
-                                                double range, int32_t search_idx_s, int8_t which_dir);
-
-// which dir 0 : forward 1 : backward
-std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &pose,
-                                                                                int32_t idx, double stop_dist, int8_t which_dir);
+double normalizeEulerAngle(double euler);
 void convertEulerAngleToMonotonic(std::vector<double> &a);
-bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory, const std::vector<double> &out_index,
-                              autoware_planning_msgs::Trajectory &out_trajectory);
+bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
+                            const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory);
 } // namespace planning_utils
