@@ -52,6 +52,7 @@ void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning
 
         output_path_msg.header.frame_id = "map";
         output_path_msg.header.stamp = ros::Time::now();
+        output_path_msg.drivable_area = input_path_msg.drivable_area;  // TODO: This must be updated in each scene module, but copy from input message for now.
         path_pub_.publish(output_path_msg);
         publishDebugMarker(output_path_msg, debug_viz_pub_);
     }
