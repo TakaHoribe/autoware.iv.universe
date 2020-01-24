@@ -1,10 +1,10 @@
 <launch>
-    <arg name="file_name" default="$(find path_loader)/data/sample.csv" />
-    <arg name="dist_threshold" default="1.0" />
-    <arg name="time_threshold" default="0.1" />
-    <node pkg="path_saver" type="path_saver_node" name="path_saver" output="screen">
-        <param name="path_file_name" value="$(arg file_name)" />
-        <param name="dist_threshold" value="$(arg dist_threshold)" />
-        <param name="time_threshold" value="$(arg time_threshold)" />
-    </node>
+  <arg name="file_name" default="$(find path_loader)/data/sample.csv" />
+  <arg name="dist_threshold" default="1.0" />
+  <arg name="time_threshold" default="0.1" />
+  <node pkg="path_saver" type="path_saver_node" name="path_saver" output="screen">
+    <param name="path_file_name" value="$(arg file_name)" />
+    <param name="dist_threshold" value="$(arg dist_threshold)" />
+    <param name="time_threshold" value="$(arg time_threshold)" />
+  </node>
 </launch>

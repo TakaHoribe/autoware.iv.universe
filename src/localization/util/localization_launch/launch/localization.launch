@@ -1,26 +1,26 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- localization module -->
-    <group ns="localization">
-        <!-- util module -->
-        <group ns="util">
-            <include file="$(find localization_launch)/launch/util/util.launch">
-            </include>
-        </group>
-        <!-- pose_generator module -->
-        <group ns="pose_generator">
-            <include file="$(find localization_launch)/launch/pose_generator/pose_generator.launch">
-            </include>
-        </group>
-        <!-- twist_generator module -->
-        <group ns="twist_generator">
-            <include file="$(find localization_launch)/launch/twist_generator/twist_generator.launch">
-            </include>
-        </group>
-        <!-- fusion_localizer module -->
-        <group ns="fusion_localizer">
-            <include file="$(find localization_launch)/launch/fusion_localizer/fusion_localizer.launch">
-            </include>
-        </group>
+  <!-- localization module -->
+  <group ns="localization">
+    <!-- util module -->
+    <group ns="util">
+      <include file="$(find localization_launch)/launch/util/util.launch">
+      </include>
     </group>
+    <!-- pose_generator module -->
+    <group ns="pose_generator">
+      <include file="$(find localization_launch)/launch/pose_generator/pose_generator.launch">
+      </include>
+    </group>
+    <!-- twist_generator module -->
+    <group ns="twist_generator">
+      <include file="$(find localization_launch)/launch/twist_generator/twist_generator.launch">
+      </include>
+    </group>
+    <!-- fusion_localizer module -->
+    <group ns="fusion_localizer">
+      <include file="$(find localization_launch)/launch/fusion_localizer/fusion_localizer.launch">
+      </include>
+    </group>
+  </group>
 </launch>

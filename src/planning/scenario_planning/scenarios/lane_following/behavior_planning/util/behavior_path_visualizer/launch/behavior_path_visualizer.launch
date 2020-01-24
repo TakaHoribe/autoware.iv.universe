@@ -1,10 +1,9 @@
 <launch>
-    <arg name="path_topic_name" default="path_with_lane_id"/>
-    <arg name="marker_topic_name" default="path_with_lane_id_marker"/>
+  <arg name="path_topic_name" default="path_with_lane_id"/>
+  <arg name="marker_topic_name" default="path_with_lane_id_marker"/>
 
-    <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
-      <remap from="~input/path_with_lane_id" to="$(arg path_topic_name)"/>
-      <remap from="~output/path_with_lane_id_marker" to="$(arg marker_topic_name)"/>
-    </node>
+  <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
+    <remap from="~input/path_with_lane_id" to="$(arg path_topic_name)"/>
+    <remap from="~output/path_with_lane_id_marker" to="$(arg marker_topic_name)"/>
+  </node>
 </launch>
-  

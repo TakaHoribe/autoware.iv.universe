@@ -2,15 +2,15 @@
 
 <launch>
 
-    <arg name="input" default="/points_raw"/>
-    <arg name="output" default="vscan/pointcloud"/>
+  <arg name="input" default="/points_raw"/>
+  <arg name="output" default="vscan/pointcloud"/>
 
-    <!-- run pointcloud_to_laserscan node -->
-    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+  <!-- run pointcloud_to_laserscan node -->
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
-        <remap from="cloud_in" to="$(arg input)"/>
-        <remap from="cloud_out" to="$(arg output)"/>
-        <rosparam>
+    <remap from="cloud_in" to="$(arg input)"/>
+    <remap from="cloud_out" to="$(arg output)"/>
+    <rosparam>
             target_frame: velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
             min_height: -1.5
@@ -30,8 +30,8 @@
             # 1 : Single threaded
             # 2->inf : Parallelism level
             concurrency_level: 1
-        </rosparam>
+    </rosparam>
 
-    </node>
+  </node>
 
 </launch>

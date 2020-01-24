@@ -10,31 +10,33 @@
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
   <!-- Map -->
-  <include file="$(find map_launch)/launch/map.launch" >
+  <include file="$(find map_launch)/launch/map.launch">
     <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
     <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
     <arg name="map_tf_path" value="$(arg map_tf_path)"/>
   </include>
 
   <!-- Sensing -->
-  <include file="$(find sensing_launch)/launch/sensing.launch" >
+  <include file="$(find sensing_launch)/launch/sensing.launch">
   </include>
 
   <!-- Localization -->
-  <include file="$(find localization_launch)/launch/localization.launch" >
+  <include file="$(find localization_launch)/launch/localization.launch">
   </include>
 
   <!-- Perception -->
-  <include file="$(find perception_launch)/launch/perception.launch" >
-    <arg name="mode" default="lidar"/>  <!-- "camera_lidar_fusion", "lidar" or "camera" -->
+  <include file="$(find perception_launch)/launch/perception.launch">
+    <arg name="mode" default="lidar"/>
+    <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
   <!-- Traffic Light Recognition -->
 
 
   <!-- Rviz -->
-  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />/>
-  
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
+/>
+
   <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /media/tier4/Sandisk2TB/log/03082019/auto_2019-03-08-11-22-32.bag"/>
 </launch>
 

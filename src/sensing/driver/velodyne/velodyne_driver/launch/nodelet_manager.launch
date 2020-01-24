@@ -19,8 +19,7 @@
   <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
 
   <!-- load driver nodelet into it -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
-        args="load velodyne_driver/DriverNodelet $(arg manager)" >
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver" args="load velodyne_driver/DriverNodelet $(arg manager)">
     <param name="device_ip" value="$(arg device_ip)" />
     <param name="frame_id" value="$(arg frame_id)"/>
     <param name="model" value="$(arg model)"/>
@@ -31,6 +30,6 @@
     <param name="repeat_delay" value="$(arg repeat_delay)"/>
     <param name="rpm" value="$(arg rpm)"/>
     <param name="cut_angle" value="$(arg cut_angle)"/>
-  </node>    
+  </node>
 
 </launch>

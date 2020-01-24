@@ -17,9 +17,9 @@
 
   <!-- crop box filter -->
   <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_self" output="log">
-      <remap from="~input" to="$(arg input_sensor_points_topic)" />
-      <remap from="~output" to="$(arg output_crop_self_sensor_points_topic)" />
-      <rosparam>
+    <remap from="~input" to="$(arg input_sensor_points_topic)" />
+    <remap from="~output" to="$(arg output_crop_self_sensor_points_topic)" />
+    <rosparam>
         min_x: -1.0
         max_x: 5.0
         min_y: -1.50
@@ -27,15 +27,15 @@
         min_z: -100.0
         max_z: 100.0
         negative: True
-      </rosparam>
-      <param name="input_frame" value="$(arg base_frame)" />
-      <param name="output_frame" value="$(arg base_frame)" />
+    </rosparam>
+    <param name="input_frame" value="$(arg base_frame)" />
+    <param name="output_frame" value="$(arg base_frame)" />
   </node>
 
   <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_mesurement_range" output="log">
-      <remap from="~input" to="$(arg output_crop_self_sensor_points_topic)" />
-      <remap from="~output" to="$(arg output_crop_mesurement_range_sensor_points_topic)" />
-      <rosparam>
+    <remap from="~input" to="$(arg output_crop_self_sensor_points_topic)" />
+    <remap from="~output" to="$(arg output_crop_mesurement_range_sensor_points_topic)" />
+    <rosparam>
         min_x: -60.0
         max_x: 60.0
         min_y: -60.0
@@ -43,9 +43,9 @@
         min_z: -30.0
         max_z: 50.0
         negative: False
-      </rosparam>
-      <param name="input_frame" value="$(arg base_frame)" />
-      <param name="output_frame" value="$(arg base_frame)" />
+    </rosparam>
+    <param name="input_frame" value="$(arg base_frame)" />
+    <param name="output_frame" value="$(arg base_frame)" />
   </node>
 
 

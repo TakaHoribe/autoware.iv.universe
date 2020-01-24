@@ -9,8 +9,7 @@
   <arg name="num_points_thresthold" default="300"/>
   <arg name="invalid_intensity" default="[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"/>
 
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)_cloud"
-        args="load velodyne_pointcloud/CloudNodelet $(arg manager)">
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_cloud" args="load velodyne_pointcloud/CloudNodelet $(arg manager)">
     <param name="calibration" value="$(arg calibration)"/>
     <param name="max_range" value="$(arg max_range)"/>
     <param name="min_range" value="$(arg min_range)"/>

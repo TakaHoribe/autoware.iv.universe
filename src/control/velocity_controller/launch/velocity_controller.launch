@@ -22,7 +22,7 @@
   <!-- finding a closet waypoint -->
   <arg name="distance_threshold_closest_waypoint" default="3.0" />
   <arg name="angle_threshold_closest_waypoint" default="0.7854" />
-   
+
   <!-- stop state -->
   <arg name="stop_state_velocity" default="0.0" />
   <arg name="stop_state_acceleration" default="-3.4" />
@@ -116,7 +116,7 @@
     <!-- finding a closet waypoint -->
     <param name="distance_threshold_closest_waypoint" value="$(arg distance_threshold_closest_waypoint)" />
     <param name="angle_threshold_closest_waypoint" value="$(arg angle_threshold_closest_waypoint)" />
-    
+
     <!-- stop state -->
     <param name="stop_state_velocity" value="$(arg stop_state_velocity)" />
     <param name="stop_state_acceleration" value="$(arg stop_state_acceleration)" />
