@@ -3,10 +3,6 @@
   <include file="$(find autoware_launch)/launch/planning_simulator_kashiwanoha.launch">
   </include>
 
-  <!-- traffic light classifier -->
-  <include file="$(find perception_launch)/launch/traffic_light/traffic_light.launch" />
-  <node pkg="topic_tools" type="relay" name="scenario_trajectory_relay" args="/traffic_light_states /perception/traffic_light/traffic_light_states" />
-
   <!-- scenario maker -->
   <include file="$(find scenario_maker)/launch/scenario_maker.launch" />
 </launch>

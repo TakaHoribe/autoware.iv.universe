@@ -23,6 +23,7 @@
 
   <!-- preception module -->
   <group ns="perception">
+    <!-- tracking module -->
     <group ns="tracking">
       <include file="$(find perception_launch)/launch/tracking/tracking.launch"></include>
     </group>
@@ -32,5 +33,10 @@
         <arg name="use_vector_map" default="true" />
       </include>
     </group>
+    <!-- traffic light module -->
+    <group ns="traffic_light">
+      <include file="$(find perception_launch)/launch/traffic_light/traffic_light.launch">
+      </include>
+    </group>    
   </group>
 </launch>
