@@ -603,7 +603,7 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
       angle = std::atan2(next_pt.point.pose.position.y - pt.point.pose.position.y,
                          next_pt.point.pose.position.x - pt.point.pose.position.x);
     }
-    else if (i - 1 >= 0)
+    else if (i != 0)
     {
       auto prev_pt = reference_path.points.at(i - 1);
       auto pt = reference_path.points.at(i);

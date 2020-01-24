@@ -42,6 +42,7 @@ private:
   bool hasEnoughDistance() const;
   bool isLaneChangeApproved() const;
   bool isLaneBlocked() const;
+  bool isOutOfCurrentLanes() const;
 
   bool isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
                             const autoware_planning_msgs::PathWithLaneId& path) const;

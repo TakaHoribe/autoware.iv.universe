@@ -39,6 +39,7 @@ void BlockedByObstacleState::entry(const Status& status)
   lane_change_approved_ = false;
   force_lane_change_ = false;
   found_safe_path_ = false;
+  current_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
 }
 
 autoware_planning_msgs::PathWithLaneId BlockedByObstacleState::getPath() const
@@ -78,8 +79,8 @@ void BlockedByObstacleState::update()
       ROS_ERROR("failed to find closest lanelet within route!!!");
       return;
     }
-    current_lanes_ = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
-                                                                    backward_path_length, forward_path_length);
+    // current_lanes_ = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
+    //                                                                 backward_path_length, forward_path_length);
     lanelet::ConstLanelet right_lane;
     if (RouteHandler::getInstance().getRightLaneletWithinRoute(current_lane, &right_lane))
     {
@@ -143,15 +144,37 @@ void BlockedByObstacleState::update()
 
 State BlockedByObstacleState::getNextState() const
 {
+  if (isOutOfCurrentLanes())
+  {
+    return State::FOLLOWING_LANE;
+  }
   if (!isLaneBlocked())
   {
     return State::FOLLOWING_LANE;
   }
+
   if (isLaneChangeApproved() && hasEnoughDistance() && foundSafeLaneChangePath())
   {
     return State::EXECUTING_LANE_CHANGE;
   }
   return State::BLOCKED_BY_OBSTACLE;
+}
+bool BlockedByObstacleState::isOutOfCurrentLanes() const
+{
+  lanelet::ConstLanelet closest_lane;
+  if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &closest_lane))
+  {
+    ROS_ERROR("failed to find closest lanelet within route!!!");
+    return true;
+  }
+  for (const auto& llt : current_lanes_)
+  {
+    if (llt == closest_lane)
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool BlockedByObstacleState::isLaneBlocked() const
@@ -191,9 +214,8 @@ bool BlockedByObstacleState::hasEnoughDistance() const
   const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
   const double lane_change_total_distance =
       lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
-  const auto& current_lanes = RouteHandler::getInstance().getClosestLaneletSequence(current_pose_.pose);
 
-  if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes))
+  if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
   {
     return false;
   }
