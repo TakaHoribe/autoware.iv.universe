@@ -16,7 +16,7 @@
 
 #include "velocity_controller_mathutils.h"
 
-namespace velocity_controller_mathutils
+namespace vcutils
 {
 
 double calcDistance2D(const geometry_msgs::Pose &p1, const geometry_msgs::Pose &p2)

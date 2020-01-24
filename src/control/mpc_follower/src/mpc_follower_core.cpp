@@ -16,7 +16,6 @@
 
 #include "mpc_follower/mpc_follower_core.h"
 
-#define DEBUG_INFO(...) { if (show_debug_info_) { ROS_INFO(__VA_ARGS__); }}
 
 #define DEG2RAD 3.1415926535 / 180.0
 #define RAD2DEG 180.0 / 3.1415926535
@@ -160,14 +159,14 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
   /* guard */
   if (vehicle_model_ptr_ == nullptr || qpsolver_ptr_ == nullptr)
   {
-    DEBUG_INFO("[MPC] vehicle_model = %d, qp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
+    ROS_INFO_COND(show_debug_info_, "[MPC] vehicle_model = %d, qp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
     publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
     return;
   }
 
   if (ref_traj_.size() == 0 || current_pose_ptr_ == nullptr || current_velocity_ptr_ == nullptr || current_steer_ptr_ == nullptr)
   {
-    DEBUG_INFO("[MPC] MPC is not solved. ref_traj_.size() = %d, pose = %d,  velocity = %d,  steer = %d",
+    ROS_INFO_COND(show_debug_info_, "[MPC] MPC is not solved. ref_traj_.size() = %d, pose = %d,  velocity = %d,  steer = %d",
                ref_traj_.size(), current_pose_ptr_ != nullptr, current_velocity_ptr_ != nullptr, current_steer_ptr_ != nullptr);
 
     publishCtrlCmd(0.0, 0.0, steer_cmd_prev_, 0.0); // publish brake
@@ -184,7 +183,7 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
   auto start = std::chrono::system_clock::now();
   const bool mpc_solved = calculateMPC(vel_cmd, acc_cmd, steer_cmd, steer_vel_cmd);
   double elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
-  DEBUG_INFO("[MPC] timerCallback: MPC calculating time = %f [ms]\n", elapsed_ms);
+  ROS_INFO_COND(show_debug_info_, "[MPC] timerCallback: MPC calculating time = %f [ms]\n", elapsed_ms);
 
   /* publish computing time */
   std_msgs::Float32 mpc_calc_time_msg;
@@ -266,12 +265,12 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   {
     double dot_err_lat = (err_lat - lateral_error_prev_) / ctrl_period_;
     double dot_err_yaw = (yaw_err - yaw_error_prev_) / ctrl_period_;
-    DEBUG_INFO("[MPC] (before lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
+    ROS_INFO_COND(show_debug_info_, "[MPC] (before lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
     lateral_error_prev_ = err_lat;
     yaw_error_prev_ = yaw_err;
     dot_err_lat = lpf_lateral_error_.filter(dot_err_lat);
     dot_err_yaw = lpf_yaw_error_.filter(dot_err_yaw);
-    DEBUG_INFO("[MPC] (after lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
+    ROS_INFO_COND(show_debug_info_, "[MPC] (after lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
     x0 << err_lat, dot_err_lat, yaw_err, dot_err_yaw;
   }
   else
@@ -279,10 +278,10 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     ROS_ERROR("vehicle_model_type is undefined");
     return false;
   }
-  DEBUG_INFO("[MPC] selfpose.x = %f, y = %f, yaw = %f", current_pose_ptr_->pose.position.x, current_pose_ptr_->pose.position.y, current_yaw);
-  DEBUG_INFO("[MPC] nearpose.x = %f, y = %f, yaw = %f", nearest_pose.position.x, nearest_pose.position.y, tf2::getYaw(nearest_pose.orientation));
-  DEBUG_INFO("[MPC] nearest_index = %d, nearest_traj_time = %f", nearest_index, nearest_traj_time);
-  DEBUG_INFO("[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", err_lat, yaw_err, steer, sp_yaw, current_yaw);
+  ROS_INFO_COND(show_debug_info_, "[MPC] selfpose.x = %f, y = %f, yaw = %f", current_pose_ptr_->pose.position.x, current_pose_ptr_->pose.position.y, current_yaw);
+  ROS_INFO_COND(show_debug_info_, "[MPC] nearpose.x = %f, y = %f, yaw = %f", nearest_pose.position.x, nearest_pose.position.y, tf2::getYaw(nearest_pose.orientation));
+  ROS_INFO_COND(show_debug_info_, "[MPC] nearest_index = %d, nearest_traj_time = %f", nearest_index, nearest_traj_time);
+  ROS_INFO_COND(show_debug_info_, "[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", err_lat, yaw_err, steer, sp_yaw, current_yaw);
 
 
   /////////////// delay compensation  ///////////////
@@ -462,7 +461,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     return false;
   }
   double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
-  DEBUG_INFO("[MPC] calculateMPC: qp solver calculation time = %f [ms]", elapsed);
+  ROS_INFO_COND(show_debug_info_, "[MPC] calculateMPC: qp solver calculation time = %f [ms]", elapsed);
 
   if (Uex.array().isNaN().any())
   {
@@ -490,8 +489,8 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   input_buffer_.push_back(steer_cmd);
   input_buffer_.pop_front();
 
-  DEBUG_INFO("[MPC] calculateMPC: mpc steer command raw = %f, filtered = %f, steer_vel_cmd = %f", Uex(0, 0), u_filtered, steer_vel_cmd);
-  DEBUG_INFO("[MPC] calculateMPC: mpc vel command = %f, acc_cmd = %f", vel_cmd, acc_cmd);
+  ROS_INFO_COND(show_debug_info_, "[MPC] calculateMPC: mpc steer command raw = %f, filtered = %f, steer_vel_cmd = %f", Uex(0, 0), u_filtered, steer_vel_cmd);
+  ROS_INFO_COND(show_debug_info_, "[MPC] calculateMPC: mpc vel command = %f, acc_cmd = %f", vel_cmd, acc_cmd);
 
   ////////////////// DEBUG ///////////////////
 
@@ -547,25 +546,25 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
 {
   if (msg->points.size() < 3)
   {
-    DEBUG_INFO("[MPC] received path size is < 3, not enough.");
+    ROS_INFO_COND(show_debug_info_, "[MPC] received path size is < 3, not enough.");
     return;
   }
 
   current_trajectory_ = *msg;
-  DEBUG_INFO("[MPC] trajectory callback: received trajectory size = %lu", current_trajectory_.points.size());
+  ROS_INFO_COND(show_debug_info_, "[MPC] trajectory callback: received trajectory size = %lu", current_trajectory_.points.size());
 
   MPCTrajectory traj;
 
   /* calculate relative time */
   std::vector<double> relative_time;
   MPCUtils::calcPathRelativeTime(current_trajectory_, relative_time);
-  DEBUG_INFO("[MPC] path callback: relative_time.size() = %lu, front() = %f, back() = %f",
+  ROS_INFO_COND(show_debug_info_, "[MPC] path callback: relative_time.size() = %lu, front() = %f, back() = %f",
              relative_time.size(), relative_time.front(), relative_time.back());
 
   /* resampling */
   MPCUtils::convertWaypointsToMPCTrajWithDistanceResample(current_trajectory_, relative_time, traj_resample_dist_, traj);
   MPCUtils::convertEulerAngleToMonotonic(traj.yaw);
-  DEBUG_INFO("[MPC] path callback: resampled traj size() = %lu", traj.relative_time.size());
+  ROS_INFO_COND(show_debug_info_, "[MPC] path callback: resampled traj size() = %lu", traj.relative_time.size());
 
 
   /* path smoothing */
@@ -579,7 +578,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
           !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.yaw) ||
           !MoveAverageFilter::filt_vector(path_filter_moving_ave_num_, traj_smoothed.vx))
       {
-        DEBUG_INFO("[MPC] path callback: filtering error. ignore this trajectory");
+        ROS_INFO_COND(show_debug_info_, "[MPC] path callback: filtering error. ignore this trajectory");
         break;
       }
       else
@@ -600,7 +599,7 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
   MPCUtils::calcTrajectoryCurvature(traj, curvature_smoothing_num_);
   const double max_k = *max_element(traj.k.begin(), traj.k.end());
   const double min_k = *min_element(traj.k.begin(), traj.k.end());
-  DEBUG_INFO("[MPC] path callback: trajectory curvature : max_k = %f, min_k = %f", max_k, min_k);
+  ROS_INFO_COND(show_debug_info_, "[MPC] path callback: trajectory curvature : max_k = %f, min_k = %f", max_k, min_k);
   /* add end point with vel=0 on traj for mpc prediction */
   const double mpc_predict_time_length = (mpc_param_.prediction_horizon + 1) * mpc_param_.prediction_sampling_time + mpc_param_.delay_compensation_time + ctrl_period_;
   const double end_velocity = 0.0;
@@ -610,8 +609,8 @@ void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::Cons
 
   if (!traj.size())
   {
-    DEBUG_INFO("[MPC] path callback: trajectory size is undesired.");
-    DEBUG_INFO("size: x=%lu, y=%lu, z=%lu, yaw=%lu, v=%lu,k=%lu,t=%lu", traj.x.size(), traj.y.size(),
+    ROS_INFO_COND(show_debug_info_, "[MPC] path callback: trajectory size is undesired.");
+    ROS_INFO_COND(show_debug_info_, "size: x=%lu, y=%lu, z=%lu, yaw=%lu, v=%lu,k=%lu,t=%lu", traj.x.size(), traj.y.size(),
                traj.z.size(), traj.yaw.size(), traj.vx.size(), traj.k.size(), traj.relative_time.size());
     return;
   }

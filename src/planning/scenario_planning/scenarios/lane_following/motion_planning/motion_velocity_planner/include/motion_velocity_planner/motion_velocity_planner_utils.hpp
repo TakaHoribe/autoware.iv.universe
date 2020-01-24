@@ -30,7 +30,7 @@ double calcLengthOnWaypoints(const autoware_planning_msgs::Trajectory &trajector
 void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &arclength);
 bool scalingVelocitWithStopPoint(const autoware_planning_msgs::Trajectory &trajectory, const int &self_idx, const int &stop_idx,
                                  autoware_planning_msgs::Trajectory &trajectory_scaled);
-void zeroVelocity(autoware_planning_msgs::Trajectory &trajectory);
+void setZeroVelocity(autoware_planning_msgs::Trajectory &trajectory);
 bool calcStopDistWithConstantJerk(const double &v0, const double &a0, const double &s_lim, const double &v_end,
                                   double &t1, double &t2, double &stop_dist);
 bool calcStopVelocityWithConstantJerk(const double &v0, const double &a0, const double &s, const double &t1,

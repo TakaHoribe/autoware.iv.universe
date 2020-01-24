@@ -811,7 +811,7 @@ bool MotionVelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const 
   {
     ROS_DEBUG("[stopVelocityFilter]: return, self_pose over stop_point");
     is_stop_ok = false;
-    vpu::zeroVelocity(output);
+    vpu::setZeroVelocity(output);
     return true;  // return value is for system error. return true with is_stop_ok = false for emergency.
   }
 
@@ -966,7 +966,7 @@ void MotionVelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, au
       double stop_dist = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest)));
       if (stop_dist < planning_param_.stop_dist_not_to_drive_vehicle)
       {
-        vpu::zeroVelocity(trajectory);
+        vpu::setZeroVelocity(trajectory);
         DEBUG_INFO("[preventMoveToVeryCloseStopLine] set zero vel curr_vel = %3.3f, stop_dist = %3.3f < thr = %3.3f",
                    current_velocity_ptr_->twist.linear.x, stop_dist, planning_param_.stop_dist_not_to_drive_vehicle);
       }
