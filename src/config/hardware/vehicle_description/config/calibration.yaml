@@ -3,7 +3,7 @@ base_link2camera:
   y: 0.0
   z: 1.57
   roll: 0.0
-  pitch: 0.0
+  pitch: -0.3
   yaw: 0.0
 base_link2velodyne:
   x: 1.64
