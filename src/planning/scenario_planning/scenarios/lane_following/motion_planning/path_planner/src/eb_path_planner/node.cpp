@@ -27,6 +27,99 @@
 #include "eb_path_planner/eb_path_smoother.h"
 #include "eb_path_planner/node.hpp"
 
+namespace tmp1
+{
+  
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const geometry_msgs::Point &point,
+  const geometry_msgs::Pose &origin)
+{
+  // translation
+  geometry_msgs::Point trans_p;
+  trans_p.x = point.x - origin.position.x;
+  trans_p.y = point.y - origin.position.y;
+
+  // rotation (use inverse matrix of rotation)
+  double yaw = tf2::getYaw(origin.orientation);
+
+  geometry_msgs::Point res;
+  res.x = (cos(yaw) * trans_p.x) + (sin(yaw) * trans_p.y);
+  res.y = ((-1) * sin(yaw) * trans_p.x) + (cos(yaw) * trans_p.y);
+  res.z = origin.position.z;
+
+  return res;
+}
+
+bool transformMapToImage(const geometry_msgs::Point& map_point,
+                         const nav_msgs::MapMetaData& occupancy_grid_info,
+                         geometry_msgs::Point& image_point)
+{
+  geometry_msgs::Point relative_p = 
+    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
+  // std::cout << "relative p "<<relative_p.x <<" "<<relative_p.y << std::endl;
+  // double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
+  // double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
+  // std::cout << "heifht "<< occupancy_grid_info.height << std::endl;
+  // std::cout << "width "<< occupancy_grid_info.width << std::endl;
+  double resolution = occupancy_grid_info.resolution;
+  double map_y_height = occupancy_grid_info.height;
+  double map_x_width = occupancy_grid_info.width;
+  double map_x_in_image_resolution = relative_p.x/resolution;
+  double map_y_in_image_resolution = relative_p.y/resolution;
+  double image_x = map_y_height - map_y_in_image_resolution;
+  double image_y = map_x_width - map_x_in_image_resolution;
+  // double bottomleft_x = (relative_p.x)/costmap_resolution;
+  // double bottomleft_y = (relative_p.y)/costmap_resolution;
+  // double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
+  // double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
+  // std::cout << "costmap width "<< ego_costmap_y_width << std::endl;
+  // std::cout << "costmap length "<< ego_costmap_x_length << std::endl;
+  // std::cout << "image x y "<< image_x << " "<< image_y << std::endl;
+  if(image_x>=0 && 
+     image_x<(int)map_y_height &&
+     image_y>=0 && 
+     image_y<(int)map_x_width)
+  {
+    image_point.x = image_x;
+    image_point.y = image_y;
+    return true;
+  }
+  else
+  {
+    return false;
+  } 
+}
+
+
+bool transformImageToMap(const geometry_msgs::Point& image_point,
+                         const nav_msgs::MapMetaData& occupancy_grid_info,
+                         geometry_msgs::Point& map_point)
+{
+  double resolution = occupancy_grid_info.resolution;
+  double map_y_height = occupancy_grid_info.height;
+  double map_x_width = occupancy_grid_info.width;
+  double map_x_in_image_resolution = map_x_width - image_point.y;
+  double map_y_in_image_resolution = map_y_height - image_point.x;
+  double relative_x = map_x_in_image_resolution*resolution;
+  double relative_y = map_y_in_image_resolution*resolution;
+  
+  // double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
+  // double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
+  // double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
+  // double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
+
+  double yaw = tf2::getYaw(occupancy_grid_info.origin.orientation);
+  geometry_msgs::Point res;
+  res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
+  res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
+  
+  map_point.x = res.x + occupancy_grid_info.origin.position.x;
+  map_point.y = res.y + occupancy_grid_info.origin.position.y;
+  map_point.z = occupancy_grid_info.origin.position.z;
+  return true;
+}
+}
+
 namespace path_planner
 {
 EBPathPlannerNode::EBPathPlannerNode(): 
@@ -67,7 +160,7 @@ private_nh_("~")
   private_nh_.param<double>("delta_ego_point_threshold", 
                              delta_ego_point_threshold_, 5);
   private_nh_.param<double>("max_avoiding_objects_velocity_ms", 
-                             max_avoiding_objects_velocity_ms_, 1.1);
+                             max_avoiding_objects_velocity_ms_, 0.1);
   modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
     num_lookup_lanelet_for_drivealble_area_,
     exploring_minimum_radius_,
@@ -108,37 +201,19 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
     return;
   }
-  // cv::Mat distance_map;
-  // generateClearanceMap(
-  //   input_path_msg.drivable_area,
-  //   in_objects_ptr_->objects,
-  //   self_pose,
-  //   distance_map);
   cv::Mat clearance_map;
   generateClearanceMap(
     input_path_msg.drivable_area,
     in_objects_ptr_->objects,
     self_pose,
     clearance_map);
-  if(needReset(*previous_ego_point_ptr_, self_pose.position))
-  {
-    modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
-                num_lookup_lanelet_for_drivealble_area_,
-                exploring_minimum_radius_,
-                backward_fixing_distance_);
-    eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
-                number_of_fixing_points_,
-                exploring_minimum_radius_,
-                backward_fixing_distance_,
-                forward_fixing_distance_,
-                delta_arc_length_);
-    previous_optimized_points_ptr_ = 
-      std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>();
-  }
+    
   std::vector<autoware_planning_msgs::TrajectoryPoint> fixed_optimized_points; 
   generateFixedOptimizedPoints(
       self_pose, 
-      previous_optimized_points_ptr_, 
+      previous_optimized_points_ptr_,
+      clearance_map,
+      input_path_msg.drivable_area.info, 
       fixed_optimized_points);
   geometry_msgs::Pose start_exploring_pose;
   if(fixed_optimized_points.empty())
@@ -157,9 +232,32 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     start_exploring_pose = fixed_optimized_points.back().pose;
   }
   
+  // if(needReset(*previous_ego_point_ptr_, 
+  //              self_pose.position))
+  if(needReset(*previous_ego_point_ptr_, 
+               self_pose.position,
+               clearance_map,
+               input_path_msg.drivable_area.info,
+               fixed_optimized_points))
+  {
+    modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
+                num_lookup_lanelet_for_drivealble_area_,
+                exploring_minimum_radius_,
+                backward_fixing_distance_);
+    eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
+                number_of_fixing_points_,
+                exploring_minimum_radius_,
+                backward_fixing_distance_,
+                forward_fixing_distance_,
+                delta_arc_length_);
+    previous_optimized_points_ptr_ = 
+      std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>();
+    fixed_optimized_points.clear();
+    start_exploring_pose = self_pose;
+    // start_exploring_pose = e
+  }
   
   std::vector<geometry_msgs::Point> explored_points;
-  // cv::Mat clearance_map;
   geometry_msgs::Point debug_goal_point;
   std::vector<geometry_msgs::Point> debug_rearranged_points;
   modify_reference_path_ptr_->generateModifiedPath(
@@ -597,25 +695,65 @@ void EBPathPlannerNode::objectsCallback(
 
 bool EBPathPlannerNode::needReset(
   const geometry_msgs::Point& previous_ego_point,
-  const geometry_msgs::Point& current_ego_point)
+  const geometry_msgs::Point& current_ego_point,
+  const cv::Mat& clearance_map,
+  const nav_msgs::MapMetaData& map_info,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points)
 {
+  bool is_need_reset = false;
+  //check1
   double dx = previous_ego_point.x - current_ego_point.x;
   double dy = previous_ego_point.y - current_ego_point.y;
   double dist = std::sqrt(dx*dx+dy*dy);
   if(dist > delta_ego_point_threshold_ || is_debug_no_fixing_points_mode_)
   {
-    ROS_WARN("[EBPathPlanner] Reset eb path planner");
-    return true;
+    ROS_WARN(
+      "[EBPathPlanner] Reset eb path planner since ego pose is moved more than %lf", 
+       delta_ego_point_threshold_);
+    is_need_reset = true;
   }
   else
   {
-    return false;
+    is_need_reset = false;
   }
+  
+  if(is_need_reset)
+  {
+    return is_need_reset;
+  }
+  
+  //check2
+  int count = 0;
+  for(const auto& point: fixed_optimized_points)
+  {
+    geometry_msgs::Point point_in_image;
+    if(tmp1::transformMapToImage(
+            point.pose.position, 
+            map_info,
+            point_in_image))
+    {
+       float clearance = 
+          clearance_map.ptr<float>((int)point_in_image.y)
+                                  [(int)point_in_image.x]*map_info.resolution;
+       if(clearance < 1e-6)
+       {
+        //  ROS_ERROR("ocunt %d", count);
+         ROS_WARN(
+          "[EBPathPlanner] Reset eb path planner since optimized points are outside of drivavle area");
+         is_need_reset = true;
+         break;
+       }
+    }
+    count++;
+  }
+  return is_need_reset;
 }
 
 bool EBPathPlannerNode::generateFixedOptimizedPoints(
   const geometry_msgs::Pose& ego_pose,
   const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& previous_optimized_points_ptr,
+  const cv::Mat& clearance_map,
+  const nav_msgs::MapMetaData& map_info,
   std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points)
 {
   std::chrono::high_resolution_clock::time_point begin= 
@@ -651,10 +789,41 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
   int backward_fixing_idx = 
     std::max((int)(min_ind-backward_keep_distance/delta_arc_length_),
                   0);
-  for (int i = backward_fixing_idx; i < forward_fixing_idx; i++)
+                  
+  int origin_valid_prev_optimized_points_ind = 0;
+  for (int i = 0; i < forward_fixing_idx; i++)
+  {
+    geometry_msgs::Point point_in_image;
+    if(tmp1::transformMapToImage(
+            previous_optimized_points_ptr_->at(i).pose.position, 
+            map_info,
+            point_in_image))
+    {
+       float clearance = 
+          clearance_map.ptr<float>((int)point_in_image.y)
+                                  [(int)point_in_image.x]*map_info.resolution;
+       origin_valid_prev_optimized_points_ind = i;
+       if(clearance > 0)
+       {
+        //  origin_valid_prev_optimized_points_ind = std::min(i+10, forward_fixing_idx);
+         break;
+       }
+       else
+       {
+         ROS_WARN_THROTTLE(1.0, 
+              "[EBPathPlanner] Discard fixed optimized points since they are out of dirvable area");
+       }
+    }
+  }
+  std::cout << "origin valid "<< origin_valid_prev_optimized_points_ind << std::endl;
+  std::cout << "backward  "<< backward_fixing_idx<< std::endl;
+  int valid_backward_fixing_idx =  std::max(origin_valid_prev_optimized_points_ind, backward_fixing_idx);
+  valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
+  for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)
   {
     fixed_optimized_points.push_back(previous_optimized_points_ptr->at(i));
   }
+  
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
@@ -696,7 +865,7 @@ bool EBPathPlannerNode::alighWithPathPoints(
     }
     if(!flag)
     {
-      ROS_WARN("[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
+      ROS_WARN_THROTTLE(1.0, "[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
     }
   }
   double dx = merged_optimized_points.back().pose.position.x - 
@@ -812,100 +981,6 @@ void EBPathPlannerNode::getOccupancyGridValue(const nav_msgs::OccupancyGrid& og,
   }
 }
 
-namespace tmp
-{
-  
-geometry_msgs::Point transformToRelativeCoordinate2D(
-  const geometry_msgs::Point &point,
-  const geometry_msgs::Pose &origin)
-{
-  // translation
-  geometry_msgs::Point trans_p;
-  trans_p.x = point.x - origin.position.x;
-  trans_p.y = point.y - origin.position.y;
-
-  // rotation (use inverse matrix of rotation)
-  double yaw = tf2::getYaw(origin.orientation);
-
-  geometry_msgs::Point res;
-  res.x = (cos(yaw) * trans_p.x) + (sin(yaw) * trans_p.y);
-  res.y = ((-1) * sin(yaw) * trans_p.x) + (cos(yaw) * trans_p.y);
-  res.z = origin.position.z;
-
-  return res;
-}
-
-bool transformMapToImage(const geometry_msgs::Point& map_point,
-                         const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& image_point)
-{
-  geometry_msgs::Point relative_p = 
-    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
-  // std::cout << "relative p "<<relative_p.x <<" "<<relative_p.y << std::endl;
-  // double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
-  // double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
-  // std::cout << "heifht "<< occupancy_grid_info.height << std::endl;
-  // std::cout << "width "<< occupancy_grid_info.width << std::endl;
-  double resolution = occupancy_grid_info.resolution;
-  double map_y_height = occupancy_grid_info.height;
-  double map_x_width = occupancy_grid_info.width;
-  double map_x_in_image_resolution = relative_p.x/resolution;
-  double map_y_in_image_resolution = relative_p.y/resolution;
-  double image_x = map_y_height - map_y_in_image_resolution;
-  double image_y = map_x_width - map_x_in_image_resolution;
-  // double bottomleft_x = (relative_p.x)/costmap_resolution;
-  // double bottomleft_y = (relative_p.y)/costmap_resolution;
-  // double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
-  // double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
-  // std::cout << "costmap width "<< ego_costmap_y_width << std::endl;
-  // std::cout << "costmap length "<< ego_costmap_x_length << std::endl;
-  // std::cout << "image x y "<< image_x << " "<< image_y << std::endl;
-  if(image_x>=0 && 
-     image_x<(int)map_y_height &&
-     image_y>=0 && 
-     image_y<(int)map_x_width)
-  {
-    image_point.x = image_x;
-    image_point.y = image_y;
-    return true;
-  }
-  else
-  {
-    return false;
-  } 
-}
-
-
-bool transformImageToMap(const geometry_msgs::Point& image_point,
-                         const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& map_point)
-{
-  double resolution = occupancy_grid_info.resolution;
-  double map_y_height = occupancy_grid_info.height;
-  double map_x_width = occupancy_grid_info.width;
-  double map_x_in_image_resolution = map_x_width - image_point.y;
-  double map_y_in_image_resolution = map_y_height - image_point.x;
-  double relative_x = map_x_in_image_resolution*resolution;
-  double relative_y = map_y_in_image_resolution*resolution;
-  
-  // double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
-  // double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
-  // double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
-  // double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
-
-  double yaw = tf2::getYaw(occupancy_grid_info.origin.orientation);
-  geometry_msgs::Point res;
-  res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
-  res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
-  
-  map_point.x = res.x + occupancy_grid_info.origin.position.x;
-  map_point.y = res.y + occupancy_grid_info.origin.position.y;
-  map_point.z = occupancy_grid_info.origin.position.z;
-  return true;
-}
-
-}
-
 bool EBPathPlannerNode::generateClearanceMap(
     const nav_msgs::OccupancyGrid& occupancy_grid,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
@@ -930,7 +1005,7 @@ bool EBPathPlannerNode::generateClearanceMap(
     if(object.state.twist_covariance.twist.linear.x < max_avoiding_objects_velocity_ms_)
     {
       geometry_msgs::Point point_in_image;
-      if(tmp::transformMapToImage(
+      if(tmp1::transformMapToImage(
               object.state.pose_covariance.pose.position, 
               occupancy_grid.info,
               point_in_image))
@@ -954,34 +1029,34 @@ bool EBPathPlannerNode::generateClearanceMap(
   
   
   //--debug
-  cv::Mat tmp;
-  clearance_map.copyTo(tmp);
-  cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+  // cv::Mat tmp;
+  // clearance_map.copyTo(tmp);
+  // cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
   
-  geometry_msgs::Point ddd;
-  if(tmp::transformMapToImage(
-              debug_ego_pose.position, 
-              occupancy_grid.info,
-              ddd ))
-  {
-    std::cout << "ddd "<<ddd.x <<" "<<ddd.y<< std::endl;
-    cv::circle(tmp, 
-                cv::Point(ddd.x, ddd.y), 
-                10, 
-                cv::Scalar(0),
-                1);
-    geometry_msgs::Point aaa;
-    tmp::transformImageToMap(
-      ddd,
-      occupancy_grid.info,
-      aaa);
-    std::cout << "map " <<aaa.x<<" "<<aaa.y<< std::endl;
-    std::cout << "pose "<< debug_ego_pose.position.x<< " "<<debug_ego_pose.position.y << std::endl;
-  } 
+  // geometry_msgs::Point ddd;
+  // if(tmp1::transformMapToImage(
+  //             debug_ego_pose.position, 
+  //             occupancy_grid.info,
+  //             ddd ))
+  // {
+  //   std::cout << "ddd "<<ddd.x <<" "<<ddd.y<< std::endl;
+  //   cv::circle(tmp, 
+  //               cv::Point(ddd.x, ddd.y), 
+  //               10, 
+  //               cv::Scalar(0),
+  //               1);
+  //   geometry_msgs::Point aaa;
+  //   tmp1::transformImageToMap(
+  //     ddd,
+  //     occupancy_grid.info,
+  //     aaa);
+  //   std::cout << "map " <<aaa.x<<" "<<aaa.y<< std::endl;
+  //   std::cout << "pose "<< debug_ego_pose.position.x<< " "<<debug_ego_pose.position.y << std::endl;
+  // } 
   
-  cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-  cv::imshow("image", tmp);
-  cv::waitKey(20);
+  // cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+  // cv::imshow("image", tmp);
+  // cv::waitKey(20);
   //end debugs
 }
 } // namespace path_planner

@@ -104,10 +104,15 @@ private:
   void routeCallback(const autoware_planning_msgs::Route& msg);
   void objectsCallback(const autoware_perception_msgs::DynamicObjectArray& msg);
   bool needReset(const geometry_msgs::Point& previous_ego_point,
-                 const geometry_msgs::Point& current_ego_point);
+                 const geometry_msgs::Point& current_ego_point,
+                 const cv::Mat& clearance_map,
+                 const nav_msgs::MapMetaData& map_info,
+                 const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points);
   bool generateFixedOptimizedPoints(
     const geometry_msgs::Pose& ego_pose,
     const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& previous_optimized_points_ptr,
+    const cv::Mat& clearance_map,
+    const nav_msgs::MapMetaData& map_info,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_points);
     
   bool alighWithPathPoints(
