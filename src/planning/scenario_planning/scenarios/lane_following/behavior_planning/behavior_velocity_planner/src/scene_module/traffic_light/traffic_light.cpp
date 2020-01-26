@@ -57,7 +57,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
         }
         if (!((ros::Time::now() - header.stamp).toSec() < 1.0))
         {
-            debug_msg ="TL time stamp is too old";
+            debug_msg ="TL time stamp is too old." + std::to_string((ros::Time::now() - header.stamp).toSec());
             continue;
         }
         if (tl_state.lamp_states.empty() || tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::UNKNOWN)
