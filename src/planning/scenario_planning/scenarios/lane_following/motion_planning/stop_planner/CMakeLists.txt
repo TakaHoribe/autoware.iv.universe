@@ -38,7 +38,7 @@ include_directories(
 add_executable(stop_planner
   src/stop_planner/stop_planner_core.cpp
   src/stop_planner/stop_planner_node.cpp
-  src/stop_planner/obstacle_considered_lane.cpp
+  src/stop_planner/obstacle_pcd_velocity_planner.cpp
   src/stop_planner/planning_utils.cpp
   src/stop_planner/visualize.cpp
   src/stop_planner/interpolate.cpp)

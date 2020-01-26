@@ -276,13 +276,14 @@ void MotionVelocityPlanner::insertBehindVelocity(const int prev_output_closest, 
   int j = std::max(prev_output_closest - 1, 0);
   for (int i = output_closest - 1; i >= 0; --i)
   {
-    if (planning_type_ == 3)
+    if (initialize_type_ == InitializeType::INIT || initialize_type_ == InitializeType::LARGE_DEVIATION_REPLAN ||
+        initialize_type_ == InitializeType::ENGAGING)
     {
-      output.points.at(i).twist.linear.x = prev_output.points.at(j).twist.linear.x;
+      output.points.at(i).twist.linear.x = output.points.at(output_closest).twist.linear.x;
     }
     else
     {
-      output.points.at(i).twist.linear.x = output.points.at(output_closest).twist.linear.x;
+      output.points.at(i).twist.linear.x = prev_output.points.at(j).twist.linear.x;
     }
     
     j = std::max(j - 1, 0);
@@ -367,7 +368,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
   {
     initial_vel = vehicle_speed;
     initial_acc = 0.0; // if possible, use actual vehicle acc & jerk value;
-    planning_type_ = 0;
+    initialize_type_ = InitializeType::INIT;
     return;
   }
 
@@ -380,7 +381,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
     DEBUG_WARN("[calcInitialMotion] : Large deviation error for speed control. Use current speed for initial value, "
                "desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
                desired_vel, vehicle_speed, vel_error, planning_param_.replan_vel_deviation);
-    planning_type_ = 1;
+    initialize_type_ = InitializeType::LARGE_DEVIATION_REPLAN;
     return;
   }
 
@@ -399,7 +400,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
       DEBUG_INFO("[calcInitialMotion] : vehicle speed is low (%3.3f [m/s]), but desired speed is high (%3.3f [m/s]). "
                  "Use engage speed (%3.3f [m/s]), stop_dist = %3.3f",
                  vehicle_speed, base_speed, planning_param_.engage_velocity, stop_dist);
-      planning_type_ = 2;
+      initialize_type_ = InitializeType::ENGAGING;
       return;
     }
     else
@@ -414,7 +415,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
   DEBUG_INFO("[calcInitialMotion]: normal update initial_motion.vel = %f, acc = %f, vehicle_speed = %f, "
              "base_speed = %f",
              initial_vel, initial_acc, vehicle_speed, base_speed);
-  planning_type_ = 3;
+  initialize_type_ = InitializeType::NORMAL;
   return;
 }
 

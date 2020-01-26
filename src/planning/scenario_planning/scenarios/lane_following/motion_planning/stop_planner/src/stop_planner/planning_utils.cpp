@@ -54,31 +54,21 @@ double calcLateralError2D(const geometry_msgs::Point &line_s, const geometry_msg
 }
 
 
-std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Trajectory &lane)
-{
-  std::vector<geometry_msgs::Pose> poses;
-
-  for (const auto &p : lane.points)
-    poses.push_back(p.pose);
-
-  return poses;
-}
-
 // get closest point index from current pose
-std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry_msgs::Pose> &curr_ps,
-                                                      const geometry_msgs::Pose &curr_pose, double dist_thr, double angle_thr)
+bool findClosestIdxWithDistAngThr(const autoware_planning_msgs::Trajectory &in_trajectory,
+                                                      const geometry_msgs::Pose &curr_pose, int32_t &out_idx, double dist_thr, double angle_thr)
 {
   double dist_squared_min = std::numeric_limits<double>::max();
-  int32_t idx_min = -1;
+  out_idx = -1;
 
-  for (int32_t i = 0; i < (int32_t)curr_ps.size(); ++i)
+  for (int32_t i = 0; i < (int32_t)in_trajectory.points.size(); ++i)
   {
-    const double ds = calcDistSquared2D(curr_ps.at(i).position, curr_pose.position);
+    const double ds = calcDistSquared2D(in_trajectory.points.at(i).pose.position, curr_pose.position);
     if (ds > dist_thr * dist_thr)
       continue;
 
     double yaw_pose = tf2::getYaw(curr_pose.orientation);
-    double yaw_ps = tf2::getYaw(curr_ps.at(i).orientation);
+    double yaw_ps = tf2::getYaw(in_trajectory.points.at(i).pose.orientation);
     double yaw_diff = normalizeEulerAngle(yaw_pose - yaw_ps);
     if (fabs(yaw_diff) > angle_thr)
       continue;
@@ -86,58 +76,11 @@ std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry
     if (ds < dist_squared_min)
     {
       dist_squared_min = ds;
-      idx_min = i;
+      out_idx = i;
     }
   }
 
-  return (idx_min >= 0) ? std::make_pair(true, idx_min) : std::make_pair(false, idx_min);
-}
-
-int8_t getLaneDirection(const std::vector<geometry_msgs::Pose> &poses, double dist_thr)
-{
-  if(poses.size() < 2)
-  {
-    ROS_ERROR("size of points is smaller than 2");
-    return 2;
-  }
-
-  for(uint32_t i = 0; i < poses.size(); i++)
-  {
-    geometry_msgs::Pose prev;
-    geometry_msgs::Pose next;
-
-    if(i == (poses.size() - 1))
-    {
-      prev = poses.at(i - 1);
-      next = poses.at(i);
-    }
-    else
-    {
-      prev = poses.at(i);
-      next = poses.at(i + 1);
-    };
-
-    if(planning_utils::calcDistSquared2D(prev.position, next.position) > dist_thr * dist_thr)
-    {
-      const auto rel_p = transformToRelativeCoordinate2D(next.position, prev);
-      return (rel_p.x > 0.0) ? 0 : 1;
-    }
-  }
-
-
-  ROS_ERROR("lane is something wrong. poses.size = %lu, dist_thr = %f", poses.size(), dist_thr);
-  return 2;
-
-}
-
-bool isDirectionForward(const geometry_msgs::Pose &prev, const geometry_msgs::Pose &next)
-{
-  return (transformToRelativeCoordinate2D(next.position, prev).x > 0.0) ? true : false;
-}
-
-bool isDirectionForward(const geometry_msgs::Pose &prev, const geometry_msgs::Point &next)
-{
-  return transformToRelativeCoordinate2D(next, prev).x > 0.0;
+  return (out_idx >= 0) ? true : false;
 }
 
 template <typename T>
@@ -289,196 +232,6 @@ geometry_msgs::Quaternion getQuaternionFromYaw(const double &_yaw)
   return tf2::toMsg(q);
 }
 
-std::pair<bool, geometry_msgs::Point> calcFootOfPerpendicular(const geometry_msgs::Point &line_s, const geometry_msgs::Point &line_e, const geometry_msgs::Point &point)
-{
-  constexpr double ER = 1e-5;  // 0.00001
-
-  Eigen::Vector3d vec_a((line_e.x - line_s.x),
-                        (line_e.y - line_s.y),
-                        (line_e.z - line_s.z));
-
-  if (vec_a.norm() < ER)
-    return std::make_pair(false, geometry_msgs::Point());
-
-  double lateral_error = calcLateralError2D(line_s, line_e, point);
-
-  /* calculate the position of the foot of a perpendicular line */
-  Eigen::Vector2d uva2d(vec_a.x(), vec_a.y());
-  uva2d.normalize();
-  Eigen::Rotation2Dd rot = (lateral_error > 0) ? Eigen::Rotation2Dd(-M_PI / 2.0) : Eigen::Rotation2Dd(M_PI / 2.0);
-  Eigen::Vector2d uva2d_rot = rot * uva2d;
-
-  geometry_msgs::Point h;
-  h.x = point.x + fabs(lateral_error) * uva2d_rot.x();
-  h.y = point.y + fabs(lateral_error) * uva2d_rot.y();
-  h.z = (line_s.z + line_e.z) / 2;
-
-  return std::make_pair(true, h);
-}
-
-std::pair<bool, geometry_msgs::Point> findIntersectionWithLineCircle(const geometry_msgs::Point &line_s,
-                                                                     const geometry_msgs::Point &line_e,
-                                                                     const geometry_msgs::Point &point,
-                                                                     double range,
-                                                                     int8_t which_point)
-{
-  if(range < 0 || abs(which_point) > 1)
-    return std::make_pair(false, geometry_msgs::Point());
-
-  constexpr double ER = 1e-5;  // 0.00001
-  Eigen::Vector3d vec_a((line_e.x - line_s.x),
-                        (line_e.y - line_s.y),
-                        (line_e.z - line_s.z));
-
-  if (vec_a.norm() < ER)
-    return std::make_pair(false, geometry_msgs::Point());
-
-  double lateral_error = calcLateralError2D(
-      line_s, line_e, point);
-
-  if (fabs(lateral_error) > range)
-  {
-    ROS_ERROR("lateral_error is larger than range, lat_err: %lf, radius: %lf", lateral_error, range);
-    return std::make_pair(false, geometry_msgs::Point());
-  }
-
-  /* calculate the position of the foot of a perpendicular line */
-  auto h = calcFootOfPerpendicular(line_s, line_e, point);
-
-  if(!h.first)
-  {
-    ROS_ERROR("cannot calc fop");
-    return std::make_pair(false, geometry_msgs::Point());
-  }
-
-  // if there is a intersection
-  if (fabs(fabs(lateral_error) - range) < ER)
-  {
-    return std::make_pair(true, h.second);
-  }
-  else
-  {
-    // if there are two intersection
-    // get intersection in front of vehicle
-    Eigen::Vector2d uva2d(vec_a.x(), vec_a.y());
-    uva2d.normalize();
-
-    double s = sqrt(pow(range, 2) - pow(lateral_error, 2));
-    geometry_msgs::Point res;
-
-    if(which_point == 0)
-    {
-      res.x = h.second.x + s * uva2d.x();
-      res.y = h.second.y + s * uva2d.y();
-      res.z = (line_s.z + line_e.z) / 2;
-    }
-    else
-    {
-      res.x = h.second.x - s * uva2d.x();
-      res.y = h.second.y - s * uva2d.y();
-      res.z = (line_s.z + line_e.z) / 2;
-    }
-
-    return std::make_pair(true, res);
-  }
-}
-
-std::pair<bool, int32_t> findFirstIdxOutOfRange(const std::vector<geometry_msgs::Pose> &pose_v,
-                                                const geometry_msgs::Point &point,
-                                                double range, int32_t search_idx_s, int8_t which_dir)
-{
-  if (pose_v.empty() || search_idx_s < 0 || abs(which_dir) > 1 || range < 0)
-    return std::make_pair(false, -1);
-
-  int32_t i = search_idx_s;
-  while (true)
-  {
-    // if search waypoint is the last
-    if ((which_dir == 0 && i == (int32_t)pose_v.size() - 1) || (which_dir == 1 && i == 0))
-    {
-      return std::make_pair(true, i);
-    }
-
-    // if there exists an effective waypoint
-    const double ds = calcDistSquared2D(point, pose_v.at(i).position);
-    if (ds > std::pow(range, 2))
-      return std::make_pair(true, i);
-
-    if (which_dir == 0)
-      i++;
-    else
-      i--;
-  }
-}
-
-std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(const autoware_planning_msgs::Trajectory &lane, const geometry_msgs::Pose &pose,
-                                                                                int32_t idx, double stop_dist, int8_t which_dir)
-{
-  auto dst_idx_pair = planning_utils::findFirstIdxOutOfRange(planning_utils::extractPoses(lane),
-                                                             pose.position, stop_dist, idx, which_dir);
-  if(!dst_idx_pair.first)
-  {
-    ROS_ERROR("findFirstIdxOutOfRange: cannot find index");
-    return std::make_tuple(false, -1, geometry_msgs::Pose());
-  }
-
-  // calculate actual stop position
-  auto dst_idx = dst_idx_pair.second;
-  ROS_DEBUG("idx: %d", idx);
-
-  geometry_msgs::Pose res;
-  if(dst_idx_pair.second == 0)
-  {
-    res = lane.points.front().pose;
-  }
-  else if(dst_idx_pair.second == (int32_t)(lane.points.size() - 1))
-  {
-    res = lane.points.back().pose;
-  }
-  else
-  {
-    geometry_msgs::Pose line_s;
-    geometry_msgs::Pose line_e;
-
-    if(which_dir == 1)
-    {
-      line_s = lane.points.at(dst_idx).pose;
-      line_e = lane.points.at(dst_idx + 1).pose;
-    }
-    else
-    {
-      line_s = lane.points.at(dst_idx - 1).pose;
-      line_e = lane.points.at(dst_idx).pose;
-    }
-
-    auto actual_pair =  planning_utils::findIntersectionWithLineCircle(line_s.position, line_e.position,
-                                                                       pose.position, stop_dist, which_dir);
-    if(!actual_pair.first)
-    {
-      ROS_ERROR("findIntersectionWithLineCircle: cannot find actual pos");
-      return std::make_tuple(false, -1, geometry_msgs::Pose());
-    }
-
-    res.position = actual_pair.second;
-    if(planning_utils::isDirectionForward(line_s, line_e))
-    {
-      res.orientation = planning_utils::getQuaternionFromYaw(
-          atan2((line_e.position.y - line_s.position.y), (line_e.position.x - line_s.position.x))
-      );
-    }
-    else
-    {
-      res.orientation = planning_utils::getQuaternionFromYaw(
-          atan2((line_s.position.y - line_e.position.y), (line_s.position.x - line_e.position.x))
-      );
-    }
-  }
-
-  ROS_DEBUG("actual: (%lf, %lf)", res.position.x, res.position.y);
-
-  return std::make_tuple(true, dst_idx, res);
-}
-
 void convertEulerAngleToMonotonic(std::vector<double> &a)
 {
   for (unsigned int i = 1; i < a.size(); ++i)
@@ -539,4 +292,87 @@ bool linearInterpTrajectory(const std::vector<double> &base_index, const autowar
   return true;
 
 }
+
+int calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &in_trajectory, int32_t start_idx, double distance)
+
+{
+  double dist_sum = 0.0;
+  for (int i = start_idx; i < (int)in_trajectory.points.size() - 1; ++i)
+  {
+    dist_sum += planning_utils::calcDistance2D(in_trajectory.points.at(i + 1).pose.position,
+                                               in_trajectory.points.at(i).pose.position);
+    if (dist_sum > distance)
+    {
+      return i;
+    }
+  }
+  return (int)(in_trajectory.points.size()) - 1;
+}
+
+
+geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::Trajectory &in_trajectory, const geometry_msgs::Point &origin,
+                                                  const int start_idx, const double radius)
+{
+  if (start_idx < 0 || start_idx >= in_trajectory.points.size())
+  {
+    return geometry_msgs::Pose();
+  }
+
+  double prev_dist = 0.0;
+  geometry_msgs::Point p_prev = origin;
+  if (radius > 0)
+  {
+    for (uint i = start_idx; i < in_trajectory.points.size() - 1; ++i)
+    {
+      geometry_msgs::Point p_i = in_trajectory.points.at(i).pose.position;
+      double dist_i = planning_utils::calcDistance2D(p_i, origin);
+      if (dist_i > radius)
+      {
+        // points found. do interpolation.
+        double d_next = dist_i - radius;
+        double d_prev = radius - prev_dist;
+        double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        geometry_msgs::Pose p;
+        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
+        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
+        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
+        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        return p;
+      }
+      prev_dist = dist_i;
+      p_prev = p_i;
+    }
+    return in_trajectory.points.back().pose;
+  }
+  else if (radius < 0)
+  {
+    double abs_radius = std::fabs(radius);
+    for (uint i = start_idx; i > 0; --i)
+    {
+      geometry_msgs::Point p_i = in_trajectory.points.at(i).pose.position;
+      double dist_i = planning_utils::calcDistance2D(p_i, origin);
+      if (dist_i > abs_radius)
+      {
+        // points found. do interpolation.
+        double d_next = dist_i - abs_radius;
+        double d_prev = abs_radius - prev_dist;
+        double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        geometry_msgs::Pose p;
+        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
+        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
+        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
+        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        return p;
+      }
+      prev_dist = dist_i;
+      p_prev = p_i;
+    }
+    return in_trajectory.points.front().pose;
+  }
+  else
+  {
+    return in_trajectory.points.at(start_idx).pose;
+  }
+}
+
 }  // namespace planning_utils
