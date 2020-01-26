@@ -77,7 +77,6 @@ private:
   ros::Subscriber objects_sub_;
   bool enable_velocity_based_cropping_;
   bool is_debug_no_fixing_points_mode_;
-  int num_lookup_lanelet_for_drivealble_area_;
   int number_of_fixing_points_;
   double time_for_calculating_velocity_based_distance_;
   double distance_for_cropping_;

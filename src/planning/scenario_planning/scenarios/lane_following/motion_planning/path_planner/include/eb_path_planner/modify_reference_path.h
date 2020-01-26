@@ -55,7 +55,6 @@ private:
   int clearance_map_y_width_;
   int clearance_map_x_length_;
   //should be deprecated when implementing appropriate driveable area
-  int num_lookup_lanelet_for_drivealble_area_; 
   double resolution_;
   double time_limit_;
   double min_radius_;
@@ -105,7 +104,6 @@ public:
     std::vector<geometry_msgs::Point>& debug_rearrange_points
   );
   ModifyReferencePath(
-    int num_lookup_lanelet_for_driveable_area,
     double min_radius,
     double backward_distance);
   ModifyReferencePath();

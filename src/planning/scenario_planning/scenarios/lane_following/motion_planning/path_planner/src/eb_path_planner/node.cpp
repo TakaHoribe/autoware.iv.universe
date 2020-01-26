@@ -141,8 +141,6 @@ private_nh_("~")
                          enable_velocity_based_cropping_,false);
   private_nh_.param<bool>("is_debug_fixing_points_mode", 
                            is_debug_no_fixing_points_mode_,false);
-  private_nh_.param<int>("num_lookup_lanelet_for_drivealble_area", 
-                         num_lookup_lanelet_for_drivealble_area_,9);
   private_nh_.param<int>("number_of_fixing_points", 
                           number_of_fixing_points_, 15);
   private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
@@ -162,7 +160,6 @@ private_nh_("~")
   private_nh_.param<double>("max_avoiding_objects_velocity_ms", 
                              max_avoiding_objects_velocity_ms_, 0.1);
   modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
-    num_lookup_lanelet_for_drivealble_area_,
     exploring_minimum_radius_,
     backward_fixing_distance_);
   eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
@@ -241,7 +238,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
                fixed_optimized_points))
   {
     modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
-                num_lookup_lanelet_for_drivealble_area_,
                 exploring_minimum_radius_,
                 backward_fixing_distance_);
     eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(

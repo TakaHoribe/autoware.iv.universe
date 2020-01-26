@@ -197,7 +197,6 @@ bool transformImageToMap(const geometry_msgs::Point& image_point,
 
 
 ModifyReferencePath::ModifyReferencePath(
-  int num_lookup_lanelet_for_driveable_area,
   double min_radius,
   double backward_distance):
 is_fix_pose_mode_for_debug_(false),
@@ -206,7 +205,6 @@ is_debug_driveable_area_mode_(false),
 is_debug_clearance_map_mode_(false),
 clearance_map_y_width_(100),
 clearance_map_x_length_(100),
-num_lookup_lanelet_for_drivealble_area_(num_lookup_lanelet_for_driveable_area),
 resolution_(0.1),
 time_limit_(200.0),
 min_radius_(min_radius),

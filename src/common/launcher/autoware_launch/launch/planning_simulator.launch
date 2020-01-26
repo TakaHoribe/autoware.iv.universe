@@ -4,7 +4,6 @@
   <arg name="lanelet_map_path" default="$(arg city_config_path)/lanelet2_map.osm"/>
   <arg name="pointcloud_map_path" default="$(arg city_config_path)/pointcloud_map.pcd"/>
   <arg name="map_tf_path" default="$(arg city_config_path)/tf.launch"/>
-  <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
 
   <!-- Vehicle Setting -->
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
@@ -25,7 +24,6 @@
   <!-- Planning -->
   <include file="$(find planning_launch)/launch/planning.launch">
     <arg name="is_online_path_update" default="true"/>
-    <arg name="num_lookup_lanelet_for_drivealble_area" value="$(arg num_lookup_lanelet_for_drivealble_area)"/>
   </include>
 
   <!-- Control -->
