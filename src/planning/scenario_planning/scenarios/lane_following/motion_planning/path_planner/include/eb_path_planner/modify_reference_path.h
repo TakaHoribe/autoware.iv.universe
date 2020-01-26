@@ -38,6 +38,11 @@ namespace geometry_msgs
   // ROS_DECLARE_MESSAGE(TwistStamped);
 }
 
+namespace nav_msgs
+{
+  ROS_DECLARE_MESSAGE(MapMetaData); 
+}
+
 
 
 class ModifyReferencePath 
@@ -58,11 +63,13 @@ private:
   double backward_distance_;
   double static_objects_velocity_ms_threshold_;
   double loosing_clerance_for_explore_goal_threshold_;
+  double heuristic_epsilon_;
   std::unique_ptr<geometry_msgs::Pose> debug_fix_pose_;
   std::unique_ptr<geometry_msgs::Pose> previous_exploring_goal_pose_in_map_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> cached_explored_points_ptr_;
   bool expandNode(Node& parent_node, 
                   const cv::Mat& clearence_map,
+                  const nav_msgs::MapMetaData& map_info,
                   const Node& goal_node,
                   const double min_r,
                   const double max_r,
@@ -73,6 +80,7 @@ private:
                      const geometry_msgs::Point& start_point_in_map,
                      const geometry_msgs::Point& goal_point_in_map,
                      const cv::Mat& clearance_map,
+                     const nav_msgs::MapMetaData& map_info,
                      std::vector<geometry_msgs::Point>& explored_points);
   
   bool arrangeExploredPointsBaseedOnClearance(
@@ -91,7 +99,8 @@ public:
     lanelet::LaneletMap& map,
     const autoware_planning_msgs::Route& route,
     std::vector<geometry_msgs::Point>& explored_points,
-    cv::Mat& clearance_map,
+    const cv::Mat& clearance_map,
+    const nav_msgs::MapMetaData& map_info,
     geometry_msgs::Point& debug_goal_point,
     std::vector<geometry_msgs::Point>& debug_rearrange_points
   );

@@ -13,6 +13,12 @@ namespace autoware_planning_msgs
   ROS_DECLARE_MESSAGE(TrajectoryPoint);
 }
 
+namespace nav_msgs
+{
+  ROS_DECLARE_MESSAGE(MapMetaData); 
+}
+
+
 namespace cv
 {
   class Mat;
@@ -72,9 +78,12 @@ public:
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
     const geometry_msgs::Pose& ego_pose,
     const cv::Mat& clearance_map,
+    const nav_msgs::MapMetaData& map_info,
     std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
     std::vector<geometry_msgs::Point>& debug_cached_explored_points,                  
     std::vector<geometry_msgs::Point>& debug_boundary_points,                  
+    std::vector<geometry_msgs::Point>& debug_lb_boundary_points,                  
+    std::vector<geometry_msgs::Point>& debug_ub_boundary_points,                  
     std::vector<geometry_msgs::Point>& debug_fixed_optimization_points,                  
     std::vector<geometry_msgs::Point>& debug_variable_optimization_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  

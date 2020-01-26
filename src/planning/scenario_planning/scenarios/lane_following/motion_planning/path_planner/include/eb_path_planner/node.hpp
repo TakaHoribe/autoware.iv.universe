@@ -17,6 +17,11 @@ namespace lanelet
   }
 }
 
+namespace cv
+{
+  class Mat;
+}
+
 namespace autoware_lanelet2_msgs
 {
   ROS_DECLARE_MESSAGE(MapBin); 
@@ -34,6 +39,12 @@ namespace autoware_planning_msgs
 namespace autoware_perception_msgs
 {
   ROS_DECLARE_MESSAGE(DynamicObjectArray);
+  ROS_DECLARE_MESSAGE(DynamicObject);
+}
+
+namespace nav_msgs
+{
+  ROS_DECLARE_MESSAGE(OccupancyGrid);
 }
 
 namespace geometry_msgs
@@ -75,6 +86,7 @@ private:
   double forward_fixing_distance_;
   double delta_arc_length_;
   double delta_ego_point_threshold_;
+  double max_avoiding_objects_velocity_ms_;
   
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
@@ -106,7 +118,17 @@ private:
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& fine_optimized_points);
-
+  
+  bool generateClearanceMap(
+    const nav_msgs::OccupancyGrid& occupancy_grid,
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+    const geometry_msgs::Pose& debug_ego_pose,
+    cv::Mat& clearance_map);
+  
+  void getOccupancyGridValue(const nav_msgs::OccupancyGrid& occupancy_grid, 
+                             const int i, 
+                             const int j,
+                             unsigned char&value);
   
 public:
    EBPathPlannerNode();

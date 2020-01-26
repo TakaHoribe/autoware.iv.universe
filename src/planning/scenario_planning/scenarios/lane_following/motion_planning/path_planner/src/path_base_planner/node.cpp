@@ -12,7 +12,7 @@ BasePlannerNode::BasePlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 void BasePlannerNode::timerCallback(const ros::TimerEvent &e){
   if (trajectory_pub_.getNumSubscribers() < 1)
   {
-    ROS_INFO("There is no subscribers for Motion Path Planner; Skip callback");
+    ROS_WARN_THROTTLE(10.0,"There is no subscribers for Motion Path Planner; Skip callback");
     return;
   }
   if(path_ptr_ == nullptr)

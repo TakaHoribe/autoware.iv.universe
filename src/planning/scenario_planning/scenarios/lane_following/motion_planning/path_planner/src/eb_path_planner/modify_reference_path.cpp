@@ -19,6 +19,7 @@
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 #include <geometry_msgs/Pose.h>
+#include <nav_msgs/MapMetaData.h>
 
 #include "autoware_perception_msgs/DynamicObject.h"
 #include "autoware_planning_msgs/PathPoint.h"
@@ -73,23 +74,86 @@ double calculateEigen2DDistance(const Eigen::Vector2d& a,
   return std::sqrt(dx*dx+dy*dy);
 }
 
+// bool transformMapToImage(const geometry_msgs::Point& map_point,
+//                          const geometry_msgs::Pose& map_ego_pose,
+//                          const int ego_costmap_x_length,
+//                          const int ego_costmap_y_width,
+//                          const double costmap_resolution,
+//                          geometry_msgs::Point& image_point)
+// {
+//   geometry_msgs::Point relative_p = 
+//     transformToRelativeCoordinate2D(map_point, map_ego_pose);
+//   double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
+//   double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
+//   double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
+//   double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
+//   if(image_x>=0 && 
+//      image_x<(int)ego_costmap_y_width/costmap_resolution &&
+//      image_y>=0 && 
+//      image_y<(int)ego_costmap_x_length/costmap_resolution)
+//   {
+//     image_point.x = image_x;
+//     image_point.y = image_y;
+//     return true;
+//   }
+//   else
+//   {
+//     return false;
+//   } 
+// }
+
+// bool transformImageToMap(const geometry_msgs::Point& image_point,
+//                          const geometry_msgs::Pose& map_ego_pose,
+//                          const int ego_costmap_x_length,
+//                          const int ego_costmap_y_width,
+//                          const double costmap_resolution,
+//                          geometry_msgs::Point& map_point)
+// {
+//   double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
+//   double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
+//   double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
+//   double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
+//   double yaw = tf2::getYaw(map_ego_pose.orientation);
+
+//   geometry_msgs::Point res;
+//   res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
+//   res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
+  
+//   map_point.x = res.x + map_ego_pose.position.x;
+//   map_point.y = res.y + map_ego_pose.position.y;
+//   map_point.z = map_ego_pose.position.z;
+//   return true;
+// }
+
 bool transformMapToImage(const geometry_msgs::Point& map_point,
-                         const geometry_msgs::Pose& map_ego_pose,
-                         const int ego_costmap_x_length,
-                         const int ego_costmap_y_width,
-                         const double costmap_resolution,
+                         const nav_msgs::MapMetaData& occupancy_grid_info,
                          geometry_msgs::Point& image_point)
 {
   geometry_msgs::Point relative_p = 
-    transformToRelativeCoordinate2D(map_point, map_ego_pose);
-  double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
-  double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
-  double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
-  double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
+    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
+  // std::cout << "relative p "<<relative_p.x <<" "<<relative_p.y << std::endl;
+  // double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
+  // double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
+  // std::cout << "heifht "<< occupancy_grid_info.height << std::endl;
+  // std::cout << "width "<< occupancy_grid_info.width << std::endl;
+  double resolution = occupancy_grid_info.resolution;
+  double map_y_height = occupancy_grid_info.height;
+  double map_x_width = occupancy_grid_info.width;
+  double map_x_in_image_resolution = relative_p.x/resolution;
+  double map_y_in_image_resolution = relative_p.y/resolution;
+  double image_x = map_y_height - map_y_in_image_resolution;
+  double image_y = map_x_width - map_x_in_image_resolution;
+  // double bottomleft_x = (relative_p.x)/costmap_resolution;
+  // double bottomleft_y = (relative_p.y)/costmap_resolution;
+  // double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
+  // double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
+  // std::cout << "costmap width "<< ego_costmap_y_width << std::endl;
+  // std::cout << "costmap length "<< ego_costmap_x_length << std::endl;
+  // std::cout << "image x y "<< image_x << " "<< image_y << std::endl;
   if(image_x>=0 && 
-     image_x<(int)ego_costmap_y_width/costmap_resolution &&
+     image_x<(int)map_y_height &&
      image_y>=0 && 
-     image_y<(int)ego_costmap_x_length/costmap_resolution)
+     image_y<(int)map_x_width)
   {
     image_point.x = image_x;
     image_point.y = image_y;
@@ -101,26 +165,32 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   } 
 }
 
+
 bool transformImageToMap(const geometry_msgs::Point& image_point,
-                         const geometry_msgs::Pose& map_ego_pose,
-                         const int ego_costmap_x_length,
-                         const int ego_costmap_y_width,
-                         const double costmap_resolution,
+                         const nav_msgs::MapMetaData& occupancy_grid_info,
                          geometry_msgs::Point& map_point)
 {
-  double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
-  double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
-  double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
-  double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
-  double yaw = tf2::getYaw(map_ego_pose.orientation);
+  double resolution = occupancy_grid_info.resolution;
+  double map_y_height = occupancy_grid_info.height;
+  double map_x_width = occupancy_grid_info.width;
+  double map_x_in_image_resolution = map_x_width - image_point.y;
+  double map_y_in_image_resolution = map_y_height - image_point.x;
+  double relative_x = map_x_in_image_resolution*resolution;
+  double relative_y = map_y_in_image_resolution*resolution;
+  
+  // double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
+  // double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
+  // double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
+  // double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
 
+  double yaw = tf2::getYaw(occupancy_grid_info.origin.orientation);
   geometry_msgs::Point res;
   res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
   res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
   
-  map_point.x = res.x + map_ego_pose.position.x;
-  map_point.y = res.y + map_ego_pose.position.y;
-  map_point.z = map_ego_pose.position.z;
+  map_point.x = res.x + occupancy_grid_info.origin.position.x;
+  map_point.y = res.y + occupancy_grid_info.origin.position.y;
+  map_point.z = occupancy_grid_info.origin.position.z;
   return true;
 }
 
@@ -143,7 +213,8 @@ min_radius_(min_radius),
 max_radius_(min_radius),
 backward_distance_(backward_distance),
 static_objects_velocity_ms_threshold_(1.1),
-loosing_clerance_for_explore_goal_threshold_(0.2)
+loosing_clerance_for_explore_goal_threshold_(0.2),
+heuristic_epsilon_(5)
 {
 }
 
@@ -153,6 +224,7 @@ ModifyReferencePath::~ModifyReferencePath()
 
 bool ModifyReferencePath::expandNode(Node& parent_node, 
                              const cv::Mat& clearance_map,
+                             const nav_msgs::MapMetaData& map_info,
                              const Node& goal_node,
                              const double min_r,
                              const double max_r,
@@ -189,7 +261,6 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
     cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
     cv::imshow("image", tmp);
     cv::waitKey(20);
-    // cv::destroyAllWindows();
   }
 
   
@@ -210,9 +281,9 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
     child_node.p = rotated_delta + parent_node.p;
     // std::cerr << "child node " << child_node.p(0)<<" "<<child_node.p(1) << std::endl;
     if(child_node.p(0)*resolution_ >=0 && 
-       child_node.p(0)*resolution_ < clearance_map_y_width_ && 
+       child_node.p(0) < map_info.height && 
        child_node.p(1)*resolution_ >=0 &&
-       child_node.p(1)*resolution_ < clearance_map_x_length_)
+       child_node.p(1) < map_info.width)
     {
       double tmp_r = clearance_map.ptr<float>
                       ((int)child_node.p(1))[(int)child_node.p(0)]*resolution_;
@@ -228,8 +299,8 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
       continue;
     }
     child_node.g = parent_node.g + current_r;
-    //weighted a*: solution is suboptimal
-    child_node.h = calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_*5;
+    //weighted a*: solution is epsiolon suboptimal
+    child_node.h = calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_*heuristic_epsilon_;
     child_node.f = child_node.g + child_node.h;
     
     child_node.parent_node = std::make_shared<Node>(parent_node);
@@ -268,15 +339,23 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
                      const geometry_msgs::Point& start_point_in_map,
                      const geometry_msgs::Point& goal_point_in_map,
                      const cv::Mat& clearance_map,
+                     const nav_msgs::MapMetaData& map_info,
                      std::vector<geometry_msgs::Point>& explored_points)
 {
   geometry_msgs::Point start_point_in_image;
   geometry_msgs::Point goal_point_in_image;
-  if(transformMapToImage(start_point_in_map, ego_pose, clearance_map_x_length_, 
-                      clearance_map_y_width_, resolution_, start_point_in_image) &&
-     transformMapToImage(goal_point_in_map, ego_pose, clearance_map_x_length_, 
-                      clearance_map_y_width_, resolution_, goal_point_in_image))
+  // if(transformMapToImage(start_point_in_map, ego_pose, clearance_map_x_length_, 
+  //                     clearance_map_y_width_, resolution_, start_point_in_image) &&
+  //    transformMapToImage(goal_point_in_map, ego_pose, clearance_map_x_length_, 
+  //                     clearance_map_y_width_, resolution_, goal_point_in_image))
+  if(transformMapToImage(start_point_in_map,
+                         map_info,
+                         start_point_in_image)&&
+     transformMapToImage(goal_point_in_map, 
+                         map_info,
+                         goal_point_in_image))
   {
+    std::cout << "aaa" << std::endl;
     std::vector<Node> s_open;
     Node initial_node;
     double initial_r = clearance_map.ptr<float>((int)start_point_in_image.y)
@@ -359,6 +438,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
         int lowest_f_child_node_index;
         expandNode(lowest_f_node, 
                     clearance_map,
+                    map_info,
                     goal_node,
                     min_radius_,
                     max_radius_,
@@ -408,13 +488,17 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     for(const auto& point: explored_image_points)
     {
       geometry_msgs::Point map_point;
-      transformImageToMap(point, ego_pose, clearance_map_x_length_, clearance_map_y_width_, resolution_,map_point);
+      // transformImageToMap(point, ego_pose, clearance_map_x_length_, clearance_map_y_width_, resolution_,map_point);
+      transformImageToMap(point,
+                          map_info,
+                          map_point);
       explored_points.push_back(map_point);
     }
     return true;
   }
   else
   {
+    ROS_WARN_THROTTLE(2.0, "Strat point or/and goal point is outside of drivable area");
     return false;
   }
 }
@@ -609,132 +693,133 @@ bool ModifyReferencePath::generateModifiedPath(
   lanelet::LaneletMap& map,
   const autoware_planning_msgs::Route& route,
   std::vector<geometry_msgs::Point>& explored_points,
-  cv::Mat& clearance_map,
+  const cv::Mat& clearance_map,
+  const nav_msgs::MapMetaData& map_info,
   geometry_msgs::Point& debug_goal_point_in_map,
   std::vector<geometry_msgs::Point>& debug_rearrange_points)
 {
-  std::chrono::high_resolution_clock::time_point begin= 
-    std::chrono::high_resolution_clock::now();
-  if(!debug_fix_pose_&&is_fix_pose_mode_for_debug_)
-  {
-    debug_fix_pose_ = std::make_unique<geometry_msgs::Pose>(ego_pose);
-  }
-  else if(debug_fix_pose_&&is_fix_pose_mode_for_debug_)
-  {
-    ego_pose.position = debug_fix_pose_->position;
-    ego_pose.orientation = debug_fix_pose_->orientation;
-  }
+  // std::chrono::high_resolution_clock::time_point begin= 
+  //   std::chrono::high_resolution_clock::now();
+  // if(!debug_fix_pose_&&is_fix_pose_mode_for_debug_)
+  // {
+  //   debug_fix_pose_ = std::make_unique<geometry_msgs::Pose>(ego_pose);
+  // }
+  // else if(debug_fix_pose_&&is_fix_pose_mode_for_debug_)
+  // {
+  //   ego_pose.position = debug_fix_pose_->position;
+  //   ego_pose.orientation = debug_fix_pose_->orientation;
+  // }
   
   
-  cv::Mat image = cv::Mat::zeros(
-    (int)(2*clearance_map_y_width_/resolution_), 
-    (int)(2*clearance_map_x_length_/resolution_),
-    CV_8UC1);
+  // cv::Mat image = cv::Mat::zeros(
+  //   (int)(2*clearance_map_y_width_/resolution_), 
+  //   (int)(2*clearance_map_x_length_/resolution_),
+  //   CV_8UC1);
     
-  //use route to draw driveable area; should be deprecated in the future
-  lanelet::BasicPoint2d ego_point(ego_pose.position.x, ego_pose.position.y);
-  std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
-      lanelet::geometry::findNearest(map.laneletLayer, ego_point, 1);
-  if(nearest_lanelets.empty())
-  {
-    ROS_WARN("[EBPathPlanner] Ego vechicle is not in the lanelet ares");
-    return false;
-  }
-  int nearest_route_secition_idx_from_ego_pose = 0; 
-  for (int i = 0; i < route.route_sections.size(); i++)
-  {
-    for(const auto& llid: route.route_sections[i].lane_ids)
-    {
-      for(const auto& nearest_lanelet: nearest_lanelets)
-      {
-        if(llid == nearest_lanelet.second.id())
-        {
-          nearest_route_secition_idx_from_ego_pose = i;
-        }
-      }
-    }
-  }
+  // //use route to draw driveable area; should be deprecated in the future
+  // lanelet::BasicPoint2d ego_point(ego_pose.position.x, ego_pose.position.y);
+  // std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
+  //     lanelet::geometry::findNearest(map.laneletLayer, ego_point, 1);
+  // if(nearest_lanelets.empty())
+  // {
+  //   ROS_WARN("[EBPathPlanner] Ego vechicle is not in the lanelet ares");
+  //   return false;
+  // }
+  // int nearest_route_secition_idx_from_ego_pose = 0; 
+  // for (int i = 0; i < route.route_sections.size(); i++)
+  // {
+  //   for(const auto& llid: route.route_sections[i].lane_ids)
+  //   {
+  //     for(const auto& nearest_lanelet: nearest_lanelets)
+  //     {
+  //       if(llid == nearest_lanelet.second.id())
+  //       {
+  //         nearest_route_secition_idx_from_ego_pose = i;
+  //       }
+  //     }
+  //   }
+  // }
   
-  int exploring_route_section_id = 
-    std::min(nearest_route_secition_idx_from_ego_pose+
-              num_lookup_lanelet_for_drivealble_area_,
-            (int)route.route_sections.size());
-  for (int i = nearest_route_secition_idx_from_ego_pose;
-       i < exploring_route_section_id; i++)
-  {
-    for(const auto& llid: route.route_sections[i].lane_ids)
-    {
-      lanelet::ConstLanelet llt = map.laneletLayer.get(llid);
-      std::vector<cv::Point> cv_points;
-      for(const auto& point: llt.polygon3d())
-      {
-        geometry_msgs::Point tmp;
-        tmp.x = point.x();
-        tmp.y = point.y();
-        tmp.z = point.z();
-        geometry_msgs::Point image_point;
-        if(transformMapToImage(tmp, ego_pose,clearance_map_x_length_*2, clearance_map_y_width_*2, resolution_,image_point))
-        {
-          int pixel_x = image_point.x;
-          int pixel_y = image_point.y;
-          cv_points.emplace_back(cv::Point(pixel_x, pixel_y));
-          geometry_msgs::Point point;
-          point.x = pixel_x;
-          point.y = pixel_y;
-        }
-      }
-      cv::fillConvexPoly(image, cv_points.data(), cv_points.size(), cv::Scalar(255));
-    }
-  }
-  //end route
-  // cv::Rect rect = cv::Rect(left-top-x, left-top-y, width, height);
-  cv::Rect rect = cv::Rect(clearance_map_y_width_/resolution_/2, clearance_map_x_length_/resolution_/2, 
-                            clearance_map_y_width_/resolution_, clearance_map_x_length_/resolution_);
-  image = image(rect);
+  // int exploring_route_section_id = 
+  //   std::min(nearest_route_secition_idx_from_ego_pose+
+  //             num_lookup_lanelet_for_drivealble_area_,
+  //           (int)route.route_sections.size());
+  // for (int i = nearest_route_secition_idx_from_ego_pose;
+  //      i < exploring_route_section_id; i++)
+  // {
+  //   for(const auto& llid: route.route_sections[i].lane_ids)
+  //   {
+  //     lanelet::ConstLanelet llt = map.laneletLayer.get(llid);
+  //     std::vector<cv::Point> cv_points;
+  //     for(const auto& point: llt.polygon3d())
+  //     {
+  //       geometry_msgs::Point tmp;
+  //       tmp.x = point.x();
+  //       tmp.y = point.y();
+  //       tmp.z = point.z();
+  //       geometry_msgs::Point image_point;
+  //       if(transformMapToImage(tmp, ego_pose,clearance_map_x_length_*2, clearance_map_y_width_*2, resolution_,image_point))
+  //       {
+  //         int pixel_x = image_point.x;
+  //         int pixel_y = image_point.y;
+  //         cv_points.emplace_back(cv::Point(pixel_x, pixel_y));
+  //         geometry_msgs::Point point;
+  //         point.x = pixel_x;
+  //         point.y = pixel_y;
+  //       }
+  //     }
+  //     cv::fillConvexPoly(image, cv_points.data(), cv_points.size(), cv::Scalar(255));
+  //   }
+  // }
+  // //end route
+  // // cv::Rect rect = cv::Rect(left-top-x, left-top-y, width, height);
+  // cv::Rect rect = cv::Rect(clearance_map_y_width_/resolution_/2, clearance_map_x_length_/resolution_/2, 
+  //                           clearance_map_y_width_/resolution_, clearance_map_x_length_/resolution_);
+  // image = image(rect);
   
   
-  for(const auto& object: objects)
-  {
-    if(object.state.twist_covariance.twist.linear.x < static_objects_velocity_ms_threshold_)
-    {
-      geometry_msgs::Point point_in_image;
-      if(transformMapToImage(object.state.pose_covariance.pose.position, ego_pose, clearance_map_x_length_, 
-                        clearance_map_y_width_, resolution_, point_in_image))
-      {
-        cv::circle(image, 
-                   cv::Point(point_in_image.x, point_in_image.y), 
-                   15, 
-                   cv::Scalar(0),
-                   -1);
-      } 
-    }
-  }
+  // for(const auto& object: objects)
+  // {
+  //   if(object.state.twist_covariance.twist.linear.x < static_objects_velocity_ms_threshold_)
+  //   {
+  //     geometry_msgs::Point point_in_image;
+  //     if(transformMapToImage(object.state.pose_covariance.pose.position, ego_pose, clearance_map_x_length_, 
+  //                       clearance_map_y_width_, resolution_, point_in_image))
+  //     {
+  //       cv::circle(image, 
+  //                  cv::Point(point_in_image.x, point_in_image.y), 
+  //                  15, 
+  //                  cv::Scalar(0),
+  //                  -1);
+  //     } 
+  //   }
+  // }
   
-  if(is_debug_driveable_area_mode_)
-  {
-    cv::Mat tmp;
-    image.copyTo(tmp);
-    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("image", tmp);
-    cv::waitKey(10);
-    // cv::destroyAllWindows();
-  }
-  std::chrono::high_resolution_clock::time_point end= 
-    std::chrono::high_resolution_clock::now();
-  std::chrono::nanoseconds time = 
-    std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  std::cout << " lanelet find nearest & fill convex fill "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  // if(is_debug_driveable_area_mode_)
+  // {
+  //   cv::Mat tmp;
+  //   image.copyTo(tmp);
+  //   cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+  //   cv::imshow("image", tmp);
+  //   cv::waitKey(10);
+  //   // cv::destroyAllWindows();
+  // }
+  // std::chrono::high_resolution_clock::time_point end= 
+  //   std::chrono::high_resolution_clock::now();
+  // std::chrono::nanoseconds time = 
+  //   std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  // std::cout << " lanelet find nearest & fill convex fill "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
   
-  std::chrono::high_resolution_clock::time_point begin1= 
-    std::chrono::high_resolution_clock::now();
-  // cv::Mat clearance_map;
-  cv::distanceTransform(image, clearance_map, cv::DIST_L2, 5);
-  geometry_msgs::Point start_point_in_map;
-  std::chrono::high_resolution_clock::time_point end1= 
-    std::chrono::high_resolution_clock::now();
-  std::chrono::nanoseconds time1 = 
-    std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1);
-  std::cout << " edt time: "<< time1.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  // std::chrono::high_resolution_clock::time_point begin1= 
+  //   std::chrono::high_resolution_clock::now();
+  // // cv::Mat clearance_map;
+  // cv::distanceTransform(image, clearance_map, cv::DIST_L2, 5);
+  // geometry_msgs::Point start_point_in_map;
+  // std::chrono::high_resolution_clock::time_point end1= 
+  //   std::chrono::high_resolution_clock::now();
+  // std::chrono::nanoseconds time1 = 
+  //   std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1);
+  // std::cout << " edt time: "<< time1.count()/(1000.0*1000.0)<<" ms" <<std::endl;
   
   std::chrono::high_resolution_clock::time_point begin2= 
     std::chrono::high_resolution_clock::now();
@@ -786,12 +871,15 @@ bool ModifyReferencePath::generateModifiedPath(
       
     }
     geometry_msgs::Point image_point;
+    // if(transformMapToImage(path_points[i].pose.position, 
+    //                         ego_pose,
+    //                         clearance_map_x_length_,
+    //                         clearance_map_y_width_, 
+    //                         resolution_,
+    //                         image_point))
     if(transformMapToImage(path_points[i].pose.position, 
-                            ego_pose,
-                            clearance_map_x_length_,
-                            clearance_map_y_width_, 
-                            resolution_,
-                            image_point))
+                           map_info,
+                           image_point))
     {
       int pixel_x = image_point.x;
       int pixel_y = image_point.y;
@@ -840,6 +928,7 @@ bool ModifyReferencePath::generateModifiedPath(
                   start_exploring_pose.position, 
                   exploring_goal_pose_in_map_ptr->position, 
                   clearance_map, 
+                  map_info,
                   explored_points);
   
   // arrangeExploredPointsBaseedOnClearance(clearance_map,
