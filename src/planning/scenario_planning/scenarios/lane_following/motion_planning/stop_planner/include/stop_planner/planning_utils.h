@@ -63,4 +63,10 @@ double normalizeEulerAngle(double euler);
 void convertEulerAngleToMonotonic(std::vector<double> &a);
 bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
                             const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory);
+int calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &in_trajectory, int32_t start_idx, double distance);
+
+geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::Trajectory &in_tajectory,
+                                                  const geometry_msgs::Point &origin,
+                                                  const int start_idx, const double distance);
+
 } // namespace planning_utils

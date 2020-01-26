@@ -34,10 +34,10 @@ StopPlanner::StopPlanner()
   pnh_.param("stop_margin_dist", stop_margin_dist, double(7.0));
   pnh_.param("object_pcd_threshold_num", object_pcd_threshold_num, int(1));
   pnh_.param("detection_area_width", detection_area_width, double(2.5));
-  obstacle_pcd_stop_planner_.setVehicleWidth(tread);
-  obstacle_pcd_stop_planner_.setStopDistance(stop_margin_dist);
-  obstacle_pcd_stop_planner_.setPointsThreshold(object_pcd_threshold_num);
-  obstacle_pcd_stop_planner_.setDetectionAreaWidth(detection_area_width);
+  obstacle_pcd_velocity_planner_.setVehicleWidth(tread);
+  obstacle_pcd_velocity_planner_.setStopDistance(stop_margin_dist);
+  obstacle_pcd_velocity_planner_.setPointsThreshold(object_pcd_threshold_num);
+  obstacle_pcd_velocity_planner_.setDetectionAreaWidth(detection_area_width);
 
 
 
@@ -108,13 +108,13 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   /* obstacle stop point calculation */
   auto ts = std::chrono::system_clock::now();
 
-  obstacle_pcd_stop_planner_.setCurrentPose(current_pose_ptr_->pose);
-  obstacle_pcd_stop_planner_.setCurrentTrajectory(*in_trajectory_ptr_);
-  obstacle_pcd_stop_planner_.setPointCloud(transformed_pointcloud);
-  autoware_planning_msgs::Trajectory out_trajectory = obstacle_pcd_stop_planner_.run();
+  obstacle_pcd_velocity_planner_.setCurrentPose(current_pose_ptr_->pose);
+  obstacle_pcd_velocity_planner_.setCurrentTrajectory(*in_trajectory_ptr_);
+  obstacle_pcd_velocity_planner_.setPointCloud(transformed_pointcloud);
+  autoware_planning_msgs::Trajectory out_trajectory = obstacle_pcd_velocity_planner_.run();
 
   sensor_msgs::PointCloud2 pcd_extructed;
-  obstacle_pcd_stop_planner_.getExtructedPcd(pcd_extructed);
+  obstacle_pcd_velocity_planner_.getExtructedPcd(pcd_extructed);
   pcd_extructed.header.stamp = ros::Time::now();
   pcd_extructed.header.frame_id = "map";
 
@@ -124,7 +124,7 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
 
   trajectory_pub_.publish(out_trajectory);
   pcd_extructed_pub_.publish(pcd_extructed);
-  marker_viz_pub_.publish(obstacle_pcd_stop_planner_.visualize());
+  marker_viz_pub_.publish(obstacle_pcd_velocity_planner_.visualize());
 
 
   return;

@@ -33,7 +33,7 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
-#include "stop_planner/obstacle_considered_lane.h"
+#include "stop_planner/obstacle_pcd_velocity_planner.h"
 
 class StopPlanner
 {
@@ -60,7 +60,7 @@ private:
   std::shared_ptr<autoware_planning_msgs::Trajectory> in_trajectory_ptr_;
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;
 
-  motion_planner::ObstacleConsideredLane obstacle_pcd_stop_planner_;
+  ObstaclePcdVelocityPlanner obstacle_pcd_velocity_planner_;
 
   void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr &msg);
   void callbackPointCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);

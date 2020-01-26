@@ -292,4 +292,87 @@ bool linearInterpTrajectory(const std::vector<double> &base_index, const autowar
   return true;
 
 }
+
+int calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &in_trajectory, int32_t start_idx, double distance)
+
+{
+  double dist_sum = 0.0;
+  for (int i = start_idx; i < (int)in_trajectory.points.size() - 1; ++i)
+  {
+    dist_sum += planning_utils::calcDistance2D(in_trajectory.points.at(i + 1).pose.position,
+                                               in_trajectory.points.at(i).pose.position);
+    if (dist_sum > distance)
+    {
+      return i;
+    }
+  }
+  return (int)(in_trajectory.points.size()) - 1;
+}
+
+
+geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::Trajectory &in_trajectory, const geometry_msgs::Point &origin,
+                                                  const int start_idx, const double radius)
+{
+  if (start_idx < 0 || start_idx >= in_trajectory.points.size())
+  {
+    return geometry_msgs::Pose();
+  }
+
+  double prev_dist = 0.0;
+  geometry_msgs::Point p_prev = origin;
+  if (radius > 0)
+  {
+    for (uint i = start_idx; i < in_trajectory.points.size() - 1; ++i)
+    {
+      geometry_msgs::Point p_i = in_trajectory.points.at(i).pose.position;
+      double dist_i = planning_utils::calcDistance2D(p_i, origin);
+      if (dist_i > radius)
+      {
+        // points found. do interpolation.
+        double d_next = dist_i - radius;
+        double d_prev = radius - prev_dist;
+        double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        geometry_msgs::Pose p;
+        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
+        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
+        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
+        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        return p;
+      }
+      prev_dist = dist_i;
+      p_prev = p_i;
+    }
+    return in_trajectory.points.back().pose;
+  }
+  else if (radius < 0)
+  {
+    double abs_radius = std::fabs(radius);
+    for (uint i = start_idx; i > 0; --i)
+    {
+      geometry_msgs::Point p_i = in_trajectory.points.at(i).pose.position;
+      double dist_i = planning_utils::calcDistance2D(p_i, origin);
+      if (dist_i > abs_radius)
+      {
+        // points found. do interpolation.
+        double d_next = dist_i - abs_radius;
+        double d_prev = abs_radius - prev_dist;
+        double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        geometry_msgs::Pose p;
+        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
+        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
+        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
+        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        return p;
+      }
+      prev_dist = dist_i;
+      p_prev = p_i;
+    }
+    return in_trajectory.points.front().pose;
+  }
+  else
+  {
+    return in_trajectory.points.at(start_idx).pose;
+  }
+}
+
 }  // namespace planning_utils
