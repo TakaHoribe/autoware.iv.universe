@@ -262,7 +262,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.009999999776482582
           Style: Points
-          Topic: /sensing/preprocess/lidar/no_ground/pointcloud
+          Topic: /sensing/lidar/no_ground/pointcloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -294,7 +294,7 @@ Visualization Manager:
               Size (Pixels): 2
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /sensor/lidar/main/pointcloud
+              Topic: /sensor/lidar/pointcloud
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true

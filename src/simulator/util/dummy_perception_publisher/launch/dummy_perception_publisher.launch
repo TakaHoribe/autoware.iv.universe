@@ -5,7 +5,7 @@
   <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
     <remap from="~output/dynamic_object" to="/perception/detection/objects" />
     <remap from="~output/objects_pose" to="debug/object_pose" />
-    <remap from="~output/points_raw" to="/sensing/preprocess/lidar/no_ground/pointcloud" />
+    <remap from="~output/points_raw" to="/sensing/lidar/no_ground/pointcloud" />
     <remap from="~input/pedestrian/pose" to="initial_pedestrian_pose" />
     <remap from="~input/pedestrian/twist" to="initial_pedestrian_twist" />
     <remap from="~input/car/pose" to="initial_car_pose" />
