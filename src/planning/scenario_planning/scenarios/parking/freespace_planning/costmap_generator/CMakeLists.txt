@@ -6,6 +6,7 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
+  autoware_planning_msgs
   grid_map_ros
   pcl_ros
   roscpp

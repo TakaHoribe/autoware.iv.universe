@@ -18,8 +18,12 @@
 
 namespace {
 
-bool isActive(const autoware_planning_msgs::Scenario& scenario) {
-  const auto& s = scenario.activating_scenarios;
+bool isActive(const autoware_planning_msgs::Scenario::ConstPtr& scenario) {
+  if (!scenario) {
+    return false;
+  }
+
+  const auto& s = scenario->activating_scenarios;
   if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) !=
       std::end(s)) {
     return true;
@@ -298,7 +302,7 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
     return;
   }
 
-  if (!isActive(*scenario_)) {
+  if (!isActive(scenario_)) {
     trajectory_ = {};
     return;
   }

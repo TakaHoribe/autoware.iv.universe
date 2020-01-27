@@ -4,7 +4,6 @@ project(astar_search)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
-  autoware_perception_msgs
   geometry_msgs
   pcl_ros
   roscpp
