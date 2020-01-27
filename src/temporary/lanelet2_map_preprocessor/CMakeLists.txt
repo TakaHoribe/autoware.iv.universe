@@ -26,6 +26,10 @@ add_executable(transform_maps src/transform_maps.cpp)
 add_dependencies(transform_maps ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(transform_maps ${catkin_LIBRARIES})
 
+add_executable(merge_close_lines src/merge_close_lines.cpp)
+add_dependencies(merge_close_lines ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(merge_close_lines ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
