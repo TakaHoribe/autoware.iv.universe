@@ -3,6 +3,7 @@
     <arg name="input_objects" value="/perception/prediction/objects"/>
     <arg name="input_points" value="/sensing/preprocess/lidar/no_ground/pointcloud"/>
     <arg name="input_lanelet_map_bin" value="/lanelet_map_bin"/>
+    <arg name="input_scenario" value="/planning/scenario_planning/scenario"/>
     <arg name="output_costmap" value="~costmap"/>
     <arg name="output_occupancy_grid" value="~occupancy_grid"/>
   </include>

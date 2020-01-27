@@ -160,18 +160,18 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
   const auto scenario_trajectory = getScenarioInput(current_scenario_).buf_trajectory;
 
   const auto is_near_trajectory_end =
-      isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_stopping_distance_m_);
+      isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_stopped_distance_m_);
 
-  const auto is_stopping = [&]() {
+  const auto is_stopped = [&]() {
     for (const auto& twist : twist_buffer_) {
-      if (std::abs(twist->twist.linear.x) > th_stopping_velocity_mps_) {
+      if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps_) {
         return false;
       }
     }
     return true;
   }();
 
-  if (is_near_trajectory_end && is_stopping) {
+  if (is_near_trajectory_end && is_stopped) {
     current_scenario_ = selectScenarioByPosition();
   }
 
@@ -209,7 +209,7 @@ void ScenarioSelectorNode::onTwist(const geometry_msgs::TwistStamped::ConstPtr& 
   while (true) {
     const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
 
-    if (time_diff.toSec() < th_stopping_time_sec_) {
+    if (time_diff.toSec() < th_stopped_time_sec_) {
       break;
     }
 
@@ -259,9 +259,9 @@ ScenarioSelectorNode::ScenarioSelectorNode()
   // Parameters
   private_nh_.param<double>("update_rate", update_rate_, 10.0);
   private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
-  private_nh_.param<double>("th_stopping_time_sec", th_stopping_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopping_distance_m", th_stopping_distance_m_, 1.0);
-  private_nh_.param<double>("th_stopping_velocity_mps", th_stopping_velocity_mps_, 0.01);
+  private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
+  private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
+  private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input
   input_lane_following_.sub_trajectory = private_nh_.subscribe(

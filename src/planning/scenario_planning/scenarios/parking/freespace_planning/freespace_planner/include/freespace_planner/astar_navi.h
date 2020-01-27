@@ -65,9 +65,9 @@ class AstarNavi {
   // params
   double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
   double update_rate_;         // replanning and publishing rate [Hz]
-  double th_stopping_time_sec_;
-  double th_stopping_distance_m_;
-  double th_stopping_velocity_mps_;
+  double th_stopped_time_sec_;
+  double th_stopped_distance_m_;
+  double th_stopped_velocity_mps_;
 
   // variables
   std::unique_ptr<AstarSearch> astar_;

@@ -9,6 +9,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>autoware_perception_msgs</depend>
+  <depend>autoware_planning_msgs</depend>
   <depend>grid_map_ros</depend>
   <depend>pcl_ros</depend>
   <depend>roscpp</depend>
