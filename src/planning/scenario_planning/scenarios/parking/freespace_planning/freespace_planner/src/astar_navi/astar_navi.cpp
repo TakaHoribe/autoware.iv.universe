@@ -181,9 +181,9 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
 AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
   private_nh_.param<double>("update_rate", update_rate_, 1.0);
-  private_nh_.param<double>("th_stopping_time_sec", th_stopping_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopping_distance_m", th_stopping_distance_m_, 1.0);
-  private_nh_.param<double>("th_stopping_velocity_mps", th_stopping_velocity_mps_, 0.01);
+  private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
+  private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
+  private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
   occupancy_grid_sub_ =
@@ -229,7 +229,7 @@ void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   while (true) {
     const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
 
-    if (time_diff.toSec() < th_stopping_time_sec_) {
+    if (time_diff.toSec() < th_stopped_time_sec_) {
       break;
     }
 
@@ -262,18 +262,18 @@ bool AstarNavi::isPlanRequired() {
 void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
-      th_stopping_distance_m_;
+      th_stopped_distance_m_;
 
-  const auto is_stopping = [&]() {
+  const auto is_stopped = [&]() {
     for (const auto& twist : twist_buffer_) {
-      if (std::abs(twist->twist.linear.x) > th_stopping_velocity_mps_) {
+      if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps_) {
         return false;
       }
     }
     return true;
   }();
 
-  if (is_near_target && is_stopping) {
+  if (is_near_target && is_stopped) {
     const auto new_target_index =
         getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
 
