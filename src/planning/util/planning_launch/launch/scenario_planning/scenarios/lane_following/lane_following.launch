@@ -1,18 +1,18 @@
 <launch>
-    <arg name="is_online_path_update" default="true"/>
-  
-    <!-- lane_following scenario -->
-    <group ns="lane_following">
-        <!-- behavior planning module -->
-        <group ns="behavior_planning">
-            <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/behavior_planning/behavior_planning.launch"></include>
-        </group>
+  <arg name="is_online_path_update" default="true"/>
 
-        <!-- motion planning module -->
-        <group ns="motion_planning">
-            <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/motion_planning/motion_planning.launch">
-                <arg name="is_online_path_update" value="$(arg is_online_path_update)" />
-            </include>
-        </group>
+  <!-- lane_following scenario -->
+  <group ns="lane_following">
+    <!-- behavior planning module -->
+    <group ns="behavior_planning">
+      <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/behavior_planning/behavior_planning.launch"></include>
     </group>
+
+    <!-- motion planning module -->
+    <group ns="motion_planning">
+      <include file="$(find planning_launch)/launch/scenario_planning/scenarios/lane_following/motion_planning/motion_planning.launch">
+        <arg name="is_online_path_update" value="$(arg is_online_path_update)" />
+      </include>
+    </group>
+  </group>
 </launch>
