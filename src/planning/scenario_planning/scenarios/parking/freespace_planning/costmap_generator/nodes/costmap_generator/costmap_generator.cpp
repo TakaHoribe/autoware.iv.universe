@@ -38,6 +38,20 @@
 
 namespace {
 
+bool isActive(const autoware_planning_msgs::Scenario::ConstPtr& scenario) {
+  if (!scenario) {
+    return false;
+  }
+
+  const auto& s = scenario->activating_scenarios;
+  if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) !=
+      std::end(s)) {
+    return true;
+  }
+
+  return false;
+}
+
 // Convert from Point32 to Point
 std::vector<geometry_msgs::Point> poly2vector(const geometry_msgs::Polygon& poly) {
   std::vector<geometry_msgs::Point> ps;
@@ -100,6 +114,8 @@ void CostmapGenerator::run() {
   sub_lanelet_bin_map_ =
       private_nh_.subscribe("input/lanelet_map_bin", 1, &CostmapGenerator::onLaneletMapBin, this);
 
+  sub_scenario_ = private_nh_.subscribe("input/scenario", 1, &CostmapGenerator::onScenario, this);
+
   timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &CostmapGenerator::onTimer, this);
 }
 
@@ -156,6 +172,10 @@ void CostmapGenerator::onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg
 
 void CostmapGenerator::onObjects(
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects) {
+  if (!isActive(scenario_)) {
+    return;
+  }
+
   if (!use_objects_) {
     return;
   }
@@ -166,6 +186,10 @@ void CostmapGenerator::onObjects(
 }
 
 void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points_msg) {
+  if (!isActive(scenario_)) {
+    return;
+  }
+
   if (!use_points_) {
     return;
   }
@@ -177,7 +201,15 @@ void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_poi
   costmap_[LayerName::combined] = generateCombinedCostmap();
 }
 
+void CostmapGenerator::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) {
+  scenario_ = msg;
+}
+
 void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
+  if (!isActive(scenario_)) {
+    return;
+  }
+
   // Get current pose
   geometry_msgs::TransformStamped tf;
   try {

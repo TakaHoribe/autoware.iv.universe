@@ -10,9 +10,9 @@
   <!-- Node configurations -->
   <arg name="waypoints_velocity" default="5.0" />
   <arg name="update_rate" default="10.0" />
-  <arg name="th_stopping_time_sec" default="1.0" />
-  <arg name="th_stopping_distance_m" default="1.0" />
-  <arg name="th_stopping_velocity_mps" default="0.01" />
+  <arg name="th_stopped_time_sec" default="1.0" />
+  <arg name="th_stopped_distance_m" default="1.0" />
+  <arg name="th_stopped_velocity_mps" default="0.01" />
 
   <!-- A* search configurations -->
   <arg name="use_back" default="true" />
@@ -43,9 +43,9 @@
 
     <param name="waypoints_velocity" value="$(arg waypoints_velocity)" />
     <param name="update_rate" value="$(arg update_rate)" />
-    <param name="th_stopping_time_sec" value="$(arg th_stopping_time_sec)" />
-    <param name="th_stopping_distance_m" value="$(arg th_stopping_distance_m)" />
-    <param name="th_stopping_velocity_mps" value="$(arg th_stopping_velocity_mps)" />
+    <param name="th_stopped_time_sec" value="$(arg th_stopped_time_sec)" />
+    <param name="th_stopped_distance_m" value="$(arg th_stopped_distance_m)" />
+    <param name="th_stopped_velocity_mps" value="$(arg th_stopped_velocity_mps)" />
 
     <param name="use_back" value="$(arg use_back)" />
     <param name="use_potential_heuristic" value="$(arg use_potential_heuristic)" />

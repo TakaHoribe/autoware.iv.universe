@@ -48,6 +48,7 @@
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_planning_msgs/Scenario.h>
 #include <costmap_generator/objects_to_costmap.h>
 #include <costmap_generator/points_to_costmap.h>
 #include <lanelet2_extension/utility/message_conversion.h>
@@ -93,13 +94,14 @@ class CostmapGenerator {
 
   grid_map::GridMap costmap_;
 
-  ros::Subscriber sub_lanelet_bin_map_;
-
   ros::Publisher pub_costmap_;
   ros::Publisher pub_occupancy_grid_;
+
   ros::Subscriber sub_waypoint_;
   ros::Subscriber sub_points_;
   ros::Subscriber sub_objects_;
+  ros::Subscriber sub_lanelet_bin_map_;
+  ros::Subscriber sub_scenario_;
 
   ros::Timer timer_;
 
@@ -110,6 +112,8 @@ class CostmapGenerator {
 
   PointsToCostmap points2costmap_;
   ObjectsToCostmap objects2costmap_;
+
+  autoware_planning_msgs::Scenario::ConstPtr scenario_;
 
   struct LayerName {
     static constexpr const char* objects = "objects";
@@ -133,6 +137,8 @@ class CostmapGenerator {
   /// \param[in] in_points input sensot_msgs::PointCloud2. Assuming groud-fitered pointcloud
   /// by default
   void onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points);
+
+  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg);
 
   void onTimer(const ros::TimerEvent& event);
 
