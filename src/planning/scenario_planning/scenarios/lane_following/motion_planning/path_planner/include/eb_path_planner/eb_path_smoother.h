@@ -34,7 +34,8 @@ private:
   const double backward_distance_;
   const double fixing_distance_;
   const double delta_arc_length_;
-  const double constrain_buffer_;
+  // const double loose_constrain_disntance_;
+  const double loose_constrain_disntance_;
   std::unique_ptr<int> previous_number_of_optimized_points_ptr_;
   // std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
   // std::unique_ptr<std::vector<double>> previous_interpolated_x_ptr_;
@@ -86,6 +87,7 @@ public:
     std::vector<geometry_msgs::Point>& debug_ub_boundary_points,                  
     std::vector<geometry_msgs::Point>& debug_fixed_optimization_points,                  
     std::vector<geometry_msgs::Point>& debug_variable_optimization_points,                  
+    std::vector<geometry_msgs::Point>& debug_constrain_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
 };
 

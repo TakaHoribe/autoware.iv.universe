@@ -277,6 +277,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   std::vector<geometry_msgs::Point> debug_boundary_ub_points;
   std::vector<geometry_msgs::Point> debug_fixed_optimization_points;
   std::vector<geometry_msgs::Point> debug_variable_optimization_points;
+  std::vector<geometry_msgs::Point> debug_constrain_points;
   std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
   eb_path_smoother_ptr_->generateOptimizedPath(
         input_path_msg.points,
@@ -293,6 +294,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
         debug_boundary_ub_points,
         debug_fixed_optimization_points,
         debug_variable_optimization_points,
+        debug_constrain_points,
         optimized_points);
   std::vector<autoware_planning_msgs::TrajectoryPoint> merged_optimized_points;
   merged_optimized_points = fixed_optimized_points;
@@ -320,6 +322,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   std::cout << "    total time "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
 
+  std::cout << "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK" << std::endl;
   //debug; marker array
   visualization_msgs::MarkerArray marker_array;
   int unique_id = 0;
@@ -456,30 +459,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   }
   unique_id++;
   
-  // visualization_msgs::Marker variable_optimization_points_marker;
-  // variable_optimization_points_marker.lifetime = ros::Duration(1.0);
-  // variable_optimization_points_marker.header = input_path_msg.header;
-  // variable_optimization_points_marker.ns = std::string("variable_optimization_points_marker");
-  // variable_optimization_points_marker.action = visualization_msgs::Marker::MODIFY;
-  // variable_optimization_points_marker.pose.orientation.w = 1.0;
-  // variable_optimization_points_marker.id = unique_id;
-  // variable_optimization_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  // variable_optimization_points_marker.scale.x = 1.0f;
-  // variable_optimization_points_marker.scale.y = 0.1f;
-  // variable_optimization_points_marker.scale.z = 0.1f;
-  // variable_optimization_points_marker.color.g = 1.0f;
-  // variable_optimization_points_marker.color.a = 0.999;
-  // // int tmp_max_ind = std::min((int)std::ceil(fixing_distance_/sampling_resolution_), 
-  //                           //  (int)optimized_points.size());
-  // for (int i = 0; i < debug_variable_optimization_points.size(); i++)
-  // {
-  //   variable_optimization_points_marker.points.push_back(debug_variable_optimization_points[i]);
-  // }
-  // if(!variable_optimization_points_marker.points.empty())
-  // {
-  //   marker_array.markers.push_back(variable_optimization_points_marker);
-  // }
-  // unique_id++;
   
   visualization_msgs::Marker boundary_points_marker;
   boundary_points_marker.lifetime = ros::Duration(1.0);
@@ -553,30 +532,31 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   {
     marker_array.markers.push_back(ub_boundary_points_marker);
   }
-  unique_id++;
   
-  // visualization_msgs::Marker rearrange_points_marker;
-  // rearrange_points_marker.lifetime = ros::Duration(1.0);
-  // rearrange_points_marker.header = input_path_msg.header;
-  // rearrange_points_marker.ns = std::string("rearrange_points_marker");
-  // rearrange_points_marker.action = visualization_msgs::Marker::MODIFY;
-  // rearrange_points_marker.pose.orientation.w = 1.0;
-  // rearrange_points_marker.id = unique_id;
-  // rearrange_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  // rearrange_points_marker.scale.x = 0.5f;
-  // rearrange_points_marker.scale.y = 0.1f;
-  // rearrange_points_marker.scale.z = 0.1f;
-  // rearrange_points_marker.color.r = 1.0f;
-  // rearrange_points_marker.color.a = 0.999;
-  // for (int i = 0; i < debug_rearranged_points.size(); i++)
-  // {
-  //   rearrange_points_marker.points.push_back(debug_rearranged_points[i]);
-  // }
-  // if(!rearrange_points_marker.points.empty())
-  // {
-  //   marker_array.markers.push_back(rearrange_points_marker);
-  // }
-  // unique_id++;
+  visualization_msgs::Marker constrain_points_marker;
+  constrain_points_marker.lifetime = ros::Duration(1.0);
+  constrain_points_marker.header = input_path_msg.header;
+  constrain_points_marker.ns = std::string("constrain_points_marker");
+  constrain_points_marker.action = visualization_msgs::Marker::MODIFY;
+  constrain_points_marker.pose.orientation.w = 1.0;
+  constrain_points_marker.id = unique_id;
+  constrain_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  constrain_points_marker.scale.x = 0.5f;
+  constrain_points_marker.scale.y = 0.1f;
+  constrain_points_marker.scale.z = 0.1f;
+  constrain_points_marker.color.r = 1.0f;
+  constrain_points_marker.color.g = 1.0f;
+  // constrain_points_marker.color.g = 1.0f;
+  constrain_points_marker.color.a = 0.999;
+  for (int i = 0; i < debug_constrain_points.size(); i++)
+  {
+    constrain_points_marker.points.push_back(debug_constrain_points[i]);
+  }
+  if(!constrain_points_marker.points.empty())
+  {
+    marker_array.markers.push_back(constrain_points_marker);
+  }
+  unique_id++;
   
   visualization_msgs::Marker start_arrow_marker;
   start_arrow_marker.lifetime = ros::Duration(1.0);
@@ -779,10 +759,6 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
              (int)previous_optimized_points_ptr->size());
   const double backward_keep_distance = 
     keep_distance - (forward_fixing_idx-min_ind)*delta_arc_length_;
-  // std::cout << "backward keep dist "<< backward_keep_distance << std::endl;
-  // int backward_fixing_idx = 
-  //   std::max((int)(min_ind-backward_fixing_distance_/delta_arc_length_),
-  //                 0);
   int backward_fixing_idx = 
     std::max((int)(min_ind-backward_keep_distance/delta_arc_length_),
                   0);
@@ -812,8 +788,8 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
        }
     }
   }
-  std::cout << "origin valid "<< origin_valid_prev_optimized_points_ind << std::endl;
-  std::cout << "backward  "<< backward_fixing_idx<< std::endl;
+  // std::cout << "origin valid "<< origin_valid_prev_optimized_points_ind << std::endl;
+  // std::cout << "backward  "<< backward_fixing_idx<< std::endl;
   int valid_backward_fixing_idx =  std::max(origin_valid_prev_optimized_points_ind, backward_fixing_idx);
   valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
   for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)

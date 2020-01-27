@@ -268,7 +268,7 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
                    0;
   // double delta_theta = 2*M_PI/36.0;
   // double delta_theta = 2*M_PI/54.0;
-  double delta_theta = 2*M_PI/96.0;
+  double delta_theta = 2*M_PI/108.0;
   for(double theta = 0; theta < 2*M_PI; theta += delta_theta)
   {
     Eigen::Matrix2d rotation;
@@ -353,7 +353,6 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
                          map_info,
                          goal_point_in_image))
   {
-    std::cout << "aaa" << std::endl;
     std::vector<Node> s_open;
     Node initial_node;
     double initial_r = clearance_map.ptr<float>((int)start_point_in_image.y)
@@ -455,6 +454,9 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
         start_point_in_map.x, 
         start_point_in_map.y, 
         start_point_in_map.z);
+      ROS_INFO("[EBPathPlanner] A star faild. Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+        ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
+        ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
       return false;
     }
     //backtrack
@@ -696,128 +698,6 @@ bool ModifyReferencePath::generateModifiedPath(
   geometry_msgs::Point& debug_goal_point_in_map,
   std::vector<geometry_msgs::Point>& debug_rearrange_points)
 {
-  // std::chrono::high_resolution_clock::time_point begin= 
-  //   std::chrono::high_resolution_clock::now();
-  // if(!debug_fix_pose_&&is_fix_pose_mode_for_debug_)
-  // {
-  //   debug_fix_pose_ = std::make_unique<geometry_msgs::Pose>(ego_pose);
-  // }
-  // else if(debug_fix_pose_&&is_fix_pose_mode_for_debug_)
-  // {
-  //   ego_pose.position = debug_fix_pose_->position;
-  //   ego_pose.orientation = debug_fix_pose_->orientation;
-  // }
-  
-  
-  // cv::Mat image = cv::Mat::zeros(
-  //   (int)(2*clearance_map_y_width_/resolution_), 
-  //   (int)(2*clearance_map_x_length_/resolution_),
-  //   CV_8UC1);
-    
-  // //use route to draw driveable area; should be deprecated in the future
-  // lanelet::BasicPoint2d ego_point(ego_pose.position.x, ego_pose.position.y);
-  // std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
-  //     lanelet::geometry::findNearest(map.laneletLayer, ego_point, 1);
-  // if(nearest_lanelets.empty())
-  // {
-  //   ROS_WARN("[EBPathPlanner] Ego vechicle is not in the lanelet ares");
-  //   return false;
-  // }
-  // int nearest_route_secition_idx_from_ego_pose = 0; 
-  // for (int i = 0; i < route.route_sections.size(); i++)
-  // {
-  //   for(const auto& llid: route.route_sections[i].lane_ids)
-  //   {
-  //     for(const auto& nearest_lanelet: nearest_lanelets)
-  //     {
-  //       if(llid == nearest_lanelet.second.id())
-  //       {
-  //         nearest_route_secition_idx_from_ego_pose = i;
-  //       }
-  //     }
-  //   }
-  // }
-  
-  // int exploring_route_section_id = 
-  //   std::min(nearest_route_secition_idx_from_ego_pose+
-  //             num_lookup_lanelet_for_drivealble_area_,
-  //           (int)route.route_sections.size());
-  // for (int i = nearest_route_secition_idx_from_ego_pose;
-  //      i < exploring_route_section_id; i++)
-  // {
-  //   for(const auto& llid: route.route_sections[i].lane_ids)
-  //   {
-  //     lanelet::ConstLanelet llt = map.laneletLayer.get(llid);
-  //     std::vector<cv::Point> cv_points;
-  //     for(const auto& point: llt.polygon3d())
-  //     {
-  //       geometry_msgs::Point tmp;
-  //       tmp.x = point.x();
-  //       tmp.y = point.y();
-  //       tmp.z = point.z();
-  //       geometry_msgs::Point image_point;
-  //       if(transformMapToImage(tmp, ego_pose,clearance_map_x_length_*2, clearance_map_y_width_*2, resolution_,image_point))
-  //       {
-  //         int pixel_x = image_point.x;
-  //         int pixel_y = image_point.y;
-  //         cv_points.emplace_back(cv::Point(pixel_x, pixel_y));
-  //         geometry_msgs::Point point;
-  //         point.x = pixel_x;
-  //         point.y = pixel_y;
-  //       }
-  //     }
-  //     cv::fillConvexPoly(image, cv_points.data(), cv_points.size(), cv::Scalar(255));
-  //   }
-  // }
-  // //end route
-  // // cv::Rect rect = cv::Rect(left-top-x, left-top-y, width, height);
-  // cv::Rect rect = cv::Rect(clearance_map_y_width_/resolution_/2, clearance_map_x_length_/resolution_/2, 
-  //                           clearance_map_y_width_/resolution_, clearance_map_x_length_/resolution_);
-  // image = image(rect);
-  
-  
-  // for(const auto& object: objects)
-  // {
-  //   if(object.state.twist_covariance.twist.linear.x < static_objects_velocity_ms_threshold_)
-  //   {
-  //     geometry_msgs::Point point_in_image;
-  //     if(transformMapToImage(object.state.pose_covariance.pose.position, ego_pose, clearance_map_x_length_, 
-  //                       clearance_map_y_width_, resolution_, point_in_image))
-  //     {
-  //       cv::circle(image, 
-  //                  cv::Point(point_in_image.x, point_in_image.y), 
-  //                  15, 
-  //                  cv::Scalar(0),
-  //                  -1);
-  //     } 
-  //   }
-  // }
-  
-  // if(is_debug_driveable_area_mode_)
-  // {
-  //   cv::Mat tmp;
-  //   image.copyTo(tmp);
-  //   cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-  //   cv::imshow("image", tmp);
-  //   cv::waitKey(10);
-  //   // cv::destroyAllWindows();
-  // }
-  // std::chrono::high_resolution_clock::time_point end= 
-  //   std::chrono::high_resolution_clock::now();
-  // std::chrono::nanoseconds time = 
-  //   std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  // std::cout << " lanelet find nearest & fill convex fill "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
-  
-  // std::chrono::high_resolution_clock::time_point begin1= 
-  //   std::chrono::high_resolution_clock::now();
-  // // cv::Mat clearance_map;
-  // cv::distanceTransform(image, clearance_map, cv::DIST_L2, 5);
-  // geometry_msgs::Point start_point_in_map;
-  // std::chrono::high_resolution_clock::time_point end1= 
-  //   std::chrono::high_resolution_clock::now();
-  // std::chrono::nanoseconds time1 = 
-  //   std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1);
-  // std::cout << " edt time: "<< time1.count()/(1000.0*1000.0)<<" ms" <<std::endl;
   
   std::chrono::high_resolution_clock::time_point begin2= 
     std::chrono::high_resolution_clock::now();
@@ -869,12 +749,6 @@ bool ModifyReferencePath::generateModifiedPath(
       
     }
     geometry_msgs::Point image_point;
-    // if(transformMapToImage(path_points[i].pose.position, 
-    //                         ego_pose,
-    //                         clearance_map_x_length_,
-    //                         clearance_map_y_width_, 
-    //                         resolution_,
-    //                         image_point))
     if(transformMapToImage(path_points[i].pose.position, 
                            map_info,
                            image_point))
@@ -891,6 +765,10 @@ bool ModifyReferencePath::generateModifiedPath(
           break;
         }
       }
+    }
+    else
+    {
+      break;
     }
   }
   
