@@ -25,17 +25,17 @@ namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
-class IntersectionModuleManager;
-class IntersectionModuleDebugger;
+class BlindSpotModuleManager;
+class BlindSpotModuleDebugger;
 
 /*
- * ========================= Intersection Module =========================
+ * ========================= BlindSpot Module =========================
  */
-class IntersectionModule : public SceneModuleInterface
+class BlindSpotModule : public SceneModuleInterface
 {
 public:
-    IntersectionModule(const int lane_id, IntersectionModuleManager *intersection_module_manager);
-    ~IntersectionModule(){};
+    BlindSpotModule(const int lane_id, const std::string &turn_direction, BlindSpotModuleManager *blind_spot_module_manager);
+    ~BlindSpotModule(){};
 
     /**
      * @brief plan go-stop velocity at traffic crossing with collision check between reference path and object predicted path
@@ -49,24 +49,18 @@ public:
 
 private:
     const int assigned_lane_id_;                        //< @brief object lane id (unique for this instance)
+    std::string turn_direction_;                        //< @brief turn direction : right or left
     int stop_line_idx_;                                 //< @brief stop-line index
     int judge_line_idx_;                                //< @brief stop-judgement-line index
     double judge_line_dist_;                            //< @brief distance from stop-line to stop-judgement line
-    double approaching_speed_to_stopline_;              //< @brief speed when approaching stop-line (should be slow)
     double path_expand_width_;                          //< @brief path width to calculate the edge line for both side
-    IntersectionModuleManager *intersection_module_manager_; //< @brief manager pointer
+    BlindSpotModuleManager *blind_spot_module_manager_; //< @brief manager pointer
     bool show_debug_info_;
 
     /**
      * @brief set velocity from idx to the end point
      */
     bool setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId &input);
-
-    /**
-     * @brief get objective lanelets for detection area
-     */
-    bool getObjectiveLanelets(lanelet::LaneletMapConstPtr lanelet_map_ptr, lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, 
-                              const int lane_id, std::vector<lanelet::ConstLanelet> &objective_lanelets);
 
     /**
      * @brief check collision with path & dynamic object predicted path
@@ -76,10 +70,14 @@ private:
     /**
      * @brief check collision for all lanelet area & dynamic objects (call checkPathCollision() as actual collision check algorithm inside this function)
      */
-    bool checkCollision(const autoware_planning_msgs::PathWithLaneId &path, const std::vector<lanelet::ConstLanelet> &objective_lanelets,
+    bool checkCollision(const autoware_planning_msgs::PathWithLaneId &path, const std::vector<std::vector<geometry_msgs::Point>> &detection_areas,
                         const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, 
                         const double path_width, bool &is_collision);
-                        
+    /**
+     * @brief generates detection area
+     */
+    bool generateDetectionArea(const geometry_msgs::Pose &current_pose, std::vector<std::vector<geometry_msgs::Point>> &detection_areas);
+       
     /**
      * @brief calculate right and left path edge line
      */
@@ -93,7 +91,7 @@ private:
     /**
      * @brief convert from lanelet to boost polygon
      */
-    Polygon convertToBoostGeometryPolygon(const lanelet::ConstLanelet &lanelet);
+    Polygon convertToBoostGeometryPolygon(const std::vector<geometry_msgs::Point> &detection_area);
 
     enum class State
     {
@@ -109,19 +107,19 @@ private:
     public:
         StateMachine()
         {
-            state_ = IntersectionModule::State::GO;
+            state_ = BlindSpotModule::State::GO;
             margin_time_ = 0.0;
         };
 
         /**
          * @brief set request state command with margin time
          */
-        void setStateWithMarginTime(IntersectionModule::State state);
+        void setStateWithMarginTime(BlindSpotModule::State state);
 
         /**
          * @brief set request state command directly
          */
-        void setState(IntersectionModule::State state);
+        void setState(BlindSpotModule::State state);
 
         /**
          * @brief set margin time
@@ -131,7 +129,7 @@ private:
         /**
          * @brief get current state
          */
-        IntersectionModule::State getState();
+        BlindSpotModule::State getState();
 
     private:
         State state_;                           //< @brief current state
@@ -141,15 +139,15 @@ private:
 };
 
 /*
- * ========================= Intersection Module Debugger =========================
+ * ========================= BlindSpot Module Debugger =========================
  */
-class IntersectionModuleDebugger
+class BlindSpotModuleDebugger
 {
 public:
-    IntersectionModuleDebugger();
-    ~IntersectionModuleDebugger(){};
+    BlindSpotModuleDebugger();
+    ~BlindSpotModuleDebugger(){};
 
-    void publishLaneletsArea(const std::vector<lanelet::ConstLanelet> &lanelets, const std::string &ns);
+    void publishDetectionArea(const std::vector<std::vector<geometry_msgs::Point>> &detection_area, int mode, const std::string &ns);
     void publishPath(const autoware_planning_msgs::PathWithLaneId &path, const std::string &ns, double r, double g, double b);
     void publishPose(const geometry_msgs::Pose &pose, const std::string &ns, double r, double g, double b, int mode);
     void publishDebugValues(const std_msgs::Float32MultiArray &msg);
@@ -162,15 +160,15 @@ private:
 };
 
 /*
- * ========================= Intersection Module Manager =========================
+ * ========================= BlindSpot Module Manager =========================
  */
-class IntersectionModuleManager : public SceneModuleManagerInterface
+class BlindSpotModuleManager : public SceneModuleManagerInterface
 {
 public:
-    IntersectionModuleManager(){};
-    ~IntersectionModuleManager(){};
+    BlindSpotModuleManager(){};
+    ~BlindSpotModuleManager(){};
     bool startCondition(const autoware_planning_msgs::PathWithLaneId &input, std::vector<std::shared_ptr<SceneModuleInterface>> &v_module_ptr) override;
-    IntersectionModuleDebugger debugger_;
+    BlindSpotModuleDebugger debugger_;
     void unregisterTask(const int lane_id);
 
 private:

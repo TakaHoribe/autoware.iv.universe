@@ -151,15 +151,16 @@ add_executable(behavior_velocity_planner_node
 src/api.cpp
 src/data_manager.cpp
 src/utilization/path_utilization.cpp
+src/utilization/util.cpp
 src/planner_manager.cpp
 src/node.cpp
 src/main.cpp
 src/scene_module/momentary_stop/momentary_stop.cpp
 src/scene_module/crosswalk/crosswalk.cpp
 src/scene_module/intersection/intersection.cpp
-src/scene_module/intersection/util/util.cpp
 src/scene_module/traffic_light/traffic_light.cpp
 src/scene_module/traffic_light/debug_marker.cpp
+src/scene_module/blind_spot/blind_spot.cpp
 )
 
 ## Rename C++ executable without prefix

@@ -16,7 +16,7 @@
  * Author: Robin Karlsson
  */
 
-#include "util.h"
+#include "utilization/util.h"
 
 namespace planning_utils
 {
@@ -82,7 +82,7 @@ template bool calcClosestIndex<autoware_planning_msgs::PathWithLaneId>(const aut
 template bool calcClosestIndex<autoware_planning_msgs::Path>(const autoware_planning_msgs::Path &path, const geometry_msgs::Pose &pose,
                                                              int &closest, double dist_thr, double angle_thr);
 
-geometry_msgs::Pose transformOrigin2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin)
+geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin)
 {
   // translation
   geometry_msgs::Point trans_p;
@@ -99,5 +99,24 @@ geometry_msgs::Pose transformOrigin2D(const geometry_msgs::Pose &target, const g
   res.orientation = getQuaternionFromYaw(tf2::getYaw(target.orientation) - yaw);
   
   return res;
+}
+
+geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose &relative,
+                                             const geometry_msgs::Pose &origin)
+{
+  // rotation
+  geometry_msgs::Point rot_p;
+  double yaw = tf2::getYaw(origin.orientation);
+  rot_p.x = (std::cos(yaw) * relative.position.x) + (-std::sin(yaw) * relative.position.y);
+  rot_p.y = (std::sin(yaw) * relative.position.x) + (std::cos(yaw) * relative.position.y);
+
+  // translation
+  geometry_msgs::Pose absolute;
+  absolute.position.x = rot_p.x + origin.position.x;
+  absolute.position.y = rot_p.y + origin.position.y;
+  absolute.position.z = relative.position.x + origin.position.z;
+  absolute.orientation = getQuaternionFromYaw(tf2::getYaw(relative.orientation) + yaw);
+
+  return absolute;
 }
 } // namespace planning_utils

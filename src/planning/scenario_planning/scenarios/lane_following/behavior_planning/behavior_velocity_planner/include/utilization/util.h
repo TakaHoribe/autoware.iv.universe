@@ -58,7 +58,8 @@ double calcDist2d(const T1 &a, const T2 &b)
 template<class T> 
 bool calcClosestIndex(const T &path, const geometry_msgs::Pose &pose, int &closest, double dist_thr = 3.0, double angle_thr = M_PI_4);
 
-geometry_msgs::Pose transformOrigin2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin);
+geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin);
+geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose &relative, const geometry_msgs::Pose &origin);
 
 } // namespace planning_utils
 

@@ -5,6 +5,7 @@
 #include <scene_module/crosswalk/crosswalk.hpp>
 #include <scene_module/traffic_light/traffic_light.hpp>
 #include <scene_module/intersection/intersection.hpp>
+#include <scene_module/blind_spot/blind_spot.hpp>
 
 namespace behavior_planning
 {
@@ -15,6 +16,7 @@ BehaviorVelocityPlannerManager::BehaviorVelocityPlannerManager()
     scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<TrafficLightModuleManager>());
     scene_managers_ptr_.push_back(std::make_shared<IntersectionModuleManager>());
+    scene_managers_ptr_.push_back(std::make_shared<BlindSpotModuleManager>());
 }
 
 bool BehaviorVelocityPlannerManager::callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
