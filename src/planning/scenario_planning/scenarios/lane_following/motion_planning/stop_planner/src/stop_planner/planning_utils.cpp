@@ -21,7 +21,6 @@
 namespace planning_utils
 {
 
-
 double calcDistance2D(const geometry_msgs::Point &p, const geometry_msgs::Point &q)
 {
   const double dx = p.x - q.x;
@@ -35,7 +34,6 @@ double calcDistSquared2D(const geometry_msgs::Point &p, const geometry_msgs::Poi
   const double dy = p.y - q.y;
   return (dx * dx + dy * dy);
 }
-
 
 /* a_vec = line_e - line_s, b_vec = point - line_s
  * a_vec x b_vec = |a_vec| * |b_vec| * sin(theta)
@@ -53,10 +51,9 @@ double calcLateralError2D(const geometry_msgs::Point &line_s, const geometry_msg
   return lat_err;
 }
 
-
 // get closest point index from current pose
 bool findClosestIdxWithDistAngThr(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                                      const geometry_msgs::Pose &curr_pose, int32_t &out_idx, double dist_thr, double angle_thr)
+                                  const geometry_msgs::Pose &curr_pose, int32_t &out_idx, double dist_thr, double angle_thr)
 {
   double dist_squared_min = std::numeric_limits<double>::max();
   out_idx = -1;
@@ -87,7 +84,7 @@ template <typename T>
 bool isInPolygon(const std::vector<T> &polygon, const T &point)
 {
   // polygons with fewer than 3 sides are excluded
-  if(polygon.size() < 3)
+  if (polygon.size() < 3)
     return false;
 
   bool in_poly = false;
@@ -131,7 +128,7 @@ template <>
 bool isInPolygon(const std::vector<geometry_msgs::Point> &polygon, const geometry_msgs::Point &point)
 {
   std::vector<tf2::Vector3> polygon_conv;
-  for(const auto &el : polygon)
+  for (const auto &el : polygon)
     polygon_conv.emplace_back(el.x, el.y, el.z);
 
   tf2::Vector3 point_conv = tf2::Vector3(point.x, point.y, point.z);
@@ -158,7 +155,7 @@ double normalizeEulerAngle(double euler)
 // (pu, pv): retative, (px, py): absolute, (ox, oy): origin
 // (px, py) = rot * (pu, pv) + (ox, oy)
 geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point &point,
-                                                                      const geometry_msgs::Pose &origin)
+                                                     const geometry_msgs::Pose &origin)
 {
   // rotation
   geometry_msgs::Point rot_p;
@@ -176,7 +173,7 @@ geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point 
 }
 
 geometry_msgs::Point transformToAbsoluteCoordinate3D(const geometry_msgs::Point &point,
-                                                                      const geometry_msgs::Pose &origin)
+                                                     const geometry_msgs::Pose &origin)
 {
   Eigen::Translation3d trans(origin.position.x, origin.position.y, origin.position.z);
   Eigen::Quaterniond rot(origin.orientation.w, origin.orientation.x, origin.orientation.y, origin.orientation.z);
@@ -193,7 +190,7 @@ geometry_msgs::Point transformToAbsoluteCoordinate3D(const geometry_msgs::Point 
 // (pu, pv): retative, (px, py): absolute, (ox, oy): origin
 // (pu, pv) = rot^-1 * {(px, py) - (ox, oy)}
 geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point &point,
-                                                                      const geometry_msgs::Pose &origin)
+                                                     const geometry_msgs::Pose &origin)
 {
   // translation
   geometry_msgs::Point trans_p;
@@ -212,7 +209,7 @@ geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point 
 }
 
 geometry_msgs::Point transformToRelativeCoordinate3D(const geometry_msgs::Point &point,
-                                                                      const geometry_msgs::Pose &origin)
+                                                     const geometry_msgs::Pose &origin)
 {
   Eigen::Translation3d trans(-origin.position.x, -origin.position.y, -origin.position.z);
   Eigen::Quaterniond rot(origin.orientation.w, origin.orientation.x, origin.orientation.y, origin.orientation.z);
@@ -242,7 +239,7 @@ void convertEulerAngleToMonotonic(std::vector<double> &a)
 }
 
 bool linearInterpTrajectory(const std::vector<double> &base_index, const autoware_planning_msgs::Trajectory &base_trajectory,
-                              const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory)
+                            const std::vector<double> &out_index, autoware_planning_msgs::Trajectory &out_trajectory)
 {
   std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
   for (const auto &p : base_trajectory.points)
@@ -290,7 +287,6 @@ bool linearInterpTrajectory(const std::vector<double> &base_index, const autowar
     out_trajectory.points.push_back(point);
   }
   return true;
-
 }
 
 int calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &in_trajectory, int32_t start_idx, double distance)
@@ -308,7 +304,6 @@ int calcForwardIdxByLineIntegral(const autoware_planning_msgs::Trajectory &in_tr
   }
   return (int)(in_trajectory.points.size()) - 1;
 }
-
 
 geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::Trajectory &in_trajectory, const geometry_msgs::Point &origin,
                                                   const int start_idx, const double radius)
@@ -375,4 +370,4 @@ geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::
   }
 }
 
-}  // namespace planning_utils
+} // namespace planning_utils

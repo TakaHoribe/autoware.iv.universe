@@ -64,7 +64,7 @@ autoware_planning_msgs::Trajectory ObstaclePcdVelocityPlanner::run()
   geometry_msgs::Pose stop_pose;
   if (!calcStopPoseOnTrajectory(resampled_traj, pcd_around_traj, /*out=*/stop_pose, is_obstacle_detected_))
   {
-    ROS_ERROR("[stop] fail to calculate stop position.");
+    ROS_ERROR_DELAYED_THROTTLE(1.0, "[stop] fail to calculate stop position.");
     return in_trajectory_; // no obstacle. return raw trajectory.
   }
   if (!is_obstacle_detected_)
@@ -81,7 +81,7 @@ autoware_planning_msgs::Trajectory ObstaclePcdVelocityPlanner::run()
 }
 
 bool ObstaclePcdVelocityPlanner::extractPcdAroundTrajectory2D(const pcl::PointCloud<pcl::PointXYZ> &in_pcd, const autoware_planning_msgs::Trajectory &in_traj,
-                                                          double radius, /*out=*/pcl::PointCloud<pcl::PointXYZ> &out_pcd)
+                                                              double radius, /*out=*/pcl::PointCloud<pcl::PointXYZ> &out_pcd)
 {
   out_pcd.clear();
 
@@ -105,7 +105,7 @@ bool ObstaclePcdVelocityPlanner::extractPcdAroundTrajectory2D(const pcl::PointCl
 }
 
 bool ObstaclePcdVelocityPlanner::planStopVelocity(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                                   const geometry_msgs::Pose &stop_pose, autoware_planning_msgs::Trajectory &out)
+                                                  const geometry_msgs::Pose &stop_pose, autoware_planning_msgs::Trajectory &out)
 {
   out = in_trajectory;
 
@@ -131,7 +131,7 @@ bool ObstaclePcdVelocityPlanner::planStopVelocity(const autoware_planning_msgs::
 }
 
 bool ObstaclePcdVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory, const double resample_interval_dist,
-                                                autoware_planning_msgs::Trajectory &out)
+                                                    autoware_planning_msgs::Trajectory &out)
 {
   if (in_trajectory.points.size() == 0)
   {
@@ -169,12 +169,12 @@ bool ObstaclePcdVelocityPlanner::resampleTrajectory(const autoware_planning_msgs
 }
 
 bool ObstaclePcdVelocityPlanner::calcStopPoseOnTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory, const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
-                                          geometry_msgs::Pose &stop_pose, bool &is_obstacle_detected)
+                                                          geometry_msgs::Pose &stop_pose, bool &is_obstacle_detected)
 {
   is_obstacle_detected = false;
 
   // Guard
-  if (in_pcd.empty() || planning_param_.points_thr == 0 || in_trajectory.points.empty())
+  if (planning_param_.points_thr == 0 || in_trajectory.points.empty())
   {
     ROS_DEBUG("no plan needed. points_thr = %d, pcd.size = %lu, trajectory size = %lu", planning_param_.points_thr, in_pcd.size(), in_trajectory.points.size());
     return true;
@@ -184,7 +184,7 @@ bool ObstaclePcdVelocityPlanner::calcStopPoseOnTrajectory(const autoware_plannin
   if (!planning_utils::findClosestIdxWithDistAngThr(in_trajectory, current_pose_, /*out=*/current_closest))
   {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[stop planner] cannot get closest.");
-    return false; // cannot get closest error
+    return false; // cannot get closest error 
   }
 
   // define search range
@@ -193,23 +193,18 @@ bool ObstaclePcdVelocityPlanner::calcStopPoseOnTrajectory(const autoware_plannin
   int start_idx = planning_utils::calcForwardIdxByLineIntegral(in_trajectory, current_closest, start_dist);
   int end_idx = planning_utils::calcForwardIdxByLineIntegral(in_trajectory, current_closest, end_dist);
 
-  // 検出エリアに入っている点群を抽出する
-  std::vector<geometry_msgs::Point> pcd_in_polygon;
-  for (size_t i = 0; i < in_pcd.size(); ++i)
-  {
-    geometry_msgs::Point p;
-    p.x = in_pcd.at(i).x;
-    p.y = in_pcd.at(i).y;
-    p.z = in_pcd.at(i).z;
-    pcd_in_polygon.push_back(p);
-  }
+  // create the whole detection area (only for visualize)
+  std::vector<double> left_width_v, right_width_v;
+  calcDetectionWidthWithVehicleShape(in_trajectory, left_width_v, right_width_v);
+  current_detection_area_ = createPolygonFromTrajectory(in_trajectory, left_width_v, right_width_v, start_idx, end_idx);
+
 
   // calculate closest pcd point with interpolation
   int32_t closest;
   if (!calcClosestPointInPolygon(in_trajectory, in_pcd, start_idx, end_idx, closest, obstacle_pose_))
   {
     ROS_DEBUG("[StopPlanner] no point is in polygon in binary search. return input trajectory as it is.");
-    return false;
+    return true;
   }
 
   // calculate stop point index for base_link
@@ -226,16 +221,13 @@ bool ObstaclePcdVelocityPlanner::calcStopPoseOnTrajectory(const autoware_plannin
 }
 
 bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                                                std::vector<double> &left_widths, std::vector<double> &right_widths)
+                                                                    std::vector<double> &left_widths, std::vector<double> &right_widths)
 {
   left_widths.clear();
   right_widths.clear();
 
   double shape_tread = planning_param_.detection_area_width;
   double shape_length = vehicle_param_.baselink_to_front_length;
-
-  double left = shape_tread * 0.5;
-  double right = shape_tread * 0.5;
 
   geometry_msgs::Point p_fl_shape; // front left point in local coordinate
   p_fl_shape.x = shape_length;
@@ -247,6 +239,9 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
 
   for (int i = 0; i < in_trajectory.points.size(); ++i)
   {
+    double left = shape_tread * 0.5;
+    double right = shape_tread * 0.5;
+
     const geometry_msgs::Pose base_p = in_trajectory.points.at(i).pose;
     const geometry_msgs::Pose p_i = planning_utils::getPoseOnTrajectoryWithRadius(in_trajectory, base_p.position, i, (-1.0) * shape_length);
 
@@ -271,7 +266,7 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
 }
 
 void ObstaclePcdVelocityPlanner::calcVehicleEdgePoints(const geometry_msgs::Pose &curr_pose, const VehicleParam &param,
-                                                   std::vector<geometry_msgs::Point> &edge_points)
+                                                       std::vector<geometry_msgs::Point> &edge_points)
 {
   edge_points.clear();
   const double half_width = param.width / 2.0;
@@ -307,7 +302,6 @@ bool ObstaclePcdVelocityPlanner::extendTrajectory(const autoware_planning_msgs::
     return true;
   }
 
-
   geometry_msgs::Pose ext_pose;
   geometry_msgs::Point ext_p;
   ext_p.x = (current_direction_ == Direction::FORWARD) ? planning_param_.endpoint_extend_length
@@ -323,7 +317,7 @@ bool ObstaclePcdVelocityPlanner::extendTrajectory(const autoware_planning_msgs::
 }
 
 PolygonX ObstaclePcdVelocityPlanner::createPolygonFromTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory, const std::vector<double> &left_width,
-                                                             const std::vector<double> &right_width, int32_t start_idx, int32_t end_idx)
+                                                                 const std::vector<double> &right_width, int32_t start_idx, int32_t end_idx)
 {
   PolygonX poly;
 
@@ -391,7 +385,7 @@ bool ObstaclePcdVelocityPlanner::calcClosestPoseProjectedOnTrajectory(const pcl:
 }
 
 bool ObstaclePcdVelocityPlanner::calcClosestPointInPolygon(const autoware_planning_msgs::Trajectory &in_trajectory, const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
-                                                       const int32_t start_idx, const int32_t end_idx, int32_t &closest_idx, geometry_msgs::Pose &closest_pose)
+                                                           const int32_t start_idx, const int32_t end_idx, int32_t &closest_idx, geometry_msgs::Pose &closest_pose)
 {
   if (start_idx >= end_idx)
   {
@@ -404,7 +398,6 @@ bool ObstaclePcdVelocityPlanner::calcClosestPointInPolygon(const autoware_planni
   // calculate polygon width for each trajectory points with vehicle shape.
   std::vector<double> left_width_v, right_width_v;
   calcDetectionWidthWithVehicleShape(in_trajectory, left_width_v, right_width_v);
-
 
   // create the whole detection area (only for visualize)
   current_detection_area_ = createPolygonFromTrajectory(in_trajectory, left_width_v, right_width_v, start_idx, end_idx);
@@ -452,26 +445,8 @@ bool ObstaclePcdVelocityPlanner::calcClosestPointInPolygon(const autoware_planni
     // no obstacle found.
     closest_idx = -1;
     closest_pose = geometry_msgs::Pose();
-    return true;
+    return false;
   }
-}
-
-visualization_msgs::MarkerArray ObstaclePcdVelocityPlanner::visualize()
-{
-  visualization_msgs::MarkerArray ma;
-
-  const int8_t stop_kind = is_obstacle_detected_ ? 1 /* obstacle */ : 0 /* none */;
-  const visualization_msgs::MarkerArray ma_d = displayActiveDetectionArea(current_detection_area_, stop_kind);
-  ma.markers.insert(ma.markers.end(), ma_d.markers.begin(), ma_d.markers.end());
-
-  if (is_obstacle_detected_)
-  {
-    ma.markers.push_back(displayWall(stop_pose_front_, stop_kind, 1));
-    ma.markers.push_back(displayObstaclePerpendicularPoint(obstacle_pose_, stop_kind));
-  }
-  ma.markers.push_back(displayObstaclePoint(obstacle_pose_, stop_kind));
-
-  return ma;
 }
 
 bool ObstaclePcdVelocityPlanner::extructPointsInPolygon(const PolygonX &poly, const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
@@ -533,4 +508,21 @@ ObstaclePcdVelocityPlanner::Direction ObstaclePcdVelocityPlanner::calcTrajectory
 
   ROS_ERROR("lane is something wrong. poses.size = %lu, dist_thr = %f", trajectory.points.size(), dist_thr);
   return Direction::INVALID;
+}
+
+visualization_msgs::MarkerArray ObstaclePcdVelocityPlanner::visualize()
+{
+  visualization_msgs::MarkerArray ma;
+
+  const int8_t stop_kind = is_obstacle_detected_ ? 1 /* obstacle */ : 0 /* none */;
+  const visualization_msgs::MarkerArray ma_d = displayActiveDetectionArea(current_detection_area_, stop_kind);
+  ma.markers.insert(ma.markers.end(), ma_d.markers.begin(), ma_d.markers.end());
+
+  if (is_obstacle_detected_)
+  {
+    ma.markers.push_back(displayWall(stop_pose_front_, stop_kind, 1));
+    ma.markers.push_back(displayObstaclePerpendicularPoint(obstacle_pose_, stop_kind));
+  }
+  ma.markers.push_back(displayObstaclePoint(obstacle_pose_, stop_kind));
+  return ma;
 }

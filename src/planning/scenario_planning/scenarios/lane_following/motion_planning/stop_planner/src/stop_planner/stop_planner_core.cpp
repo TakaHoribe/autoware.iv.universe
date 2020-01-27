@@ -81,9 +81,9 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   }
 
   /* if obstacle pcd is not received */
-  if (in_obstacle_pcd_ptr_ == nullptr || in_obstacle_pcd_ptr_->data.empty())
+  if (in_obstacle_pcd_ptr_ == nullptr)
   {
-    ROS_DEBUG_DELAYED_THROTTLE(2.0, "[StopPlanner] pcd is not received or size is 0.");
+    ROS_DEBUG_DELAYED_THROTTLE(2.0, "[StopPlanner] pcd is not received.");
     trajectory_pub_.publish(*in_trajectory_ptr_);
     return;
   }
