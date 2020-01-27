@@ -158,7 +158,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   visualization_msgs::MarkerArray ma;
   visualization_msgs::Marker m_poly;
   m_poly.header.frame_id = "map";
-  m_poly.header.stamp = ros::Time();
+  m_poly.header.stamp = ros::Time::now();
   m_poly.ns = "active_detection_area";
   m_poly.id = 0;
   m_poly.type = visualization_msgs::Marker::LINE_STRIP;
@@ -168,7 +168,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
 
   visualization_msgs::Marker m_point;
   m_point.header.frame_id = "map";
-  m_point.header.stamp = ros::Time();
+  m_point.header.stamp = ros::Time::now();
   m_point.ns = "active_detection_area_point";
   m_point.id = 0;
   m_point.type = visualization_msgs::Marker::SPHERE_LIST;

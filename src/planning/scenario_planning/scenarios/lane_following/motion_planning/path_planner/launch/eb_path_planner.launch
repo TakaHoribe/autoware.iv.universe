@@ -8,9 +8,8 @@
       <!-- motion planning module -->
       <group ns="motion_planning">
         <arg name="input_path_topic" default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
-        <arg name="num_lookup_lanelet_for_drivealble_area" default="4"/>
-        <node pkg="path_planner" type="eb_path_planner_node" name="eb_path_planner_node" output="log">
-          <param name="num_lookup_lanelet_for_drivealble_area" value="$(arg num_lookup_lanelet_for_drivealble_area)"/>
+        <node pkg="path_planner" type="eb_path_planner_node" 
+          name="eb_path_planner_node" output="log">
           <remap from="~input/path" to="$(arg input_path_topic)" />
           <remap from="~output/path" to="path_planner/trajectory" />
         </node>
