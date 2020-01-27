@@ -307,7 +307,9 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double feedback_acc_cmd = applyVelocityFeedback(target_acc, error_vel_filtered, dt, current_vel);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[feedback control]  vel: %f, acc: %f", target_vel, acc_cmd);
+  ROS_INFO_COND(show_debug_info_, "[feedback control]  target_acc: %f, error_vel_filtered: %f, "
+                                  "dt: %f, current_vel: %f, feedback_acc_cmd: %f, shift: %d, out_vel: %f, out_acc: %f",
+                target_acc, error_vel_filtered, dt, current_vel, feedback_acc_cmd, shift, target_vel, acc_cmd);
   return CtrlCmd{target_vel, acc_cmd};
 }
 
@@ -497,7 +499,7 @@ double VelocityController::calcInterpolatedTargetVelocity(const autoware_plannin
     }
     closest_second = 1;
   }
-  else if (closest == traj.points.size() - 1)
+  else if (closest == (int)traj.points.size() - 1)
   {
     if (rel_pos.x * curr_vel >= 0.0)
     {
@@ -565,6 +567,8 @@ double VelocityController::applyVelocityFeedback(const double target_acc, const 
   debug_values_.data.at(18) = pid_contributions.at(0);
   debug_values_.data.at(19) = pid_contributions.at(1);
   debug_values_.data.at(20) = pid_contributions.at(2);
+
+  return feedbacked_acc;
 }
 
 void VelocityController::resetSmoothStop()
