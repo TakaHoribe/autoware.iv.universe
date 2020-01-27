@@ -210,6 +210,30 @@ bool EBPathSmoother::preprocessExploredPoints(
     point.y = interpolated_y[i];
     debug_interpolated_points.push_back(point);
   }
+  // double min_dist = 10000000;
+  // int min_ind = 0;
+  // for (int i = 0; i < interpolated_x.size(); i++)
+  // {
+  //   geometry_msgs::Point point;
+  //   point.x = interpolated_x[i];
+  //   point.y = interpolated_y[i];
+  //   debug_interpolated_points.push_back(point);
+  //   if(fixed_optimized_points.size()>0)
+  //   {
+  //     double dx = fixed_optimized_points.back().pose.position.x - interpolated_x[i];
+  //     double dy = fixed_optimized_points.back().pose.position.y - interpolated_y[i];
+  //     double dist = std::sqrt(dx*dx+dy*dy);
+  //     if(dist < min_dist)
+  //     {
+  //       min_dist = dist;
+  //       min_ind = i;
+  //     }
+  //   }
+  // }
+  
+  // std::cout << " min dist "<<min_dist << std::endl;
+  // std::cout << " min ind "<<min_ind << std::endl;
+  // nearest_idx = min_ind;
   
   nearest_idx = 0;
   farrest_idx = std::min((int)(number_of_sampling_points_-1),
@@ -257,6 +281,23 @@ bool EBPathSmoother::generateOptimizedPath(
                              nearest_idx_from_ego_pose,
                              farrest_idx_from_ego_pose,
                              debug_interpolated_points);
+                             
+  int current_num_fix_points = std::min(number_of_fixing_points_,
+                                        (int)fixed_optimized_points.size());
+  // farrest_idx = std::min((int)(number_of_sampling_points_-1),
+  //                        (int)(interpolated_x.size()-1));
+  // farrest_idx_from_ego_pose = 
+  //   std::min(farrest_idx_from_ego_pose, 
+  //             (int)interpolated_x.size()-1-current_num_fix_points);
+  farrest_idx_from_ego_pose = farrest_idx_from_ego_pose+current_num_fix_points;
+  // farrest_idx_from_ego_pose =
+  //   std::max(farrest_idx_from_ego_pose+current_num_fix_points,
+  //            current_num_fix_points);
+  
+  
+  // ROS_WARN("interpolate size %d", (int)interpolated_x.size());
+  // ROS_WARN("current num fix points %d", current_num_fix_points);
+  // ROS_WARN("farrest idx  %d", farrest_idx_from_ego_pose);
   if(!is_preprocess_success)
   {
     return false;
@@ -292,125 +333,49 @@ bool EBPathSmoother::generateOptimizedPath(
   double first_yaw = tf2::getYaw(start_exploring_pose.orientation);
   for (int i = 0; i < number_of_sampling_points_ ; ++i)
   {
-    if(i < number_of_fixing_points_&&fixed_optimized_points.size()>number_of_fixing_points_)
+    if(i < current_num_fix_points&&fixed_optimized_points.size()>current_num_fix_points)
     {
-      lower_bound[i] = fixed_optimized_points[fixed_optimized_points.size()-number_of_fixing_points_+i].pose.position.x;
-      upper_bound[i] = fixed_optimized_points[fixed_optimized_points.size()-number_of_fixing_points_+i].pose.position.x;
+      lower_bound[i] = fixed_optimized_points[fixed_optimized_points.size()-current_num_fix_points+i].pose.position.x;
+      upper_bound[i] = fixed_optimized_points[fixed_optimized_points.size()-current_num_fix_points+i].pose.position.x;
     }
     else if(i==0)
     // if (i == 0)//initial x
     {
-      lower_bound[i] = interpolated_x[i];
-      upper_bound[i] = interpolated_x[i];
+      lower_bound[i] = interpolated_x[i-current_num_fix_points];
+      upper_bound[i] = interpolated_x[i-current_num_fix_points];
     }
     else if (i == 1)//second initial x
     {
-      lower_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
-      upper_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
+      lower_bound[i] = interpolated_x[i-1-current_num_fix_points] + delta_arc_length_ * std::cos(first_yaw);
+      upper_bound[i] = interpolated_x[i-1-current_num_fix_points] + delta_arc_length_ * std::cos(first_yaw);
       // lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
       // upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
     }
-    else if (i == farrest_idx_from_ego_pose - 1)//second last x
+    else if (i == farrest_idx_from_ego_pose - 1 )//second last x
     {
       // lower_bound[i] = new_x[i+1] - 0.2 * std::cos(last_yaw);
       // upper_bound[i] = new_x[i+1] - 0.2 * std::cos(last_yaw);
-      lower_bound[i] = interpolated_x[i];
-      upper_bound[i] = interpolated_x[i];
+      lower_bound[i] = interpolated_x[i-current_num_fix_points];
+      upper_bound[i] = interpolated_x[i-current_num_fix_points];
     }
     else if (i == farrest_idx_from_ego_pose )//last x
     {
-      lower_bound[i] = interpolated_x[i];
-      upper_bound[i] = interpolated_x[i];
+      lower_bound[i] = interpolated_x[i-current_num_fix_points];
+      upper_bound[i] = interpolated_x[i-current_num_fix_points];
     }
     else if(i >= farrest_idx_from_ego_pose)
     {
-      lower_bound[i] = interpolated_x[farrest_idx_from_ego_pose];
-      upper_bound[i] = interpolated_x[farrest_idx_from_ego_pose];
+      lower_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
+      upper_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
     }
     else
     {     
-      // geometry_msgs::Point lb_x_point;
-      // lb_x_point.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      // lb_x_point.y = interpolated_y[nearest_idx_from_ego_pose+i];
-      // for (int j = 0; j < 60; j++)
-      // {
-      //   lb_x_point.x = lb_x_point.x - clearance_map_resolution ; 
-      //   geometry_msgs::Point tmp_image_p;
-      //   // if(tmp::transformMapToImage(lb_x_point, 
-      //   //                     ego_pose,
-      //   //                     x_length,
-      //   //                     y_width,
-      //   //                     clearance_map_resolution,
-      //   //                     tmp_image_p))
-      //   if(tmp::transformMapToImage(
-      //                       lb_x_point, 
-      //                       map_info,
-      //                       tmp_image_p))
-      //   {
-      //     float clearance = 
-      //       clearance_map.ptr<float>((int)tmp_image_p.y)
-      //                               [(int)tmp_image_p.x];
-      //     if(clearance*clearance_map_resolution <= 
-      //          exploring_minimum_radius_-constrain_buffer_)
-      //     {
-      //       break;
-      //     }
-      //   }
-      //   else
-      //   {
-      //     break;
-      //   }
-      // }
-      // geometry_msgs::Point ub_x_point;
-      // ub_x_point.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      // ub_x_point.y = interpolated_y[nearest_idx_from_ego_pose+i];
-      // for (int j = 0; j < 60; j++)
-      // {
-      //   ub_x_point.x = ub_x_point.x + clearance_map_resolution; 
-      //   geometry_msgs::Point tmp_image_p;
-      //   // if(tmp::transformMapToImage(ub_x_point, 
-      //   //                     ego_pose,
-      //   //                     x_length,
-      //   //                     y_width,
-      //   //                     clearance_map_resolution,
-      //   //                     tmp_image_p))
-      //   if(tmp::transformMapToImage(
-      //                       ub_x_point, 
-      //                       map_info,
-      //                       tmp_image_p))
-      //   {
-      //     float clearance = 
-      //       clearance_map.ptr<float>((int)tmp_image_p.y)
-      //                               [(int)tmp_image_p.x];
-      //     if(clearance*clearance_map_resolution <= 
-      //         exploring_minimum_radius_- constrain_buffer_)
-      //     {
-      //       break;
-      //     }
-      //   }
-      //   else
-      //   {
-      //     break;
-      //   }
-      // }
-      // if(ub_x_point.x - lb_x_point.x<0)
-      // {
-      //   ROS_ERROR("somethong wrong");
-      // }
-      // debug_lb_boundary_points.push_back(lb_x_point);
-      
-      // debug_ub_boundary_points.push_back(ub_x_point);
-      // debug_boundary_points.push_back(lb_x_point);
-      // debug_boundary_points.push_back(ub_x_point);
-      // lower_bound[i] = lb_x_point.x;
-      // upper_bound[i] = ub_x_point.x;
-      // std::cout << "boud x "<< lb_x_point.x<<" "<< ub_x_point.x << std::endl;
-      // lower_bound[i] = interpolated_x[i] - 0.5;
-      // upper_bound[i] = interpolated_x[i] + 0.5;
       
       geometry_msgs::Point interpolated_p;
-      interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
+      // interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
+      // interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
+      interpolated_p.x = interpolated_x[i-current_num_fix_points];
+      interpolated_p.y = interpolated_y[i-current_num_fix_points];
       geometry_msgs::Point interpolated_p_in_image;
       float clearance;
       if(tmp::transformMapToImage(
@@ -427,28 +392,31 @@ bool EBPathSmoother::generateOptimizedPath(
         clearance = 0.5;
       }
       float diff = std::fmax(clearance - exploring_minimum_radius_ - constrain_buffer_, constrain_buffer_);
-      lower_bound[i] = interpolated_x[i] - diff;
-      upper_bound[i] = interpolated_x[i] + diff;
+      // lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] - diff;
+      // upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] + diff;
+      lower_bound[i] = interpolated_x[i-current_num_fix_points] - diff;
+      upper_bound[i] = interpolated_x[i-current_num_fix_points] + diff;
     }
   }
   
   // int constrain_count = 0;
   for (int i = 0; i < number_of_sampling_points_ ; ++i)
   {
-    if(i < number_of_fixing_points_&& fixed_optimized_points.size()>number_of_fixing_points_)
+    // if(i < number_of_fixing_points_&& fixed_optimized_points.size()>number_of_fixing_points_)
+    if(i < current_num_fix_points)
     {
-      lower_bound[i+number_of_sampling_points_] = fixed_optimized_points[fixed_optimized_points.size()-number_of_fixing_points_+i].pose.position.y;
-      upper_bound[i+number_of_sampling_points_] = fixed_optimized_points[fixed_optimized_points.size()-number_of_fixing_points_+i].pose.position.y;
+      lower_bound[i+number_of_sampling_points_] = fixed_optimized_points[fixed_optimized_points.size()-current_num_fix_points+i].pose.position.y;
+      upper_bound[i+number_of_sampling_points_] = fixed_optimized_points[fixed_optimized_points.size()-current_num_fix_points+i].pose.position.y;
     }
     else if (i == 0)//initial x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
     }
     else if (i == 1)//second initial x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1-current_num_fix_points] + delta_arc_length_ * std::sin(first_yaw);
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1-current_num_fix_points] + delta_arc_length_ * std::sin(first_yaw);
       // lower_bound[i+number_of_sampling_points_] = interpolated_y[nearest_idx_from_ego_pose+i];
       // upper_bound[i+number_of_sampling_points_] = interpolated_y[nearest_idx_from_ego_pose+i];
     }
@@ -456,101 +424,27 @@ bool EBPathSmoother::generateOptimizedPath(
     {
       // lower_bound[i+number_of_sampling_points_] = new_y[i+1] - 0.2 * std::sin(last_yaw);
       // upper_bound[i+number_of_sampling_points_] = new_y[i+1] - 0.2 * std::sin(last_yaw);
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
     }
     else if (i == farrest_idx_from_ego_pose)//last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
     }
     else if(i >= farrest_idx_from_ego_pose)
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
     }
     else
     {
-      // geometry_msgs::Point lb_y_point;
-      // lb_y_point.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      // lb_y_point.y = interpolated_y[nearest_idx_from_ego_pose+i];
-      // for (int j = 0; j < 60; j++)
-      // {
-      //   lb_y_point.y = lb_y_point.y - clearance_map_resolution; 
-      //   geometry_msgs::Point tmp_image_p;
-      //   if(tmp::transformMapToImage(
-      //                       lb_y_point, 
-      //                       map_info,
-      //                       tmp_image_p))
-      //   {
-      //     float clearance = 
-      //       clearance_map.ptr<float>((int)tmp_image_p.y)
-      //                               [(int)tmp_image_p.x];
-      //     if(clearance*clearance_map_resolution <= 
-      //          exploring_minimum_radius_- constrain_buffer_)
-      //     {
-      //       break;
-      //     }
-      //   }
-      //   else
-      //   {
-      //     break;
-      //   }
-      // }
-      // geometry_msgs::Point ub_y_point;
-      // ub_y_point.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      // ub_y_point.y = interpolated_y[nearest_idx_from_ego_pose+i];
-      // for (int j = 0; j < 60; j++)
-      // {
-      //   ub_y_point.y = ub_y_point.y + clearance_map_resolution; 
-      //   geometry_msgs::Point tmp_image_p;
-      //   if(tmp::transformMapToImage(
-      //                       ub_y_point, 
-      //                       map_info,
-      //                       tmp_image_p))
-      //   {
-      //     float clearance = 
-      //       clearance_map.ptr<float>((int)tmp_image_p.y)
-      //                               [(int)tmp_image_p.x];
-      //     if(clearance*clearance_map_resolution <= 
-      //          exploring_minimum_radius_- constrain_buffer_)
-      //     {
-      //       break;
-      //     }
-      //   }
-      //   else
-      //   {
-      //     break;
-      //   }
-      // }
-      // if(ub_y_point.y - lb_y_point.y<0)
-      // {
-      //   ROS_ERROR("somethong wrong");
-      // }
-      // if(ub_y_point.y <  interpolated_y[nearest_idx_from_ego_pose+i])
-      // {
-      //   ROS_ERROR("somethong wrong");
-      // }
-      // if(lb_y_point.y >  interpolated_y[nearest_idx_from_ego_pose+i])
-      // {
-      //   ROS_ERROR("somethong wrong");
-      // }
-      // // debug_lb_boundary_points.push_back(lb_y_point);
-      // // debug_ub_boundary_points.push_back(ub_y_point);
-      
-      // debug_lb_boundary_points[constrain_count].y = lb_y_point.y ;
-      // debug_ub_boundary_points[constrain_count].y = ub_y_point.y;
-      // lower_bound[i+number_of_sampling_points_] = lb_y_point.y;
-      // upper_bound[i+number_of_sampling_points_] = ub_y_point.y;
-      // debug_boundary_points.push_back(lb_y_point);
-      // debug_boundary_points.push_back(ub_y_point);
-      // lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - 0.5;
-      // upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + 0.5;
-      // constrain_count++;
       
       geometry_msgs::Point interpolated_p;
-      interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
+      // interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
+      // interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
+      interpolated_p.x = interpolated_x[i-current_num_fix_points];
+      interpolated_p.y = interpolated_y[i-current_num_fix_points];
       geometry_msgs::Point interpolated_p_in_image;
       float clearance;
       if(tmp::transformMapToImage(
@@ -568,8 +462,10 @@ bool EBPathSmoother::generateOptimizedPath(
       }
       float diff = std::fmax(clearance - exploring_minimum_radius_ - constrain_buffer_, constrain_buffer_);
       // std::cout << "diff "<< diff << std::endl;
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - diff;
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + diff;
+      // lower_bound[i+number_of_sampling_points_] = interpolated_y[nearest_idx_from_ego_pose+ i] - diff;
+      // upper_bound[i+number_of_sampling_points_] = interpolated_y[nearest_idx_from_ego_pose+ i] + diff;
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - diff;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + diff;
     }
   }
   

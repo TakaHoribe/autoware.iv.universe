@@ -220,9 +220,11 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   }
   else if(fixed_optimized_points.size()>=number_of_fixing_points_)
   {
+    // start_exploring_pose = 
+    //   fixed_optimized_points
+    //     [fixed_optimized_points.size()-number_of_fixing_points_].pose;
     start_exploring_pose = 
-      fixed_optimized_points
-        [fixed_optimized_points.size()-number_of_fixing_points_].pose;
+      fixed_optimized_points.back().pose;
   }
   else
   {
@@ -250,7 +252,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>();
     fixed_optimized_points.clear();
     start_exploring_pose = self_pose;
-    // start_exploring_pose = e
   }
   
   std::vector<geometry_msgs::Point> explored_points;
