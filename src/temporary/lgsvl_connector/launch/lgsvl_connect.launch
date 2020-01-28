@@ -20,8 +20,10 @@
     <node name="pcl_relay" pkg="topic_tools" type="relay" args="/points_raw_tmp /sensor/lidar/main/velodyne_points_ex" />
     <node name="pose_relay" pkg="topic_tools" type="relay" args="/vehicle/status/twist /current_velocity" />
     <node name="camera_relay" pkg="topic_tools" type="relay" args="/tmp_img_lgsvl /sensor/camera/traffic_light/image_raw" />
+    <node name="pcl_relay_apollo" pkg="topic_tools" type="relay" args="/sensor/lidar/main/velodyne_points_ex/self_cropped /sensor/lidar/main/velodyne_points" />
 
     <!-- publish base_link-centered and self-cropped pcl. (substitute for velodyne nodelet manager) -->
+    <!--
     <node pkg="pointcloud_preprocessor" type="passthrough_filter_node" name="passthrough_filter_for_apollo">
         <remap from="~input" to="$(arg points_src)" />
         <remap from="~output" to="$(arg points_src_apollo)" />
@@ -30,5 +32,6 @@
           input_frame: base_link
         </rosparam>
     </node>
+    -->
 
 </launch>
