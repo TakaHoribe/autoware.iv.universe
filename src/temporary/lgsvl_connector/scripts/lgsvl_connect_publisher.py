@@ -24,7 +24,7 @@ class LgsvlConnectPublisher:
     def __init__(self):
         self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate]
         self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)  # [rate]
-        self.max_steering_velocity = rospy.get_param("max_steering_velocity", 1.0)  # [rad/s]
+        self.max_steering_velocity = rospy.get_param("max_steering_velocity", 2.0)  # [rad/s]
 
         self.v = 0.0
         self.last_steer = 0.0
