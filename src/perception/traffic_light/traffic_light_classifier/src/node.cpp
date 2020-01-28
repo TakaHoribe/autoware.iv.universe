@@ -8,9 +8,17 @@ TrafficLightClassifierNode::TrafficLightClassifierNode() : nh_(""),
                                                            image_transport_(pnh_),
                                                            image_sub_(image_transport_, "input/image", 1),
                                                            roi_sub_(pnh_, "input/rois", 1),
-                                                           sync_(SyncPolicy(10), image_sub_, roi_sub_)
+                                                           sync_(SyncPolicy(10), image_sub_, roi_sub_),
+                                                           approximate_sync_(ApproximateSyncPolicy(10), image_sub_, roi_sub_)
 {
-  sync_.registerCallback(boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
+
+  pnh_.param<bool>("approximate_sync", is_approximate_sync_, false);
+  if(is_approximate_sync_){
+    approximate_sync_.registerCallback(boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
+  }
+  else{
+    sync_.registerCallback(boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
+  }
   tl_states_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
   classifier_ptr_ = std::make_shared<ColorClassifier>();
 }

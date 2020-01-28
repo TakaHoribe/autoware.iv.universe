@@ -9,6 +9,7 @@
     <remap from="~input/image" to="$(arg input/image)" />
     <remap from="~input/rois" to="$(arg input/rois)" />
     <remap from="~output/traffic_light_states" to="$(arg output/traffic_light_states)" />
+    <param name="approximate_sync" value="false" />
   </node>
 
 </launch>
