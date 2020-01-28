@@ -5,15 +5,16 @@
 ##<Warning>This is temporary file.##
 ####################################
 
-import rospy, tf
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import TwistStamped
-from sensor_msgs.msg import PointCloud2
-from autoware_vehicle_msgs.msg import VehicleCommandStamped
-from autoware_msgs.msg import VehicleCmd
-from autoware_vehicle_msgs.msg import Steering
-from sensor_msgs.msg import Image
 import math
+
+import numpy as np
+import rospy
+import tf
+from autoware_msgs.msg import VehicleCmd
+from autoware_vehicle_msgs.msg import Steering, VehicleCommandStamped
+from geometry_msgs.msg import TwistStamped
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Image, PointCloud2
 
 WHEEL_BASE = 2.9  # [m]
 CAMERA_LINK = "traffic_light/camera_link"
@@ -21,10 +22,13 @@ CAMERA_LINK = "traffic_light/camera_link"
 
 class LgsvlConnectPublisher:
     def __init__(self):
-        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)
-        self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)
+        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate]
+        self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)  # [rate]
+        self.max_steering_velocity = rospy.get_param("max_steering_velocity", 2.0)  # [rad/s]
 
         self.v = 0.0
+        self.last_steer = 0.0
+        self.last_command_time = rospy.Time.now().to_sec()
         self.tfb = tf.TransformBroadcaster()
         self.tfl = tf.TransformListener()
 
@@ -50,7 +54,7 @@ class LgsvlConnectPublisher:
 
         self.pubimg = rospy.Publisher("/tmp_img_lgsvl", Image, queue_size=1)
 
-    def CallBackOdom(self, odmmsg):  # Problem 1: /vehicle/status/twist is not published.
+    def CallBackOdom(self, odmmsg):  # Problem 1: /vehicle/status/steering is not published.
         twistmsg = TwistStamped()
         twistmsg.header.stamp = rospy.Time.now()
         twistmsg.header.frame_id = "base_link"
@@ -99,18 +103,35 @@ class LgsvlConnectPublisher:
         cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration / 4.0 + (
             self.v / self.v_offset_rate
         )  # accel + v ????????f**k! a/4.0????
+
+        steer = self.cramp_steering(
+            vcmdmsg.command.control.steering_angle
+        )  # prevent from sudden change of steering in LG-simulator
+
         # Angular Velocity
         if self.v != 0:
             # cmdmsg.twist_cmd.twist.angular.z = math.tan(vcmdmsg.command.control.steering_angle)
-            cmdmsg.twist_cmd.twist.angular.z = vcmdmsg.command.control.steering_angle * 0.5 / self.w_offset_rate
+            cmdmsg.twist_cmd.twist.angular.z = steer * 0.5 / self.w_offset_rate
         else:
             cmdmsg.twist_cmd.twist.angular.z = 0.0
 
         cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity
         cmdmsg.ctrl_cmd.linear_acceleration = vcmdmsg.command.control.acceleration  # accel
-        cmdmsg.ctrl_cmd.steering_angle = vcmdmsg.command.control.steering_angle  # steer
+        cmdmsg.ctrl_cmd.steering_angle = steer  # steer
         cmdmsg.emergency = vcmdmsg.command.emergency
         self.pubcmd.publish(cmdmsg)
+
+    def cramp_steering(self, steer):
+        dt = rospy.Time.now().to_sec() - self.last_command_time
+        max_steer_delta = dt * self.max_steering_velocity
+        if np.abs(steer - self.last_steer) > max_steer_delta:
+            cramped_steer = self.last_steer + max_steer_delta * np.sign(steer - self.last_steer)
+        else:
+            cramped_steer = steer
+
+        self.last_steer = cramped_steer
+        self.last_command_time = rospy.Time.now().to_sec()
+        return cramped_steer
 
     def PubVehicleSteering(self, v, w):  # Problem4: /vehicle/status/steering is not published
         strmsg = Steering()

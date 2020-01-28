@@ -42,11 +42,14 @@ private:
   typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
                                                     autoware_traffic_light_msgs::TrafficLightRoiArray>
       SyncPolicy;
-  // typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-  //                                                         autoware_traffic_light_msgs::TrafficLightRoiArray>
-  //     SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Sync;
   Sync sync_;
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
+                                                    autoware_traffic_light_msgs::TrafficLightRoiArray>
+      ApproximateSyncPolicy;
+  typedef message_filters::Synchronizer<ApproximateSyncPolicy> ApproximateSync;
+  ApproximateSync approximate_sync_;
+  bool is_approximate_sync_;
   ros::Publisher tl_states_pub_;
   std::shared_ptr<ClassifierInterface> classifier_ptr_;
   void imageRoiCallback(const sensor_msgs::ImageConstPtr &input_image_msg,
