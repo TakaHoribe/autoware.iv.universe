@@ -22,9 +22,12 @@ CAMERA_LINK = "traffic_light/camera_link"
 
 class LgsvlConnectPublisher:
     def __init__(self):
-        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate]
-        self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)  # [rate]
+        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate] actual_velocity/velocity_from_simulator
+        self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)  # [rate] actual_angular_velocity/angular_velocity_from_simulator
+        self.accel_command_offset_rate = rospy.get_param("accel_offset_rate", 0.22) #[rate] accel command/accel behavior in simulator
+        self.steer_command_offset_rate = rospy.get_param("steer_offset_rate", 0.28) #[rate] steer command/steer behavior in simulator
         self.max_steering_velocity = rospy.get_param("max_steering_velocity", 2.0)  # [rad/s]
+        self.throttle_brake_mode = rospy.get_param("throttle_brake_mode", False)  # [rad/s]
 
         self.v = 0.0
         self.last_steer = 0.0
@@ -100,9 +103,9 @@ class LgsvlConnectPublisher:
         cmdmsg.header.frame_id = "base_link"
         cmdmsg.twist_cmd.header.stamp = rospy.Time.now()
         # cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.velocity#Velocity. Fine.
-        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration / 4.0 + (
+        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration * self.accel_command_offset_rate + (
             self.v / self.v_offset_rate
-        )  # accel + v ????????f**k! a/4.0????
+        )
 
         steer = self.cramp_steering(
             vcmdmsg.command.control.steering_angle
@@ -111,14 +114,21 @@ class LgsvlConnectPublisher:
         # Angular Velocity
         if self.v != 0:
             # cmdmsg.twist_cmd.twist.angular.z = math.tan(vcmdmsg.command.control.steering_angle)
-            cmdmsg.twist_cmd.twist.angular.z = steer * 0.5 / self.w_offset_rate
+            cmdmsg.twist_cmd.twist.angular.z = steer * (self.steer_command_offset_rate*2.0) / self.w_offset_rate
         else:
             cmdmsg.twist_cmd.twist.angular.z = 0.0
 
-        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity
-        cmdmsg.ctrl_cmd.linear_acceleration = vcmdmsg.command.control.acceleration  # accel
-        cmdmsg.ctrl_cmd.steering_angle = steer  # steer
+        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity(no use)
+        cmdmsg.ctrl_cmd.linear_acceleration = vcmdmsg.command.control.acceleration*self.accel_command_offset_rate  # accel
+        cmdmsg.ctrl_cmd.steering_angle = -steer*self.steer_command_offset_rate  # steer
         cmdmsg.emergency = vcmdmsg.command.emergency
+
+        if self.throttle_brake_mode:
+            if vcmdmsg.command.control.velocity >=0:
+                cmdmsg.gear = 64#drive
+            else:
+                cmdmsg.gear = 63#reverse
+
         self.pubcmd.publish(cmdmsg)
 
     def cramp_steering(self, steer):
