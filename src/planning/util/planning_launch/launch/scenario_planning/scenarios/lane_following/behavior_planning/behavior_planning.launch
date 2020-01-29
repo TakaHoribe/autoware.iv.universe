@@ -28,7 +28,7 @@
     <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
     <remap from="~input/vehicle/velocity" to="/vehicle/status/twist"/>
     <remap from="~input/perception" to="/perception/prediction/objects"/>
-    <remap from="~input/pointcloud" to="/sensing/preprocess/lidar/no_ground/pointcloud"/>
+    <remap from="~input/pointcloud" to="/sensing/lidar/no_ground/pointcloud"/>
     <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
     <remap from="~output/path" to="path"/>
   </node>

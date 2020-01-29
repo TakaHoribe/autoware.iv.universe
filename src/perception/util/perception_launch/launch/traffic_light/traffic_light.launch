@@ -3,8 +3,8 @@
 <launch>
 
   <arg name="enable_fine_detection" default="false"/>
-  <arg name="input/image" default="/sensor/camera/traffic_light/image_raw"/>
-  <arg name="input/camera_info" default="/sensor/camera/traffic_light/camera_info"/>
+  <arg name="input/image" default="/sensing/camera/traffic_light/image_raw"/>
+  <arg name="input/camera_info" default="/sensing/camera/traffic_light/camera_info"/>
 
   <group if="$(arg enable_fine_detection)">
     <include file="$(find traffic_light_map_based_detector)/launch/traffic_light_map_based_detector.launch">

@@ -105,7 +105,7 @@ class ScenarioMaker:
 
         # for publish time-sync image
         self.sub_camerainfo = rospy.Subscriber(
-            "/sensor/camera/traffic_light/camera_info",
+            "/sensing/camera/traffic_light/camera_info",
             CameraInfo,
             self.CallBackCameraInfoTime,
             queue_size=1,
@@ -136,7 +136,7 @@ class ScenarioMaker:
 
         self.pub_resetobjectid = rospy.Publisher("/reset_object_id", Int32, queue_size=1)
 
-        self.pub_traffic_light_image = rospy.Publisher("/sensor/camera/traffic_light/image_raw", Image, queue_size=1)
+        self.pub_traffic_light_image = rospy.Publisher("/sensing/camera/traffic_light/image_raw", Image, queue_size=1)
 
         time.sleep(0.5)  # wait for ready to publish/subscribe#TODO: fix this
 
@@ -870,7 +870,7 @@ class ScenarioMaker:
             "rosbag record -O "
             + file_name
             + str(id)
-            + '.bag -a -x "/debug/(.*)|/sensing/(.*)|/sensor/(.*)|/traffic_light_classifier/(.*)|/rosout|/rosout_agg|(.*)/pcd|(.*)/costmap|(.*)/occupancy_grid|(.*)/drivable_area" __name:='
+            + '.bag -a -x "/debug/(.*)|/sensing/(.*)|/traffic_light_classifier/(.*)|/rosout|/rosout_agg|(.*)/pcd|(.*)/costmap|(.*)/occupancy_grid|(.*)/drivable_area" __name:='
             + node_name
         )
         subprocess.Popen(rosbag_record, shell=True)

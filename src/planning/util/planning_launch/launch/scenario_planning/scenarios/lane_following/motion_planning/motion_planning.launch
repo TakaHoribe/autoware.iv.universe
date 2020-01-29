@@ -17,7 +17,7 @@
   <!-- stop velocity planning with obstacle pointcloud info -->
   <node pkg="stop_planner" type="stop_planner" name="stop_planner" output="log">
     <remap from="~input/trajectory" to="path_planner/trajectory" />
-    <remap from="~input/point_cloud" to="/sensing/preprocess/lidar/no_ground/pointcloud" />
+    <remap from="~input/point_cloud" to="/sensing/lidar/no_ground/pointcloud" />
     <remap from="~output/trajectory" to="stop_planner/trajectory" />
   </node>
 

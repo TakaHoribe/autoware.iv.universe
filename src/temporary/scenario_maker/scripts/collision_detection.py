@@ -34,7 +34,7 @@ class CollisionDetection:
         self.pcl_msg = None
 
         self.sub_pcl = rospy.Subscriber(
-            "/sensing/preprocess/lidar/no_ground/pointcloud",
+            "/sensing/lidar/no_ground/pointcloud",
             PointCloud2,
             self.CallBackPointCloud,
             queue_size=1,

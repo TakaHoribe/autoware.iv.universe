@@ -9,7 +9,6 @@
 #include <gnss/geo_pos_conv.hpp>
 
 namespace GNSSPoser {
-
 enum class MGRSPrecision { 
   _10_KIRO_METER = 1,
   _1_KIRO_METER = 2,
@@ -25,15 +24,16 @@ enum class MGRSPrecision {
 // OrthometricHeight:height above geoid
 double EllipsoidHeight2OrthometricHeight(const sensor_msgs::NavSatFix &nav_sat_fix_msg)
 {
-  double OrthometricHeight;
-  try{
-    GeographicLib::Geoid egm2008("egm2008-1");
-    OrthometricHeight = egm2008.ConvertHeight(nav_sat_fix_msg.latitude, nav_sat_fix_msg.longitude, nav_sat_fix_msg.altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
-  }
-  catch(const GeographicLib::GeographicErr err){
-    ROS_ERROR_STREAM("Failed to convert Height from Ellipsoid to Orthometric" << err.what());
-  }
-  return OrthometricHeight;
+  // double OrthometricHeight;
+  // try{
+  //   GeographicLib::Geoid egm2008("egm2008-1");
+  //   OrthometricHeight = egm2008.ConvertHeight(nav_sat_fix_msg.latitude, nav_sat_fix_msg.longitude, nav_sat_fix_msg.altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
+  // }
+  // catch(const GeographicLib::GeographicErr err){
+  //   ROS_ERROR_STREAM("Failed to convert Height from Ellipsoid to Orthometric" << err.what());
+  // }
+  // return OrthometricHeight;
+  return nav_sat_fix_msg.altitude;
 }
 
 GNSSStat NavSatFix2UTM(const sensor_msgs::NavSatFix &nav_sat_fix_msg)

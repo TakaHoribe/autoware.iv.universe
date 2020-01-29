@@ -1,0 +1,72 @@
+<launch>
+
+  <!-- Params -->
+  <arg name="launch_driver" default="true" />
+
+  <arg name="manager" default="velodyne_nodelet_manager" />
+
+  <arg name="sensor_frame" default="velodyne" />
+  <arg name="base_frame" default="base_link" />
+
+  <arg name="device_ip" default="192.168.1.201"/>
+  <arg name="port" default="2368"/>
+
+  <arg name="model" default="VLP16"/>
+  <arg name="calibration" default="$(find velodyne_pointcloud)/params/VLP16db.yaml" />
+
+  <!-- nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+
+  <!-- velodyne driver -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver" args="load velodyne_driver/DriverNodelet $(arg manager)"  if="$(arg launch_driver)">
+    <param name="device_ip" value="$(arg device_ip)" />
+    <param name="frame_id" value="$(arg sensor_frame)"/>
+    <param name="model" value="$(arg model)"/>
+    <param name="port" value="$(arg port)" />
+  </node>
+
+  <!-- velodyne_packets to pointcloud -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_cloud" args="load velodyne_pointcloud/CloudNodelet $(arg manager)">
+    <remap from="velodyne_points" to="pointcloud_raw" />
+    <remap from="velodyne_points_ex" to="pointcloud_raw_ex" />
+
+    <param name="calibration" value="$(arg calibration)"/>
+    <param name="max_range" value="130.0"/>
+    <param name="min_range" value="0.5"/>
+  </node>
+
+  <!-- crop self -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_crop_box_filter_self" args="load pointcloud_preprocessor/crop_box_filter_nodelet $(arg manager)" output="log">
+    <remap from="~input" to="pointcloud_raw_ex" />
+    <remap from="~output" to="self_cropped/pointcloud_ex" />
+    <remap from="~min_x" to="/vehicle_info/min_longitudinal_offset" />
+    <remap from="~max_x" to="/vehicle_info/max_longitudinal_offset" />
+    <remap from="~min_y" to="/vehicle_info/min_lateral_offset" />
+    <remap from="~max_y" to="/vehicle_info/max_lateral_offset" />
+    <remap from="~min_z" to="/vehicle_info/min_height_offset" />
+    <remap from="~max_z" to="/vehicle_info/max_height_offset" />
+
+    <param name="negative" value="True" />
+    <param name="input_frame" value="$(arg base_frame)" />
+    <param name="output_frame" value="$(arg sensor_frame)" />
+  </node>
+
+  <!-- fix distortion -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_fix_distortion" args="load velodyne_pointcloud/InterpolateNodelet $(arg manager)">
+    <remap from="velodyne_points_ex" to="self_cropped/pointcloud_ex" />
+    <remap from="velodyne_points_interpolate" to="rectified/pointcloud" />
+  </node>
+
+  <!-- PointCloud Outlier Filter -->
+  <!-- <node pkg="nodelet" type="nodelet" name="$(arg manager)_voxel_grid_outlier_filter" args="load pointcloud_preprocessor/voxel_grid_outlier_filter_nodelet $(arg manager)">
+    <remap from="~input" to="rectified/pointcloud" />
+    <remap from="~output" to="outlier_filtered/pointcloud" />
+    <rosparam>
+      voxel_size_x: 0.3
+      voxel_size_y: 0.3
+      voxel_size_z: 0.5
+      voxel_points_threshold: 2
+    </rosparam>
+  </node> -->
+
+</launch>
