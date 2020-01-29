@@ -175,27 +175,27 @@ private:
 
 
   CtrlCmd calcCtrlCmd();
-  void publishCtrlCmd(const double velocity, const double acceleration);
+  void publishCtrlCmd(const double vel, const double acc);
 
   bool checkEmergency();
   void resetEmergencyStop();
 
   double getDt();
   double calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj, const geometry_msgs::PoseStamped &curr_pose,
-                                        const double curr_vel, const int closest);
+                                        const double current_vel, const int closest);
   void resetHandling(ControlMode control_mode);
   
-  enum Shift getCurrentShift(const double target_velocity, const double target_acceleration);
+  enum Shift getCurrentShift(const double target_velocity);
 
   double calcSmoothStopAcc();
   bool isInSmoothStopRange(const int closest);
   void resetSmoothStop();
 
   double calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift);
-  double applyVelocityFeedback(const double target_acceleration, const double error_velocity, const double dt, const double current_vel);
+  double applyVelocityFeedback(const double target_acc, const double target_vel, const double dt, const double current_vel);
   double applyLimitFilter(const double input_val, const double max_val, const double min_val);
   double applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val, const double min_val);
-  double applySlopeCompensation(const double acceleration, const double pitch, const Shift shift);
+  double applySlopeCompensation(const double acc, const double pitch, const Shift shift);
 
   /* Debug */
   std_msgs::Float32MultiArray debug_values_;
@@ -208,7 +208,7 @@ private:
    * [3]: target acceleration after delay compensation
    * [4]: shift
    * [5]: pitch after LPF [rad]
-   * [6]: error velocity after LPF
+   * [6]: raw error velocity
    * [7]: controller_mode (0: init check, 1: PID, 2: Stop, 3: Sudden stop, 4: Smooth stop, 5: Closest waypoint error, 6: Emergency stop) 
    * [8]: acceleration after PID
    * [9]: acceleration after acceleration limit
@@ -222,7 +222,7 @@ private:
    * [17]: closest waypoint target acceleration
    **/
   void writeDebugValues(const double dt, const double current_velocity, const double target_vel, const double target_acc,
-                        const Shift shift, const double pitch, const int32_t closest_waypoint_index, const double error_vel_filtered);
+                        const Shift shift, const double pitch, const int32_t closest_waypoint_index);
 };
 
 #endif

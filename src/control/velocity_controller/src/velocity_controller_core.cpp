@@ -223,18 +223,17 @@ CtrlCmd VelocityController::calcCtrlCmd()
                                                                       current_vel_ptr_->twist.linear.x);
 
   /* shift check */
-  const Shift shift = getCurrentShift(target_vel, target_acc);
+  const Shift shift = getCurrentShift(target_vel);
   if (shift != prev_shift_)
     pid_vel_.reset();
   prev_shift_ = shift;
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
-  const double error_vel_filtered = lpf_vel_error_.filter(target_vel - current_vel);
   ROS_INFO_COND(show_debug_info_, "current_vel = %f, target_vel = %f, target_acc = %f, pitch_filtered = %f, is_smooth_stop_ = %d",
                 current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_);
-  writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx, error_vel_filtered);
+  writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx);
 
-  /* -- stop state --
+  /* ===== STOPPED =====
    *
    * If the current velocity and target velocity is almost zero,
    * and the smooth stop is not working, enter the stop state.
@@ -252,7 +251,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     return CtrlCmd{stop_state_vel_, acc_cmd};
   }
 
-  /* -- emergency state --
+  /* ===== EMERGENCY STOP =====
    *
    * If the emergency flag is true, enter the emergency state.
    * The condition of the energency is checked in checkEmergency() function.
@@ -272,7 +271,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
-  /* -- smooth stop state --
+  /* ===== SMOOTH STOP =====
    *
    * If the vehicle veloicity & target velocity is low ehough, and there is a stop point nearby the ego vehicle,
    * enter the smooth stop state.
@@ -296,7 +295,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     return CtrlCmd{target_vel, acc_cmd};
   }
 
-  /* -- feedback control state --
+  /* ===== FEEDBACK CONTROL =====
    *
    * Execute PID feedback control. 
    *
@@ -304,12 +303,11 @@ CtrlCmd VelocityController::calcCtrlCmd()
    * Output acceleration : calculated by PID controller with max_acceleration & max_jerk limit.
    * 
    */ 
-  double feedback_acc_cmd = applyVelocityFeedback(target_acc, error_vel_filtered, dt, current_vel);
+  double feedback_acc_cmd = applyVelocityFeedback(target_acc, target_vel, dt, current_vel);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[feedback control]  target_acc: %f, error_vel_filtered: %f, "
-                                  "dt: %f, current_vel: %f, feedback_acc_cmd: %f, shift: %d, out_vel: %f, out_acc: %f",
-                target_acc, error_vel_filtered, dt, current_vel, feedback_acc_cmd, shift, target_vel, acc_cmd);
+  ROS_INFO_COND(show_debug_info_, "[feedback control]  target_acc: %f, dt: %f, current_vel: %f, feedback_acc_cmd: %f, shift: %d, out_vel: %f, out_acc: %f",
+                target_acc, dt, current_vel, feedback_acc_cmd, shift, target_vel, acc_cmd);
   return CtrlCmd{target_vel, acc_cmd};
 }
 
@@ -318,6 +316,7 @@ void VelocityController::resetHandling(const ControlMode control_mode)
   if (control_mode == ControlMode::EMERGENCY_STOP)
   {
     pid_vel_.reset();
+    lpf_vel_error_.reset();
     resetSmoothStop();
     if (std::fabs(current_vel_ptr_->twist.linear.x) < stop_state_entry_ego_speed_)
     {
@@ -327,12 +326,14 @@ void VelocityController::resetHandling(const ControlMode control_mode)
   else if (control_mode == ControlMode::STOPPED)
   {
     pid_vel_.reset();
+    lpf_vel_error_.reset();
     resetSmoothStop();
     resetEmergencyStop();
   }
   else if (control_mode == ControlMode::SMOOTH_STOP)
   {
     pid_vel_.reset();
+    lpf_vel_error_.reset();
   }
 }
 
@@ -413,8 +414,7 @@ double VelocityController::getDt()
   return std::max(std::min(dt, max_dt), min_dt);
 }
 
-enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel,
-                                                                       const double target_acc)
+enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel)
 {
   const double ep = 1.0e-5;
   return target_vel > ep ? Shift::Forward : (target_vel < -ep ? Shift::Reverse : prev_shift_);
@@ -554,20 +554,24 @@ double VelocityController::applySlopeCompensation(const double input_acc, const 
   return compensated_acc;
 }
 
-double VelocityController::applyVelocityFeedback(const double target_acc, const double error_vel,
+double VelocityController::applyVelocityFeedback(const double target_acc, const double target_vel,
                                                  const double dt, const double current_vel)
 {
   const bool enable_integration = std::fabs(current_vel) < current_vel_threshold_pid_integrate_ ? false : true;
+  const double error_vel_filtered = lpf_vel_error_.filter(std::fabs(target_vel) - std::fabs(current_vel));
 
   std::vector<double> pid_contributions(3);
-  double feedbacked_acc = target_acc + pid_vel_.calculate(error_vel, dt,
-                                                          enable_integration, pid_contributions);
-  debug_values_.data.at(6) = error_vel;
-  debug_values_.data.at(8) = feedbacked_acc;
-  debug_values_.data.at(18) = pid_contributions.at(0);
-  debug_values_.data.at(19) = pid_contributions.at(1);
-  debug_values_.data.at(20) = pid_contributions.at(2);
+  const double pid_acc = pid_vel_.calculate(error_vel_filtered, dt, enable_integration, pid_contributions);
+  const double feedbacked_acc = target_acc + pid_acc;
 
+  debug_values_.data.at(8) = feedbacked_acc;
+  debug_values_.data.at(14) = error_vel_filtered;
+  debug_values_.data.at(18) = pid_contributions.at(0); // P
+  debug_values_.data.at(19) = pid_contributions.at(1); // I
+  debug_values_.data.at(20) = pid_contributions.at(2); // D
+
+  ROS_WARN("PID : target_acc = %3.3f, target_vel = %3.3f, current_vel = %3.3f, error_vel = %3.3f, fb_acc = %3.3f",
+            target_acc, target_vel, current_vel, error_vel_filtered, pid_acc);
   return feedbacked_acc;
 }
 
@@ -583,7 +587,7 @@ void VelocityController::resetEmergencyStop()
 }
 
 void VelocityController::writeDebugValues(const double dt, const double current_vel, const double target_vel, const double target_acc,
-                                          const Shift shift, const double pitch, const int32_t closest, const double error_vel_filtered)
+                                          const Shift shift, const double pitch, const int32_t closest)
 {
   const double rad2deg = 180.0 / 3.141592;
   const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
@@ -593,8 +597,8 @@ void VelocityController::writeDebugValues(const double dt, const double current_
   debug_values_.data.at(3) = target_acc;
   debug_values_.data.at(4) = double(shift);
   debug_values_.data.at(5) = pitch;
+  debug_values_.data.at(6) = target_vel - current_vel;
   debug_values_.data.at(13) = raw_pitch;
-  debug_values_.data.at(14) = error_vel_filtered;
   debug_values_.data.at(15) = pitch * rad2deg;
   debug_values_.data.at(16) = raw_pitch * rad2deg;
   debug_values_.data.at(17) = trajectory_ptr_->points.at(closest).accel.linear.x;
