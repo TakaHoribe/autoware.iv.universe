@@ -65,8 +65,8 @@ class AstarNavi {
   // params
   double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
   double update_rate_;         // replanning and publishing rate [Hz]
+  double th_arrived_distance_m_;
   double th_stopped_time_sec_;
-  double th_stopped_distance_m_;
   double th_stopped_velocity_mps_;
   double th_course_out_distance_m_;
 

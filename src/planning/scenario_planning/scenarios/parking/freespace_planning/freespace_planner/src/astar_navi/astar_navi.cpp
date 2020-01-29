@@ -185,8 +185,8 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
 AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
   private_nh_.param<double>("update_rate", update_rate_, 1.0);
+  private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
   private_nh_.param<double>("th_course_out_distance_m", th_course_out_distance_m_, 3.0);
 
@@ -266,7 +266,7 @@ bool AstarNavi::isPlanRequired() {
 void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
-      th_stopped_distance_m_;
+      th_arrived_distance_m_;
 
   const auto is_stopped = [&]() {
     for (const auto& twist : twist_buffer_) {
