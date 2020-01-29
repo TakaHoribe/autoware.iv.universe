@@ -16,7 +16,7 @@
   </group>
 
   <!-- Microstrain sensor node -->
-  <node name="microstrain_mips_node" pkg="microstrain_mips" type="microstrain_mips_node" output="screen" ns="gx5">
+  <node name="microstrain_mips_node" pkg="microstrain_mips" type="microstrain_mips_node" output="screen" >
     <param name="port" value="$(arg port)" type="str" />
     <param name="baudrate" value="$(arg baudrate)" type="int" />
 
