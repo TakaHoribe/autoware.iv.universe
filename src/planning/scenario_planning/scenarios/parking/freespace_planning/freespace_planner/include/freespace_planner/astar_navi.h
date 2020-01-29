@@ -65,9 +65,12 @@ class AstarNavi {
   // params
   double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
   double update_rate_;         // replanning and publishing rate [Hz]
+  double th_arrived_distance_m_;
   double th_stopped_time_sec_;
-  double th_stopped_distance_m_;
   double th_stopped_velocity_mps_;
+  double th_course_out_distance_m_;
+  bool replan_when_obstacle_found_;
+  bool replan_when_course_out_;
 
   // variables
   std::unique_ptr<AstarSearch> astar_;
@@ -77,9 +80,11 @@ class AstarNavi {
   geometry_msgs::PoseStamped goal_pose_global_;
 
   autoware_planning_msgs::Trajectory trajectory_;
+  autoware_planning_msgs::Trajectory partial_trajectory_;
   std::vector<size_t> reversing_indices_;
   size_t prev_target_index_;
   size_t target_index_;
+  bool is_completed_ = false;
 
   autoware_planning_msgs::Route::ConstPtr route_;
   nav_msgs::OccupancyGrid::ConstPtr occupancy_grid_;
@@ -96,6 +101,7 @@ class AstarNavi {
 
   void onTimer(const ros::TimerEvent& event);
 
+  void reset();
   bool isPlanRequired();
   void planTrajectory();
   void updateTargetIndex();

@@ -123,6 +123,7 @@ Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
 
 std::string ScenarioSelectorNode::selectScenarioByPosition() {
   const auto is_in_lane = isInLane(lanelet_map_ptr_, current_pose_->pose);
+  const auto is_goal_in_lane = isInLane(lanelet_map_ptr_, route_->goal_pose);
   const auto is_in_parking_lot = isInParkingLot(lanelet_map_ptr_, current_pose_->pose);
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
@@ -134,7 +135,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
   }
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::LaneFollowing) {
-    if (is_in_parking_lot) {
+    if (is_in_parking_lot && !is_goal_in_lane) {
       return autoware_planning_msgs::Scenario::Parking;
     }
   }
@@ -147,6 +148,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
     }
 
     if (!is_in_parking_lot) {
+      ROS_INFO_STREAM("out of parking lot");
       return autoware_planning_msgs::Scenario::LaneFollowing;
     }
   }
@@ -160,7 +162,7 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
   const auto scenario_trajectory = getScenarioInput(current_scenario_).buf_trajectory;
 
   const auto is_near_trajectory_end =
-      isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_stopped_distance_m_);
+      isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_arrived_distance_m_);
 
   const auto is_stopped = [&]() {
     for (const auto& twist : twist_buffer_) {
@@ -259,8 +261,8 @@ ScenarioSelectorNode::ScenarioSelectorNode()
   // Parameters
   private_nh_.param<double>("update_rate", update_rate_, 10.0);
   private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
+  private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input

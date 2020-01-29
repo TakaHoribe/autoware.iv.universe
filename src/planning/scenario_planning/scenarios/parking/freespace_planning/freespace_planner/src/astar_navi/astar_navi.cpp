@@ -185,9 +185,12 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
 AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
   private_nh_.param<double>("update_rate", update_rate_, 1.0);
+  private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
+  private_nh_.param<double>("th_course_out_distance_m", th_course_out_distance_m_, 3.0);
+  private_nh_.param<bool>("replan_when_obstacle_found", replan_when_obstacle_found_, true);
+  private_nh_.param<bool>("replan_when_course_out", replan_when_course_out_, true);
 
   route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
   occupancy_grid_sub_ =
@@ -213,7 +216,7 @@ void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
   goal_pose_global_.header = msg->header;
   goal_pose_global_.pose = msg->goal_pose;
 
-  trajectory_ = {};
+  reset();
 }
 
 void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
@@ -246,18 +249,24 @@ bool AstarNavi::isPlanRequired() {
     return true;
   }
 
-  astar_->initializeNodes(*occupancy_grid_);
-  // TODO(Kenji Miyake): Consider current position(index) and velocity
-  const bool is_obstacle_found = astar_->hasObstacleOnPath();
-  if (is_obstacle_found) {
-    return true;
+  if (replan_when_obstacle_found_) {
+    astar_->initializeNodes(*occupancy_grid_);
+    // TODO(Kenji Miyake): Consider current position(index) and velocity
+    const bool is_obstacle_found =
+        astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
+    if (is_obstacle_found) {
+      ROS_INFO("Found obstacle");
+      return true;
+    }
   }
 
-  constexpr double th_course_out_distance_m = 3.0;
-  const bool is_course_out =
-      calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m;
-  if (is_course_out) {
-    return true;
+  if (replan_when_course_out_) {
+    const bool is_course_out =
+        calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
+    if (is_course_out) {
+      ROS_INFO("Course out");
+      return true;
+    }
   }
 
   return false;
@@ -266,7 +275,7 @@ bool AstarNavi::isPlanRequired() {
 void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
-      th_stopped_distance_m_;
+      th_arrived_distance_m_;
 
   const auto is_stopped = [&]() {
     for (const auto& twist : twist_buffer_) {
@@ -281,13 +290,12 @@ void AstarNavi::updateTargetIndex() {
     const auto new_target_index =
         getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
 
-    // Finished publishing all partial trajectories
     if (new_target_index == target_index_) {
-      ROS_INFO_THROTTLE(1, "Astar completed");
+      // Finished publishing all partial trajectories
+      is_completed_ = true;
       private_nh_.setParam("is_completed", true);
+      ROS_INFO_THROTTLE(1, "Astar completed");
     } else {
-      private_nh_.setParam("is_completed", false);
-
       // Switch to next partial trajectory
       prev_target_index_ = target_index_;
       target_index_ =
@@ -303,7 +311,11 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   if (!isActive(scenario_)) {
-    trajectory_ = {};
+    reset();
+    return;
+  }
+
+  if (is_completed_) {
     return;
   }
 
@@ -314,23 +326,31 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   if (isPlanRequired()) {
-    trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
+    reset();
 
-    trajectory_pub_.publish(trajectory_);
-    debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
-    debug_partial_pose_array_pub_.publish(trajectory2posearray(trajectory_));
+    // Stop before planning new trajectoryg
+    const auto stop_trajectory = createStopTrajectory(tf_buffer_, current_pose_global_);
+    trajectory_pub_.publish(stop_trajectory);
+    debug_pose_array_pub_.publish(trajectory2posearray(stop_trajectory));
+    debug_partial_pose_array_pub_.publish(trajectory2posearray(stop_trajectory));
 
+    // Plan new trajectory
     planTrajectory();
   }
 
+  // StopTrajectory
+  if (trajectory_.points.size() <= 1) {
+    return;
+  }
+
+  // Update partial trajectory
   updateTargetIndex();
+  partial_trajectory_ = getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
 
-  const auto partial_trajectory =
-      getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
-
-  trajectory_pub_.publish(partial_trajectory);
+  // Publish messages
+  trajectory_pub_.publish(partial_trajectory_);
   debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
-  debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory));
+  debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory_));
 }
 
 void AstarNavi::planTrajectory() {
@@ -363,13 +383,20 @@ void AstarNavi::planTrajectory() {
     ROS_INFO("Found goal!");
     trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_->getWaypoints(),
                                    waypoints_velocity_);
+    reversing_indices_ = getReversingIndices(trajectory_);
+    prev_target_index_ = 0;
+    target_index_ =
+        getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
+
   } else {
     ROS_INFO("Can't find goal...");
-    trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
+    reset();
   }
+}
 
-  reversing_indices_ = getReversingIndices(trajectory_);
-  prev_target_index_ = 0;
-  target_index_ =
-      getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
+void AstarNavi::reset() {
+  trajectory_ = {};
+  partial_trajectory_ = {};
+  is_completed_ = false;
+  private_nh_.setParam("is_completed", false);
 }

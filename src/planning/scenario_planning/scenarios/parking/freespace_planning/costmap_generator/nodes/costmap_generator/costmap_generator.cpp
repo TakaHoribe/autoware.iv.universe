@@ -159,47 +159,21 @@ void CostmapGenerator::loadParkingAreasFromLaneletMap(
 }
 
 void CostmapGenerator::onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg) {
-  if (!use_wayarea_) {
-    return;
-  }
-
   lanelet_map_ = std::make_shared<lanelet::LaneletMap>();
   lanelet::utils::conversion::fromBinMsg(msg, lanelet_map_);
-  loaded_lanelet_map_ = true;
-  loadRoadAreasFromLaneletMap(lanelet_map_, &area_points_);
-  loadParkingAreasFromLaneletMap(lanelet_map_, &area_points_);
+
+  if (use_wayarea_) {
+    loadRoadAreasFromLaneletMap(lanelet_map_, &area_points_);
+    loadParkingAreasFromLaneletMap(lanelet_map_, &area_points_);
+  }
 }
 
 void CostmapGenerator::onObjects(
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects) {
-  if (!isActive(scenario_)) {
-    return;
-  }
-
-  if (!use_objects_) {
-    return;
-  }
-
-  costmap_[LayerName::objects] = generateObjectsCostmap(in_objects);
-  costmap_[LayerName::wayarea] = generateWayAreaCostmap();
-  costmap_[LayerName::combined] = generateCombinedCostmap();
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg) {
+  objects_ = msg;
 }
 
-void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points_msg) {
-  if (!isActive(scenario_)) {
-    return;
-  }
-
-  if (!use_points_) {
-    return;
-  }
-
-  pcl::PointCloud<pcl::PointXYZ>::Ptr in_points(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(*in_points_msg, *in_points);
-  costmap_[LayerName::points] = generatePointsCostmap(in_points);
-  costmap_[LayerName::wayarea] = generateWayAreaCostmap();
-  costmap_[LayerName::combined] = generateCombinedCostmap();
-}
+void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& msg) { points_ = msg; }
 
 void CostmapGenerator::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) {
   scenario_ = msg;
@@ -225,6 +199,22 @@ void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
   p.x() = tf.transform.translation.x;
   p.y() = tf.transform.translation.y;
   costmap_.setPosition(p);
+
+  if (use_wayarea_) {
+    costmap_[LayerName::wayarea] = generateWayAreaCostmap();
+  }
+
+  if (use_objects_) {
+    costmap_[LayerName::objects] = generateObjectsCostmap(objects_);
+  }
+
+  if (use_points_) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(*points_, *points);
+    costmap_[LayerName::points] = generatePointsCostmap(points);
+  }
+
+  costmap_[LayerName::combined] = generateCombinedCostmap();
 
   publishCostmap(costmap_);
 }
