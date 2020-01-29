@@ -80,8 +80,18 @@ void PoseInitializer::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr
 
 bool PoseInitializer::serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res)
 {
+  gnss_pose_sub_.shutdown();  // get only first topic
+
   geometry_msgs::PoseWithCovarianceStamped::Ptr add_height_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(req.pose_with_cov, add_height_pose_msg_ptr);
+
+  // TODO
+  add_height_pose_msg_ptr->pose.covariance[0] = 1.0;
+  add_height_pose_msg_ptr->pose.covariance[1*6+1] = 1.0;
+  add_height_pose_msg_ptr->pose.covariance[2*6+2] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[3*6+3] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[4*6+4] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[5*6+5] = 1.0;
 
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
@@ -98,8 +108,18 @@ bool PoseInitializer::serviceInitial(autoware_localization_srvs::PoseWithCovaria
 
 void PoseInitializer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr)
 {
+  gnss_pose_sub_.shutdown();  // get only first topic
+
   geometry_msgs::PoseWithCovarianceStamped::Ptr add_height_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(*pose_cov_msg_ptr, add_height_pose_msg_ptr);
+
+  // TODO
+  add_height_pose_msg_ptr->pose.covariance[0] = 2.0;
+  add_height_pose_msg_ptr->pose.covariance[1*6+1] = 2.0;
+  add_height_pose_msg_ptr->pose.covariance[2*6+2] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[3*6+3] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[4*6+4] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[5*6+5] = 0.3;
 
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
@@ -119,15 +139,17 @@ void PoseInitializer::callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianc
   geometry_msgs::PoseWithCovarianceStamped::Ptr add_height_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(*pose_cov_msg_ptr, add_height_pose_msg_ptr);
 
+  // TODO
+  add_height_pose_msg_ptr->pose.covariance[0] = 1.0;
+  add_height_pose_msg_ptr->pose.covariance[1*6+1] = 1.0;
+  add_height_pose_msg_ptr->pose.covariance[2*6+2] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[3*6+3] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[4*6+4] = 0.01;
+  add_height_pose_msg_ptr->pose.covariance[5*6+5] = 3.14;
+
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
 
-  aligned_pose_msg_ptr->pose.covariance[0] = 2.0;
-  aligned_pose_msg_ptr->pose.covariance[1*6+1] = 2.0;
-  aligned_pose_msg_ptr->pose.covariance[2*6+2] = 0.01;
-  aligned_pose_msg_ptr->pose.covariance[3*6+3] = 0.01;
-  aligned_pose_msg_ptr->pose.covariance[4*6+4] = 0.01;
-  aligned_pose_msg_ptr->pose.covariance[5*6+5] = 3.14;
   if (succeeded_align) {
     initial_pose_pub_.publish(*aligned_pose_msg_ptr);
   }
@@ -189,7 +211,3 @@ bool PoseInitializer::callAlignService(const geometry_msgs::PoseWithCovarianceSt
     return false;
   }
 }
-
-
-
-
