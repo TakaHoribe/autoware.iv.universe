@@ -188,6 +188,7 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
   private_nh_.param<double>("th_stopped_distance_m", th_stopped_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
+  private_nh_.param<double>("th_course_out_distance_m", th_course_out_distance_m_, 3.0);
 
   route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
   occupancy_grid_sub_ =
@@ -253,9 +254,8 @@ bool AstarNavi::isPlanRequired() {
     return true;
   }
 
-  constexpr double th_course_out_distance_m = 3.0;
   const bool is_course_out =
-      calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m;
+      calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
   if (is_course_out) {
     return true;
   }

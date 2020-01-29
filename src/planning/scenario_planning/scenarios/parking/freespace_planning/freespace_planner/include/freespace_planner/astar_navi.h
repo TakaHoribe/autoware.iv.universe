@@ -68,6 +68,7 @@ class AstarNavi {
   double th_stopped_time_sec_;
   double th_stopped_distance_m_;
   double th_stopped_velocity_mps_;
+  double th_course_out_distance_m_;
 
   // variables
   std::unique_ptr<AstarSearch> astar_;
