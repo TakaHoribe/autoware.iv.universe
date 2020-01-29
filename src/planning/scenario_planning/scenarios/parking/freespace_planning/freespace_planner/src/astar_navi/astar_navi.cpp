@@ -338,6 +338,11 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
     planTrajectory();
   }
 
+  // StopTrajectory
+  if (trajectory_.points.size() == 1) {
+    return;
+  }
+
   // Update partial trajectory
   updateTargetIndex();
   partial_trajectory_ = getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
