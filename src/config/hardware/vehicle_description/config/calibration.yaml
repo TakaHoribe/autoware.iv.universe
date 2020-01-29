@@ -6,47 +6,47 @@ base_link2traffic_light_camera:
   pitch: -0.3
   yaw: 0.0
 base_link2camera1:
-  x: 2.07
-  y: 0.0
-  z: 1.57
+  x: 1.0
+  y: 0.55
+  z: 1.63
   roll: 0.0
-  pitch: -0.3
-  yaw: 0.0
+  pitch: 0.349066
+  yaw: 1.0472
 base_link2camera2:
-  x: 2.07
-  y: 0.0
-  z: 1.57
+  x: 0.8
+  y: -0.55
+  z: 1.63
   roll: 0.0
-  pitch: -0.3
-  yaw: 0.0
+  pitch: 0.349066
+  yaw: -2.0943951
 base_link2camera3:
-  x: 2.07
-  y: 0.0
-  z: 1.57
+  x: 1.0
+  y: -0.55
+  z: 1.63
   roll: 0.0
-  pitch: -0.3
-  yaw: 0.0
+  pitch: 0.349066
+  yaw: -1.0472
 base_link2camera4:
-  x: 2.07
-  y: 0.0
-  z: 1.57
+  x: 0.8
+  y: 0.55
+  z: 1.63
   roll: 0.0
-  pitch: -0.3
-  yaw: 0.0
+  pitch: 0.349066
+  yaw: 2.0943951
 base_link2camera5:
-  x: 2.07
+  x: 0.93
   y: 0.0
-  z: 1.57
+  z: 1.918
   roll: 0.0
-  pitch: -0.3
+  pitch: 0.0
   yaw: 0.0
 base_link2camera6:
-  x: 2.07
+  x: 0.87
   y: 0.0
-  z: 1.57
+  z: 1.918
   roll: 0.0
-  pitch: -0.3
-  yaw: 0.0
+  pitch: 00
+  yaw: 1.57
 base_link2velodyne_top:
   x: 0.9
   y: 0.0
