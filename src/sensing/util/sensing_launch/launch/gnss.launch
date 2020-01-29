@@ -23,6 +23,7 @@
         <arg name="coordinate_system" value="1" doc="0:UTM, 1:MGRS, 2:PLANE" />
         <arg name="use_ublox_receiver" value="true" />
 
+        <arg name="gnss_frame" value="gnss_link" />
       </include>
 
     </group>
