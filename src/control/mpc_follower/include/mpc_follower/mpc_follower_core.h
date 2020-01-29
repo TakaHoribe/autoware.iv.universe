@@ -180,6 +180,29 @@ private:
    */
   bool calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd);
 
+  /**
+   * @brief set initial condition for mpc
+   * @param [in] lat_err lateral error
+   * @param [in] yaw_err yaw error
+   * @param [out] x0 initial state
+   */
+  bool setInitialState(const double &lat_err, const double &yaw_err, const double &steer, Eigen::VectorXd &x0);
+
+  /**
+   * @brief update status for delay compensation
+   * @param [in] start_time start time for update
+   * @param [out] x updated state
+   */
+  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x);
+
+  /**
+   * @brief update status for delay compensation
+   * @param [in] start_time start time for update
+   * @param [out] x updated state at delayed_time
+   * @param [out] delayed_time start_time + delay_compensation_time
+   */
+  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x, double &delayed_time);
+
   /* debug */
   bool show_debug_info_; //!< @brief flag to display debug info
 
