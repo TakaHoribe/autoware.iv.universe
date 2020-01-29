@@ -41,7 +41,7 @@ class AstarSearch {
 
   void initializeNodes(const nav_msgs::OccupancyGrid& costmap);
   bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
-  bool hasObstacleOnPath();
+  bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory);
 
   const nav_msgs::Path& getPath() const { return path_; }
   const AstarWaypoints& getWaypoints() const { return waypoints_; }

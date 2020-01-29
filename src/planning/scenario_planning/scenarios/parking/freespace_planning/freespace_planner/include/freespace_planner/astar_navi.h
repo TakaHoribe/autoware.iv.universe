@@ -78,9 +78,11 @@ class AstarNavi {
   geometry_msgs::PoseStamped goal_pose_global_;
 
   autoware_planning_msgs::Trajectory trajectory_;
+  autoware_planning_msgs::Trajectory partial_trajectory_;
   std::vector<size_t> reversing_indices_;
   size_t prev_target_index_;
   size_t target_index_;
+  bool is_completed_ = false;
 
   autoware_planning_msgs::Route::ConstPtr route_;
   nav_msgs::OccupancyGrid::ConstPtr occupancy_grid_;
@@ -97,6 +99,7 @@ class AstarNavi {
 
   void onTimer(const ros::TimerEvent& event);
 
+  void reset();
   bool isPlanRequired();
   void planTrajectory();
   void updateTargetIndex();

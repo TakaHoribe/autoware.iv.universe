@@ -608,9 +608,13 @@ bool AstarSearch::detectCollisionWaveFront(const WaveFrontNode& ref) {
   return false;
 }
 
-bool AstarSearch::hasObstacleOnPath() {
-  for (const auto& p : waypoints_.waypoints) {
-    const auto index = pose2index(costmap_, p.pose.pose, theta_size_);
+bool AstarSearch::hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory) {
+  for (const auto& p : trajectory.poses) {
+    const auto index = pose2index(costmap_, p, theta_size_);
+    if (isOutOfRange(index.x, index.y)) {
+      continue;
+    }
+
     if (isObs(index.x, index.y)) {
       return true;
     }

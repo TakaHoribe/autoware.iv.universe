@@ -214,7 +214,7 @@ void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
   goal_pose_global_.header = msg->header;
   goal_pose_global_.pose = msg->goal_pose;
 
-  trajectory_ = {};
+  reset();
 }
 
 void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
@@ -249,14 +249,17 @@ bool AstarNavi::isPlanRequired() {
 
   astar_->initializeNodes(*occupancy_grid_);
   // TODO(Kenji Miyake): Consider current position(index) and velocity
-  const bool is_obstacle_found = astar_->hasObstacleOnPath();
+  const bool is_obstacle_found =
+      astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
   if (is_obstacle_found) {
+    ROS_INFO("Found obstacle");
     return true;
   }
 
   const bool is_course_out =
       calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
   if (is_course_out) {
+    ROS_INFO("Course out");
     return true;
   }
 
@@ -281,13 +284,12 @@ void AstarNavi::updateTargetIndex() {
     const auto new_target_index =
         getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
 
-    // Finished publishing all partial trajectories
     if (new_target_index == target_index_) {
-      ROS_INFO_THROTTLE(1, "Astar completed");
+      // Finished publishing all partial trajectories
+      is_completed_ = true;
       private_nh_.setParam("is_completed", true);
+      ROS_INFO_THROTTLE(1, "Astar completed");
     } else {
-      private_nh_.setParam("is_completed", false);
-
       // Switch to next partial trajectory
       prev_target_index_ = target_index_;
       target_index_ =
@@ -303,7 +305,11 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   if (!isActive(scenario_)) {
-    trajectory_ = {};
+    reset();
+    return;
+  }
+
+  if (is_completed_) {
     return;
   }
 
@@ -314,23 +320,26 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   if (isPlanRequired()) {
-    trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
+    reset();
 
-    trajectory_pub_.publish(trajectory_);
-    debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
-    debug_partial_pose_array_pub_.publish(trajectory2posearray(trajectory_));
+    // Stop before planning new trajectoryg
+    const auto stop_trajectory = createStopTrajectory(tf_buffer_, current_pose_global_);
+    trajectory_pub_.publish(stop_trajectory);
+    debug_pose_array_pub_.publish(trajectory2posearray(stop_trajectory));
+    debug_partial_pose_array_pub_.publish(trajectory2posearray(stop_trajectory));
 
+    // Plan new trajectory
     planTrajectory();
   }
 
+  // Update partial trajectory
   updateTargetIndex();
+  partial_trajectory_ = getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
 
-  const auto partial_trajectory =
-      getPartialTrajectory(trajectory_, prev_target_index_, target_index_);
-
-  trajectory_pub_.publish(partial_trajectory);
+  // Publish messages
+  trajectory_pub_.publish(partial_trajectory_);
   debug_pose_array_pub_.publish(trajectory2posearray(trajectory_));
-  debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory));
+  debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory_));
 }
 
 void AstarNavi::planTrajectory() {
@@ -372,4 +381,11 @@ void AstarNavi::planTrajectory() {
   prev_target_index_ = 0;
   target_index_ =
       getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
+}
+
+void AstarNavi::reset() {
+  trajectory_ = {};
+  partial_trajectory_ = {};
+  is_completed_ = false;
+  private_nh_.setParam("is_completed", false);
 }
