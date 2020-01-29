@@ -1,5 +1,11 @@
-<?xml version="1.0"?>
 <launch>
+  <!-- Autoware: vehicle interface -->
+  <group ns="vehicle">
+    <include file="$(find as)/launch/pacmod_interface.launch">
+    </include>
+  </group>
+
+  <!-- Vehicle: Autonomoustuff pacmod module -->
   <arg name="pacmod_vehicle_type" default="LEXUS_RX_450H" />
   <arg name="kvaser_hardware_id" default="57075" />
   <arg name="kvaser_circuit_id" default="0" />
