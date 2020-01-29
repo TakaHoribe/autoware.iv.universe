@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
 
-    <arg name="points_src" default="/localization/util/crop_self" />
-    <arg name="points_src_apollo" default="/sensor/lidar/main/velodyne_points" />
-
     <!-- publish camera info -->
     <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
 
@@ -22,16 +19,5 @@
     <node name="camera_relay" pkg="topic_tools" type="relay" args="/tmp_img_lgsvl /sensor/camera/traffic_light/image_raw" />
     <node name="pcl_relay_apollo" pkg="topic_tools" type="relay" args="/sensor/lidar/main/velodyne_points_ex/self_cropped /sensor/lidar/main/velodyne_points" />
 
-    <!-- publish base_link-centered and self-cropped pcl. (substitute for velodyne nodelet manager) -->
-    <!--
-    <node pkg="pointcloud_preprocessor" type="passthrough_filter_node" name="passthrough_filter_for_apollo">
-        <remap from="~input" to="$(arg points_src)" />
-        <remap from="~output" to="$(arg points_src_apollo)" />
-        <rosparam>
-          output_frame: velodyne
-          input_frame: base_link
-        </rosparam>
-    </node>
-    -->
 
 </launch>
