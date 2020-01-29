@@ -246,75 +246,29 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   const double err_x = current_pose_ptr_->pose.position.x - nearest_pose.position.x;
   const double err_y = current_pose_ptr_->pose.position.y - nearest_pose.position.y;
   const double sp_yaw = tf2::getYaw(nearest_pose.orientation);
-  const double err_lat = -std::sin(sp_yaw) * err_x + std::cos(sp_yaw) * err_y;
+  const double lat_err = -std::sin(sp_yaw) * err_x + std::cos(sp_yaw) * err_y;
 
   /* get steering angle */
   const double steer = *current_steer_ptr_;
 
   /* define initial state for error dynamics */
   Eigen::VectorXd x0 = Eigen::VectorXd::Zero(DIM_X);
-  if (vehicle_model_type_ == "kinematics")
+  if(!setInitialState(lat_err, yaw_err, steer, x0))
   {
-    x0 << err_lat, yaw_err, steer;
-  }
-  else if (vehicle_model_type_ == "kinematics_no_delay")
-  {
-    x0 << err_lat, yaw_err;
-  }
-  else if (vehicle_model_type_ == "dynamics")
-  {
-    double dot_err_lat = (err_lat - lateral_error_prev_) / ctrl_period_;
-    double dot_err_yaw = (yaw_err - yaw_error_prev_) / ctrl_period_;
-    ROS_INFO_COND(show_debug_info_, "[MPC] (before lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
-    lateral_error_prev_ = err_lat;
-    yaw_error_prev_ = yaw_err;
-    dot_err_lat = lpf_lateral_error_.filter(dot_err_lat);
-    dot_err_yaw = lpf_yaw_error_.filter(dot_err_yaw);
-    ROS_INFO_COND(show_debug_info_, "[MPC] (after lpf) dot_err_lat = %f, dot_err_yaw = %f", dot_err_lat, dot_err_yaw);
-    x0 << err_lat, dot_err_lat, yaw_err, dot_err_yaw;
-  }
-  else
-  {
-    ROS_ERROR("vehicle_model_type is undefined");
-    return false;
+    ROS_ERROR("fail to set initial state.");
   }
   ROS_INFO_COND(show_debug_info_, "[MPC] selfpose.x = %f, y = %f, yaw = %f", current_pose_ptr_->pose.position.x, current_pose_ptr_->pose.position.y, current_yaw);
   ROS_INFO_COND(show_debug_info_, "[MPC] nearpose.x = %f, y = %f, yaw = %f", nearest_pose.position.x, nearest_pose.position.y, tf2::getYaw(nearest_pose.orientation));
   ROS_INFO_COND(show_debug_info_, "[MPC] nearest_index = %d, nearest_traj_time = %f", nearest_index, nearest_traj_time);
-  ROS_INFO_COND(show_debug_info_, "[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", err_lat, yaw_err, steer, sp_yaw, current_yaw);
+  ROS_INFO_COND(show_debug_info_, "[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", lat_err, yaw_err, steer, sp_yaw, current_yaw);
 
 
   /////////////// delay compensation  ///////////////
-  Eigen::MatrixXd Ad(DIM_X, DIM_X);
-  Eigen::MatrixXd Bd(DIM_X, DIM_U);
-  Eigen::MatrixXd Wd(DIM_X, 1);
-  Eigen::MatrixXd Cd(DIM_Y, DIM_X);
-  Eigen::MatrixXd Uref(DIM_U, 1);
-
-  Eigen::MatrixXd x_curr = x0;
-  double mpc_curr_time = mpc_start_time;
-  for (unsigned int i = 0; i < input_buffer_.size(); ++i)
+  double mpc_curr_time;
+  if(!updateStateForDelayCompensation(mpc_start_time, x0, mpc_curr_time))
   {
-    double k = 0.0;
-    double v = 0.0;
-    if (!MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.k, mpc_curr_time, k) ||
-        !MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.vx, mpc_curr_time, v))
-    {
-      ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: mpc resample error at delay compensation, stop mpc calculation. check code!");
-      return false;
-    }
-
-    /* get discrete state matrix A, B, C, W */
-    vehicle_model_ptr_->setVelocity(v);
-    vehicle_model_ptr_->setCurvature(k);
-    vehicle_model_ptr_->calculateDiscreteMatrix(Ad, Bd, Cd, Wd, ctrl_period_);
-    Eigen::MatrixXd ud = Eigen::MatrixXd::Zero(DIM_U, 1);
-    ud(0, 0) = input_buffer_.at(i); // for steering input delay
-    x_curr = Ad * x_curr + Bd * ud + Wd;
-    mpc_curr_time += ctrl_period_;
+    ROS_ERROR("fail to update states for delay compemsation");
   }
-  x0 = x_curr; // set delay compensated initial state
-
 
   /////////////// generate mpc matrix  ///////////////
   /*
@@ -322,6 +276,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
    * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
    * Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
    */
+  Eigen::MatrixXd Ad(DIM_X, DIM_X);
+  Eigen::MatrixXd Bd(DIM_X, DIM_U);
+  Eigen::MatrixXd Wd(DIM_X, 1);
+  Eigen::MatrixXd Cd(DIM_Y, DIM_X);
+  Eigen::MatrixXd Uref(DIM_U, 1);
 
   Eigen::MatrixXd Aex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_X);
   Eigen::MatrixXd Bex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_U * N);
@@ -519,28 +478,99 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.k, nearest_traj_time, nearest_k);
 
     std_msgs::Float32MultiArray debug_values;
-    debug_values.data.push_back(steer_cmd);                                      // [0] final steering command (MPC + LPF)
-    debug_values.data.push_back(u_sat);                                          // [1] mpc calculation result
-    debug_values.data.push_back(Urefex(0));                                      // [2] feedforward steering value
-    debug_values.data.push_back(std::atan(nearest_k * wheelbase_));              // [3] feedforward steering value raw
-    debug_values.data.push_back(steer);                                          // [4] current steering angle
-    debug_values.data.push_back(err_lat);                                        // [5] lateral error
-    debug_values.data.push_back(tf2::getYaw(current_pose_ptr_->pose.orientation));  // [6] current_pose yaw
-    debug_values.data.push_back(tf2::getYaw(nearest_pose.orientation));          // [7] nearest_pose yaw
-    debug_values.data.push_back(yaw_err);                                        // [8] yaw error
-    debug_values.data.push_back(vel_cmd);                                        // [9] command velocitys
-    debug_values.data.push_back(current_velocity_ptr_->twist.linear.x);                 // [10] measured velocity
-    debug_values.data.push_back(curr_v * tan(steer_cmd) / wheelbase_);  // [11] angvel from steer comand (MPC assumes)
-    debug_values.data.push_back(curr_v * tan(steer) / wheelbase_);      // [12] angvel from measured steer
-    debug_values.data.push_back(curr_v * nearest_k);                    // [13] angvel from path curvature (Path angvel)
-    debug_values.data.push_back(nearest_k);                             // [14] nearest path curvature
-    debug_values.data.push_back(estimate_twist_.twist.linear.x);        // [15] current velocity
-    debug_values.data.push_back(estimate_twist_.twist.angular.z);       // [16] estimate twist angular velocity (real angvel)
+    debug_values.data.push_back(steer_cmd);                                        // [0] final steering command (MPC + LPF)
+    debug_values.data.push_back(u_sat);                                            // [1] mpc calculation result
+    debug_values.data.push_back(Urefex(0));                                        // [2] feedforward steering value
+    debug_values.data.push_back(std::atan(nearest_k * wheelbase_));                // [3] feedforward steering value raw
+    debug_values.data.push_back(steer);                                            // [4] current steering angle
+    debug_values.data.push_back(lat_err);                                          // [5] lateral error
+    debug_values.data.push_back(tf2::getYaw(current_pose_ptr_->pose.orientation)); // [6] current_pose yaw
+    debug_values.data.push_back(tf2::getYaw(nearest_pose.orientation));            // [7] nearest_pose yaw
+    debug_values.data.push_back(yaw_err);                                          // [8] yaw error
+    debug_values.data.push_back(vel_cmd);                                          // [9] command velocitys
+    debug_values.data.push_back(current_velocity_ptr_->twist.linear.x);            // [10] measured velocity
+    debug_values.data.push_back(curr_v * tan(steer_cmd) / wheelbase_);             // [11] angvel from steer comand (MPC assumes)
+    debug_values.data.push_back(curr_v * tan(steer) / wheelbase_);                 // [12] angvel from measured steer
+    debug_values.data.push_back(curr_v * nearest_k);                               // [13] angvel from path curvature (Path angvel)
+    debug_values.data.push_back(nearest_k);                                        // [14] nearest path curvature
+    debug_values.data.push_back(estimate_twist_.twist.linear.x);                   // [15] current velocity
+    debug_values.data.push_back(estimate_twist_.twist.angular.z);                  // [16] estimate twist angular velocity (real angvel)
     pub_debug_values_.publish(debug_values);
   }
 
   return true;
 };
+
+bool MPCFollower::setInitialState(const double &lat_err, const double &yaw_err, const double &steer, Eigen::VectorXd &x0)
+{
+  if (vehicle_model_type_ == "kinematics")
+  {
+    x0 << lat_err, yaw_err, steer;
+    return true;
+  }
+  else if (vehicle_model_type_ == "kinematics_no_delay")
+  {
+    x0 << lat_err, yaw_err;
+    return true;
+  }
+  else if (vehicle_model_type_ == "dynamics")
+  {
+    double dot_lat_err = (lat_err - lateral_error_prev_) / ctrl_period_;
+    double dot_yaw_err = (yaw_err - yaw_error_prev_) / ctrl_period_;
+    ROS_INFO_COND(show_debug_info_, "[MPC] (before lpf) dot_lat_err = %f, dot_yaw_err = %f", dot_lat_err, dot_yaw_err);
+    lateral_error_prev_ = lat_err;
+    yaw_error_prev_ = yaw_err;
+    dot_lat_err = lpf_lateral_error_.filter(dot_lat_err);
+    dot_yaw_err = lpf_yaw_error_.filter(dot_yaw_err);
+    ROS_INFO_COND(show_debug_info_, "[MPC] (after lpf) dot_lat_err = %f, dot_yaw_err = %f", dot_lat_err, dot_yaw_err);
+    x0 << lat_err, dot_lat_err, yaw_err, dot_yaw_err;
+    return true;
+  }
+  else
+  {
+    ROS_ERROR("vehicle_model_type is undefined");
+    return false;
+  }
+}
+
+bool MPCFollower::updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x, double &delayed_time)
+{
+  const int DIM_X = vehicle_model_ptr_->getDimX();
+  const int DIM_U = vehicle_model_ptr_->getDimU();
+  const int DIM_Y = vehicle_model_ptr_->getDimY();
+
+  Eigen::MatrixXd Ad(DIM_X, DIM_X);
+  Eigen::MatrixXd Bd(DIM_X, DIM_U);
+  Eigen::MatrixXd Wd(DIM_X, 1);
+  Eigen::MatrixXd Cd(DIM_Y, DIM_X);
+
+  Eigen::MatrixXd x_curr = x;
+  double mpc_curr_time = start_time;
+  for (unsigned int i = 0; i < input_buffer_.size(); ++i)
+  {
+    double k = 0.0;
+    double v = 0.0;
+    if (!MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.k, mpc_curr_time, k) ||
+        !MPCUtils::interp1d(ref_traj_.relative_time, ref_traj_.vx, mpc_curr_time, v))
+    {
+      ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: mpc resample error at delay compensation, stop mpc calculation. check code!");
+      return false;
+    }
+
+    /* get discrete state matrix A, B, C, W */
+    vehicle_model_ptr_->setVelocity(v);
+    vehicle_model_ptr_->setCurvature(k);
+    vehicle_model_ptr_->calculateDiscreteMatrix(Ad, Bd, Cd, Wd, ctrl_period_);
+    Eigen::MatrixXd ud = Eigen::MatrixXd::Zero(DIM_U, 1);
+    ud(0, 0) = input_buffer_.at(i); // for steering input delay
+    x_curr = Ad * x_curr + Bd * ud + Wd;
+    mpc_curr_time += ctrl_period_;
+  }
+  x = x_curr; // set delay compensated initial state
+  delayed_time = mpc_curr_time;
+  return true;
+}
+
 
 void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &msg)
 {

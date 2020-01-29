@@ -220,7 +220,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double current_vel = current_vel_ptr_->twist.linear.x;
   double target_vel = calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx);
   double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(*trajectory_ptr_, closest_idx, delay_compensation_time_,
-                                                                      current_vel_ptr_->twist.linear.x);
+                                                                      current_vel);
 
   /* shift check */
   const Shift shift = getCurrentShift(target_vel);
