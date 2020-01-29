@@ -8,7 +8,7 @@
   <arg name="is_completed" />
 
   <!-- Node configurations -->
-  <arg name="waypoints_velocity" default="5.0" />
+  <arg name="waypoints_velocity" default="3.0" />
   <arg name="update_rate" default="10.0" />
   <arg name="th_arrived_distance_m" default="3.0" />
   <arg name="th_stopped_time_sec" default="1.0" />
