@@ -1,0 +1,75 @@
+# Lexus RX450H Required Configuration
+# This file defines all of the required parameters needed for the MKZ
+# and Fusion to function.
+# Set these in CONFIG.TXT and save to the PACMod filesystem.
+
+# Rename this file to VEHICLE.TXT and copy to the PACMod
+
+# Brakes
+# Brake Pedal Position Sensor 1
+RX_450H_BRAKE_PPS_SKS1_MIN
+RX_450H_BRAKE_PPS_SKS1_MAX
+
+# Brake Pedal Position Sensor 2
+RX_450H_BRAKE_PPS_SKS2_MIN
+RX_450H_BRAKE_PPS_SKS2_MAX
+
+# Brake Override
+BRAKE_OVERRIDE_PCT
+BRAKE_OVERRIDE_DEBOUNCE_THRESH
+
+# Brake Stroke Sensor Fault
+LEXUS_BRAKE_POS_A_FAULT_V_MIN
+LEXUS_BRAKE_POS_A_FAULT_V_MAX
+LEXUS_BRAKE_POS_B_FAULT_V_MIN
+LEXUS_BRAKE_POS_B_FAULT_V_MAX
+LEXUS_BRAKE_POS_FAULT_AVG_RANGE
+LEXUS_BRAKE_PRS_FAULT_AVG_RANGE
+
+# Brake Pressure Sensor Fault
+LEXUS_BRAKE_PRS_A_FAULT_V_MIN
+LEXUS_BRAKE_PRS_A_FAULT_V_MAX
+LEXUS_BRAKE_PRS_B_FAULT_V_MIN
+LEXUS_BRAKE_PRS_B_FAULT_V_MAX
+
+# Brake Pedal Sensor Fault
+LEXUS_BRAKE_PEDAL_FAULT_V_MIN
+LEXUS_BRAKE_PEDAL_FAULT_V_MAX
+
+RX_450H_BRAKE_PMCx_MIN
+RX_450H_BRAKE_PMCx_MAX
+
+# Accelerator
+# Accelerator Pedal Position
+
+# VPA2
+ACCEL_A_MIN
+ACCEL_A_MAX
+
+# VPA1
+ACCEL_B_MIN
+ACCEL_B_MAX
+
+# Accelerator Fault Range
+ACCEL_A_FAULT_MIN
+ACCEL_A_FAULT_MAX
+ACCEL_B_FAULT_MIN
+ACCEL_B_FAULT_MAX
+
+# Accelerator Override
+ACCEL_OVERRIDE_PCT
+ACCEL_OVERRIDE_DEBOUNCE_THRESH
+
+# Steering
+# Steering Torque 1
+RX_450H_TRQ1_ZERO_PT
+
+# Steering Torque 2
+RX_450H_TRQ2_ZERO_PT
+
+# Steering angle offset
+RX_450H_SWA_OFFSET
+
+# Steering Override
+STEERING_TORQUE_OVERRIDE_THRESH
+STEERING_TORQUE_DEBOUNCE_THRESH

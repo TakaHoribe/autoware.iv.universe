@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="controller_json" default="$(find as_config)/json/veh_controller.json" />
+  <arg name="interface_json" default="$(find as_config)/json/veh_interface.json" />
+  <arg name="speed_json" default="$(find as_config)/json/speed_model.json" />
+  <arg name="steering_json" default="$(find as_config)/json/steering_model.json" />
+
+  <remap from="/as/enable_cmd" to="/pacmod/as_rx/enable" />
+  <remap from="/as/throttle_cmd" to="/pacmod/as_rx/accel_cmd"/>
+  <remap from="/as/brake_cmd" to="/pacmod/as_rx/brake_cmd"/>
+  <remap from="/as/steering_cmd" to="/pacmod/as_rx/steer_cmd"/>
+  <remap from="/as/transmission_cmd" to="/pacmod/as_rx/shift_cmd"/>
+  <remap from="/as/turn_signal_cmd" to="/pacmod/as_rx/turn_cmd"/>
+  <remap from="/as/global_report" to="/pacmod/parsed_tx/global_rpt"/>
+  <remap from="/as/throttle_report" to="/pacmod/parsed_tx/accel_rpt"/>
+  <remap from="/as/brake_report" to="/pacmod/parsed_tx/brake_rpt"/>
+  <remap from="/as/steering_report" to="/pacmod/parsed_tx/steer_rpt"/>
+  <remap from="/as/speed" to="/pacmod/parsed_tx/vehicle_speed_rpt" />
+  <remap from="/as/wheel_speed" to="/pacmod/parsed_tx/wheel_speed_rpt" />
+  <remap from="/as/transmission_report" to="/pacmod/parsed_tx/shift_rpt" />
+
+  <group ns="as">
+    <node name="pacmod3_veh_controller" pkg="pacmod3_veh_controller" type="pacmod3_veh_controller" args="-f $(arg controller_json)" />
+    <node name="pacmod3_veh_interface" pkg="pacmod3_veh_controller" type="pacmod3_veh_interface" args="-f $(arg interface_json)" />
+    <node name="speed_model" pkg="speed_model" type="speed_model" args="-f $(arg speed_json)" />
+    <node name="steering_model" pkg="steering_model" type="steering_model" args="-f $(arg steering_json)" />
+  </group>
+</launch>

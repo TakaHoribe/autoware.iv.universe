@@ -1,0 +1,17 @@
+{
+    "publish_interval": 0.025,
+    "publish_state_interval": 0.5,
+    "command_timeout": 0.5,
+    "steering_angle_timeout": 0.5,
+    "velocity_timeout": 0.5,
+    "failure_mode": "RELINQUISH_CONTROL",
+    "full_left_wheel": 8.6,
+    "full_left_tire": 0.533,
+    "full_right_wheel": 8.6,
+    "full_right_tire": 0.533,
+    "wheel_base": 2.789,
+    "max_steering_wheel_rotation_rate": 6.6,
+    "initiation_rl_map_speed": [1.0, 10.0],
+    "initiation_rl_map_slow": [0.1, 7.0, 0.03, 0.15],
+    "initiation_rl_map_fast": [0.1, 7.0, 0.001, 0.015]
+}

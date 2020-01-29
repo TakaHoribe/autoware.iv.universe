@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>as_config</name>
+  <version>1.0.0</version>
+  <description>The as_config package</description>
+
+  <maintainer email="aohsato@gmail.com">Akihito OHSATO</maintainer>
+  
+  <author email="aohsato@gmail.com">Akihito OHSATO</author>
+  <author email="border_goldenmarket@yahoo.com">Daisuke Nishimatsu</author>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>pacmod3_veh_controller</run_depend>
+  <run_depend>pacmod3_veh_controller</run_depend>
+  <run_depend>speed_model</run_depend>
+  <run_depend>steering_model</run_depend>
+
+  <export>
+  </export>
+</package>
