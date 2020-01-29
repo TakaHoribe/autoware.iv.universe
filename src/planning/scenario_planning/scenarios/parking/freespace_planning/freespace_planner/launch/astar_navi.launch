@@ -14,6 +14,8 @@
   <arg name="th_stopped_time_sec" default="1.0" />
   <arg name="th_stopped_velocity_mps" default="0.01" />
   <arg name="th_course_out_distance_m" default="5.0" />
+  <arg name="replan_when_obstacle_found" default="false" />
+  <arg name="replan_when_course_out" default="true" />
 
   <!-- A* search configurations -->
   <arg name="use_back" default="true" />
@@ -47,6 +49,9 @@
     <param name="th_arrived_distance_m" value="$(arg th_arrived_distance_m)" />
     <param name="th_stopped_time_sec" value="$(arg th_stopped_time_sec)" />
     <param name="th_stopped_velocity_mps" value="$(arg th_stopped_velocity_mps)" />
+    <param name="th_course_out_distance_m" value="$(arg th_course_out_distance_m)" />
+    <param name="replan_when_obstacle_found" value="$(arg replan_when_obstacle_found)" />
+    <param name="replan_when_course_out" value="$(arg replan_when_course_out)" />
 
     <param name="use_back" value="$(arg use_back)" />
     <param name="use_potential_heuristic" value="$(arg use_potential_heuristic)" />

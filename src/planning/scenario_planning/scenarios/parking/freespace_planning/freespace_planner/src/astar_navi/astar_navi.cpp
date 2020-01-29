@@ -189,6 +189,8 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
   private_nh_.param<double>("th_course_out_distance_m", th_course_out_distance_m_, 3.0);
+  private_nh_.param<bool>("replan_when_obstacle_found", replan_when_obstacle_found_, true);
+  private_nh_.param<bool>("replan_when_course_out", replan_when_course_out_, true);
 
   route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
   occupancy_grid_sub_ =
@@ -247,20 +249,24 @@ bool AstarNavi::isPlanRequired() {
     return true;
   }
 
-  astar_->initializeNodes(*occupancy_grid_);
-  // TODO(Kenji Miyake): Consider current position(index) and velocity
-  const bool is_obstacle_found =
-      astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
-  if (is_obstacle_found) {
-    ROS_INFO("Found obstacle");
-    return true;
+  if (replan_when_obstacle_found_) {
+    astar_->initializeNodes(*occupancy_grid_);
+    // TODO(Kenji Miyake): Consider current position(index) and velocity
+    const bool is_obstacle_found =
+        astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
+    if (is_obstacle_found) {
+      ROS_INFO("Found obstacle");
+      return true;
+    }
   }
 
-  const bool is_course_out =
-      calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
-  if (is_course_out) {
-    ROS_INFO("Course out");
-    return true;
+  if (replan_when_course_out_) {
+    const bool is_course_out =
+        calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
+    if (is_course_out) {
+      ROS_INFO("Course out");
+      return true;
+    }
   }
 
   return false;
