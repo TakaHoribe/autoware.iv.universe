@@ -7,13 +7,15 @@
       <remap from="imu/data" to="imu_raw" />
       <include file="$(find microstrain_mips)/launch/microstrain.launch"  if="$(eval launch_driver==true)">
         <arg name="port" value="/dev/ttyACM0" />
-        <arg name="imu_frame_id" value="imu" />
+        <arg name="imu_frame_id" value="gx5/imu_link" />
       </include>
     </group>
 
     <group ns="tamagawa">
-      <node pkg="tamagawa_imu_driver" name="tag_serial_driver" type="tag_serial_driver" args="/dev/ttyUSB0 noGPS 100" if="$(eval launch_driver==true)">
-        <remap from="/imu/data_raw" to="imu_raw" />
+      <node pkg="tamagawa_imu_driver" name="tag_serial_driver" type="tag_serial_driver" if="$(eval launch_driver==true)">
+        <remap from="imu/data_raw" to="imu_raw" />
+        <param name="port" value="/dev/ttyUSB0" />
+        <param name="imu_frame_id" value="tamagawa/imu_link" />
       </node>
     </group>
 
