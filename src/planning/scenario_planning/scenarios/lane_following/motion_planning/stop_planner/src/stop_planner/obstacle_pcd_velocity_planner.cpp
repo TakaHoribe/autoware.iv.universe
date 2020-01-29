@@ -226,8 +226,8 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
   left_widths.clear();
   right_widths.clear();
 
-  double shape_tread = planning_param_.detection_area_width;
-  double shape_length = vehicle_param_.baselink_to_front_length;
+  const double shape_tread = vehicle_param_.width;
+  const double shape_length = vehicle_param_.baselink_to_front_length;
 
   geometry_msgs::Point p_fl_shape; // front left point in local coordinate
   p_fl_shape.x = shape_length;
@@ -237,11 +237,11 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
   p_fr_shape.x = shape_length;
   p_fr_shape.y = -shape_tread * 0.5;
 
+  const double left_base = planning_param_.detection_area_width * 0.5;
+  const double right_base = planning_param_.detection_area_width * 0.5;
+
   for (int i = 0; i < in_trajectory.points.size(); ++i)
   {
-    double left = shape_tread * 0.5;
-    double right = shape_tread * 0.5;
-
     const geometry_msgs::Pose base_p = in_trajectory.points.at(i).pose;
     const geometry_msgs::Pose p_i = planning_utils::getPoseOnTrajectoryWithRadius(in_trajectory, base_p.position, i, (-1.0) * shape_length);
 
@@ -255,8 +255,8 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
     const double dw_l = planning_utils::calcDistance2D(p_fl_g, base_p.position) * std::sin(alpha_l);
     const double dw_r = planning_utils::calcDistance2D(p_fr_g, base_p.position) * (-1.0) * std::sin(alpha_r);
 
-    left = std::max(left, dw_l);
-    right = std::max(right, dw_r);
+    const double left = std::max(left_base, dw_l);
+    const double right = std::max(right_base, dw_r);
 
     left_widths.push_back(left);
     right_widths.push_back(right);

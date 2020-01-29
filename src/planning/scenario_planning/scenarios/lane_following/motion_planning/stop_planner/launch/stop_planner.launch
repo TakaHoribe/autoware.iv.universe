@@ -1,8 +1,18 @@
 <launch>
+
+  <arg name="stop_margin_dist" default="7.0"/>
+  <arg name="object_pcd_threshold_num" default="1"/>
+  <arg name="detection_area_width" default="1.7"/>
+
+
   <node pkg="stop_planner" type="stop_planner" name="stop_planner" output="screen">
     <remap from="~input/trajectory" to="/planning/scenario_planning/scenarios/lane_following/motion_planning/path_planner/trajectory" />
     <remap from="~input/point_cloud" to="/points_raw/outlier/filtered" />
-
     <remap from="~output/trajectory" to="/planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory" />
+
+    <param name="stop_margin_dist" value="$(arg stop_margin_dist)"/>
+    <param name="object_pcd_threshold_num" value="$(arg object_pcd_threshold_num)"/>
+    <param name="detection_area_width" value="$(arg detection_area_width)"/>
+
   </node>
 </launch>

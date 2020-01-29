@@ -27,19 +27,22 @@ StopPlanner::StopPlanner()
   trajectory_sub_ = pnh_.subscribe("input/trajectory", 1, &StopPlanner::callbackTrajectory, this);
   obstacle_pcd_sub_ = pnh_.subscribe("input/point_cloud", 1, &StopPlanner::callbackPointCloud, this);
 
-  double wheel_base, tread, stop_margin_dist, detection_area_width;
+  double wheel_base, tread, stop_margin_dist, detection_area_width, front_overhang, rear_overhang;
   int object_pcd_threshold_num;
   pnh_.param("/vehicle_info/wheel_base", wheel_base, double(2.79));
   pnh_.param("/vehicle_info/wheel_tread", tread, double(2.0));
+  pnh_.param("/vehicle_info/front_overhang", front_overhang, double(1.5));
+  pnh_.param("/vehicle_info/rear_overhang", rear_overhang, double(1.5));
   pnh_.param("stop_margin_dist", stop_margin_dist, double(7.0));
   pnh_.param("object_pcd_threshold_num", object_pcd_threshold_num, int(1));
-  pnh_.param("detection_area_width", detection_area_width, double(2.5));
+  pnh_.param("detection_area_width", detection_area_width, double(1.5));
+  detection_area_width = std::max(detection_area_width, tread);
   obstacle_pcd_velocity_planner_.setVehicleWidth(tread);
   obstacle_pcd_velocity_planner_.setStopDistance(stop_margin_dist);
   obstacle_pcd_velocity_planner_.setPointsThreshold(object_pcd_threshold_num);
   obstacle_pcd_velocity_planner_.setDetectionAreaWidth(detection_area_width);
-
-
+  obstacle_pcd_velocity_planner_.setBaselinkToFrontLength(wheel_base + front_overhang);
+  obstacle_pcd_velocity_planner_.setBaselinkToRearLength(rear_overhang);
 
   /* wait until base_link is received */
   while (ros::ok())
