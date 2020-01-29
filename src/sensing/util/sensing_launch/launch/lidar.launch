@@ -39,9 +39,9 @@
     <!-- PointCloud Concat Filter -->
     <node pkg="nodelet" type="nodelet" name="concatenate_filter" args="load pcl/PointCloudConcatenateDataSynchronizer $(arg manager)">
       <rosparam param="input_topics" subst_value="true">
-        [/sensing/lidar/top/outlier_filtered/pointcloud,
-        /sensing/lidar/left/outlier_filtered/pointcloud,
-        /sensing/lidar/right/outlier_filtered/pointcloud]
+        [/sensing/lidar/top/rectified/pointcloud,
+        /sensing/lidar/left/rectified/pointcloud,
+        /sensing/lidar/right/rectified/pointcloud]
       </rosparam>
       <remap from="~output" to="concatenated/pointcloud" />
       <param name="output_frame" value="base_link" />
@@ -50,12 +50,12 @@
 
     <!-- PointCloud Ground Filter -->
     <node pkg="nodelet" type="nodelet" name="ray_ground_filter" args="load pointcloud_preprocessor/ray_ground_filter_nodelet $(arg manager)">
-      <remap from="~input" to="concatenated/pointcloud" />
+      <remap from="~input" to="top/rectified/pointcloud" />
       <remap from="~output" to="no_ground/pointcloud" />
     </node>
 
     <!-- Relay -->
-    <node pkg="topic_tools" type="relay" name="relay" args="/sensing/lidar/top/outlier_filtered/pointcloud /sensing/lidar/pointcloud" />
+    <node pkg="topic_tools" type="relay" name="relay" args="/sensing/lidar/top/rectified/pointcloud /sensing/lidar/pointcloud" />
 
   </group>
 </launch>

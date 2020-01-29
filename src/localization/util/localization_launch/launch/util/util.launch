@@ -2,7 +2,7 @@
 <launch>
 
   <!-- Topics -->
-  <arg name="input_sensor_points_topic" default="/sensor/lidar/pointcloud" doc="Sensor points topic"/>
+  <arg name="input_sensor_points_topic" default="/sensing/lidar/pointcloud" doc="Sensor points topic"/>
   <arg name="output_mesurement_range_sensor_points_topic" default="mesurement_range/pointcloud" doc="Sensor points topic"/>
   <arg name="output_downsample_sensor_points_topic" default="downsample/pointcloud" doc="Sensor points topic"/>
 

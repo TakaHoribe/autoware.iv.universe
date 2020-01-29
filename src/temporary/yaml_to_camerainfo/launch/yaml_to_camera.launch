@@ -6,6 +6,6 @@
     <param name="frame_id" value="traffic_light/camera_optical_link" />
   </node>
 
-  <node name="camera_info_relay" pkg="topic_tools" type="relay" args="/traffic_light/camera/camera_info /sensor/camera/traffic_light/camera_info" />
+  <node name="camera_info_relay" pkg="topic_tools" type="relay" args="/traffic_light/camera/camera_info /sensing/camera/traffic_light/camera_info" />
 
 </launch>

@@ -6,9 +6,4 @@
     <arg name="input_initial_pose_topic" default="/localization/fusion_localizer/ekf_pose_with_covariance"/>
   </include>
 
-  <include file="$(find gnss_poser)/launch/ubloxfix2mgrs.launch">
-    <arg name="input_topic_fix" default="/sensor/gnss/ublox/fix" />
-    <arg name="input_topic_navpvt" default="/sensor/gnss/ublox/navpvt" />
-  </include>
-
 </launch>

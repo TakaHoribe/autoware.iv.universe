@@ -10,9 +10,9 @@
     </include>
 
     <!-- Camera Driver -->
-    <include file="$(find sensing_launch)/launch/camera.launch">
+    <!-- <include file="$(find sensing_launch)/launch/camera.launch">
       <arg name="launch_driver" value="$(arg launch_driver)" />
-    </include>
+    </include> -->
 
     <!-- IMU Driver -->
     <include file="$(find sensing_launch)/launch/imu.launch">
