@@ -339,7 +339,7 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   // StopTrajectory
-  if (trajectory_.points.size() == 1) {
+  if (trajectory_.points.size() <= 1) {
     return;
   }
 
@@ -383,15 +383,15 @@ void AstarNavi::planTrajectory() {
     ROS_INFO("Found goal!");
     trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_->getWaypoints(),
                                    waypoints_velocity_);
+    reversing_indices_ = getReversingIndices(trajectory_);
+    prev_target_index_ = 0;
+    target_index_ =
+        getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
+
   } else {
     ROS_INFO("Can't find goal...");
-    trajectory_ = createStopTrajectory(tf_buffer_, current_pose_global_);
+    reset();
   }
-
-  reversing_indices_ = getReversingIndices(trajectory_);
-  prev_target_index_ = 0;
-  target_index_ =
-      getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
 }
 
 void AstarNavi::reset() {
