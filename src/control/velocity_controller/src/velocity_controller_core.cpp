@@ -570,8 +570,6 @@ double VelocityController::applyVelocityFeedback(const double target_acc, const 
   debug_values_.data.at(19) = pid_contributions.at(1); // I
   debug_values_.data.at(20) = pid_contributions.at(2); // D
 
-  ROS_WARN("PID : target_acc = %3.3f, target_vel = %3.3f, current_vel = %3.3f, error_vel = %3.3f, fb_acc = %3.3f",
-            target_acc, target_vel, current_vel, error_vel_filtered, pid_acc);
   return feedbacked_acc;
 }
 
