@@ -75,7 +75,7 @@ int serial_setup(const char* device)
     conf_tio.c_cflag += CLOCAL;              // ローカルライン（モデム制御なし）
     conf_tio.c_cflag += CS8;                 // データビット:8bit
     conf_tio.c_cflag += 0;                   // ストップビット:1bit
-    conf_tio.c_cflag += 0; 
+    conf_tio.c_cflag += 0;
 
   cfsetispeed(&conf_tio, BAUDRATE);
   cfsetospeed(&conf_tio, BAUDRATE);
@@ -285,24 +285,29 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "tag_serial_driver", ros::init_options::NoSigintHandler);
   ros::NodeHandle n;
-  ros::Publisher pub = n.advertise<sensor_msgs::Imu>("/imu/data_raw", 1000);
-  ros::Subscriber sub1 = n.subscribe("/tamagawa_imu/receive_ver_req", 10, receive_ver_req);
-  ros::Subscriber sub2 = n.subscribe("/tamagawa_imu/receive_offset_cancel_req", 10, receive_offset_cancel_req);
-  ros::Subscriber sub3 = n.subscribe("/tamagawa_imu/receive_heading_reset_req", 10, receive_heading_reset_req);
+  ros::Publisher pub = n.advertise<sensor_msgs::Imu>("imu/data_raw", 1000);
+  ros::Subscriber sub1 = n.subscribe("receive_ver_req", 10, receive_ver_req);
+  ros::Subscriber sub2 = n.subscribe("receive_offset_cancel_req", 10, receive_offset_cancel_req);
+  ros::Subscriber sub3 = n.subscribe("receive_heading_reset_req", 10, receive_heading_reset_req);
 
-	std::string wbuf = "$TSC,BIN,30\x0d\x0a";
-	std::size_t length;
+  ros::NodeHandle nh("~");
+  std::string imu_frame_id = "imu";
+  nh.getParam("imu_frame_id", imu_frame_id);
 
-	const char *PORT = "/dev/ttyUSB0";
+  std::string port = "/dev/ttyUSB0";
+  nh.getParam("port", port);
+
 	io_service io;
-	serial_port port( io, PORT );
-	port.set_option(serial_port_base::baud_rate(115200));
-	port.set_option(serial_port_base::character_size(8));
-	port.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
-	port.set_option(serial_port_base::parity(serial_port_base::parity::none));
-	port.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
+	serial_port serial_port( io, port.c_str() );
+	serial_port.set_option(serial_port_base::baud_rate(115200));
+	serial_port.set_option(serial_port_base::character_size(8));
+	serial_port.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
+	serial_port.set_option(serial_port_base::parity(serial_port_base::parity::none));
+	serial_port.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
 
-	port.write_some( buffer( wbuf ) );
+  std::string wbuf = "$TSC,BIN,30\x0d\x0a";
+	std::size_t length;
+	serial_port.write_some( buffer( wbuf ) );
 
   ros::Rate loop_rate(30);
 
@@ -317,18 +322,18 @@ int main(int argc, char** argv)
     // loop_rate.sleep();
 
     boost::asio::streambuf response;
-    boost::asio::read_until(port, response, "\n");
+    boost::asio::read_until(serial_port, response, "\n");
     std::string rbuf(boost::asio::buffers_begin(response.data()), boost::asio::buffers_end(response.data()));
 
     length = rbuf.size();
     size_t len = response.size();
     //std::cout << rbuf  << "    " << length <<  " " << len << std::endl;
-  
+
     if (length > 0)
     {
         if (rbuf[5] == 'B' && rbuf[6] == 'I' && rbuf[7] == 'N' && rbuf[8] == ',' && length == 58)
         {
-          imu_msg.header.frame_id = "imu";
+          imu_msg.header.frame_id = imu_frame_id;
           imu_msg.header.stamp = ros::Time::now();
 
           counter = ((rbuf[11] << 8) & 0x0000FF00) | (rbuf[12] & 0x000000FF);

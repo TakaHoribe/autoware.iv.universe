@@ -68,11 +68,18 @@ base_link2velodyne_right:
   roll: 0.0
   pitch: 0.69813170079
   yaw: -1.59079632679
-base_link2imu:
-  x: 1.2
+base_link2imu_gx5:
+  x: 0.0
   y: 0.0
-  z: 1.8
-  roll: 0.0
+  z: 0.0
+  roll: 3.14159265359
+  pitch: 0.0
+  yaw: 0.0
+base_link2imu_tamagawa:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  roll: 3.14159265359
   pitch: 0.0
   yaw: 0.0
 base_link2gnss:
