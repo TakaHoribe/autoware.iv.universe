@@ -123,6 +123,7 @@ Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
 
 std::string ScenarioSelectorNode::selectScenarioByPosition() {
   const auto is_in_lane = isInLane(lanelet_map_ptr_, current_pose_->pose);
+  const auto is_goal_in_lane = isInLane(lanelet_map_ptr_, route_->goal_pose);
   const auto is_in_parking_lot = isInParkingLot(lanelet_map_ptr_, current_pose_->pose);
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
@@ -134,7 +135,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
   }
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::LaneFollowing) {
-    if (is_in_parking_lot) {
+    if (is_in_parking_lot && !is_goal_in_lane) {
       return autoware_planning_msgs::Scenario::Parking;
     }
   }
@@ -147,6 +148,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
     }
 
     if (!is_in_parking_lot) {
+      ROS_INFO_STREAM("out of parking lot");
       return autoware_planning_msgs::Scenario::LaneFollowing;
     }
   }
