@@ -6,7 +6,7 @@
     <remap from="~input/longitudinal/control_cmd" to="longitudinal/control_cmd"/>
     <remap from="~input/engage" to="/autoware/engage"/>
     <remap from="~output/vehicle_cmd" to="vehicle_cmd"/>
-
+    <remap from="~output/shift_cmd" to="/vehicle/shift_cmd"/>
   </node>
 
 </launch>
