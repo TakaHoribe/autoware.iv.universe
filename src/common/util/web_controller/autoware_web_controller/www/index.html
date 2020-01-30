@@ -98,7 +98,7 @@ if(!DisengagePublisher){
     <script type="text/javascript">
         <!--
 if(!VehicleEngagePublisher){
-    var EngagePublisher = {
+    var VehicleEngagePublisher = {
         ros : null,
         name : "",
         init : function(){
@@ -125,12 +125,12 @@ if(!VehicleEngagePublisher){
             pub.publish(str);
         }
     }
-    EngagePublisher.init();
+    VehicleEngagePublisher.init();
 
     window.onload = function(){
     };
     window.onunload = function(){
-        EngagePublisher.ros.close();
+        VehicleEngagePublisher.ros.close();
     };
 }
         //-->
@@ -139,7 +139,7 @@ if(!VehicleEngagePublisher){
     <script type="text/javascript">
         <!--
 if(!VehicleDisengagePublisher){
-    var DisengagePublisher = {
+    var VehicleDisengagePublisher = {
         ros : null,
         name : "",
         init : function(){
@@ -166,12 +166,12 @@ if(!VehicleDisengagePublisher){
             pub.publish(str);
         }
     }
-    DisengagePublisher.init();
+    VehicleDisengagePublisher.init();
 
     window.onload = function(){
     };
     window.onunload = function(){
-        DisengagePublisher.ros.close();
+        VehicleDisengagePublisher.ros.close();
     };
 }
         //-->
@@ -223,8 +223,8 @@ if(!EngageStatusSubscriber){
 
     <script type="text/javascript">
         <!--
-if(!EngageStatusSubscriber){
-    var EngageStatusSubscriber = {
+if(!VhecileEngageStatusSubscriber){
+    var VhecileEngageStatusSubscriber = {
         ros : null,
         name : "",
         init : function(){
@@ -242,7 +242,7 @@ if(!EngageStatusSubscriber){
 
             var sub = new ROSLIB.Topic({
                 ros : this.ros,
-                name : '/autoware/engage',
+                name : '/vehicle/engage',
                 messageType : 'std_msgs/Bool'
             });
             sub.subscribe(function(message) {
@@ -253,12 +253,12 @@ if(!EngageStatusSubscriber){
             });
         }
     }
-    EngageStatusSubscriber.init();
+    VhecileEngageStatusSubscriber.init();
 
     window.onload = function(){
     };
     window.onunload = function(){
-        EngageStatusSubscriber.ros.close();
+        VhecileEngageStatusSubscriber.ros.close();
     };
 }
         //-->
