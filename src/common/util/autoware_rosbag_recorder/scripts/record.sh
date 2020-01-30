@@ -16,7 +16,7 @@ do
 done
 
 if [ -n "$OPTARG" ]; then
-  rosbag record -e "(.*)/velodyne_packets|/as/(.*)|/pacmod/(.*)|/vehicle/(.*)|/sensing/imu/(.*)|/sensing/gnss/(.*)|/sensing/camera/(.*)/camera_info|/sensing/camera/(.*)/rois(.*)" -O $OPTARG;
+  rosbag record -e "(.*)/velodyne_packets|/as/(.*)|/pacmod/(.*)|/vehicle/(.*)|/sensing/imu/(.*)|/sensing/gnss/(.*)|/sensing/camera/(.*)/camera_info|/perception/detection/rois(.*)" -o $OPTARG;
 else 
   usage_exit;
 fi
