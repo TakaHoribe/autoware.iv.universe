@@ -6,13 +6,17 @@
 ####################################
 
 import math
-
+import os
+import subprocess
+import time
 import numpy as np
 import rospy
+import roslib
 import tf
+import signal
 from autoware_msgs.msg import VehicleCmd
 from autoware_vehicle_msgs.msg import Steering, VehicleCommandStamped, Shift
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, PointCloud2
 
@@ -39,9 +43,13 @@ class LgsvlConnectPublisher:
         )  # [rate] steer command/steer behavior in simulator
         self.max_steering_velocity = rospy.get_param("max_steering_velocity", 2.0)  # [rad/s]
         self.throttle_brake_mode = rospy.get_param("throttle_brake_mode", True)  # [rad/s]
+        self.is_warp_from_initialpose = rospy.get_param("is_wrap_from_initialpose", True)
 
+        self.lg_process = None
+        self.last_time_of_warp = None
         self.v = 0.0
-        self.last_steer = 0.0
+        self.last_steer = 0.0  # last published steer
+        self.last_received_steer = 0.0  # last received stere(state)
         self.last_command_time = rospy.Time.now().to_sec()
         self.shift = DRIVE
         self.tfb = tf.TransformBroadcaster()
@@ -60,7 +68,7 @@ class LgsvlConnectPublisher:
         self.subcmd = rospy.Subscriber(
             "/control/vehicle_cmd", VehicleCommandStamped, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True
         )
-        self.subshidt = rospy.Subscriber(
+        self.subshift = rospy.Subscriber(
             "/vehicle/shift_cmd", Shift, self.CallBackShift, queue_size=1, tcp_nodelay=True
         )
 
@@ -71,6 +79,12 @@ class LgsvlConnectPublisher:
         self.subimg = rospy.Subscriber("/tmp_img", Image, self.CallBackImage, queue_size=1, tcp_nodelay=True)
 
         self.pubimg = rospy.Publisher("/tmp_img_lgsvl", Image, queue_size=1)
+
+        # Warp from initialpose
+        self.subpose = rospy.Subscriber(
+            "/initialpose", PoseWithCovarianceStamped, self.CallBackPose, queue_size=1, tcp_nodelay=True
+        )
+        self.pubpose = rospy.Publisher("initialpose", PoseWithCovarianceStamped, queue_size=1)
 
     def CallBackOdom(self, odmmsg):  # Problem 1: /vehicle/status/steering is not published.
         twistmsg = TwistStamped()
@@ -168,18 +182,46 @@ class LgsvlConnectPublisher:
         strmsg = Steering()
         strmsg.header.stamp = rospy.Time.now()
         strmsg.header.frame_id = "base_link"
-        if v != 0:
-            v = max(0.5, v)  # very small v is bad effect for steer
+        if np.abs(v) > 0.1:
             strmsg.data = math.atan(WHEEL_BASE * w / v)
-
+            self.last_received_steer = strmsg.data
         else:
-            strmsg.data = 0.0
+            strmsg.data = self.last_received_steer
         self.pubsteering.publish(strmsg)
 
     def CallBackImage(self, imgmsg):
         imgmsg.header.stamp = rospy.Time.now()
         imgmsg.header.frame_id = CAMERA_LINK
         self.pubimg.publish(imgmsg)
+
+    def CallBackPose(self, posemsg):
+        if not self.is_warp_from_initialpose:
+            return
+
+        if self.last_time_of_warp is not None:
+            now = rospy.Time.now().to_sec()
+            if now - self.last_time_of_warp < 3.0:  # avoid frequent warp
+                return
+
+        if posemsg.header.frame_id == "world":
+            x = posemsg.pose.pose.position.x
+            y = posemsg.pose.pose.position.y
+            q = posemsg.pose.pose.orientation
+            rot_z = tf.transformations.euler_from_quaternion((q.x, q.y, q.z, q.w))[2]
+            self.warp_in_lgsvl(x, y, rot_z)  # temporary
+            self.last_time_of_warp = rospy.Time.now().to_sec()
+            time.sleep(1)
+            self.pubpose.publish(posemsg)  # reinitializaion after warp in simulation
+        else:
+            rospy.loginfo("frame_id of posemsg must be world")
+
+    def warp_in_lgsvl(self, x, y, theta, map_name="kashiwanoha", vehicle_name="TierIVLexus"):  # temporary
+        if self.lg_process is not None:
+            killcmd = "kill -9 " + str(self.lg_process.pid)
+            os.system(killcmd)
+        pyfile = str(roslib.packages.get_pkg_dir("lgsvl_connector") + "/scripts/lg_generator.py")
+        self_spawn_cmd = ["python3", pyfile, map_name, vehicle_name, str(x), str(y), str(theta)]
+        self.lg_process = subprocess.Popen(self_spawn_cmd, shell=False)
 
 
 def main():
