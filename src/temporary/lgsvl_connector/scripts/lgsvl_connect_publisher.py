@@ -160,7 +160,6 @@ class LgsvlConnectPublisher:
         if self.throttle_brake_mode:
             if self.shift == REVERSE:
                 cmdmsg.gear = 63  # reverse
-                cmdmsg.ctrl_cmd.linear_acceleration *= -1  # reverse accel
             else:
                 cmdmsg.gear = 64  # drive
 

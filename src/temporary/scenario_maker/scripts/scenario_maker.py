@@ -53,6 +53,7 @@ class ScenarioMaker:
         self.retry_scenario = rospy.get_param("~retry_scenario", True)  # Retry scenario or not
         self.max_scenario_num = rospy.get_param("~max_scenario_num", 10)  # Numober of scenarios to try
         self.traffic_light_time = rospy.get_param("~traffic_light_time", 35)  # Time until the traffic light changes[s]
+        self.is_pub_trafficimg = rospy.get_param("~is_pub_traffic_image", True)  # Publish Traffic Light or not
         self.initial_traffic_light = rospy.get_param(
             "~initial_traffic_light", "green"
         )  # initial traffic light. green or red.
@@ -99,23 +100,6 @@ class ScenarioMaker:
 
         self.tfl = tf.TransformListener()  # for get self-position
 
-        self.sub_vel = rospy.Subscriber(
-            "/vehicle/status/velocity", Float32, self.CallBackVehicleVelocity, queue_size=1, tcp_nodelay=True
-        )
-
-        # for publish time-sync image
-        self.sub_camerainfo = rospy.Subscriber(
-            "/sensing/camera/traffic_light/camera_info",
-            CameraInfo,
-            self.CallBackCameraInfoTime,
-            queue_size=1,
-            tcp_nodelay=True,
-        )
-
-        self.sub_collsion_detection = rospy.Subscriber(
-            "/collsion_detection_result", Bool, self.CallBackCollision, queue_size=1
-        )
-
         self.pub_initialpose = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
 
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
@@ -137,6 +121,23 @@ class ScenarioMaker:
         self.pub_resetobjectid = rospy.Publisher("/reset_object_id", Int32, queue_size=1)
 
         self.pub_traffic_light_image = rospy.Publisher("/sensing/camera/traffic_light/image_raw", Image, queue_size=1)
+
+        self.sub_vel = rospy.Subscriber(
+            "/vehicle/status/velocity", Float32, self.CallBackVehicleVelocity, queue_size=1, tcp_nodelay=True
+        )
+
+        # for publish time-sync image
+        self.sub_camerainfo = rospy.Subscriber(
+            "/sensing/camera/traffic_light/camera_info",
+            CameraInfo,
+            self.CallBackCameraInfoTime,
+            queue_size=1,
+            tcp_nodelay=True,
+        )
+
+        self.sub_collsion_detection = rospy.Subscriber(
+            "/collsion_detection_result", Bool, self.CallBackCollision, queue_size=1
+        )
 
         time.sleep(0.5)  # wait for ready to publish/subscribe#TODO: fix this
 
@@ -521,7 +522,8 @@ class ScenarioMaker:
             self.traffic_light_start_time = rospy.Time.now().to_sec()
 
     def traffic_light_publisher(self):
-        self.PubTrafficLightImage(self.traffic_light_changer(self.traffic_light))
+        if self.is_pub_trafficimg:
+            self.PubTrafficLightImage(self.traffic_light_changer(self.traffic_light))
 
     def traffic_light_changer(self, traffic_light):  # according to self posture, change the traffic light to reference
         # temporary function!!! TODO: fix this
@@ -836,8 +838,6 @@ class ScenarioMaker:
         imgmsg.width = 1920
         imgmsg.is_bigendian = False
         imgmsg.step = 3 * imgmsg.width
-        imgsize = imgmsg.height * imgmsg.width * 3  # pixel*3(bgr)
-        img = np.zeros((imgsize)).astype(np.uint8)
         if color == COLOR_GREEN:
             imgmsg.data = self.image_green
         elif color == COLOR_YELLOW:

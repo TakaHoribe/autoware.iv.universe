@@ -174,4 +174,13 @@ waypoints = [
 npc.follow(waypoints, loop=True)
 """
 
+
+# signal
+"""
+# #https://github.com/lgsvl/PythonAPI/blob/master/quickstart/27-control-traffic-lights.py
+controllables = sim.get_controllables("signal") #null -> why?
+#signal = sim.get_controllable(lgsvl.Vector(19, 5, 21), "signal")
+control_policy = "trigger=50;green=3;yellow=2;red=1;loop"
+signal.control(control_policy)
+"""
 sim.run()
