@@ -56,9 +56,26 @@
       <param name="approximate_sync" value="true" />
     </node> -->
 
+
+    <!-- PointCloud Crop Mesurement Range -->
+    <node pkg="nodelet" type="nodelet" name="crop_box_filter" args="load pointcloud_preprocessor/crop_box_filter_nodelet $(arg manager)">
+      <remap from="~input" to="concatenated/pointcloud" />
+      <remap from="~output" to="mesurement_range_cropped/pointcloud" />
+      <param name="min_x" value="-50.0" />
+      <param name="max_x" value="100.0" />
+      <param name="min_y" value="-50.0" />
+      <param name="max_y" value="50.0" />
+      <remap from="~min_z" to="/vehicle_info/min_height_offset" />
+      <remap from="~max_z" to="/vehicle_info/max_height_offset" />
+
+      <param name="negative" value="False" />
+      <param name="input_frame" value="base_link" />
+      <param name="output_frame" value="base_link" />
+    </node>
+
     <!-- PointCloud Ground Filter -->
     <node pkg="nodelet" type="nodelet" name="ray_ground_filter" args="load pointcloud_preprocessor/ray_ground_filter_nodelet $(arg manager)">
-      <remap from="~input" to="concatenated/pointcloud" />
+      <remap from="~input" to="mesurement_range_cropped/pointcloud" />
       <remap from="~output" to="no_ground/pointcloud" />
     </node>
 
