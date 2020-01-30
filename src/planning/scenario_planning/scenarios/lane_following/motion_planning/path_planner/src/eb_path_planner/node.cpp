@@ -259,6 +259,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   {
     start_exploring_pose = fixed_optimized_points.back().pose;
   }
+  fixed_optimized_points.clear();
   
   // std::cout << "start exploring pose yaw "<< tf2::getYaw(start_exploring_pose.orientation) << std::endl;
   // if(needReset(*previous_ego_point_ptr_, 
@@ -1008,6 +1009,8 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
   {
     new_s.push_back(i);
   }
+  // new_s.push_back(base_s.back());
+  
   horibe_spline::SplineInterpolate spline;
   std::vector<double> new_x;
   std::vector<double> new_y;

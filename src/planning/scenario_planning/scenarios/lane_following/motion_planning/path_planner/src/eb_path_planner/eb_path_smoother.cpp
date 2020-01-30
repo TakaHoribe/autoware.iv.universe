@@ -792,6 +792,37 @@ bool EBPathSmoother::generateOptimizedPath(
   if(fixed_optimized_points.empty())
   {
     start_pose = ego_pose;
+    double min_dist = 99999999;
+    int min_ind = -1;
+    if(!path_points.empty())
+    {
+      // for(const auto& point:path_points)
+      for (int i = 0; i < path_points.size(); i++)
+      {
+        double dx1 = path_points[i].pose.position.x - start_pose.position.x;
+        double dy1 = path_points[i].pose.position.y - start_pose.position.y;
+        double dist = std::sqrt(dx1*dx1+dy1*dy1);
+        // double yaw = tf2::getYaw(ego_pose.orientation);
+        // double dx2 = std::cos(yaw);
+        // double dy2 = std::sin(yaw);
+        // double ip = dx1*dx2 + dy1*dy2;
+        if(dist < min_dist)
+        {
+          min_dist = dist;
+          min_ind = i;
+          // start_pose = point.pose;
+        }
+      }
+      int back_ind = std::max(min_ind - 7, 0);
+      if(min_ind != -1)
+      {
+        start_pose = path_points[back_ind].pose;
+      }
+    }
+    else
+    {
+      ROS_WARN("Path is empty");
+    }
   }
   else
   {
@@ -903,6 +934,11 @@ bool EBPathSmoother::generateOptimizedPath(
       lower_bound[i] = interpolated_x[i-current_num_fix_points];
       upper_bound[i] = interpolated_x[i-current_num_fix_points];
     }
+    // else if (i < 5)//second initial x
+    // {
+    //   lower_bound[i] = interpolated_x[i-current_num_fix_points];
+    //   upper_bound[i] = interpolated_x[i-current_num_fix_points];
+    // }
     else if (i == farrest_idx_from_start_point - 1 )//second last x
     {
       lower_bound[i] = interpolated_x[i-current_num_fix_points];
