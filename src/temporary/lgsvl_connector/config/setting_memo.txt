@@ -35,5 +35,8 @@
   <arg name="twist_stddev_vx" default="0.5"/>
   <arg name="twist_stddev_wz" default="0.3"/>
 
+7. autware.launchのrosbagをtrue, use_sim_timeをfalseに設定
+
 起動方法:
+roslaunch autoware_launch autoware.launch
 roslaunch lgsvl_connector lgsvl_connect.launch

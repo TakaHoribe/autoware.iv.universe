@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
 
-    <arg name="points_src" default="/localization/util/crop_self" />
-    <arg name="points_src_apollo" default="/sensor/lidar/main/velodyne_points" />
-
     <!-- publish camera info -->
     <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
 
@@ -17,18 +14,25 @@
     <node pkg="lgsvl_connector" type="lgsvl_connect_publisher.py" name="lgsvl_connect" output="screen"></node>
 
     <!-- relay topic -->
-    <node name="pcl_relay" pkg="topic_tools" type="relay" args="/points_raw_tmp /sensor/lidar/main/velodyne_points_ex" />
+    <!-- <node name="pcl_relay" pkg="topic_tools" type="relay" args="/points_raw_tmp /sensing/lidar/top/pointcloud_raw_ex" /> -->
     <node name="pose_relay" pkg="topic_tools" type="relay" args="/vehicle/status/twist /current_velocity" />
-    <node name="camera_relay" pkg="topic_tools" type="relay" args="/tmp_img_lgsvl /sensor/camera/traffic_light/image_raw" />
+    <node name="camera_relay" pkg="topic_tools" type="relay" args="/tmp_img_lgsvl /sensing/camera/traffic_light/image_raw" />
 
-    <!-- publish base_link-centered and self-cropped pcl. (substitute for velodyne nodelet manager) -->
-    <node pkg="pointcloud_preprocessor" type="passthrough_filter_node" name="passthrough_filter_for_apollo">
-        <remap from="~input" to="$(arg points_src)" />
-        <remap from="~output" to="$(arg points_src_apollo)" />
+    <!-- self-cropped -->
+    <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_self" output="log">
+        <remap from="~input" to="/points_raw_tmp" />
+        <remap from="~output" to="/sensing/lidar/top/pointcloud_raw_ex" />
         <rosparam>
-          output_frame: velodyne
-          input_frame: base_link
+            min_x: -5.0
+            max_x: 5.0
+            min_y: -2.0
+            max_y: 2.0
+            min_z: -100.0
+            max_z: 100.0
+            negative: True
         </rosparam>
+        <param name="input_frame" value="velodyne_top" />
+        <param name="output_frame" value="velodyne_top" />
     </node>
 
 </launch>

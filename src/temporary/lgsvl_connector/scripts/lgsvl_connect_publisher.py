@@ -6,13 +6,17 @@
 ####################################
 
 import math
-
+import os
+import subprocess
+import time
 import numpy as np
 import rospy
+import roslib
 import tf
+import signal
 from autoware_msgs.msg import VehicleCmd
-from autoware_vehicle_msgs.msg import Steering, VehicleCommandStamped
-from geometry_msgs.msg import TwistStamped
+from autoware_vehicle_msgs.msg import Steering, VehicleCommandStamped, Shift
+from geometry_msgs.msg import TwistStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, PointCloud2
 
@@ -20,15 +24,34 @@ WHEEL_BASE = 2.9  # [m]
 CAMERA_LINK = "traffic_light/camera_link"
 
 
+# geer
+REVERSE = 2
+DRIVE = 4
+
+
 class LgsvlConnectPublisher:
     def __init__(self):
-        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate]
-        self.w_offset_rate = rospy.get_param("w_offset_rate", 1.0)  # [rate]
+        self.v_offset_rate = rospy.get_param("v_offset_rate", 1.0)  # [rate] actual_velocity/velocity_from_simulator
+        self.w_offset_rate = rospy.get_param(
+            "w_offset_rate", 1.0
+        )  # [rate] actual_angular_velocity/angular_velocity_from_simulator
+        self.accel_command_offset_rate = rospy.get_param(
+            "accel_offset_rate", 0.22
+        )  # [rate] accel command/accel behavior in simulator
+        self.steer_command_offset_rate = rospy.get_param(
+            "steer_offset_rate", 0.28
+        )  # [rate] steer command/steer behavior in simulator
         self.max_steering_velocity = rospy.get_param("max_steering_velocity", 2.0)  # [rad/s]
+        self.throttle_brake_mode = rospy.get_param("throttle_brake_mode", True)  # [rad/s]
+        self.is_warp_from_initialpose = rospy.get_param("is_wrap_from_initialpose", True)
 
+        self.lg_process = None
+        self.last_time_of_warp = None
         self.v = 0.0
-        self.last_steer = 0.0
+        self.last_steer = 0.0  # last published steer
+        self.last_received_steer = 0.0  # last received stere(state)
         self.last_command_time = rospy.Time.now().to_sec()
+        self.shift = DRIVE
         self.tfb = tf.TransformBroadcaster()
         self.tfl = tf.TransformListener()
 
@@ -45,6 +68,9 @@ class LgsvlConnectPublisher:
         self.subcmd = rospy.Subscriber(
             "/control/vehicle_cmd", VehicleCommandStamped, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True
         )
+        self.subshift = rospy.Subscriber(
+            "/vehicle/shift_cmd", Shift, self.CallBackShift, queue_size=1, tcp_nodelay=True
+        )
 
         # for Problem4: publish /vehicle/status/steering
         self.pubsteering = rospy.Publisher("/vehicle/status/steering", Steering, queue_size=1)
@@ -53,6 +79,12 @@ class LgsvlConnectPublisher:
         self.subimg = rospy.Subscriber("/tmp_img", Image, self.CallBackImage, queue_size=1, tcp_nodelay=True)
 
         self.pubimg = rospy.Publisher("/tmp_img_lgsvl", Image, queue_size=1)
+
+        # Warp from initialpose
+        self.subpose = rospy.Subscriber(
+            "/initialpose", PoseWithCovarianceStamped, self.CallBackPose, queue_size=1, tcp_nodelay=True
+        )
+        self.pubpose = rospy.Publisher("initialpose", PoseWithCovarianceStamped, queue_size=1)
 
     def CallBackOdom(self, odmmsg):  # Problem 1: /vehicle/status/steering is not published.
         twistmsg = TwistStamped()
@@ -92,6 +124,9 @@ class LgsvlConnectPublisher:
         pclmsg.header.stamp = rospy.Time.now()
         self.pubpcl.publish(pclmsg)
 
+    def CallBackShift(self, shiftmsg):
+        self.shift = shiftmsg.data
+
     def CallBackVehicleCmd(
         self, vcmdmsg
     ):  # Problem3: The output msg type of autoware is different from the input msg type of LG-simulator
@@ -100,9 +135,9 @@ class LgsvlConnectPublisher:
         cmdmsg.header.frame_id = "base_link"
         cmdmsg.twist_cmd.header.stamp = rospy.Time.now()
         # cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.velocity#Velocity. Fine.
-        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration / 4.0 + (
+        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration * self.accel_command_offset_rate + (
             self.v / self.v_offset_rate
-        )  # accel + v ????????f**k! a/4.0????
+        )
 
         steer = self.cramp_steering(
             vcmdmsg.command.control.steering_angle
@@ -111,14 +146,23 @@ class LgsvlConnectPublisher:
         # Angular Velocity
         if self.v != 0:
             # cmdmsg.twist_cmd.twist.angular.z = math.tan(vcmdmsg.command.control.steering_angle)
-            cmdmsg.twist_cmd.twist.angular.z = steer * 0.5 / self.w_offset_rate
+            cmdmsg.twist_cmd.twist.angular.z = steer * (self.steer_command_offset_rate * 2.0) / self.w_offset_rate
         else:
             cmdmsg.twist_cmd.twist.angular.z = 0.0
 
-        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity
-        cmdmsg.ctrl_cmd.linear_acceleration = vcmdmsg.command.control.acceleration  # accel
-        cmdmsg.ctrl_cmd.steering_angle = steer  # steer
+        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity(no use)
+        cmdmsg.ctrl_cmd.linear_acceleration = (
+            vcmdmsg.command.control.acceleration * self.accel_command_offset_rate
+        )  # accel
+        cmdmsg.ctrl_cmd.steering_angle = -steer * self.steer_command_offset_rate  # steer
         cmdmsg.emergency = vcmdmsg.command.emergency
+
+        if self.throttle_brake_mode:
+            if self.shift == REVERSE:
+                cmdmsg.gear = 63  # reverse
+            else:
+                cmdmsg.gear = 64  # drive
+
         self.pubcmd.publish(cmdmsg)
 
     def cramp_steering(self, steer):
@@ -137,18 +181,46 @@ class LgsvlConnectPublisher:
         strmsg = Steering()
         strmsg.header.stamp = rospy.Time.now()
         strmsg.header.frame_id = "base_link"
-        if v != 0:
-            v = max(0.5, v)  # very small v is bad effect for steer
+        if np.abs(v) > 0.1:
             strmsg.data = math.atan(WHEEL_BASE * w / v)
-
+            self.last_received_steer = strmsg.data
         else:
-            strmsg.data = 0.0
+            strmsg.data = self.last_received_steer
         self.pubsteering.publish(strmsg)
 
     def CallBackImage(self, imgmsg):
         imgmsg.header.stamp = rospy.Time.now()
         imgmsg.header.frame_id = CAMERA_LINK
         self.pubimg.publish(imgmsg)
+
+    def CallBackPose(self, posemsg):
+        if not self.is_warp_from_initialpose:
+            return
+
+        if self.last_time_of_warp is not None:
+            now = rospy.Time.now().to_sec()
+            if now - self.last_time_of_warp < 3.0:  # avoid frequent warp
+                return
+
+        if posemsg.header.frame_id == "world":
+            x = posemsg.pose.pose.position.x
+            y = posemsg.pose.pose.position.y
+            q = posemsg.pose.pose.orientation
+            rot_z = tf.transformations.euler_from_quaternion((q.x, q.y, q.z, q.w))[2]
+            self.warp_in_lgsvl(x, y, rot_z)  # temporary
+            self.last_time_of_warp = rospy.Time.now().to_sec()
+            time.sleep(1)
+            self.pubpose.publish(posemsg)  # reinitializaion after warp in simulation
+        else:
+            rospy.loginfo("frame_id of posemsg must be world")
+
+    def warp_in_lgsvl(self, x, y, theta, map_name="kashiwanoha", vehicle_name="TierIVLexus"):  # temporary
+        if self.lg_process is not None:
+            killcmd = "kill -9 " + str(self.lg_process.pid)
+            os.system(killcmd)
+        pyfile = str(roslib.packages.get_pkg_dir("lgsvl_connector") + "/scripts/lg_generator.py")
+        self_spawn_cmd = ["python3", pyfile, map_name, vehicle_name, str(x), str(y), str(theta)]
+        self.lg_process = subprocess.Popen(self_spawn_cmd, shell=False)
 
 
 def main():
