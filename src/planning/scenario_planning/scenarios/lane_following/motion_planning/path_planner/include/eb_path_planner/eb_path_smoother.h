@@ -63,6 +63,15 @@ private:
     int& nearest_idx,
     int& farrest_idx,
     std::vector<geometry_msgs::Point>& debug_interpolated_points);
+  
+  bool preprocessPathPoints(
+    const std::vector<autoware_planning_msgs::PathPoint>& explored_points,
+    const geometry_msgs::Pose& start_pose,
+    std::vector<double>& interpolated_x,
+    std::vector<double>& interpolated_y,
+    int& nearest_idx,
+    int& farrest_idx,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points);
     
 public:
    EBPathSmoother(
@@ -89,6 +98,13 @@ public:
     std::vector<geometry_msgs::Point>& debug_variable_optimization_points,                  
     std::vector<geometry_msgs::Point>& debug_constrain_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
+  bool generateOptimizedPath(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
+    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
 };
 
 #endif

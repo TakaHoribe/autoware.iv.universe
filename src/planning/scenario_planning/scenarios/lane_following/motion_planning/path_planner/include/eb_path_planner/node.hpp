@@ -68,6 +68,8 @@ private:
   // ros
   ros::NodeHandle nh_, private_nh_;
   ros::Publisher path_pub_;
+  ros::Publisher debug_traj_pub_;
+  ros::Publisher debug_fixed_traj_pub_;
   // ros::Publisher traj_pub_;
   ros::Publisher markers_pub_;
   // ros::Subscriber bin_map_sub_;
@@ -75,8 +77,11 @@ private:
   ros::Subscriber map_sub_;
   ros::Subscriber route_sub_;
   ros::Subscriber objects_sub_;
+  ros::Subscriber avoid_mode_sub_;
   bool enable_velocity_based_cropping_;
   bool is_debug_no_fixing_points_mode_;
+  bool is_relaying_path_mode_;
+  bool use_optimization_when_relaying_;
   int number_of_fixing_points_;
   double time_for_calculating_velocity_based_distance_;
   double distance_for_cropping_;
@@ -133,6 +138,14 @@ private:
                              const int i, 
                              const int j,
                              unsigned char&value);
+                             
+  bool convertPathToSmoothTrajectory(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points,
+    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
   
 public:
    EBPathPlannerNode();

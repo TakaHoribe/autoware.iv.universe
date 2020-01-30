@@ -128,6 +128,12 @@ private_nh_("~")
 {
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("eb_path_planner_marker", 1, true);
   path_pub_ = nh_.advertise<autoware_planning_msgs::Path>("planning/scenario_planning/scenarios/lane_following/motion_planning/avoiding_path", 1, true);
+  debug_traj_pub_ = 
+   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_traj", 1, true);
+  debug_fixed_traj_pub_ = 
+   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_fixed_traj", 1, true);
+    
+  
   
   twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
                            &EBPathPlannerNode::currentVelocityCallback, this);
@@ -137,10 +143,16 @@ private_nh_("~")
                            &EBPathPlannerNode::routeCallback, this);
   objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10,
                            &EBPathPlannerNode::objectsCallback, this);
+  // avoid_mode_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10,
+  //                          &EBPathPlannerNode::objectsCallback, this);
   private_nh_.param<bool>("enable_velocity_based_cropping", 
                          enable_velocity_based_cropping_,false);
   private_nh_.param<bool>("is_debug_fixing_points_mode", 
                            is_debug_no_fixing_points_mode_,false);
+  private_nh_.param<bool>("is_relaying_path_mode", 
+                           is_relaying_path_mode_,true);
+  private_nh_.param<bool>("use_optimization_when_relaying", 
+                           use_optimization_when_relaying_,true);
   private_nh_.param<int>("number_of_fixing_points", 
                           number_of_fixing_points_, 15);
   private_nh_.param<double>("time_for_calculating_velocity_based_distance", 
@@ -177,6 +189,23 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
 {
+  // if(!previous_optimized_points_ptr_->empty())
+  // {
+  //   std::vector<autoware_planning_msgs::TrajectoryPoint> fine_optimized_points2;
+  //   generateFineOptimizedPoints(
+  //     input_path_msg.points,
+  //     *previous_optimized_points_ptr_,
+  //     fine_optimized_points2);
+  
+  //   for (int i = 0; i < previous_optimized_points_ptr_->size(); i++)
+  //   {
+  //     std::cout << "fixed yaw "<< tf2::getYaw(previous_optimized_points_ptr_->at(i).pose.orientation) << std::endl;
+  //   }
+  //   output_trajectory_msg.points = fine_optimized_points2;
+  //   output_trajectory_msg.header = input_path_msg.header;
+  //   // output_trajectory_msg.points = *previous_optimized_points_ptr_;
+  //   return;
+  // }
   if(!lanelet_map_ptr_||
      !in_route_ptr_ )
   {
@@ -231,6 +260,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     start_exploring_pose = fixed_optimized_points.back().pose;
   }
   
+  // std::cout << "start exploring pose yaw "<< tf2::getYaw(start_exploring_pose.orientation) << std::endl;
   // if(needReset(*previous_ego_point_ptr_, 
   //              self_pose.position))
   if(needReset(*previous_ego_point_ptr_, 
@@ -316,6 +346,95 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     fine_optimized_points);
   output_trajectory_msg.points = fine_optimized_points;
   output_trajectory_msg.header = input_path_msg.header;
+  
+  
+  std::vector<geometry_msgs::Point> debug_fixed_optimzied_points_used_for_constrain;
+  std::vector<geometry_msgs::Point> debug_interpolated_points_used_for_optimization;
+  if(is_relaying_path_mode_)
+  {
+    std::vector<autoware_planning_msgs::TrajectoryPoint> smooth_trajectory_points;
+    convertPathToSmoothTrajectory(
+      self_pose,
+      input_path_msg.points,
+      fixed_optimized_points,
+      smooth_trajectory_points,
+      debug_fixed_optimzied_points_used_for_constrain,
+      debug_interpolated_points_used_for_optimization);
+    std::cout << "smooth trajectory points "<< smooth_trajectory_points.size() << std::endl;
+    // std::cout << "debug fixe "<< debug_fixed_optimzied_points_used_for_constrain.size() << std::endl;
+    // std::cout << "debug interpo "<< debug_interpolated_points_used_for_optimization.size() << std::endl;
+    alighWithPathPoints(
+      input_path_msg.points,
+      smooth_trajectory_points);
+    previous_optimized_points_ptr_ = 
+      std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>
+        (smooth_trajectory_points);
+    for (int i = 0; i < smooth_trajectory_points.size(); i++)
+    {
+      // std::cout << "loop final caching traj "<< tf2::getYaw(smooth_trajectory_points[i].pose.orientation) << std::endl;
+    }
+    std::vector<autoware_planning_msgs::TrajectoryPoint> fine_optimized_points2;
+    generateFineOptimizedPoints(
+      input_path_msg.points,
+      smooth_trajectory_points,
+      fine_optimized_points2);
+  
+    output_trajectory_msg.points = fine_optimized_points2;
+    
+    
+    visualization_msgs::MarkerArray marker_array;
+    int unique_id = 0;
+    visualization_msgs::Marker smooth_debug_fixed_constrain_marker;
+    smooth_debug_fixed_constrain_marker.lifetime = ros::Duration(1.0);
+    smooth_debug_fixed_constrain_marker.header = input_path_msg.header;
+    smooth_debug_fixed_constrain_marker.ns = std::string("smooth_debug_fixed_constrain_marker");
+    smooth_debug_fixed_constrain_marker.action = visualization_msgs::Marker::MODIFY;
+    smooth_debug_fixed_constrain_marker.pose.orientation.w = 1.0;
+    smooth_debug_fixed_constrain_marker.id = unique_id;
+    smooth_debug_fixed_constrain_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+    smooth_debug_fixed_constrain_marker.scale.x = 0.5f;
+    smooth_debug_fixed_constrain_marker.scale.y = 0.1f;
+    smooth_debug_fixed_constrain_marker.scale.z = 0.1f;
+    smooth_debug_fixed_constrain_marker.color.r = 1.0f;
+    smooth_debug_fixed_constrain_marker.color.g = 1.0f;
+    // smooth_debug_fixed_constrain_marker.color.g = 1.0f;
+    smooth_debug_fixed_constrain_marker.color.a = 0.999;
+    for (int i = 0; i < debug_fixed_optimzied_points_used_for_constrain.size(); i++)
+    {
+      smooth_debug_fixed_constrain_marker.points.push_back(debug_fixed_optimzied_points_used_for_constrain[i]);
+    }
+    if(!smooth_debug_fixed_constrain_marker.points.empty())
+    {
+      marker_array.markers.push_back(smooth_debug_fixed_constrain_marker);
+    }
+    unique_id++;
+    
+    visualization_msgs::Marker smooth_interpolated_points;
+    smooth_interpolated_points.lifetime = ros::Duration(1.0);
+    smooth_interpolated_points.header = input_path_msg.header;
+    smooth_interpolated_points.ns = std::string("smooth_interpolated_points");
+    smooth_interpolated_points.action = visualization_msgs::Marker::MODIFY;
+    smooth_interpolated_points.pose.orientation.w = 1.0;
+    smooth_interpolated_points.id = unique_id;
+    smooth_interpolated_points.type = visualization_msgs::Marker::SPHERE_LIST;
+    smooth_interpolated_points.scale.x = 0.5f;
+    smooth_interpolated_points.scale.y = 0.1f;
+    smooth_interpolated_points.scale.z = 0.1f;
+    smooth_interpolated_points.color.r = 1.0f;
+    smooth_interpolated_points.color.g = 1.0f;
+    // smooth_interpolated_points.color.g = 1.0f;
+    smooth_interpolated_points.color.a = 0.999;
+    for (int i = 0; i < debug_interpolated_points_used_for_optimization.size(); i++)
+    {
+      smooth_interpolated_points.points.push_back(debug_interpolated_points_used_for_optimization[i]);
+    }
+    if(!smooth_interpolated_points.points.empty())
+    {
+      marker_array.markers.push_back(smooth_interpolated_points);
+    }
+    unique_id++;
+    markers_pub_.publish(marker_array);
+  }
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
@@ -747,12 +866,15 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
     double dx = previous_optimized_points_ptr->at(i).pose.position.x -  ego_pose.position.x; 
     double dy = previous_optimized_points_ptr->at(i).pose.position.y -  ego_pose.position.y; 
     double dist = std::sqrt(dx*dx+dy*dy);
+    // std::cout << "dist "<< dist << std::endl;
     if(dist < min_dist)
     {
       min_dist = dist;
       min_ind = i;
     }
   }
+  std::cout << "prv opt size "<< previous_optimized_points_ptr->size() << std::endl;
+  std::cout << "min ind "<< min_ind << std::endl;
   const double keep_distance = forward_fixing_distance_ + backward_fixing_distance_;
   int forward_fixing_idx = 
     std::min((int)(min_ind+forward_fixing_distance_/delta_arc_length_),
@@ -762,40 +884,43 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
   int backward_fixing_idx = 
     std::max((int)(min_ind-backward_keep_distance/delta_arc_length_),
                   0);
-                  
-  int origin_valid_prev_optimized_points_ind = 0;
-  for (int i = 0; i < forward_fixing_idx; i++)
-  {
-    geometry_msgs::Point point_in_image;
-    if(tmp1::transformMapToImage(
-            previous_optimized_points_ptr_->at(i).pose.position, 
-            map_info,
-            point_in_image))
-    {
-       float clearance = 
-          clearance_map.ptr<float>((int)point_in_image.y)
-                                  [(int)point_in_image.x]*map_info.resolution;
-       origin_valid_prev_optimized_points_ind = i;
-       if(clearance > 0)
-       {
-        //  origin_valid_prev_optimized_points_ind = std::min(i+10, forward_fixing_idx);
-         break;
-       }
-       else
-       {
-         ROS_WARN_THROTTLE(1.0, 
-              "[EBPathPlanner] Discard fixed optimized points since they are out of dirvable area");
-       }
-    }
-  }
-  // std::cout << "origin valid "<< origin_valid_prev_optimized_points_ind << std::endl;
-  // std::cout << "backward  "<< backward_fixing_idx<< std::endl;
-  int valid_backward_fixing_idx =  std::max(origin_valid_prev_optimized_points_ind, backward_fixing_idx);
-  valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
-  for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)
+         
+  for (int i = backward_fixing_idx; i < forward_fixing_idx; i++)
   {
     fixed_optimized_points.push_back(previous_optimized_points_ptr->at(i));
-  }
+  }     
+      
+  // int origin_valid_prev_optimized_points_ind = 0;
+  // for (int i = 0; i < forward_fixing_idx; i++)
+  // {
+  //   geometry_msgs::Point point_in_image;
+  //   if(tmp1::transformMapToImage(
+  //           previous_optimized_points_ptr_->at(i).pose.position, 
+  //           map_info,
+  //           point_in_image))
+  //   {
+  //      float clearance = 
+  //         clearance_map.ptr<float>((int)point_in_image.y)
+  //                                 [(int)point_in_image.x]*map_info.resolution;
+  //      origin_valid_prev_optimized_points_ind = i;
+  //      if(clearance > 0)
+  //      {
+  //       //  origin_valid_prev_optimized_points_ind = std::min(i+10, forward_fixing_idx);
+  //        break;
+  //      }
+  //      else
+  //      {
+  //        ROS_WARN_THROTTLE(1.0, 
+  //             "[EBPathPlanner] Discard fixed optimized points since they are out of dirvable area");
+  //      }
+  //   }
+  // }
+  // int valid_backward_fixing_idx =  std::max(origin_valid_prev_optimized_points_ind, backward_fixing_idx);
+  // valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
+  // for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)
+  // {
+  //   fixed_optimized_points.push_back(previous_optimized_points_ptr->at(i));
+  // }
   
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
@@ -1031,5 +1156,304 @@ bool EBPathPlannerNode::generateClearanceMap(
   // cv::imshow("image", tmp);
   // cv::waitKey(20);
   //end debugs
+}
+
+bool EBPathPlannerNode::convertPathToSmoothTrajectory(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points,
+    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization)
+{
+  if(use_optimization_when_relaying_)
+  {
+    
+    std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
+    // std::vector<geometry_msgs::Point> debug_fixed_optimzied_points_used_for_constrain;
+    // std::vector<geometry_msgs::Point> debug_interpolated_points_used_for_optimization;
+    eb_path_smoother_ptr_->generateOptimizedPath(
+      ego_pose,
+      path_points,
+      fixed_optimized_points,
+      optimized_points,
+      debug_fixed_optimzied_points_used_for_constrain,
+      debug_interpolated_points_used_for_optimization);
+      
+    autoware_planning_msgs::Trajectory tmp_traj;
+    tmp_traj.points = optimized_points;
+    debug_traj_pub_.publish(tmp_traj);
+    
+    autoware_planning_msgs::Trajectory tmp_fixed_traj;
+    tmp_fixed_traj.points = fixed_optimized_points;
+    debug_fixed_traj_pub_.publish(tmp_fixed_traj);
+    
+    std::vector<autoware_planning_msgs::TrajectoryPoint> merged_optimized_points;
+    // merged_optimized_points = fixed_optimized_points;
+    // merged_optimized_points.insert(merged_optimized_points.end(),
+    //                       optimized_points.begin(),
+    //                       optimized_points.end());
+    merged_optimized_points = optimized_points;
+              
+    if(!fixed_optimized_points.empty()&& !optimized_points.empty())
+    {
+      // std::cout << "last fixed yaw "<<tf2::getYaw(fixed_optimized_points.back().pose.orientation) << std::endl;            
+      // std::cout << "first optimized yaw "<<tf2::getYaw(optimized_points.front().pose.orientation) << std::endl;            
+      double dy = optimized_points.front().pose.position.y - fixed_optimized_points.back().pose.position.y;
+      double dx = optimized_points.front().pose.position.x - fixed_optimized_points.back().pose.position.x;
+      // std::cout << "yaw from back to front "<<std::atan2(dy, dx) << std::endl;            
+      
+    }
+    std::vector<double> tmp_x;
+    std::vector<double> tmp_y;
+    std::vector<double> tmp_z;
+    std::vector<double> tmp_v;
+    for(size_t i = 0; i <  merged_optimized_points.size(); i++)
+    {
+      //backward check
+      if(i > 1)
+      {
+        double dx1 = merged_optimized_points[i].pose.position.x - 
+                    merged_optimized_points[i-1].pose.position.x;
+        double dy1 = merged_optimized_points[i].pose.position.y - 
+                    merged_optimized_points[i-1].pose.position.y;
+        double dx2 = merged_optimized_points[i-1].pose.position.x - 
+                    merged_optimized_points[i-2].pose.position.x;
+        double dy2 = merged_optimized_points[i-1].pose.position.y - 
+                    merged_optimized_points[i-2].pose.position.y;
+        double inner_product = dx1*dx2 + dy1*dy2;
+        if(inner_product < 0)
+        {
+          ROS_INFO("Path points might go backward");
+        }
+      }
+      
+      //resolution check
+      // if(i > 0)
+      // {
+      //   double dx = merged_optimized_points[i].pose.position.x - 
+      //               merged_optimized_points[i-1].pose.position.x;
+      //   double dy = merged_optimized_points[i].pose.position.y - 
+      //               merged_optimized_points[i-1].pose.position.y;
+      //   double dist = std::sqrt(dx*dx + dy*dy); 
+      //   if(dist < 0.1)
+      //   {
+      //     if(merged_optimized_points[i].twist.linear.x < 
+      //       merged_optimized_points[i-1].twist.linear.x)
+      //     {
+      //       //replace point with lower velocity
+      //       tmp_x.pop_back();
+      //       tmp_y.pop_back();
+      //       tmp_z.pop_back();
+      //       tmp_v.pop_back();
+      //       tmp_x.push_back(merged_optimized_points[i].pose.position.x);
+      //       tmp_y.push_back(merged_optimized_points[i].pose.position.y);
+      //       tmp_z.push_back(merged_optimized_points[i].pose.position.z);
+      //       tmp_v.push_back(merged_optimized_points[i].twist.linear.x);
+      //       continue;
+      //     }
+      //     else
+      //     {
+      //       continue;
+      //     }
+      //   }
+      // }
+      tmp_x.push_back(merged_optimized_points[i].pose.position.x);
+      tmp_y.push_back(merged_optimized_points[i].pose.position.y);
+      tmp_z.push_back(merged_optimized_points[i].pose.position.z);
+      tmp_v.push_back(merged_optimized_points[i].twist.linear.x);
+    }
+    // std::cout << "tmpxy "<< tmp_x.back()<<" "<<tmp_y.back() << std::endl;
+    
+    std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+    std::vector<double> new_s;
+    for(double i = 0.0; 
+        i <= base_s.back();
+        i += delta_arc_length_)
+    {
+      new_s.push_back(i);
+    }
+    // new_s.push_back(base_s.back());
+    
+    horibe_spline::SplineInterpolate spline;
+    std::vector<double> new_x;
+    std::vector<double> new_y;
+    spline.interpolate(base_s, tmp_x, new_s, new_x);
+    spline.interpolate(base_s, tmp_y, new_s, new_y);
+    for(size_t i = 0; i < new_s.size(); i++)
+    {
+      autoware_planning_msgs::TrajectoryPoint traj_point;
+      traj_point.pose.position.x = new_x[i]; 
+      traj_point.pose.position.y = new_y[i]; 
+      if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
+      {
+        ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
+        // msgConversionFromPath2Trajectory(path_pointst_trajectory_msg); 
+        return false;
+      }
+      double roll = 0;
+      double pitch = 0;
+      double yaw = 0;
+      if(i==new_s.size()-1)
+      {
+        double dx = new_x[i] - new_x[i-1]; 
+        double dy = new_y[i] - new_y[i-1]; 
+        yaw = std::atan2(dy, dx);
+      }
+      else
+      {
+        double dx = new_x[i+1] - new_x[i]; 
+        double dy = new_y[i+1] - new_y[i]; 
+        yaw = std::atan2(dy, dx);
+      }
+      // std::cout << "merged yaw "<< yaw << std::endl;
+      tf2::Quaternion quaternion;
+      quaternion.setRPY( roll, pitch, yaw );
+      traj_point.pose.orientation = tf2::toMsg(quaternion);
+      auto it = std::lower_bound(base_s.begin(), 
+                                base_s.end(),
+                                new_s[i]);
+      size_t ind = std::distance(base_s.begin(), it);
+      traj_point.twist.linear.x = tmp_v[ind];
+      traj_point.pose.position.z = tmp_z[ind];
+      smoothed_points.push_back(traj_point); 
+    }
+    // std::cout << "last smooth "<< smoothed_points.back().pose.position.x<< " "<<smoothed_points.back().pose.position.y << std::endl;
+    
+    //sanity check for last point
+    if(tmp_v.back()<1e-8 &&
+      smoothed_points.back().twist.linear.x > 1e-8)
+    {
+      smoothed_points.back().twist.linear.x = 0;
+    }
+  }
+  else
+  {
+    
+    std::vector<double> tmp_x;
+    std::vector<double> tmp_y;
+    std::vector<double> tmp_z;
+    std::vector<double> tmp_v;
+    for(size_t i = 0; i <  path_points.size(); i++)
+    {
+      //backward check
+      if(i > 1)
+      {
+        double dx1 = path_points[i].pose.position.x - 
+                    path_points[i-1].pose.position.x;
+        double dy1 = path_points[i].pose.position.y - 
+                    path_points[i-1].pose.position.y;
+        double dx2 = path_points[i-1].pose.position.x - 
+                    path_points[i-2].pose.position.x;
+        double dy2 = path_points[i-1].pose.position.y - 
+                    path_points[i-2].pose.position.y;
+        double inner_product = dx1*dx2 + dy1*dy2;
+        if(inner_product < 0)
+        {
+          ROS_INFO("Path points might go backward");
+        }
+      }
+      
+      //resolution check
+      if(i > 0)
+      {
+        double dx = path_points[i].pose.position.x - 
+                    path_points[i-1].pose.position.x;
+        double dy = path_points[i].pose.position.y - 
+                    path_points[i-1].pose.position.y;
+        double dist = std::sqrt(dx*dx + dy*dy); 
+        if(dist < 0.1)
+        {
+          if(path_points[i].twist.linear.x < 
+            path_points[i-1].twist.linear.x)
+          {
+            //replace point with lower velocity
+            tmp_x.pop_back();
+            tmp_y.pop_back();
+            tmp_z.pop_back();
+            tmp_v.pop_back();
+            tmp_x.push_back(path_points[i].pose.position.x);
+            tmp_y.push_back(path_points[i].pose.position.y);
+            tmp_z.push_back(path_points[i].pose.position.z);
+            tmp_v.push_back(path_points[i].twist.linear.x);
+            continue;
+          }
+          else
+          {
+            continue;
+          }
+        }
+      }
+      tmp_x.push_back(path_points[i].pose.position.x);
+      tmp_y.push_back(path_points[i].pose.position.y);
+      tmp_z.push_back(path_points[i].pose.position.z);
+      tmp_v.push_back(path_points[i].twist.linear.x);
+    }
+    
+    std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+    std::vector<double> new_s;
+    double last_s;
+    for(double i = 0.0; 
+        i <= base_s.back();
+        i += delta_arc_length_)
+    {
+      new_s.push_back(i);
+      last_s = i;
+    }
+    if(path_points.back().twist.linear.x < 1e-8)
+    {
+      new_s.push_back(base_s.back());
+    }
+    horibe_spline::SplineInterpolate spline;
+    std::vector<double> new_x;
+    std::vector<double> new_y;
+    spline.interpolate(base_s, tmp_x, new_s, new_x);
+    spline.interpolate(base_s, tmp_y, new_s, new_y);
+    for(size_t i = 0; i < new_s.size(); i++)
+    {
+      autoware_planning_msgs::TrajectoryPoint traj_point;
+      traj_point.pose.position.x = new_x[i]; 
+      traj_point.pose.position.y = new_y[i]; 
+      if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
+      {
+        ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
+        // msgConversionFromPath2Trajectory(path_pointst_trajectory_msg); 
+        return false;
+      }
+      double roll = 0;
+      double pitch = 0;
+      double yaw = 0;
+      if(i==new_s.size()-1)
+      {
+        double dx = new_x[i] - new_x[i-1]; 
+        double dy = new_y[i] - new_y[i-1]; 
+        yaw = std::atan2(dy, dx);
+      }
+      else
+      {
+        double dx = new_x[i+1] - new_x[i]; 
+        double dy = new_y[i+1] - new_y[i]; 
+        yaw = std::atan2(dy, dx);
+      }
+      tf2::Quaternion quaternion;
+      quaternion.setRPY( roll, pitch, yaw );
+      traj_point.pose.orientation = tf2::toMsg(quaternion);
+      auto it = std::lower_bound(base_s.begin(), 
+                                base_s.end(),
+                                new_s[i]);
+      size_t ind = std::distance(base_s.begin(), it);
+      traj_point.twist.linear.x = tmp_v[ind];
+      traj_point.pose.position.z = tmp_z[ind];
+      smoothed_points.push_back(traj_point); 
+    }
+    
+    //sanity check for last point
+    if(tmp_v.back()<1e-8 &&
+      smoothed_points.back().twist.linear.x > 1e-8)
+    {
+      smoothed_points.back().twist.linear.x = 0;
+    }
+  }
+  return true;
 }
 } // namespace path_planner
