@@ -302,8 +302,9 @@ void PacmodInterface::publishCommands()
 
 double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt, const pacmod_msgs::SystemRptInt& shift_rpt)
 {
-  double sign = shift_rpt.command == pacmod_msgs::SystemRptInt::SHIFT_REVERSE ? -1 : 1;
-  return sign * (wheel_speed_rpt.rear_left_wheel_speed + wheel_speed_rpt.rear_right_wheel_speed) * 0.5 * tire_radius_;
+  double sign = (shift_rpt.output == pacmod_msgs::SystemRptInt::SHIFT_REVERSE) ? -1 : 1;
+  double vel = (wheel_speed_rpt.rear_left_wheel_speed + wheel_speed_rpt.rear_right_wheel_speed) * 0.5 * tire_radius_;
+  return sign * vel;
 }
 
 bool PacmodInterface::calculateAccelMap(const double current_velocity, const double &desired_acc,
