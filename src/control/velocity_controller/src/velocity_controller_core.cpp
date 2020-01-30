@@ -353,6 +353,7 @@ void VelocityController::publishCtrlCmd(const double vel, const double acc)
   debug_values_.data.at(7) = (double)controller_mode_;
   debug_values_.data.at(12) = acc;
   pub_debug_.publish(debug_values_);
+  ROS_INFO_COND(show_debug_info_, "debug values is published!");
   debug_values_.data.clear();
   debug_values_.data.resize(num_debug_values_, 0.0);
 }

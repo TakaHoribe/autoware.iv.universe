@@ -17,16 +17,16 @@ emergency_stop_jerk: -1.5
 
 # smooth stop
 smooth_stop:
-  exit_ego_speed: 0.6
-  entry_ego_speed: 0.5
-  exit_target_speed: 0.6
-  entry_target_speed: 0.5
-  weak_brake_time: 3.0
-  weak_brake_acc: -0.4
-  increasing_brake_time: 3.0
-  increasing_brake_gradient: -0.05
-  stop_brake_time: 2.0
-  stop_brake_acc: -1.7
+  exit_ego_speed: 1.0
+  entry_ego_speed: 0.8
+  exit_target_speed: 1.0
+  entry_target_speed: 0.2
+  weak_brake_time: 1.0 # 2.0
+  weak_brake_acc: -1.0 # 1.0
+  increasing_brake_time: 1.0 # 0.0
+  increasing_brake_gradient: -0.1 # -0.2
+  stop_brake_time: 1.0
+  stop_brake_acc: -3.4
 
 # acceleration limit
 max_acc: 2.0
@@ -43,7 +43,7 @@ lpf_pitch_gain: 0.95
 
 # velocity feedback
 pid_controller:
-  kp: 0.5
+  kp: 1.0
   ki: 0.1
   kd: 0
   max_out: 1.0

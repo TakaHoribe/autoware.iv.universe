@@ -18,14 +18,6 @@
   <node pkg="stop_planner" type="stop_planner" name="stop_planner" output="log">
     <remap from="~input/trajectory" to="path_planner/trajectory" />
     <remap from="~input/point_cloud" to="/sensing/lidar/no_ground/pointcloud" />
-    <remap from="~output/trajectory" to="stop_planner/trajectory" />
+    <remap from="~output/trajectory" to="trajectory" />
   </node>
-
-  <!-- velocity planning with max velocity, acceleration, jerk, stop point constraint -->
-  <group>
-    <remap from="~/input/trajectory" to="stop_planner/trajectory"/>
-    <remap from="~/output/trajectory" to="trajectory"/>
-    <include file="$(find motion_velocity_planner)/launch/motion_velocity_planner_osqp.launch"/>
-  </group>
-
 </launch>
