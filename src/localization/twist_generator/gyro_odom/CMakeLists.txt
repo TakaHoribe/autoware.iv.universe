@@ -1,0 +1,53 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(gyro_odom)
+
+add_compile_options(-std=c++14)
+
+set(CMAKE_BUILD_TYPE "RELEASE")
+
+find_package(catkin REQUIRED COMPONENTS
+        roscpp
+        tf2_geometry_msgs
+        std_msgs
+        geometry_msgs
+        sensor_msgs
+        )
+
+#add dynamic reconfigure api
+#generate_dynamic_reconfigure_options(config/gyro_odom.cfg)
+
+###################################
+## catkin specific configuration ##
+###################################
+catkin_package(
+  INCLUDE_DIRS include
+)
+
+###########
+## Build ##
+###########
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+
+add_executable(gyro_odom
+        src/gyro_odom_node.cpp
+        src/gyro_odom_core.cpp
+)
+
+add_dependencies(gyro_odom ${${PROJECT_NAME}_EXPORTED_TARGETS}
+                                  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(gyro_odom ${catkin_LIBRARIES})
+
+install(TARGETS
+            gyro_odom
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
+
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+        PATTERN ".svn" EXCLUDE)
