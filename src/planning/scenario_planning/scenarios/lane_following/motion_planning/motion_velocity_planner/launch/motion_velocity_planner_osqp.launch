@@ -15,7 +15,7 @@
   <arg name="max_lateral_accel" default="0.05"/>
 
   <arg name="replan_vel_deviation" default="5.53"/>
-  <arg name="engage_velocity" default="1.0"/>
+  <arg name="engage_velocity" default="0.3"/>
   <arg name="engage_acceleration" default="0.0"/>
 
 
