@@ -91,7 +91,71 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
               Value: true
-            imu_link:
+            camera1/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera1/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            camera2/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera2/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            camera3/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera3/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            camera4/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera4/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            camera5/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera5/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            camera6/camera_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            camera6/camera_optical_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            gnss_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            gx5/imu_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            tamagawa/imu_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
@@ -105,12 +169,32 @@ Visualization Manager:
               Alpha: 1
               Show Axes: false
               Show Trail: false
-            velodyne:
+            velodyne_left:
               Alpha: 1
               Show Axes: false
               Show Trail: false
               Value: true
-            velodyne_base_link:
+            velodyne_left_base_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            velodyne_right:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            velodyne_right_base_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            velodyne_top:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+              Value: true
+            velodyne_top_base_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
@@ -128,19 +212,53 @@ Visualization Manager:
             All Enabled: true
             base_link:
               Value: true
-            gnss:
+            camera1/camera_link:
               Value: true
-            imu_link:
+            camera1/camera_optical_link:
+              Value: true
+            camera2/camera_link:
+              Value: true
+            camera2/camera_optical_link:
+              Value: true
+            camera3/camera_link:
+              Value: true
+            camera3/camera_optical_link:
+              Value: true
+            camera4/camera_link:
+              Value: true
+            camera4/camera_optical_link:
+              Value: true
+            camera5/camera_link:
+              Value: true
+            camera5/camera_optical_link:
+              Value: true
+            camera6/camera_link:
+              Value: true
+            camera6/camera_optical_link:
+              Value: true
+            gnss_link:
+              Value: true
+            gx5/imu_link:
               Value: true
             map:
+              Value: true
+            tamagawa/imu_link:
               Value: true
             traffic_light/camera_link:
               Value: true
             traffic_light/camera_optical_link:
               Value: true
-            velodyne:
+            velodyne_left:
               Value: true
-            velodyne_base_link:
+            velodyne_left_base_link:
+              Value: true
+            velodyne_right:
+              Value: true
+            velodyne_right_base_link:
+              Value: true
+            velodyne_top:
+              Value: true
+            velodyne_top_base_link:
               Value: true
             world:
               Value: true
@@ -153,15 +271,41 @@ Visualization Manager:
             world:
               map:
                 base_link:
-                  gnss:
+                  camera1/camera_link:
+                    camera1/camera_optical_link:
+                      {}
+                  camera2/camera_link:
+                    camera2/camera_optical_link:
+                      {}
+                  camera3/camera_link:
+                    camera3/camera_optical_link:
+                      {}
+                  camera4/camera_link:
+                    camera4/camera_optical_link:
+                      {}
+                  camera5/camera_link:
+                    camera5/camera_optical_link:
+                      {}
+                  camera6/camera_link:
+                    camera6/camera_optical_link:
+                      {}
+                  gnss_link:
                     {}
-                  imu_link:
+                  gx5/imu_link:
+                    {}
+                  tamagawa/imu_link:
                     {}
                   traffic_light/camera_link:
                     traffic_light/camera_optical_link:
                       {}
-                  velodyne_base_link:
-                    velodyne:
+                  velodyne_left_base_link:
+                    velodyne_left:
+                      {}
+                  velodyne_right_base_link:
+                    velodyne_right:
+                      {}
+                  velodyne_top_base_link:
+                    velodyne_top:
                       {}
           Update Interval: 0
           Value: true
@@ -732,10 +876,7 @@ Visualization Manager:
               Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
               Name: Crosswalk
               Namespaces:
-                crosswalk polygon line: true
-                crosswalk polygon point: true
-                slow polygon line: true
-                stop polygon line: true
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -743,20 +884,7 @@ Visualization Manager:
               Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
               Name: Intersection
               Namespaces:
-                intersection_detection_lanelets_0: false
-                intersection_detection_lanelets_1: false
-                intersection_detection_lanelets_2: false
-                intersection_detection_lanelets_3: false
-                intersection_detection_lanelets_4: false
-                intersection_detection_lanelets_5: false
-                intersection_detection_lanelets_6: false
-                intersection_detection_lanelets_7: false
-                judge_point_pose: false
-                path_left_edge: false
-                path_raw: false
-                path_right_edge: false
-                path_with_judgeline: false
-                stop_point_pose: false
+                {}
               Queue Size: 100
               Value: true
             - Class: rviz/MarkerArray
@@ -764,13 +892,7 @@ Visualization Manager:
               Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
               Name: Blind Spot
               Namespaces:
-                blind_spot_detection_area_0: true
-                judge_point_pose: false
-                path_left_edge: false
-                path_raw: false
-                path_right_edge: false
-                path_with_judgeline: false
-                stop_point_pose: false
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -872,40 +994,15 @@ Visualization Manager:
       Name: Control
     - Class: rviz/Group
       Displays:
-        - Buffer length: 100
-          Class: jsk_rviz_plugin/Plotter2D
-          Enabled: false
-          Name: velocity [km/h]
-          Show Value: true
-          Topic: /vehicle/status/velocity_kmph
-          Value: false
-          auto color change: false
-          auto scale: true
-          background color: 0; 0; 0
-          backround alpha: 0
-          border: true
-          foreground alpha: 0.699999988079071
-          foreground color: 25; 255; 240
-          height: 128
-          left: 50
-          linewidth: 1
-          max color: 255; 0; 0
-          max value: 1
-          min value: -1
-          show caption: true
-          text size: 12
-          top: 50
-          update interval: 0.03999999910593033
-          width: 128
         - Class: rviz_plugins/SteeringAngle
           Enabled: true
           Left: 128
           Length: 256
           Name: SteeringAngle
-          Scale: 3
+          Scale: 17
           Text Color: 25; 255; 240
           Top: 128
-          Topic: /vehicle/status
+          Topic: /vehicle/status/steering
           Unreliable: false
           Value: true
           Value height offset: 0
@@ -917,7 +1014,7 @@ Visualization Manager:
           Scale: 3
           Text Color: 25; 255; 240
           Top: 128
-          Topic: /vehicle/status
+          Topic: /vehicle/status/twist
           Unreliable: false
           Value: true
           Value height offset: 0
