@@ -17,9 +17,8 @@
 #include "pacmod_interface/pacmod_interface.h"
 
 PacmodInterface::PacmodInterface()
-    : nh_(), private_nh_("~"), engage_cmd_(false), prev_engage_cmd_(false), acc_map_initialized_(true),
-      vehicle_cmd_ptr_(nullptr), shift_cmd_ptr_(nullptr), is_pacmod_rpt_received_(false), 
-      is_pacmod_enabled_(false), is_clear_override_needed_(false)
+    : nh_(), private_nh_("~"), engage_cmd_(false), prev_engage_cmd_(false),
+      is_pacmod_rpt_received_(false), is_pacmod_enabled_(false), is_clear_override_needed_(false)
 {
   /* setup parameters */
   private_nh_.param<std::string>("base_frame_id", base_frame_id_, "base_link");
@@ -39,6 +38,7 @@ PacmodInterface::PacmodInterface()
   std::string csv_path_accel_map, csv_path_brake_map;
   private_nh_.param<std::string>("csv_path_accel_map", csv_path_accel_map, std::string("empty"));
   private_nh_.param<std::string>("csv_path_brake_map", csv_path_brake_map, std::string("empty"));
+  acc_map_initialized_ = true;
   if (!accel_map_.readAccelMapFromCSV(csv_path_accel_map))
   {
     ROS_ERROR("Cannot read accelmap. csv path = %s. stop calculation.", csv_path_accel_map.c_str());
@@ -218,12 +218,6 @@ void PacmodInterface::publishCommands()
 
   /* check clear flag */
   bool clear_override = false;
-  // if (!prev_engage_cmd_ && engage_cmd_)
-  // {
-  //   clear_override = true;
-  // }
-  // prev_engage_cmd_ = engage_cmd_;
-
   if (is_pacmod_enabled_ == true)
   {
     is_clear_override_needed_ = false;
