@@ -21,7 +21,7 @@
     <param name="th_stopped_time_sec" value="1.0" />
     <param name="th_stopped_velocity_mps" value="0.01" />
     <param name="th_course_out_distance_m" value="5.0" />
-    <param name="replan_when_obstacle_found" value="false" />
+    <param name="replan_when_obstacle_found" value="true" />
     <param name="replan_when_course_out" value="true" />
 
     <!-- A* search configurations -->
