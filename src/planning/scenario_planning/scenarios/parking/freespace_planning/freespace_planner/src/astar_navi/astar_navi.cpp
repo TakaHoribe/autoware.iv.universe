@@ -100,8 +100,8 @@ double calculateDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::P
   return calculateDistance2d(p1.position, p2.position);
 }
 
-double calculateDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
-                           const geometry_msgs::Pose& pose) {
+std::vector<double> calculateDistances2d(const autoware_planning_msgs::Trajectory& trajectory,
+                                         const geometry_msgs::Pose& pose) {
   std::vector<double> distances;
   distances.reserve(trajectory.points.size());
 
@@ -109,8 +109,13 @@ double calculateDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
       std::begin(trajectory.points), std::end(trajectory.points), std::back_inserter(distances),
       [&](const auto& point) { return calculateDistance2d(point.pose.position, pose.position); });
 
-  const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
+  return distances;
+}
 
+double calculateDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
+                           const geometry_msgs::Pose& pose) {
+  const auto distances = calculateDistances2d(trajectory, pose);
+  const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
   return *min_itr;
 }
 
@@ -178,6 +183,13 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
   waypoints.waypoints.push_back(waypoint);
 
   return createTrajectory(tf_buffer, current_pose_global, waypoints, 0.0);
+}
+
+size_t findNearestIndex(const autoware_planning_msgs::Trajectory& trajectory,
+                        const geometry_msgs::Pose& pose) {
+  const auto distances = calculateDistances2d(trajectory, pose);
+  const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
+  return std::distance(std::begin(distances), min_itr);
 }
 
 }  // namespace
@@ -253,9 +265,11 @@ bool AstarNavi::isPlanRequired() {
     astar_.reset(new AstarSearch());
     astar_->initializeNodes(*occupancy_grid_);
 
-    // TODO: forward path
+    const auto nearest_index = findNearestIndex(trajectory_, current_pose_global_.pose);
+    const auto forward_trajectory = getPartialTrajectory(trajectory_, nearest_index, target_index_);
+
     const bool is_obstacle_found =
-        astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
+        astar_->hasObstacleOnTrajectory(trajectory2posearray(forward_trajectory));
     if (is_obstacle_found) {
       ROS_INFO("Found obstacle");
       return true;
