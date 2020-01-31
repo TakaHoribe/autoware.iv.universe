@@ -22,7 +22,7 @@
   <arg name="extract_ahead_dist" default="200.0"/>
   <arg name="extract_behind_dist" default="3.0"/>
   <arg name="stop_dist_mergin" default="0.55"/>
-  <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>
+  <arg name="stop_dist_to_prohibit_engage" default="2.0"/>
 
 
   <arg name="max_trajectory_length" default="200.0"/>
@@ -54,7 +54,7 @@
     <param name="extract_ahead_dist" value="$(arg extract_ahead_dist)"/>
     <param name="extract_behind_dist" value="$(arg extract_behind_dist)"/>
     <param name="stop_dist_mergin" value="$(arg stop_dist_mergin)"/>
-    <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
+    <param name="stop_dist_to_prohibit_engage" value="$(arg stop_dist_to_prohibit_engage)"/>
     <param name="max_trajectory_length" value="$(arg max_trajectory_length)"/>
     <param name="min_trajectory_length" value="$(arg min_trajectory_length)"/>
     <param name="resample_total_time" value="$(arg resample_total_time)"/>
