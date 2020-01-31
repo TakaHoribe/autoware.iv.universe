@@ -874,8 +874,8 @@ bool EBPathPlannerNode::generateFixedOptimizedPoints(
       min_ind = i;
     }
   }
-  std::cout << "prv opt size "<< previous_optimized_points_ptr->size() << std::endl;
-  std::cout << "min ind "<< min_ind << std::endl;
+  // std::cout << "prv opt size "<< previous_optimized_points_ptr->size() << std::endl;
+  // std::cout << "min ind "<< min_ind << std::endl;
   const double keep_distance = forward_fixing_distance_ + backward_fixing_distance_;
   int forward_fixing_idx = 
     std::min((int)(min_ind+forward_fixing_distance_/delta_arc_length_),
@@ -1001,6 +1001,29 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
     tmp_z.push_back(merged_optimized_points[i].pose.position.z);
     tmp_v.push_back(merged_optimized_points[i].twist.linear.x);
   }
+  
+  if(!merged_optimized_points.empty()&&
+     !path_points.empty())
+  {
+    double dx1 = merged_optimized_points.back().pose.position.x - 
+                path_points.back().pose.position.x;
+    double dy1 = merged_optimized_points.back().pose.position.y - 
+                path_points.back().pose.position.y;
+    double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+    double yaw = tf2::getYaw(path_points.back().pose.orientation);
+    double dx2 = std::cos(yaw);
+    double dy2 = std::sin(yaw);
+    double inner_product = dx1*dx2+dy1*dy2;
+    if(dist1 < 1.0 && 
+      inner_product < 0 &&
+      path_points.back().twist.linear.x < 1e-6)
+    {
+      tmp_x.push_back(path_points.back().pose.position.x);
+      tmp_y.push_back(path_points.back().pose.position.y);
+      tmp_z.push_back(merged_optimized_points.back().pose.position.z);
+      tmp_v.push_back(0);
+    }  
+  }
   std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
   std::vector<double> new_s;
   for(double i = 0.0; 
@@ -1009,8 +1032,6 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
   {
     new_s.push_back(i);
   }
-  // new_s.push_back(base_s.back());
-  
   horibe_spline::SplineInterpolate spline;
   std::vector<double> new_x;
   std::vector<double> new_y;
