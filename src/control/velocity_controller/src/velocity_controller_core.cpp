@@ -335,6 +335,10 @@ void VelocityController::resetHandling(const ControlMode control_mode)
     pid_vel_.reset();
     lpf_vel_error_.reset();
   }
+  else if (control_mode == ControlMode::PID_CONTROL)
+  {
+    resetSmoothStop();
+  }
 }
 
 void VelocityController::publishCtrlCmd(const double vel, const double acc)
