@@ -98,26 +98,28 @@ class LgsvlConnectPublisher:
         self.v = odmmsg.twist.twist.linear.x
 
         """
-        #temporary tf
-        self.tfb.sendTransform((odmmsg.pose.pose.position.x, odmmsg.pose.pose.position.y, odmmsg.pose.pose.position.z),
-                         (odmmsg.pose.pose.orientation.x, odmmsg.pose.pose.orientation.y, odmmsg.pose.pose.orientation.z, odmmsg.pose.pose.orientation.w),
-                         rospy.Time.now(),
-                         "tmp_base_link", #child
-                         "tmp_gps") #parent
-        (trans, quat) = self.tfl.lookupTransform('tmp_base_link','tmp_gps',rospy.Time(0)) #parent, child
-        
-        self.tfb.sendTransform(trans,
-                               quat,
-                               rospy.Time.now(),
-                               "tmp_gps2",
-                               "base_link")
-        (trans2, quat2) = self.tfl.lookupTransform('map','tmp_gps2',rospy.Time(0)) #parent, child
-        
-        self.tfb.sendTransform(trans2,
-                               quat2,
-                               rospy.Time.now(),
-                               "gps",
-                               "map")
+        # temporary tf
+        try:
+            self.tfb.sendTransform(
+                (odmmsg.pose.pose.position.x, odmmsg.pose.pose.position.y, odmmsg.pose.pose.position.z),
+                (
+                    odmmsg.pose.pose.orientation.x * 0.0,
+                    odmmsg.pose.pose.orientation.z * 0.0,  # reverse
+                    odmmsg.pose.pose.orientation.y,  # reverse
+                    odmmsg.pose.pose.orientation.w,
+                ),
+                rospy.Time.now(),
+                "tmp_base_link",  # child
+                "tmp_gps",  # parent
+            )
+            (trans, quat) = self.tfl.lookupTransform("tmp_base_link", "tmp_gps", rospy.Time(0))  # parent, child
+
+            self.tfb.sendTransform(trans, quat, rospy.Time.now(), "tmp_gps2", "base_link")
+            (trans2, quat2) = self.tfl.lookupTransform("map", "tmp_gps2", rospy.Time(0))  # parent, child
+
+            self.tfb.sendTransform(trans2, quat2, rospy.Time.now(), "gps", "map")
+        except:
+            pass
         """
 
     def CallBackPcl(self, pclmsg):  # Problem2: timestamp of /points_raw is too old
