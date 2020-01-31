@@ -250,8 +250,10 @@ bool AstarNavi::isPlanRequired() {
   }
 
   if (replan_when_obstacle_found_) {
+    astar_.reset(new AstarSearch());
     astar_->initializeNodes(*occupancy_grid_);
-    // TODO(Kenji Miyake): Consider current position(index) and velocity
+
+    // TODO: forward path
     const bool is_obstacle_found =
         astar_->hasObstacleOnTrajectory(trajectory2posearray(partial_trajectory_));
     if (is_obstacle_found) {
