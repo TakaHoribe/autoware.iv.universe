@@ -7,65 +7,11 @@
   <arg name="show_debug_info_all" default="false"/>
   <arg name="publish_debug_trajs" default="true"/>
 
-
-  <!-- planning parameters -->
-  <arg name="max_velocity" default="20.0"/>
-  <arg name="max_accel" default="1.5"/>
-  <arg name="min_decel" default="-1.5"/>
-  <arg name="max_lateral_accel" default="0.05"/>
-
-  <arg name="replan_vel_deviation" default="5.53"/>
-  <arg name="engage_velocity" default="0.3"/>
-  <arg name="engage_acceleration" default="0.0"/>
-
-
-  <arg name="extract_ahead_dist" default="200.0"/>
-  <arg name="extract_behind_dist" default="3.0"/>
-  <arg name="stop_dist_mergin" default="0.55"/>
-  <arg name="stop_dist_to_prohibit_engage" default="2.0"/>
-
-
-  <arg name="max_trajectory_length" default="200.0"/>
-  <arg name="min_trajectory_length" default="30.0"/>
-  <arg name="resample_total_time" default="10.0"/>
-  <arg name="resample_time_interval" default="0.1"/>
-  <arg name="min_trajectory_interval_distance" default="0.1"/>
-
-
-  <arg name="pseudo_jerk_weight" default="100.0"/>
-  <arg name="over_v_weight" default="100000.0"/>
-  <arg name="over_a_weight" default="1000.0"/>
-
   <node pkg="motion_velocity_planner" type="motion_velocity_planner_osqp" name="motion_velocity_planner_osqp" output="$(arg output)">
-
+    <rosparam command="load" file="$(find motion_velocity_planner)/config/motion_velocity_planner_osqp.yaml" />
     <param name="show_debug_info" value="$(arg show_debug_info)"/>
     <param name="show_debug_info_all" value="$(arg show_debug_info_all)"/>
     <param name="publish_debug_trajs" value="$(arg publish_debug_trajs)"/>
-
-    <param name="max_velocity" value="$(arg max_velocity)"/>
-    <param name="max_accel" value="$(arg max_accel)"/>
-    <param name="min_decel" value="$(arg min_decel)"/>
-    <param name="max_lateral_accel" value="$(arg max_lateral_accel)"/>
-
-    <param name="replan_vel_deviation" value="$(arg replan_vel_deviation)"/>
-    <param name="engage_velocity" value="$(arg engage_velocity)"/>
-    <param name="engage_acceleration" value="$(arg engage_acceleration)"/>
-
-    <param name="extract_ahead_dist" value="$(arg extract_ahead_dist)"/>
-    <param name="extract_behind_dist" value="$(arg extract_behind_dist)"/>
-    <param name="stop_dist_mergin" value="$(arg stop_dist_mergin)"/>
-    <param name="stop_dist_to_prohibit_engage" value="$(arg stop_dist_to_prohibit_engage)"/>
-    <param name="max_trajectory_length" value="$(arg max_trajectory_length)"/>
-    <param name="min_trajectory_length" value="$(arg min_trajectory_length)"/>
-    <param name="resample_total_time" value="$(arg resample_total_time)"/>
-    <param name="resample_time_interval" value="$(arg resample_time_interval)"/>
-    <param name="min_trajectory_interval_distance" value="$(arg min_trajectory_interval_distance)"/>
-
-    <param name="pseudo_jerk_weight" value="$(arg pseudo_jerk_weight)"/>
-    <param name="over_v_weight" value="$(arg over_v_weight)"/>
-    <param name="over_a_weight" value="$(arg over_a_weight)"/>
-
   </node>
-
 
 </launch>
