@@ -27,7 +27,8 @@ bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &trajectory
 bool linearInterpPath(const autoware_planning_msgs::Trajectory &base_trajectory, const int resample_num,
                       autoware_planning_msgs::Trajectory &resampled_trajectory);
 double calcLengthOnWaypoints(const autoware_planning_msgs::Trajectory &trajectory, const int idx1, const int idx2);
-void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &arclength);
+void calcTrajectoryArclength(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &arclength);
+void calcTrajectoryIntervalDistance(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &intervals);
 bool scalingVelocitWithStopPoint(const autoware_planning_msgs::Trajectory &trajectory, const int &self_idx, const int &stop_idx,
                                  autoware_planning_msgs::Trajectory &trajectory_scaled);
 void setZeroVelocity(autoware_planning_msgs::Trajectory &trajectory);

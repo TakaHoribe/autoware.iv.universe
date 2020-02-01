@@ -40,7 +40,7 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param("resample_num", planning_param_.resample_num, int(10));
   pnh_.param("replan_stop_point_change_dist", planning_param_.replan_stop_point_change_dist, double(2.0));
   pnh_.param("velocity_feedback_gain", planning_param_.velocity_feedback_gain, double(0.3));
-  pnh_.param("stop_dist_not_to_drive_vehicle", planning_param_.stop_dist_not_to_drive_vehicle, double(1.5));
+  pnh_.param("stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, double(1.5));
   pnh_.param("emergency_flag_vel_thr_kmph", planning_param_.emergency_flag_vel_thr_kmph, double(3.0));
   pnh_.param("jerk_planning_span", planning_param_.jerk_planning_span, double(0.1));
   pnh_.param("stop_dist_mergin", planning_param_.stop_dist_mergin, double(0.55));
@@ -320,7 +320,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &base_speed, const au
     const bool exist_stop_point = (idx >= base_closest) ? ret : false;
 
     const double stop_dist = std::sqrt(vpu::calcSquaredDist2d(base_waypoints.points.at(idx), base_waypoints.points.at(base_closest)));
-    if (!exist_stop_point || stop_dist > planning_param_.stop_dist_not_to_drive_vehicle)
+    if (!exist_stop_point || stop_dist > planning_param_.stop_dist_to_prohibit_engage)
     {
       initial_motion->vel = planning_param_.engage_velocity;
       initial_motion->acc = planning_param_.engage_acceleration;
@@ -931,7 +931,7 @@ bool MotionVelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const 
 void MotionVelocityPlanner::calculateMotionsFromWaypoints(const autoware_planning_msgs::Trajectory &trajectory, std::vector<Motion> motions) const
 {
   std::vector<double> s;
-  vpu::calcWaypointsArclength(trajectory, s);
+  vpu::calcTrajectoryArclength(trajectory, s);
   Motion m;
   for (int i = 0; i < (int)trajectory.points.size(); ++i)
   {
@@ -964,11 +964,11 @@ void MotionVelocityPlanner::preventMoveToVeryCloseStopLine(const int closest, au
     if (stop_point_exist && stop_idx >= closest /* desired stop line is ahead of ego-vehicle */)
     {
       double stop_dist = std::sqrt(vpu::calcSquaredDist2d(trajectory.points.at(stop_idx), trajectory.points.at(closest)));
-      if (stop_dist < planning_param_.stop_dist_not_to_drive_vehicle)
+      if (stop_dist < planning_param_.stop_dist_to_prohibit_engage)
       {
         vpu::setZeroVelocity(trajectory);
         DEBUG_INFO("[preventMoveToVeryCloseStopLine] set zero vel curr_vel = %3.3f, stop_dist = %3.3f < thr = %3.3f",
-                   current_velocity_ptr_->twist.linear.x, stop_dist, planning_param_.stop_dist_not_to_drive_vehicle);
+                   current_velocity_ptr_->twist.linear.x, stop_dist, planning_param_.stop_dist_to_prohibit_engage);
       }
     }
   }

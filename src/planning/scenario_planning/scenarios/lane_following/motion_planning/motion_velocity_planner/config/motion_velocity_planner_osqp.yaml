@@ -1,0 +1,22 @@
+max_velocity: 20.0      # max velocity limit [m/s]
+max_accel: 1.5          # max acceleration limit [m/ss]
+min_decel: -1.5         # min deceleration limit [m/ss]
+max_lateral_accel: 0.05 # max lateral acceleration limit [m/ss]
+
+replan_vel_deviation: 5.53 # velocity deviation to replan initial velocity [m/s]
+engage_velocity: 0.3       # engage velocity threshold [m/s] (if the trajectory velocity is higher than this value, use this velocity for engage vehicle speed) 
+engage_acceleration: 0.0   # engage acceleration [m/ss] (use this acceleration when engagement)
+
+extract_ahead_dist: 200.0         # forward trajectory distance used for planning [m]
+extract_behind_dist: 5.0          # backward trajectory distance used for planning [m]
+stop_dist_to_prohibit_engage: 2.0 # if the stop point is in this distance, the speed is set to 0 not to move the vehicle [m]
+
+max_trajectory_length: 200.0          # max trajectory length for resampling [m]
+min_trajectory_length: 30.0           # min trajectory length for resampling [m]
+resample_total_time: 10.0             # resample time [s]
+resample_time_interval: 0.1           # resample dt [m]
+min_trajectory_interval_distance: 0.1 # resample points-interval length [m]
+
+pseudo_jerk_weight: 100.0 # weight for "smoothness" cost
+over_v_weight: 100000.0   # weight for "overspeed limit" cost
+over_a_weight: 1000.0     # weight for "overaccel limit" cost

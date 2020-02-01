@@ -114,7 +114,7 @@ geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose &relative
   geometry_msgs::Pose absolute;
   absolute.position.x = rot_p.x + origin.position.x;
   absolute.position.y = rot_p.y + origin.position.y;
-  absolute.position.z = relative.position.x + origin.position.z;
+  absolute.position.z = relative.position.z + origin.position.z;
   absolute.orientation = getQuaternionFromYaw(tf2::getYaw(relative.orientation) + yaw);
 
   return absolute;

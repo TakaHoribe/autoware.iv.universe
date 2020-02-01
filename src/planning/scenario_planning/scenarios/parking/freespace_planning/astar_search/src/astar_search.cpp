@@ -202,6 +202,7 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
   const auto width = costmap_.info.width;
 
   // size initialization
+  nodes_.clear();
   nodes_.resize(height);
   for (int i = 0; i < height; i++) {
     nodes_[i].resize(width);

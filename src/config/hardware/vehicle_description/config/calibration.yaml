@@ -57,14 +57,14 @@ base_link2velodyne_top:
 base_link2velodyne_left:
   x: 0.9
   y: 0.6
-  z: 2.0
+  z: 1.7
   roll: 0.0
   pitch: 0.69813170079
   yaw: 1.56579632679
 base_link2velodyne_right:
   x: 0.9
   y: -0.6
-  z: 2.0
+  z: 1.7
   roll: 0.0
   pitch: 0.69813170079
   yaw: -1.59079632679

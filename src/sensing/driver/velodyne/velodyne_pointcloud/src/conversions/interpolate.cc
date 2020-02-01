@@ -58,7 +58,7 @@ namespace velodyne_pointcloud
 
     pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpolate_points_xyzir(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
     tf2::Transform tf2_base_link_to_sensor;
-    getTransform(base_link_frame_, points_xyziradt->header.frame_id, &tf2_base_link_to_sensor);
+    getTransform(points_xyziradt->header.frame_id, base_link_frame_, &tf2_base_link_to_sensor);
     interpolate_points_xyzir = interpolate(points_xyziradt, twist_queue_, tf2_base_link_to_sensor);
     velodyne_points_interpolate_pub_.publish(interpolate_points_xyzir);
   }

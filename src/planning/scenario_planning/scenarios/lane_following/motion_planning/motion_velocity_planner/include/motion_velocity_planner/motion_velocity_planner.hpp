@@ -97,7 +97,7 @@ private:
     int resample_num;          // used in resample with interpolate (output waypints size = original size * this value)
     double large_jerk_report;  // publish emergency topic if stop jerk overs this value
     double velocity_feedback_gain;  // to calculate desired acceleration from velocity deviation
-    double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
+    double stop_dist_to_prohibit_engage; // set zero vel when vehicle stops and stop dist is closer than this
     double emergency_flag_vel_thr_kmph;    // Threshold for throwing emergency flag when unable to stop under jerk constraints
     double jerk_planning_span;             // Interval jerk value when planning from nominal jerk to maximum jerk for stop
     double stop_dist_mergin;
