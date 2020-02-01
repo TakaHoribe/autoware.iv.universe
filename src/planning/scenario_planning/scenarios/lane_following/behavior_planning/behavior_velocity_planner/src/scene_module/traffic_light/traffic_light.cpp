@@ -16,6 +16,7 @@ TrafficLightModule::TrafficLightModule(TrafficLightModuleManager *manager_ptr,
       traffic_light_ptr_(traffic_light_ptr),
       lane_id_(lane_id),
       stop_margin_(0.0),
+      max_stop_acceleration_threshold_(-5.0),
       task_id_(boost::uuids::random_generator()())
 
 {
@@ -39,12 +40,10 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     bool found = false;
     double highest_confidence = 0.0;
     autoware_traffic_light_msgs::TrafficLightState highest_confidence_tl_state;
-    std::string debug_msg = "";
     for (const auto &traffic_light : traffic_lights)
     {
         if (!traffic_light.isLineString()) // traffic ligth must be linestrings
         {
-            debug_msg ="traffic_light is not line string";
             continue;
         }
         const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
@@ -52,17 +51,14 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
         autoware_traffic_light_msgs::TrafficLightState tl_state;
         if (!getTrafficLightState(id, header, tl_state))
         {
-            debug_msg = "fail getTrafficLightState()";
             continue;
         }
         if (!((ros::Time::now() - header.stamp).toSec() < 1.0))
         {
-            debug_msg ="TL time stamp is too old." + std::to_string((ros::Time::now() - header.stamp).toSec());
             continue;
         }
         if (tl_state.lamp_states.empty() || tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::UNKNOWN)
         {
-            debug_msg = "LampState is UNKNOWN or EMPTY";
             continue;
         }
 
@@ -75,12 +71,40 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     }
     if (!found)
     {
-        ROS_WARN_THROTTLE(1.0, "cannot find traffic light lamp state. debug_msg = %s", debug_msg.c_str());
+        ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot find traffic light lamp state.");
         return false;
     }
 
     Line stop_line = {{lanelet_stop_line[0].x(), lanelet_stop_line[0].y()},
                       {lanelet_stop_line[1].x(), lanelet_stop_line[1].y()}};
+
+    // check stop border distance
+    std::shared_ptr<geometry_msgs::TwistStamped const> self_twist_ptr;
+    if (!getCurrentSelfVelocity(self_twist_ptr))
+    {
+        ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot get vehicle velocity.");
+        return false;
+    }
+    const double stop_border_distance_threshold =
+        (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) / (2.0 * max_stop_acceleration_threshold_);
+    geometry_msgs::PoseStamped self_pose;
+    if (!getCurrentSelfPose(self_pose))
+    {
+        ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot get vehicle pose.");
+        return false;
+    }
+    Eigen::Vector2d stop_line_point;
+    stop_line_point << (lanelet_stop_line[0].x() + lanelet_stop_line[1].x()) / 2.0, (lanelet_stop_line[0].y() + lanelet_stop_line[1].y()) / 2.0;
+    Eigen::Vector2d self_point;
+    self_point << self_pose.pose.position.x, self_pose.pose.position.y;
+    const double sq_dist = (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
+                           (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
+    std::cout << std::sqrt(sq_dist) << ", " << stop_border_distance_threshold << std::endl;
+    if (sq_dist < stop_border_distance_threshold*stop_border_distance_threshold)
+    {
+        ROS_WARN_THROTTLE(1.0, "[traffic_light] state is red. this vehicle are passing too fast to stop at the stop line");
+        return true;
+    }
 
     // debug code
     // autoware_traffic_light_msgs::LampState lamp_state;

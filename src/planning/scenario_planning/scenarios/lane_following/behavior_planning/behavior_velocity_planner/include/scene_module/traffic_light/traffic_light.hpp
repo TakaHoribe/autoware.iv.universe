@@ -49,6 +49,7 @@ private:
     std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr_;
     int lane_id_;
     double stop_margin_;
+    double max_stop_acceleration_threshold_;
     boost::uuids::uuid task_id_;
 
 };
