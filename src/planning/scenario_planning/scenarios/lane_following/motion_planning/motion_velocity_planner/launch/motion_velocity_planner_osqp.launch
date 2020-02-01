@@ -1,5 +1,5 @@
 <launch>
-  <arg name="ns" default="/"/>
+  <!-- <arg name="ns" default="/"/> -->
   <arg name="output" default="screen"/>
 
   <!-- debug flags -->

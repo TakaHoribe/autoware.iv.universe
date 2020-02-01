@@ -319,17 +319,29 @@ bool scalingVelocitWithStopPoint(const autoware_planning_msgs::Trajectory &traje
 
 }
 
-void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &path, std::vector<double> &arclength)
+void calcTrajectoryArclength(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &arclength)
 {
   double dist = 0.0;
   arclength.clear();
   arclength.push_back(dist);
-  for (unsigned int i = 1; i < path.points.size(); ++i)
+  for (unsigned int i = 1; i < trajectory.points.size(); ++i)
   {
-    const autoware_planning_msgs::TrajectoryPoint tp = path.points.at(i);
-    const autoware_planning_msgs::TrajectoryPoint tp_prev = path.points.at(i - 1);
+    const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
+    const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
     dist += vpu::calcDist2d(tp.pose, tp_prev.pose);
     arclength.push_back(dist);
+  }
+}
+
+void calcTrajectoryIntervalDistance(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &intervals)
+{
+  intervals.clear();
+  for (unsigned int i = 1; i < trajectory.points.size(); ++i)
+  {
+    const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
+    const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
+    const double dist = vpu::calcDist2d(tp.pose, tp_prev.pose);
+    intervals.push_back(dist);
   }
 }
 

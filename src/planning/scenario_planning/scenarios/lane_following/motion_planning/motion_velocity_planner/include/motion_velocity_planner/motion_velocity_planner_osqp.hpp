@@ -112,13 +112,12 @@ private:
 
   void optimizeVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                       const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest,
-                      const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
+                      autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
                          double &initial_vel, double &initial_acc);
 
-  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output,
-                          std::vector<double> &interval_dist_arr) const;
+  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output) const;
 
   bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output) const;
   bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &input, const int index, autoware_planning_msgs::Trajectory &output) const;
@@ -129,7 +128,7 @@ private:
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
   void solveOptimization(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
-                        const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
+                         autoware_planning_msgs::Trajectory &output);
   void insertBehindVelocity(const int prev_out_closest, const autoware_planning_msgs::Trajectory &prev_output,
                             const int output_closest, autoware_planning_msgs::Trajectory &output);
   /* dynamic reconfigure */

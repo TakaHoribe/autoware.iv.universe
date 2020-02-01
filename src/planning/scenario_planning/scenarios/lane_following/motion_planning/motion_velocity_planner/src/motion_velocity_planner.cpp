@@ -931,7 +931,7 @@ bool MotionVelocityPlanner::stopVelocityFilter(const int &input_stop_idx, const 
 void MotionVelocityPlanner::calculateMotionsFromWaypoints(const autoware_planning_msgs::Trajectory &trajectory, std::vector<Motion> motions) const
 {
   std::vector<double> s;
-  vpu::calcWaypointsArclength(trajectory, s);
+  vpu::calcTrajectoryArclength(trajectory, s);
   Motion m;
   for (int i = 0; i < (int)trajectory.points.size(); ++i)
   {

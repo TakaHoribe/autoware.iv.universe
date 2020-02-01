@@ -160,11 +160,11 @@ void MotionVelocityPlanner::run()
 autoware_planning_msgs::Trajectory MotionVelocityPlanner::calcTrajectoryVelocity(const autoware_planning_msgs::Trajectory &traj_input)
 {
 
-  /* (1) Find the nearest point to reference_traj. This is not severe so, could read closest topic by callback. */
+  /* (1) Find the nearest point to reference_traj */
   int input_closest = vpu::calcClosestWaypoint(traj_input, current_pose_ptr_->pose);
   if (input_closest < 0)
   {
-    ROS_WARN("[velocity planner] cannot find closest waypoint for base raw trajectory");
+    ROS_WARN("[velocity planner] cannot find closest waypoint for input trajectory");
     return prev_output_;
   }
 
@@ -174,7 +174,7 @@ autoware_planning_msgs::Trajectory MotionVelocityPlanner::calcTrajectoryVelocity
   autoware_planning_msgs::Trajectory traj_resampled;       // resampled depending on the current_velocity
   autoware_planning_msgs::Trajectory output;               // velocity is optimized by qp solver
 
-  /* (2) Extruct the route surrounding the self-position from reference_traj */
+  /* (2) Extract trajectory around self-position with desired forward-backwaed length*/
   if (!extractPathAroundIndex(traj_input, input_closest, /* out */ traj_extracted))
   {
     return prev_output_;
@@ -183,46 +183,46 @@ autoware_planning_msgs::Trajectory MotionVelocityPlanner::calcTrajectoryVelocity
   /* (3) Apply external velocity limit */
   externalVelocityLimitFilter(traj_extracted, /* out */ traj_vel_limtted);
 
-  /* (2) Lateral acceleration limt */
+  /* (4) Lateral acceleration limt */
   lateralAccelerationFilter(traj_vel_limtted, /* out */ traj_latacc_filtered);
 
-  /* (3) Resample extructed-waypoints with interpolation */
+  /* (5) Resample trajectory with ego-velocity based interval distance */
   std::vector<double> resampled_interval_arr;
-  if (!resampleTrajectory(traj_latacc_filtered, /* out */ traj_resampled, resampled_interval_arr))
+  if (!resampleTrajectory(traj_latacc_filtered, /* out */ traj_resampled))
   {
     return prev_output_;
   }
   int traj_resampled_closest = vpu::calcClosestWaypoint(traj_resampled, current_pose_ptr_->pose);
 
-  /* (4) Change base velocity to zero when current_velocity == 0 & stop_dist is close */
+  /* (6) Change trajectory velocity to zero when current_velocity == 0 & stop_dist is close */
   preventMoveToCloseStopLine(traj_resampled_closest, traj_resampled);
 
-  /* for negative velocity */
+  /* for reverse velocity */
   const bool is_reverse_velocity = (bool)(traj_resampled.points.at(traj_resampled_closest).twist.linear.x < 0.0);
-  if (is_reverse_velocity == true)
+  if (is_reverse_velocity)
   {
     vpu::multiplyConstantToTrajectoryVelocity(-1.0, /* out */ traj_resampled);
   }
 
-  /* (5) Calculate the nearest point on the previously planned traj (used to get initial planning speed) */
+  /* (7) Calculate the closest point on the previously planned traj (used to get initial planning speed) */
   int prev_output_closest = vpu::calcClosestWaypoint(prev_output_, current_pose_ptr_->pose);
   DEBUG_INFO("[calcClosestWaypoint] for base_resampled : base_resampled.size() = %d, prev_planned_closest_ = %d",
              (int)traj_resampled.points.size(), prev_output_closest);
 
-  /* (6) Replan velocity */
+  /* (8) Optimize velocity */
   optimizeVelocity(traj_resampled, traj_resampled_closest, prev_output_, prev_output_closest,
-                   resampled_interval_arr, /* out */ output);
+                   /* out */ output);
 
-  /* (7) Max velocity filter for safety */
+  /* (9) Max velocity filter for safety */
   vpu::maximumVelocityFilter(planning_param_.max_velocity, output);
 
   /* for negative velocity */
-  if (is_reverse_velocity == true)
+  if (is_reverse_velocity)
   {
     vpu::multiplyConstantToTrajectoryVelocity(-1.0, output);
   }
 
-  /* (8) Insert behind velocity for consistency */
+  /* (10) Insert behind velocity for output's consistency */
   insertBehindVelocity(prev_output_closest, prev_output_, traj_resampled_closest, output);
 
   /* for debug */
@@ -276,11 +276,10 @@ void MotionVelocityPlanner::publishStopDistance(const autoware_planning_msgs::Tr
 }
 
 bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajectory &input,
-                                               autoware_planning_msgs::Trajectory &output,
-                                               std::vector<double> &interval_dist_arr) const
+                                               autoware_planning_msgs::Trajectory &output) const
 {
   std::vector<double> in_arclength;
-  vpu::calcWaypointsArclength(input, in_arclength);
+  vpu::calcTrajectoryArclength(input, in_arclength);
   const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
   const double ds_nominal = std::max(current_velocity_ptr_->twist.linear.x * planning_param_.resample_dt,
                                      planning_param_.min_trajectory_interval_distance);
@@ -308,7 +307,6 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
       break;
     }
     out_arclength.push_back(dist_i);
-    interval_dist_arr.push_back(ds);
   }
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output))
   {
@@ -320,9 +318,7 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
   // add end point directly to consider the endpoint velocity.
   if (is_end_point)
   {
-    const double ds_end = vpu::calcDist2d(output.points.back().pose, input.points.back().pose);
     output.points.push_back(input.points.back());
-    interval_dist_arr.push_back(ds_end);
   }
   return true;
 }
@@ -390,8 +386,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double &target_vel, const au
 }
 
 void MotionVelocityPlanner::solveOptimization(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input,
-                                              const int closest, const std::vector<double> &interval_dist_arr,
-                                              autoware_planning_msgs::Trajectory &output)
+                                              const int closest, autoware_planning_msgs::Trajectory &output)
 {
   auto ts = std::chrono::system_clock::now();
 
@@ -415,6 +410,9 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
   {
     return;
   }
+
+  std::vector<double> interval_dist_arr;
+  vpu::calcTrajectoryIntervalDistance(input, interval_dist_arr);
 
   std::vector<double> vmax(N, 0.0);
   for (unsigned int i = 0; i < N; ++i)
@@ -565,7 +563,7 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
 
 void MotionVelocityPlanner::optimizeVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                                              const autoware_planning_msgs::Trajectory &prev_output, const int prev_output_closest,
-                                             const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output)
+                                             autoware_planning_msgs::Trajectory &output)
 {
   const double target_vel = std::fabs(input.points.at(input_closest).twist.linear.x);
 
@@ -576,7 +574,7 @@ void MotionVelocityPlanner::optimizeVelocity(const autoware_planning_msgs::Traje
                     /* out */ initial_vel, initial_acc);
 
   autoware_planning_msgs::Trajectory optimized_traj;
-  solveOptimization(initial_vel, initial_acc, input, input_closest, interval_dist_arr, /* out */ optimized_traj);
+  solveOptimization(initial_vel, initial_acc, input, input_closest, /* out */ optimized_traj);
 
   /* find stop point for stopVelocityFilter */
   int stop_idx_zero_vel = -1;
