@@ -11,12 +11,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
-#include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_core/geometry/Point.h>
-#include <lanelet2_core/geometry/Lanelet.h>
-#include <lanelet2_core/geometry/BoundingBox.h>
-#include <lanelet2_routing/RoutingGraph.h>
-#include <lanelet2_traffic_rules/TrafficRulesFactory.h>
+#include <Eigen/Core>
 
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/MapMetaData.h>

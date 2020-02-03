@@ -6,7 +6,6 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   roscpp
   tf2_ros
-  lanelet2_extension #TODO: add for prototype; should be deprecated in the future
 )
 
 catkin_package(
