@@ -693,7 +693,7 @@ bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planni
     const double dist = vpu::calcDist2d(trajectory.points.at(i), trajectory.points.at(i + 1));
     const double v0 = trajectory.points.at(i + 1).twist.linear.x;
     const double v1 = std::sqrt(v0 * v0 + 2.0 * std::fabs(accel) * dist);
-    printf("i = %d, dist = %3.3f, v0 = %3.3f, v1 = %3.3f\n", i, dist, v0, v1);
+    // printf("i = %d, dist = %3.3f, v0 = %3.3f, v1 = %3.3f\n", i, dist, v0, v1);
     if (trajectory.points.at(i).twist.linear.x > v1)
     {
       trajectory.points.at(i).twist.linear.x = v1;
