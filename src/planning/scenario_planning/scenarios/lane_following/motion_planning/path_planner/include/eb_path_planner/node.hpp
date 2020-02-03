@@ -105,7 +105,7 @@ private:
     const geometry_msgs::Point& current_ego_point,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
-    const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr);
+    const std::vector<geometry_msgs::Point>& fixed_explored_points);
   
   bool generateFixedExploredPoints(
     const geometry_msgs::Pose& ego_pose,

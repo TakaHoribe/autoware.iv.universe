@@ -91,11 +91,6 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
 {
   geometry_msgs::Point relative_p = 
     transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
-  // std::cout << "relative p "<<relative_p.x <<" "<<relative_p.y << std::endl;
-  // double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
-  // double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
-  // std::cout << "heifht "<< occupancy_grid_info.height << std::endl;
-  // std::cout << "width "<< occupancy_grid_info.width << std::endl;
   double resolution = occupancy_grid_info.resolution;
   double map_y_height = occupancy_grid_info.height;
   double map_x_width = occupancy_grid_info.width;
@@ -103,13 +98,6 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   double map_y_in_image_resolution = relative_p.y/resolution;
   double image_x = map_y_height - map_y_in_image_resolution;
   double image_y = map_x_width - map_x_in_image_resolution;
-  // double bottomleft_x = (relative_p.x)/costmap_resolution;
-  // double bottomleft_y = (relative_p.y)/costmap_resolution;
-  // double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
-  // double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
-  // std::cout << "costmap width "<< ego_costmap_y_width << std::endl;
-  // std::cout << "costmap length "<< ego_costmap_x_length << std::endl;
-  // std::cout << "image x y "<< image_x << " "<< image_y << std::endl;
   if(image_x>=0 && 
      image_x<(int)map_y_height &&
      image_y>=0 && 
@@ -137,12 +125,6 @@ bool transformImageToMap(const geometry_msgs::Point& image_point,
   double map_y_in_image_resolution = map_y_height - image_point.x;
   double relative_x = map_x_in_image_resolution*resolution;
   double relative_y = map_y_in_image_resolution*resolution;
-  
-  // double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
-  // double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
-  // double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
-  // double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
-
   double yaw = tf2::getYaw(occupancy_grid_info.origin.orientation);
   geometry_msgs::Point res;
   res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
@@ -798,7 +780,7 @@ bool ModifyReferencePath::generateModifiedPath(
       {
         exploring_goal_pose_in_map_ptr = 
           std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
-        if(accum_dist > max_radius_*12)
+        if(accum_dist > max_radius_*20)
         {
           break;
         }

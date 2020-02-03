@@ -188,13 +188,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       self_pose,
       clearance_map);
       
-    if(needReset(self_pose.position,
-                 clearance_map,
-                 input_path_msg.drivable_area.info,
-                 previous_explored_points_ptr_))
-    {
-      doResetting();
-    }
     
     geometry_msgs::Pose start_exploring_pose;
     std::vector<geometry_msgs::Point> fixed_explored_points; 
@@ -222,7 +215,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
             min_ind = i;
           }
         }
-        int back_ind = std::max(min_ind - 3, 0);
+        int back_ind = std::max(min_ind - 7, 0);
         if(min_ind != -1)
         {
           start_exploring_pose = input_path_msg.points[back_ind].pose;
@@ -239,6 +232,14 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       start_exploring_pose.position = fixed_explored_points.back();
     }
     
+    if(needReset(self_pose.position,
+                 clearance_map,
+                 input_path_msg.drivable_area.info,
+                 fixed_explored_points))
+    {
+      doResetting();
+    }
+    
     std::vector<geometry_msgs::Point> explored_points;
     geometry_msgs::Point debug_goal_point;
     std::vector<geometry_msgs::Point> debug_rearranged_points;
@@ -253,6 +254,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
             input_path_msg.drivable_area.info,
             debug_goal_point,
             debug_rearranged_points);
+    explored_points.insert(explored_points.begin(), start_exploring_pose.position);
     if(!is_explore_success)
     {
       generateSmoothTrajectory(
@@ -621,7 +623,7 @@ bool EBPathPlannerNode::needReset(
   const geometry_msgs::Point& current_ego_point,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
-  const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr)
+  const std::vector<geometry_msgs::Point>& fixed_explored_points)
 {
   bool is_need_reset = false;
   //check1
@@ -644,30 +646,27 @@ bool EBPathPlannerNode::needReset(
   
   //check3
   int count = 0;
-  if(previous_explored_points_ptr_)
+  for(const auto& point: fixed_explored_points)
   {
-    for(const auto& point: *previous_explored_points_ptr_)
+    geometry_msgs::Point point_in_image;
+    if(tmp1::transformMapToImage(
+            point, 
+            map_info,
+            point_in_image))
     {
-      geometry_msgs::Point point_in_image;
-      if(tmp1::transformMapToImage(
-              point, 
-              map_info,
-              point_in_image))
+      float clearance = 
+          clearance_map.ptr<float>((int)point_in_image.y)
+                                  [(int)point_in_image.x]*map_info.resolution;
+      if(clearance < 1e-6)
       {
-        float clearance = 
-            clearance_map.ptr<float>((int)point_in_image.y)
-                                    [(int)point_in_image.x]*map_info.resolution;
-        if(clearance < 1e-6)
-        {
-          // ROS_WARN("count %d", count);
-          ROS_WARN(
-            "[EBPathPlanner] Reset eb path planner since explored points are outside of drivavle area");
-          is_need_reset = true;
-          return is_need_reset;
-        }
+        // ROS_WARN("count %d", count);
+        ROS_WARN(
+          "[EBPathPlanner] Reset eb path planner since explored points are outside of drivavle area");
+        is_need_reset = true;
+        return is_need_reset;
       }
-      count++;
     }
+    count++;
   }
   //check4
   if(is_relaying_path_mode_)
@@ -693,7 +692,6 @@ bool EBPathPlannerNode::generateSmoothTrajectory(
     smooth_trajectory_points,
     debug_fixed_optimzied_points_used_for_constrain,
     debug_interpolated_points_used_for_optimization);
-  std::cout << "smooth trajectory points "<< smooth_trajectory_points.size() << std::endl;
   alighWithPathPoints(
     input_path.points,
     smooth_trajectory_points);
@@ -793,12 +791,17 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
   {
     for(const auto& avoiding_object: avoiding_objects)
     {
-      double dx = path_points[i].pose.position.x - 
+      double dx1 = path_points[i].pose.position.x - 
                   avoiding_object.state.pose_covariance.pose.position.x;
-      double dy = path_points[i].pose.position.y - 
+      double dy1 = path_points[i].pose.position.y - 
                   avoiding_object.state.pose_covariance.pose.position.y;
-      double dist = std::sqrt(dx*dx+dy*dy);
-      if(dist < exploring_minimum_radius_*2)
+      double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+      double dx2 = ego_pose.position.x - 
+                  avoiding_object.state.pose_covariance.pose.position.x;
+      double dy2 = ego_pose.position.y - 
+                  avoiding_object.state.pose_covariance.pose.position.y;
+      double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+      if(dist1 < exploring_minimum_radius_*2 && dist2<30)
       {
         return true;
       }
@@ -870,11 +873,9 @@ bool EBPathPlannerNode::generateFixedExploredPoints(
        }
     }
   }
-  int valid_backward_fixing_idx =  std::max(origin_valid_prev_explored_points_ind, backward_fixing_idx);
+  int valid_backward_fixing_idx =  
+    std::max(origin_valid_prev_explored_points_ind, backward_fixing_idx);
   valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
-  std::cout << "backward fixing idx "<< backward_fixing_idx << std::endl;       
-  std::cout << "valid backward fixing idx "<< valid_backward_fixing_idx << std::endl;       
-  std::cout << "backward keep distance  "<< backward_keep_distance << std::endl;       
   for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)
   {
     fixed_explored_points.push_back(previous_explored_points_ptr->at(i));

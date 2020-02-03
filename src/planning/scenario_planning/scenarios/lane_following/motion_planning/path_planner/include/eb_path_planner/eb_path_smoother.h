@@ -61,7 +61,7 @@ private:
   
   bool preprocessPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& explored_points,
-    const geometry_msgs::Pose& start_pose,
+    const geometry_msgs::Pose& ego_pose,
     std::vector<double>& interpolated_x,
     std::vector<double>& interpolated_y,
     int& nearest_idx,

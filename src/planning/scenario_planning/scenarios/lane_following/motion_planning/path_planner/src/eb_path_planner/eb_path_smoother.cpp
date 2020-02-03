@@ -251,7 +251,7 @@ bool EBPathSmoother::preprocessExploredPoints(
   
 bool EBPathSmoother::preprocessPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-    const geometry_msgs::Pose& start_pose,
+    const geometry_msgs::Pose& ego_pose,
     std::vector<double>& interpolated_x,
     std::vector<double>& interpolated_y,
     int& nearest_idx,
@@ -266,41 +266,39 @@ bool EBPathSmoother::preprocessPathPoints(
     ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] Almost no path points");
     return false;
   }
-  // if(fixed_optimized_points.empty())
-  // {
-  //   std::cout << "fixed points empty" << std::endl;
-  //   return false;
-  // }
   
-  int nearest_path_idx_from_path_points = 0;
-  double yaw = tf2::getYaw(start_pose.orientation);
+  geometry_msgs::Pose start_pose;
   double min_dist = 99999999;
-  for (int i = 0; i < path_points.size(); i++)
+  int min_ind = -1;
+  int back_ind = -1;
+  if(!path_points.empty())
   {
-    double dx1 = path_points[i].pose.position.x - 
-                  start_pose.position.x;
-    double dy1 = path_points[i].pose.position.y - 
-                  start_pose.position.y;
-    double dist = std::sqrt(dx1*dx1+dy1*dy1);  
-    
-    double dx2 = std::cos(yaw);
-    double dy2 = std::sin(yaw);
-    double inner_product = dx1*dx2+dy1*dy2;
-    if(inner_product > 0 && dist < min_dist)
+    for (int i = 0; i < path_points.size(); i++)
     {
-      min_dist = dist;
-      nearest_path_idx_from_path_points = i;
+      double dx1 = path_points[i].pose.position.x - ego_pose.position.x;
+      double dy1 = path_points[i].pose.position.y - ego_pose.position.y;
+      double dist = std::sqrt(dx1*dx1+dy1*dy1);
+      if(dist < min_dist)
+      {
+        min_dist = dist;
+        min_ind = i;
+      }
+    }
+    back_ind = std::max(min_ind - 7, 0);
+    if(min_ind != -1)
+    {
+      start_pose = path_points[back_ind].pose;
     }
   }
-  // nearest_path_idx_from_path_points++;
-  // nearest_path_idx_from_path_points++;
-  // nearest_path_idx_from_path_points++;
+  else
+  {
+    ROS_WARN("Path is empty");
+  }
+  
+  
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
-  tmp_x.push_back(start_pose.position.x);
-  tmp_y.push_back(start_pose.position.y);
-  std::cout << "nearest path points "<< nearest_path_idx_from_path_points << std::endl;
-  for(size_t i = nearest_path_idx_from_path_points;
+  for(size_t i = back_ind;
              i <  path_points.size(); i++)
   {
     //backward check
@@ -336,7 +334,7 @@ bool EBPathSmoother::preprocessPathPoints(
   }
   // std::cout << "base s back() "<< base_s.back() << std::endl;
   std::vector<double> new_s;
-  for(double i = delta_arc_length_for_path_smoothing_; 
+  for(double i = 0; 
       i <= base_s.back();
       i += delta_arc_length_for_path_smoothing_)
   {
@@ -354,13 +352,6 @@ bool EBPathSmoother::preprocessPathPoints(
     point.x = interpolated_x[i];
     point.y = interpolated_y[i];
     debug_interpolated_points.push_back(point);
-    if(i>0)
-    {
-      double dx = point.x - interpolated_x[i-1];
-      double dy = point.y - interpolated_y[i-1];
-      double dist = std::sqrt(dx*dx+dy*dy);
-      // std::cout << "dist "<< dist << std::endl;
-    }
   }
   
   nearest_idx = 0;
@@ -683,49 +674,16 @@ bool EBPathSmoother::generateOptimizedPath(
   
   int nearest_idx_from_start_point;
   int farrest_idx_from_start_point;
-  geometry_msgs::Pose start_pose;
-  start_pose = ego_pose;
-  double min_dist = 99999999;
-  int min_ind = -1;
-  if(!path_points.empty())
-  {
-    for (int i = 0; i < path_points.size(); i++)
-    {
-      double dx1 = path_points[i].pose.position.x - start_pose.position.x;
-      double dy1 = path_points[i].pose.position.y - start_pose.position.y;
-      double dist = std::sqrt(dx1*dx1+dy1*dy1);
-      if(dist < min_dist)
-      {
-        min_dist = dist;
-        min_ind = i;
-      }
-    }
-    int back_ind = std::max(min_ind - 7, 0);
-    if(min_ind != -1)
-    {
-      start_pose = path_points[back_ind].pose;
-    }
-  }
-  else
-  {
-    ROS_WARN("Path is empty");
-  }
   
   bool is_preprocess_success = 
     preprocessPathPoints(path_points, 
-                        start_pose,
+                        ego_pose,
                         interpolated_x,
                         interpolated_y,
                         nearest_idx_from_start_point,
                         farrest_idx_from_start_point,
                         debug_interpolated_points);
   
-  double dx = interpolated_x.front() 
-              - start_pose.position.x;
-  double dy = interpolated_y.front()
-              - start_pose.position.y;  
-  double dist = std::sqrt(dx*dx+dy*dy);
-  double yaw = std::atan2(dy, dx);
   int current_num_fix_points = 0;
   farrest_idx_from_start_point = farrest_idx_from_start_point+current_num_fix_points;
   
@@ -862,7 +820,7 @@ bool EBPathSmoother::generateOptimizedPath(
   
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
-  for(size_t i = 1; i <=  number_of_optimized_points; i++)
+  for(size_t i = 0; i <=  number_of_optimized_points; i++)
   {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
     tmp_point.pose.position.x = workspace.solution->x[i];
