@@ -1,29 +1,29 @@
 #ifndef MODIFY_REFERENCE_PATH_H
 #define MODIFY_REFERENCE_PATH_H
 
-namespace lanelet
-{
-  // class Lanelet;
-  class LaneletMap;
-  // using LaneletMapPtr = std::shared_ptr<LaneletMap>;
-  namespace routing
-  {
-    class RoutingGraph;
-  }
-}
+// namespace lanelet
+// {
+//   // class Lanelet;
+//   class LaneletMap;
+//   // using LaneletMapPtr = std::shared_ptr<LaneletMap>;
+//   namespace routing
+//   {
+//     class RoutingGraph;
+//   }
+// }
 
 namespace cv
 {
   class Mat;
 } // namespace cv
 
-struct Node;
-
+class Node;
+class GridNode;
 
 namespace autoware_planning_msgs
 {
   ROS_DECLARE_MESSAGE(PathPoint); 
-  ROS_DECLARE_MESSAGE(Route); 
+  // ROS_DECLARE_MESSAGE(Route); 
 }
 namespace autoware_perception_msgs
 {
@@ -56,7 +56,7 @@ private:
   int clearance_map_x_length_;
   //should be deprecated when implementing appropriate driveable area
   double resolution_;
-  double time_limit_;
+  double time_limit_millisecond_;
   double min_radius_;
   double max_radius_;
   double backward_distance_;
@@ -73,6 +73,13 @@ private:
                   const double min_r,
                   const double max_r,
                   std::vector<Node>& expanded_nodes);
+  bool expandGridNode(
+                const GridNode& parent_node, 
+                const cv::Mat& clearance_map,
+                const nav_msgs::MapMetaData& map_info,
+                const GridNode& goal_node,
+                cv::Mat& visited_map,
+                std::vector<GridNode>& child_nodes);
   bool isOverlap(Node& node1, Node& node2);
   bool nodeExistInClosedNodes(Node node, std::vector<Node> closed_nodes);
   bool solveGraphAStar(const geometry_msgs::Pose& ego_pose,
@@ -81,6 +88,12 @@ private:
                      const cv::Mat& clearance_map,
                      const nav_msgs::MapMetaData& map_info,
                      std::vector<geometry_msgs::Point>& explored_points);
+  bool solveAStar(
+        const geometry_msgs::Point& start_point_in_map,
+        const geometry_msgs::Point& goal_point_in_map,
+        const cv::Mat& clearance_map,
+        const nav_msgs::MapMetaData& map_info,
+        std::vector<geometry_msgs::Point>& explored_points);
   
   bool arrangeExploredPointsBaseedOnClearance(
     const cv::Mat& clearance_map,
@@ -94,9 +107,6 @@ public:
     const geometry_msgs::Pose& start_exploring_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
-    const lanelet::routing::RoutingGraph& graph,
-    lanelet::LaneletMap& map,
-    const autoware_planning_msgs::Route& route,
     std::vector<geometry_msgs::Point>& explored_points,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,

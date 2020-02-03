@@ -17,7 +17,6 @@ catkin_package(
    autoware_perception_msgs
    roscpp 
    tf2_ros
-   lanelet2_extension
 )
 
 find_package(Eigen3 REQUIRED)

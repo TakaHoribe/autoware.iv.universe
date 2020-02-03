@@ -28,19 +28,14 @@ class EBPathSmoother
 {
 private:
   const int number_of_sampling_points_;
-  const int number_of_fixing_points_;
   const int number_of_diff_optimization_points_for_cold_start_;
   const double exploring_minimum_radius_;
   const double backward_distance_;
   const double fixing_distance_;
-  const double delta_arc_length_;
-  // const double loose_constrain_disntance_;
+  const double delta_arc_length_for_path_smoothing_;
+  const double delta_arc_length_for_explored_points_;
   const double loose_constrain_disntance_;
   std::unique_ptr<int> previous_number_of_optimized_points_ptr_;
-  // std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
-  // std::unique_ptr<std::vector<double>> previous_interpolated_x_ptr_;
-  // std::unique_ptr<std::vector<double>> previous_interpolated_y_ptr_;
-  // std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   
   bool preprocessExploredPoints(
     const std::vector<geometry_msgs::Point>& current_explored_points,
@@ -75,17 +70,16 @@ private:
     
 public:
    EBPathSmoother(
-     int number_of_fixing_points,
      double exploring_minimum_raidus,
      double backward_distance,
      double fixing_distance,
-     double sampling_resolution);
+     double delta_arc_length_for_path_smoothing,
+     double delta_arc_length_for_explored_points);
   ~EBPathSmoother();
-  bool generateOptimizedPath(
+  bool generateOptimizedExploredPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<geometry_msgs::Point>& explored_points,
     const geometry_msgs::Pose& start_exploring_pose,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
     const geometry_msgs::Pose& ego_pose,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
@@ -101,7 +95,6 @@ public:
   bool generateOptimizedPath(
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& fixed_optimized_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
     std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
