@@ -26,6 +26,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include "mpc_follower/mpc_trajectory.h"
 
@@ -46,25 +47,13 @@ geometry_msgs::Quaternion getQuaternionFromYaw(const double &_yaw);
  */
 double normalizeRadian(const double _angle);
 
-
 /**
  * @brief convert eular angle vector including +-2pi to 0 jump to continuous series data 
  * @param [out] a input angle vector
  */
 void convertEulerAngleToMonotonic(std::vector<double> &a);
 
-
-
 double calcDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1);
-
-
-
-
-// --------------- until here, for math util -------------------------------
-
-
-
-
 
 
 /**
@@ -174,5 +163,11 @@ bool calcNearestPose(const MPCTrajectory &traj, const geometry_msgs::Pose &self_
  */
 bool calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_msgs::Pose &self_pose, geometry_msgs::Pose &nearest_pose,
                            unsigned int &nearest_index, double &min_dist_error, double &nearest_yaw_error, double &nearest_time);
+
+/**
+ * @brief convert MPCTraj to visualizaton marker for visualization
+ */
+void convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
+                         std::string ns, double r, double g, double b, double z, std::string &frame_id);
 
 }; // namespace MPCUtils

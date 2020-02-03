@@ -48,25 +48,6 @@ double MPCUtils::calcDist2d(const geometry_msgs::Point &p0, const geometry_msgs:
   return std::hypot(p0.x - p1.x, p0.y - p1.y);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------------- until here, for math util ------------------------------
-
-
-
-
-
 template <typename T1, typename T2>
 bool MPCUtils::interp1d(const T1 &index, const T2 &values, const double &ref, double &ret)
 {
@@ -516,4 +497,80 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
   min_dist_error = std::sqrt(b_sq - c_sq * alpha * alpha);
   nearest_yaw_error = MPCUtils::normalizeRadian(my_yaw - nearest_yaw);
   return true;
+}
+
+void MPCUtils::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
+                                   std::string ns, double r, double g, double b, double z, std::string &frame_id)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = frame_id;
+  marker.header.stamp = ros::Time();
+  marker.ns = ns + "/line";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 0.15;
+  marker.color.a = 0.9;
+  marker.color.r = r;
+  marker.color.g = g;
+  marker.color.b = b;
+  marker.pose.orientation.w = 1.0;
+  for (unsigned int i = 0; i < traj.x.size(); ++i)
+  {
+    geometry_msgs::Point p;
+    p.x = traj.x.at(i);
+    p.y = traj.y.at(i);
+    p.z = traj.z.at(i) + z;
+    marker.points.push_back(p);
+  }
+  markers.markers.push_back(marker);
+
+  visualization_msgs::Marker marker_poses;
+  for (unsigned int i = 0; i < traj.size(); ++i)
+  {
+    marker_poses.header.frame_id = frame_id;
+    marker_poses.header.stamp = ros::Time();
+    marker_poses.ns = ns + "/poses";
+    marker_poses.id = i;
+    marker_poses.lifetime = ros::Duration(0.5);
+    marker_poses.type = visualization_msgs::Marker::ARROW;
+    marker_poses.action = visualization_msgs::Marker::ADD;
+    marker_poses.pose.position.x = traj.x.at(i);
+    marker_poses.pose.position.y = traj.y.at(i);
+    marker_poses.pose.position.z = traj.z.at(i);
+    marker_poses.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
+    marker_poses.scale.x = 0.1;
+    marker_poses.scale.y = 0.05;
+    marker_poses.scale.z = 0.1;
+    marker_poses.color.a = 0.99; // Don't forget to set the alpha!
+    marker_poses.color.r = r;
+    marker_poses.color.g = g;
+    marker_poses.color.b = b;
+    markers.markers.push_back(marker_poses);
+  }
+
+  visualization_msgs::Marker marker_text;
+  marker_text.header.frame_id = frame_id;
+  marker_text.header.stamp = ros::Time();
+  marker_text.ns = ns + "/text";
+  marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_text.action = visualization_msgs::Marker::ADD;
+  marker_text.scale.z = 0.2;
+  marker_text.color.a = 0.99; // Don't forget to set the alpha!
+  marker_text.color.r = r;
+  marker_text.color.g = g;
+  marker_text.color.b = b;
+
+  for (unsigned int i = 0; i < traj.size(); ++i)
+  {
+    marker_text.id = i;
+    marker_text.pose.position.x = traj.x.at(i);
+    marker_text.pose.position.y = traj.y.at(i);
+    marker_text.pose.position.z = traj.z.at(i);
+    marker_text.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << traj.vx.at(i) << ", " <<  i;
+    marker_text.text = oss.str();
+    markers.markers.push_back(marker_text);
+  }
 }

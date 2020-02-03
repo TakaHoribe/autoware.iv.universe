@@ -74,14 +74,14 @@ public:
   ~MPCFollower();
 
 private:
-  ros::NodeHandle nh_;                    //!< @brief ros node handle
-  ros::NodeHandle pnh_;                   //!< @brief private ros node handle
-  ros::Publisher pub_steer_vel_ctrl_cmd_; //!< @brief topic publisher for control command
-  ros::Publisher pub_twist_cmd_;          //!< @brief topic publisher for twist command
-  ros::Subscriber sub_ref_path_;          //!< @brief topic subscriber for reference waypoints
-  ros::Subscriber sub_steering_;          //!< @brief subscriber for currrent steering
-  ros::Subscriber sub_current_vel_;
-  ros::Timer timer_control_; //!< @brief timer for control command computation
+  ros::NodeHandle nh_;              //!< @brief ros node handle
+  ros::NodeHandle pnh_;             //!< @brief private ros node handle
+  ros::Publisher pub_ctrl_cmd_;     //!< @brief topic publisher for control command
+  ros::Publisher pub_twist_cmd_;    //!< @brief topic publisher for twist command
+  ros::Subscriber sub_ref_path_;    //!< @brief topic subscriber for reference waypoints
+  ros::Subscriber sub_steering_;    //!< @brief subscriber for currrent steering
+  ros::Subscriber sub_current_vel_; //!< @brief subscriber for currrent velocity
+  ros::Timer timer_control_;        //!< @brief timer for control command computation
 
   MPCTrajectory ref_traj_;                                   //!< @brief reference trajectory to be followed
   Butterworth2dFilter lpf_steering_cmd_;                     //!< @brief lowpass filter for steering command
@@ -165,20 +165,15 @@ private:
 
   /**
    * @brief publish control command as autoware_msgs/ControlCommand type
-   * @param [in] vel_cmd velocity command [m/s] for vehicle control
-   * @param [in] acc_cmd acceleration command [m/s2] for vehicle control
-   * @param [in] steer_cmd steering angle command [rad] for vehicle control
+   * @param [in] cmd published control command
    */
-  void publishCtrlCmd(const double &vel_cmd, const double &acc_cmd, const double &steer_cmd, const double &steer_vel_cmd);
+  void publishCtrlCmd(const autoware_control_msgs::ControlCommand &cmd);
 
   /**
    * @brief calculate control command by MPC algorithm
-   * @param [out] vel_cmd velocity command
-   * @param [out] acc_cmd acceleration command
-   * @param [out] steer_cmd steering command
-   * @param [out] steer_vel_cmd steering rotation speed command
+   * @param [out] cmd calculated control command with mpc algorithm
    */
-  bool calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd);
+  bool calculateMPC(autoware_control_msgs::ControlCommand &cmd);
 
   /**
    * @brief set initial condition for mpc
@@ -211,6 +206,12 @@ private:
   bool executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
                            const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
                            const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex);
+  /**
+   * @brief get stop command
+   */
+  autoware_control_msgs::ControlCommand getStopControlCommand();
+
+
 
   /* debug */
   bool show_debug_info_; //!< @brief flag to display debug info
@@ -222,11 +223,7 @@ private:
   ros::Subscriber sub_estimate_twist_;         //!< @brief subscriber for /estimate_twist for debug
   geometry_msgs::TwistStamped estimate_twist_; //!< @brief received /estimate_twist for debug
 
-  /**
-   * @brief convert MPCTraj to visualizaton marker for visualization
-   */
-  void convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
-                           std::string ns, double r, double g, double b, double z);
+
 
   /**
    * @brief callback for estimate twist for debug
