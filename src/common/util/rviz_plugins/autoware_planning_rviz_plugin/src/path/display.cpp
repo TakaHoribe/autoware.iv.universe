@@ -163,12 +163,13 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
         }
         color.a = property_path_alpha_->getFloat();
         Eigen::Vector3f vec_in, vec_out;
+        Eigen::Quaternionf quat_yaw_reverse(0, 0, 0, 1);
         {
           vec_in << 0, (property_path_width_->getFloat() / 2.0), 0;
           Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
           if (path_point.twist.linear.x < 0)
           {
-            quat.w() = -quat.w();
+            quat *= quat_yaw_reverse;
           }
           vec_out = quat * vec_in;
           path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
@@ -179,7 +180,7 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
           Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
           if (path_point.twist.linear.x < 0)
           {
-            quat.w() = -quat.w();
+            quat *= quat_yaw_reverse;
           }
           vec_out = quat * vec_in;
           path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
