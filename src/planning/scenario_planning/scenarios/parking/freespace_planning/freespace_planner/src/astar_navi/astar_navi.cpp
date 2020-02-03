@@ -205,31 +205,71 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 }  // namespace
 
 AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
-  private_nh_.param<double>("waypoints_velocity", waypoints_velocity_, 5.0);
-  private_nh_.param<double>("update_rate", update_rate_, 1.0);
-  private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
-  private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
-  private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
-  private_nh_.param<double>("th_course_out_distance_m", th_course_out_distance_m_, 3.0);
-  private_nh_.param<bool>("replan_when_obstacle_found", replan_when_obstacle_found_, true);
-  private_nh_.param<bool>("replan_when_course_out", replan_when_course_out_, true);
+  // NodeParam
+  {
+    private_nh_.param<double>("waypoints_velocity", node_param_.waypoints_velocity, 5.0);
+    private_nh_.param<double>("update_rate", node_param_.update_rate, 1.0);
+    private_nh_.param<double>("th_arrived_distance_m", node_param_.th_arrived_distance_m, 1.0);
+    private_nh_.param<double>("th_stopped_time_sec", node_param_.th_stopped_time_sec, 1.0);
+    private_nh_.param<double>("th_stopped_velocity_mps", node_param_.th_stopped_velocity_mps, 0.01);
+    private_nh_.param<double>("th_course_out_distance_m", node_param_.th_course_out_distance_m,
+                              3.0);
+    private_nh_.param<bool>("replan_when_obstacle_found", node_param_.replan_when_obstacle_found,
+                            true);
+    private_nh_.param<bool>("replan_when_course_out", node_param_.replan_when_course_out, true);
+  }
 
-  route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
-  occupancy_grid_sub_ =
-      private_nh_.subscribe("input/occupancy_grid", 1, &AstarNavi::onOccupancyGrid, this);
-  scenario_sub_ = private_nh_.subscribe("input/scenario", 1, &AstarNavi::onScenario, this);
-  twist_sub_ = private_nh_.subscribe("input/twist", 1, &AstarNavi::onTwist, this);
+  // AstarParam
+  {
+    // base configs
+    private_nh_.param<bool>("use_back", astar_param_.use_back, true);
+    private_nh_.param<bool>("use_potential_heuristic", astar_param_.use_potential_heuristic, true);
+    private_nh_.param<bool>("use_wavefront_heuristic", astar_param_.use_wavefront_heuristic, false);
+    private_nh_.param<double>("time_limit", astar_param_.time_limit, 5000.0);
 
-  trajectory_pub_ =
-      private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
+    // robot configs
+    private_nh_.param<double>("robot_length", astar_param_.robot_length, 4.5);
+    private_nh_.param<double>("robot_width", astar_param_.robot_width, 1.75);
+    private_nh_.param<double>("robot_base2back", astar_param_.robot_base2back, 1.0);
+    private_nh_.param<double>("minimum_turning_radius", astar_param_.minimum_turning_radius, 6.0);
 
-  debug_pose_array_pub_ =
-      private_nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1, true);
+    // search configs
+    private_nh_.param<int>("theta_size", astar_param_.theta_size, 48);
+    private_nh_.param<double>("angle_goal_range", astar_param_.angle_goal_range, 6.0);
+    private_nh_.param<double>("curve_weight", astar_param_.curve_weight, 1.2);
+    private_nh_.param<double>("reverse_weight", astar_param_.reverse_weight, 2.00);
+    private_nh_.param<double>("lateral_goal_range", astar_param_.lateral_goal_range, 0.5);
+    private_nh_.param<double>("longitudinal_goal_range", astar_param_.longitudinal_goal_range, 2.0);
 
-  debug_partial_pose_array_pub_ =
-      private_nh_.advertise<geometry_msgs::PoseArray>("debug/partial_pose_array", 1, true);
+    // costmap configs
+    private_nh_.param<int>("obstacle_threshold", astar_param_.obstacle_threshold, 100);
+    private_nh_.param<double>("potential_weight", astar_param_.potential_weight, 10.0);
+    private_nh_.param<double>("distance_heuristic_weight", astar_param_.distance_heuristic_weight,
+                              1.0);
+  }
 
-  timer_ = private_nh_.createTimer(ros::Rate(update_rate_), &AstarNavi::onTimer, this);
+  // Subscribers
+  {
+    route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
+    occupancy_grid_sub_ =
+        private_nh_.subscribe("input/occupancy_grid", 1, &AstarNavi::onOccupancyGrid, this);
+    scenario_sub_ = private_nh_.subscribe("input/scenario", 1, &AstarNavi::onScenario, this);
+    twist_sub_ = private_nh_.subscribe("input/twist", 1, &AstarNavi::onTwist, this);
+  }
+
+  // Publishers
+  {
+    trajectory_pub_ =
+        private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
+
+    debug_pose_array_pub_ =
+        private_nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1, true);
+
+    debug_partial_pose_array_pub_ =
+        private_nh_.advertise<geometry_msgs::PoseArray>("debug/partial_pose_array", 1, true);
+  }
+
+  timer_ = private_nh_.createTimer(ros::Rate(node_param_.update_rate), &AstarNavi::onTimer, this);
 }
 
 void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
@@ -258,7 +298,7 @@ void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   while (true) {
     const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
 
-    if (time_diff.toSec() < th_stopped_time_sec_) {
+    if (time_diff.toSec() < node_param_.th_stopped_time_sec) {
       break;
     }
 
@@ -271,8 +311,8 @@ bool AstarNavi::isPlanRequired() {
     return true;
   }
 
-  if (replan_when_obstacle_found_) {
-    astar_.reset(new AstarSearch());
+  if (node_param_.replan_when_obstacle_found) {
+    astar_.reset(new AstarSearch(astar_param_));
     astar_->initializeNodes(*occupancy_grid_);
 
     const auto nearest_index = findNearestIndex(trajectory_, current_pose_global_.pose);
@@ -286,9 +326,9 @@ bool AstarNavi::isPlanRequired() {
     }
   }
 
-  if (replan_when_course_out_) {
-    const bool is_course_out =
-        calculateDistance2d(trajectory_, current_pose_global_.pose) > th_course_out_distance_m_;
+  if (node_param_.replan_when_course_out) {
+    const bool is_course_out = calculateDistance2d(trajectory_, current_pose_global_.pose) >
+                               node_param_.th_course_out_distance_m;
     if (is_course_out) {
       ROS_INFO("Course out");
       return true;
@@ -301,9 +341,9 @@ bool AstarNavi::isPlanRequired() {
 void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
-      th_arrived_distance_m_;
+      node_param_.th_arrived_distance_m;
 
-  const auto is_stopped = isStopped(twist_buffer_, th_stopped_velocity_mps_);
+  const auto is_stopped = isStopped(twist_buffer_, node_param_.th_stopped_velocity_mps);
 
   if (is_near_target && is_stopped) {
     const auto new_target_index =
@@ -388,7 +428,7 @@ void AstarNavi::planTrajectory() {
   current_pose_local_.header.stamp = current_pose_global_.header.stamp;
 
   // initialize vector for A* search, this runs only once
-  astar_.reset(new AstarSearch());
+  astar_.reset(new AstarSearch(astar_param_));
   astar_->initializeNodes(*occupancy_grid_);
 
   // execute astar search
@@ -401,7 +441,7 @@ void AstarNavi::planTrajectory() {
   if (result) {
     ROS_INFO("Found goal!");
     trajectory_ = createTrajectory(tf_buffer_, current_pose_global_, astar_->getWaypoints(),
-                                   waypoints_velocity_);
+                                   node_param_.waypoints_velocity);
     reversing_indices_ = getReversingIndices(trajectory_);
     prev_target_index_ = 0;
     target_index_ =

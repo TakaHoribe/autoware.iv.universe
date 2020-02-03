@@ -166,33 +166,9 @@ AstarSearch::StateUpdateTable createStateUpdateTable(const double minimum_turnin
 
 }  // namespace
 
-AstarSearch::AstarSearch() : nh_(""), private_nh_("~") {
-  // base configs
-  private_nh_.param<bool>("use_back", use_back_, true);
-  private_nh_.param<bool>("use_potential_heuristic", use_potential_heuristic_, true);
-  private_nh_.param<bool>("use_wavefront_heuristic", use_wavefront_heuristic_, false);
-  private_nh_.param<double>("time_limit", time_limit_, 5000.0);
-
-  // robot configs
-  private_nh_.param<double>("robot_length", robot_length_, 4.5);
-  private_nh_.param<double>("robot_width", robot_width_, 1.75);
-  private_nh_.param<double>("robot_base2back", robot_base2back_, 1.0);
-  private_nh_.param<double>("minimum_turning_radius", minimum_turning_radius_, 6.0);
-
-  // search configs
-  private_nh_.param<int>("theta_size", theta_size_, 48);
-  private_nh_.param<double>("angle_goal_range", angle_goal_range_, 6.0);
-  private_nh_.param<double>("curve_weight", curve_weight_, 1.2);
-  private_nh_.param<double>("reverse_weight", reverse_weight_, 2.00);
-  private_nh_.param<double>("lateral_goal_range", lateral_goal_range_, 0.5);
-  private_nh_.param<double>("longitudinal_goal_range", longitudinal_goal_range_, 2.0);
-
-  // costmap configs
-  private_nh_.param<int>("obstacle_threshold", obstacle_threshold_, 100);
-  private_nh_.param<double>("potential_weight", potential_weight_, 10.0);
-  private_nh_.param<double>("distance_heuristic_weight", distance_heuristic_weight_, 1.0);
-
-  state_update_table_ = createStateUpdateTable(minimum_turning_radius_, theta_size_, use_back_);
+AstarSearch::AstarSearch(const AstarParam& astar_param) : astar_param_(astar_param) {
+  state_update_table_ = createStateUpdateTable(astar_param_.minimum_turning_radius,
+                                               astar_param_.theta_size, astar_param_.use_back);
 }
 
 void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
@@ -209,7 +185,7 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
   }
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      nodes_[i][j].resize(theta_size_);
+      nodes_[i][j].resize(astar_param_.theta_size);
     }
   }
 
@@ -226,14 +202,14 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
       }
 
       // obstacle or unknown area
-      if (cost < 0 || obstacle_threshold_ <= cost) {
+      if (cost < 0 || astar_param_.obstacle_threshold <= cost) {
         nodes_[i][j][0].status = Status::OBS;
       }
 
       // the cost more than threshold is regarded almost same as an obstacle
       // because of its very high cost
-      if (use_potential_heuristic_) {
-        nodes_[i][j][0].hc = cost * potential_weight_;
+      if (astar_param_.use_potential_heuristic) {
+        nodes_[i][j][0].hc = cost * astar_param_.potential_weight;
       }
     }
   }
@@ -256,7 +232,7 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   start_pose_local_.pose = start_pose;
 
   // Get index of start pose
-  const auto index = pose2index(costmap_, start_pose_local_.pose, theta_size_);
+  const auto index = pose2index(costmap_, start_pose_local_.pose, astar_param_.theta_size);
   SimpleNode start_sn{index, 0};
 
   if (isOutOfRange(start_sn.index.x, start_sn.index.y)) {
@@ -271,7 +247,7 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   AstarNode& start_node = nodes_[index.y][index.x][index.theta];
   start_node.x = start_pose_local_.pose.position.x;
   start_node.y = start_pose_local_.pose.position.y;
-  start_node.theta = 2.0 * M_PI / theta_size_ * index.theta;
+  start_node.theta = 2.0 * M_PI / astar_param_.theta_size * index.theta;
   start_node.gc = 0;
   start_node.move_distance = 0;
   start_node.is_back = false;
@@ -279,11 +255,13 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   start_node.parent = nullptr;
 
   // set euclidean distance heuristic cost
-  if (!use_wavefront_heuristic_ && !use_potential_heuristic_) {
-    start_node.hc = calcDistance(start_pose_local_, goal_pose_local_) * distance_heuristic_weight_;
-  } else if (use_potential_heuristic_) {
+  if (!astar_param_.use_wavefront_heuristic && !astar_param_.use_potential_heuristic) {
+    start_node.hc =
+        calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
+  } else if (astar_param_.use_potential_heuristic) {
     start_node.gc += start_node.hc;
-    start_node.hc += calcDistance(start_pose_local_, goal_pose_local_) * distance_heuristic_weight_;
+    start_node.hc +=
+        calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
   }
 
   // Push start node to openlist
@@ -298,7 +276,7 @@ bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
   goal_yaw_ = modifyTheta(tf2::getYaw(goal_pose_local_.pose.orientation));
 
   // Get index of goal pose
-  const auto index = pose2index(costmap_, goal_pose_local_.pose, theta_size_);
+  const auto index = pose2index(costmap_, goal_pose_local_.pose, astar_param_.theta_size);
   const SimpleNode goal_sn{index, 0};
 
   if (isOutOfRange(goal_sn.index.x, goal_sn.index.y)) {
@@ -309,7 +287,7 @@ bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
     return false;
   }
 
-  if (use_wavefront_heuristic_) {
+  if (astar_param_.use_wavefront_heuristic) {
     const bool is_reachable = calcWaveFrontHeuristic(goal_sn);
     if (!is_reachable) {
       return false;
@@ -327,7 +305,7 @@ bool AstarSearch::search() {
     // Check time and terminate if the search reaches the time limit
     const ros::WallTime now = ros::WallTime::now();
     const double msec = (now - begin).toSec() * 1000.0;
-    if (msec > time_limit_) {
+    if (msec > astar_param_.time_limit) {
       return false;
     }
 
@@ -353,7 +331,8 @@ bool AstarSearch::search() {
       const double move_distance = current_an->move_distance + state.step;
 
       const auto is_turning_point = state.is_back != current_an->is_back;
-      const double move_cost = is_turning_point ? reverse_weight_ * state.step : state.step;
+      const double move_cost =
+          is_turning_point ? astar_param_.reverse_weight * state.step : state.step;
 
       // Calculate index of the next state
       geometry_msgs::Point next_pos;
@@ -365,7 +344,8 @@ bool AstarSearch::search() {
       SimpleNode next_sn{IndexXYT{index.x, index.y, top_sn.index.theta + state.index_theta}, 0};
 
       // Avoid invalid index
-      next_sn.index.theta = (next_sn.index.theta + theta_size_) % theta_size_;
+      next_sn.index.theta =
+          (next_sn.index.theta + astar_param_.theta_size) % astar_param_.theta_size;
 
       // Check if the index is valid
       if (isOutOfRange(next_sn.index.x, next_sn.index.y)) {
@@ -382,16 +362,16 @@ bool AstarSearch::search() {
       double next_hc = nodes_[next_sn.index.y][next_sn.index.x][0].hc;
 
       // increase the cost with euclidean distance
-      if (use_potential_heuristic_) {
+      if (astar_param_.use_potential_heuristic) {
         next_gc += nodes_[next_sn.index.y][next_sn.index.x][0].hc;
-        next_hc +=
-            calcDistance(next_pos, goal_pose_local_.pose.position) * distance_heuristic_weight_;
+        next_hc += calcDistance(next_pos, goal_pose_local_.pose.position) *
+                   astar_param_.distance_heuristic_weight;
       }
 
       // increase the cost with euclidean distance
-      if (!use_wavefront_heuristic_ && !use_potential_heuristic_) {
-        next_hc =
-            calcDistance(next_pos, goal_pose_local_.pose.position) * distance_heuristic_weight_;
+      if (!astar_param_.use_wavefront_heuristic && !astar_param_.use_potential_heuristic) {
+        next_hc = calcDistance(next_pos, goal_pose_local_.pose.position) *
+                  astar_param_.distance_heuristic_weight;
       }
 
       if (next_an->status == Status::NONE) {
@@ -475,14 +455,14 @@ void AstarSearch::setPath(const SimpleNode& goal) {
 
 bool AstarSearch::detectCollision(const SimpleNode& sn) {
   // Define the robot as rectangle
-  static const double left = -1.0 * robot_base2back_;
-  static const double right = robot_length_ - robot_base2back_;
-  static const double top = robot_width_ / 2.0;
-  static const double bottom = -1.0 * robot_width_ / 2.0;
+  static const double left = -1.0 * astar_param_.robot_base2back;
+  static const double right = astar_param_.robot_length - astar_param_.robot_base2back;
+  static const double top = astar_param_.robot_width / 2.0;
+  static const double bottom = -1.0 * astar_param_.robot_width / 2.0;
   static const double resolution = costmap_.info.resolution;
 
   // Coordinate of base_link in OccupancyGrid frame
-  static const double one_angle_range = 2.0 * M_PI / theta_size_;
+  static const double one_angle_range = 2.0 * M_PI / astar_param_.theta_size;
   const double base_x = sn.index.x * resolution;
   const double base_y = sn.index.y * resolution;
   const double base_theta = sn.index.theta * one_angle_range;
@@ -534,7 +514,7 @@ bool AstarSearch::calcWaveFrontHeuristic(const SimpleNode& sn) {
       WaveFrontNode{IndexXY{1, -1}, std::hypot(resolution, resolution)},
   };
 
-  const auto start_index = pose2index(costmap_, start_pose_local_.pose, theta_size_);
+  const auto start_index = pose2index(costmap_, start_pose_local_.pose, astar_param_.theta_size);
 
   // Whether the robot can reach goal
   bool is_reachable = false;
@@ -587,7 +567,7 @@ bool AstarSearch::calcWaveFrontHeuristic(const SimpleNode& sn) {
 // Simple collidion detection for wavefront search
 bool AstarSearch::detectCollisionWaveFront(const WaveFrontNode& ref) {
   // Define the robot as square
-  static const double half = robot_width_ / 2;
+  static const double half = astar_param_.robot_width / 2;
   const double robot_x = ref.index.x * costmap_.info.resolution;
   const double robot_y = ref.index.y * costmap_.info.resolution;
 
@@ -611,7 +591,7 @@ bool AstarSearch::detectCollisionWaveFront(const WaveFrontNode& ref) {
 
 bool AstarSearch::hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory) {
   for (const auto& p : trajectory.poses) {
-    const auto index = pose2index(costmap_, p, theta_size_);
+    const auto index = pose2index(costmap_, p, astar_param_.theta_size);
     if (isOutOfRange(index.x, index.y)) {
       continue;
     }
@@ -639,10 +619,11 @@ bool AstarSearch::isObs(const int index_x, const int index_y) {
 bool AstarSearch::isGoal(const double x, const double y, const double theta) {
   // To reduce computation time, we use square value for distance
   static const double lateral_goal_range =
-      lateral_goal_range_ / 2.0;  // [meter], divide by 2 means we check left and right
+      astar_param_.lateral_goal_range / 2.0;  // [meter], divide by 2 means we check left and right
   static const double longitudinal_goal_range =
-      longitudinal_goal_range_ / 2.0;  // [meter], check only behind of the goal
-  static const double goal_angle = M_PI * (angle_goal_range_ / 2.0) / 180.0;  // degrees -> radian
+      astar_param_.longitudinal_goal_range / 2.0;  // [meter], check only behind of the goal
+  static const double goal_angle =
+      M_PI * (astar_param_.angle_goal_range / 2.0) / 180.0;  // degrees -> radian
 
   // Calculate the node coordinate seen from the goal point
   geometry_msgs::Point p;

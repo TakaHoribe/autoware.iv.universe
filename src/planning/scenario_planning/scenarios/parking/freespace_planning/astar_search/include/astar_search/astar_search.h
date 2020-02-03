@@ -31,11 +31,38 @@
 
 #include "astar_search/astar_util.h"
 
+struct AstarParam {
+  // base configs
+  bool use_back;                 // backward search
+  bool use_potential_heuristic;  // potential cost function
+  bool use_wavefront_heuristic;  // wavefront cost function
+  double time_limit;             // planning time limit [msec]
+
+  // robot configs (TODO: obtain from vehicle_info)
+  double robot_length;            // X [m]
+  double robot_width;             // Y [m]
+  double robot_base2back;         // base_link to rear [m]
+  double minimum_turning_radius;  // [m]]
+
+  // search configs
+  int theta_size;                  // descritized angle table size [-]
+  double curve_weight;             // curve moving cost [-]
+  double reverse_weight;           // backward moving cost [-]
+  double lateral_goal_range;       // reaching threshold, lateral error [m]
+  double longitudinal_goal_range;  // reaching threshold, longitudinal error [m]
+  double angle_goal_range;         // reaching threshold, angle error [deg]
+
+  // costmap configs
+  int obstacle_threshold;            // obstacle threshold on grid [-]
+  double potential_weight;           // weight of potential cost [-]
+  double distance_heuristic_weight;  // obstacle threshold on grid [0,255]
+};
+
 class AstarSearch {
  public:
   using StateUpdateTable = std::vector<std::vector<NodeUpdate>>;
 
-  AstarSearch();
+  AstarSearch(const AstarParam& astar_param);
 
   void initializeNodes(const nav_msgs::OccupancyGrid& costmap);
   bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
@@ -57,34 +84,7 @@ class AstarSearch {
   bool isObs(const int index_x, const int index_y);
   bool isGoal(const double x, const double y, const double theta);
 
-  // ros param
-  ros::NodeHandle nh_;
-  ros::NodeHandle private_nh_;
-
-  // base configs
-  bool use_back_;                 // backward search
-  bool use_potential_heuristic_;  // potential cost function
-  bool use_wavefront_heuristic_;  // wavefront cost function
-  double time_limit_;             // planning time limit [msec]
-
-  // robot configs (TODO: obtain from vehicle_info)
-  double robot_length_;            // X [m]
-  double robot_width_;             // Y [m]
-  double robot_base2back_;         // base_link to rear [m]
-  double minimum_turning_radius_;  // [m]]
-
-  // search configs
-  int theta_size_;                  // descritized angle table size [-]
-  double curve_weight_;             // curve moving cost [-]
-  double reverse_weight_;           // backward moving cost [-]
-  double lateral_goal_range_;       // reaching threshold, lateral error [m]
-  double longitudinal_goal_range_;  // reaching threshold, longitudinal error [m]
-  double angle_goal_range_;         // reaching threshold, angle error [deg]
-
-  // costmap configs
-  int obstacle_threshold_;            // obstacle threshold on grid [-]
-  double potential_weight_;           // weight of potential cost [-]
-  double distance_heuristic_weight_;  // obstacle threshold on grid [0,255]
+  AstarParam astar_param_;
 
   // hybrid astar variables
   StateUpdateTable state_update_table_;
