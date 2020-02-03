@@ -38,7 +38,7 @@ autoware_planning_msgs::Trajectory ObstaclePcdVelocityPlanner::run()
   current_direction_ = calcTrajectoryDirection(in_trajectory_);
   if (current_direction_ == Direction::INVALID)
   {
-    ROS_WARN("[stop] invalid direction. please check trajectory.");
+    ROS_DEBUG("[stop] invalid direction. please check trajectory.");
     return in_trajectory_; // no obstacle. return raw trajectory.
   }
 
@@ -391,7 +391,8 @@ bool ObstaclePcdVelocityPlanner::calcClosestPointInPolygon(const autoware_planni
   {
     closest_idx = -1;
     closest_pose = geometry_msgs::Pose();
-    ROS_WARN("[calcClosestPointInPolygon] undesired index. s = %d, e = %d", start_idx, end_idx);
+    if (start_idx > end_idx)
+      ROS_WARN("[calcClosestPointInPolygon] undesired index. s = %d, e = %d", start_idx, end_idx);
     return false;
   }
 
@@ -479,7 +480,6 @@ ObstaclePcdVelocityPlanner::Direction ObstaclePcdVelocityPlanner::calcTrajectory
 {
   if (trajectory.points.size() < 2)
   {
-    ROS_ERROR("size of points is smaller than 2");
     return Direction::INVALID;
   }
 
