@@ -47,10 +47,14 @@ class ScenarioMaker:
         self.goal_dist = rospy.get_param("~goal_dist", 1.0)  # Goal criteria(xy-distance) [m]
         self.goal_th = rospy.get_param("~goal_theta", 10)  # Goal criteria(theta-distance)[deg]
         self.goal_vel = rospy.get_param("~goal_velocity", 0.001)  # Goal criteria(velocity)[m/s]
+        self.max_speed = rospy.get_param("~max_speed", 20.0)  # Max speed[m/s]
         self.give_up_time = rospy.get_param("~give_up_time", 600)  # Goal criteria(time)[s]
         self.generate_obstacle = rospy.get_param("~generate_obstacle", True)  # Generate obstacle or not
         self.auto_engage = rospy.get_param("~auto_engage", True)  # Engage automaticlly or not
         self.retry_scenario = rospy.get_param("~retry_scenario", True)  # Retry scenario or not
+        self.is_retry_by_collision = rospy.get_param(
+            "~is_retry_by_collision", False
+        )  # Retry sceanrio by collison or not
         self.max_scenario_num = rospy.get_param("~max_scenario_num", 10)  # Numober of scenarios to try
         self.traffic_light_time = rospy.get_param("~traffic_light_time", 35)  # Time until the traffic light changes[s]
         self.is_pub_trafficimg = rospy.get_param("~is_pub_traffic_image", True)  # Publish Traffic Light or not
@@ -122,6 +126,8 @@ class ScenarioMaker:
 
         self.pub_traffic_light_image = rospy.Publisher("/sensing/camera/traffic_light/image_raw", Image, queue_size=1)
 
+        self.pub_max_speed = rospy.Publisher("/max_speed_mps", Float32, queue_size=1)
+
         self.sub_vel = rospy.Subscriber(
             "/vehicle/status/velocity", Float32, self.CallBackVehicleVelocity, queue_size=1, tcp_nodelay=True
         )
@@ -159,6 +165,9 @@ class ScenarioMaker:
             self.scenario_obstacle()  # obstacle is valid only when self-position is given
         time.sleep(3.0)  # wait to finish ndt matching
         self.scenario_path()
+
+        #publish max speed
+        self.pubMaxSpeed()
 
         r_time = rospy.Rate(5)
         while not rospy.is_shutdown():
@@ -448,7 +457,7 @@ class ScenarioMaker:
             th_sigma=0.0,
             vel_sigma=0.0,
             judge_pose=(-86.1, -7.5, 27.2),
-            judge_dist_xy=30.0,
+            judge_dist_xy=40.0,
             judge_dist_th=30.0,
             generate_mode_dist=GENERATE_DIST_OUTAREA,
             generate_mode_traffic=GENERATE_TRAFFIC_GREEN,
@@ -501,21 +510,27 @@ class ScenarioMaker:
         # obstacle 11:car for following
         self.PubPatternedObstacle(
             pose=(-20.4, 56.3, -62.8),
-            vel=4.0,
+            vel=3.0,
             ver_sigma=0.5,
             lat_sigma=0.0,
             th_sigma=0.0,
             vel_sigma=1.0,
             judge_pose=(-20.4, 56.3, -62.8),
             judge_dist_xy=40.0,
-            judge_dist_th=20.0,
+            judge_dist_th=90.0,
             generate_mode_dist=GENERATE_DIST_INAREA,
             generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
             generate_once=True,
-            generate_loop=7.0,
+            generate_loop=12.0,
             obstacle_type="car",
             obstacle_id=11,
         )
+
+    def pubMaxSpeed(self):
+        if self.max_speed > 0:
+            floatmsg = Float32()
+            floatmsg.data = self.max_speed
+            self.pub_max_speed.publish(floatmsg)
 
     def traffic_light_manager(self):
         if rospy.Time.now().to_sec() - self.traffic_light_start_time > self.traffic_light_time:
@@ -718,6 +733,8 @@ class ScenarioMaker:
         self.traffic_light_publisher()
 
     def CallBackCollision(self, colmsg):
+        if not self.is_retry_by_collision:
+            return
         if colmsg.data:
             self.collision = colmsg.data
 

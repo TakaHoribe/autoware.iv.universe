@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
 
-  <arg name="collision_detect" default="true" />
+  <arg name="collision_detect" default="false" />
 
   <!-- publish camera info -->
   <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch">
@@ -26,6 +26,8 @@
     <!-- Goal criteria(theta-distance)[deg] -->
     <param name="goal_velocity" value="0.01" />
     <!-- Goal criteria(velocity)[m/s] -->
+    <param name="max_speed" value="8.5" />
+    <!-- Max speed[m/s](publish at once) (if max_speed is 0, do not publish) -->
     <param name="give_up_time" value="600" />
     <!-- Goal criteria(time)[s] -->
     <param name="generate_obstacle" value="true" />
@@ -34,6 +36,8 @@
     <!-- Engage automaticlly or not -->
     <param name="retry_scenario" value="true" />
     <!-- Retry scenario or not -->
+    <param name = "is_retry_by_collision" value="false"/>
+    <!-- Retry sceanrio by collison or not -->
     <param name="max_scenario_num" value="10" />
     <!-- Numober of scenarios to try -->
     <param name="traffic_light_time" value="35" />
@@ -49,6 +53,7 @@
     <!-- delete rosbag of success scenario or not -->
     <param name="rosbag_file_name" value="/media/kimura/extra_ssd/rosbag/scenario" />
     <!-- dir/file name of rosbag file(**it must be absolute path ** ) -->
+    <remap from="/max_speed_mps" to ="/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps" />
   </node>
 
 </launch>
