@@ -77,6 +77,7 @@ private:
   ros::Publisher pub_shift_;
 
   ros::Subscriber sub_vehicle_cmd_;   //!< @brief topic subscriber for vehicle_cmd
+  ros::Subscriber sub_shift_cmd_;      //!<@brief topic subscriber for vehicle_shift
   ros::Subscriber sub_trajectory_;    //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;   //!< @brief topic subscriber for initialpose topic
   ros::Timer timer_simulation_;       //!< @brief timer for simulation
@@ -86,6 +87,7 @@ private:
   geometry_msgs::Twist current_twist_;                                                    //!< @brief current vehicle velocity with twist message class
   std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> current_vehicle_cmd_ptr_; //!< @brief latest received vehicle_cmd
   std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;            //!< @brief latest received trajectory
+  double drive_shift;                                                                     //!< @brief latest received shift(drive:1, reverse:-1)
   double closest_pos_z_;                                                                  //!< @brief z position on closest trajectory
 
   /* tf */
@@ -120,6 +122,7 @@ private:
     IDEAL_FORKLIFT_RLS = 5,
     DELAY_FORKLIFT_RLS = 6,
     IDEAL_ACCEL = 7,
+    DELAY_STEER_ACC = 8,
   } vehicle_model_type_;                                 //!< @brief vehicle model type to decide the model dynamics
   std::shared_ptr<SimModelInterface> vehicle_model_ptr_; //!< @brief vehicle model pointer
 
@@ -140,6 +143,11 @@ private:
    * @brief set current_trajectory_ptr_ with received message
    */
   void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr &msg);
+
+  /**
+   * @brief set current_shift with received message
+   */
+  void callbackShift(const autoware_vehicle_msgs::Shift &msg);
 
   /**
    * @brief set initial pose for simulation with received message
