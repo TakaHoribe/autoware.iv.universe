@@ -32,8 +32,6 @@
 #include "astar_search/astar_util.h"
 
 class AstarSearch {
-  friend class TestClass;
-
  public:
   using StateUpdateTable = std::vector<std::vector<NodeUpdate>>;
 

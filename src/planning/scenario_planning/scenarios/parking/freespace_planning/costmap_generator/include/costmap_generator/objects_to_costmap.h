@@ -54,8 +54,6 @@ class ObjectsToCostmap {
       const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
 
  private:
-  friend class TestClass;
-
   const int NUMBER_OF_POINTS;
   const int NUMBER_OF_DIMENSIONS;
   const std::string OBJECTS_COSTMAP_LAYER_;
