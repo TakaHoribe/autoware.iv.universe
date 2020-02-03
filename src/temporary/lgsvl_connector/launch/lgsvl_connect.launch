@@ -23,8 +23,8 @@
         <remap from="~input" to="/points_raw_tmp" />
         <remap from="~output" to="/sensing/lidar/top/pointcloud_raw_ex" />
         <rosparam>
-            min_x: -5.0
-            max_x: 5.0
+            min_x: -3.0
+            max_x: 3.0
             min_y: -2.0
             max_y: 2.0
             min_z: -100.0

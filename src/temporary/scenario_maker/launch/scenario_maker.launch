@@ -4,7 +4,9 @@
   <arg name="collision_detect" default="true" />
 
   <!-- publish camera info -->
-  <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
+  <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch">
+    <arg name="use_real_camera_yaml" default="false" />
+  </include>
 
   <!-- publish collision detection information -->
   <rosparam command="load" file="$(find vehicle_description)/config/vehicle_info.yaml" />

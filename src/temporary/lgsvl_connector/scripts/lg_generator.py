@@ -125,7 +125,7 @@ transformer = Transformer(proj_autoware, proj_unity, tf_world2map)
 state.transform = transformer.autoware2unity(
     lgsvl.Transform(lgsvl.Vector(gen_x, gen_y, 0.0), lgsvl.Vector(0.0, 0.0, np.rad2deg(gen_theta) - 90))
 )
-# -138.291046143, -25.9349250793, 2.0
+print(state.transform)
 
 forward = lgsvl.utils.transform_to_forward(state.transform)
 state.velocity = 0 * forward
@@ -134,8 +134,8 @@ state.velocity = 0 * forward
 agent = sim.add_agent(vehicle_name, lgsvl.AgentType.EGO, state)
 agent.connect_bridge("127.0.0.1", 9090)
 
-## npc
 """
+## npc
 npc_state = lgsvl.AgentState()
 sx = original_state.transform.position.x - 20
 sy = original_state.transform.position.y
@@ -173,7 +173,6 @@ waypoints = [
 
 npc.follow(waypoints, loop=True)
 """
-
 
 # signal
 """

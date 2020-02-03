@@ -91,12 +91,12 @@ class ScenarioMaker:
         self.goal_y = 0.0
         self.goal_th = 0.0
 
-        self.image_green, self.image_yellow, self.image_red, self.image_black = self.MakeTrafficImage()
-
         self.fail_reason = 0
         self.collision = False
 
         self.camera_header = Header()
+        self.camera_height = None
+        self.camera_width = None
 
         self.tfl = tf.TransformListener()  # for get self-position
 
@@ -139,6 +139,11 @@ class ScenarioMaker:
             "/collsion_detection_result", Bool, self.CallBackCollision, queue_size=1
         )
 
+        self.image_green, self.image_yellow, self.image_red, self.image_black = self.MakeTrafficMsg()
+
+        # for publish traffic signal image
+        rospy.Timer(rospy.Duration(1 / 3.0), self.timerCallback)
+
         time.sleep(0.5)  # wait for ready to publish/subscribe#TODO: fix this
 
         ##################################################### main process start
@@ -147,14 +152,15 @@ class ScenarioMaker:
         if self.is_record_rosbag:
             self.record_rosbag(self.trial_num, self.rosbag_node_name, self.rosbag_file_name)
         self.scenario_path(only_initial_pose=True)
-        time.sleep(1.0)
+        time.sleep(1.0)  # wait to finish ndt matching
         self.reset_obstacle()
         time.sleep(1.0)
         if self.generate_obstacle:
             self.scenario_obstacle()  # obstacle is valid only when self-position is given
-        time.sleep(3.0)
+        time.sleep(3.0)  # wait to finish ndt matching
         self.scenario_path()
 
+        r_time = rospy.Rate(5)
         while not rospy.is_shutdown():
             self.GetSelfPos()
             if self.goal_judge(self.goal_dist, self.goal_th, self.goal_vel):
@@ -189,7 +195,7 @@ class ScenarioMaker:
                 if self.generate_obstacle:
                     self.scenario_obstacle_manager()
             self.traffic_light_manager()
-            # self.traffic_light_publisher()
+            r_time.sleep()
 
         ##################################################### main process end
 
@@ -234,7 +240,7 @@ class ScenarioMaker:
                 self.random_pose_maker(x=-139.1, y=-24.68, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0)
             )
         )
-        time.sleep(0.25)
+        time.sleep(5.0)
         if only_inital_pose:
             return
 
@@ -705,6 +711,10 @@ class ScenarioMaker:
 
     def CallBackCameraInfoTime(self, cimsg):
         self.camera_header = cimsg.header
+        self.camera_height = cimsg.height
+        self.camera_width = cimsg.width
+
+    def timerCallback(self, event):
         self.traffic_light_publisher()
 
     def CallBackCollision(self, colmsg):
@@ -762,7 +772,7 @@ class ScenarioMaker:
         if generate_now_dist and generate_now_traffic:
             if self.obstacle_generated[obstacle_id] == 0:
                 self.PubObjectId(obstacle_id)
-                time.sleep(0.25)
+                time.sleep(0.1)
                 if generate_now_alternate:
                     self.PubObstacle(
                         pose=self.random_pose_maker(
@@ -782,7 +792,7 @@ class ScenarioMaker:
                         self.obstacle_generated[obstacle_id] = 1  # no more generate(generate once)
                     else:
                         self.PubObjectId(obstacle_id)
-                        time.sleep(0.25)
+                        time.sleep(0.1)
                         if generate_now_alternate:
                             self.PubObstacle(
                                 pose=self.random_pose_maker(
@@ -800,7 +810,7 @@ class ScenarioMaker:
                         self.obstacle_generated[obstacle_id] = 1
                         self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
                         self.obstacle_generated_count[obstacle_id] += 1
-                    time.sleep(0.25)
+                    time.sleep(0.1)
         else:
             self.reset_id_obstacle(obstacle_id)
 
@@ -817,7 +827,7 @@ class ScenarioMaker:
         pose, twist = self.make_pose_twist_stamped(pose, vel)
         pubpose.publish(pose)
         pubtwist.publish(twist)
-        time.sleep(0.2)
+        time.sleep(0.1)
         return True
 
     def PubObjectId(self, id=0):
@@ -831,25 +841,31 @@ class ScenarioMaker:
         self.pub_resetobjectid.publish(idmsg)
 
     def PubTrafficLightImage(self, color):
-        imgmsg = Image()
-        imgmsg.header = self.camera_header  # newest header
-        imgmsg.encoding = "bgr8"
-        imgmsg.height = 1080
-        imgmsg.width = 1920
-        imgmsg.is_bigendian = False
-        imgmsg.step = 3 * imgmsg.width
         if color == COLOR_GREEN:
-            imgmsg.data = self.image_green
+            imgmsg = self.image_green
         elif color == COLOR_YELLOW:
-            imgmsg.data = self.image_yellow
+            imgmsg = self.image_yellow
         elif color == COLOR_RED:
-            imgmsg.data = self.image_red
+            imgmsg = self.image_red
         else:
-            imgmsg.data = self.image_black  # black image
+            imgmsg = self.image_black  # black image
+        imgmsg.header = self.camera_header  # newest header
         self.pub_traffic_light_image.publish(imgmsg)
 
-    def MakeTrafficImage(self):
-        imgsize = 1080 * 1920 * 3  # pixel*3(bgr)
+    def makeImageMsg(self, image, height, width):
+        imgmsg = Image()
+        imgmsg.encoding = "bgr8"
+        imgmsg.height = height
+        imgmsg.width = width
+        imgmsg.is_bigendian = False
+        imgmsg.step = 3 * imgmsg.width
+        imgmsg.data = image
+        return imgmsg
+
+    def MakeTrafficMsg(self):
+        while self.camera_height is None or self.camera_width is None:
+            time.sleep(1)  # wait for subscrbing camera info
+        imgsize = self.camera_height * self.camera_width * 3  # pixel*3(bgr)
         img_green = np.zeros((imgsize)).astype(np.uint8)
         img_green[np.arange(0, imgsize, 3)] = 10  # brue
         img_green[np.arange(1, imgsize, 3)] = 255  # green
@@ -862,7 +878,11 @@ class ScenarioMaker:
         img_red[np.arange(1, imgsize, 3)] = 10  # green
         img_red[np.arange(2, imgsize, 3)] = 255  # red
         img_black = np.zeros((imgsize)).astype(np.uint8)
-        return list(img_green), list(img_yellow), list(img_red), list(img_black)
+        img_green_msg = self.makeImageMsg(list(img_green), self.camera_height, self.camera_width)
+        img_yellow_msg = self.makeImageMsg(list(img_yellow), self.camera_height, self.camera_width)
+        img_red_msg = self.makeImageMsg(list(img_red), self.camera_height, self.camera_width)
+        img_black_msg = self.makeImageMsg(list(img_black), self.camera_height, self.camera_width)
+        return img_green_msg, img_yellow_msg, img_red_msg, img_black_msg
 
     def record_rosbag(self, id, node_name, file_name):
         # no error handling: TODO
