@@ -21,6 +21,8 @@
 #include <tf2/utils.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+#include <astar_search/helper.h>
+
 namespace {
 
 double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
@@ -31,16 +33,6 @@ double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& 
   return calcDistance2d(p1.position, p2.position);
 }
 
-double calcDistance2d(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2) {
-  return calcDistance2d(p1.pose, p2.pose);
-}
-
-double modifyTheta(double theta) {
-  if (theta < 0.0) return theta + 2.0 * M_PI;
-  if (theta >= 2.0 * M_PI) return theta - 2.0 * M_PI;
-  return theta;
-}
-
 geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose,
                                   const geometry_msgs::TransformStamped& transform) {
   geometry_msgs::Pose transformed_pose;
@@ -49,7 +41,8 @@ geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose,
   return transformed_pose;
 }
 
-geometry_msgs::Point calcRelativeCoordinate(geometry_msgs::Pose pose, geometry_msgs::Point point) {
+geometry_msgs::Point calcRelativeCoordinate(const geometry_msgs::Pose& pose,
+                                            const geometry_msgs::Point& point) {
   tf2::Transform tf_transform;
   tf2::convert(pose, tf_transform);
 
@@ -62,39 +55,37 @@ geometry_msgs::Point calcRelativeCoordinate(geometry_msgs::Pose pose, geometry_m
   return transformed_point;
 }
 
-double calcDiffOfRadian(double a, double b) {
-  double diff = std::fmod(std::fabs(a - b), 2.0 * M_PI);
-  if (diff < M_PI)
-    return diff;
-  else
-    return 2.0 * M_PI - diff;
-}
-
-geometry_msgs::Pose xytToPoseMsg(double x, double y, double theta) {
-  geometry_msgs::Pose p;
-  p.position.x = x;
-  p.position.y = y;
-  tf2::Quaternion quat;
-  quat.setRPY(0, 0, theta);
-  tf2::convert(quat, p.orientation);
-
-  return p;
-}
-
-IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Pose& pose,
-                    const int theta_size) {
-  tf2::Transform orig_tf;
-  tf2::convert(costmap.info.origin, orig_tf);
+geometry_msgs::Pose global2local(const nav_msgs::OccupancyGrid& costmap,
+                                 const geometry_msgs::Pose& pose_global) {
+  tf2::Transform tf_origin;
+  tf2::convert(costmap.info.origin, tf_origin);
 
   geometry_msgs::TransformStamped transform;
-  transform.transform = tf2::toMsg(orig_tf.inverse());
-  geometry_msgs::Pose pose2d = transformPose(pose, transform);
+  transform.transform = tf2::toMsg(tf_origin.inverse());
 
-  const int index_x = pose2d.position.x / costmap.info.resolution;
-  const int index_y = pose2d.position.y / costmap.info.resolution;
+  return transformPose(pose_global, transform);
+}
+
+geometry_msgs::Pose local2global(const nav_msgs::OccupancyGrid& costmap,
+                                 const geometry_msgs::Pose& pose_local) {
+  tf2::Transform tf_origin;
+  tf2::convert(costmap.info.origin, tf_origin);
+
+  geometry_msgs::TransformStamped transform;
+  transform.transform = tf2::toMsg(tf_origin);
+
+  return transformPose(pose_local, transform);
+}
+
+IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Pose& pose_global,
+                    const int theta_size) {
+  const auto pose_local = global2local(costmap, pose_global);
+
+  const int index_x = pose_local.position.x / costmap.info.resolution;
+  const int index_y = pose_local.position.y / costmap.info.resolution;
 
   tf2::Quaternion quat;
-  tf2::convert(pose2d.orientation, quat);
+  tf2::convert(pose_local.orientation, quat);
   double yaw = tf2::getYaw(quat);
   if (yaw < 0) {
     yaw += 2.0 * M_PI;
@@ -107,11 +98,20 @@ IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs:
   return {index_x, index_y, index_theta};
 }
 
-IndexXY point2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Point& point) {
-  geometry_msgs::Pose pose;
-  pose.position = point;
-  const auto index = pose2index(costmap, pose, 1);
-  return {index.x, index.y};
+geometry_msgs::Pose index2pose(const nav_msgs::OccupancyGrid& costmap, const IndexXYT& index,
+                               const int theta_size) {
+  geometry_msgs::Pose pose_local;
+
+  pose_local.position.x = index.x * costmap.info.resolution;
+  pose_local.position.y = index.y * costmap.info.resolution;
+
+  const double one_angle_range = 2.0 * M_PI / theta_size;
+  const double yaw = index.theta * one_angle_range;
+  tf2::Quaternion quat;
+  quat.setRPY(0, 0, yaw);
+  tf2::convert(quat, pose_local.orientation);
+
+  return global2local(costmap, pose_local);
 }
 
 geometry_msgs::Pose node2pose(const AstarNode& node) {
@@ -128,94 +128,60 @@ geometry_msgs::Pose node2pose(const AstarNode& node) {
   return pose;
 }
 
+NodeUpdate rotate(const NodeUpdate& nu, const double theta) {
+  NodeUpdate result = nu;
+  result.shift_x = std::cos(theta) * nu.shift_x - std::sin(theta) * nu.shift_y;
+  result.shift_y = std::sin(theta) * nu.shift_x + std::cos(theta) * nu.shift_y;
+  return result;
+}
+
+NodeUpdate flip(const NodeUpdate& nu) {
+  NodeUpdate result = nu;
+  result.shift_y = -result.shift_y;
+  result.shift_theta = -result.shift_theta;
+  return result;
+}
+
+NodeUpdate reverse(const NodeUpdate& nu) {
+  NodeUpdate result = nu;
+  result.shift_x = -result.shift_x;
+  result.shift_theta = -result.shift_theta;
+  result.is_back = !result.is_back;
+  return result;
+}
+
 AstarSearch::StateUpdateTable createStateUpdateTable(const double minimum_turning_radius,
                                                      const double theta_size, const bool use_back) {
   // Vehicle moving for each angle
   AstarSearch::StateUpdateTable state_update_table;
   state_update_table.resize(theta_size);
+
   const double dtheta = 2.0 * M_PI / theta_size;
 
   // Minimum moving distance with one state update
   // arc  = r * theta
-  const double step = minimum_turning_radius * dtheta;
+  const auto& R = minimum_turning_radius;
+  const double step = R * dtheta;
+
+  // NodeUpdate actions
+  const NodeUpdate forward_straight{step, 0.0, 0.0, step, false, false};
+  const NodeUpdate forward_left{R * sin(dtheta), R * (1 - cos(dtheta)), dtheta, step, true, false};
+  const NodeUpdate forward_right = flip(forward_left);
+  const NodeUpdate backward_straight = reverse(forward_straight);
+  const NodeUpdate backward_left = reverse(forward_left);
+  const NodeUpdate backward_right = reverse(forward_right);
 
   for (int i = 0; i < theta_size; i++) {
     const double theta = dtheta * i;
 
-    // Calculate right and left circle
-    // Robot moves along these circles
-    const double right_circle_center_x = minimum_turning_radius * std::sin(theta);
-    const double right_circle_center_y = minimum_turning_radius * -std::cos(theta);
-    const double left_circle_center_x = -right_circle_center_x;
-    const double left_circle_center_y = -right_circle_center_y;
-
-    // Calculate x and y shift to next state
-    NodeUpdate nu;
-
-    // forward straight
-    nu.shift_x = step * std::cos(theta);
-    nu.shift_y = step * std::sin(theta);
-    nu.rotation = 0.0;
-    nu.index_theta = 0;
-    nu.step = step;
-    nu.is_curve = false;
-    nu.is_back = false;
-    state_update_table[i].emplace_back(nu);
-
-    // forward right
-    nu.shift_x = right_circle_center_x + minimum_turning_radius * std::cos(M_PI_2 + theta - dtheta);
-    nu.shift_y = right_circle_center_y + minimum_turning_radius * std::sin(M_PI_2 + theta - dtheta);
-    nu.rotation = -dtheta;
-    nu.index_theta = -1;
-    nu.step = step;
-    nu.is_curve = true;
-    nu.is_back = false;
-    state_update_table[i].emplace_back(nu);
-
-    // forward left
-    nu.shift_x = left_circle_center_x + minimum_turning_radius * std::cos(-M_PI_2 + theta + dtheta);
-    nu.shift_y = left_circle_center_y + minimum_turning_radius * std::sin(-M_PI_2 + theta + dtheta);
-    nu.rotation = dtheta;
-    nu.index_theta = 1;
-    nu.step = step;
-    nu.is_curve = true;
-    nu.is_back = false;
-    state_update_table[i].emplace_back(nu);
+    for (const auto& nu : {forward_straight, forward_left, forward_right}) {
+      state_update_table[i].push_back(rotate(nu, theta));
+    }
 
     if (use_back) {
-      // backward straight
-      nu.shift_x = step * std::cos(theta) * -1.0;
-      nu.shift_y = step * std::sin(theta) * -1.0;
-      nu.rotation = 0;
-      nu.index_theta = 0;
-      nu.step = step;
-      nu.is_curve = false;
-      nu.is_back = true;
-      state_update_table[i].emplace_back(nu);
-
-      // backward right
-      nu.shift_x =
-          right_circle_center_x + minimum_turning_radius * std::cos(M_PI_2 + theta + dtheta);
-      nu.shift_y =
-          right_circle_center_y + minimum_turning_radius * std::sin(M_PI_2 + theta + dtheta);
-      nu.rotation = dtheta;
-      nu.index_theta = 1;
-      nu.step = step;
-      nu.is_curve = true;
-      nu.is_back = true;
-      state_update_table[i].emplace_back(nu);
-
-      // backward left
-      nu.shift_x =
-          left_circle_center_x + minimum_turning_radius * std::cos(-1.0 * M_PI_2 + theta - dtheta);
-      nu.shift_y =
-          left_circle_center_y + minimum_turning_radius * std::sin(-1.0 * M_PI_2 + theta - dtheta);
-      nu.rotation = dtheta * -1.0;
-      nu.index_theta = -1;
-      nu.step = step;
-      nu.is_curve = true;
-      nu.is_back = true;
-      state_update_table[i].emplace_back(nu);
+      for (const auto& nu : {backward_straight, backward_left, backward_right}) {
+        state_update_table[i].push_back(rotate(nu, theta));
+      }
     }
   }
 
@@ -261,7 +227,7 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
 
       // obstacle or unknown area
       if (cost < 0 || astar_param_.obstacle_threshold <= cost) {
-        nodes_[i][j][0].status = Status::OBS;
+        nodes_[i][j][0].status = NodeStatus::Obstacle;
       }
     }
   }
@@ -269,66 +235,64 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
 
 bool AstarSearch::makePlan(const geometry_msgs::Pose& start_pose,
                            const geometry_msgs::Pose& goal_pose) {
-  if (!setStartNode(start_pose)) {
+  start_pose_ = start_pose;
+  goal_pose_ = goal_pose;
+
+  if (!setStartNode()) {
     return false;
   }
 
-  if (!setGoalNode(goal_pose)) {
+  if (!setGoalNode()) {
     return false;
   }
 
   return search();
 }
 
-bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
-  start_pose_local_.pose = start_pose;
-
+bool AstarSearch::setStartNode() {
   // Get index of start pose
-  const auto index = pose2index(costmap_, start_pose_local_.pose, astar_param_.theta_size);
-  SimpleNode start_sn{index, 0};
+  const auto index = pose2index(costmap_, start_pose_, astar_param_.theta_size);
 
-  if (isOutOfRange(start_sn.index.x, start_sn.index.y)) {
+  if (isOutOfRange(index.x, index.y)) {
     return false;
   }
 
-  if (detectCollision(start_sn)) {
+  if (detectCollision(index)) {
     return false;
   }
 
   // Set start node
   AstarNode& start_node = nodes_[index.y][index.x][index.theta];
-  start_node.x = start_pose_local_.pose.position.x;
-  start_node.y = start_pose_local_.pose.position.y;
+  start_node.index = index;
+  start_node.x = start_pose_.position.x;
+  start_node.y = start_pose_.position.y;
   start_node.theta = 2.0 * M_PI / astar_param_.theta_size * index.theta;
   start_node.move_distance = 0;
   start_node.is_back = false;
-  start_node.status = Status::OPEN;
+  start_node.status = NodeStatus::Open;
   start_node.parent = nullptr;
 
   start_node.gc = 0;
-  start_node.hc =
-      calcDistance2d(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
+  start_node.hc = calcDistance2d(start_pose_, goal_pose_) * astar_param_.distance_heuristic_weight;
+  start_node.cost = start_node.gc + start_node.hc;
 
   // Push start node to openlist
-  start_sn.cost = start_node.gc + start_node.hc;
-  openlist_.push(start_sn);
+  openlist_.push(start_node);
 
   return true;
 }
 
-bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
-  goal_pose_local_.pose = goal_pose;
-  goal_yaw_ = modifyTheta(tf2::getYaw(goal_pose_local_.pose.orientation));
+bool AstarSearch::setGoalNode() {
+  goal_yaw_ = normalizeRadian(tf2::getYaw(goal_pose_.orientation), 0, 2 * M_PI);
 
   // Get index of goal pose
-  const auto index = pose2index(costmap_, goal_pose_local_.pose, astar_param_.theta_size);
-  const SimpleNode goal_sn{index, 0};
+  const auto index = pose2index(costmap_, goal_pose_, astar_param_.theta_size);
 
-  if (isOutOfRange(goal_sn.index.x, goal_sn.index.y)) {
+  if (isOutOfRange(index.x, index.y)) {
     return false;
   }
 
-  if (detectCollision(goal_sn)) {
+  if (detectCollision(index)) {
     return false;
   }
 
@@ -348,12 +312,12 @@ bool AstarSearch::search() {
     }
 
     // Pop minimum cost node from openlist
-    const SimpleNode top_sn = openlist_.top();
+    const auto top_sn = openlist_.top();
     openlist_.pop();
 
     // Expand nodes from this node
     AstarNode* current_an = &nodes_[top_sn.index.y][top_sn.index.x][top_sn.index.theta];
-    current_an->status = Status::CLOSED;
+    current_an->status = NodeStatus::Closed;
 
     if (isGoal(current_an->x, current_an->y, current_an->theta)) {
       setPath(top_sn);
@@ -365,7 +329,7 @@ bool AstarSearch::search() {
       // Next state
       const double next_x = current_an->x + state.shift_x;
       const double next_y = current_an->y + state.shift_y;
-      const double next_theta = modifyTheta(current_an->theta + state.rotation);
+      const double next_theta = normalizeRadian(current_an->theta + state.shift_theta, 0, 2 * M_PI);
       const double move_distance = current_an->move_distance + state.step;
 
       const auto is_turning_point = state.is_back != current_an->is_back;
@@ -373,35 +337,33 @@ bool AstarSearch::search() {
           is_turning_point ? astar_param_.reverse_weight * state.step : state.step;
 
       // Calculate index of the next state
-      geometry_msgs::Point next_pos;
-      next_pos.x = next_x;
-      next_pos.y = next_y;
+      geometry_msgs::Pose next_pose;
+      next_pose.position.x = next_x;
+      next_pose.position.y = next_y;
 
-      const auto index = point2index(costmap_, next_pos);
+      tf2::Quaternion quat;
+      quat.setRPY(0, 0, next_theta);
+      tf2::convert(quat, next_pose.orientation);
 
-      SimpleNode next_sn{IndexXYT{index.x, index.y, top_sn.index.theta + state.index_theta}, 0};
-
-      // Avoid invalid index
-      next_sn.index.theta =
-          (next_sn.index.theta + astar_param_.theta_size) % astar_param_.theta_size;
+      const auto next_index = pose2index(costmap_, next_pose, astar_param_.theta_size);
 
       // Check if the index is valid
-      if (isOutOfRange(next_sn.index.x, next_sn.index.y)) {
+      if (isOutOfRange(next_index.x, next_index.y)) {
         continue;
       }
 
-      if (detectCollision(next_sn)) {
+      if (detectCollision(next_index)) {
         continue;
       }
 
-      AstarNode* next_an = &nodes_[next_sn.index.y][next_sn.index.x][next_sn.index.theta];
+      AstarNode* next_an = &nodes_[next_index.y][next_index.x][next_index.theta];
+      next_an->index = next_index;
       const double next_gc = current_an->gc + move_cost;
-      // wavefront or distance transform heuristic
-      const double next_hc = calcDistance2d(next_pos, goal_pose_local_.pose.position) *
-                             astar_param_.distance_heuristic_weight;
+      const double next_hc =
+          calcDistance2d(next_pose, goal_pose_) * astar_param_.distance_heuristic_weight;
 
-      if (next_an->status == Status::NONE) {
-        next_an->status = Status::OPEN;
+      if (next_an->status == NodeStatus::None) {
+        next_an->status = NodeStatus::Open;
         next_an->x = next_x;
         next_an->y = next_y;
         next_an->theta = next_theta;
@@ -410,14 +372,14 @@ bool AstarSearch::search() {
         next_an->move_distance = move_distance;
         next_an->is_back = state.is_back;
         next_an->parent = current_an;
-        next_sn.cost = next_an->gc + next_an->hc;
-        openlist_.push(next_sn);
+        next_an->cost = next_an->gc + next_an->hc;
+        openlist_.push(*next_an);
         continue;
       }
 
-      if (next_an->status == Status::OPEN || next_an->status == Status::CLOSED) {
+      if (next_an->status == NodeStatus::Open || next_an->status == NodeStatus::Closed) {
         if (next_gc < next_an->gc) {
-          next_an->status = Status::OPEN;
+          next_an->status = NodeStatus::Open;
           next_an->x = next_x;
           next_an->y = next_y;
           next_an->theta = next_theta;
@@ -426,8 +388,8 @@ bool AstarSearch::search() {
           next_an->move_distance = move_distance;
           next_an->is_back = state.is_back;
           next_an->parent = current_an;
-          next_sn.cost = next_an->gc + next_an->hc;
-          openlist_.push(next_sn);
+          next_an->cost = next_an->gc + next_an->hc;
+          openlist_.push(*next_an);
           continue;
         }
       }
@@ -438,7 +400,7 @@ bool AstarSearch::search() {
   return false;
 }
 
-void AstarSearch::setPath(const SimpleNode& goal) {
+void AstarSearch::setPath(const AstarNode& goal_node) {
   std_msgs::Header header;
   header.stamp = ros::Time::now();
   header.frame_id = costmap_.header.frame_id;
@@ -450,7 +412,7 @@ void AstarSearch::setPath(const SimpleNode& goal) {
   waypoints_.waypoints.clear();
 
   // From the goal node to the start node
-  AstarNode* node = &nodes_[goal.index.y][goal.index.x][goal.index.theta];
+  const AstarNode* node = &goal_node;
 
   while (node != nullptr) {
     geometry_msgs::PoseStamped pose;
@@ -479,28 +441,29 @@ void AstarSearch::setPath(const SimpleNode& goal) {
   }
 }
 
-bool AstarSearch::detectCollision(const SimpleNode& sn) {
+bool AstarSearch::detectCollision(const IndexXYT& index) {
   // Define the robot as rectangle
-  const double left = -1.0 * astar_param_.robot_base2back;
-  const double right = astar_param_.robot_length - astar_param_.robot_base2back;
-  const double top = astar_param_.robot_width / 2.0;
-  const double bottom = -1.0 * astar_param_.robot_width / 2.0;
+  const double back = -1.0 * astar_param_.robot_base2back;
+  const double front = astar_param_.robot_length - astar_param_.robot_base2back;
+
+  const double right = -1.0 * astar_param_.robot_width / 2.0;
+  const double left = astar_param_.robot_width / 2.0;
 
   const double resolution = costmap_.info.resolution;
 
   // Coordinate of base_link in OccupancyGrid frame
   const double one_angle_range = 2.0 * M_PI / astar_param_.theta_size;
-  const double base_x = sn.index.x * resolution;
-  const double base_y = sn.index.y * resolution;
-  const double base_theta = sn.index.theta * one_angle_range;
+  const double base_x = index.x * resolution;
+  const double base_y = index.y * resolution;
+  const double base_theta = index.theta * one_angle_range;
 
   // Calculate cos and sin in advance
   const double cos_theta = std::cos(base_theta);
   const double sin_theta = std::sin(base_theta);
 
   // Convert each point to index and check if the node is Obstacle
-  for (double x = left; x < right; x += resolution) {
-    for (double y = top; y > bottom; y -= resolution) {
+  for (double x = back; x <= front; x += resolution) {
+    for (double y = right; y <= left; y += resolution) {
       // 2D point rotation
       const int index_x = (x * cos_theta - y * sin_theta + base_x) / resolution;
       const int index_y = (x * sin_theta + y * cos_theta + base_y) / resolution;
@@ -521,6 +484,7 @@ bool AstarSearch::detectCollision(const SimpleNode& sn) {
 bool AstarSearch::hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory) {
   for (const auto& p : trajectory.poses) {
     const auto index = pose2index(costmap_, p, astar_param_.theta_size);
+
     if (isOutOfRange(index.x, index.y)) {
       continue;
     }
@@ -540,7 +504,7 @@ bool AstarSearch::isOutOfRange(const int index_x, const int index_y) {
 }
 
 bool AstarSearch::isObs(const int index_x, const int index_y) {
-  return (nodes_[index_y][index_x][0].status == Status::OBS);
+  return (nodes_[index_y][index_x][0].status == NodeStatus::Obstacle);
 }
 
 // Check if the next state is the goal
@@ -560,14 +524,14 @@ bool AstarSearch::isGoal(const double x, const double y, const double theta) {
   p.y = y;
   p.z = 0;
 
-  geometry_msgs::Point relative_node_point = calcRelativeCoordinate(goal_pose_local_.pose, p);
+  geometry_msgs::Point relative_node_point = calcRelativeCoordinate(goal_pose_, p);
 
   // Check Pose of goal
   if (relative_node_point.x < 0 &&  // shoud be behind of goal
       std::fabs(relative_node_point.x) < longitudinal_goal_range &&
       std::fabs(relative_node_point.y) < lateral_goal_range) {
     // Check the orientation of goal
-    if (calcDiffOfRadian(goal_yaw_, theta) < goal_angle) {
+    if (std::abs(normalizeRadian(goal_yaw_ - theta)) < goal_angle) {
       return true;
     }
   }

@@ -280,7 +280,7 @@ ScenarioSelectorNode::ScenarioSelectorNode()
 
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
 
-  sub_twist_ = private_nh_.subscribe("input/twist", 1, &ScenarioSelectorNode::onTwist, this);
+  sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output
   output_.pub_scenario =

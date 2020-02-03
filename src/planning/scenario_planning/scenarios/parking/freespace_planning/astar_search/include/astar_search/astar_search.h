@@ -29,7 +29,7 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Header.h>
 
-enum class Status : uint8_t { NONE, OPEN, CLOSED, OBS };
+enum class NodeStatus : uint8_t { None, Open, Closed, Obstacle };
 
 struct IndexXYT {
   int x;
@@ -43,15 +43,19 @@ struct IndexXY {
 };
 
 struct AstarNode {
-  double x;                      // x
-  double y;                      // y
-  double theta;                  // theta
-  Status status = Status::NONE;  // NONE, OPEN, CLOSED or OBS
-  double gc = 0;                 // Actual cost
-  double hc = 0;                 // heuristic cost
-  double move_distance = 0;      // actual move distance
-  bool is_back;                  // true if the current direction of the vehicle is back
-  AstarNode* parent = nullptr;   // parent node
+  IndexXYT index;                        // index
+  double x;                              // x
+  double y;                              // y
+  double theta;                          // theta
+  NodeStatus status = NodeStatus::None;  // node status
+  double gc = 0;                         // actual cost
+  double hc = 0;                         // heuristic cost
+  double cost = 0;                       // total cost
+  double move_distance = 0;              // actual move distance
+  bool is_back;                          // true if the current direction of the vehicle is back
+  AstarNode* parent = nullptr;           // parent node
+
+  bool operator>(const AstarNode& right) const { return cost > right.cost; }
 };
 
 struct AstarWaypoint {
@@ -67,19 +71,10 @@ struct AstarWaypoints {
 struct NodeUpdate {
   double shift_x;
   double shift_y;
-  double rotation;
+  double shift_theta;
   double step;
-  int index_theta;
   bool is_curve;
   bool is_back;
-};
-
-// For open list and goal list
-struct SimpleNode {
-  IndexXYT index;
-  double cost;
-
-  bool operator>(const SimpleNode& right) const { return cost > right.cost; }
 };
 
 struct AstarParam {
@@ -121,10 +116,10 @@ class AstarSearch {
 
  private:
   bool search();
-  void setPath(const SimpleNode& goal);
-  bool setStartNode(const geometry_msgs::Pose& start_pose);
-  bool setGoalNode(const geometry_msgs::Pose& goal_pose);
-  bool detectCollision(const SimpleNode& sn);
+  void setPath(const AstarNode& goal);
+  bool setStartNode();
+  bool setGoalNode();
+  bool detectCollision(const IndexXYT& index);
 
   bool isOutOfRange(const int index_x, const int index_y);
   bool isObs(const int index_x, const int index_y);
@@ -135,15 +130,15 @@ class AstarSearch {
   // hybrid astar variables
   StateUpdateTable state_update_table_;
   std::vector<std::vector<std::vector<AstarNode>>> nodes_;
-  std::priority_queue<SimpleNode, std::vector<SimpleNode>, std::greater<SimpleNode>> openlist_;
-  std::vector<SimpleNode> goallist_;
+  std::priority_queue<AstarNode, std::vector<AstarNode>, std::greater<AstarNode>> openlist_;
+  std::vector<AstarNode> goallist_;
 
   // costmap as occupancy grid
   nav_msgs::OccupancyGrid costmap_;
 
   // pose in costmap frame
-  geometry_msgs::PoseStamped start_pose_local_;
-  geometry_msgs::PoseStamped goal_pose_local_;
+  geometry_msgs::Pose start_pose_;
+  geometry_msgs::Pose goal_pose_;
   double goal_yaw_;
 
   // result path

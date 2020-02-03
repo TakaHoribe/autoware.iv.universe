@@ -79,10 +79,8 @@ class AstarNavi {
 
   // variables
   std::unique_ptr<AstarSearch> astar_;
-  geometry_msgs::PoseStamped current_pose_local_;
-  geometry_msgs::PoseStamped current_pose_global_;
-  geometry_msgs::PoseStamped goal_pose_local_;
-  geometry_msgs::PoseStamped goal_pose_global_;
+  geometry_msgs::PoseStamped current_pose_;
+  geometry_msgs::PoseStamped goal_pose_;
 
   autoware_planning_msgs::Trajectory trajectory_;
   autoware_planning_msgs::Trajectory partial_trajectory_;
@@ -110,6 +108,8 @@ class AstarNavi {
   bool isPlanRequired();
   void planTrajectory();
   void updateTargetIndex();
+
+  geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
 };
 
 #endif
