@@ -200,15 +200,15 @@ void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
   p.y() = tf.transform.translation.y;
   costmap_.setPosition(p);
 
-  if (use_wayarea_) {
+  if (use_wayarea_ && lanelet_map_) {
     costmap_[LayerName::wayarea] = generateWayAreaCostmap();
   }
 
-  if (use_objects_) {
+  if (use_objects_ && objects_) {
     costmap_[LayerName::objects] = generateObjectsCostmap(objects_);
   }
 
-  if (use_points_) {
+  if (use_points_ && points_) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*points_, *points);
     costmap_[LayerName::points] = generatePointsCostmap(points);
