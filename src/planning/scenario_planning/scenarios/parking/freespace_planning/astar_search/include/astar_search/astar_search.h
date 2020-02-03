@@ -32,12 +32,10 @@
 
 struct AstarParam {
   // base configs
-  bool use_back;                 // backward search
-  bool use_potential_heuristic;  // potential cost function
-  bool use_wavefront_heuristic;  // wavefront cost function
-  double time_limit;             // planning time limit [msec]
+  bool use_back;      // backward search
+  double time_limit;  // planning time limit [msec]
 
-  // robot configs (TODO: obtain from vehicle_info)
+  // robot configs
   double robot_length;            // X [m]
   double robot_width;             // Y [m]
   double robot_base2back;         // base_link to rear [m]
@@ -53,7 +51,6 @@ struct AstarParam {
 
   // costmap configs
   int obstacle_threshold;            // obstacle threshold on grid [-]
-  double potential_weight;           // weight of potential cost [-]
   double distance_heuristic_weight;  // obstacle threshold on grid [0,255]
 };
 
@@ -61,7 +58,7 @@ class AstarSearch {
  public:
   using StateUpdateTable = std::vector<std::vector<NodeUpdate>>;
 
-  AstarSearch(const AstarParam& astar_param);
+  explicit AstarSearch(const AstarParam& astar_param);
 
   void initializeNodes(const nav_msgs::OccupancyGrid& costmap);
   bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
@@ -76,8 +73,6 @@ class AstarSearch {
   bool setStartNode(const geometry_msgs::Pose& start_pose);
   bool setGoalNode(const geometry_msgs::Pose& goal_pose);
   bool detectCollision(const SimpleNode& sn);
-  bool calcWaveFrontHeuristic(const SimpleNode& sn);
-  bool detectCollisionWaveFront(const WaveFrontNode& sn);
 
   bool isOutOfRange(const int index_x, const int index_y);
   bool isObs(const int index_x, const int index_y);

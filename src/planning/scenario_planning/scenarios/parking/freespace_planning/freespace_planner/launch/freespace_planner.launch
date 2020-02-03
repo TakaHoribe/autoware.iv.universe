@@ -26,8 +26,6 @@
 
     <!-- A* search configurations -->
     <param name="use_back" value="true" />
-    <param name="use_potential_heuristic" value="false" />
-    <param name="use_wavefront_heuristic" value="false" />
     <param name="time_limit" value="30000.0" />
     <param name="robot_length" value="4.5" />
     <param name="robot_width" value="1.75" />
@@ -40,7 +38,6 @@
     <param name="lateral_goal_range" value="0.5" />
     <param name="longitudinal_goal_range" value="2.0" />
     <param name="obstacle_threshold" value="100" />
-    <param name="potential_weight" value="10.0" />
     <param name="distance_heuristic_weight" value="1.0" />
   </node>
 </launch>

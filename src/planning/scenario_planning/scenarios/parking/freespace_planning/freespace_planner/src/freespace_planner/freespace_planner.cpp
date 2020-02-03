@@ -223,11 +223,10 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   {
     // base configs
     private_nh_.param<bool>("use_back", astar_param_.use_back, true);
-    private_nh_.param<bool>("use_potential_heuristic", astar_param_.use_potential_heuristic, true);
-    private_nh_.param<bool>("use_wavefront_heuristic", astar_param_.use_wavefront_heuristic, false);
     private_nh_.param<double>("time_limit", astar_param_.time_limit, 5000.0);
 
     // robot configs
+    // TODO(Kenji Miyake): obtain from vehicle_info
     private_nh_.param<double>("robot_length", astar_param_.robot_length, 4.5);
     private_nh_.param<double>("robot_width", astar_param_.robot_width, 1.75);
     private_nh_.param<double>("robot_base2back", astar_param_.robot_base2back, 1.0);
@@ -243,7 +242,6 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
 
     // costmap configs
     private_nh_.param<int>("obstacle_threshold", astar_param_.obstacle_threshold, 100);
-    private_nh_.param<double>("potential_weight", astar_param_.potential_weight, 10.0);
     private_nh_.param<double>("distance_heuristic_weight", astar_param_.distance_heuristic_weight,
                               1.0);
   }

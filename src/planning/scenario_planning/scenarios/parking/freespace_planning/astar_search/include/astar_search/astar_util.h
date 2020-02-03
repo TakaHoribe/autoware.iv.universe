@@ -59,11 +59,6 @@ struct AstarWaypoints {
   std::vector<AstarWaypoint> waypoints;
 };
 
-struct WaveFrontNode {
-  IndexXY index;
-  double hc;
-};
-
 struct NodeUpdate {
   double shift_x;
   double shift_y;

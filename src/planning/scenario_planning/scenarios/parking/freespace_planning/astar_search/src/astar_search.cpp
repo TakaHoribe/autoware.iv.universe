@@ -202,12 +202,6 @@ void AstarSearch::initializeNodes(const nav_msgs::OccupancyGrid& costmap) {
       if (cost < 0 || astar_param_.obstacle_threshold <= cost) {
         nodes_[i][j][0].status = Status::OBS;
       }
-
-      // the cost more than threshold is regarded almost same as an obstacle
-      // because of its very high cost
-      if (astar_param_.use_potential_heuristic) {
-        nodes_[i][j][0].hc = cost * astar_param_.potential_weight;
-      }
     }
   }
 }
@@ -245,21 +239,14 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
   start_node.x = start_pose_local_.pose.position.x;
   start_node.y = start_pose_local_.pose.position.y;
   start_node.theta = 2.0 * M_PI / astar_param_.theta_size * index.theta;
-  start_node.gc = 0;
   start_node.move_distance = 0;
   start_node.is_back = false;
   start_node.status = Status::OPEN;
   start_node.parent = nullptr;
 
-  // set euclidean distance heuristic cost
-  if (!astar_param_.use_wavefront_heuristic && !astar_param_.use_potential_heuristic) {
-    start_node.hc =
-        calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
-  } else if (astar_param_.use_potential_heuristic) {
-    start_node.gc += start_node.hc;
-    start_node.hc +=
-        calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
-  }
+  start_node.gc = 0;
+  start_node.hc =
+      calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
 
   // Push start node to openlist
   start_sn.cost = start_node.gc + start_node.hc;
@@ -282,13 +269,6 @@ bool AstarSearch::setGoalNode(const geometry_msgs::Pose& goal_pose) {
 
   if (detectCollision(goal_sn)) {
     return false;
-  }
-
-  if (astar_param_.use_wavefront_heuristic) {
-    const bool is_reachable = calcWaveFrontHeuristic(goal_sn);
-    if (!is_reachable) {
-      return false;
-    }
   }
 
   return true;
@@ -354,22 +334,10 @@ bool AstarSearch::search() {
       }
 
       AstarNode* next_an = &nodes_[next_sn.index.y][next_sn.index.x][next_sn.index.theta];
-      double next_gc = current_an->gc + move_cost;
+      const double next_gc = current_an->gc + move_cost;
       // wavefront or distance transform heuristic
-      double next_hc = nodes_[next_sn.index.y][next_sn.index.x][0].hc;
-
-      // increase the cost with euclidean distance
-      if (astar_param_.use_potential_heuristic) {
-        next_gc += nodes_[next_sn.index.y][next_sn.index.x][0].hc;
-        next_hc += calcDistance(next_pos, goal_pose_local_.pose.position) *
-                   astar_param_.distance_heuristic_weight;
-      }
-
-      // increase the cost with euclidean distance
-      if (!astar_param_.use_wavefront_heuristic && !astar_param_.use_potential_heuristic) {
-        next_hc = calcDistance(next_pos, goal_pose_local_.pose.position) *
-                  astar_param_.distance_heuristic_weight;
-      }
+      const double next_hc = calcDistance(next_pos, goal_pose_local_.pose.position) *
+                             astar_param_.distance_heuristic_weight;
 
       if (next_an->status == Status::NONE) {
         next_an->status = Status::OPEN;
@@ -474,104 +442,6 @@ bool AstarSearch::detectCollision(const SimpleNode& sn) {
       // 2D point rotation
       const int index_x = (x * cos_theta - y * sin_theta + base_x) / resolution;
       const int index_y = (x * sin_theta + y * cos_theta + base_y) / resolution;
-
-      if (isOutOfRange(index_x, index_y)) {
-        return true;
-      }
-
-      if (isObs(index_x, index_y)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-bool AstarSearch::calcWaveFrontHeuristic(const SimpleNode& sn) {
-  // Set start point for wavefront search
-  // This is goal for Astar search
-  nodes_[sn.index.y][sn.index.x][0].hc = 0;
-  WaveFrontNode wf_node{IndexXY{sn.index.x, sn.index.y}, 1e-10};
-
-  std::queue<WaveFrontNode> qu;
-  qu.push(wf_node);
-
-  // State update table for wavefront search
-  // Nodes are expanded for each neighborhood cells (moore neighborhood)
-  const double resolution = costmap_.info.resolution;
-  static const std::vector<WaveFrontNode> updates = {
-      WaveFrontNode{IndexXY{0, 1}, resolution},
-      WaveFrontNode{IndexXY{-1, 0}, resolution},
-      WaveFrontNode{IndexXY{1, 0}, resolution},
-      WaveFrontNode{IndexXY{0, -1}, resolution},
-      WaveFrontNode{IndexXY{-1, 1}, std::hypot(resolution, resolution)},
-      WaveFrontNode{IndexXY{1, 1}, std::hypot(resolution, resolution)},
-      WaveFrontNode{IndexXY{-1, -1}, std::hypot(resolution, resolution)},
-      WaveFrontNode{IndexXY{1, -1}, std::hypot(resolution, resolution)},
-  };
-
-  const auto start_index = pose2index(costmap_, start_pose_local_.pose, astar_param_.theta_size);
-
-  // Whether the robot can reach goal
-  bool is_reachable = false;
-
-  // Start wavefront search
-  while (!qu.empty()) {
-    WaveFrontNode ref = qu.front();
-    qu.pop();
-
-    WaveFrontNode next;
-    for (const auto& u : updates) {
-      next.index.x = ref.index.x + u.index.x;
-      next.index.y = ref.index.y + u.index.y;
-
-      // out of range OR already visited OR obstacle node
-      if (isOutOfRange(next.index.x, next.index.y)) {
-        continue;
-      }
-
-      if (isObs(next.index.x, next.index.y)) {
-        continue;
-      }
-
-      if (nodes_[next.index.y][next.index.x][0].hc > 0) {
-        continue;
-      }
-
-      // Take the size of robot into account
-      if (detectCollisionWaveFront(next)) {
-        continue;
-      }
-
-      // Check if we can reach from start to goal
-      if (next.index.x == start_index.x && next.index.y == start_index.y) {
-        is_reachable = true;
-      }
-
-      // Set wavefront heuristic cost
-      next.hc = ref.hc + u.hc;
-      nodes_[next.index.y][next.index.x][0].hc = next.hc;
-
-      qu.push(next);
-    }
-  }
-
-  // End of search
-  return is_reachable;
-}
-
-// Simple collidion detection for wavefront search
-bool AstarSearch::detectCollisionWaveFront(const WaveFrontNode& ref) {
-  // Define the robot as square
-  static const double half = astar_param_.robot_width / 2;
-  const double robot_x = ref.index.x * costmap_.info.resolution;
-  const double robot_y = ref.index.y * costmap_.info.resolution;
-
-  for (double y = half; y > -1.0 * half; y -= costmap_.info.resolution) {
-    for (double x = -1.0 * half; x < half; x += costmap_.info.resolution) {
-      const int index_x = (robot_x + x) / costmap_.info.resolution;
-      const int index_y = (robot_y + y) / costmap_.info.resolution;
 
       if (isOutOfRange(index_x, index_y)) {
         return true;
