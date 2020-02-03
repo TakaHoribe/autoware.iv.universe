@@ -20,7 +20,7 @@
 #define DEBUG_INFO(...) { ROS_INFO(__VA_ARGS__); }
 
 // clang-format on
-Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false)
+Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false), drive_shift(1.0)
 {
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
@@ -38,6 +38,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pub_turn_signal_ = nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
   pub_shift_ = nh_.advertise<autoware_vehicle_msgs::Shift>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
+  sub_shift_cmd_ = pnh_.subscribe("/vehicle/shift_cmd", 1, &Simulator::callbackShift, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
 
 
@@ -49,8 +50,8 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   }
 
   /* set vehicle model parameters */
-  double tread_length, angvel_lim, vel_lim, steer_lim, accel_rate, angvel_rate, steer_rate_lim, vel_time_delay,
-      vel_time_constant, steer_time_delay, steer_time_constant, angvel_time_delay, angvel_time_constant;
+  double tread_length, angvel_lim, vel_lim, steer_lim, accel_rate, angvel_rate, steer_rate_lim, vel_time_delay, acc_time_delay,
+      vel_time_constant, steer_time_delay, steer_time_constant, angvel_time_delay, angvel_time_constant, acc_time_constant;
   pnh_.param("tread_length", tread_length, double(1.0));
   pnh_.param("angvel_lim", angvel_lim, double(3.0));
   pnh_.param("vel_lim", vel_lim, double(10.0));
@@ -64,6 +65,8 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pnh_.param("steer_time_constant", steer_time_constant, double(0.27));
   pnh_.param("angvel_time_delay", angvel_time_delay, double(0.2));
   pnh_.param("angvel_time_constant", angvel_time_constant, double(0.5));
+  pnh_.param("acc_time_delay", acc_time_delay, double(0.3));
+  pnh_.param("acc_time_constant", acc_time_constant, double(0.3));
   const double dt = 1.0 / loop_rate_;
 
   /* set vehicle model type */
@@ -80,6 +83,13 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     vehicle_model_type_ = VehicleModelType::DELAY_STEER;
     vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteer>(vel_lim, steer_lim, accel_rate, steer_rate_lim,
                                                                   wheelbase_, dt, vel_time_delay, vel_time_constant,
+                                                                  steer_time_delay, steer_time_constant);
+  }
+  else if(vehicle_model_type_str == "DELAY_STEER_ACC")
+  {
+      vehicle_model_type_ = VehicleModelType::DELAY_STEER_ACC;
+    vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteerAccel>(vel_lim, steer_lim, accel_rate, steer_rate_lim,
+                                                                  wheelbase_, dt, acc_time_delay, acc_time_constant,
                                                                   steer_time_delay, steer_time_constant);
   }
   else
@@ -148,6 +158,16 @@ void Simulator::callbackTrajectory(const autoware_planning_msgs::TrajectoryConst
   current_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 }
 
+void Simulator::callbackShift(const autoware_vehicle_msgs::Shift &msg)
+{
+  if(msg.data == autoware_vehicle_msgs::Shift::DRIVE){
+    drive_shift = 1.0;//true;
+  }else if(msg.data == autoware_vehicle_msgs::Shift::REVERSE){
+    drive_shift = -1.0;//false;
+  }else{
+    drive_shift = -1.0;//false;//do not consider shift command other than drive/reverse
+  }
+}
 void Simulator::callbackInitialPoseWithCov(const geometry_msgs::PoseWithCovarianceStampedConstPtr &msg)
 {
   geometry_msgs::Twist initial_twist; // initialized with zero for all components
@@ -250,6 +270,11 @@ void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandSt
     Eigen::VectorXd input(2);
     input << msg->command.control.velocity, msg->command.control.steering_angle;
     vehicle_model_ptr_->setInput(input);
+  }else if (vehicle_model_type_ == VehicleModelType::DELAY_STEER_ACC)
+  {
+    Eigen::VectorXd input(3);
+    input << msg->command.control.acceleration, msg->command.control.steering_angle, drive_shift;
+    vehicle_model_ptr_->setInput(input);
   }
   else
   {
@@ -286,6 +311,7 @@ void Simulator::setInitialState(const geometry_msgs::Pose &pose, const geometry_
   const double yaw = tf2::getYaw(pose.orientation);
   const double vx = twist.linear.x;
   const double steer = 0.0;
+  const double acc = 0.0;
 
   if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER)
   {
@@ -297,6 +323,12 @@ void Simulator::setInitialState(const geometry_msgs::Pose &pose, const geometry_
   {
     Eigen::VectorXd state(5);
     state << x, y, yaw, vx, steer;
+    vehicle_model_ptr_->setState(state);
+  }
+  else if (vehicle_model_type_ == VehicleModelType::DELAY_STEER_ACC)
+  {
+    Eigen::VectorXd state(6);
+    state << x, y, yaw, vx, steer, acc;
     vehicle_model_ptr_->setState(state);
   }
   else
