@@ -3,6 +3,7 @@
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_io/Io.h>
+#include <lanelet2_core/geometry/Lanelet.h>
 
 #include <lanelet2_extension/projection/mgrs_projector.h>
 #include <lanelet2_extension/io/autoware_osm_parser.h>
@@ -19,14 +20,14 @@ void printUsage()
             << "output_path" << std::endl;
 }
 
-bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                    lanelet::Projector& projector)
+bool loadLaneletMap(const std::string &llt_map_path, lanelet::LaneletMapPtr &lanelet_map_ptr,
+                    lanelet::Projector &projector)
 {
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet_map_ptr = lanelet::load(llt_map_path, "autoware_osm_handler", projector, &errors);
 
-  for (const auto& error : errors)
+  for (const auto &error : errors)
   {
     ROS_ERROR_STREAM(error);
   }
@@ -38,15 +39,15 @@ bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lan
   return true;
 }
 
-bool exists(std::unordered_set<lanelet::Id>& set, lanelet::Id element)
+bool exists(std::unordered_set<lanelet::Id> &set, lanelet::Id element)
 {
   return std::find(set.begin(), set.end(), element) != set.end();
 }
 
-lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map_ptr)
+lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr &lanelet_map_ptr)
 {
   lanelet::Points3d points;
-  for (const lanelet::Point3d pt: lanelet_map_ptr->pointsLayer)
+  for (const lanelet::Point3d pt : lanelet_map_ptr->pointLayer)
   {
     points.push_back(pt);
   }
@@ -67,30 +68,35 @@ lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map
 //   return lanelet::LineString3d(lanelet::utils::getId(), new_points);
 // }
 
-void mergeLines(lanelet::LaneletMapPtr& lanelet_map_ptr)
+void mergePoints(lanelet::LaneletMapPtr &lanelet_map_ptr)
 {
-  const auto& points = convertPointsLayerToPoints(lanelet_map_ptr);
-  
+  const auto &points = convertPointsLayerToPoints(lanelet_map_ptr);
+
   for (size_t i = 0; i < points.size(); i++)
   {
-    const auto point_i = points.at(i);
+    auto point_i = points.at(i);
     for (size_t j = 0; j < i; j++)
     {
-      const auto point_j = points.at(j);
-      
+      auto point_j = points.at(j);
+
       double distance = boost::geometry::distance(point_i, point_j);
-      if(distance < 0.1)
+      if (distance < 0.1)
       {
-        new_point = point_i + point_j;
-        point_i = new_point;
-        point_j = new_point;
+        const auto new_point = (point_i.basicPoint() + point_j.basicPoint()) / 2;
+        // const auto new_pt3d = lanelet::Point3d(lanelet::utils::getId(), new_point);
+        point_i.x() = new_point.x();
+        point_i.y() = new_point.y();
+        point_i.z() = new_point.z();
+        point_j.x() = new_point.x();
+        point_j.y() = new_point.y();
+        point_j.z() = new_point.z();
+        point_i.setId(point_j.id());
       }
     }
   }
 }
 
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "merge_lines");
   ros::NodeHandle pnh("~");
@@ -117,12 +123,8 @@ int main(int argc, char* argv[])
   {
     return EXIT_FAILURE;
   }
-  if (!loadPCDMap(pcd_map_path, pcd_map_ptr))
-  {
-    return EXIT_FAILURE;
-  }
 
-  mergeLines(llt_map_ptr);
+  mergePoints(llt_map_ptr);
   lanelet::write(output_path, *llt_map_ptr, projector);
 
   return 0;

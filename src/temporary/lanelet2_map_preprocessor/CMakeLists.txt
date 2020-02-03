@@ -30,6 +30,10 @@ add_executable(merge_close_lines src/merge_close_lines.cpp)
 add_dependencies(merge_close_lines ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(merge_close_lines ${catkin_LIBRARIES})
 
+add_executable(merge_close_points src/merge_close_points.cpp)
+add_dependencies(merge_close_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(merge_close_points ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
