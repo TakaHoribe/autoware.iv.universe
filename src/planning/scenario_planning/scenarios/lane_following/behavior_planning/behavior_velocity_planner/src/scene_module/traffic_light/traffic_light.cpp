@@ -99,7 +99,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId &input
     self_point << self_pose.pose.position.x, self_pose.pose.position.y;
     const double sq_dist = (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
                            (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
-    std::cout << std::sqrt(sq_dist) << ", " << stop_border_distance_threshold << std::endl;
+    // std::cout << std::sqrt(sq_dist) << ", " << stop_border_distance_threshold << std::endl;
     if (sq_dist < stop_border_distance_threshold*stop_border_distance_threshold)
     {
         ROS_WARN_THROTTLE(1.0, "[traffic_light] state is red. this vehicle are passing too fast to stop at the stop line");
