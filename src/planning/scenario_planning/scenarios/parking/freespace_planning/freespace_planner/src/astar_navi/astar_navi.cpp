@@ -192,6 +192,16 @@ size_t findNearestIndex(const autoware_planning_msgs::Trajectory& trajectory,
   return std::distance(std::begin(distances), min_itr);
 }
 
+bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
+               const double th_stopped_velocity_mps) {
+  for (const auto& twist : twist_buffer) {
+    if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
@@ -293,14 +303,7 @@ void AstarNavi::updateTargetIndex() {
       calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
       th_arrived_distance_m_;
 
-  const auto is_stopped = [&]() {
-    for (const auto& twist : twist_buffer_) {
-      if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps_) {
-        return false;
-      }
-    }
-    return true;
-  }();
+  const auto is_stopped = isStopped(twist_buffer_, th_stopped_velocity_mps_);
 
   if (is_near_target && is_stopped) {
     const auto new_target_index =
