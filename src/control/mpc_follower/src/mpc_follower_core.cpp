@@ -205,13 +205,12 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
 
 bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_cmd, double &steer_vel_cmd)
 {
+  /* set parameters */
   const int N = mpc_param_.prediction_horizon;
   const double DT = mpc_param_.prediction_sampling_time;
   const int DIM_X = vehicle_model_ptr_->getDimX();
-  const int DIM_U = vehicle_model_ptr_->getDimU();
-  const int DIM_Y = vehicle_model_ptr_->getDimY();
-
   const double current_yaw = tf2::getYaw(current_pose_ptr_->pose.orientation);
+  const double steer = *current_steer_ptr_;
 
   /* calculate nearest point on reference trajectory (used as initial state) */
   unsigned int nearest_index = 0;
@@ -245,14 +244,11 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   /* convert tracking x,y error to lat error */
   const double err_x = current_pose_ptr_->pose.position.x - nearest_pose.position.x;
   const double err_y = current_pose_ptr_->pose.position.y - nearest_pose.position.y;
-  const double sp_yaw = tf2::getYaw(nearest_pose.orientation);
-  const double lat_err = -std::sin(sp_yaw) * err_x + std::cos(sp_yaw) * err_y;
-
-  /* get steering angle */
-  const double steer = *current_steer_ptr_;
+  const double ref_yaw = tf2::getYaw(nearest_pose.orientation);
+  const double lat_err = -std::sin(ref_yaw) * err_x + std::cos(ref_yaw) * err_y;
 
   /* define initial state for error dynamics */
-  Eigen::VectorXd x0 = Eigen::VectorXd::Zero(DIM_X);
+  Eigen::VectorXd x0;
   if(!setInitialState(lat_err, yaw_err, steer, x0))
   {
     ROS_ERROR("fail to set initial state.");
@@ -260,44 +256,15 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
   ROS_INFO_COND(show_debug_info_, "[MPC] selfpose.x = %f, y = %f, yaw = %f", current_pose_ptr_->pose.position.x, current_pose_ptr_->pose.position.y, current_yaw);
   ROS_INFO_COND(show_debug_info_, "[MPC] nearpose.x = %f, y = %f, yaw = %f", nearest_pose.position.x, nearest_pose.position.y, tf2::getYaw(nearest_pose.orientation));
   ROS_INFO_COND(show_debug_info_, "[MPC] nearest_index = %d, nearest_traj_time = %f", nearest_index, nearest_traj_time);
-  ROS_INFO_COND(show_debug_info_, "[MPC] lat error = %f, yaw error = %f, steer = %f, sp_yaw = %f, my_yaw = %f", lat_err, yaw_err, steer, sp_yaw, current_yaw);
+  ROS_INFO_COND(show_debug_info_, "[MPC] lat error = %f, yaw error = %f, steer = %f, ref_yaw = %f, my_yaw = %f", lat_err, yaw_err, steer, ref_yaw, current_yaw);
 
 
-  /////////////// delay compensation  ///////////////
+  /* delay compensation */
   double mpc_curr_time;
   if(!updateStateForDelayCompensation(mpc_start_time, x0, mpc_curr_time))
   {
     ROS_ERROR("fail to update states for delay compemsation");
   }
-
-  /////////////// generate mpc matrix  ///////////////
-  /*
-   * predict equation: Xec = Aex * x0 + Bex * Uex + Wex
-   * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
-   * Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
-   */
-  Eigen::MatrixXd Ad(DIM_X, DIM_X);
-  Eigen::MatrixXd Bd(DIM_X, DIM_U);
-  Eigen::MatrixXd Wd(DIM_X, 1);
-  Eigen::MatrixXd Cd(DIM_Y, DIM_X);
-  Eigen::MatrixXd Uref(DIM_U, 1);
-
-  Eigen::MatrixXd Aex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_X);
-  Eigen::MatrixXd Bex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_U * N);
-  Eigen::MatrixXd Wex = Eigen::MatrixXd::Zero(DIM_X * N, 1);
-  Eigen::MatrixXd Cex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_X * N);
-  Eigen::MatrixXd Qex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_Y * N);
-  Eigen::MatrixXd Rex = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-  Eigen::MatrixXd Urefex = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-
-  /* weight matrix depends on the vehicle model */
-  Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(DIM_Y, DIM_Y);
-  Eigen::MatrixXd R = Eigen::MatrixXd::Zero(DIM_U, DIM_U);
-  Eigen::MatrixXd Q_adaptive = Eigen::MatrixXd::Zero(DIM_Y, DIM_Y);
-  Eigen::MatrixXd R_adaptive = Eigen::MatrixXd::Zero(DIM_U, DIM_U);
-  Q(0, 0) = mpc_param_.weight_lat_error;
-  Q(1, 1) = mpc_param_.weight_heading_error;
-  R(0, 0) = mpc_param_.weight_steering_input;
 
   /* resample ref_traj with mpc sampling time */
   std::vector<double> mpc_time_v;
@@ -312,126 +279,35 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
     return false;
   }
 
-  /* predict dynamics for N times */
-  for (int i = 0; i < N; ++i)
+  /*
+   * generate mpc matrix.
+   * predict equation: Xec = Aex * x0 + Bex * Uex + Wex
+   */
+  Eigen::MatrixXd Aex, Bex, Wex, Cex, Qex, Rex, Urefex;
+  if (!generateMPCMatrix(mpc_resampled_ref_traj, Aex, Bex, Wex, Cex, Qex, Rex, Urefex))
   {
-    const double sign_vx = mpc_resampled_ref_traj.vx[i] > 0 ? 1 : (mpc_resampled_ref_traj.vx[i] < 0 ? -1 : 0);
-    const double ref_k = mpc_resampled_ref_traj.k[i] * sign_vx;
-    const double ref_vx = mpc_resampled_ref_traj.vx[i];
-    const double ref_vx_squared = ref_vx * ref_vx;
-
-    /* get discrete state matrix A, B, C, W */
-    vehicle_model_ptr_->setVelocity(ref_vx);
-    vehicle_model_ptr_->setCurvature(ref_k);
-    vehicle_model_ptr_->calculateDiscreteMatrix(Ad, Bd, Cd, Wd, DT);
-
-    Q_adaptive = Q;
-    R_adaptive = R;
-    if (i == N - 1)
-    {
-      Q_adaptive(0, 0) = mpc_param_.weight_terminal_lat_error;
-      Q_adaptive(1, 1) = mpc_param_.weight_terminal_heading_error;
-    }
-    Q_adaptive(1, 1) += ref_vx_squared * mpc_param_.weight_heading_error_squared_vel_coeff;
-    R_adaptive(0, 0) += ref_vx_squared * mpc_param_.weight_steering_input_squared_vel_coeff;
-
-    /* update mpc matrix */
-    int idx_x_i = i * DIM_X;
-    int idx_x_i_prev = (i - 1) * DIM_X;
-    int idx_u_i = i * DIM_U;
-    int idx_y_i = i * DIM_Y;
-    if (i == 0)
-    {
-      Aex.block(0, 0, DIM_X, DIM_X) = Ad;
-      Bex.block(0, 0, DIM_X, DIM_U) = Bd;
-      Wex.block(0, 0, DIM_X, 1) = Wd;
-    }
-    else
-    {
-      Aex.block(idx_x_i, 0, DIM_X, DIM_X) = Ad * Aex.block(idx_x_i_prev, 0, DIM_X, DIM_X);
-      for (int j = 0; j < i; ++j)
-      {
-        int idx_u_j = j * DIM_U;
-        Bex.block(idx_x_i, idx_u_j, DIM_X, DIM_U) = Ad * Bex.block(idx_x_i_prev, idx_u_j, DIM_X, DIM_U);
-      }
-      Wex.block(idx_x_i, 0, DIM_X, 1) = Ad * Wex.block(idx_x_i_prev, 0, DIM_X, 1) + Wd;
-    }
-    Bex.block(idx_x_i, idx_u_i, DIM_X, DIM_U) = Bd;
-    Cex.block(idx_y_i, idx_x_i, DIM_Y, DIM_X) = Cd;
-    Qex.block(idx_y_i, idx_y_i, DIM_Y, DIM_Y) = Q_adaptive;
-    Rex.block(idx_u_i, idx_u_i, DIM_U, DIM_U) = R_adaptive;
-
-    /* get reference input (feed-forward) */
-    vehicle_model_ptr_->calculateReferenceInput(Uref);
-    if (std::fabs(Uref(0, 0)) < DEG2RAD * mpc_param_.zero_ff_steer_deg)
-    {
-      Uref(0, 0) = 0.0; // ignore curvature noise
-    }
-
-    Urefex.block(i * DIM_U, 0, DIM_U, 1) = Uref;
-
-    mpc_curr_time += DT;
-  }
-
-  /* add lateral jerk : weight for (v * {u(i) - u(i-1)} )^2 */
-  for (int i = 0; i < N - 1; ++i)
-  {
-    const double v = mpc_resampled_ref_traj.vx[i];
-    const double lateral_jerk_weight = v * v * mpc_param_.weight_lat_jerk;
-    Rex(i, i) += lateral_jerk_weight;
-    Rex(i + 1, i) -= lateral_jerk_weight;
-    Rex(i, i + 1) -= lateral_jerk_weight;
-    Rex(i + 1, i + 1) += lateral_jerk_weight;
-  }
-
-  if (Aex.array().isNaN().any() || Bex.array().isNaN().any() ||
-      Cex.array().isNaN().any() || Wex.array().isNaN().any())
-  {
-    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model matrix includes NaN, stop MPC.");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] generateMPCMatrix() failed. stop computation.");
     return false;
   }
 
-  /////////////// optimization ///////////////
+
   /*
    * solve quadratic optimization.
-   * cost function: 1/2 * Uex' * H * Uex + f' * Uex
+   * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
+   *  , Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
    */
-  const Eigen::MatrixXd CB = Cex * Bex;
-  const Eigen::MatrixXd QCB = Qex * CB;
-  Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-  H.triangularView<Eigen::Upper>() = CB.transpose() * QCB; // NOTE: This calculation is very heavy. searching for a good way...
-  H.triangularView<Eigen::Upper>() += Rex;
-  H.triangularView<Eigen::Lower>() = H.transpose();
-  Eigen::MatrixXd f = (Cex * (Aex * x0 + Wex)).transpose() * QCB - Urefex.transpose() * Rex;
-
-  /* constraint matrix : lb < U < ub, lbA < A*U < ubA */
-  const double u_lim = DEG2RAD * steer_lim_deg_;
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-  Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-  Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim); // min steering angle
-  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);  // max steering angle
-
-  auto start = std::chrono::system_clock::now();
   Eigen::VectorXd Uex;
-  if (!qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, Uex))
+  if (!executeOptimization(Aex, Bex, Wex, Cex, Qex, Rex, Urefex, x0, Uex))
   {
-    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] qp solver error");
-    return false;
-  }
-  double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
-  ROS_INFO_COND(show_debug_info_, "[MPC] calculateMPC: qp solver calculation time = %f [ms]", elapsed);
-
-  if (Uex.array().isNaN().any())
-  {
-    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model Uex includes NaN, stop MPC. ");
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] generateMPCMatrix() failed. stop computation.");
     return false;
   }
 
-  /* saturation */
+  /* saturation for safety */
+  const double u_lim = DEG2RAD * steer_lim_deg_;
   const double u_sat = std::max(std::min(Uex(0), u_lim), -u_lim);
 
-  /* filtering */
+  /* filtering for noise reduction */
   const double u_filtered = lpf_steering_cmd_.filter(u_sat);
 
   /* set steering command */
@@ -444,7 +320,7 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
   steer_cmd_prev_ = steer_cmd;
 
-  /* save to buffer */
+  /* save input to delay-buffer */
   input_buffer_.push_back(steer_cmd);
   input_buffer_.pop_front();
 
@@ -503,6 +379,9 @@ bool MPCFollower::calculateMPC(double &vel_cmd, double &acc_cmd, double &steer_c
 
 bool MPCFollower::setInitialState(const double &lat_err, const double &yaw_err, const double &steer, Eigen::VectorXd &x0)
 {
+  const int DIM_X = vehicle_model_ptr_->getDimX();
+  x0 = Eigen::VectorXd::Zero(DIM_X);
+
   if (vehicle_model_type_ == "kinematics")
   {
     x0 << lat_err, yaw_err, steer;
@@ -571,6 +450,168 @@ bool MPCFollower::updateStateForDelayCompensation(const double &start_time, Eige
   return true;
 }
 
+bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, Eigen::MatrixXd &Aex, Eigen::MatrixXd &Bex,
+                                    Eigen::MatrixXd &Wex, Eigen::MatrixXd &Cex, Eigen::MatrixXd &Qex,
+                                    Eigen::MatrixXd &Rex, Eigen::MatrixXd &Urefex)
+{
+  const int N = mpc_param_.prediction_horizon;
+  const double DT = mpc_param_.prediction_sampling_time;
+  const int DIM_X = vehicle_model_ptr_->getDimX();
+  const int DIM_U = vehicle_model_ptr_->getDimU();
+  const int DIM_Y = vehicle_model_ptr_->getDimY();
+
+ /*
+  * predict equation: Xec = Aex * x0 + Bex * Uex + Wex
+  * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
+  * Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
+  */
+  Aex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_X);
+  Bex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_U * N);
+  Wex = Eigen::MatrixXd::Zero(DIM_X * N, 1);
+  Cex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_X * N);
+  Qex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_Y * N);
+  Rex = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  Urefex = Eigen::MatrixXd::Zero(DIM_U * N, 1);
+
+  /* weight matrix depends on the vehicle model */
+  Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(DIM_Y, DIM_Y);
+  Eigen::MatrixXd R = Eigen::MatrixXd::Zero(DIM_U, DIM_U);
+  Eigen::MatrixXd Q_adaptive = Eigen::MatrixXd::Zero(DIM_Y, DIM_Y);
+  Eigen::MatrixXd R_adaptive = Eigen::MatrixXd::Zero(DIM_U, DIM_U);
+  Q(0, 0) = mpc_param_.weight_lat_error;
+  Q(1, 1) = mpc_param_.weight_heading_error;
+  R(0, 0) = mpc_param_.weight_steering_input;
+
+  Eigen::MatrixXd Ad(DIM_X, DIM_X);
+  Eigen::MatrixXd Bd(DIM_X, DIM_U);
+  Eigen::MatrixXd Wd(DIM_X, 1);
+  Eigen::MatrixXd Cd(DIM_Y, DIM_X);
+  Eigen::MatrixXd Uref(DIM_U, 1);
+
+  /* predict dynamics for N times */
+  for (int i = 0; i < N; ++i)
+  {
+    const double sign_vx = reference_trajectory.vx[i] > 0 ? 1 : (reference_trajectory.vx[i] < 0 ? -1 : 0);
+    const double ref_k = reference_trajectory.k[i] * sign_vx;
+    const double ref_vx = reference_trajectory.vx[i];
+    const double ref_vx_squared = ref_vx * ref_vx;
+
+    /* get discrete state matrix A, B, C, W */
+    vehicle_model_ptr_->setVelocity(ref_vx);
+    vehicle_model_ptr_->setCurvature(ref_k);
+    vehicle_model_ptr_->calculateDiscreteMatrix(Ad, Bd, Cd, Wd, DT);
+
+    Q_adaptive = Q;
+    R_adaptive = R;
+    if (i == N - 1)
+    {
+      Q_adaptive(0, 0) = mpc_param_.weight_terminal_lat_error;
+      Q_adaptive(1, 1) = mpc_param_.weight_terminal_heading_error;
+    }
+    Q_adaptive(1, 1) += ref_vx_squared * mpc_param_.weight_heading_error_squared_vel_coeff;
+    R_adaptive(0, 0) += ref_vx_squared * mpc_param_.weight_steering_input_squared_vel_coeff;
+
+    /* update mpc matrix */
+    int idx_x_i = i * DIM_X;
+    int idx_x_i_prev = (i - 1) * DIM_X;
+    int idx_u_i = i * DIM_U;
+    int idx_y_i = i * DIM_Y;
+    if (i == 0)
+    {
+      Aex.block(0, 0, DIM_X, DIM_X) = Ad;
+      Bex.block(0, 0, DIM_X, DIM_U) = Bd;
+      Wex.block(0, 0, DIM_X, 1) = Wd;
+    }
+    else
+    {
+      Aex.block(idx_x_i, 0, DIM_X, DIM_X) = Ad * Aex.block(idx_x_i_prev, 0, DIM_X, DIM_X);
+      for (int j = 0; j < i; ++j)
+      {
+        int idx_u_j = j * DIM_U;
+        Bex.block(idx_x_i, idx_u_j, DIM_X, DIM_U) = Ad * Bex.block(idx_x_i_prev, idx_u_j, DIM_X, DIM_U);
+      }
+      Wex.block(idx_x_i, 0, DIM_X, 1) = Ad * Wex.block(idx_x_i_prev, 0, DIM_X, 1) + Wd;
+    }
+    Bex.block(idx_x_i, idx_u_i, DIM_X, DIM_U) = Bd;
+    Cex.block(idx_y_i, idx_x_i, DIM_Y, DIM_X) = Cd;
+    Qex.block(idx_y_i, idx_y_i, DIM_Y, DIM_Y) = Q_adaptive;
+    Rex.block(idx_u_i, idx_u_i, DIM_U, DIM_U) = R_adaptive;
+
+    /* get reference input (feed-forward) */
+    vehicle_model_ptr_->calculateReferenceInput(Uref);
+    if (std::fabs(Uref(0, 0)) < DEG2RAD * mpc_param_.zero_ff_steer_deg)
+    {
+      Uref(0, 0) = 0.0; // ignore curvature noise
+    }
+
+    Urefex.block(i * DIM_U, 0, DIM_U, 1) = Uref;
+  }
+
+  /* add lateral jerk : weight for (v * {u(i) - u(i-1)} )^2 */
+  for (int i = 0; i < N - 1; ++i)
+  {
+    const double v = reference_trajectory.vx[i];
+    const double lateral_jerk_weight = v * v * mpc_param_.weight_lat_jerk;
+    Rex(i, i) += lateral_jerk_weight;
+    Rex(i + 1, i) -= lateral_jerk_weight;
+    Rex(i, i + 1) -= lateral_jerk_weight;
+    Rex(i + 1, i + 1) += lateral_jerk_weight;
+  }
+
+  if (Aex.array().isNaN().any() || Bex.array().isNaN().any() ||
+      Cex.array().isNaN().any() || Wex.array().isNaN().any())
+  {
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model matrix includes NaN, stop MPC.");
+    return false;
+  }
+  return true;
+}
+
+bool MPCFollower::executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
+                                      const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
+                                      const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex)
+{
+  const int N = mpc_param_.prediction_horizon;
+  const int DIM_U = vehicle_model_ptr_->getDimU();
+
+  // cost function: 1/2 * Uex' * H * Uex + f' * Uex
+  // H = B' * C' * Q * C * B + R
+  const Eigen::MatrixXd CB = Cex * Bex;
+  const Eigen::MatrixXd QCB = Qex * CB;
+  Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  H.triangularView<Eigen::Upper>() = CB.transpose() * QCB; // NOTE: This calculation is very heavy. looking for a good way...
+  H.triangularView<Eigen::Upper>() += Rex;
+  H.triangularView<Eigen::Lower>() = H.transpose();
+  Eigen::MatrixXd f = (Cex * (Aex * x0 + Wex)).transpose() * QCB - Urefex.transpose() * Rex;
+
+  /*
+   * constraint matrix : lb < U < ub, lbA < A*U < ubA 
+   * current considered constraint
+   *  - steering limit
+   */
+  const double u_lim = DEG2RAD * steer_lim_deg_;
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
+  Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
+  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim); // min steering angle
+  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);  // max steering angle
+
+  auto start = std::chrono::system_clock::now();
+  if (!qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, Uex))
+  {
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] qp solver error");
+    return false;
+  }
+  double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
+  ROS_INFO_COND(show_debug_info_, "[MPC] calculateMPC: qp solver calculation time = %f [ms]", elapsed);
+
+  if (Uex.array().isNaN().any())
+  {
+    ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] calculateMPC: model Uex includes NaN, stop MPC. ");
+    return false;
+  }
+  return true;
+}
 
 void MPCFollower::callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &msg)
 {

@@ -191,17 +191,26 @@ private:
   /**
    * @brief update status for delay compensation
    * @param [in] start_time start time for update
-   * @param [out] x updated state
-   */
-  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x);
-
-  /**
-   * @brief update status for delay compensation
-   * @param [in] start_time start time for update
    * @param [out] x updated state at delayed_time
    * @param [out] delayed_time start_time + delay_compensation_time
    */
   bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x, double &delayed_time);
+
+  /**
+   * @brief generate MPC matrix with trajectory and vehicle model
+   * @param [in] reference_trajectory used for linearization around reference trajectory
+   */
+  bool generateMPCMatrix(const MPCTrajectory &reference_trajectory, Eigen::MatrixXd &Aex, Eigen::MatrixXd &Bex,
+                         Eigen::MatrixXd &Wex, Eigen::MatrixXd &Cex, Eigen::MatrixXd &Qex,
+                         Eigen::MatrixXd &Rex, Eigen::MatrixXd &Urefex);
+
+  /**
+   * @brief generate MPC matrix with trajectory and vehicle model
+   * @param [out] Uex optimized input vector
+   */
+  bool executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
+                           const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
+                           const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex);
 
   /* debug */
   bool show_debug_info_; //!< @brief flag to display debug info
