@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ndt)
 
 add_compile_options(-std=c++14)
-SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
+
+set(CMAKE_BUILD_TYPE "Release")
 
 find_package(catkin REQUIRED COMPONENTS
   ndt_pcl_modified
