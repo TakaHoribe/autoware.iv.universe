@@ -924,16 +924,6 @@ bool EBPathPlannerNode::alighWithPathPoints(
       ROS_WARN_THROTTLE(1.0, "[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
     }
   }
-  double dx = merged_optimized_points.back().pose.position.x - 
-                path_points.back().pose.position.x;
-  double dy = merged_optimized_points.back().pose.position.y -
-                path_points.back().pose.position.y;
-  double dist = std::sqrt(dx*dx+dy*dy);
-  double diff_dist_for_goal_thres = 10;
-  if(dist < diff_dist_for_goal_thres && !merged_optimized_points.empty())
-  {
-    merged_optimized_points.back().twist.linear.x = 0;
-  }
 }
 
 bool EBPathPlannerNode::generateFineOptimizedPoints(
@@ -971,7 +961,7 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
     double dx2 = std::cos(yaw);
     double dy2 = std::sin(yaw);
     double inner_product = dx1*dx2+dy1*dy2;
-    if(dist1 < 1.0 && 
+    if(dist1 < 2.0 && 
       inner_product < 0 &&
       path_points.back().twist.linear.x < 1e-6)
     {

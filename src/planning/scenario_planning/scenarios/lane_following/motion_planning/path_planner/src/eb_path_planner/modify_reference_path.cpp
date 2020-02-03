@@ -85,57 +85,6 @@ double calculateEigen2DDistance(const Eigen::Vector2d& a,
   return std::sqrt(dx*dx+dy*dy);
 }
 
-// bool transformMapToImage(const geometry_msgs::Point& map_point,
-//                          const geometry_msgs::Pose& map_ego_pose,
-//                          const int ego_costmap_x_length,
-//                          const int ego_costmap_y_width,
-//                          const double costmap_resolution,
-//                          geometry_msgs::Point& image_point)
-// {
-//   geometry_msgs::Point relative_p = 
-//     transformToRelativeCoordinate2D(map_point, map_ego_pose);
-//   double bottomleft_x = (relative_p.x+ego_costmap_x_length/2)/costmap_resolution;
-//   double bottomleft_y = (relative_p.y+ego_costmap_y_width/2)/costmap_resolution;
-//   double image_x = ego_costmap_y_width/costmap_resolution - bottomleft_y;
-//   double image_y = ego_costmap_x_length/costmap_resolution - bottomleft_x;
-//   if(image_x>=0 && 
-//      image_x<(int)ego_costmap_y_width/costmap_resolution &&
-//      image_y>=0 && 
-//      image_y<(int)ego_costmap_x_length/costmap_resolution)
-//   {
-//     image_point.x = image_x;
-//     image_point.y = image_y;
-//     return true;
-//   }
-//   else
-//   {
-//     return false;
-//   } 
-// }
-
-// bool transformImageToMap(const geometry_msgs::Point& image_point,
-//                          const geometry_msgs::Pose& map_ego_pose,
-//                          const int ego_costmap_x_length,
-//                          const int ego_costmap_y_width,
-//                          const double costmap_resolution,
-//                          geometry_msgs::Point& map_point)
-// {
-//   double bottomleft_x = ego_costmap_y_width/costmap_resolution - image_point.y;
-//   double bottomleft_y = ego_costmap_x_length/costmap_resolution - image_point.x;
-//   double relative_x = bottomleft_x*costmap_resolution - ego_costmap_x_length/2;
-//   double relative_y = bottomleft_y*costmap_resolution - ego_costmap_y_width/2;
-//   double yaw = tf2::getYaw(map_ego_pose.orientation);
-
-//   geometry_msgs::Point res;
-//   res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
-//   res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
-  
-//   map_point.x = res.x + map_ego_pose.position.x;
-//   map_point.y = res.y + map_ego_pose.position.y;
-//   map_point.z = map_ego_pose.position.z;
-//   return true;
-// }
-
 bool transformMapToImage(const geometry_msgs::Point& map_point,
                          const nav_msgs::MapMetaData& occupancy_grid_info,
                          geometry_msgs::Point& image_point)
