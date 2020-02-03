@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ASTAR_NAVI_H
-#define ASTAR_NAVI_H
+#ifndef FREESPACE_PLANNER_H
+#define FREESPACE_PLANNER_H
 
 #include <deque>
 #include <iostream>

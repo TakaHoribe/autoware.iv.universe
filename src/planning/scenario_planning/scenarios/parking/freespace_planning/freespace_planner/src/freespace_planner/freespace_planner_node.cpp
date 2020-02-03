@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "freespace_planner/astar_navi.h"
+#include "freespace_planner/freespace_planner.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "astar_navi");
+  ros::init(argc, argv, "freespace_planner");
 
   AstarNavi node;
   ros::spin();

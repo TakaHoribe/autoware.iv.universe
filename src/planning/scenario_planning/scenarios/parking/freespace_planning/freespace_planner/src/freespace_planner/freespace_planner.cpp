@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "freespace_planner/astar_navi.h"
+#include "freespace_planner/freespace_planner.h"
 
 namespace {
 
