@@ -13,7 +13,7 @@ Panels:
         - /Control1/Debug/MPC1/Namespaces1
         - /Vehicle1/VelocityHistory1/Constant Color1
       Splitter Ratio: 0.64552241563797
-    Tree Height: 580
+    Tree Height: 482
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -748,7 +748,11 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                {}
+                label: true
+                path: true
+                path confidence: true
+                shape: true
+                twist: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -772,7 +776,7 @@ Visualization Manager:
               Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/output/debug/markers
               Name: Beam
               Namespaces:
-                {}
+                beam: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -788,6 +792,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
+                end_lanelets: true
                 goal_lanelets: true
                 left_lane_bound: true
                 right_lane_bound: true
@@ -815,11 +820,11 @@ Visualization Manager:
           Displays:
             - Class: rviz_plugins/Trajectory
               Color Border Vel Max: 3
-              Enabled: false
+              Enabled: true
               Name: ScenarioTrajectory
               Topic: /planning/scenario_planning/trajectory
               Unreliable: false
-              Value: false
+              Value: true
               View Path:
                 Alpha: 1
                 Color: 0; 0; 0
@@ -832,152 +837,169 @@ Visualization Manager:
                 Constant Color: false
                 Scale: 0.30000001192092896
                 Value: true
+            - Class: rviz/Group
+              Displays:
+                - Class: rviz/Group
+                  Displays:
+                    - Class: rviz_plugins/Path
+                      Color Border Vel Max: 3
+                      Enabled: true
+                      Name: Path
+                      Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
+                      Unreliable: false
+                      Value: true
+                      View Path:
+                        Alpha: 0.4000000059604645
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Value: true
+                        Width: 2
+                      View Velocity:
+                        Alpha: 0.4000000059604645
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Scale: 0.30000001192092896
+                        Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
+                      Name: Arrow
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
+                      Name: PathWithLaneId
+                      Namespaces:
+                        lane_id: true
+                        line: true
+                        points: true
+                      Queue Size: 100
+                      Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
+                      Name: Crosswalk
+                      Namespaces:
+                        collision line: true
+                        collision point: true
+                        crosswalk polygon line: true
+                        crosswalk polygon point: true
+                        slow point: true
+                        slow polygon line: true
+                        stop point: true
+                        stop polygon line: true
+                      Queue Size: 100
+                      Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
+                      Name: Intersection
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
+                      Name: Blind Spot
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                  Enabled: true
+                  Name: BehaviorPlanning
+                - Class: rviz/Group
+                  Displays:
+                    - Class: rviz_plugins/Trajectory
+                      Color Border Vel Max: 3
+                      Enabled: false
+                      Name: Trajectory
+                      Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
+                      Unreliable: false
+                      Value: false
+                      View Path:
+                        Alpha: 1
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Value: true
+                        Width: 2
+                      View Velocity:
+                        Alpha: 1
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Scale: 0.30000001192092896
+                        Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
+                      Name: StopDetectionArea
+                      Namespaces:
+                        active_detection_area: true
+                        active_detection_area_point: true
+                        obstacle_perpendicular_point: true
+                        obstacle_point: true
+                        stop_factor_wall: true
+                      Queue Size: 100
+                      Value: true
+                  Enabled: true
+                  Name: MotionPlanning
+              Enabled: true
+              Name: LaneFollowing
+            - Class: rviz/Group
+              Displays:
+                - Class: rviz/Group
+                  Displays:
+                    - Alpha: 0.699999988079071
+                      Class: rviz/Map
+                      Color Scheme: map
+                      Draw Behind: false
+                      Enabled: false
+                      Name: Costmap
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
+                      Unreliable: false
+                      Use Timestamp: false
+                      Value: false
+                    - Alpha: 1
+                      Arrow Length: 0.30000001192092896
+                      Axes Length: 0.30000001192092896
+                      Axes Radius: 0.05000000074505806
+                      Class: rviz/PoseArray
+                      Color: 255; 25; 0
+                      Enabled: true
+                      Head Length: 0.10000000149011612
+                      Head Radius: 0.20000000298023224
+                      Name: PartialPoseArray
+                      Shaft Length: 0.20000000298023224
+                      Shaft Radius: 0.05000000074505806
+                      Shape: Arrow (3D)
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/partial_pose_array
+                      Unreliable: false
+                      Value: true
+                    - Alpha: 1
+                      Arrow Length: 0.5
+                      Axes Length: 0.30000001192092896
+                      Axes Radius: 0.009999999776482582
+                      Class: rviz/PoseArray
+                      Color: 0; 0; 255
+                      Enabled: true
+                      Head Length: 0.10000000149011612
+                      Head Radius: 0.20000000298023224
+                      Name: PoseArray
+                      Shaft Length: 0.20000000298023224
+                      Shaft Radius: 0.05000000074505806
+                      Shape: Arrow (Flat)
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/pose_array
+                      Unreliable: false
+                      Value: true
+                  Enabled: true
+                  Name: FreespacePlanning
+              Enabled: true
+              Name: Parking
           Enabled: true
           Name: ScenarioPlanning
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz_plugins/Path
-              Color Border Vel Max: 3
-              Enabled: true
-              Name: Path
-              Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 0.4000000059604645
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 0.4000000059604645
-                Color: 0; 0; 0
-                Constant Color: false
-                Scale: 0.30000001192092896
-                Value: true
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
-              Name: Arrow
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
-              Name: PathWithLaneId
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
-              Name: Crosswalk
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
-              Name: Intersection
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
-              Name: Blind Spot
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: true
-          Enabled: true
-          Name: BehaviorPlanning
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz_plugins/Trajectory
-              Color Border Vel Max: 3
-              Enabled: true
-              Name: Trajectory
-              Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Scale: 0.30000001192092896
-                Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
-              Name: StopDetectionArea
-              Namespaces:
-                active_detection_area: true
-                active_detection_area_point: true
-                obstacle_perpendicular_point: true
-                obstacle_point: true
-                stop_factor_wall: true
-              Queue Size: 100
-              Value: true
-          Enabled: true
-          Name: MotionPlanning
-        - Class: rviz/Group
-          Displays:
-            - Alpha: 0.699999988079071
-              Class: rviz/Map
-              Color Scheme: map
-              Draw Behind: false
-              Enabled: false
-              Name: Costmap
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
-              Unreliable: false
-              Use Timestamp: false
-              Value: false
-            - Alpha: 1
-              Arrow Length: 0.30000001192092896
-              Axes Length: 0.30000001192092896
-              Axes Radius: 0.05000000074505806
-              Class: rviz/PoseArray
-              Color: 255; 25; 0
-              Enabled: true
-              Head Length: 0.10000000149011612
-              Head Radius: 0.20000000298023224
-              Name: PartialPoseArray
-              Shaft Length: 0.20000000298023224
-              Shaft Radius: 0.05000000074505806
-              Shape: Arrow (3D)
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/partial_pose_array
-              Unreliable: false
-              Value: true
-            - Alpha: 1
-              Arrow Length: 0.5
-              Axes Length: 0.30000001192092896
-              Axes Radius: 0.009999999776482582
-              Class: rviz/PoseArray
-              Color: 0; 0; 255
-              Enabled: true
-              Head Length: 0.10000000149011612
-              Head Radius: 0.20000000298023224
-              Name: PoseArray
-              Shaft Length: 0.20000000298023224
-              Shaft Radius: 0.05000000074505806
-              Shape: Arrow (Flat)
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/pose_array
-              Unreliable: false
-              Value: true
-          Enabled: true
-          Name: FreespacePlanning
       Enabled: true
       Name: Planning
     - Class: rviz/Group
@@ -1079,7 +1101,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -8.95501708984375
+      Angle: -2.6750004291534424
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -1089,21 +1111,21 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 18.083356857299805
+      Scale: 15.06101131439209
       Target Frame: world
       Value: TopDownOrtho (rviz)
-      X: -74.35234832763672
-      Y: -2.907951593399048
+      X: -73.20896911621094
+      Y: -3.658054828643799
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 2105
+  Height: 2049
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000003260000077ffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000281000000c900fffffffb0000000a0056006900650077007301000002c40000014c000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000416000001100000005c00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000052c000002900000001600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000ebd0000005afc0100000002fb0000000800540069006d0065010000000000000ebd000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000b910000077f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000326000006fffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000002500000018200fffffffb0000000a0056006900650077007301000002ca000001320000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000408000000fb000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000050f0000025e0000002600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b48000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1112,6 +1134,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 3773
-  X: 3907
-  Y: 27
+  Width: 3706
+  X: 134
+  Y: 55
