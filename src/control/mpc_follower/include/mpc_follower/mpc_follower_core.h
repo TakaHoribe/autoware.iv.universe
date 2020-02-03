@@ -48,6 +48,7 @@
 #include <autoware_vehicle_msgs/Steering.h>
 
 #include "mpc_follower/mpc_utils.h"
+#include "mpc_follower/interpolate.h"
 #include "mpc_follower/mpc_trajectory.h"
 #include "mpc_follower/lowpass_filter.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
@@ -146,7 +147,7 @@ private:
   /**
    * @brief set current_trajectory_ with receved message
    */
-  void callbackRefPath(const autoware_planning_msgs::Trajectory::ConstPtr &);
+  void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr &);
 
   /**
    * @brief update current_pose from tf
@@ -209,7 +210,7 @@ private:
   /**
    * @brief get stop command
    */
-  autoware_control_msgs::ControlCommand getStopControlCommand();
+  autoware_control_msgs::ControlCommand getStopControlCommand() const;
 
 
 

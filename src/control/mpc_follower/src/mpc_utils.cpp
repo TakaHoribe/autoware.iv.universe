@@ -37,9 +37,6 @@ double MPCUtils::normalizeRadian(const double _angle)
 {
   double n_angle = std::fmod(_angle, 2 * M_PI);
   n_angle = n_angle > M_PI ? n_angle - 2 * M_PI : n_angle < -M_PI ? 2 * M_PI + n_angle : n_angle;
-
-  // another way
-  // Math.atan2(Math.sin(_angle), Math.cos(_angle));
   return n_angle;
 }
 
@@ -48,125 +45,129 @@ double MPCUtils::calcDist2d(const geometry_msgs::Point &p0, const geometry_msgs:
   return std::hypot(p0.x - p1.x, p0.y - p1.y);
 }
 
-template <typename T1, typename T2>
-bool MPCUtils::interp1d(const T1 &index, const T2 &values, const double &ref, double &ret)
+double MPCUtils::calcSquaredDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1)
 {
-  ret = 0.0;
-  if (!((int)index.size() == (int)values.size()))
+  double dx = p1.x - p0.x;
+  double dy = p1.y - p0.y;
+  return dx * dx + dy * dy;
+}
+
+double MPCUtils::calcDist3d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1)
+{
+  double dx = p1.x - p0.x;
+  double dy = p1.y - p0.y;
+  double dz = p1.z - p0.z;
+  return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory &trajectory, std::vector<double> &arclength)
+{
+  double dist = 0.0;
+  arclength.clear();
+  arclength.push_back(dist);
+  for (unsigned int i = 1; i < trajectory.size(); ++i)
   {
-    printf("index and values must have same size, return false. size : idx = %d, values = %d\n", (int)index.size(), (int)values.size());
-    return false;
+    double dx = trajectory.x.at(i) - trajectory.x.at(i - 1);
+    double dy = trajectory.y.at(i) - trajectory.y.at(i - 1);
+    dist += std::sqrt(dx * dx + dy * dy);
+    arclength.push_back(dist);
   }
-  if (index.size() == 1)
+}
+
+bool MPCUtils::resampleMPCTrajectorySpline(const MPCTrajectory &input, const double resample_interval_dist, MPCTrajectory &output)
+{
+  if (input.size() == 0)
   {
-    printf("index size is 1, too short. return false.\n");
-    return false;
-  }
-  unsigned int end = index.size() - 1;
-  if (ref < index[0])
-  {
-    ret = values[0];
-    // printf("ref point is out of index (low), return false.\n");
+    output = input;
     return true;
   }
-  if (index[end] < ref)
+  std::vector<double> input_arclength;
+  calcMPCTrajectoryArclength(input, input_arclength);
+
+  if (input_arclength.size() == 0)
   {
-    ret = values[end];
-    // printf("ref point is out of index (high), return false.\n");
-    return true;
+    return false;
   }
 
-  for (unsigned int i = 1; i < index.size(); ++i)
+  std::vector<double> output_arclength;
+  for (double s = 0; s < input_arclength.back(); s += resample_interval_dist)
   {
-    if (!(index[i] > index[i - 1]))
-    {
-      printf("index must be monotonically increasing, return false. index[%d] = %f, but index[%d] = %f\n", i, index[i], i-1, index[i - 1]);
-      return false;
-    }
+    output_arclength.push_back(s);
   }
-  unsigned int i = 1;
-  while (ref > index[i])
-  {
-    ++i;
-  }
-  const double a = ref - index[i - 1];
-  const double d_index = index[i] - index[i - 1];
-  ret = ((d_index - a) * values[i - 1] + a * values[i]) / d_index;
+
+  splineInterpMPCTrajectory(input_arclength, input, output_arclength, output);
+
   return true;
 }
-template bool MPCUtils::interp1d<std::vector<double>, std::vector<double>>(const std::vector<double> &, const std::vector<double> &, const double &, double &);
-template bool MPCUtils::interp1d<std::vector<double>, Eigen::VectorXd>(const std::vector<double> &, const Eigen::VectorXd &, const double &, double &);
-template bool MPCUtils::interp1d<Eigen::VectorXd, std::vector<double>>(const Eigen::VectorXd &, const std::vector<double> &, const double &, double &);
-template bool MPCUtils::interp1d<Eigen::VectorXd, Eigen::VectorXd>(const Eigen::VectorXd &, const Eigen::VectorXd &, const double &, double &);
 
-// 1D interpolation
-bool MPCUtils::interp1dMPCTraj(const std::vector<double> &index, const MPCTrajectory &values,
-                               const std::vector<double> &ref_time, MPCTrajectory &ret)
+bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
+                                         const std::vector<double> &out_index, MPCTrajectory &out_traj)
 {
-  if (!(index.size() == values.size()))
+  if (in_traj.size() == 0)
   {
-    printf("index and values must have same size, return false.\n");
+    out_traj = in_traj;
+    return true;
+  }
+
+  std::vector<double> in_traj_yaw = in_traj.yaw;
+  MPCUtils::convertEulerAngleToMonotonic(in_traj_yaw);
+
+  LinearInterpolate linear_interp;
+  if (!linear_interp.interpolate(in_index, in_traj.x, out_index, out_traj.x) ||
+      !linear_interp.interpolate(in_index, in_traj.y, out_index, out_traj.y) ||
+      !linear_interp.interpolate(in_index, in_traj.z, out_index, out_traj.z) ||
+      !linear_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj.yaw) ||
+      !linear_interp.interpolate(in_index, in_traj.vx, out_index, out_traj.vx) ||
+      !linear_interp.interpolate(in_index, in_traj.k, out_index, out_traj.k) ||
+      !linear_interp.interpolate(in_index, in_traj.relative_time, out_index, out_traj.relative_time))
+  {
+    std::cerr << "linearInterpMPCTrajectory error!" << std::endl; 
     return false;
   }
-  if (index.size() == 1)
+
+  if (out_traj.size() == 0)
   {
-    printf("index size is 1, too short. return false.\n");
+    std::cerr << "[mpc util] linear interpolation error" << std::endl;
     return false;
   }
 
-  for (unsigned int i = 1; i < index.size(); ++i)
+  return true;
+}
+
+bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
+                                         const std::vector<double> &out_index, MPCTrajectory &out_traj)
+{
+  if (in_traj.size() == 0)
   {
-    if (!(index[i] > index[i - 1]))
-    {
-      printf("index must be monotonically increasing, return false. index[%d] = %f, but index[%d] = %f. index.size() = %lu\n", i, index[i], i-1, index[i - 1], index.size());
-      return false;
-    }
+    out_traj = in_traj;
+    return true;
   }
 
-  for (unsigned int i = 1; i < ref_time.size(); ++i)
+  std::vector<double> in_traj_yaw = in_traj.yaw;
+  MPCUtils::convertEulerAngleToMonotonic(in_traj_yaw);
+  
+  out_traj.clear();
+  SplineInterpolate spline_interp;
+  if (!spline_interp.interpolate(in_index, in_traj.x, out_index, out_traj.x) ||
+      !spline_interp.interpolate(in_index, in_traj.y, out_index, out_traj.y) ||
+      !spline_interp.interpolate(in_index, in_traj.z, out_index, out_traj.z) ||
+      !spline_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj.yaw) ||
+      !spline_interp.interpolate(in_index, in_traj.vx, out_index, out_traj.vx) ||
+      !spline_interp.interpolate(in_index, in_traj.k, out_index, out_traj.k))
   {
-    if (!(ref_time[i] > ref_time[i - 1]))
-    {
-      printf("reference point must be monotonically increasing, return false. ref_time[%d] = %f, but ref_time[%d] = %f\n", i, ref_time[i], i-1, ref_time[i - 1]);
-      return false;
-    }
+    std::cerr << "splineInterpMPCTrajectory error!" << std::endl; 
+    return false;
   }
 
-  ret.clear();
-  unsigned int i = 1;
-  for (unsigned int j = 0; j < ref_time.size(); ++j)
+  // use linear interpolation for time.
+  calcMPCTrajectoryTime(out_traj);
+
+  if (out_traj.size() == 0)
   {
-    double a, d_index;
-    if (ref_time[j] > index.back())
-    {
-      a = 1.0;
-      d_index = 1.0;
-      i = index.size() - 1;
-    }
-    else if (ref_time[j] < index.front())
-    {
-      a = 0.0;
-      d_index = 1.0;
-      i = 1;
-    }
-    else
-    {
-      while (ref_time[j] > index[i])
-      {
-        ++i;
-      }
-      a = ref_time[j] - index[i - 1];
-      d_index = index[i] - index[i - 1];
-    }
-    const double x = ((d_index - a) * values.x[i - 1] + a * values.x[i]) / d_index;
-    const double y = ((d_index - a) * values.y[i - 1] + a * values.y[i]) / d_index;
-    const double z = ((d_index - a) * values.z[i - 1] + a * values.z[i]) / d_index;
-    const double yaw = ((d_index - a) * values.yaw[i - 1] + a * values.yaw[i]) / d_index;
-    const double vx = ((d_index - a) * values.vx[i - 1] + a * values.vx[i]) / d_index;
-    const double k = ((d_index - a) * values.k[i - 1] + a * values.k[i]) / d_index;
-    const double t = ref_time[j];
-    ret.push_back(x, y, z, yaw, vx, k, t);
+    std::cerr << "[mpc util] spline interpolation error" << std::endl;
+    return false;
   }
+
   return true;
 }
 
@@ -191,146 +192,71 @@ void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory &traj)
 void MPCUtils::calcTrajectoryCurvature(MPCTrajectory &traj, int curvature_smoothing_num)
 {
   int traj_size = (int)traj.x.size();
-  for (int i = 0; i < traj_size; ++i)
-  {
-    traj.k[i] = 0.0;
-  }
+  // for (int i = 0; i < traj_size; ++i)
+  // {
+  //   traj.k[i] = 0.0;
+  // }
+  traj.k.clear();
+  traj.k.resize(traj_size, 0.0);
 
   /* calculate curvature by circle fitting from three points */
   geometry_msgs::Point p1, p2, p3;
-  for (int i = curvature_smoothing_num; i < traj_size - curvature_smoothing_num; ++i)
+  int max_smoothing_num = (int)std::floor(0.5 * (traj_size - 1));
+  int L = std::min(curvature_smoothing_num, max_smoothing_num);
+  for (int i = L; i < traj_size - L; ++i)
   {
-    p1.x = traj.x[i - curvature_smoothing_num];
+    p1.x = traj.x[i - L];
     p2.x = traj.x[i];
-    p3.x = traj.x[i + curvature_smoothing_num];
-    p1.y = traj.y[i - curvature_smoothing_num];
+    p3.x = traj.x[i + L];
+    p1.y = traj.y[i - L];
     p2.y = traj.y[i];
-    p3.y = traj.y[i + curvature_smoothing_num];
+    p3.y = traj.y[i + L];
     double den = std::max(calcDist2d(p1, p2) * calcDist2d(p2, p3) * calcDist2d(p3, p1), 0.0001);
     const double curvature = 2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / den;
     traj.k.at(i) = curvature;
   }
 
   /* first and last curvature is copied from next value */
-  for (int i = 0; i < std::min(curvature_smoothing_num, traj_size); ++i)
+  for (int i = 0; i < std::min(L, traj_size); ++i)
   {
-    traj.k.at(i) = traj.k.at(std::min(curvature_smoothing_num, traj_size - 1));
-    traj.k.at(traj_size - i - 1) = traj.k.at(std::max(traj_size - curvature_smoothing_num - 1, 0));
+    traj.k.at(i) = traj.k.at(std::min(L, traj_size - 1));
+    traj.k.at(traj_size - i - 1) = traj.k.at(std::max(traj_size - L - 1, 0));
   }
 }
 
-void MPCUtils::convertWaypointsToMPCTraj(const autoware_planning_msgs::Trajectory &traj, MPCTrajectory &mpc_traj)
+void MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory &input, MPCTrajectory &output)
 {
-  mpc_traj.clear();
-  const double k_tmp = 0.0;
-  const double t_tmp = 0.0;
-  for (const auto &p : traj.points)
+  output.clear();
+  for (uint i = 0; i < input.points.size(); ++i)
   {
-    const double x = p.pose.position.x;
-    const double y = p.pose.position.y;
-    const double z = p.pose.position.z;
-    const double yaw = tf2::getYaw(p.pose.orientation);
-    const double vx = p.twist.linear.x;
-    mpc_traj.push_back(x, y, z, yaw, vx, k_tmp, t_tmp);
+    geometry_msgs::Pose p = input.points.at(i).pose;
+    const double x = p.position.x;
+    const double y = p.position.y;
+    const double z = p.position.z;
+    const double yaw = tf2::getYaw(p.orientation);
+    const double vx = input.points.at(i).twist.linear.x;
+    const double k = 0.0;
+    const double t = 0.0;
+    output.push_back(x, y, z, yaw, vx, k, t);
   }
+  calcMPCTrajectoryTime(output);
 }
 
-void MPCUtils::convertWaypointsToMPCTrajWithDistanceResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                                             const double &dl, MPCTrajectory &ref_traj)
-{
-  ref_traj.clear();
-  double dist = 0.0;
-  std::vector<double> dists;
-  dists.push_back(0.0);
-
-  for (int i = 1; i < (int)path_time.size(); ++i)
-  {
-    double dx = path.points.at(i).pose.position.x - path.points.at(i - 1).pose.position.x;
-    double dy = path.points.at(i).pose.position.y - path.points.at(i - 1).pose.position.y;
-    dist += sqrt(dx * dx + dy * dy);
-    dists.push_back(dist);
-  }
-
-  convertWaypointsToMPCTrajWithResample(path, path_time, dists, dl, ref_traj);
-}
-
-
-void MPCUtils::convertWaypointsToMPCTrajWithTimeResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                                         const double &dt, MPCTrajectory &ref_traj)
-{
-  ref_traj.clear();
-  convertWaypointsToMPCTrajWithResample(path, path_time, path_time, dt, ref_traj);
-}
-
-void MPCUtils::convertWaypointsToMPCTrajWithResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                                     const std::vector<double> &ref_index, const double &d_ref_index, MPCTrajectory &ref_traj)
-{
-  if (ref_index.size() == 0) {
-    return;
-  }
-
-  for (unsigned int i = 1; i < ref_index.size(); ++i)
-  {
-    if (ref_index[i] < ref_index[i - 1])
-    {
-      ROS_ERROR("[convertWaypointsToMPCTrajWithResample] resampling index must be monotonically increasing. idx[%d] = %f, idx[%d+1] = %f",
-                i, ref_index[i], i, ref_index[i + 1]);
-      return;
-    }
-  }
-
-  double point = ref_index[0];
-  while (point < ref_index.back())
-  {
-    unsigned int j = 1;
-    while (point > ref_index.at(j))
-    {
-      ++j;
-    }
-
-    const double a = point - ref_index.at(j - 1);
-    const double ref_index_dist = ref_index.at(j) - ref_index.at(j - 1);
-    const geometry_msgs::Pose pos0 = path.points.at(j - 1).pose;
-    const geometry_msgs::Pose pos1 = path.points.at(j).pose;
-    const geometry_msgs::Twist twist0 = path.points.at(j - 1).twist;
-    const geometry_msgs::Twist twist1 = path.points.at(j).twist;
-    const double x = ((ref_index_dist - a) * pos0.position.x + a * pos1.position.x) / ref_index_dist;
-    const double y = ((ref_index_dist - a) * pos0.position.y + a * pos1.position.y) / ref_index_dist;
-    const double z = ((ref_index_dist - a) * pos0.position.z + a * pos1.position.z) / ref_index_dist;
-
-    /* for singular point of euler angle */
-    const double yaw0 = tf2::getYaw(pos0.orientation);
-    const double dyaw = MPCUtils::normalizeRadian(tf2::getYaw(pos1.orientation) - yaw0);
-    const double yaw1 = yaw0 + dyaw;
-    const double yaw = ((ref_index_dist - a) * yaw0 + a * yaw1) / ref_index_dist;
-    const double vx = ((ref_index_dist - a) * twist0.linear.x + a * twist1.linear.x) / ref_index_dist;
-    const double curvature_tmp = 0.0;
-    const double t = ((ref_index_dist - a) * path_time.at(j - 1) + a * path_time.at(j)) / ref_index_dist;
-    ref_traj.push_back(x, y, z, yaw, vx, curvature_tmp, t);
-    point += d_ref_index;
-  }
-}
-
-void MPCUtils::calcPathRelativeTime(const autoware_planning_msgs::Trajectory &path, std::vector<double> &path_time)
+void MPCUtils::calcMPCTrajectoryTime(MPCTrajectory &traj)
 {
   double t = 0.0;
-  path_time.clear();
-  path_time.push_back(t);
-  for (int i = 0; i < (int)path.points.size() - 1; ++i)
+  int traj_size = traj.x.size();
+  traj.relative_time.clear();
+  traj.relative_time.push_back(t);
+  for (int i = 0; i < traj_size - 1; ++i)
   {
-    const double x0 = path.points.at(i).pose.position.x;
-    const double y0 = path.points.at(i).pose.position.y;
-    const double z0 = path.points.at(i).pose.position.z;
-    const double x1 = path.points.at(i + 1).pose.position.x;
-    const double y1 = path.points.at(i + 1).pose.position.y;
-    const double z1 = path.points.at(i + 1).pose.position.z;
-    const double dx = x1 - x0;
-    const double dy = y1 - y0;
-    const double dz = z1 - z0;
-    const double dist = sqrt(dx * dx + dy * dy + dz * dz);
-    double v = std::max(std::fabs(path.points.at(i).twist.linear.x), 1.0);
+    double dx = traj.x.at(i + 1) - traj.x.at(i);
+    double dy = traj.y.at(i + 1) - traj.y.at(i);
+    double dz = traj.z.at(i + 1) - traj.z.at(i);
+    const double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    double v = std::max(std::fabs(traj.vx.at(i)), 0.1);
     t += (dist / v);
-    path_time.push_back(t);
+    traj.relative_time.push_back(t);
   }
 }
 
@@ -498,6 +424,8 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
   nearest_yaw_error = MPCUtils::normalizeRadian(my_yaw - nearest_yaw);
   return true;
 }
+
+
 
 void MPCUtils::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray &markers,
                                    std::string ns, double r, double g, double b, double z, std::string &frame_id)

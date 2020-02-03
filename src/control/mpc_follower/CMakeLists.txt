@@ -43,6 +43,7 @@ include_directories(
 set(
   MPC_FOLLOWER_SRC
     src/mpc_utils.cpp
+    src/interpolate.cpp
     src/mpc_trajectory.cpp
     src/lowpass_filter.cpp
     src/vehicle_model/vehicle_model_interface.cpp

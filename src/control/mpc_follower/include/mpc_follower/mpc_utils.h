@@ -27,6 +27,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <visualization_msgs/MarkerArray.h>
+#include "mpc_follower/interpolate.h"
 
 #include "mpc_follower/mpc_trajectory.h"
 
@@ -54,29 +55,17 @@ double normalizeRadian(const double _angle);
 void convertEulerAngleToMonotonic(std::vector<double> &a);
 
 double calcDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1);
+double calcDist3d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1);
+double calcSquaredDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1);
 
-
-/**
- * @brief interpolate value vector at reference index
- * @param [in] index index vector related to object value (Eigen::Vector or std::vector)
- * @param [in] values object value vector (Eigen::Vector or std::vector)
- * @param [in] ref reference index
- * @param [out] ret interpolated value
- * @return bool to check whether it was interpolated properly  
- */
-template <typename T1, typename T2>
-bool interp1d(const T1 &index, const T2 &values, const double &ref, double &ret);
-
-/**
- * @brief interpolate MPCTrajectory at index vector
- * @param [in] index index vector related to MPCTrajectory value 
- * @param [in] values MPCTrajectory
- * @param [in] ref reference index
- * @param [out] ret interpolated MPCTrajectory
- * @return bool to check whether it was interpolated properly  
- */
-bool interp1dMPCTraj(const std::vector<double> &index, const MPCTrajectory &values,
-                     const std::vector<double> &ref, MPCTrajectory &ret);
+void convertToMPCTrajectory(const autoware_planning_msgs::Trajectory &input, MPCTrajectory &output);
+void calcMPCTrajectoryArclength(const MPCTrajectory &trajectory, std::vector<double> &arclength);
+bool resampleMPCTrajectorySpline(const MPCTrajectory &input, const double resample_interval_dist, MPCTrajectory &output);
+bool linearInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
+                               const std::vector<double> &out_index, MPCTrajectory &out_traj);
+bool splineInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
+                               const std::vector<double> &out_index, MPCTrajectory &out_traj);
+void calcMPCTrajectoryTime(MPCTrajectory &traj);
 
 /**
  * @brief calculate yaw angle in MPCTrajectory from xy vector
@@ -90,51 +79,6 @@ void calcTrajectoryYawFromXY(MPCTrajectory &traj);
  * @param [in] curvature_smoothing_num index distance for 3 points for curvature calculation
  */
 void calcTrajectoryCurvature(MPCTrajectory &traj, int curvature_smoothing_num);
-
-/**
- * @brief convert waypoints to MPCTrajectory
- * @param [in] path input waypoints
- * @param [out] mpc_traj converted traj
- */
-void convertWaypointsToMPCTraj(const autoware_planning_msgs::Trajectory &path, MPCTrajectory &mpc_traj);
-
-/**
- * @brief convert waypoints to MPCTraj with interpolation
- * @param [in] path input waypoints 
- * @param [in] path_time waypoints time used for MPCTrajectory relative_time
- * @param [in] ref_index reference index with constant distance
- * @param [in] d_ref_index constant distance of reference index
- * @param [out] ref_traj converted reference trajectory
- */
-void convertWaypointsToMPCTrajWithResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                           const std::vector<double> &ref_index, const double &d_ref_index, MPCTrajectory &ref_traj);
-
-/**
- * @brief convert waypoints to MPCTraj with constant distance interpolation 
- * @param [in] path input waypoints 
- * @param [in] path_time waypoints time used for MPCTrajectory relative_time
- * @param [in] dl distance of interpolated path
- * @param [out] ref_traj converted reference trajectory
- */
-void convertWaypointsToMPCTrajWithDistanceResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                                   const double &dl, MPCTrajectory &ref_traj);
-
-/**
- * @brief convert waypoints to MPCTraj with constant time interpolation 
- * @param [in] path input waypoints 
- * @param [in] path_time waypoints time used for MPCTrajectory relative_time
- * @param [in] dt time span of interpolated path
- * @param [out] ref_traj converted reference trajectory
- */
-void convertWaypointsToMPCTrajWithTimeResample(const autoware_planning_msgs::Trajectory &path, const std::vector<double> &path_time,
-                                               const double &dt, MPCTrajectory &ref_traj_);
-
-/**
- * @brief calculate waypoints time with waypoint velocity
- * @param [in] path object waypoints
- * @param [out] path_time calculated waypoints time vector
- */
-void calcPathRelativeTime(const autoware_planning_msgs::Trajectory &path, std::vector<double> &path_time);
 
 /**
  * @brief calculate nearest pose on MPCTrajectory
