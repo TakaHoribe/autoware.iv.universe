@@ -101,7 +101,7 @@ IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs:
   }
 
   // Descretize angle
-  static const double one_angle_range = 2.0 * M_PI / theta_size;
+  const double one_angle_range = 2.0 * M_PI / theta_size;
   const int index_theta = static_cast<int>(yaw / one_angle_range) % theta_size;
 
   return {index_x, index_y, index_theta};
@@ -481,14 +481,15 @@ void AstarSearch::setPath(const SimpleNode& goal) {
 
 bool AstarSearch::detectCollision(const SimpleNode& sn) {
   // Define the robot as rectangle
-  static const double left = -1.0 * astar_param_.robot_base2back;
-  static const double right = astar_param_.robot_length - astar_param_.robot_base2back;
-  static const double top = astar_param_.robot_width / 2.0;
-  static const double bottom = -1.0 * astar_param_.robot_width / 2.0;
-  static const double resolution = costmap_.info.resolution;
+  const double left = -1.0 * astar_param_.robot_base2back;
+  const double right = astar_param_.robot_length - astar_param_.robot_base2back;
+  const double top = astar_param_.robot_width / 2.0;
+  const double bottom = -1.0 * astar_param_.robot_width / 2.0;
+
+  const double resolution = costmap_.info.resolution;
 
   // Coordinate of base_link in OccupancyGrid frame
-  static const double one_angle_range = 2.0 * M_PI / astar_param_.theta_size;
+  const double one_angle_range = 2.0 * M_PI / astar_param_.theta_size;
   const double base_x = sn.index.x * resolution;
   const double base_y = sn.index.y * resolution;
   const double base_theta = sn.index.theta * one_angle_range;
@@ -546,11 +547,11 @@ bool AstarSearch::isObs(const int index_x, const int index_y) {
 // Check lateral offset, longitudinal offset and angle
 bool AstarSearch::isGoal(const double x, const double y, const double theta) {
   // To reduce computation time, we use square value for distance
-  static const double lateral_goal_range =
+  const double lateral_goal_range =
       astar_param_.lateral_goal_range / 2.0;  // [meter], divide by 2 means we check left and right
-  static const double longitudinal_goal_range =
+  const double longitudinal_goal_range =
       astar_param_.longitudinal_goal_range / 2.0;  // [meter], check only behind of the goal
-  static const double goal_angle =
+  const double goal_angle =
       M_PI * (astar_param_.angle_goal_range / 2.0) / 180.0;  // degrees -> radian
 
   // Calculate the node coordinate seen from the goal point
