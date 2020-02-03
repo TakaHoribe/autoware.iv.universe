@@ -91,12 +91,12 @@ class ScenarioMaker:
         self.goal_y = 0.0
         self.goal_th = 0.0
 
-        self.image_green, self.image_yellow, self.image_red, self.image_black = self.MakeTrafficMsg()
-
         self.fail_reason = 0
         self.collision = False
 
         self.camera_header = Header()
+        self.camera_height = None
+        self.camera_width = None
 
         self.tfl = tf.TransformListener()  # for get self-position
 
@@ -126,9 +126,6 @@ class ScenarioMaker:
             "/vehicle/status/velocity", Float32, self.CallBackVehicleVelocity, queue_size=1, tcp_nodelay=True
         )
 
-        # for publish traffic signal image
-        rospy.Timer(rospy.Duration(1 / 3.0), self.timerCallback)
-
         # for publish time-sync image
         self.sub_camerainfo = rospy.Subscriber(
             "/sensing/camera/traffic_light/camera_info",
@@ -141,6 +138,11 @@ class ScenarioMaker:
         self.sub_collsion_detection = rospy.Subscriber(
             "/collsion_detection_result", Bool, self.CallBackCollision, queue_size=1
         )
+
+        self.image_green, self.image_yellow, self.image_red, self.image_black = self.MakeTrafficMsg()
+
+        # for publish traffic signal image
+        rospy.Timer(rospy.Duration(1 / 3.0), self.timerCallback)
 
         time.sleep(0.5)  # wait for ready to publish/subscribe#TODO: fix this
 
@@ -709,6 +711,8 @@ class ScenarioMaker:
 
     def CallBackCameraInfoTime(self, cimsg):
         self.camera_header = cimsg.header
+        self.camera_height = cimsg.height
+        self.camera_width = cimsg.width
 
     def timerCallback(self, event):
         self.traffic_light_publisher()
@@ -848,18 +852,20 @@ class ScenarioMaker:
         imgmsg.header = self.camera_header  # newest header
         self.pub_traffic_light_image.publish(imgmsg)
 
-    def makeImageMsg(self, image):
+    def makeImageMsg(self, image, height, width):
         imgmsg = Image()
         imgmsg.encoding = "bgr8"
-        imgmsg.height = 1080
-        imgmsg.width = 1920
+        imgmsg.height = height
+        imgmsg.width = width
         imgmsg.is_bigendian = False
         imgmsg.step = 3 * imgmsg.width
         imgmsg.data = image
         return imgmsg
 
     def MakeTrafficMsg(self):
-        imgsize = 1080 * 1920 * 3  # pixel*3(bgr)
+        while self.camera_height is None or self.camera_width is None:
+            time.sleep(1)  # wait for subscrbing camera info
+        imgsize = self.camera_height * self.camera_width * 3  # pixel*3(bgr)
         img_green = np.zeros((imgsize)).astype(np.uint8)
         img_green[np.arange(0, imgsize, 3)] = 10  # brue
         img_green[np.arange(1, imgsize, 3)] = 255  # green
@@ -872,10 +878,10 @@ class ScenarioMaker:
         img_red[np.arange(1, imgsize, 3)] = 10  # green
         img_red[np.arange(2, imgsize, 3)] = 255  # red
         img_black = np.zeros((imgsize)).astype(np.uint8)
-        img_green_msg = self.makeImageMsg(list(img_green))
-        img_yellow_msg = self.makeImageMsg(list(img_yellow))
-        img_red_msg = self.makeImageMsg(list(img_red))
-        img_black_msg = self.makeImageMsg(list(img_black))
+        img_green_msg = self.makeImageMsg(list(img_green), self.camera_height, self.camera_width)
+        img_yellow_msg = self.makeImageMsg(list(img_yellow), self.camera_height, self.camera_width)
+        img_red_msg = self.makeImageMsg(list(img_red), self.camera_height, self.camera_width)
+        img_black_msg = self.makeImageMsg(list(img_black), self.camera_height, self.camera_width)
         return img_green_msg, img_yellow_msg, img_red_msg, img_black_msg
 
     def record_rosbag(self, id, node_name, file_name):
