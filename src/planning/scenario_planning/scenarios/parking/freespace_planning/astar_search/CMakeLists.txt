@@ -5,11 +5,10 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  pcl_ros
-  roscpp
-  sensor_msgs
+  nav_msgs
+  std_msgs
   tf2
-  tf2_ros
+  tf2_geometry_msgs
 )
 
 catkin_package(
