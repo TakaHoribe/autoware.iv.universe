@@ -166,6 +166,10 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
         {
           vec_in << 0, (property_path_width_->getFloat() / 2.0), 0;
           Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
+          if (path_point.twist.linear.x < 0)
+          {
+            quat.w() = -quat.w();
+          }
           vec_out = quat * vec_in;
           path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
           path_manual_object_->colour(color);
@@ -173,6 +177,10 @@ void AutowarePathDisplay::processMessage(const autoware_planning_msgs::PathConst
         {
           vec_in << 0, -(property_path_width_->getFloat() / 2.0), 0;
           Eigen::Quaternionf quat(path_point.pose.orientation.w, path_point.pose.orientation.x, path_point.pose.orientation.y, path_point.pose.orientation.z);
+          if (path_point.twist.linear.x < 0)
+          {
+            quat.w() = -quat.w();
+          }
           vec_out = quat * vec_in;
           path_manual_object_->position(path_point.pose.position.x + vec_out.x(), path_point.pose.position.y + vec_out.y(), path_point.pose.position.z + vec_out.z());
           path_manual_object_->colour(color);
