@@ -16,9 +16,70 @@
 
 #include "astar_search/astar_search.h"
 
+#include <vector>
+
 #include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace {
+
+double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+  return std::hypot(p2.x - p1.x, p2.y - p1.y);
+}
+
+double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  return calcDistance2d(p1.position, p2.position);
+}
+
+double calcDistance2d(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2) {
+  return calcDistance2d(p1.pose, p2.pose);
+}
+
+double modifyTheta(double theta) {
+  if (theta < 0.0) return theta + 2.0 * M_PI;
+  if (theta >= 2.0 * M_PI) return theta - 2.0 * M_PI;
+  return theta;
+}
+
+geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose,
+                                  const geometry_msgs::TransformStamped& transform) {
+  geometry_msgs::Pose transformed_pose;
+  tf2::doTransform(pose, transformed_pose, transform);
+
+  return transformed_pose;
+}
+
+geometry_msgs::Point calcRelativeCoordinate(geometry_msgs::Pose pose, geometry_msgs::Point point) {
+  tf2::Transform tf_transform;
+  tf2::convert(pose, tf_transform);
+
+  geometry_msgs::TransformStamped transform;
+  transform.transform = tf2::toMsg(tf_transform.inverse());
+
+  geometry_msgs::Point transformed_point;
+  tf2::doTransform(point, transformed_point, transform);
+
+  return transformed_point;
+}
+
+double calcDiffOfRadian(double a, double b) {
+  double diff = std::fmod(std::fabs(a - b), 2.0 * M_PI);
+  if (diff < M_PI)
+    return diff;
+  else
+    return 2.0 * M_PI - diff;
+}
+
+geometry_msgs::Pose xytToPoseMsg(double x, double y, double theta) {
+  geometry_msgs::Pose p;
+  p.position.x = x;
+  p.position.y = y;
+  tf2::Quaternion quat;
+  quat.setRPY(0, 0, theta);
+  tf2::convert(quat, p.orientation);
+
+  return p;
+}
 
 IndexXYT pose2index(const nav_msgs::OccupancyGrid& costmap, const geometry_msgs::Pose& pose,
                     const int theta_size) {
@@ -246,7 +307,7 @@ bool AstarSearch::setStartNode(const geometry_msgs::Pose& start_pose) {
 
   start_node.gc = 0;
   start_node.hc =
-      calcDistance(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
+      calcDistance2d(start_pose_local_, goal_pose_local_) * astar_param_.distance_heuristic_weight;
 
   // Push start node to openlist
   start_sn.cost = start_node.gc + start_node.hc;
@@ -336,7 +397,7 @@ bool AstarSearch::search() {
       AstarNode* next_an = &nodes_[next_sn.index.y][next_sn.index.x][next_sn.index.theta];
       const double next_gc = current_an->gc + move_cost;
       // wavefront or distance transform heuristic
-      const double next_hc = calcDistance(next_pos, goal_pose_local_.pose.position) *
+      const double next_hc = calcDistance2d(next_pos, goal_pose_local_.pose.position) *
                              astar_param_.distance_heuristic_weight;
 
       if (next_an->status == Status::NONE) {

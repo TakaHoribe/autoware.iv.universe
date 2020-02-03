@@ -92,31 +92,39 @@ autoware_planning_msgs::Trajectory getPartialTrajectory(
   return partial_trajectory;
 }
 
-double calculateDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
   return std::hypot(p1.x - p2.x, p1.y - p2.y);
 }
 
-double calculateDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
-  return calculateDistance2d(p1.position, p2.position);
+double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  return calcDistance2d(p1.position, p2.position);
 }
 
-std::vector<double> calculateDistances2d(const autoware_planning_msgs::Trajectory& trajectory,
-                                         const geometry_msgs::Pose& pose) {
+std::vector<double> calcDistances2d(const autoware_planning_msgs::Trajectory& trajectory,
+                                    const geometry_msgs::Pose& pose) {
   std::vector<double> distances;
   distances.reserve(trajectory.points.size());
 
   std::transform(
       std::begin(trajectory.points), std::end(trajectory.points), std::back_inserter(distances),
-      [&](const auto& point) { return calculateDistance2d(point.pose.position, pose.position); });
+      [&](const auto& point) { return calcDistance2d(point.pose.position, pose.position); });
 
   return distances;
 }
 
-double calculateDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
-                           const geometry_msgs::Pose& pose) {
-  const auto distances = calculateDistances2d(trajectory, pose);
+double calcDistance2d(const autoware_planning_msgs::Trajectory& trajectory,
+                      const geometry_msgs::Pose& pose) {
+  const auto distances = calcDistances2d(trajectory, pose);
   const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
   return *min_itr;
+}
+
+geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose,
+                                  const geometry_msgs::TransformStamped& transform) {
+  geometry_msgs::Pose transformed_pose;
+  tf2::doTransform(pose, transformed_pose, transform);
+
+  return transformed_pose;
 }
 
 geometry_msgs::PoseStamped tf2pose(const geometry_msgs::TransformStamped& tf) {
@@ -187,7 +195,7 @@ autoware_planning_msgs::Trajectory createStopTrajectory(
 
 size_t findNearestIndex(const autoware_planning_msgs::Trajectory& trajectory,
                         const geometry_msgs::Pose& pose) {
-  const auto distances = calculateDistances2d(trajectory, pose);
+  const auto distances = calcDistances2d(trajectory, pose);
   const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
   return std::distance(std::begin(distances), min_itr);
 }
@@ -325,7 +333,7 @@ bool AstarNavi::isPlanRequired() {
   }
 
   if (node_param_.replan_when_course_out) {
-    const bool is_course_out = calculateDistance2d(trajectory_, current_pose_global_.pose) >
+    const bool is_course_out = calcDistance2d(trajectory_, current_pose_global_.pose) >
                                node_param_.th_course_out_distance_m;
     if (is_course_out) {
       ROS_INFO("Course out");
@@ -338,7 +346,7 @@ bool AstarNavi::isPlanRequired() {
 
 void AstarNavi::updateTargetIndex() {
   const auto is_near_target =
-      calculateDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
+      calcDistance2d(trajectory_.points.at(target_index_).pose, current_pose_global_.pose) <
       node_param_.th_arrived_distance_m;
 
   const auto is_stopped = isStopped(twist_buffer_, node_param_.th_stopped_velocity_mps);

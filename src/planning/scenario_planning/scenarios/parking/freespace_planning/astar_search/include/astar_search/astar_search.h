@@ -27,8 +27,60 @@
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Header.h>
 
-#include "astar_search/astar_util.h"
+enum class Status : uint8_t { NONE, OPEN, CLOSED, OBS };
+
+struct IndexXYT {
+  int x;
+  int y;
+  int theta;
+};
+
+struct IndexXY {
+  int x;
+  int y;
+};
+
+struct AstarNode {
+  double x;                      // x
+  double y;                      // y
+  double theta;                  // theta
+  Status status = Status::NONE;  // NONE, OPEN, CLOSED or OBS
+  double gc = 0;                 // Actual cost
+  double hc = 0;                 // heuristic cost
+  double move_distance = 0;      // actual move distance
+  bool is_back;                  // true if the current direction of the vehicle is back
+  AstarNode* parent = nullptr;   // parent node
+};
+
+struct AstarWaypoint {
+  geometry_msgs::PoseStamped pose;
+  bool is_back = false;
+};
+
+struct AstarWaypoints {
+  std_msgs::Header header;
+  std::vector<AstarWaypoint> waypoints;
+};
+
+struct NodeUpdate {
+  double shift_x;
+  double shift_y;
+  double rotation;
+  double step;
+  int index_theta;
+  bool is_curve;
+  bool is_back;
+};
+
+// For open list and goal list
+struct SimpleNode {
+  IndexXYT index;
+  double cost;
+
+  bool operator>(const SimpleNode& right) const { return cost > right.cost; }
+};
 
 struct AstarParam {
   // base configs
