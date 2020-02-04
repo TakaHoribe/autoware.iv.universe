@@ -20,7 +20,7 @@
 #define DEBUG_INFO(...) { ROS_INFO(__VA_ARGS__); }
 
 // clang-format on
-Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false), drive_shift(1.0)
+Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), drive_shift(1.0), is_initialized_(false)
 {
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
