@@ -98,8 +98,12 @@ void BlockedByObstacleState::update()
 
   // update lane_follow_path
   {
-    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(current_lanes_, current_pose_.pose,
-                                                                            backward_path_length, forward_path_length);
+    const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+    const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+    const double min_velocity = 2.0;
+    const double minimum_lane_change_length = min_velocity * (lane_change_prepare_duration + lane_changing_duration);
+    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(
+        current_lanes_, current_pose_.pose, backward_path_length, forward_path_length, minimum_lane_change_length);
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
   }
 
