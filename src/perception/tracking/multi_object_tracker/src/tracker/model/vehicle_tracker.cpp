@@ -234,8 +234,8 @@ bool VehicleTracker::getEstimatedDynamicObject(const ros::Time &time, autoware_p
     }
     else
     {
-        object.state.pose_covariance.pose.position.x += std::cos(filtered_yaw_) * vel * dt;
-        object.state.pose_covariance.pose.position.y += std::sin(filtered_yaw_) * vel * dt;
+        object.state.pose_covariance.pose.position.x += std::cos(filtered_yaw_) * std::max(vel, 0.0) * dt;
+        object.state.pose_covariance.pose.position.y += std::sin(filtered_yaw_) * std::max(vel, 0.0) * dt;
     }
 
     double roll, pitch, yaw;
