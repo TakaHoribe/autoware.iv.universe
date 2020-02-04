@@ -18,7 +18,7 @@ CrosswalkModule::CrosswalkModule(CrosswalkModuleManager *manager_ptr,
       crosswalk_(crosswalk),
       stop_margin_(1.0),
       stop_dynamic_object_prediction_time_margin_(3.0),
-      slow_margin_(5.0),
+      slow_margin_(2.0),
       lane_id_(lane_id),
       task_id_(boost::uuids::random_generator()())
 {
