@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ASTAR_NAVI_H
-#define ASTAR_NAVI_H
+#ifndef FREESPACE_PLANNER_H
+#define FREESPACE_PLANNER_H
 
 #include <deque>
 #include <iostream>
@@ -38,6 +38,17 @@
 #include <autoware_planning_msgs/Trajectory.h>
 
 #include "astar_search/astar_search.h"
+
+struct NodeParam {
+  double waypoints_velocity;  // constant velocity on planned waypoints [km/h]
+  double update_rate;         // replanning and publishing rate [Hz]
+  double th_arrived_distance_m;
+  double th_stopped_time_sec;
+  double th_stopped_velocity_mps;
+  double th_course_out_distance_m;
+  bool replan_when_obstacle_found;
+  bool replan_when_course_out;
+};
 
 class AstarNavi {
  public:
@@ -63,21 +74,13 @@ class AstarNavi {
   tf2_ros::TransformListener tf_listener_;
 
   // params
-  double waypoints_velocity_;  // constant velocity on planned waypoints [km/h]
-  double update_rate_;         // replanning and publishing rate [Hz]
-  double th_arrived_distance_m_;
-  double th_stopped_time_sec_;
-  double th_stopped_velocity_mps_;
-  double th_course_out_distance_m_;
-  bool replan_when_obstacle_found_;
-  bool replan_when_course_out_;
+  NodeParam node_param_;
+  AstarParam astar_param_;
 
   // variables
   std::unique_ptr<AstarSearch> astar_;
-  geometry_msgs::PoseStamped current_pose_local_;
-  geometry_msgs::PoseStamped current_pose_global_;
-  geometry_msgs::PoseStamped goal_pose_local_;
-  geometry_msgs::PoseStamped goal_pose_global_;
+  geometry_msgs::PoseStamped current_pose_;
+  geometry_msgs::PoseStamped goal_pose_;
 
   autoware_planning_msgs::Trajectory trajectory_;
   autoware_planning_msgs::Trajectory partial_trajectory_;
@@ -105,6 +108,8 @@ class AstarNavi {
   bool isPlanRequired();
   void planTrajectory();
   void updateTargetIndex();
+
+  geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
 };
 
 #endif

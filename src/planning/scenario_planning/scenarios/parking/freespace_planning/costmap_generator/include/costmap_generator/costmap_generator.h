@@ -61,7 +61,6 @@ class CostmapGenerator {
   void run();
 
  private:
-  friend class TestClass;
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 

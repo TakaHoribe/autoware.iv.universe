@@ -112,6 +112,16 @@ bool isNearTrajectoryEnd(const autoware_planning_msgs::Trajectory::ConstPtr& tra
   return dist < th_dist;
 }
 
+bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
+               const double th_stopped_velocity_mps) {
+  for (const auto& twist : twist_buffer) {
+    if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
@@ -164,14 +174,7 @@ autoware_planning_msgs::Scenario ScenarioSelectorNode::selectScenario() {
   const auto is_near_trajectory_end =
       isNearTrajectoryEnd(scenario_trajectory, current_pose_->pose, th_arrived_distance_m_);
 
-  const auto is_stopped = [&]() {
-    for (const auto& twist : twist_buffer_) {
-      if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps_) {
-        return false;
-      }
-    }
-    return true;
-  }();
+  const auto is_stopped = isStopped(twist_buffer_, th_stopped_velocity_mps_);
 
   if (is_near_trajectory_end && is_stopped) {
     current_scenario_ = selectScenarioByPosition();
@@ -277,7 +280,7 @@ ScenarioSelectorNode::ScenarioSelectorNode()
 
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
 
-  sub_twist_ = private_nh_.subscribe("input/twist", 1, &ScenarioSelectorNode::onTwist, this);
+  sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output
   output_.pub_scenario =

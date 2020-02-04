@@ -77,6 +77,4 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  catkin_add_gtest(test-costmap_generator test/src/test_costmap_generator.cpp)
-  target_link_libraries(test-costmap_generator ${catkin_LIBRARIES} costmap_generator_lib)
 endif()

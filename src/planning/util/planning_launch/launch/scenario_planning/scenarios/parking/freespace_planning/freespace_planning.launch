@@ -8,7 +8,7 @@
     <arg name="output_occupancy_grid" value="~occupancy_grid"/>
   </include>
 
-  <include file="$(find freespace_planner)/launch/astar_navi.launch">
+  <include file="$(find freespace_planner)/launch/freespace_planner.launch">
     <arg name="input_route" value="/planning/mission_planning/route" />
     <arg name="input_occupancy_grid" value="costmap_generator/occupancy_grid" />
     <arg name="input_scenario" value="/planning/scenario_planning/scenario" />

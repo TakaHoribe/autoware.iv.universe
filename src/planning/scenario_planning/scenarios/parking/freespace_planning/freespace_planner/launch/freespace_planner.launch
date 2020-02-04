@@ -6,7 +6,7 @@
   <arg name="output_trajectory" />
   <arg name="is_completed" />
 
-  <node pkg="freespace_planner" type="astar_navi" name="astar_navi" output="screen">
+  <node pkg="freespace_planner" type="freespace_planner" name="freespace_planner" output="screen">
     <remap from="~input/route" to="$(arg input_route)" />
     <remap from="~input/occupancy_grid" to="$(arg input_occupancy_grid)" />
     <remap from="~input/scenario" to="$(arg input_scenario)" />
@@ -15,19 +15,18 @@
     <remap from="~is_completed" to="$(arg is_completed)" />
 
     <!-- Node configurations -->
-    <param name="waypoints_velocity" value="3.0" />
+    <param name="waypoints_velocity" value="5.0" />
     <param name="update_rate" value="10.0" />
-    <param name="th_arrived_distance_m" value="3.0" />
+    <param name="th_arrived_distance_m" value="1.0" />
     <param name="th_stopped_time_sec" value="1.0" />
     <param name="th_stopped_velocity_mps" value="0.01" />
-    <param name="th_course_out_distance_m" value="5.0" />
+    <param name="th_course_out_distance_m" value="1.0" />
     <param name="replan_when_obstacle_found" value="true" />
     <param name="replan_when_course_out" value="true" />
 
     <!-- A* search configurations -->
     <param name="use_back" value="true" />
-    <param name="use_potential_heuristic" value="false" />
-    <param name="use_wavefront_heuristic" value="false" />
+    <param name="only_behind_solutions" value="false" />
     <param name="time_limit" value="30000.0" />
     <param name="robot_length" value="4.5" />
     <param name="robot_width" value="1.75" />
@@ -40,7 +39,6 @@
     <param name="lateral_goal_range" value="0.5" />
     <param name="longitudinal_goal_range" value="2.0" />
     <param name="obstacle_threshold" value="100" />
-    <param name="potential_weight" value="10.0" />
     <param name="distance_heuristic_weight" value="1.0" />
   </node>
 </launch>

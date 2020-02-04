@@ -23,23 +23,23 @@ include_directories(
 )
 
 add_executable(
-  astar_navi
-  src/astar_navi/astar_navi.cpp
-  src/astar_navi/astar_navi_node.cpp
+  freespace_planner
+  src/freespace_planner/freespace_planner.cpp
+  src/freespace_planner/freespace_planner_node.cpp
 )
 
 target_link_libraries(
-  astar_navi
+  freespace_planner
   ${catkin_LIBRARIES}
 )
 
 add_dependencies(
-  astar_navi
+  freespace_planner
   ${catkin_EXPORTED_TARGETS}
 )
 
 install(
-  TARGETS astar_navi
+  TARGETS freespace_planner
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
