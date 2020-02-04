@@ -238,18 +238,18 @@ void MapBasedPredictionROS::objectsCallback(
       tmp_object.object.state.pose_covariance.pose = pose_in_map;
     }
     
+    if(object.semantic.type != autoware_perception_msgs::Semantic::CAR||
+       object.semantic.type != autoware_perception_msgs::Semantic::BUS||
+       object.semantic.type != autoware_perception_msgs::Semantic::TRUCK)
+    {
+      tmp_objects_whitout_map.objects.push_back(tmp_object.object);
+      continue;
+    }
+    
     if(tmp_object.object.state.twist_covariance.twist.linear.x< 0 && 
        tmp_object.object.state.orientation_reliable)
     {
-      tmp_objects_whitout_map.objects.push_back(object);
-      // geometry_msgs::Point debug_point;
-      // tf2::doTransform(pose_in_map.position,
-      //                debug_point,
-      //                debug_map2lidar_transform);
-      // std::cerr << "minus velo "<< 
-      //             object.state.twist_covariance.twist.linear.x<<
-      //              " " << debug_point.x <<
-      //              " " <<debug_point.y  << std::endl;
+      tmp_objects_whitout_map.objects.push_back(tmp_object.object);
       continue;
     }
     else if(tmp_object.object.state.twist_covariance.twist.linear.x < 0)
@@ -263,7 +263,6 @@ void MapBasedPredictionROS::objectsCallback(
       q.setRPY( roll, pitch, yaw );
       tmp_object.object.state.pose_covariance.pose.orientation = 
         tf2::toMsg(q);
-      
     }
                      
                      
@@ -285,7 +284,6 @@ void MapBasedPredictionROS::objectsCallback(
                      debug_point,
                      debug_map2lidar_transform);
       tmp_objects_whitout_map.objects.push_back(object);
-      // std::cerr << "could not find closest lanelet  " << debug_point.x <<" "<<debug_point.y  << std::endl;
       continue;
     }
     
@@ -319,7 +317,6 @@ void MapBasedPredictionROS::objectsCallback(
                      debug_point,
                      debug_map2lidar_transform);
       tmp_objects_whitout_map.objects.push_back(object);
-      // std::cerr << "path size is 0; skip  " << debug_point.x <<" "<<debug_point.y  << std::endl;
       continue;
     }
     
@@ -343,9 +340,6 @@ void MapBasedPredictionROS::objectsCallback(
     tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position,
                      debug_point,
                      debug_map2lidar_transform);
-    // std::cerr << "point in lidar " << debug_point.x <<" "<<debug_point.y  << std::endl;
-    // std::cerr << "num path " << paths.size() << std::endl;
-    
     std::vector<std::vector<geometry_msgs::Pose>> tmp_paths;
     for(const auto& path: paths)
     {
