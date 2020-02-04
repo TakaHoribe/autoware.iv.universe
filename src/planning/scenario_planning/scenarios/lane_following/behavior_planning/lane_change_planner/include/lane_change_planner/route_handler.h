@@ -113,7 +113,7 @@ public:
   autoware_planning_msgs::PathWithLaneId getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                                           const geometry_msgs::Pose& pose,
                                                           const double backward_path_length,
-                                                          const double forward_path_length) const;
+                                                          const double forward_path_length, const double minimum_lane_change_length) const;
   autoware_planning_msgs::PathWithLaneId getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                                           const double s_start, const double s_end,
                                                           bool use_exact = true) const;

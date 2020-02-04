@@ -498,7 +498,8 @@ bool RouteHandler::isInTargetLane(const geometry_msgs::PoseStamped& pose, const 
 
 PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                               const geometry_msgs::Pose& pose, const double backward_path_length,
-                                              const double forward_path_length) const
+                                              const double forward_path_length,
+                                              const double minimum_lane_change_length) const
 {
   PathWithLaneId reference_path;
 
@@ -515,8 +516,8 @@ PathWithLaneId RouteHandler::getReferencePath(const lanelet::ConstLanelets& lane
   if (isDeadEndLanelet(lanelet_sequence.back()))
   {
     int n_lane_change = std::abs(getNumLaneToPreferredLane(lanelet_sequence.back()));
-    double minimum_lanechange_length = 5;
-    s_forward = std::min(s_forward, lane_length - n_lane_change * minimum_lanechange_length);
+    s_forward = std::min(s_forward, lane_length - n_lane_change * minimum_lane_change_length);
+    return getReferencePath(lanelet_sequence, s_backward, s_forward, true);
   }
   return getReferencePath(lanelet_sequence, s_backward, s_forward, false);
 }
