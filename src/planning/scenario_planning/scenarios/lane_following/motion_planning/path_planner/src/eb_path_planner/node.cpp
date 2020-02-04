@@ -139,7 +139,7 @@ private_nh_("~")
   private_nh_.param<double>("exploring_minumum_radius", 
                              exploring_minimum_radius_, 1.3);
   private_nh_.param<double>("forward_fixing_distance", 
-                             forward_fixing_distance_, 10.0);
+                             forward_fixing_distance_, 30.0);
   private_nh_.param<double>("delta_arc_length_for_path_smoothing", 
                              delta_arc_length_for_path_smoothing_, 1.0);
   private_nh_.param<double>("delta_arc_length_for_explored_points", 
@@ -197,9 +197,13 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
         clearance_map,
         input_path_msg.drivable_area.info, 
         fixed_explored_points);
-    if(fixed_explored_points.empty())
+    if(!fixed_explored_points.empty())
     {
-      ROS_INFO("[EBPathPlanner] No fixing explored points");
+      start_exploring_pose.position = fixed_explored_points.back();
+      fixed_explored_points.erase(fixed_explored_points.end());
+    }
+    else
+    {
       double min_dist = 99999999;
       int min_ind = -1;
       if(!input_path_msg.points.empty())
@@ -215,7 +219,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
             min_ind = i;
           }
         }
-        int back_ind = std::max(min_ind - 7, 0);
+        int back_ind = std::max(min_ind - 4, 0);
         if(min_ind != -1)
         {
           start_exploring_pose = input_path_msg.points[back_ind].pose;
@@ -226,10 +230,10 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
         ROS_WARN("Path is empty");
         return;
       }
-    }
-    else
-    {
-      start_exploring_pose.position = fixed_explored_points.back();
+      if(min_ind == -1)
+      {
+        start_exploring_pose = self_pose;
+      }
     }
     
     if(needReset(self_pose.position,
@@ -838,6 +842,7 @@ bool EBPathPlannerNode::generateFixedExploredPoints(
       min_ind = i;
     }
   }
+  std::cout << "min ind "<< min_ind << std::endl;
   // std::cout << "prv opt size "<< previous_explored_points_ptr->size() << std::endl;
   std::cout << "min dist "<< min_dist << std::endl;
   const double keep_distance = forward_fixing_distance_ + backward_fixing_distance_;
@@ -881,6 +886,9 @@ bool EBPathPlannerNode::generateFixedExploredPoints(
     fixed_explored_points.push_back(previous_explored_points_ptr->at(i));
   }     
       
+      
+  std::cout << "forward fixing ind "<< forward_fixing_idx<< std::endl;
+  std::cout << "valid backward fixing dist "<< valid_backward_fixing_idx << std::endl;
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
