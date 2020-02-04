@@ -30,7 +30,7 @@ private:
   const int number_of_sampling_points_;
   const int number_of_diff_optimization_points_for_cold_start_;
   const double exploring_minimum_radius_;
-  const double backward_distance_;
+  const double backward_fixing_distance_;
   const double fixing_distance_;
   const double delta_arc_length_for_path_smoothing_;
   const double delta_arc_length_for_explored_points_;

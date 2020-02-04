@@ -120,14 +120,14 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
 
 EBPathSmoother::EBPathSmoother(
   double exploring_minimum_radius,
-  double backward_distance,
+  double backward_fixing_distance,
   double fixing_distance,
   double delta_arc_length_for_path_smoothing,
   double delta_arc_length_for_explored_points):
 number_of_sampling_points_(100),
 number_of_diff_optimization_points_for_cold_start_(40),
 exploring_minimum_radius_(exploring_minimum_radius),
-backward_distance_(backward_distance),
+backward_fixing_distance_(backward_fixing_distance),
 fixing_distance_(fixing_distance),
 delta_arc_length_for_path_smoothing_(delta_arc_length_for_path_smoothing),
 delta_arc_length_for_explored_points_(delta_arc_length_for_explored_points),
@@ -284,7 +284,9 @@ bool EBPathSmoother::preprocessPathPoints(
         min_ind = i;
       }
     }
-    back_ind = std::max(min_ind - 7, 0);
+    back_ind = 
+      std::max((int)(min_ind - 
+                backward_fixing_distance_/delta_arc_length_for_path_smoothing_), 0);
     if(min_ind != -1)
     {
       start_pose = path_points[back_ind].pose;
@@ -459,6 +461,11 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
       lower_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
       upper_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
     }
+    else if (i < 20)
+    {
+      lower_bound[i] = interpolated_x[i-current_num_fix_points] - 0.1;
+      upper_bound[i] = interpolated_x[i-current_num_fix_points] + 0.1;
+    }
     else
     {     
       // std::cout << "i - current_num_fixpoints "<< i-current_num_fix_points << std::endl;
@@ -520,6 +527,11 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
     {
       lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
       upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
+    }
+    else if (i < 20)
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - 0.1;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + 0.1;
     }
     else
     {

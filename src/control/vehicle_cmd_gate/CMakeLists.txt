@@ -28,7 +28,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(vehicle_cmd_gate src/vehicle_cmd_gate_node.cpp src/vehicle_cmd_gate.cpp)
+add_executable(vehicle_cmd_gate src/vehicle_cmd_gate_node.cpp src/vehicle_cmd_gate.cpp src/vehicle_cmd_filter.cpp)
 target_link_libraries(vehicle_cmd_gate ${catkin_LIBRARIES})
 add_dependencies(vehicle_cmd_gate ${catkin_EXPORTED_TARGETS})
 
