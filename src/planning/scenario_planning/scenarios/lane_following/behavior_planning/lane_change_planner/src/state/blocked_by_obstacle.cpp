@@ -116,6 +116,7 @@ void BlockedByObstacleState::update()
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
   const double lane_changing_duration = ros_parameters_.lane_changing_duration;
   status_.lane_change_path = autoware_planning_msgs::PathWithLaneId();  // clear path
+  status_.lane_change_lane_ids.clear();
   if (!right_lanes.empty())
   {
     const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
@@ -152,7 +153,6 @@ State BlockedByObstacleState::getNextState() const
   {
     return State::FOLLOWING_LANE;
   }
-
   if (isLaneChangeApproved() && hasEnoughDistance() && foundSafeLaneChangePath())
   {
     return State::EXECUTING_LANE_CHANGE;
@@ -214,8 +214,20 @@ bool BlockedByObstacleState::hasEnoughDistance() const
   const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
   const double lane_change_total_distance =
       lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
-
+  const auto target_lanes = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+  if (target_lanes.empty())
+  {
+    return false;
+  }
   if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
+  {
+    return false;
+  }
+  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, current_lanes_))
+  {
+    return false;
+  }
+  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, target_lanes))
   {
     return false;
   }
