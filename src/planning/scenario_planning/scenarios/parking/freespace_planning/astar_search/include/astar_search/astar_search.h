@@ -43,21 +43,20 @@ struct IndexXY {
 };
 
 struct AstarNode {
-  IndexXYT index;                        // index
+  NodeStatus status = NodeStatus::None;  // node status
   double x;                              // x
   double y;                              // y
   double theta;                          // theta
-  NodeStatus status = NodeStatus::None;  // node status
   double gc = 0;                         // actual cost
   double hc = 0;                         // heuristic cost
-  double cost = 0;                       // total cost
-  double move_distance = 0;              // actual move distance
   bool is_back;                          // true if the current direction of the vehicle is back
   AstarNode* parent = nullptr;           // parent node
+
+  double cost() const { return gc + hc; }
 };
 
 struct NodeComparison {
-  bool operator()(const AstarNode* lhs, const AstarNode* rhs) { return lhs->cost > rhs->cost; }
+  bool operator()(const AstarNode* lhs, const AstarNode* rhs) { return lhs->cost() > rhs->cost(); }
 };
 
 struct AstarWaypoint {
@@ -77,6 +76,28 @@ struct NodeUpdate {
   double step;
   bool is_curve;
   bool is_back;
+
+  NodeUpdate rotated(const double theta) const {
+    NodeUpdate result = *this;
+    result.shift_x = std::cos(theta) * this->shift_x - std::sin(theta) * this->shift_y;
+    result.shift_y = std::sin(theta) * this->shift_x + std::cos(theta) * this->shift_y;
+    return result;
+  }
+
+  NodeUpdate fliped() const {
+    NodeUpdate result = *this;
+    result.shift_y = -result.shift_y;
+    result.shift_theta = -result.shift_theta;
+    return result;
+  }
+
+  NodeUpdate reversed() const {
+    NodeUpdate result = *this;
+    result.shift_x = -result.shift_x;
+    result.shift_theta = -result.shift_theta;
+    result.is_back = !result.is_back;
+    return result;
+  }
 };
 
 struct RobotShape {
@@ -110,7 +131,7 @@ struct AstarParam {
 
 class AstarSearch {
  public:
-  using StateUpdateTable = std::vector<std::vector<NodeUpdate>>;
+  using TransitionTable = std::vector<std::vector<NodeUpdate>>;
 
   explicit AstarSearch(const AstarParam& astar_param);
 
@@ -119,7 +140,6 @@ class AstarSearch {
   bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
   bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory);
 
-  const nav_msgs::Path& getPath() const { return path_; }
   const AstarWaypoints& getWaypoints() const { return waypoints_; }
 
  private:
@@ -127,21 +147,21 @@ class AstarSearch {
   void setPath(const AstarNode& goal);
   bool setStartNode();
   bool setGoalNode();
+  double estimateCost(const geometry_msgs::Pose& pose);
 
   bool detectCollision(const IndexXYT& index);
   bool isOutOfRange(const IndexXYT& index);
   bool isObs(const IndexXYT& index);
-  bool isGoal(const double x, const double y, const double theta);
+  bool isGoal(const AstarNode& node);
 
   AstarNode* getNodeRef(const IndexXYT& index) { return &nodes_[index.y][index.x][index.theta]; }
 
   AstarParam astar_param_;
 
   // hybrid astar variables
-  StateUpdateTable state_update_table_;
+  TransitionTable transition_table_;
   std::vector<std::vector<std::vector<AstarNode>>> nodes_;
   std::priority_queue<AstarNode*, std::vector<AstarNode*>, NodeComparison> openlist_;
-  std::vector<AstarNode> goallist_;
 
   // costmap as occupancy grid
   nav_msgs::OccupancyGrid costmap_;
@@ -149,10 +169,8 @@ class AstarSearch {
   // pose in costmap frame
   geometry_msgs::Pose start_pose_;
   geometry_msgs::Pose goal_pose_;
-  double goal_yaw_;
 
   // result path
-  nav_msgs::Path path_;
   AstarWaypoints waypoints_;
 };
 
