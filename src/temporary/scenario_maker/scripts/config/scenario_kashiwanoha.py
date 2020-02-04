@@ -15,7 +15,7 @@ AFTER = 1
 
 
 s_initpos = {"x": -139.1, "y": -24.68, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
-s_goalpos = {"x": -119.9, "y": 4.945, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
+s_goalpos = {"x": -119.9, "y": -4.945, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
 
 s_checkpoint = [
     {"x": -60.3, "y": -23.6, "th": -62.8, "ver_sigma": 0.0, "lat_sigma": 0.0, "th_sigma": 0.0},
