@@ -67,9 +67,9 @@ private:
   
   bool getLinearPredictedPath(
         const geometry_msgs::Pose& object_pose,
-        const double linear_velocity,
+        const geometry_msgs::Twist& object_twist,
         const std_msgs::Header& origin_header,
-        autoware_perception_msgs::PredictedPath& path);
+        autoware_perception_msgs::PredictedPath& predicted_path);
 
   // double calculateLikelyhood(const double desired_yaw, const double current_d, const double current_yaw);
   double calculateLikelyhood(const double current_d);
