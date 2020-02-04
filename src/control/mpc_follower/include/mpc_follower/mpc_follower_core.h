@@ -40,8 +40,7 @@
 #include <tf2/utils.h>
 #include <tf2_ros/transform_listener.h>
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/LU>
+#include <osqp_interface/osqp_interface.h>
 
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_control_msgs/ControlCommandStamped.h>
@@ -90,7 +89,9 @@ private:
   Butterworth2dFilter lpf_yaw_error_;                        //!< @brief lowpass filter for heading error to calculate derivatie
   std::shared_ptr<VehicleModelInterface> vehicle_model_ptr_; //!< @brief vehicle model for MPC
   std::string vehicle_model_type_;                           //!< @brief vehicle model type for MPC
+  std::string qp_solver_type_;                               //!< @brief solver type of MPC
   std::shared_ptr<QPSolverInterface> qpsolver_ptr_;          //!< @brief qp solver for MPC
+  std::shared_ptr<osqp::OSQPInterface> osqpsolver_ptr_;      //!< @brief osqp solver for MPC
   std::string output_interface_;                             //!< @brief output command type
   std::deque<double> input_buffer_;                          //!< @brief control input (mpc_output) buffer for delay time conpemsation
 
@@ -100,6 +101,7 @@ private:
   double admisible_position_error_; //!< @brief stop MPC calculation when lateral error is large than this value [m]
   double admisible_yaw_error_deg_;  //!< @brief stop MPC calculation when heading error is large than this value [deg]
   double steer_lim_deg_;            //!< @brief steering command limit [rad]
+  double steer_rate_lim_deg_;        //!< @brief steering rate limit [rad]
   double wheelbase_;                //!< @brief vehicle wheelbase length [m] to convert steering angle to angular velocity
 
   /* parameters for path smoothing */
@@ -132,7 +134,8 @@ private:
   std::shared_ptr<double> current_steer_ptr_;                         //!< @brief current measured pose
   autoware_planning_msgs::Trajectory current_trajectory_;             //!< @brief current waypoints to be followed
 
-  double steer_cmd_prev_;     //< @brief steering command calculated in previous period
+  double raw_steer_cmd_prev_; //< @brief steering command calculated by mpc in previous period
+  double steer_cmd_prev_;     //< @brief steering command calculated by mpc and some filters in previous period
   double lateral_error_prev_; //< @brief previous lateral error for derivative
   double yaw_error_prev_;     //< @brief previous lateral error for derivative
 
@@ -206,7 +209,8 @@ private:
    */
   bool executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
                            const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
-                           const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex);
+                           const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex,
+                           double dt);
   /**
    * @brief get stop command
    */

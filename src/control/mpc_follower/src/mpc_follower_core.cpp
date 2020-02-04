@@ -49,6 +49,7 @@ MPCFollower::MPCFollower()
   pnh_.param("delay_compensation_time", mpc_param_.delay_compensation_time, double(0.0));
 
   pnh_.param("steer_lim_deg", steer_lim_deg_, double(35.0));
+  pnh_.param("steer_rate_lim_deg", steer_rate_lim_deg_, double(150.0));
   pnh_.param("/vehicle_info/wheel_base", wheelbase_, double(2.9));
 
   /* vehicle model setup */
@@ -85,7 +86,6 @@ MPCFollower::MPCFollower()
   }
 
   /* QP solver setup */
-  std::string qp_solver_type_;
   pnh_.param("qp_solver_type", qp_solver_type_, std::string("unconstraint_fast"));
   if (qp_solver_type_ == "unconstraint_fast")
   {
@@ -98,6 +98,10 @@ MPCFollower::MPCFollower()
     // pnh_.param("qpoases_max_iter", max_iter, int(500));
     // qpsolver_ptr_ = std::make_shared<QPSolverQpoasesHotstart>(max_iter);
     // ROS_INFO("[MPC] set qp solver = qpoases_hotstart");
+  }
+  else if(qp_solver_type_ == "osqp")
+  {
+    osqpsolver_ptr_ = std::make_shared<osqp::OSQPInterface>();//TODO: make middle interface
   }
   else
   {
@@ -166,9 +170,9 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te)
   autoware_control_msgs::ControlCommand ctrl_cmd = getStopControlCommand();
 
   /* guard */
-  if (vehicle_model_ptr_ == nullptr || qpsolver_ptr_ == nullptr)
+  if (vehicle_model_ptr_ == nullptr || (qpsolver_ptr_ == nullptr && osqpsolver_ptr_ == nullptr))
   {
-    ROS_INFO_COND(show_debug_info_, "[MPC] vehicle_model = %d, qp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
+    ROS_INFO_COND(show_debug_info_, "[MPC] vehicle_model = %d, qp_solver = %d, osqp_solver = %d", !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr), !(osqpsolver_ptr_));
     publishCtrlCmd(ctrl_cmd); // publish brake
     return;
   }
@@ -291,7 +295,7 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand &ctrl_cmd)
    *  , Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
    */
   Eigen::VectorXd Uex;
-  if (!executeOptimization(Aex, Bex, Wex, Cex, Qex, Rex, Urefex, x0, /*out=*/ Uex))
+  if (!executeOptimization(Aex, Bex, Wex, Cex, Qex, Rex, Urefex, x0, /*out=*/ Uex, DT))
   {
     ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] executeOptimization() failed. stop computation.");
     return false;
@@ -303,6 +307,7 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand &ctrl_cmd)
 
   /* filtering for noise reduction */
   const double u_filtered = lpf_steering_cmd_.filter(u_saturated);
+
 
   /* set control command */
   ctrl_cmd.steering_angle = u_filtered;
@@ -562,7 +567,8 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, E
 
 bool MPCFollower::executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
                                       const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
-                                      const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex)
+                                      const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex,
+                                      double dt)
 {
   const int N = mpc_param_.prediction_horizon;
   const int DIM_U = vehicle_model_ptr_->getDimU();
@@ -578,23 +584,66 @@ bool MPCFollower::executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::M
   Eigen::MatrixXd f = (Cex * (Aex * x0 + Wex)).transpose() * QCB - Urefex.transpose() * Rex;
 
   /*
-   * constraint matrix : lb < U < ub, lbA < A*U < ubA 
+   * constraint matrix : lb < U < ub, lbA < A*U < ubA
    * current considered constraint
    *  - steering limit
    */
   const double u_lim = DEG2RAD * steer_lim_deg_;
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-  Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-  Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim); // min steering angle
-  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);  // max steering angle
+  const double au_lim = DEG2RAD * steer_rate_lim_deg_;
 
   auto start = std::chrono::system_clock::now();
-  if (!qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, Uex))
+
+  bool solve_result;
+  if(qp_solver_type_ == "osqp"){
+    Eigen::MatrixXd I = Eigen::MatrixXd::Identity(DIM_U * N , DIM_U * N);
+    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N , DIM_U * N);
+    for(int i = 0; i < N; i++){
+      A(i, i) = 1.0f;
+      if(i!=0)A(i,i-1)= -1.0f;
+    }
+
+    // [lb, lbA] <= [I, A]u <= [ub, ubA]
+
+    //concatenate matrix. osqpA = [I.T, A.T].T
+    Eigen::MatrixXd osqpA(DIM_U * N * 2, DIM_U * N);
+    osqpA << I, A;
+
+    std::vector<double> f_(&f(0), f.data()+f.cols()*f.rows());//convert matrix to vector for osqpsolver
+    std::vector<double> lb(DIM_U * N, -u_lim);
+    std::vector<double> ub(DIM_U * N, u_lim);
+    std::vector<double> lbA(DIM_U * N, -au_lim * dt);
+    std::vector<double> ubA(DIM_U * N, au_lim * dt);
+    lbA[0] = raw_steer_cmd_prev_ - au_lim * ctrl_period_;
+    ubA[0] = raw_steer_cmd_prev_ + au_lim * ctrl_period_;
+
+    //concatenate vector. lower_bound = [lb, lbA], upper_bound = [ub, ubA]
+    std::vector<double> lower_bound(lb);
+    lower_bound.insert(lower_bound.end(), lbA.begin(), lbA.end());
+    std::vector<double> upper_bound(ub);
+    upper_bound.insert(upper_bound.end(), ubA.begin(), ubA.end());
+
+    //optimize
+    std::tuple<std::vector<double>, std::vector<double>, int> result = osqpsolver_ptr_->optimize(H, osqpA, f_, lower_bound, upper_bound);
+    std::vector<double> U_osqp = std::get<0>(result);
+    Uex = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1> >(&U_osqp[0], U_osqp.size(), 1);
+    solve_result = true;//TODO: input solve_result
+  }else{
+    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+    Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
+    Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
+    Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim); // min steering angle
+    Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);  // max steering angle
+    solve_result = qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, Uex);
+  }
+
+  if (!solve_result)
   {
     ROS_WARN_DELAYED_THROTTLE(5.0, "[MPC] qp solver error");
     return false;
   }
+  //input mpc command
+  raw_steer_cmd_prev_ = Uex(0);
+
   double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
   ROS_INFO_COND(show_debug_info_, "[MPC] qp solver calculation time = %f [ms]", elapsed);
 
