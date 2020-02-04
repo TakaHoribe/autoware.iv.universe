@@ -82,6 +82,11 @@ private:
   ros::Subscriber sub_initialpose_;   //!< @brief topic subscriber for initialpose topic
   ros::Timer timer_simulation_;       //!< @brief timer for simulation
 
+  /* tf */
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+  tf2_ros::TransformBroadcaster tf_broadcaster_; //!< @brief tf broadcaster  
+
   /* received & published topics */
   geometry_msgs::Pose current_pose_;                                                      //!< @brief current vehicle position ang angle with pose message class
   geometry_msgs::Twist current_twist_;                                                    //!< @brief current vehicle velocity with twist message class
@@ -89,11 +94,6 @@ private:
   std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;            //!< @brief latest received trajectory
   double drive_shift;                                                                     //!< @brief latest received shift(drive:1, reverse:-1)
   double closest_pos_z_;                                                                  //!< @brief z position on closest trajectory
-
-  /* tf */
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
-  tf2_ros::TransformBroadcaster tf_broadcaster_; //!< @brief tf broadcaster
 
   /* frame_id */
   std::string simulation_frame_id_; //!< @brief vehicle frame id simulated by simple_planning_simulator
