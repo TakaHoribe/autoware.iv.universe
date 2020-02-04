@@ -123,11 +123,6 @@ bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time &time, autowar
     object.state.pose_covariance.pose.position.x += filtered_vx_ * dt;
     object.state.pose_covariance.pose.position.y += filtered_vy_ * dt;
 
-    object.state.pose_covariance.pose.orientation.x = 0.0;
-    object.state.pose_covariance.pose.orientation.y = 0.0;
-    object.state.pose_covariance.pose.orientation.z = 0.0;
-    object.state.pose_covariance.pose.orientation.w = 1.0;
-
     object.state.orientation_reliable = false;
 
     double roll, pitch, yaw;
