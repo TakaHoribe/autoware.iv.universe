@@ -12,6 +12,7 @@ import tf
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, Quaternion, Twist, TwistStamped
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Bool, Float32, Header, Int32
+from config.scenario_kashiwanoha import *  # scenario
 
 OBSTACLE_NUM = 4096
 
@@ -166,7 +167,7 @@ class ScenarioMaker:
         time.sleep(3.0)  # wait to finish ndt matching
         self.scenario_path()
 
-        #publish max speed
+        # publish max speed
         self.pubMaxSpeed()
 
         r_time = rospy.Rate(5)
@@ -246,7 +247,14 @@ class ScenarioMaker:
         # publish Start Position
         self.pub_initialpose.publish(
             self.make_posstmp_with_cov(
-                self.random_pose_maker(x=-139.1, y=-24.68, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0)
+                self.random_pose_maker(
+                    x=s_initpos["x"],
+                    y=s_initpos["y"],
+                    th=s_initpos["th"],
+                    ver_sigma=s_initpos["ver_sigma"],
+                    lat_sigma=s_initpos["lat_sigma"],
+                    th_sigma=s_initpos["th_sigma"],
+                )
             )
         )
         time.sleep(5.0)
@@ -257,274 +265,74 @@ class ScenarioMaker:
         self.pub_goal.publish(
             self.make_posstmp(
                 self.random_pose_maker(
-                    x=-117.8, y=4.553, th=117.2, ver_sigma=0.5, lat_sigma=0.1, th_sigma=1.0, goal_record=True
+                    x=s_goalpos["x"],
+                    y=s_goalpos["y"],
+                    th=s_goalpos["th"],
+                    ver_sigma=s_goalpos["ver_sigma"],
+                    lat_sigma=s_goalpos["lat_sigma"],
+                    th_sigma=s_goalpos["th_sigma"],
+                    goal_record=True,
                 )
             )
         )
         time.sleep(0.25)
 
         # Publish Check Point
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=-60.3, y=-23.6, th=-62.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
+        for cp in s_checkpoint:
+            self.pub_checkpoint.publish(
+                self.make_posstmp(
+                    self.random_pose_maker(
+                        x=cp["x"],
+                        y=cp["y"],
+                        th=cp["th"],
+                        ver_sigma=cp["ver_sigma"],
+                        lat_sigma=cp["lat_sigma"],
+                        th_sigma=cp["th_sigma"],
+                    )
+                )
             )
-        )  # checkpoint 1
-        time.sleep(0.25)
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=1.4, y=5.4, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
-            )
-        )  # checkpoint 2
-        time.sleep(0.25)
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=-83.5, y=14.5, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
-            )
-        )  # checkpoint 3
-        time.sleep(0.25)
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=-43.5, y=64.2, th=27.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
-            )
-        )  # checkpoint 4
-        time.sleep(0.25)
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=-5.8, y=-19.8, th=-152.8, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
-            )
-        )  # checkpoint 5
-        time.sleep(0.25)
-        self.pub_checkpoint.publish(
-            self.make_posstmp(
-                self.random_pose_maker(x=-119.1, y=-63.6, th=117.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0)
-            )
-        )  # checkpoint 6
-        time.sleep(0.25)
+            time.sleep(0.25)
 
     def scenario_obstacle1(self):
         ###obstacle 0: fixed pedestrian
         self.PubObjectId(0)
         time.sleep(0.25)
-        self.PubObstacle(
-            pose=self.random_pose_maker(x=-121.3, y=25.87, th=27.2, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0),
-            vel=self.random_velocity_maker(v=0, v_sigma=0),
-            obstacle_type="pedestrian",
-            obstacle_id=0,
-        )
+        for sb in s_staticobstacle:
+            self.PubObstacle(
+                pose=self.random_pose_maker(
+                    x=sb["x"],
+                    y=sb["y"],
+                    th=sb["th"],
+                    ver_sigma=sb["ver_sigma"],
+                    lat_sigma=sb["lat_sigma"],
+                    th_sigma=sb["th_sigma"],
+                ),
+                vel=self.random_velocity_maker(v=sb["v"], v_sigma=sb["v_sigma"]),
+                obstacle_type=sb["obstacle_type"],
+                obstacle_id=sb["obstacle_id"],
+            )
 
     def scenario_obstacle_manager1(self):
-        # obstacle 1: obstacle car in lane change
-        self.PubPatternedObstacle(
-            pose=(-56.7, 57.3, 27.2),
-            vel=3.0,
-            ver_sigma=2.0,
-            lat_sigma=0.0,
-            th_sigma=0.0,
-            vel_sigma=0.5,
-            judge_pose=(-56.7, 57.3, 27.2),
-            judge_dist_xy=40.0,
-            judge_dist_th=45.0,
-            generate_mode_dist=GENERATE_DIST_INAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
-            generate_once=False,
-            generate_loop=20.0,
-            obstacle_type="car",
-            obstacle_id=1,
-        )
-
-        # obstacle 2: sudden pedestrian
-        self.PubPatternedObstacle(
-            pose=(-95.0, -67.0, 117.2),
-            vel=0.5,
-            ver_sigma=0.1,
-            lat_sigma=0.1,
-            th_sigma=1.0,
-            vel_sigma=0.1,
-            judge_pose=(-95.0, -67.0, -152.8),
-            judge_dist_xy=35.0,
-            judge_dist_th=45.0,
-            generate_mode_dist=GENERATE_DIST_INAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
-            generate_once=False,
-            generate_loop=12.0,
-            obstacle_type="pedestrian",
-            obstacle_id=2,
-        )
-
-        # obstacle 3: crossing car 1(crossing with traffic light)
-        self.PubPatternedObstacle(
-            pose=(-121.8, -25.6, 27.2),
-            vel=8.0,
-            ver_sigma=5.0,
-            lat_sigma=0.1,
-            th_sigma=0.0,
-            vel_sigma=0.5,
-            judge_pose=(-121.8, -25.6, 27.2),
-            judge_dist_xy=30.0,
-            judge_dist_th=30.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_RED,
-            generate_once=False,
-            generate_loop=11.0,
-            obstacle_type="car",
-            obstacle_id=3,
-        )
-
-        # obstacle 4: crossing car 2(crossing without traffic light)
-        self.PubPatternedObstacle(
-            pose=(-101.6, -65.2, 27.2),
-            vel=8.0,
-            ver_sigma=5.0,
-            lat_sigma=0.1,
-            th_sigma=0.0,
-            vel_sigma=1.0,
-            judge_pose=(-101.6, -65.2, 27.2),
-            judge_dist_xy=30.0,
-            judge_dist_th=30.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
-            generate_once=False,
-            generate_loop=11.0,
-            obstacle_type="car",
-            obstacle_id=4,
-        )
-
-        # obstacle 5: crossing pedestrian(crossing with traffic light)
-        self.PubPatternedObstacle(
-            pose=(-83.8, 2.0, 27.2),
-            vel=2.0,
-            ver_sigma=0.5,
-            lat_sigma=0.5,
-            th_sigma=1.0,
-            vel_sigma=0.2,
-            judge_pose=(-83.8, 2.0, 27.2),
-            judge_dist_xy=0,
-            judge_dist_th=0,
-            generate_mode_dist=GENERATE_DIST_ALLWAYS,
-            generate_mode_traffic=GENERATE_TRAFFIC_RED,
-            generate_once=False,
-            generate_loop=14.0,
-            obstacle_type="pedestrian",
-            obstacle_id=5,
-        )
-
-        # obstacle 6: pause and vanish car
-        self.PubPatternedObstacle(
-            pose=(-33.1, -33.6, -152.8),
-            vel=0.0,
-            ver_sigma=0.1,
-            lat_sigma=0.1,
-            th_sigma=2.0,
-            vel_sigma=0.0,
-            judge_pose=(-33.1, -33.6, -152.8),
-            judge_dist_xy=30.0,
-            judge_dist_th=45.0,
-            generate_mode_dist=GENERATE_DIST_INAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
-            generate_once=True,
-            generate_loop=10.0,
-            obstacle_type="car",
-            obstacle_id=6,
-        )
-
-        # obstacle 7: crossing car 3(crossing with traffic light/stop to see red light) (alternative: obstacle 8)
-        self.PubPatternedObstacle(
-            pose=(-121.8, -25.6, 27.2),
-            vel=4.5,
-            ver_sigma=0.5,
-            lat_sigma=0.1,
-            th_sigma=0.0,
-            vel_sigma=0.05,
-            judge_pose=(-121.8, -25.6, 27.2),
-            judge_dist_xy=30.0,
-            judge_dist_th=30.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_GREEN,
-            generate_once=False,
-            generate_loop=8.0,
-            obstacle_type="car",
-            obstacle_id=7,
-            alternate_mode=True,
-            alternate_timing=BEFORE,
-        )
-
-        # obstacle 8: stop car (alternative: obstacle 7)
-        self.PubPatternedObstacle(
-            pose=(-86.1, -7.5, 27.2),
-            vel=0.0,
-            ver_sigma=0.5,
-            lat_sigma=0.1,
-            th_sigma=0.0,
-            vel_sigma=0.0,
-            judge_pose=(-86.1, -7.5, 27.2),
-            judge_dist_xy=40.0,
-            judge_dist_th=30.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_GREEN,
-            generate_once=False,
-            generate_loop=8.0,
-            obstacle_type="car",
-            obstacle_id=8,
-            alternate_mode=True,
-            alternate_timing=AFTER,
-        )
-
-        # obstacle 9:crossing pedestrian2(crossing with traffic light)
-        self.PubPatternedObstacle(
-            pose=(-81.8, -2.0, -62.8),
-            vel=2.0,
-            ver_sigma=0.5,
-            lat_sigma=0.5,
-            th_sigma=2.0,
-            vel_sigma=0.1,
-            judge_pose=(-81.8, -2.0, -62.8),
-            judge_dist_xy=0.0,
-            judge_dist_th=0.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_GREEN,
-            generate_once=False,
-            generate_loop=4.0,
-            obstacle_type="pedestrian",
-            obstacle_id=9,
-        )
-
-        # obstacle 10:crossing pedestrian3(crossing with traffic light)
-        self.PubPatternedObstacle(
-            pose=(-81.8, -2.0, -62.8),
-            vel=3.0,
-            ver_sigma=0.5,
-            lat_sigma=0.5,
-            th_sigma=2.0,
-            vel_sigma=0.1,
-            judge_pose=(-81.8, -2.0, -62.8),
-            judge_dist_xy=0.0,
-            judge_dist_th=0.0,
-            generate_mode_dist=GENERATE_DIST_OUTAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_GREEN,
-            generate_once=False,
-            generate_loop=3.0,
-            obstacle_type="pedestrian",
-            obstacle_id=10,
-        )
-
-        # obstacle 11:car for following
-        self.PubPatternedObstacle(
-            pose=(-20.4, 56.3, -62.8),
-            vel=3.0,
-            ver_sigma=0.5,
-            lat_sigma=0.0,
-            th_sigma=0.0,
-            vel_sigma=1.0,
-            judge_pose=(-20.4, 56.3, -62.8),
-            judge_dist_xy=40.0,
-            judge_dist_th=90.0,
-            generate_mode_dist=GENERATE_DIST_INAREA,
-            generate_mode_traffic=GENERATE_TRAFFIC_ALLWAYS,
-            generate_once=True,
-            generate_loop=12.0,
-            obstacle_type="car",
-            obstacle_id=11,
-        )
+        for db in s_dynamicobstacle:
+            self.PubPatternedObstacle(
+                pose=(db["x"], db["y"], db["th"]),
+                vel=db["v"],
+                ver_sigma=db["v_sigma"],
+                lat_sigma=db["lat_sigma"],
+                th_sigma=db["th_sigma"],
+                vel_sigma=db["v_sigma"],
+                judge_pose=(db["judge_x"], db["judge_y"], db["judge_th"]),
+                judge_dist_xy=db["judge_dist_xy"],
+                judge_dist_th=db["judge_dist_th"],
+                generate_mode_dist=db["generate_mode_dist"],
+                generate_mode_traffic=db["generate_mode_traffic"],
+                generate_once=db["generate_once"],
+                generate_loop=db["generate_loop"],
+                obstacle_type=db["obstacle_type"],
+                obstacle_id=db["obstacle_id"],
+                alternate_mode=db["alternate_mode"],
+                alternate_timing=db["alternate_timing"],
+            )
 
     def pubMaxSpeed(self):
         if self.max_speed > 0:
@@ -884,9 +692,9 @@ class ScenarioMaker:
             time.sleep(1)  # wait for subscrbing camera info
         imgsize = self.camera_height * self.camera_width * 3  # pixel*3(bgr)
         img_green = np.zeros((imgsize)).astype(np.uint8)
-        img_green[np.arange(0, imgsize, 3)] = 10  # brue
-        img_green[np.arange(1, imgsize, 3)] = 255  # green
-        img_green[np.arange(2, imgsize, 3)] = 10  # red
+        img_green[np.arange(0, imgsize, 3)] = 200  # brue
+        img_green[np.arange(1, imgsize, 3)] = 200  # green
+        img_green[np.arange(2, imgsize, 3)] = 0  # red
         img_yellow = np.zeros((imgsize)).astype(np.uint8)
         img_yellow[np.arange(2, imgsize, 3)] = 255  # red
         img_yellow[np.arange(1, imgsize, 3)] = 217  # green
