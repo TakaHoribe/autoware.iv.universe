@@ -15,7 +15,7 @@ AFTER = 1
 
 
 s_initpos = {"x": -139.1, "y": -24.68, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
-s_goalpos = {"x": -119.9, "y": -4.945, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
+s_goalpos = {"x": -117.8, "y": 4.553, "th": 117.2, "ver_sigma": 0.5, "lat_sigma": 0.1, "th_sigma": 1.0}
 
 s_checkpoint = [
     {"x": -60.3, "y": -23.6, "th": -62.8, "ver_sigma": 0.0, "lat_sigma": 0.0, "th_sigma": 0.0},
@@ -26,7 +26,6 @@ s_checkpoint = [
     {"x": -119.1, "y": -63.6, "th": 117.2, "ver_sigma": 0.0, "lat_sigma": 0.0, "th_sigma": 0.0},
 ]
 
-# obstacle0: avoid by lane change
 s_staticobstacle = [
     {
         "x": -121.3,
@@ -37,42 +36,30 @@ s_staticobstacle = [
         "th_sigma": 0.0,
         "v": 0,
         "v_sigma": 0,
-        "obstacle_type": "car",
-        "obstacle_id": 0,
-    },
-    {
-        "x": -17.8,
-        "y": 51.2,
-        "th": -62.8,
-        "ver_sigma": 0.5,
-        "lat_sigma": 0.0,
-        "th_sigma": 0.0,
-        "v": 0,
-        "v_sigma": 0,
-        "obstacle_type": "car",
+        "obstacle_type": "pedestrian",
         "obstacle_id": 0,
     },
 ]
 
 s_dynamicobstacle = [
     {  # obstacle1: obstacle car in lane change
-        "x": -77.8,
-        "y": 46.8,
+        "x": -56.7,
+        "y": 57.3,
         "th": 27.2,
-        "ver_sigma": 20.0,
+        "ver_sigma": 2.0,
         "lat_sigma": 0.0,
         "th_sigma": 0.0,
-        "v": 4.0,
-        "v_sigma": 2.0,
+        "v": 3.0,
+        "v_sigma": 0.5,
         "judge_x": -56.7,
         "judge_y": 57.3,
         "judge_th": 27.2,
-        "judge_dist_xy": 50.0,
-        "judge_dist_th": 100.0,
+        "judge_dist_xy": 40.0,
+        "judge_dist_th": 45.0,
         "generate_mode_dist": GENERATE_DIST_INAREA,
         "generate_mode_traffic": GENERATE_TRAFFIC_ALLWAYS,
         "generate_once": False,
-        "generate_loop": 25.0,
+        "generate_loop": 20.0,
         "obstacle_type": "car",
         "obstacle_id": 1,
         "alternate_mode": False,
@@ -282,6 +269,29 @@ s_dynamicobstacle = [
         "generate_loop": 3.0,
         "obstacle_type": "pedestrian",
         "obstacle_id": 10,
+        "alternate_mode": False,
+        "alternate_timing": None,
+    },
+    {  # obstacle 11:car for following
+        "x": -20.4,
+        "y": 56.3,
+        "th": -62.8,
+        "ver_sigma": 0.5,
+        "lat_sigma": 0.0,
+        "th_sigma": 0.0,
+        "v": 3.0,
+        "v_sigma": 1.0,
+        "judge_x": -20.4,
+        "judge_y": 56.3,
+        "judge_th": -62.8,
+        "judge_dist_xy": 40.0,
+        "judge_dist_th": 90.0,
+        "generate_mode_dist": GENERATE_DIST_INAREA,
+        "generate_mode_traffic": GENERATE_TRAFFIC_ALLWAYS,
+        "generate_once": True,
+        "generate_loop": 12.0,
+        "obstacle_type": "car",
+        "obstacle_id": 11,
         "alternate_mode": False,
         "alternate_timing": None,
     },
