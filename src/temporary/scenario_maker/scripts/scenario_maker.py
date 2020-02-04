@@ -692,9 +692,9 @@ class ScenarioMaker:
             time.sleep(1)  # wait for subscrbing camera info
         imgsize = self.camera_height * self.camera_width * 3  # pixel*3(bgr)
         img_green = np.zeros((imgsize)).astype(np.uint8)
-        img_green[np.arange(0, imgsize, 3)] = 10  # brue
-        img_green[np.arange(1, imgsize, 3)] = 255  # green
-        img_green[np.arange(2, imgsize, 3)] = 10  # red
+        img_green[np.arange(0, imgsize, 3)] = 200  # brue
+        img_green[np.arange(1, imgsize, 3)] = 200  # green
+        img_green[np.arange(2, imgsize, 3)] = 0  # red
         img_yellow = np.zeros((imgsize)).astype(np.uint8)
         img_yellow[np.arange(2, imgsize, 3)] = 255  # red
         img_yellow[np.arange(1, imgsize, 3)] = 217  # green
