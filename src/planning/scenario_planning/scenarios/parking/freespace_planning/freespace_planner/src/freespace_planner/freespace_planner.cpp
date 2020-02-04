@@ -218,13 +218,14 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
   {
     // base configs
     private_nh_.param<bool>("use_back", astar_param_.use_back, true);
+    private_nh_.param<bool>("only_behind_solutions", astar_param_.only_behind_solutions, false);
     private_nh_.param<double>("time_limit", astar_param_.time_limit, 5000.0);
 
     // robot configs
     // TODO(Kenji Miyake): obtain from vehicle_info
-    private_nh_.param<double>("robot_length", astar_param_.robot_length, 4.5);
-    private_nh_.param<double>("robot_width", astar_param_.robot_width, 1.75);
-    private_nh_.param<double>("robot_base2back", astar_param_.robot_base2back, 1.0);
+    private_nh_.param<double>("robot_length", astar_param_.robot_shape.length, 4.5);
+    private_nh_.param<double>("robot_width", astar_param_.robot_shape.width, 1.75);
+    private_nh_.param<double>("robot_base2back", astar_param_.robot_shape.base2back, 1.0);
     private_nh_.param<double>("minimum_turning_radius", astar_param_.minimum_turning_radius, 6.0);
 
     // search configs
@@ -407,8 +408,16 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
 }
 
 void AstarNavi::planTrajectory() {
+  // Extend robot shape
+  RobotShape extended_robot_shape = astar_param_.robot_shape;
+  constexpr double margin = 1.0;
+  extended_robot_shape.length += margin;
+  extended_robot_shape.width += margin;
+  extended_robot_shape.base2back += margin / 2;
+
   // initialize vector for A* search, this runs only once
   astar_.reset(new AstarSearch(astar_param_));
+  astar_->setRobotShape(extended_robot_shape);
   astar_->initializeNodes(*occupancy_grid_);
 
   // Calculate poses in costmap frame

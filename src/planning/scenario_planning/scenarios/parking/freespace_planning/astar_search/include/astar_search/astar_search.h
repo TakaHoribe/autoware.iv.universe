@@ -54,8 +54,10 @@ struct AstarNode {
   double move_distance = 0;              // actual move distance
   bool is_back;                          // true if the current direction of the vehicle is back
   AstarNode* parent = nullptr;           // parent node
+};
 
-  bool operator>(const AstarNode& right) const { return cost > right.cost; }
+struct NodeComparison {
+  bool operator()(const AstarNode* lhs, const AstarNode* rhs) { return lhs->cost > rhs->cost; }
 };
 
 struct AstarWaypoint {
@@ -77,15 +79,20 @@ struct NodeUpdate {
   bool is_back;
 };
 
+struct RobotShape {
+  double length;     // X [m]
+  double width;      // Y [m]
+  double base2back;  // base_link to rear [m]
+};
+
 struct AstarParam {
   // base configs
-  bool use_back;      // backward search
-  double time_limit;  // planning time limit [msec]
+  bool use_back;               // backward search
+  bool only_behind_solutions;  // solutions should be behind the goal
+  double time_limit;           // planning time limit [msec]
 
   // robot configs
-  double robot_length;            // X [m]
-  double robot_width;             // Y [m]
-  double robot_base2back;         // base_link to rear [m]
+  RobotShape robot_shape;
   double minimum_turning_radius;  // [m]]
 
   // search configs
@@ -107,6 +114,7 @@ class AstarSearch {
 
   explicit AstarSearch(const AstarParam& astar_param);
 
+  void setRobotShape(const RobotShape& robot_shape) { astar_param_.robot_shape = robot_shape; }
   void initializeNodes(const nav_msgs::OccupancyGrid& costmap);
   bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
   bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory);
@@ -119,18 +127,20 @@ class AstarSearch {
   void setPath(const AstarNode& goal);
   bool setStartNode();
   bool setGoalNode();
-  bool detectCollision(const IndexXYT& index);
 
-  bool isOutOfRange(const int index_x, const int index_y);
-  bool isObs(const int index_x, const int index_y);
+  bool detectCollision(const IndexXYT& index);
+  bool isOutOfRange(const IndexXYT& index);
+  bool isObs(const IndexXYT& index);
   bool isGoal(const double x, const double y, const double theta);
+
+  AstarNode* getNodeRef(const IndexXYT& index) { return &nodes_[index.y][index.x][index.theta]; }
 
   AstarParam astar_param_;
 
   // hybrid astar variables
   StateUpdateTable state_update_table_;
   std::vector<std::vector<std::vector<AstarNode>>> nodes_;
-  std::priority_queue<AstarNode, std::vector<AstarNode>, std::greater<AstarNode>> openlist_;
+  std::priority_queue<AstarNode*, std::vector<AstarNode*>, NodeComparison> openlist_;
   std::vector<AstarNode> goallist_;
 
   // costmap as occupancy grid

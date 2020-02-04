@@ -26,6 +26,7 @@
 
     <!-- A* search configurations -->
     <param name="use_back" value="true" />
+    <param name="only_behind_solutions" value="false" />
     <param name="time_limit" value="30000.0" />
     <param name="robot_length" value="4.5" />
     <param name="robot_width" value="1.75" />
