@@ -45,10 +45,24 @@ private:
                                    const double &margin,
                                    const double &velocity,
                                    autoware_planning_msgs::PathWithLaneId &output);
+    bool getHighestConfidenceTrafficLightState(lanelet::ConstLineStringsOrPolygons3d &traffic_lights,
+                                               autoware_traffic_light_msgs::TrafficLightState &highest_confidence_tl_state);
+    bool createTargetPoint(const autoware_planning_msgs::PathWithLaneId &input,
+                          const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &stop_line,
+                          const double &margin,
+                          size_t &target_point_idx,
+                          Eigen::Vector2d &target_point);
+    enum class State
+    {
+        APPROARCH,
+        GO_OUT
+    };
     TrafficLightModuleManager *manager_ptr_;
+    State state_;
     std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr_;
     int lane_id_;
     double stop_margin_;
+    double tl_state_timeout_;
     double max_stop_acceleration_threshold_;
     boost::uuids::uuid task_id_;
 

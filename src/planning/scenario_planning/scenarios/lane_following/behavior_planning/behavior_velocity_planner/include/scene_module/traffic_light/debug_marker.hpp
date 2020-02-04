@@ -19,6 +19,7 @@ public:
     void pushTrafficLightState(const std::shared_ptr<lanelet::TrafficLight const> &traffic_light,
                          const autoware_traffic_light_msgs::TrafficLightState &state);
     void pushStopPose(const geometry_msgs::Pose &pose);
+    void pushJudgePose(const geometry_msgs::Pose &pose);
 
     void publish();
 
@@ -31,6 +32,7 @@ private:
 
     std::vector<std::tuple<std::shared_ptr<lanelet::TrafficLight const>, autoware_traffic_light_msgs::TrafficLightState>> tl_state_;
     std::vector<geometry_msgs::Pose> stop_poses_;
+    std::vector<geometry_msgs::Pose> judge_poses_;
 };
 
 } // namespace behavior_planning

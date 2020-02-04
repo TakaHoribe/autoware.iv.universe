@@ -15,10 +15,14 @@ void TrafficLightDebugMarkersManager::pushTrafficLightState(const std::shared_pt
     tl_state_.push_back(std::make_tuple(traffic_light, state));
 }
 
-
 void TrafficLightDebugMarkersManager::pushStopPose(const geometry_msgs::Pose &pose)
 {
     stop_poses_.push_back(geometry_msgs::Pose(pose));
+}
+
+void TrafficLightDebugMarkersManager::pushJudgePose(const geometry_msgs::Pose &pose)
+{
+    judge_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
 #if 0
@@ -90,336 +94,13 @@ void TrafficLightDebugMarkersManager::publish()
     visualization_msgs::MarkerArray msg;
     ros::Time current_time = ros::Time::now();
 
-#if 0
-    const int lanelet_tl_ptr = 0;
-    const int autoware_tl_state = 1;
-    // Traffic Light States
-    for (size_t i = 0; i < tl_state_.size(); ++i)
-    {
-        const std::tuple<std::shared_ptr<lanelet::TrafficLight const>,
-                         autoware_traffic_light_msgs::TrafficLightState> &tl_state = tl_state_.at(i);
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-
-        marker.ns = "text";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.1;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < polygon.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = polygon.at(j).x();
-            point.y = polygon.at(j).y();
-            point.z = polygon.at(j).z();
-            marker.points.push_back(point);
-        }
-        marker.points.push_back(marker.points.front());
-        msg.markers.push_back(marker);
-
-    // Crosswalk polygons
-    for (size_t i = 0; i < crosswalk_polygons_.size(); ++i)
-    {
-        std::vector<Eigen::Vector3d> polygon = crosswalk_polygons_.at(i);
-
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-
-        marker.ns = "crosswalk polygon line";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.1;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < polygon.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = polygon.at(j).x();
-            point.y = polygon.at(j).y();
-            point.z = polygon.at(j).z();
-            marker.points.push_back(point);
-        }
-        marker.points.push_back(marker.points.front());
-        msg.markers.push_back(marker);
-
-        marker.ns = "crosswalk polygon point";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::POINTS;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.25;
-        marker.scale.y = 0.25;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < polygon.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = polygon.at(j).x();
-            point.y = polygon.at(j).y();
-            point.z = polygon.at(j).z();
-            marker.points.push_back(point);
-        }
-        msg.markers.push_back(marker);
-    }
-
-    // Collision line
-    for (size_t i = 0; i < collision_lines_.size(); ++i)
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "collision line";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.1;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < collision_lines_.at(i).size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = collision_lines_.at(i).at(j).x();
-            point.y = collision_lines_.at(i).at(j).y();
-            point.z = collision_lines_.at(i).at(j).z();
-            marker.points.push_back(point);
-        }
-        msg.markers.push_back(marker);
-    }
-
-    // Collision point
-    if (!collision_points_.empty())
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "collision point";
-        marker.id = 0;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::POINTS;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.25;
-        marker.scale.y = 0.25;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < collision_points_.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = collision_points_.at(j).x();
-            point.y = collision_points_.at(j).y();
-            point.z = collision_points_.at(j).z();
-            marker.points.push_back(point);
-        }
-        msg.markers.push_back(marker);
-    }
-
-    // Slow polygon
-    for (size_t i = 0; i < slow_polygons_.size(); ++i)
-    {
-        std::vector<Eigen::Vector3d> polygon = slow_polygons_.at(i);
-
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-
-        marker.ns = "slow polygon line";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.1;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 0.0;
-        marker.color.b = 1.0;
-        for (size_t j = 0; j < polygon.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = polygon.at(j).x();
-            point.y = polygon.at(j).y();
-            point.z = polygon.at(j).z();
-            marker.points.push_back(point);
-        }
-        marker.points.push_back(marker.points.front());
-        msg.markers.push_back(marker);
-    }
-
-    // Slow point
-    if (!slow_poses_.empty())
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "slow point";
-        marker.id = 0;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::POINTS;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.25;
-        marker.scale.y = 0.25;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 0.0;
-        marker.color.b = 1.0;
-        for (size_t j = 0; j < slow_poses_.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = slow_poses_.at(j).position.x;
-            point.y = slow_poses_.at(j).position.y;
-            point.z = slow_poses_.at(j).position.z;
-            marker.points.push_back(point);
-        }
-        msg.markers.push_back(marker);
-    }
-
-    // Stop polygon
-    for (size_t i = 0; i < stop_polygons_.size(); ++i)
-    {
-        std::vector<Eigen::Vector3d> polygon = stop_polygons_.at(i);
-
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-
-        marker.ns = "stop polygon line";
-        marker.id = i;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.1;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < polygon.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = polygon.at(j).x();
-            point.y = polygon.at(j).y();
-            point.z = polygon.at(j).z();
-            marker.points.push_back(point);
-        }
-        marker.points.push_back(marker.points.front());
-        msg.markers.push_back(marker);
-    }
-
-    // Stop point
-    if (!stop_poses_.empty())
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "stop point";
-        marker.id = 0;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::POINTS;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = 0;
-        marker.pose.position.y = 0;
-        marker.pose.position.z = 0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.25;
-        marker.scale.y = 0.25;
-        marker.color.a = 0.999; // Don't forget to set the alpha!
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        for (size_t j = 0; j < stop_poses_.size(); ++j)
-        {
-            geometry_msgs::Point point;
-            point.x = stop_poses_.at(j).position.x;
-            point.y = stop_poses_.at(j).position.y;
-            point.z = stop_poses_.at(j).position.z;
-            marker.points.push_back(point);
-        }
-        msg.markers.push_back(marker);
-    }
-
-
-#endif
     // Geofence Stop
     for (size_t j = 0; j < stop_poses_.size(); ++j)
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = "map";
         marker.header.stamp = current_time;
-        marker.ns = "geofence";
+        marker.ns = "stop geofence";
         marker.id = j;
         marker.lifetime = ros::Duration(0.5);
         marker.type = visualization_msgs::Marker::CUBE_LIST;
@@ -447,10 +128,45 @@ void TrafficLightDebugMarkersManager::publish()
         marker.points.push_back(point);
         msg.markers.push_back(marker);
     }
+    // Geofence Judge
+    for (size_t j = 0; j < judge_poses_.size(); ++j)
+    {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "map";
+        marker.header.stamp = current_time;
+        marker.ns = "judge geofence";
+        marker.id = j;
+        marker.lifetime = ros::Duration(0.5);
+        marker.type = visualization_msgs::Marker::CUBE_LIST;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = judge_poses_.at(j).position.x;
+        marker.pose.position.y = judge_poses_.at(j).position.y;
+        marker.pose.position.z = judge_poses_.at(j).position.z+1.0;
+        marker.pose.orientation.x = judge_poses_.at(j).orientation.x;
+        marker.pose.orientation.y = judge_poses_.at(j).orientation.y;
+        marker.pose.orientation.z = judge_poses_.at(j).orientation.z;
+        marker.pose.orientation.w = judge_poses_.at(j).orientation.w;
+        marker.scale.x = 0.1;
+        marker.scale.y = 5.0;
+        marker.scale.z = 2.0;
+        marker.color.a = 0.5; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+        double base_link2front;
+        getBaselink2FrontLength(base_link2front);
+        geometry_msgs::Point point;
+        point.x = base_link2front;
+        point.y = 0;
+        point.z = 0;
+        marker.points.push_back(point);
+        msg.markers.push_back(marker);
+    }
 
     debug_viz_pub_.publish(msg);
     tl_state_.clear();
     stop_poses_.clear();
+    judge_poses_.clear();
 
     return;
 }
