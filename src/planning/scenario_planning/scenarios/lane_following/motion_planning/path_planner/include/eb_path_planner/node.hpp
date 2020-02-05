@@ -81,10 +81,15 @@ private:
   ros::Subscriber objects_sub_;
   bool is_relaying_path_mode_;
   bool use_optimization_when_relaying_;
+  bool is_debug_clearance_map_mode_;
+  bool is_debug_drivable_area_mode_;
   int number_of_fixing_explored_points_;
-  double backward_fixing_distance_;
-  double exploring_minimum_radius_;
   double forward_fixing_distance_;
+  double backward_fixing_distance_;
+  double detection_radius_from_ego_;
+  double backward_detection_range_arc_length_;
+  double reset_delta_ego_distance_;
+  double exploring_minimum_radius_;
   double delta_arc_length_for_path_smoothing_;
   double delta_arc_length_for_explored_points_;
   double max_avoiding_objects_velocity_ms_;
@@ -103,17 +108,18 @@ private:
   
   bool needReset(
     const geometry_msgs::Point& current_ego_point,
-    const geometry_msgs::Point& previous_ego_point,
+    std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
     const std::vector<geometry_msgs::Point>& fixed_explored_points);
   
-  bool generateFixedExploredPoints(
+  bool seperateExploredPointsToFixedAndNonFixed(
     const geometry_msgs::Pose& ego_pose,
     const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
-    std::vector<geometry_msgs::Point>& fixed_points);
+    std::vector<geometry_msgs::Point>& fixed_points,
+    std::vector<geometry_msgs::Point>& non_fixed_points);
     
   bool alighWithPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,

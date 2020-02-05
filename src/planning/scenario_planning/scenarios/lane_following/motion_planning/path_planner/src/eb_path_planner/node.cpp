@@ -64,13 +64,13 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   double map_y_in_image_resolution = relative_p.y/resolution;
   double image_x = map_y_height - map_y_in_image_resolution;
   double image_y = map_x_width - map_x_in_image_resolution;
+  image_point.x = image_x;
+  image_point.y = image_y;
   if(image_x>=0 && 
      image_x<(int)map_y_height &&
      image_y>=0 && 
      image_y<(int)map_x_width)
   {
-    image_point.x = image_x;
-    image_point.y = image_y;
     return true;
   }
   else
@@ -132,18 +132,28 @@ private_nh_("~")
                            is_relaying_path_mode_,false);
   private_nh_.param<bool>("use_optimization_when_relaying", 
                            use_optimization_when_relaying_,true);
+  private_nh_.param<bool>("is_debug_clearance_map_mode", 
+                           is_debug_clearance_map_mode_,false);
+  private_nh_.param<bool>("is_debug_drivable_area_mode", 
+                           is_debug_drivable_area_mode_,false);
   private_nh_.param<int>("number_of_fixing_explored_points", 
                           number_of_fixing_explored_points_, 10);
+  private_nh_.param<double>("forward_fixing_distance", 
+                             forward_fixing_distance_, 20.0);
   private_nh_.param<double>("backward_fixing_distance", 
-                             backward_fixing_distance_, 5);
+                             backward_fixing_distance_, 10.0);
+  private_nh_.param<double>("forward_detection_range_arc_length", 
+                             detection_radius_from_ego_, 50.0);
+  private_nh_.param<double>("backward_detection_range_arc_length", 
+                             backward_detection_range_arc_length_, 5);
+  private_nh_.param<double>("reset_delta_ego_distance", 
+                             reset_delta_ego_distance_, 5.0);
   private_nh_.param<double>("exploring_minumum_radius", 
                              exploring_minimum_radius_, 1.3);
-  private_nh_.param<double>("forward_fixing_distance", 
-                             forward_fixing_distance_, 30.0);
   private_nh_.param<double>("delta_arc_length_for_path_smoothing", 
                              delta_arc_length_for_path_smoothing_, 1.0);
   private_nh_.param<double>("delta_arc_length_for_explored_points", 
-                             delta_arc_length_for_explored_points_, 0.3);
+                             delta_arc_length_for_explored_points_, 0.7);
   private_nh_.param<double>("max_avoiding_objects_velocity_ms", 
                              max_avoiding_objects_velocity_ms_, 0.1);
   doResetting();
@@ -196,16 +206,17 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     
     geometry_msgs::Pose start_exploring_pose;
     std::vector<geometry_msgs::Point> fixed_explored_points; 
-    generateFixedExploredPoints(
+    std::vector<geometry_msgs::Point> non_fixed_explored_points; 
+    seperateExploredPointsToFixedAndNonFixed(
         self_pose, 
         previous_explored_points_ptr_,
         clearance_map,
         input_path_msg.drivable_area.info, 
-        fixed_explored_points);
+        fixed_explored_points,
+        non_fixed_explored_points);
     if(!fixed_explored_points.empty())
     {
       start_exploring_pose.position = fixed_explored_points.back();
-      fixed_explored_points.erase(fixed_explored_points.end());
     }
     else
     {
@@ -242,11 +253,12 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     }
     
     if(needReset(self_pose.position,
-                 *previous_ego_point_ptr_,
+                 previous_ego_point_ptr_,
                  clearance_map,
                  input_path_msg.drivable_area.info,
                  fixed_explored_points))
     {
+      ROS_WARN("[EBPathPLanner] Reset is triggered");
       doResetting();
     }
     
@@ -259,28 +271,87 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
             start_exploring_pose,
             input_path_msg.points,
             in_objects_ptr_->objects,
+            non_fixed_explored_points,
             explored_points,
             clearance_map, 
             input_path_msg.drivable_area.info,
             debug_goal_point,
             debug_rearranged_points);
-    explored_points.insert(explored_points.begin(), start_exploring_pose.position);
-    if(!is_explore_success)
-    {
-      generateSmoothTrajectory(
-        self_pose,
-        input_path_msg,
-        output_trajectory_msg);
-      // doResetting();
-      return;
-    }
-    for (int i = 1; i < explored_points.size(); i++)
+    for (int i = 0; i < explored_points.size(); i++)
     {
       fixed_explored_points.push_back(explored_points[i]);
     }
     explored_points = fixed_explored_points;
+    //remove redundant explored points 
+    std::vector<geometry_msgs::Point> non_redundant_explored_points;
+    for (int i = 0; i < explored_points.size(); i++)
+    {
+      if(i>0)
+      {
+        double dx = explored_points[i].x -explored_points[i-1].x;
+        double dy = explored_points[i].y -explored_points[i-1].y;
+        double dist = std::sqrt(dx*dx+dy*dy);
+        if(dist < 1e-6)
+        {
+          continue;
+        }
+      }
+      non_redundant_explored_points.push_back(explored_points[i]);
+    }
+    explored_points.clear();
+    explored_points = non_redundant_explored_points;
+    
+    
     previous_explored_points_ptr_ = 
       std::make_unique<std::vector<geometry_msgs::Point>>(explored_points);    
+    std::cout << "prev explored size "<< previous_explored_points_ptr_->size()<<std::endl;
+    if(!is_explore_success)
+    {
+      ROS_WARN("Could not find path; relay path");
+      generateSmoothTrajectory(
+        self_pose,
+        input_path_msg,
+        output_trajectory_msg);
+      //debug; marker array
+      visualization_msgs::MarkerArray marker_array;
+      int unique_id = 0;
+      // visualize cubic spline point
+      visualization_msgs::Marker debug_goal_point_marker;
+      debug_goal_point_marker.lifetime = ros::Duration(1.0);
+      debug_goal_point_marker.header = input_path_msg.header;
+      debug_goal_point_marker.ns = std::string("goal_point_marker");
+      debug_goal_point_marker.action = visualization_msgs::Marker::MODIFY;
+      debug_goal_point_marker.pose.orientation.w = 1.0;
+      debug_goal_point_marker.id = unique_id;
+      debug_goal_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+      debug_goal_point_marker.scale.x = 1.0f;
+      debug_goal_point_marker.scale.y = 0.1f;
+      debug_goal_point_marker.scale.z = 0.1f;
+      debug_goal_point_marker.color.r = 1.0f;
+      debug_goal_point_marker.color.a = 0.999;
+      debug_goal_point_marker.points.push_back(debug_goal_point);
+      marker_array.markers.push_back(debug_goal_point_marker);
+      unique_id++;
+      
+      visualization_msgs::Marker debug_start_point_marker;
+      debug_start_point_marker.lifetime = ros::Duration(1.0);
+      debug_start_point_marker.header = input_path_msg.header;
+      debug_start_point_marker.ns = std::string("start_point_marker");
+      debug_start_point_marker.action = visualization_msgs::Marker::MODIFY;
+      debug_start_point_marker.pose.orientation.w = 1.0;
+      debug_start_point_marker.id = unique_id;
+      debug_start_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+      debug_start_point_marker.scale.x = 1.0f;
+      debug_start_point_marker.scale.y = 0.1f;
+      debug_start_point_marker.scale.z = 0.1f;
+      debug_start_point_marker.color.r = 1.0f;
+      debug_start_point_marker.color.a = 0.999;
+      debug_start_point_marker.points.push_back(start_exploring_pose.position);
+      marker_array.markers.push_back(debug_start_point_marker);
+      unique_id++;
+      // doResetting();
+      return;
+    }
     
     std::vector<geometry_msgs::Point> debug_interpolated_points;
     std::vector<geometry_msgs::Point> debug_cached_explored_points;
@@ -329,7 +400,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     //debug; marker array
     visualization_msgs::MarkerArray marker_array;
     int unique_id = 0;
-
     // visualize cubic spline point
     visualization_msgs::Marker debug_cubic_spline;
     debug_cubic_spline.lifetime = ros::Duration(1.0);
@@ -436,6 +506,26 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       marker_array.markers.push_back(debug_optimized_points_marker);
     }
     unique_id++;
+    
+    for (size_t i = 0; i < output_trajectory_msg.points.size(); i++)
+    {
+      // visualize cubic spline point
+      visualization_msgs::Marker debug_optimized_points_marker;
+      debug_optimized_points_marker.lifetime = ros::Duration(1.0);
+      debug_optimized_points_marker.header = input_path_msg.header;
+      debug_optimized_points_marker.ns = std::string("optimized_points_arow_marker");
+      debug_optimized_points_marker.action = visualization_msgs::Marker::MODIFY;
+      debug_optimized_points_marker.pose= output_trajectory_msg.points[i].pose;
+      debug_optimized_points_marker.id = unique_id;
+      debug_optimized_points_marker.type = visualization_msgs::Marker::ARROW;
+      debug_optimized_points_marker.scale.x = 0.3f;
+      debug_optimized_points_marker.scale.y = 0.1f;
+      debug_optimized_points_marker.scale.z = 0.1f;
+      debug_optimized_points_marker.color.g = 1.0f;
+      debug_optimized_points_marker.color.a = 0.999;
+      unique_id++;
+      marker_array.markers.push_back(debug_optimized_points_marker);
+    }
     
     visualization_msgs::Marker boundary_points_marker;
     boundary_points_marker.lifetime = ros::Duration(1.0);
@@ -596,6 +686,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     
     markers_pub_.publish(marker_array);
   }
+  previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
 }
 
 void EBPathPlannerNode::doResetting()
@@ -631,12 +722,26 @@ void EBPathPlannerNode::objectsCallback(
 
 bool EBPathPlannerNode::needReset(
   const geometry_msgs::Point& current_ego_point,
-  const geometry_msgs::Point& previous_ego_point,
+  std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
   const std::vector<geometry_msgs::Point>& fixed_explored_points)
 {
   bool is_need_reset = false;
+  //check2
+  double dx = current_ego_point.x - previous_ego_point_ptr->x;
+  double dy = current_ego_point.y - previous_ego_point_ptr->y;
+  double dist = std::sqrt(dx*dx+dy*dy);
+  // previous_ego_point_ptr = std::make_unique<geometry_msgs::Point>(current_ego_point);
+  if(dist > reset_delta_ego_distance_)
+  {
+    ROS_WARN(
+    "[EBPathPlanner] Reset eb path planner since delta ego distance is more than %lf",
+     reset_delta_ego_distance_);
+    is_need_reset = true;
+    return is_need_reset;
+  }
+  
   //check1
   geometry_msgs::Point ego_point_in_image;
   bool is_inside_map = tmp1::transformMapToImage(
@@ -655,18 +760,6 @@ bool EBPathPlannerNode::needReset(
     return is_need_reset;
   }
   
-  //check2
-  double dx = current_ego_point.x - previous_ego_point.x;
-  double dy = current_ego_point.y - previous_ego_point.y;
-  double dist = std::sqrt(dx*dx+dy*dy);
-  double reset_delta_distance = 5;
-  if(dist > 5)
-  {
-    ROS_WARN(
-    "[EBPathPlanner] Reset eb path planner since delta ego distance is more than %lf", reset_delta_distance);
-    is_need_reset = true;
-    return is_need_reset;
-  }
   
   //check3
   int count = 0;
@@ -802,10 +895,16 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
   int min_ind = 0;
   for (int i = 0; i < path_points.size(); i++)
   {
-    double dx = path_points[i].pose.position.x - ego_pose.position.x;
-    double dy = path_points[i].pose.position.y - ego_pose.position.y;
-    double dist = std::sqrt(dx*dx+dy*dy);
-    if(dist < min_dist)
+    double dx1 = path_points[i].pose.position.x - ego_pose.position.x;
+    double dy1 = path_points[i].pose.position.y - ego_pose.position.y;
+    double dist = std::sqrt(dx1*dx1+dy1*dy1);
+    double yaw = tf2::getYaw(ego_pose.orientation);
+    double dx2 = std::cos(yaw);
+    double dy2 = std::sin(yaw);
+    double inner_product = dx1*dx2+dy1*dy2;
+    if(dist < min_dist && 
+       inner_product < 0 && 
+       dist > backward_detection_range_arc_length_)
     {
       min_dist = dist;
       min_ind = i;
@@ -825,7 +924,8 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
       double dy2 = ego_pose.position.y - 
                   avoiding_object.state.pose_covariance.pose.position.y;
       double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
-      if(dist1 < exploring_minimum_radius_*2 && dist2<30)
+      if(dist1 < exploring_minimum_radius_*2 && 
+         dist2<detection_radius_from_ego_)
       {
         return true;
       }
@@ -834,12 +934,14 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
   return false;
 }
 
-bool EBPathPlannerNode::generateFixedExploredPoints(
+// bool EBPathPlannerNode::generateFixedExploredPoints(
+bool EBPathPlannerNode::seperateExploredPointsToFixedAndNonFixed(
   const geometry_msgs::Pose& ego_pose,
   const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
-  std::vector<geometry_msgs::Point>& fixed_explored_points)
+  std::vector<geometry_msgs::Point>& fixed_explored_points,
+  std::vector<geometry_msgs::Point>& non_fixed_explored_points)
 {
   std::chrono::high_resolution_clock::time_point begin= 
     std::chrono::high_resolution_clock::now();
@@ -862,9 +964,6 @@ bool EBPathPlannerNode::generateFixedExploredPoints(
       min_ind = i;
     }
   }
-  std::cout << "min ind "<< min_ind << std::endl;
-  // std::cout << "prv opt size "<< previous_explored_points_ptr->size() << std::endl;
-  std::cout << "min dist "<< min_dist << std::endl;
   const double keep_distance = forward_fixing_distance_ + backward_fixing_distance_;
   int forward_fixing_idx = 
     std::min((int)(min_ind+forward_fixing_distance_/exploring_minimum_radius_),
@@ -901,14 +1000,46 @@ bool EBPathPlannerNode::generateFixedExploredPoints(
   int valid_backward_fixing_idx =  
     std::max(origin_valid_prev_explored_points_ind, backward_fixing_idx);
   valid_backward_fixing_idx = std::min(valid_backward_fixing_idx, forward_fixing_idx);
-  for (int i = valid_backward_fixing_idx; i < forward_fixing_idx; i++)
+    
+  int valid_forward_fixing_idx = 
+    std::min(forward_fixing_idx,
+             (int)previous_explored_points_ptr_->size()-1);
+  for (int i = valid_forward_fixing_idx;
+           i >= 0; i--)
+  {
+    geometry_msgs::Point point_in_image;
+    if(tmp1::transformMapToImage(
+            previous_explored_points_ptr->at(i), 
+            map_info,
+            point_in_image))
+    {
+       float clearance = 
+          clearance_map.ptr<float>((int)point_in_image.y)
+                                  [(int)point_in_image.x]*map_info.resolution;
+       valid_forward_fixing_idx = i;
+       if(clearance > 0)
+       {
+         break;
+       }
+       else
+       {
+         ROS_WARN_THROTTLE(1.0, 
+              "[EBPathPlanner] Discard fixed explored points since they are out of dirvable area");
+       }
+    }
+  }
+  for (int i = valid_backward_fixing_idx; i <= valid_forward_fixing_idx; i++)
   {
     fixed_explored_points.push_back(previous_explored_points_ptr->at(i));
   }     
+  for (int i = valid_forward_fixing_idx+1; i < previous_explored_points_ptr->size(); i++)
+  {
+    non_fixed_explored_points.push_back(previous_explored_points_ptr->at(i));
+  }     
       
       
-  std::cout << "forward fixing ind "<< forward_fixing_idx<< std::endl;
-  std::cout << "valid backward fixing dist "<< valid_backward_fixing_idx << std::endl;
+  // std::cout << "valid backward fixing ind "<< valid_backward_fixing_idx << std::endl;
+  // std::cout << "valid forward fixing ind "<< valid_forward_fixing_idx<< std::endl;
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
@@ -1102,20 +1233,135 @@ bool EBPathPlannerNode::generateClearanceMap(
   {
     if(object.state.twist_covariance.twist.linear.x < max_avoiding_objects_velocity_ms_)
     {
-      geometry_msgs::Point point_in_image;
-      if(tmp1::transformMapToImage(
-              object.state.pose_covariance.pose.position, 
-              occupancy_grid.info,
-              point_in_image))
+      if(object.semantic.type == object.semantic.CAR)
       {
-        cv::circle(drivable_area, 
-                   cv::Point(point_in_image.x, point_in_image.y), 
-                   15, 
-                   cv::Scalar(0),
-                   -1);
-      } 
+        double yaw = tf2::getYaw(object.state.pose_covariance.pose.orientation);
+        geometry_msgs::Point top_left;
+        top_left.x = object.shape.dimensions.x*0.5;
+        top_left.y = object.shape.dimensions.y*0.5;
+        geometry_msgs::Point top_left_map;
+        top_left_map.x =  std::cos(yaw)*top_left.x+  
+                            -1*std::sin(yaw)*top_left.y;
+        top_left_map.y =  std::sin(yaw)*top_left.x+  
+                            std::cos(yaw)*top_left.y;
+        top_left_map.x += object.state.pose_covariance.pose.position.x;
+        top_left_map.y += object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point top_right;
+        top_right.x = object.shape.dimensions.x*0.5;
+        top_right.y = -1*object.shape.dimensions.y*0.5;
+        geometry_msgs::Point top_right_map;
+        top_right_map.x =  std::cos(yaw)*top_right.x+  
+                            -1*std::sin(yaw)*top_right.y;
+        top_right_map.y =  std::sin(yaw)*top_right.x+  
+                            std::cos(yaw)*top_right.y;
+        top_right_map.x += object.state.pose_covariance.pose.position.x;
+        top_right_map.y += object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point bottom_left;
+        bottom_left.x = -1*object.shape.dimensions.x*0.5;
+        bottom_left.y = object.shape.dimensions.y*0.5;
+        geometry_msgs::Point bottom_left_map;
+        bottom_left_map.x =  std::cos(yaw)*bottom_left.x+  
+                            -1*std::sin(yaw)*bottom_left.y;
+        bottom_left_map.y =  std::sin(yaw)*bottom_left.x+  
+                            std::cos(yaw)*bottom_left.y;
+        bottom_left_map.x += object.state.pose_covariance.pose.position.x;
+        bottom_left_map.y += object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point bottom_right;
+        bottom_right.x = -1*object.shape.dimensions.x*0.5;
+        bottom_right.y = -1*object.shape.dimensions.y*0.5;
+        geometry_msgs::Point bottom_right_map;
+        bottom_right_map.x =  std::cos(yaw)*bottom_right.x+  
+                            -1*std::sin(yaw)*bottom_right.y;
+        bottom_right_map.y =  std::sin(yaw)*bottom_right.x+  
+                            std::cos(yaw)*bottom_right.y;
+        bottom_right_map.x += object.state.pose_covariance.pose.position.x;
+        bottom_right_map.y += object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point top_left_map_in_image;
+        geometry_msgs::Point top_right_map_in_image;
+        geometry_msgs::Point bottom_left_map_in_image;
+        geometry_msgs::Point bottom_right_map_in_image;
+        tmp1::transformMapToImage(
+              top_left_map, 
+              occupancy_grid.info,
+              top_left_map_in_image);
+        tmp1::transformMapToImage(
+              top_right_map, 
+              occupancy_grid.info,
+              top_right_map_in_image);
+        tmp1::transformMapToImage(
+              bottom_left_map, 
+              occupancy_grid.info,
+              bottom_left_map_in_image);
+        tmp1::transformMapToImage(
+              bottom_right_map, 
+              occupancy_grid.info,
+              bottom_right_map_in_image);
+        cv::Point top_left_image_point = 
+          cv::Point(top_left_map_in_image.x, top_left_map_in_image.y);
+        cv::Point top_right_image_point = 
+          cv::Point(top_right_map_in_image.x, top_right_map_in_image.y);
+        cv::Point bottom_left_image_point = 
+          cv::Point(bottom_right_map_in_image.x, bottom_right_map_in_image.y);
+        cv::Point bottom_right_image_point = 
+          cv::Point(bottom_right_map_in_image.x, bottom_right_map_in_image.y);
+        cv::clipLine(
+          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          top_left_image_point,
+          top_right_image_point);
+        cv::clipLine(
+          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          top_right_image_point,
+          bottom_right_image_point);
+        cv::clipLine(
+          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          bottom_right_image_point,
+          bottom_left_image_point);
+        cv::clipLine(
+          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          bottom_left_image_point,
+          top_left_image_point);
+          
+        cv::line(drivable_area,
+                  top_left_image_point,
+                  top_right_image_point,
+                  cv::Scalar(0), 10);
+        cv::line(drivable_area,
+                  top_right_image_point,
+                  bottom_right_image_point,
+                  cv::Scalar(0), 10);
+        cv::line(drivable_area,
+                  bottom_right_image_point,
+                  bottom_left_image_point,
+                  cv::Scalar(0), 10);
+        cv::line(drivable_area,
+                  bottom_left_image_point,
+                  top_left_image_point,
+                  cv::Scalar(0), 10);
+      }
+      else
+      {
+        geometry_msgs::Point point_in_image;
+        if(tmp1::transformMapToImage(
+                object.state.pose_covariance.pose.position, 
+                occupancy_grid.info,
+                point_in_image))
+        {
+          cv::circle(drivable_area, 
+                    cv::Point(point_in_image.x, point_in_image.y), 
+                    15, 
+                    cv::Scalar(0),
+                    -1);
+            
+        } 
+        
+      }      
     }
   }
+  
   
   cv::distanceTransform(drivable_area, clearance_map, cv::DIST_L2, 5);
   std::chrono::high_resolution_clock::time_point end= 
@@ -1123,7 +1369,24 @@ bool EBPathPlannerNode::generateClearanceMap(
   std::chrono::nanoseconds time = 
     std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   std::cout << " conversion & edt "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
-  
+  if(is_debug_clearance_map_mode_)
+  {
+    cv::Mat tmp;
+    clearance_map.copyTo(tmp);
+    cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("image", tmp);
+    cv::waitKey(10);
+  }
+  if(is_debug_drivable_area_mode_)
+  {
+    cv::Mat tmp;
+    drivable_area.copyTo(tmp);
+    // cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("image", tmp);
+    cv::waitKey(10);
+  }
 }
 
 bool EBPathPlannerNode::convertPathToSmoothTrajectory(
@@ -1143,7 +1406,20 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
       optimized_points,
       debug_fixed_optimzied_points_used_for_constrain,
       debug_interpolated_points_used_for_optimization);
-      
+    
+    if(optimized_points.empty())
+    {
+      ROS_WARN("Path size %d is not enough for smoothing; Relay path to trajetory ",
+       (int)path_points.size());
+      for(const auto& point: path_points)
+      {
+        autoware_planning_msgs::TrajectoryPoint smoothed_point;
+        smoothed_point.pose = point.pose;
+        smoothed_point.twist = point.twist;
+        smoothed_points.push_back(smoothed_point);
+      }
+      return false;
+    }
     autoware_planning_msgs::Trajectory tmp_traj;
     tmp_traj.points = optimized_points;
     debug_traj_pub_.publish(tmp_traj);
@@ -1227,7 +1503,6 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
       traj_point.pose.position.z = tmp_z[ind];
       smoothed_points.push_back(traj_point); 
     }
-    
     //sanity check for last point
     if(tmp_v.back()<1e-8 &&
       smoothed_points.back().twist.linear.x > 1e-8)

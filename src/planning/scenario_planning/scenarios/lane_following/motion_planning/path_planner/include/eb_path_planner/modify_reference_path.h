@@ -107,6 +107,7 @@ public:
     const geometry_msgs::Pose& start_exploring_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+    const std::vector<geometry_msgs::Point>& non_fixed_explored_points,
     std::vector<geometry_msgs::Point>& explored_points,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,

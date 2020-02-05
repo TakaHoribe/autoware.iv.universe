@@ -98,6 +98,10 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   double map_y_in_image_resolution = relative_p.y/resolution;
   double image_x = map_y_height - map_y_in_image_resolution;
   double image_y = map_x_width - map_x_in_image_resolution;
+  // std::cout << "image x "<<  image_x << std::endl;
+  // std::cout << "image y "<<  image_y << std::endl;
+  // std::cout << "max x "<<  map_y_height << std::endl;
+  // std::cout << "max y "<<  map_x_width << std::endl;
   if(image_x>=0 && 
      image_x<(int)map_y_height &&
      image_y>=0 && 
@@ -153,7 +157,7 @@ min_radius_(min_radius),
 max_radius_(min_radius),
 backward_distance_(backward_distance),
 static_objects_velocity_ms_threshold_(1.1),
-loosing_clerance_for_explore_goal_threshold_(0.2),
+loosing_clerance_for_explore_goal_threshold_(0.0),
 heuristic_epsilon_(1)
 {
 }
@@ -283,12 +287,13 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
 {
   geometry_msgs::Point start_point_in_image;
   geometry_msgs::Point goal_point_in_image;
-  if(transformMapToImage(start_point_in_map,
-                         map_info,
-                         start_point_in_image)&&
-     transformMapToImage(goal_point_in_map, 
-                         map_info,
-                         goal_point_in_image))
+  bool is_start_point_inside = transformMapToImage(start_point_in_map,
+                                  map_info,
+                                  start_point_in_image);
+  bool is_goal_point_inside = transformMapToImage(goal_point_in_map,
+                                  map_info,
+                                  goal_point_in_image);
+  if(is_start_point_inside && is_goal_point_inside)
   {
     Node initial_node;
     double initial_r = clearance_map.ptr<float>((int)start_point_in_image.y)
@@ -386,7 +391,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     }
     if(!is_explore_success)
     {
-      ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] graph a star could not find path");
+      ROS_WARN( "[EBPathPlanner] graph a star could not find path");
       ROS_INFO("[EBPathPlanner] Start point: %lf %lf %lf ", 
         start_point_in_map.x, 
         start_point_in_map.y, 
@@ -400,9 +405,10 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     Node current_node = s_closed.back();
     if(current_node.parent_node == nullptr)
     {
-      ROS_INFO("[EBPathPlanner] No node is explored, Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
-        ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
-        ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
+      ROS_WARN("[EBPathPlanner] No node is explored");
+      // , Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
+      //   ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
+      //   ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
       return false;
     }
     std::vector<geometry_msgs::Point> explored_image_points;
@@ -434,7 +440,15 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
   }
   else
   {
-    ROS_WARN_THROTTLE(2.0, "Strat point or/and goal point is outside of drivable area");
+    if(!is_start_point_inside)
+    {
+      ROS_WARN( "Strat point is outside of drivable area");
+    }
+    if(!is_goal_point_inside)
+    {
+      std::cout << "goal point in image "<< goal_point_in_image.x << " "<< goal_point_in_image.y << std::endl;
+      ROS_WARN("Goal point is outside of drivable area");
+    }
     return false;
   }
 }
@@ -712,6 +726,7 @@ bool ModifyReferencePath::generateModifiedPath(
   const geometry_msgs::Pose& start_exploring_pose,
   const std::vector<autoware_planning_msgs::PathPoint>& path_points,
   const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+  const std::vector<geometry_msgs::Point>& non_fixed_explored_points,
   std::vector<geometry_msgs::Point>& explored_points,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
@@ -778,10 +793,14 @@ bool ModifyReferencePath::generateModifiedPath(
       float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
       if(clearance*resolution_>=min_radius_-loosing_clerance_for_explore_goal_threshold_)
       {
-        exploring_goal_pose_in_map_ptr = 
-          std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
-        if(accum_dist > max_radius_*20)
+        if(accum_dist > max_radius_*7)
         {
+          exploring_goal_pose_in_map_ptr = 
+            std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
+        }
+        if(accum_dist > max_radius_*10)
+        {
+          // ROS_WARN("Set farrest foal");
           break;
         }
       }
@@ -791,33 +810,13 @@ bool ModifyReferencePath::generateModifiedPath(
       break;
     }
   }
-  if(!exploring_goal_pose_in_map_ptr && previous_exploring_goal_pose_in_map_ptr_)
+  if(!exploring_goal_pose_in_map_ptr)
   {
-    exploring_goal_pose_in_map_ptr = 
-      std::make_unique<geometry_msgs::Pose>(*previous_exploring_goal_pose_in_map_ptr_);
-  }
-  else if(!exploring_goal_pose_in_map_ptr)
-  {
-    ROS_WARN("[EBPathPlanner] Explore from baselink positon."); 
-    exploring_goal_pose_in_map_ptr = 
-      std::make_unique<geometry_msgs::Pose>(ego_pose);
+    ROS_WARN_THROTTLE(2.0,"[EBPathPlanner] Could not find appropriate goal, usinga previous explored points"); 
+    explored_points = non_fixed_explored_points;
+    return true;
   }
   
-  // std::cout << "goal "<< exploring_goal_pose_in_map_ptr->position.x << " "<< exploring_goal_pose_in_map_ptr->position.y << std::endl;
-  //for last stopping point 
-  if(path_points.back().twist.linear.x < 1e-4)
-  {
-    double dx = exploring_goal_pose_in_map_ptr->position.x - 
-                path_points.back().pose.position.x;
-    double dy = exploring_goal_pose_in_map_ptr->position.y - 
-                path_points.back().pose.position.y;
-    double dist = std::sqrt(dx*dx+dy*dy);
-    if(dist < min_radius_)
-    {
-      exploring_goal_pose_in_map_ptr = 
-        std::make_unique<geometry_msgs::Pose>(path_points.back().pose);
-    }
-  }
   debug_goal_point_in_map = exploring_goal_pose_in_map_ptr->position;
   
   bool is_explore_success = solveGraphAStar(ego_pose, 
@@ -843,8 +842,6 @@ bool ModifyReferencePath::generateModifiedPath(
     explored_points.push_back(exploring_goal_pose_in_map_ptr->position);
   }
   
-  previous_exploring_goal_pose_in_map_ptr_ = 
-    std::make_unique<geometry_msgs::Pose>(*exploring_goal_pose_in_map_ptr);
   std::chrono::high_resolution_clock::time_point end2= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time2 = 
