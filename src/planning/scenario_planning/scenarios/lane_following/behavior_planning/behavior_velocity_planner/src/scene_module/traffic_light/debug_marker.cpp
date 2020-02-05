@@ -1,28 +1,25 @@
-#include <scene_module/traffic_light/debug_marker.hpp>
 #include <behavior_velocity_planner/api.hpp>
+#include <scene_module/traffic_light/debug_marker.hpp>
 
-namespace behavior_planning
-{
-// TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
-TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~")
-{
-    debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/traffic_light", 1);
+namespace behavior_planning {
+// TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~"),
+// tf_listener_(tf_buffer_)
+TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~") {
+  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/traffic_light", 1);
 }
 
-void TrafficLightDebugMarkersManager::pushTrafficLightState(const std::shared_ptr<lanelet::TrafficLight const> &traffic_light,
-                                                            const autoware_traffic_light_msgs::TrafficLightState &state)
-{
-    tl_state_.push_back(std::make_tuple(traffic_light, state));
+void TrafficLightDebugMarkersManager::pushTrafficLightState(
+    const std::shared_ptr<lanelet::TrafficLight const>& traffic_light,
+    const autoware_traffic_light_msgs::TrafficLightState& state) {
+  tl_state_.push_back(std::make_tuple(traffic_light, state));
 }
 
-void TrafficLightDebugMarkersManager::pushStopPose(const geometry_msgs::Pose &pose)
-{
-    stop_poses_.push_back(geometry_msgs::Pose(pose));
+void TrafficLightDebugMarkersManager::pushStopPose(const geometry_msgs::Pose& pose) {
+  stop_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
-void TrafficLightDebugMarkersManager::pushJudgePose(const geometry_msgs::Pose &pose)
-{
-    judge_poses_.push_back(geometry_msgs::Pose(pose));
+void TrafficLightDebugMarkersManager::pushJudgePose(const geometry_msgs::Pose& pose) {
+  judge_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
 #if 0
@@ -89,86 +86,83 @@ void MapBasedDetector::publishVisibleTrafficLights(const geometry_msgs::PoseStam
 }
 #endif
 
-void TrafficLightDebugMarkersManager::publish()
-{
-    visualization_msgs::MarkerArray msg;
-    ros::Time current_time = ros::Time::now();
+void TrafficLightDebugMarkersManager::publish() {
+  visualization_msgs::MarkerArray msg;
+  ros::Time current_time = ros::Time::now();
 
-    // Geofence Stop
-    for (size_t j = 0; j < stop_poses_.size(); ++j)
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "stop geofence";
-        marker.id = j;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::CUBE_LIST;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = stop_poses_.at(j).position.x;
-        marker.pose.position.y = stop_poses_.at(j).position.y;
-        marker.pose.position.z = stop_poses_.at(j).position.z+1.0;
-        marker.pose.orientation.x = stop_poses_.at(j).orientation.x;
-        marker.pose.orientation.y = stop_poses_.at(j).orientation.y;
-        marker.pose.orientation.z = stop_poses_.at(j).orientation.z;
-        marker.pose.orientation.w = stop_poses_.at(j).orientation.w;
-        marker.scale.x = 0.1;
-        marker.scale.y = 5.0;
-        marker.scale.z = 2.0;
-        marker.color.a = 0.5; // Don't forget to set the alpha!
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        double base_link2front;
-        getBaselink2FrontLength(base_link2front);
-        geometry_msgs::Point point;
-        point.x = base_link2front;
-        point.y = 0;
-        point.z = 0;
-        marker.points.push_back(point);
-        msg.markers.push_back(marker);
-    }
-    // Geofence Judge
-    for (size_t j = 0; j < judge_poses_.size(); ++j)
-    {
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = current_time;
-        marker.ns = "judge geofence";
-        marker.id = j;
-        marker.lifetime = ros::Duration(0.5);
-        marker.type = visualization_msgs::Marker::CUBE_LIST;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = judge_poses_.at(j).position.x;
-        marker.pose.position.y = judge_poses_.at(j).position.y;
-        marker.pose.position.z = judge_poses_.at(j).position.z+1.0;
-        marker.pose.orientation.x = judge_poses_.at(j).orientation.x;
-        marker.pose.orientation.y = judge_poses_.at(j).orientation.y;
-        marker.pose.orientation.z = judge_poses_.at(j).orientation.z;
-        marker.pose.orientation.w = judge_poses_.at(j).orientation.w;
-        marker.scale.x = 0.1;
-        marker.scale.y = 5.0;
-        marker.scale.z = 2.0;
-        marker.color.a = 0.5; // Don't forget to set the alpha!
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        double base_link2front;
-        getBaselink2FrontLength(base_link2front);
-        geometry_msgs::Point point;
-        point.x = base_link2front;
-        point.y = 0;
-        point.z = 0;
-        marker.points.push_back(point);
-        msg.markers.push_back(marker);
-    }
+  // Geofence Stop
+  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+    marker.ns = "stop geofence";
+    marker.id = j;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::CUBE_LIST;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = stop_poses_.at(j).position.x;
+    marker.pose.position.y = stop_poses_.at(j).position.y;
+    marker.pose.position.z = stop_poses_.at(j).position.z + 1.0;
+    marker.pose.orientation.x = stop_poses_.at(j).orientation.x;
+    marker.pose.orientation.y = stop_poses_.at(j).orientation.y;
+    marker.pose.orientation.z = stop_poses_.at(j).orientation.z;
+    marker.pose.orientation.w = stop_poses_.at(j).orientation.w;
+    marker.scale.x = 0.1;
+    marker.scale.y = 5.0;
+    marker.scale.z = 2.0;
+    marker.color.a = 0.5;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    double base_link2front;
+    getBaselink2FrontLength(base_link2front);
+    geometry_msgs::Point point;
+    point.x = base_link2front;
+    point.y = 0;
+    point.z = 0;
+    marker.points.push_back(point);
+    msg.markers.push_back(marker);
+  }
+  // Geofence Judge
+  for (size_t j = 0; j < judge_poses_.size(); ++j) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+    marker.ns = "judge geofence";
+    marker.id = j;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::CUBE_LIST;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = judge_poses_.at(j).position.x;
+    marker.pose.position.y = judge_poses_.at(j).position.y;
+    marker.pose.position.z = judge_poses_.at(j).position.z + 1.0;
+    marker.pose.orientation.x = judge_poses_.at(j).orientation.x;
+    marker.pose.orientation.y = judge_poses_.at(j).orientation.y;
+    marker.pose.orientation.z = judge_poses_.at(j).orientation.z;
+    marker.pose.orientation.w = judge_poses_.at(j).orientation.w;
+    marker.scale.x = 0.1;
+    marker.scale.y = 5.0;
+    marker.scale.z = 2.0;
+    marker.color.a = 0.5;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    double base_link2front;
+    getBaselink2FrontLength(base_link2front);
+    geometry_msgs::Point point;
+    point.x = base_link2front;
+    point.y = 0;
+    point.z = 0;
+    marker.points.push_back(point);
+    msg.markers.push_back(marker);
+  }
 
-    debug_viz_pub_.publish(msg);
-    tl_state_.clear();
-    stop_poses_.clear();
-    judge_poses_.clear();
+  debug_viz_pub_.publish(msg);
+  tl_state_.clear();
+  stop_poses_.clear();
+  judge_poses_.clear();
 
-    return;
+  return;
 }
 
-}
+}  // namespace behavior_planning
