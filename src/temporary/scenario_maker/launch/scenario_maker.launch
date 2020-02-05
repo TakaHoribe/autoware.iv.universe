@@ -36,13 +36,14 @@
     <!-- Engage automaticlly or not -->
     <param name="retry_scenario" value="true" />
     <!-- Retry scenario or not -->
-    <param name = "is_retry_by_collision" value="false"/>
+    <param name="is_retry_by_collision" value="false" />
     <!-- Retry sceanrio by collison or not -->
     <param name="max_scenario_num" value="10" />
     <!-- Numober of scenarios to try -->
     <param name="traffic_light_time" value="35" />
     <!-- Time until the traffic light changes[s] (larger than 0)-->
-    <param name="is_pub_traffic_image" value="true" /> <!-- Publish Traffic image or not -->
+    <param name="is_pub_traffic_image" value="true" /> 
+    <!-- Publish Traffic image or not -->
     <param name="initial_traffic_light" value="green" />
     <!-- initial traffic light. green or red.H -->
     <param name="record_rosbag" value="false" />
@@ -53,7 +54,9 @@
     <!-- delete rosbag of success scenario or not -->
     <param name="rosbag_file_name" value="/media/kimura/extra_ssd/rosbag/scenario" />
     <!-- dir/file name of rosbag file(**it must be absolute path ** ) -->
-    <remap from="/max_speed_mps" to ="/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps" />
+    <param name="use_ndt" value="false" />
+    <!-- use ndt or not -->
+    <remap from="/max_speed_mps" to="/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps" />
   </node>
 
 </launch>

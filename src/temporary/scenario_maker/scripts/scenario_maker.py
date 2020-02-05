@@ -72,6 +72,7 @@ class ScenarioMaker:
         self.rosbag_file_name = rospy.get_param(
             "~rosbag_file_name", "/media/kimura/extra_ssd/rosbag/scenario"
         )  # dir/file name of rosbag file(**it must be absolute path ** )
+        self.use_ndt = rospy.get_param("~use_ndt", "false")
 
         self.trial_num = 0
         self.start_time = 0
@@ -151,7 +152,7 @@ class ScenarioMaker:
         # for publish traffic signal image
         rospy.Timer(rospy.Duration(1 / 3.0), self.timerCallback)
 
-        time.sleep(0.5)  # wait for ready to publish/subscribe#TODO: fix this
+        time.sleep(0.2)  # wait for ready to publish/subscribe
 
         ##################################################### main process start
 
@@ -159,12 +160,13 @@ class ScenarioMaker:
         if self.is_record_rosbag:
             self.record_rosbag(self.trial_num, self.rosbag_node_name, self.rosbag_file_name)
         self.scenario_path(only_initial_pose=True)
-        time.sleep(1.0)  # wait to finish ndt matching
+        if self.use_ndt:
+            time.sleep(5.0)  # wait to finish ndt matching
         self.reset_obstacle()
         time.sleep(1.0)
         if self.generate_obstacle:
             self.scenario_obstacle()  # obstacle is valid only when self-position is given
-        time.sleep(3.0)  # wait to finish ndt matching
+        time.sleep(2.0) # wait for registration of obstacle
         self.scenario_path()
 
         # publish max speed
@@ -233,7 +235,7 @@ class ScenarioMaker:
         # Publish Engage
         if self.auto_engage:
             self.pub_engage.publish(True)
-            time.sleep(0.25)
+            time.sleep(0.2)
 
     def scenario_obstacle(self):
         self.scenario_obstacle1()
@@ -242,7 +244,7 @@ class ScenarioMaker:
         self.scenario_obstacle_manager1()
 
     def scenario_path1(self, only_inital_pose=False):
-        time.sleep(0.25)
+        time.sleep(0.2)
 
         # publish Start Position
         self.pub_initialpose.publish(
@@ -257,7 +259,8 @@ class ScenarioMaker:
                 )
             )
         )
-        time.sleep(5.0)
+        if self.use_ndt:
+            time.sleep(5.0)  # wait to finish ndt matching
         if only_inital_pose:
             return
 
@@ -275,7 +278,7 @@ class ScenarioMaker:
                 )
             )
         )
-        time.sleep(0.25)
+        time.sleep(0.2)
 
         # Publish Check Point
         for cp in s_checkpoint:
@@ -291,12 +294,12 @@ class ScenarioMaker:
                     )
                 )
             )
-            time.sleep(0.25)
+            time.sleep(0.2)
 
     def scenario_obstacle1(self):
         ###obstacle 0: fixed pedestrian
         self.PubObjectId(0)
-        time.sleep(0.25)
+        time.sleep(0.2)
         for sb in s_staticobstacle:
             self.PubObstacle(
                 pose=self.random_pose_maker(
@@ -689,7 +692,7 @@ class ScenarioMaker:
 
     def MakeTrafficMsg(self):
         while self.camera_height is None or self.camera_width is None:
-            time.sleep(1)  # wait for subscrbing camera info
+            time.sleep(0.2)  # wait for subscrbing camera info
         imgsize = self.camera_height * self.camera_width * 3  # pixel*3(bgr)
         img_green = np.zeros((imgsize)).astype(np.uint8)
         img_green[np.arange(0, imgsize, 3)] = 200  # brue
