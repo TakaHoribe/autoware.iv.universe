@@ -42,8 +42,8 @@ class Murakami:
         print(len(args))
         if len(args) > 1:
             scene_number = args[1]
-            print('aaa')
-            rosbag_play = 'rosbag play ./scene/' + scene_number + '.bag --wait-for-subscribers -i'
+            rosbag_play = 'rosbag play ./scene/' + scene_number + '.bag --wait-for-subscribers -r 100'
+            print('run : ' + rosbag_play)
             os.system(rosbag_play)
         else:
             print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
