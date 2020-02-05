@@ -225,7 +225,6 @@ bool BlockedByObstacleState::hasEnoughDistance() const
   {
     return false;
   }
-    std::cerr << target_lanes.front() << " " << util::getDistanceToEndOfLane(current_pose_.pose, target_lanes)<< std::endl;
   if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
   {
     return false;
