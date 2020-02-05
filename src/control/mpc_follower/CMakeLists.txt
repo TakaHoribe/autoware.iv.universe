@@ -16,6 +16,7 @@ find_package(
   autoware_planning_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
+  osqp_interface
 )
 
 catkin_package(
@@ -30,6 +31,7 @@ catkin_package(
     autoware_planning_msgs
     autoware_control_msgs
     autoware_vehicle_msgs
+    osqp_interface
 )
 
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
