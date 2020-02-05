@@ -49,6 +49,7 @@ MPCFollower::MPCFollower()
   pnh_.param("delay_compensation_time", mpc_param_.delay_compensation_time, double(0.0));
 
   pnh_.param("steer_lim_deg", steer_lim_deg_, double(35.0));
+  pnh_.param("enable_steer_rate_lim", enable_steer_rate_lim_, false);
   pnh_.param("steer_rate_lim_deg", steer_rate_lim_deg_, double(150.0));
   pnh_.param("/vehicle_info/wheel_base", wheelbase_, double(2.9));
 
@@ -101,7 +102,7 @@ MPCFollower::MPCFollower()
   }
   else if(qp_solver_type_ == "osqp")
   {
-    osqpsolver_ptr_ = std::make_shared<osqp::OSQPInterface>();//TODO: make middle interface
+    osqpsolver_ptr_ = std::make_shared<osqp::OSQPInterface>();
   }
   else
   {
@@ -595,38 +596,71 @@ bool MPCFollower::executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::M
 
   bool solve_result;
   if(qp_solver_type_ == "osqp"){
+
+    /*
+    (1)lb < u < ub && (2)lbA < Au < ubA --> (3)[lb, lbA] < [I, A]u < [ub, ubA]
+    (1)lb < u < ub ...
+    [-u_lim] < [ u0 ] < [u_lim]
+    [-u_lim] < [ u1 ] < [u_lim]
+                 ~~~
+    [-u_lim] < [ uN ] < [u_lim] (*N... DIM_U)
+    (2)lbA < Au < ubA ...
+    [prev_u0 - au_lim*ctp] < [   u0  ] < [prev_u0 + au_lim*ctp] (*ctp ... ctrl_period)
+    [    -au_lim * dt    ] < [u1 - u0] < [     au_lim * dt    ]
+    [    -au_lim * dt    ] < [u2 - u1] < [     au_lim * dt    ]
+                               ~~~
+    [    -au_lim * dt    ] < [uN-uN-1] < [     au_lim * dt    ] (*N... DIM_U)
+    */
+
     Eigen::MatrixXd I = Eigen::MatrixXd::Identity(DIM_U * N , DIM_U * N);
-    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N , DIM_U * N);
-    for(int i = 0; i < N; i++){
-      A(i, i) = 1.0f;
-      if(i!=0)A(i,i-1)= -1.0f;
-    }
 
-    // [lb, lbA] <= [I, A]u <= [ub, ubA]
-
-    //concatenate matrix. osqpA = [I.T, A.T].T
-    Eigen::MatrixXd osqpA(DIM_U * N * 2, DIM_U * N);
-    osqpA << I, A;
-
-    std::vector<double> f_(&f(0), f.data()+f.cols()*f.rows());//convert matrix to vector for osqpsolver
+    //convert matrix to vector for osqpsolver
+    std::vector<double> f_(&f(0), f.data()+f.cols()*f.rows());
     std::vector<double> lb(DIM_U * N, -u_lim);
     std::vector<double> ub(DIM_U * N, u_lim);
-    std::vector<double> lbA(DIM_U * N, -au_lim * dt);
-    std::vector<double> ubA(DIM_U * N, au_lim * dt);
-    lbA[0] = raw_steer_cmd_prev_ - au_lim * ctrl_period_;
-    ubA[0] = raw_steer_cmd_prev_ + au_lim * ctrl_period_;
 
-    //concatenate vector. lower_bound = [lb, lbA], upper_bound = [ub, ubA]
-    std::vector<double> lower_bound(lb);
-    lower_bound.insert(lower_bound.end(), lbA.begin(), lbA.end());
-    std::vector<double> upper_bound(ub);
-    upper_bound.insert(upper_bound.end(), ubA.begin(), ubA.end());
+    Eigen::MatrixXd osqpA;
+    std::vector<double> lower_bound;
+    std::vector<double> upper_bound;
 
-    //optimize
+    if(enable_steer_rate_lim_){
+      /* optimize by formula(3) */
+
+      //create additional Martix A in formula(2)
+      Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N , DIM_U * N);
+      for(int i = 0; i < N; i++){
+        A(i, i) = 1.0f;
+        if(i!=0)A(i,i-1)= -1.0f;
+      }
+
+      //concatenate matrix. osqpA = [I, A]
+      osqpA = Eigen::MatrixXd(DIM_U * N * 2, DIM_U * N);
+      osqpA << I, A;
+
+      // create additional vector lbA, ubA in formula(2)
+      std::vector<double> lbA(DIM_U * N, -au_lim * dt);
+      std::vector<double> ubA(DIM_U * N, au_lim * dt);
+      lbA[0] = raw_steer_cmd_prev_ - au_lim * ctrl_period_;
+      ubA[0] = raw_steer_cmd_prev_ + au_lim * ctrl_period_;
+
+      //concatenate vector. lower_bound = [lb, lbA], upper_bound = [ub, ubA]
+      lower_bound = lb;
+      lower_bound.insert(lower_bound.end(), lbA.begin(), lbA.end());
+      upper_bound = ub;
+      upper_bound.insert(upper_bound.end(), ubA.begin(), ubA.end());
+    }else{
+      /* optimize by formula(1) */
+      osqpA = I;
+      lower_bound = lb;
+      upper_bound = ub;
+    }
+
+     /* execute optimization */
     std::tuple<std::vector<double>, std::vector<double>, int> result = osqpsolver_ptr_->optimize(H, osqpA, f_, lower_bound, upper_bound);
     std::vector<double> U_osqp = std::get<0>(result);
     Uex = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1> >(&U_osqp[0], U_osqp.size(), 1);
-    solve_result = true;//TODO: input solve_result
+    //osqp does not judge the success of optimization
+    solve_result = true;
   }else{
     Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
     Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);

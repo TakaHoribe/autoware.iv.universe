@@ -101,7 +101,8 @@ private:
   double admisible_position_error_; //!< @brief stop MPC calculation when lateral error is large than this value [m]
   double admisible_yaw_error_deg_;  //!< @brief stop MPC calculation when heading error is large than this value [deg]
   double steer_lim_deg_;            //!< @brief steering command limit [rad]
-  double steer_rate_lim_deg_;        //!< @brief steering rate limit [rad]
+  bool enable_steer_rate_lim_;      //!< @brief flag for steering rate limit
+  double steer_rate_lim_deg_;       //!< @brief steering rate limit [rad]
   double wheelbase_;                //!< @brief vehicle wheelbase length [m] to convert steering angle to angular velocity
 
   /* parameters for path smoothing */
