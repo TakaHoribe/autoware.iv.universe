@@ -114,7 +114,8 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   obstacle_pcd_velocity_planner_.setCurrentPose(current_pose_ptr_->pose);
   obstacle_pcd_velocity_planner_.setCurrentTrajectory(*in_trajectory_ptr_);
   obstacle_pcd_velocity_planner_.setPointCloud(transformed_pointcloud);
-  autoware_planning_msgs::Trajectory out_trajectory = obstacle_pcd_velocity_planner_.run();
+  autoware_planning_msgs::Trajectory out_trajectory;
+  obstacle_pcd_velocity_planner_.plan(out_trajectory);
 
   sensor_msgs::PointCloud2 pcd_extructed;
   obstacle_pcd_velocity_planner_.getExtructedPcd(pcd_extructed);

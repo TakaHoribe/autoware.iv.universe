@@ -46,7 +46,7 @@ public:
   /*
    * set zero velocity behind from closest pcd in detection area.
    */
-  autoware_planning_msgs::Trajectory run();
+  bool plan(autoware_planning_msgs::Trajectory &output);
 
   /*
    * set zero velocity behind from closest pcd in detection area.

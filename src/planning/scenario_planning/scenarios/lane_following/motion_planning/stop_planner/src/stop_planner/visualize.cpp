@@ -208,8 +208,6 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   return ma;
 }
 
-
-
 std_msgs::ColorRGBA setColorWhite()
 {
   std_msgs::ColorRGBA color;

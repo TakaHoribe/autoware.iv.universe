@@ -32,14 +32,16 @@ ObstaclePcdVelocityPlanner::ObstaclePcdVelocityPlanner()
   planning_param_.search_distance_rev = 30.0;
 }
 
-autoware_planning_msgs::Trajectory ObstaclePcdVelocityPlanner::run()
+bool ObstaclePcdVelocityPlanner::plan(autoware_planning_msgs::Trajectory &output)
 {
+  output = in_trajectory_;
+
   /* check Trajectory Direction */
   current_direction_ = calcTrajectoryDirection(in_trajectory_);
   if (current_direction_ == Direction::INVALID)
   {
     ROS_DEBUG("[stop] invalid direction. please check trajectory.");
-    return in_trajectory_; // no obstacle. return raw trajectory.
+    return false; // no obstacle. return raw trajectory.
   }
 
   /* extend trajectory for endpoint detection */
@@ -65,19 +67,18 @@ autoware_planning_msgs::Trajectory ObstaclePcdVelocityPlanner::run()
   if (!calcStopPoseOnTrajectory(resampled_traj, pcd_around_traj, /*out=*/stop_pose, is_obstacle_detected_))
   {
     ROS_ERROR_DELAYED_THROTTLE(1.0, "[stop] fail to calculate stop position.");
-    return in_trajectory_; // no obstacle. return raw trajectory.
+    return false;
   }
   if (!is_obstacle_detected_)
   {
     ROS_DEBUG("[stop] no obstacle");
-    return in_trajectory_; // no obstacle. return raw trajectory.
+    return true; // no obstacle. return raw trajectory.
   }
 
   /* set stop velocity from stop point */
-  autoware_planning_msgs::Trajectory out_trajectory;
-  planStopVelocity(in_trajectory_, stop_pose, /*out=*/out_trajectory);
+  planStopVelocity(in_trajectory_, stop_pose, /*out=*/output);
 
-  return out_trajectory;
+  return true;
 }
 
 bool ObstaclePcdVelocityPlanner::extractPcdAroundTrajectory2D(const pcl::PointCloud<pcl::PointXYZ> &in_pcd, const autoware_planning_msgs::Trajectory &in_traj,
@@ -245,7 +246,7 @@ bool ObstaclePcdVelocityPlanner::calcDetectionWidthWithVehicleShape(const autowa
     const geometry_msgs::Pose base_p = in_trajectory.points.at(i).pose;
     const geometry_msgs::Pose p_i = planning_utils::getPoseOnTrajectoryWithRadius(in_trajectory, base_p.position, i, (-1.0) * shape_length);
 
-    // calculat vehicle edge point (froint_right/left) when vehicle is behind with baselink_to_front length
+    // calculate vehicle edge point (froint_right/left) when vehicle is baselink_to_front length behind
     const geometry_msgs::Point p_fl_g = planning_utils::transformToAbsoluteCoordinate2D(p_fl_shape, p_i);
     const geometry_msgs::Point p_fr_g = planning_utils::transformToAbsoluteCoordinate2D(p_fr_shape, p_i);
     const geometry_msgs::Point p_fl_l = planning_utils::transformToRelativeCoordinate2D(p_fl_g, base_p);
