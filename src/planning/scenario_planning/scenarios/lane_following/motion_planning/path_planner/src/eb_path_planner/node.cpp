@@ -258,7 +258,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
                  input_path_msg.drivable_area.info,
                  fixed_explored_points))
     {
-      ROS_WARN("[EBPathPLanner] Reset is triggered");
+      // ROS_WARN("[EBPathPLanner] Reset is triggered");
       doResetting();
     }
     
@@ -307,7 +307,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     std::cout << "prev explored size "<< previous_explored_points_ptr_->size()<<std::endl;
     if(!is_explore_success)
     {
-      ROS_WARN("Could not find path; relay path");
+      ROS_WARN_THROTTLE(3.0,"[EBPathPlanner] Could not find path; relay path");
       generateSmoothTrajectory(
         self_pose,
         input_path_msg,
@@ -735,7 +735,7 @@ bool EBPathPlannerNode::needReset(
   // previous_ego_point_ptr = std::make_unique<geometry_msgs::Point>(current_ego_point);
   if(dist > reset_delta_ego_distance_)
   {
-    ROS_WARN(
+    ROS_WARN_THROTTLE(3.0,
     "[EBPathPlanner] Reset eb path planner since delta ego distance is more than %lf",
      reset_delta_ego_distance_);
     is_need_reset = true;
@@ -754,7 +754,7 @@ bool EBPathPlannerNode::needReset(
                             [(int)ego_point_in_image.x]*map_info.resolution;
   if(clearance < 1e-6 || !is_inside_map)
   {
-    ROS_WARN(
+    ROS_WARN_THROTTLE(3.0,
     "[EBPathPlanner] Reset eb path planner since current ego vehicle is outside of drivavle area");
     is_need_reset = true;
     return is_need_reset;

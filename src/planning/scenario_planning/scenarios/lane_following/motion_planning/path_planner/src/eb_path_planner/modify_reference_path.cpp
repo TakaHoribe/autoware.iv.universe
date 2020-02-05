@@ -391,7 +391,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     }
     if(!is_explore_success)
     {
-      ROS_WARN( "[EBPathPlanner] graph a star could not find path");
+      ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] graph a star could not find path");
       ROS_INFO("[EBPathPlanner] Start point: %lf %lf %lf ", 
         start_point_in_map.x, 
         start_point_in_map.y, 
