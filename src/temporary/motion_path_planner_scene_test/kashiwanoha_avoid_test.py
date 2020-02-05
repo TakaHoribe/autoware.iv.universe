@@ -32,11 +32,11 @@ class Murakami:
 
 
         self.play_rosbag()
-        
-        time.sleep(0.5)  # wait for ready to publish/subscribe
-        self.publish_engage(False)
 
-        print('done')
+        time.sleep(0.5)  # wait for ready to publish/subscribe
+        self.publish_engage(True)
+
+        
     def play_rosbag(self):
         args = sys.argv
         print(len(args))
@@ -46,7 +46,9 @@ class Murakami:
             rosbag_play = 'rosbag play ./scene/' + scene_number + '.bag --wait-for-subscribers -i'
             os.system(rosbag_play)
         else:
-            print('nosbag id is not set!!')
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            print('!!!!!!! you must set rosbag id !!!!!!!')
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     def publish_initialize(self, x_s, y_s, th_s):
         posewcs = self.make_posstmp_with_cov((x_s, y_s, th_s))
@@ -95,8 +97,6 @@ class Murakami:
         return posemsg
 
 if __name__ == "__main__":
-
-
 
     mk = Murakami()
     rospy.spin()
