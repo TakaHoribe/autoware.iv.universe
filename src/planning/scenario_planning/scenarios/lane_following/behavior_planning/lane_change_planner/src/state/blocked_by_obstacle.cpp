@@ -216,13 +216,16 @@ bool BlockedByObstacleState::hasEnoughDistance() const
   const double lane_changing_duration = ros_parameters_.lane_changing_duration;
   const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
   const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
+  const double min_vehicle_speed = 2;
   const double lane_change_total_distance =
-      lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
+      lane_change_total_duration * min_vehicle_speed * 2;  // two is for comming back to original lane
   const auto target_lanes = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+
   if (target_lanes.empty())
   {
     return false;
   }
+    std::cerr << target_lanes.front() << " " << util::getDistanceToEndOfLane(current_pose_.pose, target_lanes)<< std::endl;
   if (lane_change_total_distance > util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_))
   {
     return false;
