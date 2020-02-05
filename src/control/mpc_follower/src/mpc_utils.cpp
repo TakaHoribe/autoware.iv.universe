@@ -403,7 +403,7 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
   }
 
   /* linear interpolation */
-  const double alpha = 0.5 * (c_sq - a_sq + b_sq) / c_sq;
+  const double alpha = std::max(std::min(0.5 * (c_sq - a_sq + b_sq) / c_sq, 1.0), 0.0);
   nearest_pose.position.x = alpha * traj.x[nearest_index] + (1 - alpha) * traj.x[second_nearest_index];
   nearest_pose.position.y = alpha * traj.y[nearest_index] + (1 - alpha) * traj.y[second_nearest_index];
   double tmp_yaw_err = traj.yaw[nearest_index] - traj.yaw[second_nearest_index];
