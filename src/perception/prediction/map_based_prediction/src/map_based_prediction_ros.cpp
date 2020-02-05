@@ -238,8 +238,8 @@ void MapBasedPredictionROS::objectsCallback(
       tmp_object.object.state.pose_covariance.pose = pose_in_map;
     }
     
-    if(object.semantic.type != autoware_perception_msgs::Semantic::CAR||
-       object.semantic.type != autoware_perception_msgs::Semantic::BUS||
+    if(object.semantic.type != autoware_perception_msgs::Semantic::CAR&&
+       object.semantic.type != autoware_perception_msgs::Semantic::BUS&&
        object.semantic.type != autoware_perception_msgs::Semantic::TRUCK)
     {
       tmp_objects_whitout_map.objects.push_back(tmp_object.object);
