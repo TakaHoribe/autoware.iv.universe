@@ -103,6 +103,7 @@ private:
   
   bool needReset(
     const geometry_msgs::Point& current_ego_point,
+    const geometry_msgs::Point& previous_ego_point,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
     const std::vector<geometry_msgs::Point>& fixed_explored_points);

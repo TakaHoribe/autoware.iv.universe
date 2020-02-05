@@ -166,6 +166,11 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   {
     return;
   }
+  if(!previous_ego_point_ptr_)
+  {
+    previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
+    return;
+  }
   bool is_objects_detected = 
     detectAvoidingObjectsOnPath(
       self_pose, 
@@ -237,6 +242,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     }
     
     if(needReset(self_pose.position,
+                 *previous_ego_point_ptr_,
                  clearance_map,
                  input_path_msg.drivable_area.info,
                  fixed_explored_points))
@@ -625,6 +631,7 @@ void EBPathPlannerNode::objectsCallback(
 
 bool EBPathPlannerNode::needReset(
   const geometry_msgs::Point& current_ego_point,
+  const geometry_msgs::Point& previous_ego_point,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
   const std::vector<geometry_msgs::Point>& fixed_explored_points)
@@ -644,6 +651,19 @@ bool EBPathPlannerNode::needReset(
   {
     ROS_WARN(
     "[EBPathPlanner] Reset eb path planner since current ego vehicle is outside of drivavle area");
+    is_need_reset = true;
+    return is_need_reset;
+  }
+  
+  //check2
+  double dx = current_ego_point.x - previous_ego_point.x;
+  double dy = current_ego_point.y - previous_ego_point.y;
+  double dist = std::sqrt(dx*dx+dy*dy);
+  double reset_delta_distance = 5;
+  if(dist > 5)
+  {
+    ROS_WARN(
+    "[EBPathPlanner] Reset eb path planner since delta ego distance is more than %lf", reset_delta_distance);
     is_need_reset = true;
     return is_need_reset;
   }
