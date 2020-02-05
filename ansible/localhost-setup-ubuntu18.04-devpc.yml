@@ -10,5 +10,6 @@
     - {role: ros, release: melodic}
     - lanelet2
     - caffe
+    - osqp
     - {role: autoware, release: melodic}
     - us_sample #could be deprecated in the future
