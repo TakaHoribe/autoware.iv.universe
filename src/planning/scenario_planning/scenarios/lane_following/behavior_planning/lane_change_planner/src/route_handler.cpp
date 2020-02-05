@@ -247,8 +247,7 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequenceAfter(const lanelet::Cons
     return lanelet_sequence_forward;
   }
 
-  lanelet_sequence_forward.push_back(lanelet);
-  double length = boost::geometry::length(lanelet.centerline().basicLineString());
+  double length = 0;
   lanelet::ConstLanelet current_lanelet = lanelet;
   while (ros::ok() && length < min_length)
   {
@@ -334,8 +333,8 @@ lanelet::ConstLanelets RouteHandler::getLaneletSequence(const lanelet::ConstLane
       return lanelet_sequence_forward;
     }
   }
-
   lanelet_sequence.insert(lanelet_sequence.end(), lanelet_sequence_backward.begin(), lanelet_sequence_backward.end());
+  lanelet_sequence.push_back(lanelet);
   lanelet_sequence.insert(lanelet_sequence.end(), lanelet_sequence_forward.begin(), lanelet_sequence_forward.end());
 
   return lanelet_sequence;
