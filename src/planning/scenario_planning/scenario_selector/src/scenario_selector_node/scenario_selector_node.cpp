@@ -156,11 +156,6 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
       nh_.setParam("is_parking_completed", false);
       return autoware_planning_msgs::Scenario::LaneFollowing;
     }
-
-    if (!is_in_parking_lot) {
-      ROS_INFO_STREAM("out of parking lot");
-      return autoware_planning_msgs::Scenario::LaneFollowing;
-    }
   }
 
   return current_scenario_;
