@@ -89,8 +89,7 @@ void FollowingLaneState::update()
   {
     const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
     const double lane_changing_duration = ros_parameters_.lane_changing_duration;
-    const double min_velocity = 2.0;
-    const double minimum_lane_change_length = min_velocity * (lane_change_prepare_duration + lane_changing_duration);
+    const double minimum_lane_change_length = ros_parameters_.minimum_lane_change_length;
     status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(
         current_lanes_, current_pose_.pose, backward_path_length, forward_path_length, minimum_lane_change_length);
 
@@ -98,7 +97,7 @@ void FollowingLaneState::update()
     {
       status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
           current_lanes_, lane_change_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
-          forward_path_length, lane_change_prepare_duration, lane_changing_duration);
+          forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
     }
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
     status_.lane_change_lane_ids = util::getIds(lane_change_lanes);
@@ -269,6 +268,7 @@ bool FollowingLaneState::isLaneChangePathSafe() const
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
+
       if (distance < thresh)
       {
         return false;

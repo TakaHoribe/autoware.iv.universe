@@ -118,43 +118,22 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
       const auto geom_pt = linestring.at(i);
       const auto current_pt = convertToEigenPt(geom_pt);
       const auto current2search_pt = (search_pt - current_pt);
-
-      // get direction vector
-      Eigen::Vector3d direction;
-      {
-        Eigen::Vector3d p1, p2;
-        if (i == 0)
-        {
-          p1 = current_pt;
-          p2 = convertToEigenPt(linestring.at(i + 1));
-        }
-        else
-        {
-          p1 = convertToEigenPt(linestring.at(i - 1));
-          p2 = current_pt;
-        }
-        direction = (p2 - p1).normalized();
-      }
-
-      // update frenet coordinate
-      const double tmp_distance = current2search_pt.norm();
-      if (tmp_distance < min_distance)
-      {
-        if (i > 0 && i < linestring.size() - 1)
-        {
-          found = true;
-        }
-        min_distance = tmp_distance;
-        frenet_coordinate->distance = tmp_distance;
-        frenet_coordinate->length = accumulated_length;
-      }
-
       // update accumulated length
       if (i != 0)
       {
         const auto p1 = convertToEigenPt(linestring.at(i - 1));
         const auto p2 = current_pt;
         accumulated_length += (p2 - p1).norm();
+      }
+      // update frenet coordinate
+
+      const double tmp_distance = current2search_pt.norm();
+      if (tmp_distance < min_distance)
+      {
+        found = true;
+        min_distance = tmp_distance;
+        frenet_coordinate->distance = tmp_distance;
+        frenet_coordinate->length = accumulated_length;
       }
     }
   }
@@ -229,7 +208,6 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   const auto& geometry_points = convertToGeometryPointArray(path);
   FrenetCoordinate3d vehicle_pose_frenet;
   convertToFrenetCoordinate3d(geometry_points, vehicle_pose.position, &vehicle_pose_frenet);
-
   ros::Time start_time = ros::Time::now();
   double vehicle_speed = std::abs(vehicle_twist.linear.x);
   const double min_speed = 0.01;
@@ -310,31 +288,32 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
 {
   if (lerped_pt == nullptr)
   {
-    ROS_WARN_STREAM(__func__ << " failed due to nullptr pt");
+    ROS_WARN_STREAM_THROTTLE(1, "failed to lerp by time due to nullptr pt");
+    return false;
   }
   if (path.path.empty())
   {
-    ROS_WARN_STREAM("Empty path. Failed to interpolate path by time!");
+    ROS_WARN_STREAM_THROTTLE(1, "Empty path. Failed to interpolate path by time!");
     return false;
   }
   if (t < path.path.front().header.stamp)
   {
-    ROS_DEBUG_STREAM("failed to interpolate path by time!" << std::endl
-                                                    << "path start time: " << path.path.front().header.stamp
-                                                    << std::endl
-                                                    << "path end time  : " << path.path.back().header.stamp << std::endl
-                                                    << "query time     : " << t);
+    ROS_DEBUG_STREAM("failed to interpolate path by time!"
+                     << std::endl
+                     << "path start time: " << path.path.front().header.stamp << std::endl
+                     << "path end time  : " << path.path.back().header.stamp << std::endl
+                     << "query time     : " << t);
     *lerped_pt = path.path.front().pose.pose;
     return false;
   }
 
   if (t > path.path.back().header.stamp)
   {
-    ROS_DEBUG_STREAM("failed to interpolate path by time!" << std::endl
-                                                    << "path start time: " << path.path.front().header.stamp
-                                                    << std::endl
-                                                    << "path end time  : " << path.path.back().header.stamp << std::endl
-                                                    << "query time     : " << t);
+    ROS_DEBUG_STREAM("failed to interpolate path by time!"
+                     << std::endl
+                     << "path start time: " << path.path.front().header.stamp << std::endl
+                     << "path end time  : " << path.path.back().header.stamp << std::endl
+                     << "query time     : " << t);
     *lerped_pt = path.path.back().pose.pose;
 
     return false;
@@ -519,7 +498,7 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
   }
   catch (std::out_of_range& ex)
   {
-    std::cout << ex.what() << std::endl;
+    ROS_ERROR_STREAM("failed to set goal" << ex.what() << std::endl);
     return false;
   }
 }
@@ -695,18 +674,14 @@ double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, co
   }
 
   double distance = 0;
-  bool is_before_current_lanelet = true;
+  bool is_after_current_lanelet = false;
   for (const auto& llt : lanelets)
   {
     if (llt == current_lanelet)
     {
-      is_before_current_lanelet = false;
+      is_after_current_lanelet = true;
     }
-    if (is_before_current_lanelet)
-    {
-      continue;
-    }
-    if (llt.hasAttribute("turn_direction"))
+    if (is_after_current_lanelet && llt.hasAttribute("turn_direction"))
     {
       return distance - arc_coordinates.length;
     }
@@ -714,7 +689,7 @@ double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, co
   }
 
   return std::numeric_limits<double>::max();
-}
+}  // namespace util
 
 std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets)
 {

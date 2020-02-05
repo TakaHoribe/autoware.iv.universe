@@ -123,6 +123,7 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const
                                                                prediction_duration);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
+
       if (distance < thresh)
       {
         return false;
