@@ -116,7 +116,9 @@ private_nh_("~")
   debug_traj_pub_ = 
    nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_traj", 1, true);
   debug_fixed_traj_pub_ = 
-   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_fixed_traj", 1, true);
+   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_fixed_traj", 1, true);  
+  debug_clearance_map_in_occupancy_grid_pub_ = 
+   nh_.advertise<nav_msgs::OccupancyGrid>("debug_clearance_map", 1, true);
     
   
   
@@ -130,6 +132,8 @@ private_nh_("~")
                            is_debug_clearance_map_mode_,false);
   private_nh_.param<bool>("is_debug_drivable_area_mode", 
                            is_debug_drivable_area_mode_,false);
+  private_nh_.param<bool>("is_publishing_clearance_map_as_occupancy_grid", 
+                           is_publishing_clearance_map_as_occupancy_grid_,false);
   private_nh_.param<int>("number_of_backward_detection_range_path_points", 
                              number_of_backward_detection_range_path_points_, 5);
   private_nh_.param<double>("forward_fixing_distance", 
@@ -1094,10 +1098,11 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
   return true;
 }
 
-void EBPathPlannerNode::getOccupancyGridValue(const nav_msgs::OccupancyGrid& og, 
-                           const int i, 
-                           const int j,
-                           unsigned char&value) 
+void EBPathPlannerNode::getOccupancyGridValue(
+  const nav_msgs::OccupancyGrid& og, 
+  const int i, 
+  const int j,
+  unsigned char&value) 
 {
   int i_flip = og.info.width - i-1;
   int j_flip = og.info.height - j-1;
@@ -1109,6 +1114,17 @@ void EBPathPlannerNode::getOccupancyGridValue(const nav_msgs::OccupancyGrid& og,
   {
     value = 255;
   }
+}
+
+void EBPathPlannerNode::putOccupancyGridValue(
+  nav_msgs::OccupancyGrid& og, 
+  const int i, 
+  const int j,
+  const unsigned char&value) 
+{
+  int i_flip = og.info.width - i-1;
+  int j_flip = og.info.height - j-1;
+  og.data[i_flip + j_flip*og.info.width] = value;
 }
 
 bool EBPathPlannerNode::generateClearanceMap(
@@ -1283,10 +1299,25 @@ bool EBPathPlannerNode::generateClearanceMap(
   {
     cv::Mat tmp;
     drivable_area.copyTo(tmp);
-    // cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
     cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
     cv::imshow("image", tmp);
     cv::waitKey(10);
+  }
+  
+  if(is_publishing_clearance_map_as_occupancy_grid_)
+  {
+    cv::Mat tmp;
+    clearance_map.copyTo(tmp);
+    cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    nav_msgs::OccupancyGrid clearance_map_in_og = occupancy_grid;
+    tmp.forEach<unsigned char>
+    (
+      [&](const unsigned char &value, const int *position) -> void
+      {
+        putOccupancyGridValue(clearance_map_in_og, position[0], position[1], value);
+      }
+    );
+    debug_clearance_map_in_occupancy_grid_pub_.publish(clearance_map_in_og);
   }
 }
 

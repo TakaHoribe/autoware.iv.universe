@@ -57,11 +57,13 @@ private:
   ros::Publisher debug_traj_pub_;
   ros::Publisher debug_fixed_traj_pub_;
   ros::Publisher markers_pub_;
+  ros::Publisher debug_clearance_map_in_occupancy_grid_pub_;
   // ros::Subscriber is_relay_path_sub_;
   ros::Subscriber twist_sub_;
   ros::Subscriber objects_sub_;
   bool is_debug_clearance_map_mode_;
   bool is_debug_drivable_area_mode_;
+  bool is_publishing_clearance_map_as_occupancy_grid_;
   int number_of_backward_detection_range_path_points_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
@@ -128,6 +130,11 @@ private:
                              const int i, 
                              const int j,
                              unsigned char&value);
+                             
+  void putOccupancyGridValue(nav_msgs::OccupancyGrid& occupancy_grid, 
+                             const int i, 
+                             const int j,
+                             const unsigned char&value);
                              
   bool convertPathToSmoothTrajectory(
     const geometry_msgs::Pose& ego_pose,

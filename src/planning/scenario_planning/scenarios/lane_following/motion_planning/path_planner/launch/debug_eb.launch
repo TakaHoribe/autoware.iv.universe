@@ -8,6 +8,7 @@
         <arg name="input_path_topic" default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
         <arg name="is_debug_clearance_map_mode" default="false" />
         <arg name="is_debug_drivable_area_mode" default="false" />
+        <arg name="is_publishing_clearance_map_as_occupancy_grid" default="true" />
         <arg name="forward_fixing_distance" default="20" />
         <arg name="backward_fixing_distance" default="10" />
         <arg name="detection_radius_from_ego" default="50" />
@@ -23,6 +24,7 @@
           <remap from="~output/path" to="path_planner/trajectory" />
           <param name="is_debug_clearance_map_mode" value="$(arg is_debug_clearance_map_mode)"/>
           <param name="is_debug_drivable_area_mode" value="$(arg is_debug_drivable_area_mode)"/>
+          <param name="is_publishing_clearance_map_as_occupancy_grid" value="$(arg is_publishing_clearance_map_as_occupancy_grid)"/>
           <param name="forward_fixing_distance" value="$(arg forward_fixing_distance)"/>
           <param name="backward_fixing_distance" value="$(arg backward_fixing_distance)"/>
           <param name="detection_radius_from_ego" value="$(arg detection_radius_from_ego)"/>
