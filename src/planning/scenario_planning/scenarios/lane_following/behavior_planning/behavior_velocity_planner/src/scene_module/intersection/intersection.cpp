@@ -539,7 +539,7 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, co
     marker_line.action = visualization_msgs::Marker::ADD;
     marker_line.pose.orientation.w = 1.0;
     marker_line.scale.x = 0.1;
-    marker_line.color.a = 0.99;  // Don't forget to set the alpha!
+    marker_line.color.a = 0.999;  // Don't forget to set the alpha!
     marker_line.color.r = r;
     marker_line.color.g = g;
     marker_line.color.b = b;
