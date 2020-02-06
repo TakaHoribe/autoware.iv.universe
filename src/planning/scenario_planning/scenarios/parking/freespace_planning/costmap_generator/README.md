@@ -4,42 +4,6 @@
 
 This node reads `PointCloud` and/or `DynamicObjectArray` and creates an `OccupancyGrid` and `GridMap`. `VectorMap(Lanelet2)` is optional.
 
-### Flowchart
-
-```plantuml
-@startuml
-title onTimer
-start
-
-if (scenario is active?) then (yes)
-else (no)
-  stop
-endif
-
-:get current pose;
-
-:set the center of costmap to current pose;
-
-if (use wayarea?) then (yes)
- :generate wayarea costmap;
-endif
-
-if (use objects?) then (yes)
- :generate objects costmap;
-endif
-
-if (use points?) then (yes)
- :generate points costmap;
-endif
-
-:combine costmap;
-
-:publish costmap;
-
-stop
-@enduml
-```
-
 ### Input topics
 
 | Name                      | Type                                         | Description                                                                  |
@@ -87,3 +51,39 @@ None
 | `minimum_lidar_height_thres` | double | minimum height threshold for pointcloud data                 |
 | `expand_rectangle_size`      | double | expand object's rectangle with this value                    |
 | `size_of_expansion_kernel`   | int    | kernel size for blurring effect on object's costmap          |
+
+### Flowchart
+
+```plantuml
+@startuml
+title onTimer
+start
+
+if (scenario is active?) then (yes)
+else (no)
+  stop
+endif
+
+:get current pose;
+
+:set the center of costmap to current pose;
+
+if (use wayarea?) then (yes)
+ :generate wayarea costmap;
+endif
+
+if (use objects?) then (yes)
+ :generate objects costmap;
+endif
+
+if (use points?) then (yes)
+ :generate points costmap;
+endif
+
+:combine costmap;
+
+:publish costmap;
+
+stop
+@enduml
+```

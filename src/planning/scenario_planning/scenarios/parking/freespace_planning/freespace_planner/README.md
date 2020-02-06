@@ -9,47 +9,6 @@ This node is based on Hybrid A\* search algorithm in `astar_search` package.
 Due to the constraint of trajectory following, the output trajectory will be split to include only the single direction path.
 In other words, the output trajectory doesn't include both forward and backward trajectories at once.
 
-### Flowchart
-
-```plantuml
-@startuml
-title onTimer
-start
-
-if (all input data are ready?) then (yes)
-else (no)
-  stop
-endif
-
-if (scenario is active?) then (yes)
-else (no)
-  :reset internal data;
-  stop
-endif
-
-:get current pose;
-
-if (replan is required?) then (yes)
-  :reset internal data;
-  :publish stop trajectory before planning new trajectory;
-  :plan new trajectory;
-else (no)
-endif
-
-
-if (vehicle is stopped?) then (yes)
-  stop
-else (no)
-endif
-
-:split trajectory\n(internally managing the state);
-
-:publish trajectory;
-
-stop
-@enduml
-```
-
 ### Input topics
 
 | Name                    | Type                             | Description                                               |
@@ -109,3 +68,44 @@ None
 | `reverse_weight`            | double | additional cost factor for reverse actions              |
 | `obstacle_threshold`        | double | threshold for regarding a certain grid as obstacle      |
 | `distance_heuristic_weight` | double | heuristic weight for estimating node's cost             |
+
+### Flowchart
+
+```plantuml
+@startuml
+title onTimer
+start
+
+if (all input data are ready?) then (yes)
+else (no)
+  stop
+endif
+
+if (scenario is active?) then (yes)
+else (no)
+  :reset internal data;
+  stop
+endif
+
+:get current pose;
+
+if (replan is required?) then (yes)
+  :reset internal data;
+  :publish stop trajectory before planning new trajectory;
+  :plan new trajectory;
+else (no)
+endif
+
+
+if (vehicle is stopped?) then (yes)
+  stop
+else (no)
+endif
+
+:split trajectory\n(internally managing the state);
+
+:publish trajectory;
+
+stop
+@enduml
+```
