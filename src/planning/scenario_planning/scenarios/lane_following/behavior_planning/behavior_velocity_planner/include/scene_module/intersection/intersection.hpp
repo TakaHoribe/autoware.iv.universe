@@ -1,4 +1,9 @@
 #pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <autoware_perception_msgs/DynamicObject.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
@@ -6,7 +11,6 @@
 #include <ros/ros.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <string>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry.hpp>
@@ -14,7 +18,6 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 
 #include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.hpp>
@@ -27,13 +30,9 @@ using Polygon = bg::model::polygon<Point, false>;
 class IntersectionModuleManager;
 class IntersectionModuleDebugger;
 
-/*
- * ========================= Intersection Module =========================
- */
 class IntersectionModule : public SceneModuleInterface {
  public:
   IntersectionModule(const int lane_id, IntersectionModuleManager* intersection_module_manager);
-  ~IntersectionModule(){};
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -60,14 +59,14 @@ class IntersectionModule : public SceneModuleInterface {
   /**
    * @brief set velocity from idx to the end point
    */
-  bool setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId& input);
+  bool setVelocityFrom(const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId* input);
 
   /**
    * @brief get objective lanelets for detection area
    */
   bool getObjectiveLanelets(lanelet::LaneletMapConstPtr lanelet_map_ptr,
                             lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, const int lane_id,
-                            std::vector<lanelet::ConstLanelet>& objective_lanelets);
+                            std::vector<lanelet::ConstLanelet>* objective_lanelets);
 
   /**
    * @brief check collision with path & dynamic object predicted path
@@ -82,19 +81,20 @@ class IntersectionModule : public SceneModuleInterface {
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
                       const std::vector<lanelet::ConstLanelet>& objective_lanelets,
                       const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
-                      const double path_width, bool& is_collision);
+                      const double path_width);
 
   /**
    * @brief calculate right and left path edge line
    */
   bool generateEdgeLine(const autoware_planning_msgs::PathWithLaneId& path, const double path_width,
-                        autoware_planning_msgs::PathWithLaneId& path_r, autoware_planning_msgs::PathWithLaneId& path_l);
+                        autoware_planning_msgs::PathWithLaneId* path_r, autoware_planning_msgs::PathWithLaneId* path_l);
+
   /**
    * @brief set stop-line and stop-judgement-line index. This may modificates path size due to
    * interpolate insertion.
    */
-  bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId& path,
-                      int& stop_line_idx, int& judge_line_idx);
+  bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId* path,
+                      int* stop_line_idx, int* judge_line_idx);
 
   /**
    * @brief convert from lanelet to boost polygon
@@ -114,7 +114,7 @@ class IntersectionModule : public SceneModuleInterface {
     StateMachine() {
       state_ = IntersectionModule::State::GO;
       margin_time_ = 0.0;
-    };
+    }
 
     /**
      * @brief set request state command with margin time
@@ -144,13 +144,9 @@ class IntersectionModule : public SceneModuleInterface {
   } state_machine_;   //< @brief for state management
 };
 
-/*
- * ========================= Intersection Module Debugger =========================
- */
 class IntersectionModuleDebugger {
  public:
   IntersectionModuleDebugger();
-  ~IntersectionModuleDebugger(){};
 
   void publishLaneletsArea(const std::vector<lanelet::ConstLanelet>& lanelets, const std::string& ns);
   void publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns, double r, double g,
@@ -165,13 +161,8 @@ class IntersectionModuleDebugger {
   ros::Publisher debug_values_pub_;
 };
 
-/*
- * ========================= Intersection Module Manager =========================
- */
 class IntersectionModuleManager : public SceneModuleManagerInterface {
  public:
-  IntersectionModuleManager(){};
-  ~IntersectionModuleManager(){};
   bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
   IntersectionModuleDebugger debugger_;
