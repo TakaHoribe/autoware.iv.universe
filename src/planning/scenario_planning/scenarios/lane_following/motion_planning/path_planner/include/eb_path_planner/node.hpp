@@ -2,20 +2,6 @@
 #define EB_PATH_PLANNER_H
 #include "path_base_planner/node.hpp"
 
-namespace lanelet
-{
-  class Lanelet;
-  class LaneletMap;
-  using LaneletMapPtr = std::shared_ptr<LaneletMap>;
-  namespace routing
-  {
-    class RoutingGraph;
-  }
-  namespace traffic_rules
-  {
-    class TrafficRules;
-  }
-}
 
 namespace cv
 {
@@ -25,11 +11,6 @@ namespace cv
 namespace std_msgs
 {
   ROS_DECLARE_MESSAGE(Bool); 
-}
-
-namespace autoware_lanelet2_msgs
-{
-  ROS_DECLARE_MESSAGE(MapBin); 
 }
 
 
@@ -81,11 +62,11 @@ private:
   ros::Subscriber objects_sub_;
   bool is_debug_clearance_map_mode_;
   bool is_debug_drivable_area_mode_;
+  int number_of_backward_detection_range_path_points_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
   double detection_radius_from_ego_;
   double detection_radius_around_path_point_;
-  double backward_detection_range_arc_length_;
   double reset_delta_ego_distance_;
   double exploring_minimum_radius_;
   double delta_arc_length_for_path_smoothing_;

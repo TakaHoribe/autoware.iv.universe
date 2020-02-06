@@ -5,11 +5,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_perception_msgs/DynamicObject.h>
-// #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
 
-// #include <lanelet2_extension/utility/message_conversion.h>
 
 
 #include <tf2/utils.h>
@@ -132,6 +130,8 @@ private_nh_("~")
                            is_debug_clearance_map_mode_,false);
   private_nh_.param<bool>("is_debug_drivable_area_mode", 
                            is_debug_drivable_area_mode_,false);
+  private_nh_.param<int>("number_of_backward_detection_range_path_points", 
+                             number_of_backward_detection_range_path_points_, 5);
   private_nh_.param<double>("forward_fixing_distance", 
                              forward_fixing_distance_, 20.0);
   private_nh_.param<double>("backward_fixing_distance", 
@@ -140,8 +140,6 @@ private_nh_("~")
                              detection_radius_from_ego_, 50.0);
   private_nh_.param<double>("detection_radius_around_path_point", 
                              detection_radius_around_path_point_, 4.0);
-  private_nh_.param<double>("backward_detection_range_arc_length", 
-                             backward_detection_range_arc_length_, 5);
   private_nh_.param<double>("reset_delta_ego_distance", 
                              reset_delta_ego_distance_, 5.0);
   private_nh_.param<double>("exploring_minumum_radius", 
@@ -894,19 +892,15 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
     double dx1 = path_points[i].pose.position.x - ego_pose.position.x;
     double dy1 = path_points[i].pose.position.y - ego_pose.position.y;
     double dist = std::sqrt(dx1*dx1+dy1*dy1);
-    double yaw = tf2::getYaw(ego_pose.orientation);
-    double dx2 = std::cos(yaw);
-    double dy2 = std::sin(yaw);
-    double inner_product = dx1*dx2+dy1*dy2;
-    if(dist < min_dist && 
-       inner_product < 0 && 
-       dist > backward_detection_range_arc_length_)
+    if(dist < min_dist)
     {
       min_dist = dist;
       min_ind = i;
     }
   }
-  for (int i = min_ind; i < path_points.size(); i++)
+  int search_start_idx = 
+    std::max((int)(min_ind - number_of_backward_detection_range_path_points_), 0);
+  for (int i = search_start_idx; i < path_points.size(); i++)
   {
     for(const auto& avoiding_object: avoiding_objects)
     {
@@ -930,7 +924,6 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
   return false;
 }
 
-// bool EBPathPlannerNode::generateFixedExploredPoints(
 bool EBPathPlannerNode::seperateExploredPointsToFixedAndNonFixed(
   const geometry_msgs::Pose& ego_pose,
   const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr,
