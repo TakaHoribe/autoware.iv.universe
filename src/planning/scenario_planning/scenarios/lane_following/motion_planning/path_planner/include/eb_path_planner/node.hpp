@@ -76,17 +76,15 @@ private:
   ros::Publisher debug_traj_pub_;
   ros::Publisher debug_fixed_traj_pub_;
   ros::Publisher markers_pub_;
-  ros::Subscriber is_relay_path_sub_;
+  // ros::Subscriber is_relay_path_sub_;
   ros::Subscriber twist_sub_;
   ros::Subscriber objects_sub_;
-  bool is_relaying_path_mode_;
-  bool use_optimization_when_relaying_;
   bool is_debug_clearance_map_mode_;
   bool is_debug_drivable_area_mode_;
-  int number_of_fixing_explored_points_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
   double detection_radius_from_ego_;
+  double detection_radius_around_path_point_;
   double backward_detection_range_arc_length_;
   double reset_delta_ego_distance_;
   double exploring_minimum_radius_;
@@ -101,7 +99,7 @@ private:
   std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
   std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
-  void isRelayPathCallback(const std_msgs::Bool& msg);
+  // void isRelayPathCallback(const std_msgs::Bool& msg);
   void currentVelocityCallback(const geometry_msgs::TwistStamped& msg);
   void objectsCallback(const autoware_perception_msgs::DynamicObjectArray& msg);
   void doResetting();

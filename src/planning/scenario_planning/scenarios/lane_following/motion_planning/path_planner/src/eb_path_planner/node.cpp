@@ -122,28 +122,24 @@ private_nh_("~")
     
   
   
-  is_relay_path_sub_ = private_nh_.subscribe("/is_relay_path", 1, 
-                           &EBPathPlannerNode::isRelayPathCallback, this);
+  // is_relay_path_sub_ = private_nh_.subscribe("/is_relay_path", 1, 
+  //                          &EBPathPlannerNode::isRelayPathCallback, this);
   twist_sub_ = private_nh_.subscribe("/current_velocity", 1, 
                            &EBPathPlannerNode::currentVelocityCallback, this);
   objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10,
                            &EBPathPlannerNode::objectsCallback, this);
-  private_nh_.param<bool>("is_relay_path_mode", 
-                           is_relaying_path_mode_,false);
-  private_nh_.param<bool>("use_optimization_when_relaying", 
-                           use_optimization_when_relaying_,true);
   private_nh_.param<bool>("is_debug_clearance_map_mode", 
                            is_debug_clearance_map_mode_,false);
   private_nh_.param<bool>("is_debug_drivable_area_mode", 
                            is_debug_drivable_area_mode_,false);
-  private_nh_.param<int>("number_of_fixing_explored_points", 
-                          number_of_fixing_explored_points_, 10);
   private_nh_.param<double>("forward_fixing_distance", 
                              forward_fixing_distance_, 20.0);
   private_nh_.param<double>("backward_fixing_distance", 
                              backward_fixing_distance_, 10.0);
-  private_nh_.param<double>("forward_detection_range_arc_length", 
+  private_nh_.param<double>("detection_radius_from_ego", 
                              detection_radius_from_ego_, 50.0);
+  private_nh_.param<double>("detection_radius_around_path_point", 
+                             detection_radius_around_path_point_, 4.0);
   private_nh_.param<double>("backward_detection_range_arc_length", 
                              backward_detection_range_arc_length_, 5);
   private_nh_.param<double>("reset_delta_ego_distance", 
@@ -709,10 +705,10 @@ void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStampe
   in_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(msg);
 }
 
-void EBPathPlannerNode::isRelayPathCallback(const std_msgs::Bool& msg)
-{
-  is_relaying_path_mode_ = msg.data;
-}
+// void EBPathPlannerNode::isRelayPathCallback(const std_msgs::Bool& msg)
+// {
+//   is_relaying_path_mode_ = msg.data;
+// }
 
 void EBPathPlannerNode::objectsCallback(
   const autoware_perception_msgs::DynamicObjectArray& msg)
@@ -785,13 +781,13 @@ bool EBPathPlannerNode::needReset(
     }
     count++;
   }
-  //check4
-  if(is_relaying_path_mode_)
-  {
-    ROS_WARN(
-    "[EBPathPlanner] Reset eb path planner since is_relay_path_mode is enabled");
-    is_need_reset = true;
-  }
+  // //check4
+  // if(is_relaying_path_mode_)
+  // {
+  //   ROS_WARN(
+  //   "[EBPathPlanner] Reset eb path planner since is_relay_path_mode is enabled");
+  //   is_need_reset = true;
+  // }
   return is_need_reset;
 }
 
@@ -924,7 +920,7 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
       double dy2 = ego_pose.position.y - 
                   avoiding_object.state.pose_covariance.pose.position.y;
       double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
-      if(dist1 < exploring_minimum_radius_*2 && 
+      if(dist1 < detection_radius_around_path_point_ && 
          dist2<detection_radius_from_ego_)
       {
         return true;
@@ -1304,10 +1300,10 @@ bool EBPathPlannerNode::generateClearanceMap(
           cv::Point(top_left_map_in_image.x, top_left_map_in_image.y);
         cv::Point top_right_image_point = 
           cv::Point(top_right_map_in_image.x, top_right_map_in_image.y);
-        cv::Point bottom_left_image_point = 
-          cv::Point(bottom_right_map_in_image.x, bottom_right_map_in_image.y);
         cv::Point bottom_right_image_point = 
           cv::Point(bottom_right_map_in_image.x, bottom_right_map_in_image.y);
+        cv::Point bottom_left_image_point = 
+          cv::Point(bottom_left_map_in_image.x, bottom_left_map_in_image.y);
         cv::clipLine(
           cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
           top_left_image_point,
@@ -1396,245 +1392,115 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization)
 {
-  if(use_optimization_when_relaying_)
+  std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
+  eb_path_smoother_ptr_->generateOptimizedPath(
+    ego_pose,
+    path_points,
+    optimized_points,
+    debug_fixed_optimzied_points_used_for_constrain,
+    debug_interpolated_points_used_for_optimization);
+  
+  if(optimized_points.empty())
   {
-    
-    std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
-    eb_path_smoother_ptr_->generateOptimizedPath(
-      ego_pose,
-      path_points,
-      optimized_points,
-      debug_fixed_optimzied_points_used_for_constrain,
-      debug_interpolated_points_used_for_optimization);
-    
-    if(optimized_points.empty())
+    ROS_WARN("Path size %d is not enough for smoothing; Relay path to trajetory ",
+      (int)path_points.size());
+    for(const auto& point: path_points)
     {
-      ROS_WARN("Path size %d is not enough for smoothing; Relay path to trajetory ",
-       (int)path_points.size());
-      for(const auto& point: path_points)
+      autoware_planning_msgs::TrajectoryPoint smoothed_point;
+      smoothed_point.pose = point.pose;
+      smoothed_point.twist = point.twist;
+      smoothed_points.push_back(smoothed_point);
+    }
+    return false;
+  }
+  autoware_planning_msgs::Trajectory tmp_traj;
+  tmp_traj.points = optimized_points;
+  debug_traj_pub_.publish(tmp_traj);
+  
+  std::vector<double> tmp_x;
+  std::vector<double> tmp_y;
+  std::vector<double> tmp_z;
+  std::vector<double> tmp_v;
+  for(size_t i = 0; i <  optimized_points.size(); i++)
+  {
+    //backward check
+    if(i > 1)
+    {
+      double dx1 = optimized_points[i].pose.position.x - 
+                  optimized_points[i-1].pose.position.x;
+      double dy1 = optimized_points[i].pose.position.y - 
+                  optimized_points[i-1].pose.position.y;
+      double dx2 = optimized_points[i-1].pose.position.x - 
+                  optimized_points[i-2].pose.position.x;
+      double dy2 = optimized_points[i-1].pose.position.y - 
+                  optimized_points[i-2].pose.position.y;
+      double inner_product = dx1*dx2 + dy1*dy2;
+      if(inner_product < 0)
       {
-        autoware_planning_msgs::TrajectoryPoint smoothed_point;
-        smoothed_point.pose = point.pose;
-        smoothed_point.twist = point.twist;
-        smoothed_points.push_back(smoothed_point);
+        ROS_INFO("Path points might go backward");
       }
+    }
+    tmp_x.push_back(optimized_points[i].pose.position.x);
+    tmp_y.push_back(optimized_points[i].pose.position.y);
+    tmp_z.push_back(optimized_points[i].pose.position.z);
+    tmp_v.push_back(optimized_points[i].twist.linear.x);
+  }
+  
+  std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+  std::vector<double> new_s;
+  for(double i = 0.0; 
+      i <= base_s.back();
+      i += delta_arc_length_for_path_smoothing_)
+  {
+    new_s.push_back(i);
+  }
+  
+  horibe_spline::SplineInterpolate spline;
+  std::vector<double> new_x;
+  std::vector<double> new_y;
+  spline.interpolate(base_s, tmp_x, new_s, new_x);
+  spline.interpolate(base_s, tmp_y, new_s, new_y);
+  for(size_t i = 0; i < new_s.size(); i++)
+  {
+    autoware_planning_msgs::TrajectoryPoint traj_point;
+    traj_point.pose.position.x = new_x[i]; 
+    traj_point.pose.position.y = new_y[i]; 
+    if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
+    {
+      ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
       return false;
     }
-    autoware_planning_msgs::Trajectory tmp_traj;
-    tmp_traj.points = optimized_points;
-    debug_traj_pub_.publish(tmp_traj);
-    
-    std::vector<double> tmp_x;
-    std::vector<double> tmp_y;
-    std::vector<double> tmp_z;
-    std::vector<double> tmp_v;
-    for(size_t i = 0; i <  optimized_points.size(); i++)
+    double roll = 0;
+    double pitch = 0;
+    double yaw = 0;
+    if(i==new_s.size()-1)
     {
-      //backward check
-      if(i > 1)
-      {
-        double dx1 = optimized_points[i].pose.position.x - 
-                    optimized_points[i-1].pose.position.x;
-        double dy1 = optimized_points[i].pose.position.y - 
-                    optimized_points[i-1].pose.position.y;
-        double dx2 = optimized_points[i-1].pose.position.x - 
-                    optimized_points[i-2].pose.position.x;
-        double dy2 = optimized_points[i-1].pose.position.y - 
-                    optimized_points[i-2].pose.position.y;
-        double inner_product = dx1*dx2 + dy1*dy2;
-        if(inner_product < 0)
-        {
-          ROS_INFO("Path points might go backward");
-        }
-      }
-      tmp_x.push_back(optimized_points[i].pose.position.x);
-      tmp_y.push_back(optimized_points[i].pose.position.y);
-      tmp_z.push_back(optimized_points[i].pose.position.z);
-      tmp_v.push_back(optimized_points[i].twist.linear.x);
+      double dx = new_x[i] - new_x[i-1]; 
+      double dy = new_y[i] - new_y[i-1]; 
+      yaw = std::atan2(dy, dx);
     }
-    
-    std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
-    std::vector<double> new_s;
-    for(double i = 0.0; 
-        i <= base_s.back();
-        i += delta_arc_length_for_path_smoothing_)
+    else
     {
-      new_s.push_back(i);
+      double dx = new_x[i+1] - new_x[i]; 
+      double dy = new_y[i+1] - new_y[i]; 
+      yaw = std::atan2(dy, dx);
     }
-    
-    horibe_spline::SplineInterpolate spline;
-    std::vector<double> new_x;
-    std::vector<double> new_y;
-    spline.interpolate(base_s, tmp_x, new_s, new_x);
-    spline.interpolate(base_s, tmp_y, new_s, new_y);
-    for(size_t i = 0; i < new_s.size(); i++)
-    {
-      autoware_planning_msgs::TrajectoryPoint traj_point;
-      traj_point.pose.position.x = new_x[i]; 
-      traj_point.pose.position.y = new_y[i]; 
-      if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
-      {
-        ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
-        return false;
-      }
-      double roll = 0;
-      double pitch = 0;
-      double yaw = 0;
-      if(i==new_s.size()-1)
-      {
-        double dx = new_x[i] - new_x[i-1]; 
-        double dy = new_y[i] - new_y[i-1]; 
-        yaw = std::atan2(dy, dx);
-      }
-      else
-      {
-        double dx = new_x[i+1] - new_x[i]; 
-        double dy = new_y[i+1] - new_y[i]; 
-        yaw = std::atan2(dy, dx);
-      }
-      tf2::Quaternion quaternion;
-      quaternion.setRPY( roll, pitch, yaw );
-      traj_point.pose.orientation = tf2::toMsg(quaternion);
-      auto it = std::lower_bound(base_s.begin(), 
-                                base_s.end(),
-                                new_s[i]);
-      size_t ind = std::distance(base_s.begin(), it);
-      traj_point.twist.linear.x = tmp_v[ind];
-      traj_point.pose.position.z = tmp_z[ind];
-      smoothed_points.push_back(traj_point); 
-    }
-    //sanity check for last point
-    if(tmp_v.back()<1e-8 &&
-      smoothed_points.back().twist.linear.x > 1e-8)
-    {
-      smoothed_points.back().twist.linear.x = 0;
-    }
+    tf2::Quaternion quaternion;
+    quaternion.setRPY( roll, pitch, yaw );
+    traj_point.pose.orientation = tf2::toMsg(quaternion);
+    auto it = std::lower_bound(base_s.begin(), 
+                              base_s.end(),
+                              new_s[i]);
+    size_t ind = std::distance(base_s.begin(), it);
+    traj_point.twist.linear.x = tmp_v[ind];
+    traj_point.pose.position.z = tmp_z[ind];
+    smoothed_points.push_back(traj_point); 
   }
-  else
+  //sanity check for last point
+  if(tmp_v.back()<1e-8 &&
+    smoothed_points.back().twist.linear.x > 1e-8)
   {
-    
-    std::vector<double> tmp_x;
-    std::vector<double> tmp_y;
-    std::vector<double> tmp_z;
-    std::vector<double> tmp_v;
-    for(size_t i = 0; i <  path_points.size(); i++)
-    {
-      //backward check
-      if(i > 1)
-      {
-        double dx1 = path_points[i].pose.position.x - 
-                    path_points[i-1].pose.position.x;
-        double dy1 = path_points[i].pose.position.y - 
-                    path_points[i-1].pose.position.y;
-        double dx2 = path_points[i-1].pose.position.x - 
-                    path_points[i-2].pose.position.x;
-        double dy2 = path_points[i-1].pose.position.y - 
-                    path_points[i-2].pose.position.y;
-        double inner_product = dx1*dx2 + dy1*dy2;
-        if(inner_product < 0)
-        {
-          ROS_INFO("Path points might go backward");
-        }
-      }
-      
-      //resolution check
-      if(i > 0)
-      {
-        double dx = path_points[i].pose.position.x - 
-                    path_points[i-1].pose.position.x;
-        double dy = path_points[i].pose.position.y - 
-                    path_points[i-1].pose.position.y;
-        double dist = std::sqrt(dx*dx + dy*dy); 
-        if(dist < 0.1)
-        {
-          if(path_points[i].twist.linear.x < 
-            path_points[i-1].twist.linear.x)
-          {
-            //replace point with lower velocity
-            tmp_x.pop_back();
-            tmp_y.pop_back();
-            tmp_z.pop_back();
-            tmp_v.pop_back();
-            tmp_x.push_back(path_points[i].pose.position.x);
-            tmp_y.push_back(path_points[i].pose.position.y);
-            tmp_z.push_back(path_points[i].pose.position.z);
-            tmp_v.push_back(path_points[i].twist.linear.x);
-            continue;
-          }
-          else
-          {
-            continue;
-          }
-        }
-      }
-      tmp_x.push_back(path_points[i].pose.position.x);
-      tmp_y.push_back(path_points[i].pose.position.y);
-      tmp_z.push_back(path_points[i].pose.position.z);
-      tmp_v.push_back(path_points[i].twist.linear.x);
-    }
-    
-    std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
-    std::vector<double> new_s;
-    double last_s;
-    for(double i = 0.0; 
-        i <= base_s.back();
-        i += delta_arc_length_for_path_smoothing_)
-    {
-      new_s.push_back(i);
-      last_s = i;
-    }
-    if(path_points.back().twist.linear.x < 1e-8)
-    {
-      new_s.push_back(base_s.back());
-    }
-    horibe_spline::SplineInterpolate spline;
-    std::vector<double> new_x;
-    std::vector<double> new_y;
-    spline.interpolate(base_s, tmp_x, new_s, new_x);
-    spline.interpolate(base_s, tmp_y, new_s, new_y);
-    for(size_t i = 0; i < new_s.size(); i++)
-    {
-      autoware_planning_msgs::TrajectoryPoint traj_point;
-      traj_point.pose.position.x = new_x[i]; 
-      traj_point.pose.position.y = new_y[i]; 
-      if(std::isnan(new_x[i]) || std::isnan(new_y[i]))
-      {
-        ROS_WARN("[path2tracjectory]: Interpolation gets nan value. Relay path to trajectory, but point interval is more than 0.1m");
-        return false;
-      }
-      double roll = 0;
-      double pitch = 0;
-      double yaw = 0;
-      if(i==new_s.size()-1)
-      {
-        double dx = new_x[i] - new_x[i-1]; 
-        double dy = new_y[i] - new_y[i-1]; 
-        yaw = std::atan2(dy, dx);
-      }
-      else
-      {
-        double dx = new_x[i+1] - new_x[i]; 
-        double dy = new_y[i+1] - new_y[i]; 
-        yaw = std::atan2(dy, dx);
-      }
-      tf2::Quaternion quaternion;
-      quaternion.setRPY( roll, pitch, yaw );
-      traj_point.pose.orientation = tf2::toMsg(quaternion);
-      auto it = std::lower_bound(base_s.begin(), 
-                                base_s.end(),
-                                new_s[i]);
-      size_t ind = std::distance(base_s.begin(), it);
-      traj_point.twist.linear.x = tmp_v[ind];
-      traj_point.pose.position.z = tmp_z[ind];
-      smoothed_points.push_back(traj_point); 
-    }
-    
-    //sanity check for last point
-    if(tmp_v.back()<1e-8 &&
-      smoothed_points.back().twist.linear.x > 1e-8)
-    {
-      smoothed_points.back().twist.linear.x = 0;
-    }
+    smoothed_points.back().twist.linear.x = 0;
   }
   return true;
 }

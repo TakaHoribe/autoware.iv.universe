@@ -793,7 +793,7 @@ bool ModifyReferencePath::generateModifiedPath(
       float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
       if(clearance*resolution_>=min_radius_-loosing_clerance_for_explore_goal_threshold_)
       {
-        if(accum_dist > max_radius_*7)
+        if(accum_dist > max_radius_*10)
         {
           exploring_goal_pose_in_map_ptr = 
             std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
