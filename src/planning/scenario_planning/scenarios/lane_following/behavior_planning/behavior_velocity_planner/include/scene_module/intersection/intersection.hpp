@@ -12,20 +12,12 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <boost/assign/list_of.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.hpp>
 
 namespace behavior_planning {
-namespace bg = boost::geometry;
-using Point = bg::model::d2::point_xy<double>;
-using Polygon = bg::model::polygon<Point, false>;
 
 class IntersectionModuleManager;
 class IntersectionModuleDebugger;
@@ -95,11 +87,6 @@ class IntersectionModule : public SceneModuleInterface {
    */
   bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId* path,
                       int* stop_line_idx, int* judge_line_idx);
-
-  /**
-   * @brief convert from lanelet to boost polygon
-   */
-  Polygon convertToBoostGeometryPolygon(const lanelet::ConstLanelet& lanelet);
 
   enum class State {
     STOP = 0,

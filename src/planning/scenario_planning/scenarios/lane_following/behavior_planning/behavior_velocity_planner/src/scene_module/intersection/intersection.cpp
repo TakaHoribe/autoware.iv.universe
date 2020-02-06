@@ -1,6 +1,7 @@
 #include <behavior_velocity_planner/api.hpp>
 #include <scene_module/intersection/intersection.hpp>
 
+#include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
 
 #include <lanelet2_core/geometry/Polygon.h>
@@ -9,8 +10,6 @@
 namespace behavior_planning {
 
 namespace bg = boost::geometry;
-using Point = bg::model::d2::point_xy<double>;
-using Polygon = bg::model::polygon<Point, false>;
 
 IntersectionModule::IntersectionModule(const int lane_id, IntersectionModuleManager* intersection_module_manager)
     : assigned_lane_id_(lane_id), intersection_module_manager_(intersection_module_manager) {
@@ -225,16 +224,6 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   return true;
 }
 
-Polygon IntersectionModule::convertToBoostGeometryPolygon(const lanelet::ConstLanelet& lanelet) {
-  Polygon polygon;
-  lanelet::CompoundPolygon3d lanelet_polygon = lanelet.polygon3d();
-  for (const auto& lanelet_point : lanelet_polygon) {
-    polygon.outer().push_back(bg::make<Point>(lanelet_point.x(), lanelet_point.y()));
-  }
-  polygon.outer().push_back(polygon.outer().front());
-  return polygon;
-}
-
 bool IntersectionModule::checkCollision(
     const autoware_planning_msgs::PathWithLaneId& path, const std::vector<lanelet::ConstLanelet>& objective_lanelets,
     const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, const double path_width) {
@@ -246,12 +235,11 @@ bool IntersectionModule::checkCollision(
   /* check collision for each objects and lanelets area */
   bool is_collision_detected = false;
   for (size_t i = 0; i < objective_lanelets.size(); ++i) {
-    Polygon polygon = convertToBoostGeometryPolygon(objective_lanelets.at(i));
+    const auto objective_lanelet = objective_lanelets.at(i);
 
     for (size_t j = 0; j < objects_ptr->objects.size(); ++j) {
-      Point point(objects_ptr->objects.at(j).state.pose_covariance.pose.position.x,
-                  objects_ptr->objects.at(j).state.pose_covariance.pose.position.y);
-      if (bg::within(point, polygon)) {
+      const auto position = objects_ptr->objects.at(j).state.pose_covariance.pose.position;
+      if (bg::within(to_bg2d(position), objective_lanelet.polygon2d())) {
         if (checkPathCollision(path_r, objects_ptr->objects.at(j)) ||
             checkPathCollision(path_l, objects_ptr->objects.at(j))) {
           is_collision_detected = true;
@@ -272,28 +260,13 @@ bool IntersectionModule::checkCollision(
 
 bool IntersectionModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId& path,
                                             const autoware_perception_msgs::DynamicObject& object) {
-  bool is_collision = false;
-
-  bg::model::linestring<Point> bg_ego_path;
-  for (const auto& p : path.points) {
-    bg_ego_path.push_back(Point{p.point.pose.position.x, p.point.pose.position.y});
-  }
-
-  std::vector<bg::model::linestring<Point>> bg_object_path_arr;
-  for (size_t i = 0; i < object.state.predicted_paths.size(); ++i) {
-    bg::model::linestring<Point> bg_object_path;
-    for (const auto& p : object.state.predicted_paths.at(i).path) {
-      bg_object_path.push_back(Point{p.pose.pose.position.x, p.pose.pose.position.y});
+  for (const auto object_path : object.state.predicted_paths) {
+    if (bg::intersects(to_bg2d(path.points), to_bg2d(object_path.path))) {
+      return true;
     }
-    bg_object_path_arr.push_back(bg_object_path);
   }
 
-  for (size_t i = 0; i < object.state.predicted_paths.size(); ++i) {
-    bool is_intersects = bg::intersects(bg_ego_path, bg_object_path_arr.at(i));
-    is_collision = is_collision || is_intersects;
-  }
-
-  return is_collision;
+  return false;
 }
 
 bool IntersectionModule::generateEdgeLine(const autoware_planning_msgs::PathWithLaneId& path, const double path_width,
