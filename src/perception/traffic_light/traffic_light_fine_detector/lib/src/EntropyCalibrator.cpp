@@ -8,12 +8,11 @@
 namespace nvinfer1
 {
 Int8EntropyCalibrator::Int8EntropyCalibrator(int BatchSize, const std::vector<std::vector<float>>& data,
-                                             const std::string& CalibDataName /*= ""*/, bool readCache /*= true*/)
+                                             const std::string& CalibDataName, bool readCache)
   : mCalibDataName(CalibDataName), mBatchSize(BatchSize), mReadCache(readCache)
 {
   mDatas.reserve(data.size());
   mDatas = data;
-
   mInputCount = BatchSize * data[0].size();
   mCurBatchData = new float[mInputCount];
   mCurBatchIdx = 0;
@@ -44,7 +43,6 @@ bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int 
   });
 
   CUDA_CHECK(cudaMemcpy(mDeviceInput, mCurBatchData, mInputCount * sizeof(float), cudaMemcpyHostToDevice));
-  // std::cout << "input name " << names[0] << std::endl;
   bindings[0] = mDeviceInput;
 
   std::cout << "load batch " << mCurBatchIdx << " to " << mCurBatchIdx + mBatchSize - 1 << std::endl;

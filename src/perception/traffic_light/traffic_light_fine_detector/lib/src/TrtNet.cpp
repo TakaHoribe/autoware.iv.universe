@@ -61,7 +61,7 @@ inline unsigned int getElementSize(nvinfer1::DataType t)
 namespace Tn
 {
 trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float>>& calibratorData,
-               RUN_MODE mode /*= RUN_MODE::FLOAT32*/)
+               RUN_MODE mode, bool readCache, const std::string& dataPath)
   : mTrtContext(nullptr)
   , mTrtEngine(nullptr)
   , mTrtRunTime(nullptr)
@@ -74,13 +74,13 @@ trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float
   const int maxBatchSize = 1;
 
   Int8EntropyCalibrator* calibrator = nullptr;
-  if (calibratorData.size() > 0)
+  if (calibratorData.size() > 0 && mode == RUN_MODE::INT8)
   {
     auto endPos = onnxmodel.find_last_of(".");
     auto beginPos = onnxmodel.find_last_of('/') + 1;
     std::string calibratorName = onnxmodel.substr(beginPos, endPos - beginPos);
     std::cout << "create calibrator,Named:" << calibratorName << std::endl;
-    calibrator = new Int8EntropyCalibrator(maxBatchSize, calibratorData, calibratorName);
+    calibrator = new Int8EntropyCalibrator(maxBatchSize, calibratorData, dataPath + calibratorName, readCache);
   }
 
   ICudaEngine* tmpEngine = loadModelAndCreateEngine(onnxmodel.c_str(), maxBatchSize, calibrator, trtModelStream);

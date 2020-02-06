@@ -29,7 +29,7 @@ public:
           const std::vector<std::vector<float>>& calibratorData, RUN_MODE mode = RUN_MODE::FLOAT32);
   */
   trtNet(const std::string& onnxFile, const std::vector<std::vector<float>>& calibratorData,
-         RUN_MODE mode = RUN_MODE::FLOAT32);
+         RUN_MODE mode, bool readCache, const std::string& dataPath);
   // Load from engine file
   explicit trtNet(const std::string& engineFile);
 

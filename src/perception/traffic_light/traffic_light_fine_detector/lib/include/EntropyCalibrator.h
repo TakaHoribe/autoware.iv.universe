@@ -1,5 +1,5 @@
-#ifndef _ENTROY_CALIBRATOR_H
-#define _ENTROY_CALIBRATOR_H
+#ifndef _ENTROPY_CALIBRATOR_H
+#define _ENTROPY_CALIBRATOR_H
 
 #include <cudnn.h>
 #include <string>
@@ -9,11 +9,11 @@
 
 namespace nvinfer1
 {
-class Int8EntropyCalibrator : public IInt8EntropyCalibrator
+class Int8EntropyCalibrator : public IInt8EntropyCalibrator2
 {
 public:
   Int8EntropyCalibrator(int BatchSize, const std::vector<std::vector<float>>& data,
-                        const std::string& CalibDataName = "", bool readCache = true);
+                        const std::string& CalibDataName, bool readCache);
 
   virtual ~Int8EntropyCalibrator();
 
@@ -45,4 +45,4 @@ private:
 
 }  // namespace
 
-#endif  //_ENTROY_CALIBRATOR_H
+#endif  //_ENTROPY_CALIBRATOR_H
