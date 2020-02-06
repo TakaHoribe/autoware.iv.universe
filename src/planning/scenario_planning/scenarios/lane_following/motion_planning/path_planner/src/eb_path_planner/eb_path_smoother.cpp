@@ -362,12 +362,6 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
     std::vector<geometry_msgs::Point>& debug_interpolated_points,
-    std::vector<geometry_msgs::Point>& debug_cached_explored_points,
-    std::vector<geometry_msgs::Point>& debug_boundary_points,
-    std::vector<geometry_msgs::Point>& debug_lb_boundary_points,
-    std::vector<geometry_msgs::Point>& debug_ub_boundary_points,
-    std::vector<geometry_msgs::Point>& debug_fixed_optimization_points,
-    std::vector<geometry_msgs::Point>& debug_variable_optimization_points,
     std::vector<geometry_msgs::Point>& debug_constrain_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points)
 {
@@ -393,8 +387,6 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
                              farrest_idx_from_ego_pose,
                              debug_interpolated_points);
                              
-  int current_num_fix_points = 0;
-  farrest_idx_from_ego_pose = farrest_idx_from_ego_pose+current_num_fix_points;
   if(!is_preprocess_success)
   {
     return false;
@@ -426,47 +418,42 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
   {
     if(i==0)
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if (i == 1)//second initial x
     {
-      // lower_bound[i] = interpolated_x[i-1-current_num_fix_points] + delta_arc_length_ * std::cos(first_yaw);
-      // upper_bound[i] = interpolated_x[i-1-current_num_fix_points] + delta_arc_length_ * std::cos(first_yaw);
+      // lower_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
+      // upper_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
       lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
       upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
     }
     else if (i == farrest_idx_from_ego_pose - 1 )//second last x
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if (i == farrest_idx_from_ego_pose )//last x
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if(i > farrest_idx_from_ego_pose)
     {
-      lower_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
-      upper_bound[i] = interpolated_x[farrest_idx_from_ego_pose-current_num_fix_points];
+      lower_bound[i] = interpolated_x[farrest_idx_from_ego_pose];
+      upper_bound[i] = interpolated_x[farrest_idx_from_ego_pose];
     }
-    // else if (i < 20)
-    // {
-    //   lower_bound[i] = interpolated_x[i-current_num_fix_points] - 0.1;
-    //   upper_bound[i] = interpolated_x[i-current_num_fix_points] + 0.1;
-    // }
     else
     {     
-      // std::cout << "i - current_num_fixpoints "<< i-current_num_fix_points << std::endl;
-      // std::cout << "<- xy "<<interpolated_x[i-current_num_fix_points]<< " " 
-      //                      <<interpolated_y[i-current_num_fix_points]<<std::endl;
+      // std::cout << "i - current_num_fixpoints "<< i << std::endl;
+      // std::cout << "<- xy "<<interpolated_x[i]<< " " 
+      //                      <<interpolated_y[i]<<std::endl;
       count++;
       geometry_msgs::Point interpolated_p;
       // interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
       // interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
-      interpolated_p.x = interpolated_x[i-current_num_fix_points];
-      interpolated_p.y = interpolated_y[i-current_num_fix_points];
+      interpolated_p.x = interpolated_x[i];
+      interpolated_p.y = interpolated_y[i];
       geometry_msgs::Point interpolated_p_in_image;
       float clearance;
       if(tmp::transformMapToImage(
@@ -482,53 +469,50 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
       {
         clearance = 0.5;
       }
-      float diff = std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_, loose_constrain_disntance_);
+      float diff = 
+        std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_,
+                  loose_constrain_disntance_);
       // lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] - diff;
       // upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] + diff;
-      lower_bound[i] = interpolated_x[i-current_num_fix_points] - diff;
-      upper_bound[i] = interpolated_x[i-current_num_fix_points] + diff;
+      lower_bound[i] = interpolated_x[i] - diff;
+      upper_bound[i] = interpolated_x[i] + diff;
     }
   }
   for (int i = 0; i < number_of_sampling_points_ ; ++i)
   {
     if (i == 0)//initial x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == 1)//second initial x
     {
-      // lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1-current_num_fix_points] + delta_arc_length_ * std::sin(first_yaw);
-      // upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1-current_num_fix_points] + delta_arc_length_ * std::sin(first_yaw);
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      // lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
+      // upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == farrest_idx_from_ego_pose - 1)//second last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == farrest_idx_from_ego_pose)//last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if(i >= farrest_idx_from_ego_pose)
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_ego_pose];
     }
-    // else if (i < 20)
-    // {
-    //   lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - 0.1;
-    //   upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + 0.1;
-    // }
     else
     {
       
       geometry_msgs::Point interpolated_p;
-      interpolated_p.x = interpolated_x[i-current_num_fix_points];
-      interpolated_p.y = interpolated_y[i-current_num_fix_points];
+      interpolated_p.x = interpolated_x[i];
+      interpolated_p.y = interpolated_y[i];
       geometry_msgs::Point interpolated_p_in_image;
       float clearance;
       if(tmp::transformMapToImage(
@@ -537,16 +521,22 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
                             interpolated_p_in_image))
       {
         clearance = 
-          clearance_map.ptr<float>((int)interpolated_p_in_image.y)
-                                  [(int)interpolated_p_in_image.x]*clearance_map_resolution;
+          clearance_map.ptr<float>
+            ((int)interpolated_p_in_image.y)
+            [(int)interpolated_p_in_image.x]*clearance_map_resolution;
       }
       else
       {
         clearance = 0.5;
       }
-      float diff = std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_, loose_constrain_disntance_);
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - diff;
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + diff;
+      float diff = 
+        std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_,
+                  loose_constrain_disntance_);
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - diff;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + diff;
+      
+      interpolated_p.z = diff;
+      debug_constrain_points.push_back(interpolated_p);
     }
   }
   
@@ -610,8 +600,10 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
   for(size_t i = loop_start_ind; i <  number_of_optimized_points; i++)
   {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
-    tmp_point.pose.position.x = workspace.solution->x[i]+av_x;
-    tmp_point.pose.position.y = workspace.solution->x[i + number_of_sampling_points_] + av_y;
+    tmp_point.pose.position.x = 
+      workspace.solution->x[i]+av_x;
+    tmp_point.pose.position.y = 
+      workspace.solution->x[i + number_of_sampling_points_] + av_y;
     tmp_x.push_back(tmp_point.pose.position.x);
     tmp_y.push_back(tmp_point.pose.position.y);
   }
@@ -705,8 +697,6 @@ bool EBPathSmoother::generateOptimizedPath(
                         nearest_idx_from_start_point,
                         farrest_idx_from_start_point,
                         debug_interpolated_points);
-  int current_num_fix_points = 0;
-  farrest_idx_from_start_point = farrest_idx_from_start_point+current_num_fix_points;
   
   if(!is_preprocess_success)
   {
@@ -731,38 +721,38 @@ bool EBPathSmoother::generateOptimizedPath(
   {
     if(i==0)
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if (i == 1)//second initial x
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if (i == farrest_idx_from_start_point - 1 )//second last x
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points]; 
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i]; 
     }
     else if (i == farrest_idx_from_start_point )//last x
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points];
-      upper_bound[i] = interpolated_x[i-current_num_fix_points];
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
     }
     else if(i > farrest_idx_from_start_point)
     {
-      lower_bound[i] = interpolated_x[farrest_idx_from_start_point-current_num_fix_points];
-      upper_bound[i] = interpolated_x[farrest_idx_from_start_point-current_num_fix_points];
+      lower_bound[i] = interpolated_x[farrest_idx_from_start_point];
+      upper_bound[i] = interpolated_x[farrest_idx_from_start_point];
     }
     else if (i < 10)
     {
-      lower_bound[i] = interpolated_x[i-current_num_fix_points] - 0.1;
-      upper_bound[i] = interpolated_x[i-current_num_fix_points] + 0.1;
+      lower_bound[i] = interpolated_x[i] - 0.1;
+      upper_bound[i] = interpolated_x[i] + 0.1;
     }
     else
     { 
-      lower_bound[i] = interpolated_x[i-current_num_fix_points] - 0.2;
-      upper_bound[i] = interpolated_x[i-current_num_fix_points] + 0.2;
+      lower_bound[i] = interpolated_x[i] - 0.2;
+      upper_bound[i] = interpolated_x[i] + 0.2;
     }
   }
   
@@ -770,38 +760,38 @@ bool EBPathSmoother::generateOptimizedPath(
   {
     if (i == 0)//initial x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == 1)//second initial x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == farrest_idx_from_start_point - 1)//second last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if (i == farrest_idx_from_start_point)//last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
     }
     else if(i > farrest_idx_from_start_point)
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point-current_num_fix_points];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point-current_num_fix_points];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point];
     }
     else if(i > 10)
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - 0.1;
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + 0.1;
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - 0.1;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + 0.1;
     }
     else
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] - 0.2;
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-current_num_fix_points] + 0.2;
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - 0.2;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + 0.2;
     }
   }
   

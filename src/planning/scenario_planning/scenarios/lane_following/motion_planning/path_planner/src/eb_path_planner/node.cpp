@@ -348,12 +348,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     }
     
     std::vector<geometry_msgs::Point> debug_interpolated_points;
-    std::vector<geometry_msgs::Point> debug_cached_explored_points;
-    std::vector<geometry_msgs::Point> debug_boundary_points;
-    std::vector<geometry_msgs::Point> debug_boundary_lb_points;
-    std::vector<geometry_msgs::Point> debug_boundary_ub_points;
-    std::vector<geometry_msgs::Point> debug_fixed_optimization_points;
-    std::vector<geometry_msgs::Point> debug_variable_optimization_points;
     std::vector<geometry_msgs::Point> debug_constrain_points;
     std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
     eb_path_smoother_ptr_->generateOptimizedExploredPoints(
@@ -364,12 +358,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
           clearance_map, 
           input_path_msg.drivable_area.info,
           debug_interpolated_points,
-          debug_cached_explored_points,
-          debug_boundary_points,
-          debug_boundary_lb_points,
-          debug_boundary_ub_points,
-          debug_fixed_optimization_points,
-          debug_variable_optimization_points,
           debug_constrain_points,
           optimized_points);
     
@@ -396,7 +384,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     int unique_id = 0;
     // visualize cubic spline point
     visualization_msgs::Marker debug_cubic_spline;
-    debug_cubic_spline.lifetime = ros::Duration(1.0);
+    debug_cubic_spline.lifetime = ros::Duration(0.1);
     debug_cubic_spline.header = input_path_msg.header;
     debug_cubic_spline.ns = std::string("explored_points");
     debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
@@ -420,7 +408,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     
     // visualize cubic spline point
     visualization_msgs::Marker debug_goal_point_marker;
-    debug_goal_point_marker.lifetime = ros::Duration(1.0);
+    debug_goal_point_marker.lifetime = ros::Duration(0.1);
     debug_goal_point_marker.header = input_path_msg.header;
     debug_goal_point_marker.ns = std::string("goal_point_marker");
     debug_goal_point_marker.action = visualization_msgs::Marker::MODIFY;
@@ -437,7 +425,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     unique_id++;
     
     visualization_msgs::Marker debug_start_point_marker;
-    debug_start_point_marker.lifetime = ros::Duration(1.0);
+    debug_start_point_marker.lifetime = ros::Duration(0.1);
     debug_start_point_marker.header = input_path_msg.header;
     debug_start_point_marker.ns = std::string("start_point_marker");
     debug_start_point_marker.action = visualization_msgs::Marker::MODIFY;
@@ -455,7 +443,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     
     // visualize cubic spline point
     visualization_msgs::Marker debug_interpolated_points_marker;
-    debug_interpolated_points_marker.lifetime = ros::Duration(1.0);
+    debug_interpolated_points_marker.lifetime = ros::Duration(0.1);
     debug_interpolated_points_marker.header = input_path_msg.header;
     debug_interpolated_points_marker.ns = std::string("interpolated_points_marker");
     debug_interpolated_points_marker.action = visualization_msgs::Marker::MODIFY;
@@ -479,7 +467,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     
     // visualize cubic spline point
     visualization_msgs::Marker debug_optimized_points_marker;
-    debug_optimized_points_marker.lifetime = ros::Duration(1.0);
+    debug_optimized_points_marker.lifetime = ros::Duration(0.1);
     debug_optimized_points_marker.header = input_path_msg.header;
     debug_optimized_points_marker.ns = std::string("optimized_points_marker");
     debug_optimized_points_marker.action = visualization_msgs::Marker::MODIFY;
@@ -505,7 +493,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     {
       // visualize cubic spline point
       visualization_msgs::Marker debug_optimized_points_marker;
-      debug_optimized_points_marker.lifetime = ros::Duration(1.0);
+      debug_optimized_points_marker.lifetime = ros::Duration(0.1);
       debug_optimized_points_marker.header = input_path_msg.header;
       debug_optimized_points_marker.ns = std::string("optimized_points_arow_marker");
       debug_optimized_points_marker.action = visualization_msgs::Marker::MODIFY;
@@ -521,106 +509,30 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       marker_array.markers.push_back(debug_optimized_points_marker);
     }
     
-    visualization_msgs::Marker boundary_points_marker;
-    boundary_points_marker.lifetime = ros::Duration(1.0);
-    boundary_points_marker.header = input_path_msg.header;
-    boundary_points_marker.ns = std::string("boundary_points_marker");
-    boundary_points_marker.action = visualization_msgs::Marker::MODIFY;
-    boundary_points_marker.pose.orientation.w = 1.0;
-    boundary_points_marker.id = unique_id;
-    boundary_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    boundary_points_marker.scale.x = 0.5f;
-    boundary_points_marker.scale.y = 0.1f;
-    boundary_points_marker.scale.z = 0.1f;
-    boundary_points_marker.color.r = 1.0f;
-    // boundary_points_marker.color.g = 1.0f;
-    boundary_points_marker.color.a = 0.999;
-    for (int i = 0; i < debug_boundary_points.size(); i++)
-    {
-      boundary_points_marker.points.push_back(debug_boundary_points[i]);
-    }
-    if(!boundary_points_marker.points.empty())
-    {
-      marker_array.markers.push_back(boundary_points_marker);
-    }
-    
-    unique_id++;
-    visualization_msgs::Marker lb_boundary_points_marker;
-    lb_boundary_points_marker.lifetime = ros::Duration(1.0);
-    lb_boundary_points_marker.header = input_path_msg.header;
-    lb_boundary_points_marker.ns = std::string("lb_boundary_points_marker");
-    lb_boundary_points_marker.action = visualization_msgs::Marker::MODIFY;
-    lb_boundary_points_marker.pose.orientation.w = 1.0;
-    lb_boundary_points_marker.id = unique_id;
-    lb_boundary_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    lb_boundary_points_marker.scale.x = 0.5f;
-    lb_boundary_points_marker.scale.y = 0.1f;
-    lb_boundary_points_marker.scale.z = 0.1f;
-    lb_boundary_points_marker.color.r = 1.0f;
-    lb_boundary_points_marker.color.b = 1.0f;
-    // lb_boundary_points_marker.color.g = 1.0f;
-    lb_boundary_points_marker.color.a = 0.999;
-    for (int i = 0; i < debug_boundary_lb_points.size(); i++)
-    {
-      lb_boundary_points_marker.points.push_back(debug_boundary_lb_points[i]);
-    }
-    if(!lb_boundary_points_marker.points.empty())
-    {
-      marker_array.markers.push_back(lb_boundary_points_marker);
-    }
-    
-    unique_id++;
-    visualization_msgs::Marker ub_boundary_points_marker;
-    ub_boundary_points_marker.lifetime = ros::Duration(1.0);
-    ub_boundary_points_marker.header = input_path_msg.header;
-    ub_boundary_points_marker.ns = std::string("ub_boundary_points_marker");
-    ub_boundary_points_marker.action = visualization_msgs::Marker::MODIFY;
-    ub_boundary_points_marker.pose.orientation.w = 1.0;
-    ub_boundary_points_marker.id = unique_id;
-    ub_boundary_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    ub_boundary_points_marker.scale.x = 0.5f;
-    ub_boundary_points_marker.scale.y = 0.1f;
-    ub_boundary_points_marker.scale.z = 0.1f;
-    ub_boundary_points_marker.color.r = 1.0f;
-    ub_boundary_points_marker.color.g = 1.0f;
-    // ub_boundary_points_marker.color.g = 1.0f;
-    ub_boundary_points_marker.color.a = 0.999;
-    for (int i = 0; i < debug_boundary_ub_points.size(); i++)
-    {
-      ub_boundary_points_marker.points.push_back(debug_boundary_ub_points[i]);
-    }
-    if(!ub_boundary_points_marker.points.empty())
-    {
-      marker_array.markers.push_back(ub_boundary_points_marker);
-    }
-    
-    visualization_msgs::Marker constrain_points_marker;
-    constrain_points_marker.lifetime = ros::Duration(1.0);
-    constrain_points_marker.header = input_path_msg.header;
-    constrain_points_marker.ns = std::string("constrain_points_marker");
-    constrain_points_marker.action = visualization_msgs::Marker::MODIFY;
-    constrain_points_marker.pose.orientation.w = 1.0;
-    constrain_points_marker.id = unique_id;
-    constrain_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    constrain_points_marker.scale.x = 0.5f;
-    constrain_points_marker.scale.y = 0.1f;
-    constrain_points_marker.scale.z = 0.1f;
-    constrain_points_marker.color.r = 1.0f;
-    constrain_points_marker.color.g = 1.0f;
-    // constrain_points_marker.color.g = 1.0f;
-    constrain_points_marker.color.a = 0.999;
     for (int i = 0; i < debug_constrain_points.size(); i++)
     {
-      constrain_points_marker.points.push_back(debug_constrain_points[i]);
-    }
-    if(!constrain_points_marker.points.empty())
-    {
+      visualization_msgs::Marker constrain_points_marker;
+      constrain_points_marker.lifetime = ros::Duration(0.1);
+      constrain_points_marker.header = input_path_msg.header;
+      constrain_points_marker.ns = std::string("constrain_points_marker");
+      constrain_points_marker.action = visualization_msgs::Marker::MODIFY;
+      constrain_points_marker.pose.orientation.w = 1.0;
+      constrain_points_marker.pose.position = debug_constrain_points[i];
+      constrain_points_marker.pose.position.z = self_pose.position.z;
+      constrain_points_marker.id = unique_id;
+      constrain_points_marker.type = visualization_msgs::Marker::SPHERE;
+      constrain_points_marker.scale.x = debug_constrain_points[i].z*2;
+      constrain_points_marker.scale.y = debug_constrain_points[i].z*2;
+      constrain_points_marker.scale.z = 0.1;
+      constrain_points_marker.color.r = 1.0f;
+      constrain_points_marker.color.g = 0.5f;
+      constrain_points_marker.color.a = 0.199;
+      unique_id++;
       marker_array.markers.push_back(constrain_points_marker);
     }
-    unique_id++;
     
     visualization_msgs::Marker start_arrow_marker;
-    start_arrow_marker.lifetime = ros::Duration(1.0);
+    start_arrow_marker.lifetime = ros::Duration(0.1);
     start_arrow_marker.header = input_path_msg.header;
     start_arrow_marker.ns = std::string("start_arrow_marker");
     start_arrow_marker.action = visualization_msgs::Marker::MODIFY;
@@ -639,7 +551,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     for (size_t i = 0; i < explored_points.size(); i++)
     {
       visualization_msgs::Marker text_marker;
-      text_marker.lifetime = ros::Duration(1.0);
+      text_marker.lifetime = ros::Duration(0.1);
       text_marker.header = input_path_msg.header;
       text_marker.ns = std::string("text_explored_points");
       text_marker.action = visualization_msgs::Marker::MODIFY;
@@ -660,7 +572,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     for (size_t i = 0; i < optimized_points.size(); i++)
     {
       visualization_msgs::Marker text_marker;
-      text_marker.lifetime = ros::Duration(1.0);
+      text_marker.lifetime = ros::Duration(0.1);
       text_marker.header = input_path_msg.header;
       text_marker.ns = std::string("text_optimized_points");
       text_marker.action = visualization_msgs::Marker::MODIFY;

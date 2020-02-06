@@ -84,12 +84,6 @@ public:
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
     std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
-    std::vector<geometry_msgs::Point>& debug_cached_explored_points,                  
-    std::vector<geometry_msgs::Point>& debug_boundary_points,                  
-    std::vector<geometry_msgs::Point>& debug_lb_boundary_points,                  
-    std::vector<geometry_msgs::Point>& debug_ub_boundary_points,                  
-    std::vector<geometry_msgs::Point>& debug_fixed_optimization_points,                  
-    std::vector<geometry_msgs::Point>& debug_variable_optimization_points,                  
     std::vector<geometry_msgs::Point>& debug_constrain_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
   bool generateOptimizedPath(

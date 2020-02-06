@@ -5,7 +5,7 @@
   <arg name="backward_fixing_distance" default="10" />
   <arg name="detection_radius_from_ego" default="50" />
   <arg name="detection_radius_around_path_point" default="4" />
-  <arg name="backward_detection_range_arc_length" default="5" />
+  <arg name="number_of_backward_detection_range_path_points" default="5" />
   <arg name="exploring_minumum_radius" default="1.3" />
   <arg name="delta_arc_length_for_path_smoothing" default="1.0" />
   <arg name="delta_arc_length_for_explored_points" default="0.7" />
@@ -18,7 +18,7 @@
     <param name="backward_fixing_distance" value="$(arg backward_fixing_distance)"/>
     <param name="detection_radius_from_ego" value="$(arg detection_radius_from_ego)"/>
     <param name="detection_radius_around_path_point" value="$(arg detection_radius_around_path_point)"/>
-    <param name="backward_detection_range_arc_length" value="$(arg backward_detection_range_arc_length)"/>
+    <param name="number_of_backward_detection_range_path_points" value="$(arg number_of_backward_detection_range_path_points)"/>
     <param name="exploring_minumum_radius" value="$(arg exploring_minumum_radius)"/>
     <param name="delta_arc_length_for_path_smoothing" value="$(arg delta_arc_length_for_path_smoothing)"/>
     <param name="delta_arc_length_for_explored_points" value="$(arg delta_arc_length_for_explored_points)"/>
