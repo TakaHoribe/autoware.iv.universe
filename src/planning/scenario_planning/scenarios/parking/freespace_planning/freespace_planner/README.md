@@ -1,50 +1,111 @@
-# Freespace Planner
+# The `freespace_planner` Package
 
-Freespace planner package provides the global planner nodes that plan waypoints in the space having static/dynamic obstacles.
+## freespace_planner_node
 
-## Freespace Planner - Astar Navi
+`freespace_planner_node` is a global path planner node that plans trajectory in the space having static/dynamic obstacles.  
+This node is based on Hybrid A\* search algorithm in `astar_search` package.
 
-`freespace_planner` is global path planner based on Hybrid A\* search algorithm in `astar_search` package. This node executes planning at a constant cycle and publish `lane_waypoints_array`.
+**Note**
+Due to the constraint of trajectory following, the output trajectory will be split to include only the single direction path.
+In other words, the output trajectory doesn't include both forward and backward trajectories at once.
 
-_NOTE_ : You can use `Use Reverse Motion` option for generating path including k-turn, backward control is not enough unified in Autoware planners, currently.
+### Flowchart
 
-Please see also: motion/packages/waypoint_planner/README.md
+```plantuml
+@startuml
+title onTimer
+start
+
+if (all input data are ready?) then (yes)
+else (no)
+  stop
+endif
+
+if (scenario is active?) then (yes)
+else (no)
+  :reset internal data;
+  stop
+endif
+
+:get current pose;
+
+if (replan is required?) then (yes)
+  :reset internal data;
+  :publish stop trajectory before planning new trajectory;
+  :plan new trajectory;
+else (no)
+endif
+
+
+if (vehicle is stopped?) then (yes)
+  stop
+else (no)
+endif
+
+:split trajectory\n(internally managing the state);
+
+:publish trajectory;
+
+stop
+@enduml
+```
+
+### Input topics
+
+| Name                    | Type                             | Description                                               |
+| ----------------------- | -------------------------------- | --------------------------------------------------------- |
+| `~input/route`          | autoware_planning_msgs::Route    | route and goal pose                                       |
+| `~input/occupancy_grid` | nav_msgs::OccupancyGrid          | costmap, for drivable areas                               |
+| `~input/twist`          | geometry_msgs::TwistStamped      | vehicle velocity, for checking whether vehicle is stopped |
+| `~input/scenario`       | autoware_planning_msgs::Scenario | scenarios to be activated, for node activation            |
+
+### Output topics
+
+| Name                 | Type                               | Description                                |
+| -------------------- | ---------------------------------- | ------------------------------------------ |
+| `~output/trajectory` | autoware_planning_msgs::Trajectory | trajectory to be followed                  |
+| `is_completed`       | bool (implemented as rosparam)     | whether all split trajectory are published |
+
+### Output TFs
+
+None
 
 ### How to launch
 
-`$ roslaunch freespace_planner freespace_planner.launch`
+1. Write your remapping info in `freespace_planner.launch` or add args when executing `roslaunch`
+2. `roslaunch freespace_planner freespace_planner.launch`
 
 ### Parameters
 
-Parameters can be set in both Launch file and Runtime manager:
+#### Node parameters
 
-| Parameter in RM      | Parameter in Launch  | Type     | Description                                   | Default                                      |
-| -------------------- | -------------------- | -------- | --------------------------------------------- | -------------------------------------------- |
-| `Use Reverse Motion` | `use_back`           | _Bool_   | Enable backward motion in Hybrid A\* search   | `true`                                       |
-| `Costmap Topic`      | `costmap_topic`      | _String_ | Costmap topic for Hybrid-A\* search           | `semantics/costmap_generator/occupancy_grid` |
-| `Waypoint Velocity`  | `waypoints_velocity` | _Double_ | Constant velocity on planned waypoints [km/h] | 5.0                                          |
-| `Update Rate`        | `update_rate`        | _Double_ | Replanning and publishing rate [Hz]           | 1.0                                          |
+| Parameter                    | Type   | Description                                                                     |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------- |
+| `update_rate`                | double | timer's update rate                                                             |
+| `waypoints_velocity`         | double | velocity in output trajectory (currently, only constant velocity is supported)  |
+| `th_arrived_distance_m`      | double | threshold distance to check if vehicle has arrived at the trajectory's endpoint |
+| `th_stopped_time_sec`        | double | threshold time to check if vehicle is stopped                                   |
+| `th_stopped_velocity_mps`    | double | threshold velocity to check if vehicle is stopped                               |
+| `th_course_out_distance_m`   | double | threshold distance to check if vehicle is out of course                         |
+| `replan_when_obstacle_found` | bool   | whether replanning when obstacle has found on the trajectory                    |
+| `replan_when_course_out`     | bool   | whether replanning when vehicle is out of course                                |
 
-### Subscriptions/Publications
+#### A\* search parameters
 
-```
-Node [/astar_avoid]
-Publications:
- * /safety_waypoints [autoware_msgs/Lane]
-
-Subscriptions:
- * /base_waypoints [autoware_msgs/Lane]
- * /closest_waypoint [std_msgs/Int32]
- * /current_pose [geometry_msgs/PoseStamped]
- * /current_velocity [geometry_msgs/TwistStamped]
- * /semantics/costmap_generator/occupancy_grid [nav_msgs/OccupancyGrid]
- * /obstacle_waypoint [std_msgs/Int32]
- * /tf [tf2_msgs/TFMessage]
- * /tf_static [tf2_msgs/TFMessage]
-```
-
-### Demo videos
-
-#### Freespace planning with static obstacle
-
-[![Hybrid A*, freespace planning](https://img.youtube.com/vi/tXfexskIbrg/sddefault.jpg)](https://youtu.be/tXfexskIbrg)
+| Parameter                   | Type   | Description                                             |
+| --------------------------- | ------ | ------------------------------------------------------- |
+| `use_back`                  | bool   | whether using backward trajectory                       |
+| `only_behind_solutions`     | bool   | whether restricting the solutions to be behind the goal |
+| `time_limit`                | double | time limit of planning                                  |
+| `robot_length`              | double | robot length                                            |
+| `robot_width`               | double | robot width                                             |
+| `robot_base2back`           | double | distance from robot's back to robot's base_link         |
+| `minimum_turning_radius`    | double | minimum turning radius of robot                         |
+| `theta_size`                | double | the number of angle's discretization                    |
+| `lateral_goal_range`        | double | goal range of lateral position                          |
+| `longitudinal_goal_range`   | double | goal range of longitudinal position                     |
+| `angle_goal_range`          | double | goal range of angle                                     |
+| `curve_weight`              | double | additional cost factor for curve actions                |
+| `reverse_weight`            | double | additional cost factor for reverse actions              |
+| `obstacle_threshold`        | double | threshold for regarding a certain grid as obstacle      |
+| `distance_heuristic_weight` | double | heuristic weight for estimating node's cost             |
