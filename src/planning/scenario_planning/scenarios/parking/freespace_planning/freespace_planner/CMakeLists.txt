@@ -22,19 +22,16 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(
-  freespace_planner
-  src/freespace_planner/freespace_planner.cpp
+add_executable(freespace_planner
   src/freespace_planner/freespace_planner_node.cpp
+  src/freespace_planner/main.cpp
 )
 
-target_link_libraries(
-  freespace_planner
+target_link_libraries(freespace_planner
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(
-  freespace_planner
+add_dependencies(freespace_planner
   ${catkin_EXPORTED_TARGETS}
 )
 

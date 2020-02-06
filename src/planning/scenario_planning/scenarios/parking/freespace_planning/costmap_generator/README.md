@@ -1,52 +1,89 @@
 # The `costmap_generator` Package
 
-## costmap_generator
+## costmap_generator_node
 
-This node reads `PointCloud` and/or `DynamicObjectArray` and creates an `OccupancyGrid` and `GridMap`. `VectorMap` is optional.
+This node reads `PointCloud` and/or `DynamicObjectArray` and creates an `OccupancyGrid` and `GridMap`. `VectorMap(Lanelet2)` is optional.
 
-**You need to subscribe at least one of `PointCloud` or `DynamicObjectArray` to generate costmap.**
+### Input topics
 
-#### Input topics
+| Name                      | Type                                         | Description                                                                  |
+| ------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| `~input/objects`          | autoware_perception_msgs::DynamicObjectArray | predicted objects, for obstacles areas                                       |
+| `~input/points_no_ground` | sensor_msgs::PointCloud2                     | ground-removed points, for obstacle areas which can't be detected as objects |
+| `~input/lanelet_map_bin`  | autoware_lanelet2_msgs::MapBin               | vector map, for drivable areas                                               |
+| `~input/scenario`         | autoware_planning_msgs::Scenario             | scenarios to be activated, for node activation                               |
 
-`/points_no_ground` (sensor_msgs::PointCloud2) : from ray_ground_filter or compare map filter. It contains filtered points with the ground removed.
+### Output topics
 
-`/prediction/moving_predictor/objects` (autoware_perception_msgs::DynamicObjectArray): predicted objects from naive_motion_predict.
+| Name                     | Type                    | Description                                          |
+| ------------------------ | ----------------------- | ---------------------------------------------------- |
+| `~output/grid_map`       | grid_map_msgs::GridMap  | - costmap as GridMap, values are from 0.0 to 1.0     |
+| `~output/occupancy_grid` | nav_msgs::OccupancyGrid | - costmap as OccupancyGrid, values are from 0 to 100 |
 
-`/lanelet_map_bin`: from the `lanelet2_map_loader`. `/tf` to obtain the transform between the vector map(map_frame) and the sensor(sensor_frame) .
+### Output TFs
 
-#### Output topics
+None
 
-`~output/costmap` (grid_map::GridMap) is the output costmap, with values ranging from 0.0-1.0.
+### How to launch
 
-`~output/occupancy_grid` (nav_msgs::OccupancyGrid) is the output OccupancyGrid, with values ranging from 0-100.
+1. Write your remapping info in `costmap_generator.launch` or add args when executing `roslaunch`
+2. Run `roslaunch costmap_generator costmap_generator.launch`
 
-##### How to launch
+### Parameters
 
-`roslaunch costmap_generator costmap_generator.launch`.
+| Name                         | Type   | Description                                                  |
+| ---------------------------- | ------ | ------------------------------------------------------------ |
+| `update_rate`                | double | timer's update rate                                          |
+| `use_objects`                | bool   | whether using `~input/objects` or not                        |
+| `use_points`                 | bool   | whether using `~input/points_no_ground` or not               |
+| `use_wayarea`                | bool   | whether using `wayarea` from `~input/lanelet_map_bin` or not |
+| `costmap_frame`              | string | created costmap's coordinate                                 |
+| `vehicle_frame`              | string | vehicle's coordinate                                         |
+| `map_frame`                  | string | map's coordinate                                             |
+| `grid_min_value`             | double | minimum cost for gridmap                                     |
+| `grid_max_value`             | double | maximum cost for gridmap                                     |
+| `grid_resolution`            | double | resolution for gridmap                                       |
+| `grid_length_x`              | int    | size of gridmap for x direction                              |
+| `grid_length_y`              | int    | size of gridmap for y direction                              |
+| `grid_position_x`            | int    | offset from coordinate in x direction                        |
+| `grid_position_y`            | int    | offset from coordinate in y direction                        |
+| `maximum_lidar_height_thres` | double | maximum height threshold for pointcloud data                 |
+| `minimum_lidar_height_thres` | double | minimum height threshold for pointcloud data                 |
+| `expand_rectangle_size`      | double | expand object's rectangle with this value                    |
+| `size_of_expansion_kernel`   | int    | kernel size for blurring effect on object's costmap          |
 
-##### Parameters available in roslaunch and rosrun
+### Flowchart
 
-- `use_objects` Whether if using `DynamicObjectArray` or not (default value: true).
-- `use_points` Whether if using `PointCloud` or not (default value: true).
-- `use_wayarea` Whether if using `Wayarea` from `VectorMap` or not (default value: true).
-- `objects_input` Input topic for `autoware_perception_msgs::DynamicObjectArray` (default value: /prediction/moving_predictor/objects).
-- `points_input` Input topic for sensor_msgs::PointCloud2 (default value: points_no_ground).
-- `costmap_frame` costmap's coordinate. Cost is calculated based on this coordinate (default value: base_link).
-- `map_frame` map's coordinate. (default value: map).
-- `grid_min_value` Minimum cost for gridmap (default value: 0.0).
-- `grid_max_value` Maximum cost for gridmap (default value: 1.0).
-- `grid_resolution` Resolution for gridmap (default value: 0.2).
-- `grid_length_x` Size of gridmap for x direction (default value: 50).
-- `grid_length_y` Size of gridmap for y direction (default value: 30).
-- `grid_position_x` Offset from coordinate in x direction (default value: 20).
-- `grid_position_y` Offset from coordinate in y direction (default value: 0).
-- `maximum_lidar_height_thres` Maximum height threshold for pointcloud data (default value: 0.3).
-- `minimum_lidar_height_thres` Minimum height threshold for pointcloud data (default value: -2.2).
-- `expand_rectangle_size` Expand object's rectangle with this value (default value: 1).
-- `size_of_expansion_kernel` Kernel size for blurring effect on object's costmap (default value: 9).
+```plantuml
+@startuml
+title onTimer
+start
 
----
+if (scenario is active?) then (yes)
+else (no)
+  stop
+endif
 
-## Instruction Videos
+:get current pose;
 
-[![](https://img.youtube.com/vi/f7kSVJ23Mtw/0.jpg)](https://www.youtube.com/watch?v=f7kSVJ23Mtw)
+:set the center of costmap to current pose;
+
+if (use wayarea?) then (yes)
+ :generate wayarea costmap;
+endif
+
+if (use objects?) then (yes)
+ :generate objects costmap;
+endif
+
+if (use points?) then (yes)
+ :generate points costmap;
+endif
+
+:combine costmap;
+
+:publish costmap;
+
+stop
+@enduml
+```
