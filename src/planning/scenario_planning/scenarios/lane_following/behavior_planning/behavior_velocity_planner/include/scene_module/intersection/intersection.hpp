@@ -136,9 +136,10 @@ class IntersectionModuleDebugger {
   IntersectionModuleDebugger();
 
   void publishLaneletsArea(const std::vector<lanelet::ConstLanelet>& lanelets, const std::string& ns);
-  void publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns, double r, double g,
-                   double b);
-  void publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g, double b, int mode);
+  void publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns, const double r,
+                   const double g, const double b);
+  void publishPose(const geometry_msgs::Pose& pose, const std::string& ns, const double r, const double g,
+                   const double b, const int mode);
   void publishDebugValues(const std_msgs::Float32MultiArray& msg);
 
  private:
