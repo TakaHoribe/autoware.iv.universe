@@ -17,45 +17,46 @@
 #ifndef SSC_INTERFACE_H
 #define SSC_INTERFACE_H
 
-#include <ros/ros.h>
-#include <std_msgs/Bool.h>
-#include <std_msgs/Time.h>
-#include <std_msgs/Header.h>
-#include <std_msgs/Float32.h>
+#include <string>
+
 #include <geometry_msgs/TwistStamped.h>
 #include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
+#include <ros/ros.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/Header.h>
+#include <std_msgs/Time.h>
 
-#include <automotive_platform_msgs/SteerMode.h>
-#include <automotive_platform_msgs/SpeedMode.h>
+#include <automotive_navigation_msgs/ModuleState.h>
+#include <automotive_platform_msgs/BrakeFeedback.h>
+#include <automotive_platform_msgs/CurvatureFeedback.h>
 #include <automotive_platform_msgs/GearCommand.h>
+#include <automotive_platform_msgs/GearFeedback.h>
+#include <automotive_platform_msgs/SpeedMode.h>
+#include <automotive_platform_msgs/SteerMode.h>
+#include <automotive_platform_msgs/ThrottleFeedback.h>
 #include <automotive_platform_msgs/TurnSignalCommand.h>
 #include <automotive_platform_msgs/VelocityAccel.h>
-#include <automotive_platform_msgs/CurvatureFeedback.h>
-#include <automotive_platform_msgs/ThrottleFeedback.h>
-#include <automotive_platform_msgs/BrakeFeedback.h>
-#include <automotive_platform_msgs/GearFeedback.h>
-#include <automotive_navigation_msgs/ModuleState.h>
-#include <pacmod_msgs/WheelSpeedRpt.h>
 #include <pacmod_msgs/SystemRptFloat.h>
+#include <pacmod_msgs/WheelSpeedRpt.h>
 
+#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/TurnSignal.h>
 #include <autoware_vehicle_msgs/VehicleCommandStamped.h>
 #include <autoware_vehicle_msgs/VehicleStatusStamped.h>
-#include <autoware_vehicle_msgs/TurnSignal.h>
-#include <autoware_vehicle_msgs/Shift.h>
 
 static const std::string BASE_FRAME_ID = "base_link";
 
-class SSCInterface
-{
-public:
+class SSCInterface {
+ public:
   SSCInterface();
   ~SSCInterface();
 
   void run();
 
-private:
+ private:
   typedef message_filters::sync_policies::ApproximateTime<
       automotive_platform_msgs::VelocityAccel, automotive_platform_msgs::CurvatureFeedback,
       automotive_platform_msgs::ThrottleFeedback, automotive_platform_msgs::BrakeFeedback,
@@ -102,12 +103,12 @@ private:
   double deceleration_limit_;  // [m/s^2]
   double max_curvature_rate_;  // [rad/m/s]
 
-  bool use_rear_wheel_speed_;     // instead of 'as/velocity_accel'
-  bool use_adaptive_gear_ratio_;  // for more accurate steering angle (gr = theta_sw / theta_s)
-  double tire_radius_;            // [m] (NOTE: used by 'use_rear_wheel_speed' mode)
-  double ssc_gear_ratio_;         // gr = const (NOTE: used by 'use_adaptive_gear_ratio' mode)
+  bool use_rear_wheel_speed_;                    // instead of 'as/velocity_accel'
+  bool use_adaptive_gear_ratio_;                 // for more accurate steering angle (gr = theta_sw / theta_s)
+  double tire_radius_;                           // [m] (NOTE: used by 'use_rear_wheel_speed' mode)
+  double ssc_gear_ratio_;                        // gr = const (NOTE: used by 'use_adaptive_gear_ratio' mode)
   double agr_coef_a_, agr_coef_b_, agr_coef_c_;  // gr = a + b * speed^2 + c * theta_sw
-  double steering_offset_; // [rad] def: measured = truth + offset
+  double steering_offset_;                       // [rad] def: measured = truth + offset
 
   // NOTE: default parameters in SSC
   // tire radius = 0.39             [m]
