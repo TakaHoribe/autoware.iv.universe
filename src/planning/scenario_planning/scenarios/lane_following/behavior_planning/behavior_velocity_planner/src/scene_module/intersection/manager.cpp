@@ -1,5 +1,7 @@
 #include <scene_module/intersection/manager.hpp>
 
+#include <lanelet2_core/primitives/BasicRegulatoryElements.h>
+
 #include <behavior_velocity_planner/api.hpp>  // To be refactored
 
 #include "utilization/boost_geometry_helper.h"
@@ -28,17 +30,28 @@ bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::Pat
   for (size_t i = 0; i < input.points.size(); ++i) {
     for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
       const int lane_id = input.points.at(i).lane_ids.at(j);
-      lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);  // get lanelet layer
-      std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else");  // get turn_direction
 
       if (!isRunning(lane_id)) {
-        // check intersection tag
-        if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0 ||
-            turn_direction.compare("straight") == 0) {
-          // intersection tag is found. set module.
-          v_module_ptr.push_back(std::make_shared<IntersectionModule>(lane_id, this));
-          registerTask(lane_id);
+        lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);
+
+        // Is intersection?
+        const std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else");  // get turn_direction
+        const auto is_intersection =
+            turn_direction == "right" || turn_direction == "left" || turn_direction == "straight";
+        if (!is_intersection) {
+          continue;
         }
+
+        // Is has traffic light and straight?
+        const auto is_straight = turn_direction == "straight";
+        const auto traffic_lights = lanelet_ij.regulatoryElementsAs<const lanelet::TrafficLight>();
+        const auto has_traffic_light = !traffic_lights.empty();
+        if (has_traffic_light && is_straight) {
+          continue;
+        }
+
+        v_module_ptr.push_back(std::make_shared<IntersectionModule>(lane_id, this));
+        registerTask(lane_id);
       }
     }
   }
