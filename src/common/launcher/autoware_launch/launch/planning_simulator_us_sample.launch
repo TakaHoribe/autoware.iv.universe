@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-  <arg name="city_config_path" default="/media/tier4/Sandisk2TB/t4b/us_sample"/>
+  <arg name="map_path" default="/media/tier4/Sandisk2TB/t4b/us_sample"/>
 
   <include file="$(find autoware_launch)/launch/planning_simulator.launch">
-    <arg name="city_config_path" value="$(arg city_config_path )"/>
+    <arg name="map_path" value="$(arg map_path)"/>
   </include>
 </launch>

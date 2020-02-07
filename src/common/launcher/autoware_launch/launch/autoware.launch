@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <!-- Map path -->
+  <arg name="map_path" default=""/>
   <!-- Rosbag -->
   <arg name="rosbag" default="false" />
   <param name="/use_sim_time" value="$(arg rosbag)" />
@@ -9,9 +11,7 @@
 
   <!-- Map -->
   <include file="$(find map_launch)/launch/map.launch">
-    <arg name="lanelet_map_path" default=""/>
-    <arg name="pointcloud_map_path" default=""/>
-    <arg name="map_tf_path" default=""/>
+    <arg name="map_path" value="$(arg map_path)"/>
   </include>
 
   <!-- Sensing -->
