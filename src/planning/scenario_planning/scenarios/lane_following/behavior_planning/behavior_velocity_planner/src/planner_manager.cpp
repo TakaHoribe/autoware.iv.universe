@@ -1,20 +1,10 @@
 #include <behavior_velocity_planner/planner_manager.hpp>
 
-// Scene include
-#include <scene_module/blind_spot/blind_spot.hpp>
-#include <scene_module/crosswalk/crosswalk.hpp>
-#include <scene_module/intersection/manager.hpp>
-#include <scene_module/momentary_stop/momentary_stop.hpp>
-#include <scene_module/traffic_light/traffic_light.hpp>
-
 namespace behavior_planning {
 
-BehaviorVelocityPlannerManager::BehaviorVelocityPlannerManager() {
-  scene_managers_ptr_.push_back(std::make_shared<MomentaryStopModuleManager>());
-  scene_managers_ptr_.push_back(std::make_shared<CrosswalkModuleManager>());
-  scene_managers_ptr_.push_back(std::make_shared<TrafficLightModuleManager>());
-  scene_managers_ptr_.push_back(std::make_shared<IntersectionModuleManager>());
-  scene_managers_ptr_.push_back(std::make_shared<BlindSpotModuleManager>());
+void BehaviorVelocityPlannerManager::launchSceneModule(
+    const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr) {
+  scene_managers_ptr_.push_back(scene_module_manager_ptr);
 }
 
 bool BehaviorVelocityPlannerManager::callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,

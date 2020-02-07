@@ -1,11 +1,49 @@
+#include <behavior_velocity_planner/node.hpp>
+
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_routing/Route.h>
+
 #include <visualization_msgs/MarkerArray.h>
-#include <behavior_velocity_planner/node.hpp>
+
 #include <utilization/path_utilization.hpp>
+
+// Scene modules
+#include <scene_module/blind_spot/blind_spot.hpp>
+#include <scene_module/crosswalk/crosswalk.hpp>
+#include <scene_module/intersection/manager.hpp>
+#include <scene_module/momentary_stop/momentary_stop.hpp>
+#include <scene_module/traffic_light/traffic_light.hpp>
+
+namespace {
+template <class T>
+T getParam(const ros::NodeHandle& nh, const std::string& key, const T& default_value) {
+  T value;
+  nh.param<T>(key, value, default_value);
+  return value;
+}
+
+template <class T>
+T waitForParam(const ros::NodeHandle& nh, const std::string& key) {
+  T value;
+  ros::Rate rate(1.0);
+
+  while (ros::ok()) {
+    const auto result = nh.getParam(key, value);
+    if (result) {
+      return value;
+    }
+
+    ROS_WARN("waiting for parameter `%s` ...", key);
+    rate.sleep();
+  }
+
+  return {};
+}
+}  // namespace
 
 namespace behavior_planning {
 BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
+  // Subscribers
   path_with_lane_id_sub_ =
       pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorVelocityPlannerNode::pathWithLaneIdCallback, this);
   perception_sub_ = pnh_.subscribe("input/perception", 1, &SingletonDataManager::perceptionCallback,
@@ -19,10 +57,16 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
   traffic_light_states_sub_ =
       pnh_.subscribe("input/traffic_light_states", 10, &SingletonDataManager::trafficLightStatesCallback,
                      &SingletonDataManager::getInstance());
+
+  // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
+
+  // Parameters
   pnh_.param("foward_path_length", foward_path_length_, 1000.0);
   pnh_.param("backward_path_length", backward_path_length_, 5.0);
+
+  // Vehicle Parameters
   double wheel_base, front_overhang, vehicle_width;
   pnh_.param("/vehicle_info/wheel_base", wheel_base, 2.95);
   pnh_.param("/vehicle_info/front_overhang", front_overhang, 1.0);
@@ -30,8 +74,21 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
   SingletonDataManager::getInstance().setWheelBase(wheel_base);
   SingletonDataManager::getInstance().setFrontOverhang(front_overhang);
   SingletonDataManager::getInstance().setVehicleWidth(vehicle_width);
+
+  // Initialize PlannerManager
   planner_manager_ptr_ = std::make_shared<BehaviorVelocityPlannerManager>();
-};
+
+  if (getParam<bool>(pnh_, "launch_momentary_stop", true))
+    planner_manager_ptr_->launchSceneModule(std::make_shared<MomentaryStopModuleManager>());
+  if (getParam<bool>(pnh_, "launch_crosswalk", true))
+    planner_manager_ptr_->launchSceneModule(std::make_shared<CrosswalkModuleManager>());
+  if (getParam<bool>(pnh_, "launch_traffic_light", true))
+    planner_manager_ptr_->launchSceneModule(std::make_shared<TrafficLightModuleManager>());
+  if (getParam<bool>(pnh_, "launch_intersection", true))
+    planner_manager_ptr_->launchSceneModule(std::make_shared<IntersectionModuleManager>());
+  if (getParam<bool>(pnh_, "launch_blind_spot", true))
+    planner_manager_ptr_->launchSceneModule(std::make_shared<BlindSpotModuleManager>());
+}
 
 void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId& input_path_msg) {
   // if (path_pub_.getNumSubscribers() < 1)

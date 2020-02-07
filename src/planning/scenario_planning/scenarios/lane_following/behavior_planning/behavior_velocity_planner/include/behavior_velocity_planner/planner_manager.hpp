@@ -36,7 +36,8 @@ namespace behavior_planning {
 
 class BehaviorVelocityPlannerManager {
  public:
-  BehaviorVelocityPlannerManager();
+  void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
+
   bool callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,
                 autoware_planning_msgs::PathWithLaneId& output_path_msg);
 
