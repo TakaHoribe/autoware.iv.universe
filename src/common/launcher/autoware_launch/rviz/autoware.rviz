@@ -97,7 +97,7 @@ Visualization Manager:
               Value: true
             velodyne_top_base_link:
               Value: true
-            world:
+            viewer:
               Value: true
           Marker Scale: 1
           Name: TF
@@ -105,45 +105,9 @@ Visualization Manager:
           Show Axes: true
           Show Names: true
           Tree:
-            world:
-              map:
-                base_link:
-                  camera1/camera_link:
-                    camera1/camera_optical_link:
-                      {}
-                  camera2/camera_link:
-                    camera2/camera_optical_link:
-                      {}
-                  camera3/camera_link:
-                    camera3/camera_optical_link:
-                      {}
-                  camera4/camera_link:
-                    camera4/camera_optical_link:
-                      {}
-                  camera5/camera_link:
-                    camera5/camera_optical_link:
-                      {}
-                  camera6/camera_link:
-                    camera6/camera_optical_link:
-                      {}
-                  gnss_link:
-                    {}
-                  gx5/imu_link:
-                    {}
-                  tamagawa/imu_link:
-                    {}
-                  traffic_light/camera_link:
-                    traffic_light/camera_optical_link:
-                      {}
-                  velodyne_left_base_link:
-                    velodyne_left:
-                      {}
-                  velodyne_right_base_link:
-                    velodyne_right:
-                      {}
-                  velodyne_top_base_link:
-                    velodyne_top:
-                      {}
+            map:
+              viewer:
+                {}
           Update Interval: 0
           Value: true
         - Alpha: 0.5
@@ -787,11 +751,7 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                label: true
-                path: true
-                path confidence: true
-                shape: true
-                twist: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -815,7 +775,7 @@ Visualization Manager:
               Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/output/debug/markers
               Name: Beam
               Namespaces:
-                beam: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -831,11 +791,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                end_lanelets: true
-                goal_lanelets: true
-                left_lane_bound: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -912,9 +868,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
                       Name: PathWithLaneId
                       Namespaces:
-                        lane_id: true
-                        line: true
-                        points: true
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -922,14 +876,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
                       Name: Crosswalk
                       Namespaces:
-                        collision line: true
-                        collision point: true
-                        crosswalk polygon line: true
-                        crosswalk polygon point: true
-                        slow point: true
-                        slow polygon line: true
-                        stop point: true
-                        stop polygon line: true
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -976,11 +923,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
                       Name: StopDetectionArea
                       Namespaces:
-                        active_detection_area: true
-                        active_detection_area_point: true
-                        obstacle_perpendicular_point: true
-                        obstacle_point: true
-                        stop_factor_wall: true
+                        {}
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -1057,7 +1000,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: viewer
     Frame Rate: 30
   Name: root
   Tools:
@@ -1099,7 +1042,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -2.6750004291534424
+      Angle: -2.670001268386841
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -1109,11 +1052,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 15.06101131439209
-      Target Frame: world
+      Scale: 17.623416900634766
+      Target Frame: viewer
       Value: TopDownOrtho (rviz)
-      X: -73.20896911621094
-      Y: -3.658054828643799
+      X: -11.548897743225098
+      Y: -23.440082550048828
     Saved: ~
 Window Geometry:
   Displays:
