@@ -166,7 +166,7 @@ class ScenarioMaker:
         time.sleep(1.0)
         if self.generate_obstacle:
             self.scenario_obstacle()  # obstacle is valid only when self-position is given
-        time.sleep(2.0) # wait for registration of obstacle
+        time.sleep(2.0)  # wait for registration of obstacle
         self.scenario_path()
 
         # publish max speed
@@ -404,7 +404,7 @@ class ScenarioMaker:
         v_rand = v + v_error
         return v_rand
 
-    def make_posstmp(self, pose, frame_id="world"):
+    def make_posstmp(self, pose, frame_id=REF_LINK):
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -415,7 +415,7 @@ class ScenarioMaker:
         return posemsg
 
     def make_posstmp_with_cov(
-        self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id="world"
+        self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id=REF_LINK
     ):  # pose: x[m], y[m], th[deg]
         x = pose[0]
         y = pose[1]
@@ -429,7 +429,7 @@ class ScenarioMaker:
         posewcmsg.pose.covariance[35] = thcov  # cov of rot_z, rot_z
         return posewcmsg
 
-    def make_pose_twist_stamped(self, pose, vel, frame_id="world"):
+    def make_pose_twist_stamped(self, pose, vel, frame_id=REF_LINK):
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -515,7 +515,7 @@ class ScenarioMaker:
             return False
 
     def GetSelfPos(self):
-        trans, quat = self.get_pose(from_link="world", to_link="base_link")
+        trans, quat = self.get_pose(from_link=REF_LINK, to_link=SELF_LINK)
         rot = tf.transformations.euler_from_quaternion(quat)
         self.self_x = trans[0]  # [m]
         self.self_y = trans[1]  # [m]
@@ -568,7 +568,7 @@ class ScenarioMaker:
         obstacle_id,
         alternate_mode=False,
         alternate_timing=BEFORE,
-        frame_id="world",
+        frame_id=REF_LINK,
     ):
         x_obj, y_obj, th_obj = pose
         x_jdg, y_jdg, th_jdg = judge_pose
@@ -642,7 +642,7 @@ class ScenarioMaker:
         else:
             self.reset_id_obstacle(obstacle_id)
 
-    def PubObstacle(self, pose, vel, obstacle_type, obstacle_id, frame_id="world"):
+    def PubObstacle(self, pose, vel, obstacle_type, obstacle_id, frame_id=REF_LINK):
         if obstacle_type == "pedestrian":
             pubpose = self.pub_pedestrianpose
             pubtwist = self.pub_pedestriantwist
