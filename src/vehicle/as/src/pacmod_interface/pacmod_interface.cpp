@@ -153,25 +153,27 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
   const double adaptive_gear_ratio = calculateVariableGearRatio(current_velocity, curr_steer_wheel);
   const double curr_steer = curr_steer_wheel / adaptive_gear_ratio - steering_offset_;
 
-  ros::Time current_time = ros::Time::now();
+  std_msgs::Header header;
+  header.frame_id = base_frame_id_;
+  header.stamp = ros::Time::now();
+
 
   /* publish vehicle status twist */
   geometry_msgs::TwistStamped twist;
-  twist.header.frame_id = base_frame_id_;
-  twist.header.stamp = current_time;
+  twist.header = header;
   twist.twist.linear.x = current_velocity;                                        // [m/s]
   twist.twist.angular.z = current_velocity * std::tan(curr_steer) / wheel_base_;  // [rad/s]
   vehicle_twist_pub_.publish(twist);
 
   /* publish current shift */
   autoware_vehicle_msgs::Shift shift_msg;
+  shift_msg.header = header;
   shift_msg.data = toAutowareShiftCmd(*shift_rpt_ptr_);
   shift_status_pub_.publish(shift_msg);
 
   /* publish current steernig angle */
   autoware_vehicle_msgs::Steering steer_msg;
-  steer_msg.header.frame_id = base_frame_id_;
-  steer_msg.header.stamp = current_time;
+  steer_msg.header = header;
   steer_msg.data = curr_steer;
   steering_status_pub_.publish(steer_msg);
 }
@@ -224,10 +226,8 @@ void PacmodInterface::publishCommands() {
   /* check shift change */
   const double brake_for_shift_trans = 0.7;
   uint16_t desired_shift = shift_rpt_ptr_->output;
-  if (shift_cmd_ptr_ != nullptr && std::fabs(current_velocity) < 0.1)  // velocity is low -> the shift can be changed
-  {
-    if (toPacmodShiftCmd(*shift_cmd_ptr_) != shift_rpt_ptr_->output)  // need shift change.
-    {
+  if (shift_cmd_ptr_ != nullptr && std::fabs(current_velocity) < 0.1) {  // velocity is low -> the shift can be changed
+    if (toPacmodShiftCmd(*shift_cmd_ptr_) != shift_rpt_ptr_->output)  {  // need shift change.
       desired_throttle = 0.0;
       desired_brake = brake_for_shift_trans;  // set brake to change the shift
       desired_shift = toPacmodShiftCmd(*shift_cmd_ptr_);

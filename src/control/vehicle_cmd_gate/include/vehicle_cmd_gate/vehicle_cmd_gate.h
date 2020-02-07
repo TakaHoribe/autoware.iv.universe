@@ -17,25 +17,27 @@
 #ifndef VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
 #define VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
 
+#include <memory>
+
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 
-#include "vehicle_cmd_gate/vehicle_cmd_filter.h"
 #include "autoware_control_msgs/ControlCommandStamped.h"
-#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
 #include "autoware_vehicle_msgs/Shift.h"
+#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
+#include "vehicle_cmd_gate/vehicle_cmd_filter.h"
 
-class VehicleCmdGate
-{
-
-public:
+class VehicleCmdGate {
+ public:
   VehicleCmdGate();
   ~VehicleCmdGate() = default;
 
-private:
+ private:
   void latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr &msg);
   void lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr &msg);
   void engageCallback(const std_msgs::Bool msg);
+
+  double getDt();
   void processCommand();
 
   ros::NodeHandle nh_;
@@ -55,4 +57,4 @@ private:
   VehicleCmdFilter filter;
 };
 
-#endif // VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
+#endif  // VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
