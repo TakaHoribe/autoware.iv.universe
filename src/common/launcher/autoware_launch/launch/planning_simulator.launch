@@ -17,9 +17,7 @@
   <include file="$(find dummy_perception_publisher)/launch/dummy_perception_publisher.launch" />
 
   <!-- Planning -->
-  <include file="$(find planning_launch)/launch/planning.launch">
-    <arg name="is_online_path_update" default="true"/>
-  </include>
+  <include file="$(find planning_launch)/launch/planning.launch" />
 
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch">
