@@ -310,6 +310,8 @@ void DummyPerceptionPublisherNode::convert2Tuple(const geometry_msgs::PoseStampe
         tf2::fromMsg(input_pose_msg->pose, tf_input_world2object);
         tf_map2objet = tf_map2input_world * tf_input_world2object;
         tf2::toMsg(tf_map2objet, pose_msg.pose);
+    }else{
+        pose_msg.pose = input_pose_msg->pose;
     }
     output = std::make_tuple(pose_msg, *input_twist_msg, object_id);
 }

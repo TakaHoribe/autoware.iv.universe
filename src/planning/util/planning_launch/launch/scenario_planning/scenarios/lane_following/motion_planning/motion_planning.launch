@@ -1,18 +1,11 @@
 <launch>
   <arg name="input_path_topic" 
     default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
-  <arg name="is_online_path_update" default="false"/>
-  <group if="$(eval is_online_path_update)">
+  <group>
     <remap from="~input/path" to="$(arg input_path_topic)" />
     <remap from="~output/path" to="path_planner/trajectory" />
     <include file="$(find path_planner)/launch/path_planner.launch">
     </include>
-  </group>
-  <group unless="$(eval is_online_path_update)">
-    <node pkg="path_planner" type="path2trajectory_converter_node" name="path2trajecotry_converter_node" output="screen">
-      <remap from="~input/path" to="$(arg input_path_topic)" />
-      <remap from="~output/path" to="path_planner/trajectory" />
-    </node>
   </group>
 
   <!-- stop velocity planning with obstacle pointcloud info -->

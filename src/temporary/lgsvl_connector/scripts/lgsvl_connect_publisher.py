@@ -204,7 +204,7 @@ class LgsvlConnectPublisher:
             if now - self.last_time_of_warp < 3.0:  # avoid frequent warp
                 return
 
-        if posemsg.header.frame_id == "world":
+        if posemsg.header.frame_id == "map":
             x = posemsg.pose.pose.position.x
             y = posemsg.pose.pose.position.y
             q = posemsg.pose.pose.orientation
@@ -214,7 +214,7 @@ class LgsvlConnectPublisher:
             time.sleep(1)
             self.pubpose.publish(posemsg)  # reinitializaion after warp in simulation
         else:
-            rospy.loginfo("frame_id of posemsg must be world")
+            rospy.loginfo("frame_id of posemsg must be map")
 
     def warp_in_lgsvl(self, x, y, theta, map_name="kashiwanoha", vehicle_name="TierIVLexus"):  # temporary
         if self.lg_process is not None:

@@ -1,18 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="city_config_path"/>
-  <arg name="lanelet_map_path" default="$(arg city_config_path)/lanelet2_map.osm"/>
-  <arg name="pointcloud_map_path" default="$(arg city_config_path)/pointcloud_map.pcd"/>
-  <arg name="map_tf_path" default="$(arg city_config_path)/tf.launch"/>
+  <arg name="map_path" default=""/>
 
   <!-- Vehicle Setting -->
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
   <!-- Map -->
   <include file="$(find map_launch)/launch/map.launch">
-    <arg name="lanelet_map_path" value="$(arg lanelet_map_path )"/>
-    <arg name="pointcloud_map_path" value="$(arg pointcloud_map_path)"/>
-    <arg name="map_tf_path" value="$(arg map_tf_path)"/>
+    <arg name="map_path" value="$(arg map_path)"/>
   </include>
 
   <!-- Planning Simulator -->
@@ -22,9 +17,7 @@
   <include file="$(find dummy_perception_publisher)/launch/dummy_perception_publisher.launch" />
 
   <!-- Planning -->
-  <include file="$(find planning_launch)/launch/planning.launch">
-    <arg name="is_online_path_update" default="true"/>
-  </include>
+  <include file="$(find planning_launch)/launch/planning.launch" />
 
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch">

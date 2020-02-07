@@ -1,15 +1,16 @@
 <launch>
 
-  <arg name="lanelet_map_path" default=""/>
-  <arg name="pointcloud_map_path" default=""/>
-  <arg name="map_tf_path" default=""/>
+  <arg name="map_path" default=""/>
+  <arg name="lanelet2_map_path" default="$(arg map_path)/lanelet2_map.osm"/>
+  <arg name="pointcloud_map_path" default="$(arg map_path)/pointcloud_map.pcd"/>
 
   <include file="$(find map_file)/launch/lanelet2_map_loader.launch">
-    <arg name="file_name" default="$(arg lanelet_map_path)"/>
+    <arg name="file_name" default="$(arg lanelet2_map_path)"/>
   </include>
 
   <node pkg="map_file" type="pointcloud_map_loader" name="pointcloud_map_loader" args="noupdate $(arg pointcloud_map_path)"/>
 
-  <include file="$(arg map_tf_path)"/>
+  <include file="$(find map_tf_generator)/launch/map_tf_generator.launch">
+  </include>
 
 </launch>
