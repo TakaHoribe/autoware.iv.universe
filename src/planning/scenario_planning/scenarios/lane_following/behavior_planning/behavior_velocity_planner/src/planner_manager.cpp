@@ -3,7 +3,7 @@
 // Scene include
 #include <scene_module/blind_spot/blind_spot.hpp>
 #include <scene_module/crosswalk/crosswalk.hpp>
-#include <scene_module/intersection/intersection.hpp>
+#include <scene_module/intersection/manager.hpp>
 #include <scene_module/momentary_stop/momentary_stop.hpp>
 #include <scene_module/traffic_light/traffic_light.hpp>
 

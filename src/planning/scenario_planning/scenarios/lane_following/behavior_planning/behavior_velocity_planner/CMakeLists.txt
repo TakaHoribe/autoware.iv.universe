@@ -75,7 +75,9 @@ target_link_libraries(scene_module_crosswalk
 
 # Scene Module: Intersection
 add_library(scene_module_intersection
-  src/scene_module/intersection/intersection.cpp
+  src/scene_module/intersection/manager.cpp
+  src/scene_module/intersection/scene.cpp
+  src/scene_module/intersection/debug.cpp
 )
 
 target_link_libraries(scene_module_intersection
