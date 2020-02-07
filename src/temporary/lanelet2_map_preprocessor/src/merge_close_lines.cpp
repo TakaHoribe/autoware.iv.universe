@@ -91,7 +91,16 @@ double getLineLength(const lanelet::ConstLineString3d &line)
 
 bool areLinesSame(const lanelet::ConstLineString3d &line1, const lanelet::ConstLineString3d &line2)
 {
-  if (line1.front() != line2.front() || line1.back() != line2.back())
+  bool same_ends = false;
+  if (line1.front() == line2.front() && line1.back() == line2.back())
+  {
+    same_ends = true;
+  }
+  if (line1.front() == line2.back() && line1.back() == line2.front())
+  {
+    same_ends = true;
+  }
+  if(!same_ends)
   {
     return false;
   }
@@ -162,11 +171,11 @@ void mergeLines(lanelet::LaneletMapPtr &lanelet_map_ptr)
       if (areLinesSame(line_i, line_j))
       {
         auto merged_line = mergeTwoLines(line_i, line_j);
-        std::cout << merged_line << std::endl;
         copyData(line_i, merged_line);
         copyData(line_j, merged_line);
-        std::cout << merged_line << std::endl;
-        lanelet_map_ptr->add(merged_line);
+        line_i.setId(line_j.id());
+        std::cout << line_j << " " << line_i << std::endl;
+        // lanelet_map_ptr->add(merged_line);
         for (lanelet::Point3d pt : merged_line)
         {
           lanelet_map_ptr->add(pt);

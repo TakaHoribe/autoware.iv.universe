@@ -34,6 +34,14 @@ add_executable(merge_close_points src/merge_close_points.cpp)
 add_dependencies(merge_close_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(merge_close_points ${catkin_LIBRARIES})
 
+add_executable(remove_unreferenced_geometry src/remove_unreferenced_geometry.cpp)
+add_dependencies(remove_unreferenced_geometry ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(remove_unreferenced_geometry ${catkin_LIBRARIES})
+
+add_executable(fix_lane_change_tags src/fix_lane_change_tags.cpp)
+add_dependencies(fix_lane_change_tags ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(fix_lane_change_tags ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
