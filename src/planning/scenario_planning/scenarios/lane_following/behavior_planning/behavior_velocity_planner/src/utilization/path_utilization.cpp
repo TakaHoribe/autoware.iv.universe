@@ -1,8 +1,12 @@
+#include "utilization/path_utilization.hpp"
+
+#include <memory>
+
 #include <ros/ros.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <memory>
-#include <utilization/path_utilization.hpp>
+
+#include "utilization/interpolation/cubic_spline.hpp"
 
 namespace behavior_planning {
 void interpolatePath(const autoware_planning_msgs::Path& path, const double length,
