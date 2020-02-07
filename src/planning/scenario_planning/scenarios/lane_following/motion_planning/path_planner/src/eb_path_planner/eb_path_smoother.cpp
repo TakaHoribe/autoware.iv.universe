@@ -131,7 +131,7 @@ backward_fixing_distance_(backward_fixing_distance),
 fixing_distance_(fixing_distance),
 delta_arc_length_for_path_smoothing_(delta_arc_length_for_path_smoothing),
 delta_arc_length_for_explored_points_(delta_arc_length_for_explored_points),
-loose_constrain_disntance_(0.1)
+loose_constrain_disntance_(0.2)
 {
   cold_start(&workspace);
 }
@@ -160,31 +160,13 @@ bool EBPathSmoother::preprocessExploredPoints(
   std::vector<double> tmp_y;
   for(size_t i = 0; i <  explored_points.size(); i++)
   {
-    //backward check
-    if(i > 1)
-    {
-      double dx1 = explored_points[i].x - 
-                   explored_points[i-1].x;
-      double dy1 = explored_points[i].y - 
-                   explored_points[i-1].y;
-      double dx2 = explored_points[i-1].x - 
-                   explored_points[i-2].x;
-      double dy2 = explored_points[i-1].y - 
-                   explored_points[i-2].y;
-      double inner_product = dx1*dx2 + dy1*dy2;
-      if(inner_product < 0)
-      {
-        std::cout << "Path points might go backwrd"  << std::endl;
-        // ROS_ERROR("path mo go backward");
-      }
-    }
     tmp_x.push_back(explored_points[i].x);
     tmp_y.push_back(explored_points[i].y);
   }
   
   std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
   std::vector<double> new_s;
-  for(double i = delta_arc_length_for_explored_points_; 
+  for(double i = 0; 
       i <= base_s.back();
       i += delta_arc_length_for_explored_points_)
   {
@@ -200,39 +182,7 @@ bool EBPathSmoother::preprocessExploredPoints(
     point.x = interpolated_x[i];
     point.y = interpolated_y[i];
     debug_interpolated_points.push_back(point);
-    // if(i>0)
-    // {
-    //   double dx = point.x - interpolated_x[i-1];
-    //   double dy = point.y - interpolated_y[i-1];
-    //   double dist = std::sqrt(dx*dx+dy*dy);
-    //   // std::cout << "dist " << dist<< std::endl;
-    // }
   }
-  // double min_dist = 10000000;
-  // int min_ind = 0;
-  // for (int i = 0; i < interpolated_x.size(); i++)
-  // {
-  //   geometry_msgs::Point point;
-  //   point.x = interpolated_x[i];
-  //   point.y = interpolated_y[i];
-  //   debug_interpolated_points.push_back(point);
-  //   if(fixed_optimized_points.size()>0)
-  //   {
-  //     double dx = fixed_optimized_points.back().pose.position.x - interpolated_x[i];
-  //     double dy = fixed_optimized_points.back().pose.position.y - interpolated_y[i];
-  //     double dist = std::sqrt(dx*dx+dy*dy);
-  //     if(dist < min_dist)
-  //     {
-  //       min_dist = dist;
-  //       min_ind = i;
-  //     }
-  //   }
-  // }
-  
-  // std::cout << " min dist "<<min_dist << std::endl;
-  // std::cout << " min ind "<<min_ind << std::endl;
-  // nearest_idx = min_ind;
-  
   nearest_idx = 0;
   farrest_idx = std::min((int)(number_of_sampling_points_-1),
                          (int)(interpolated_x.size()-1));
@@ -412,8 +362,32 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
   int y_width = 100;
   double lower_bound[number_of_sampling_points_ * 2];
   double upper_bound[number_of_sampling_points_ * 2];
-  double first_yaw = tf2::getYaw(start_exploring_pose.orientation);
-  int count = 0;
+  // double first_yaw = tf2::getYaw(start_exploring_pose.orientation);
+  geometry_msgs::Pose nearest_path_pose_from_first_point;
+  geometry_msgs::Pose nearest_path_pose_from_last_point;
+  double first_point_min_dist = 9999999;
+  double last_point_min_dist = 9999999;
+  for(const auto& point: path_points)
+  {
+    double dx1 = point.pose.position.x - interpolated_x.front();
+    double dy1 = point.pose.position.y - interpolated_y.front();
+    double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+    if(dist1 < first_point_min_dist)
+    {
+      first_point_min_dist = dist1;
+      nearest_path_pose_from_first_point = point.pose;
+    }
+    double dx2 = point.pose.position.x - interpolated_x[farrest_idx_from_ego_pose];
+    double dy2 = point.pose.position.y - interpolated_y[farrest_idx_from_ego_pose];
+    double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+    if(dist2 < last_point_min_dist)
+    {
+      last_point_min_dist = dist2;
+      nearest_path_pose_from_last_point = point.pose;
+    }
+  }
+  double first_yaw = tf2::getYaw(nearest_path_pose_from_first_point.orientation);
+  double last_yaw = tf2::getYaw(nearest_path_pose_from_last_point.orientation);
   for (int i = 0; i < number_of_sampling_points_ ; ++i)
   {
     if(i==0)
@@ -423,15 +397,15 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
     }
     else if (i == 1)//second initial x
     {
-      // lower_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
-      // upper_bound[i] = interpolated_x[i-1] + delta_arc_length_ * std::cos(first_yaw);
-      lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
-      upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose+i];
+      // lower_bound[i] = interpolated_x[i];
+      // upper_bound[i] = interpolated_x[i];
+      lower_bound[i] = interpolated_x[i-1]+std::cos(first_yaw);
+      upper_bound[i] = interpolated_x[i-1]+std::cos(first_yaw);
     }
     else if (i == farrest_idx_from_ego_pose - 1 )//second last x
     {
-      lower_bound[i] = interpolated_x[i];
-      upper_bound[i] = interpolated_x[i];
+      lower_bound[i] = interpolated_x[i+1]-std::cos(last_yaw);
+      upper_bound[i] = interpolated_x[i+1]-std::cos(last_yaw);
     }
     else if (i == farrest_idx_from_ego_pose )//last x
     {
@@ -445,13 +419,7 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
     }
     else
     {     
-      // std::cout << "i - current_num_fixpoints "<< i << std::endl;
-      // std::cout << "<- xy "<<interpolated_x[i]<< " " 
-      //                      <<interpolated_y[i]<<std::endl;
-      count++;
       geometry_msgs::Point interpolated_p;
-      // interpolated_p.x = interpolated_x[nearest_idx_from_ego_pose+i];
-      // interpolated_p.y = interpolated_y[nearest_idx_from_ego_pose+i];
       interpolated_p.x = interpolated_x[i];
       interpolated_p.y = interpolated_y[i];
       geometry_msgs::Point interpolated_p_in_image;
@@ -472,8 +440,6 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
       float diff = 
         std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_,
                   loose_constrain_disntance_);
-      // lower_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] - diff;
-      // upper_bound[i] = interpolated_x[nearest_idx_from_ego_pose +i] + diff;
       lower_bound[i] = interpolated_x[i] - diff;
       upper_bound[i] = interpolated_x[i] + diff;
     }
@@ -487,15 +453,15 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
     }
     else if (i == 1)//second initial x
     {
-      // lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
-      // upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1] + delta_arc_length_ * std::sin(first_yaw);
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      // lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      // upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i-1]+std::sin(first_yaw);
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i-1]+std::sin(first_yaw);
     }
     else if (i == farrest_idx_from_ego_pose - 1)//second last x
     {
-      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
-      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i+1]-std::sin(last_yaw);
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i+1]-std::sin(last_yaw);
     }
     else if (i == farrest_idx_from_ego_pose)//last x
     {
@@ -558,13 +524,12 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
   }
   
   
-  
   std::chrono::high_resolution_clock::time_point end3 =
    std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds elapsed_time3 = 
     std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
   std::cout << "  preprocess for optimization  "<< elapsed_time3.count()/(1000.0*1000.0)<<" ms" <<std::endl;
-  osqp_update_eps_abs(&workspace, 1e-4f);
+  osqp_update_eps_abs(&workspace, 1e-2f);
   osqp_update_eps_rel(&workspace, 1e-5f);
   osqp_update_alpha(&workspace, 1.6);
   osqp_update_max_iter(&workspace, 16000);
@@ -590,14 +555,13 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
   
   
   // std::cout << "number of optimized pints "<< number_of_optimized_points << std::endl;
-  int loop_start_ind = 0;
   std::vector<geometry_msgs::Point> previous_points;
   size_t previously_used_index = 0;
   
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
   //skip fixed_points
-  for(size_t i = loop_start_ind; i <  number_of_optimized_points; i++)
+  for(size_t i = 0; i < farrest_idx_from_ego_pose ; i++)
   {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
     tmp_point.pose.position.x = 
@@ -824,7 +788,6 @@ bool EBPathSmoother::generateOptimizedPath(
   // printf("Objective value:       %.4e\n", (&workspace)->info->obj_val);
   // std::cout << "last solution "<< workspace.solution->x[number_of_sampling_points_-1]<< " "<< workspace.solution->x[number_of_sampling_points_*2-1] << std::endl;
   
-  int loop_start_ind = 0;
   
   std::vector<geometry_msgs::Point> previous_points;
   size_t previously_used_index = 0;

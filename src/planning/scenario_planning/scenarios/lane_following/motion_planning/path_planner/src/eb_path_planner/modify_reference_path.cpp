@@ -29,6 +29,7 @@ public:
   
   Eigen::Vector2d p;
   double r;
+  double d;
   double g;
   double h;
   double f;
@@ -144,7 +145,8 @@ bool transformImageToMap(const geometry_msgs::Point& image_point,
 
 ModifyReferencePath::ModifyReferencePath(
   double min_radius,
-  double backward_distance):
+  double backward_distance,
+  double clearance_weight_when_exploring):
 is_fix_pose_mode_for_debug_(false),
 is_debug_each_iteration_mode_(false),
 is_debug_driveable_area_mode_(false),
@@ -156,9 +158,8 @@ time_limit_millisecond_(200.0),
 min_radius_(min_radius),
 max_radius_(min_radius),
 backward_distance_(backward_distance),
-static_objects_velocity_ms_threshold_(1.1),
 loosing_clerance_for_explore_goal_threshold_(0.0),
-heuristic_epsilon_(1)
+clearance_weight_when_exploring_(clearance_weight_when_exploring)
 {
 }
 
@@ -174,20 +175,7 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
                              const double max_r,
                              std::vector<Node>& child_nodes)
 { 
-  //r min max
-  double current_r;
-  if(parent_node.r < min_r)
-  {
-    current_r = min_r;
-  }
-  else if(parent_node.r > max_r)
-  {
-    current_r = max_r;
-  }
-  else
-  {
-    current_r = parent_node.r;
-  }
+  double explore_radius = std::max(std::min(parent_node.d, max_r),min_r);
   if(is_debug_each_iteration_mode_)
   {
     cv::Mat tmp;
@@ -197,20 +185,17 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
               10, 
               cv::Scalar(0),
               1);
-    cv::rectangle(tmp, cv::Point(std::floor(parent_node.p(0))-(std::floor((current_r/resolution_)/std::sqrt(2))), 
-                                std::floor(parent_node.p(1))-(std::floor((current_r/resolution_)/std::sqrt(2)))),
-                      cv::Point(std::floor(parent_node.p(0))+(std::floor((current_r/resolution_)/std::sqrt(2))), 
-                                std::floor(parent_node.p(1))+(std::floor((current_r/resolution_)/std::sqrt(2)))),
+    cv::rectangle(tmp, cv::Point(std::floor(parent_node.p(0))-(std::floor((explore_radius/resolution_)/std::sqrt(2))), 
+                                std::floor(parent_node.p(1))-(std::floor((explore_radius/resolution_)/std::sqrt(2)))),
+                      cv::Point(std::floor(parent_node.p(0))+(std::floor((explore_radius/resolution_)/std::sqrt(2))), 
+                                std::floor(parent_node.p(1))+(std::floor((explore_radius/resolution_)/std::sqrt(2)))),
                       cv::Scalar(0), -1 ,CV_AA);
     cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
     cv::imshow("image", tmp);
     cv::waitKey(20);
   }
-
-  
-  // std::vector<Node> child_nodes;
   Eigen::Vector2d delta_child_p;
-  delta_child_p << current_r/resolution_,
+  delta_child_p << explore_radius/resolution_,
                    0;
   // double delta_theta = 2*M_PI/36.0;
   // double delta_theta = 2*M_PI/54.0;
@@ -224,26 +209,27 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
     Eigen::Vector2d rotated_delta = rotation * delta_child_p;
     Node child_node;
     child_node.p = rotated_delta + parent_node.p;
-    if(child_node.p(0)*resolution_ >=0 && 
-       child_node.p(0) < map_info.height && 
-       child_node.p(1)*resolution_ >=0 &&
-       child_node.p(1) < map_info.width)
+
+    if(child_node.p(0)*resolution_ < 0 ||
+       child_node.p(0) >= map_info.height || 
+       child_node.p(1)*resolution_ < 0 ||
+       child_node.p(1) >= map_info.width)
     {
-      double tmp_r = clearance_map.ptr<float>
-                      ((int)child_node.p(1))[(int)child_node.p(0)]*resolution_;
-      double r = std::min(tmp_r, max_r);
-      if(r < min_r)
-      {
-        continue;
-      }
-      child_node.r = r;
+      continue; // out of map
     }
-    else 
+    
+    child_node.d = clearance_map.ptr<float>
+                    ((int)child_node.p(1))[(int)child_node.p(0)]*resolution_;
+    if(child_node.d < min_r)
     {
-      continue;
+      continue; // obstacle is too close
     }
-    child_node.g = parent_node.g + current_r;
-    child_node.h = calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_*heuristic_epsilon_;
+
+    child_node.r = explore_radius;
+    child_node.g = parent_node.g + explore_radius - 
+                    clearance_weight_when_exploring_*child_node.d*child_node.d;
+    child_node.h = 
+      calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_;
     child_node.f = child_node.g + child_node.h;
     
     child_node.parent_node = std::make_shared<Node>(parent_node);
@@ -793,12 +779,12 @@ bool ModifyReferencePath::generateModifiedPath(
       float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
       if(clearance*resolution_>=min_radius_-loosing_clerance_for_explore_goal_threshold_)
       {
-        if(accum_dist > max_radius_*10)
+        if(accum_dist > max_radius_*15)
         {
           exploring_goal_pose_in_map_ptr = 
             std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
         }
-        if(accum_dist > max_radius_*10)
+        if(accum_dist > max_radius_*15)
         {
           // ROS_WARN("Set farrest foal");
           break;

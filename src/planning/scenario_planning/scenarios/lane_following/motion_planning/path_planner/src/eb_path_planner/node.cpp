@@ -129,7 +129,7 @@ private_nh_("~")
   objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10,
                            &EBPathPlannerNode::objectsCallback, this);
   private_nh_.param<bool>("is_debug_clearance_map_mode", 
-                           is_debug_clearance_map_mode_,false);
+                           is_debug_clearance_map_mode_,true);
   private_nh_.param<bool>("is_debug_drivable_area_mode", 
                            is_debug_drivable_area_mode_,false);
   private_nh_.param<bool>("is_publishing_clearance_map_as_occupancy_grid", 
@@ -139,11 +139,11 @@ private_nh_("~")
   private_nh_.param<double>("forward_fixing_distance", 
                              forward_fixing_distance_, 20.0);
   private_nh_.param<double>("backward_fixing_distance", 
-                             backward_fixing_distance_, 10.0);
+                             backward_fixing_distance_, 20.0);
   private_nh_.param<double>("detection_radius_from_ego", 
                              detection_radius_from_ego_, 50.0);
   private_nh_.param<double>("detection_radius_around_path_point", 
-                             detection_radius_around_path_point_, 4.0);
+                             detection_radius_around_path_point_, 2.5);
   private_nh_.param<double>("reset_delta_ego_distance", 
                              reset_delta_ego_distance_, 5.0);
   private_nh_.param<double>("exploring_minumum_radius", 
@@ -154,6 +154,8 @@ private_nh_("~")
                              delta_arc_length_for_explored_points_, 0.7);
   private_nh_.param<double>("max_avoiding_objects_velocity_ms", 
                              max_avoiding_objects_velocity_ms_, 0.1);
+  private_nh_.param<double>("clearance_weight_when_exploring", 
+                             clearance_weight_when_exploring_, 0.0);
   doResetting();
 }
 
@@ -254,9 +256,11 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
                  previous_ego_point_ptr_,
                  clearance_map,
                  input_path_msg.drivable_area.info,
-                 fixed_explored_points))
+                 fixed_explored_points,
+                 in_objects_ptr_->objects))
     {
       // ROS_WARN("[EBPathPLanner] Reset is triggered");
+      start_exploring_pose = self_pose;
       doResetting();
     }
     
@@ -305,11 +309,12 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     std::cout << "prev explored size "<< previous_explored_points_ptr_->size()<<std::endl;
     if(!is_explore_success)
     {
-      ROS_WARN_THROTTLE(3.0,"[EBPathPlanner] Could not find path; relay path");
+      ROS_WARN("[EBPathPlanner] Could not find path; relay path");
       generateSmoothTrajectory(
         self_pose,
         input_path_msg,
         output_trajectory_msg);
+      doResetting();
       //debug; marker array
       visualization_msgs::MarkerArray marker_array;
       int unique_id = 0;
@@ -347,7 +352,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       debug_start_point_marker.points.push_back(start_exploring_pose.position);
       marker_array.markers.push_back(debug_start_point_marker);
       unique_id++;
-      // doResetting();
       return;
     }
     
@@ -534,24 +538,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       unique_id++;
       marker_array.markers.push_back(constrain_points_marker);
     }
-    
-    visualization_msgs::Marker start_arrow_marker;
-    start_arrow_marker.lifetime = ros::Duration(0.1);
-    start_arrow_marker.header = input_path_msg.header;
-    start_arrow_marker.ns = std::string("start_arrow_marker");
-    start_arrow_marker.action = visualization_msgs::Marker::MODIFY;
-    start_arrow_marker.pose.orientation.w = 1.0;
-    start_arrow_marker.id = unique_id;
-    start_arrow_marker.type = visualization_msgs::Marker::ARROW;
-    start_arrow_marker.scale.x = 0.8f;
-    start_arrow_marker.scale.y = 0.3f;
-    start_arrow_marker.scale.z = 0.3f;
-    start_arrow_marker.color.r = 1.0f;
-    start_arrow_marker.color.a = 0.999;
-    start_arrow_marker.pose = start_exploring_pose;
-    marker_array.markers.push_back(start_arrow_marker);
-    unique_id++;
-    
+        
     for (size_t i = 0; i < explored_points.size(); i++)
     {
       visualization_msgs::Marker text_marker;
@@ -603,7 +590,8 @@ void EBPathPlannerNode::doResetting()
 {
   modify_reference_path_ptr_ = std::make_unique<ModifyReferencePath>(
                   exploring_minimum_radius_,
-                  backward_fixing_distance_);
+                  backward_fixing_distance_,
+                  clearance_weight_when_exploring_);
   eb_path_smoother_ptr_ = std::make_unique<EBPathSmoother>(
               exploring_minimum_radius_,
               backward_fixing_distance_,
@@ -632,13 +620,14 @@ void EBPathPlannerNode::objectsCallback(
 
 bool EBPathPlannerNode::needReset(
   const geometry_msgs::Point& current_ego_point,
-  std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
+  const std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
   const cv::Mat& clearance_map,
   const nav_msgs::MapMetaData& map_info,
-  const std::vector<geometry_msgs::Point>& fixed_explored_points)
+  const std::vector<geometry_msgs::Point>& fixed_explored_points,
+  const std::vector<autoware_perception_msgs::DynamicObject>& objects)
 {
   bool is_need_reset = false;
-  //check2
+  //check1
   double dx = current_ego_point.x - previous_ego_point_ptr->x;
   double dy = current_ego_point.y - previous_ego_point_ptr->y;
   double dist = std::sqrt(dx*dx+dy*dy);
@@ -652,7 +641,7 @@ bool EBPathPlannerNode::needReset(
     return is_need_reset;
   }
   
-  //check1
+  //check2
   geometry_msgs::Point ego_point_in_image;
   bool is_inside_map = tmp1::transformMapToImage(
           current_ego_point, 
@@ -672,29 +661,42 @@ bool EBPathPlannerNode::needReset(
   
   
   //check3
-  int count = 0;
-  for(const auto& point: fixed_explored_points)
+  // int count = 0;
+  // for(const auto& point: fixed_explored_points)
+  // {
+  //   geometry_msgs::Point point_in_image;
+  //   if(tmp1::transformMapToImage(
+  //           point, 
+  //           map_info,
+  //           point_in_image))
+  //   {
+  //     float clearance = 
+  //         clearance_map.ptr<float>((int)point_in_image.y)
+  //                                 [(int)point_in_image.x]*map_info.resolution;
+  //     if(clearance < 1e-6)
+  //     {
+  //       // ROS_WARN("count %d", count);
+  //       ROS_WARN(
+  //         "[EBPathPlanner] Reset eb path planner since explored points are outside of drivavle area");
+  //       is_need_reset = true;
+  //       return is_need_reset;
+  //     }
+  //   }
+  //   count++;
+  // }
+  bool is_object_on_explored_points =  
+    detectAvoidingObjectsOnPoints(
+      objects,
+      fixed_explored_points);
+  if(is_object_on_explored_points)
   {
-    geometry_msgs::Point point_in_image;
-    if(tmp1::transformMapToImage(
-            point, 
-            map_info,
-            point_in_image))
-    {
-      float clearance = 
-          clearance_map.ptr<float>((int)point_in_image.y)
-                                  [(int)point_in_image.x]*map_info.resolution;
-      if(clearance < 1e-6)
-      {
-        // ROS_WARN("count %d", count);
-        ROS_WARN(
-          "[EBPathPlanner] Reset eb path planner since explored points are outside of drivavle area");
-        is_need_reset = true;
-        return is_need_reset;
-      }
-    }
-    count++;
+     ROS_WARN(
+    "[EBPathPlanner] Reset eb path planner since objects on explored points");
+    
+    is_need_reset = true;
+    return is_need_reset;
   }
+  
   // //check4
   // if(is_relaying_path_mode_)
   // {
@@ -832,6 +834,35 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
       double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
       if(dist1 < detection_radius_around_path_point_ && 
          dist2<detection_radius_from_ego_)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool EBPathPlannerNode::detectAvoidingObjectsOnPoints(
+  const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+  const std::vector<geometry_msgs::Point>& points)
+{
+  std::vector<autoware_perception_msgs::DynamicObject> avoiding_objects;
+  for(const auto& object: objects)
+  {
+    if(object.state.twist_covariance.twist.linear.x< max_avoiding_objects_velocity_ms_)
+    {
+      avoiding_objects.push_back(object);
+    }
+  }
+  
+  for(const auto& point: points)
+  {
+    for(const auto& object: avoiding_objects)
+    {
+      double dx = point.x - object.state.pose_covariance.pose.position.x;
+      double dy = point.y - object.state.pose_covariance.pose.position.y;
+      double dist = std::sqrt(dx*dx+dy*dy);
+      if(dist < exploring_minimum_radius_)
       {
         return true;
       }
@@ -1279,7 +1310,6 @@ bool EBPathPlannerNode::generateClearanceMap(
     }
   }
   
-  
   cv::distanceTransform(drivable_area, clearance_map, cv::DIST_L2, 5);
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
@@ -1288,7 +1318,7 @@ bool EBPathPlannerNode::generateClearanceMap(
   std::cout << " conversion & edt "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
   if(is_debug_clearance_map_mode_)
   {
-    cv::Mat tmp;
+    cv::Mat tmp;  
     clearance_map.copyTo(tmp);
     cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
     cv::namedWindow("image", cv::WINDOW_AUTOSIZE);

@@ -74,6 +74,7 @@ private:
   double delta_arc_length_for_path_smoothing_;
   double delta_arc_length_for_explored_points_;
   double max_avoiding_objects_velocity_ms_;
+  double clearance_weight_when_exploring_;
   
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
@@ -89,10 +90,11 @@ private:
   
   bool needReset(
     const geometry_msgs::Point& current_ego_point,
-    std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
+    const std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
-    const std::vector<geometry_msgs::Point>& fixed_explored_points);
+    const std::vector<geometry_msgs::Point>& fixed_explored_points,
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects);
   
   bool seperateExploredPointsToFixedAndNonFixed(
     const geometry_msgs::Pose& ego_pose,
@@ -121,6 +123,10 @@ private:
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points);
+    
+  bool detectAvoidingObjectsOnPoints(
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+    const std::vector<geometry_msgs::Point>& points);
   
   bool generateSmoothTrajectory(const geometry_msgs::Pose& ego_pose,
                             const autoware_planning_msgs::Path& input_path,

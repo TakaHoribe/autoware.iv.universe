@@ -10,7 +10,8 @@
   <arg name="exploring_minumum_radius" default="1.3" />
   <arg name="delta_arc_length_for_path_smoothing" default="1.0" />
   <arg name="delta_arc_length_for_explored_points" default="0.7" />
-  <arg name="max_avoiding_objects_velocity_ms" default="0.1" />
+  <arg name="max_avoiding_objects_velocity_ms" default="1.1" />
+  <arg name="clearance_weight_when_exploring" default="0.0" />
   <node pkg="path_planner" type="eb_path_planner_node" 
     name="eb_path_planner_node" output="log">
     <param name="is_debug_clearance_map_mode" value="$(arg is_debug_clearance_map_mode)"/>
@@ -25,5 +26,6 @@
     <param name="delta_arc_length_for_path_smoothing" value="$(arg delta_arc_length_for_path_smoothing)"/>
     <param name="delta_arc_length_for_explored_points" value="$(arg delta_arc_length_for_explored_points)"/>
     <param name="max_avoiding_objects_velocity_ms" value="$(arg max_avoiding_objects_velocity_ms)"/>
+    <param name="clearance_weight_when_exploring" value="$(arg clearance_weight_when_exploring)"/>
   </node>
 </launch>

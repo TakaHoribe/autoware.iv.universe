@@ -60,9 +60,8 @@ private:
   double min_radius_;
   double max_radius_;
   double backward_distance_;
-  double static_objects_velocity_ms_threshold_;
   double loosing_clerance_for_explore_goal_threshold_;
-  double heuristic_epsilon_;
+  double clearance_weight_when_exploring_;
   std::unique_ptr<geometry_msgs::Pose> debug_fix_pose_;
   std::unique_ptr<geometry_msgs::Pose> previous_exploring_goal_pose_in_map_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> cached_explored_points_ptr_;
@@ -116,7 +115,8 @@ public:
   );
   ModifyReferencePath(
     double min_radius,
-    double backward_distance);
+    double backward_distance,
+    double clearance_weight_when_exploring);
   ModifyReferencePath();
   ~ModifyReferencePath();
 };
