@@ -85,15 +85,15 @@ void VelocityHistoryDisplay::reset()
   velocity_manual_object_->clear();
 }
 
-bool VelocityHistoryDisplay::validateFloats(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+bool VelocityHistoryDisplay::validateFloats(const geometry_msgs::TwistStampedConstPtr &msg_ptr)
 {
-  if (!rviz::validateFloats(msg_ptr->status.velocity))
+  if (!rviz::validateFloats(msg_ptr->twist.linear.x))
     return false;
 
   return true;
 }
 
-void VelocityHistoryDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void VelocityHistoryDisplay::processMessage(const geometry_msgs::TwistStampedConstPtr &msg_ptr)
 {
   if (!validateFloats(msg_ptr))
   {
@@ -150,7 +150,7 @@ void VelocityHistoryDisplay::updateVisualization()
     {
       /* color change depending on velocity */
       std::unique_ptr<Ogre::ColourValue> dynamic_color_ptr =
-          setColorDependsOnVelocity(property_vel_max_->getFloat(), std::get<0>(history_.at(i))->status.velocity);
+          setColorDependsOnVelocity(property_vel_max_->getFloat(), std::get<0>(history_.at(i))->twist.linear.x);
       color = *dynamic_color_ptr;
     }
     color.a = 1.0 - (current_time - std::get<0>(history_.at(i))->header.stamp).toSec() / property_velocity_timeout_->getFloat();
@@ -160,7 +160,7 @@ void VelocityHistoryDisplay::updateVisualization()
     // color.a = property_velocity_alpha_->getFloat();
     velocity_manual_object_->position(std::get<1>(history_.at(i)).x,
                                       std::get<1>(history_.at(i)).y,
-                                      std::get<1>(history_.at(i)).z + std::get<0>(history_.at(i))->status.velocity * property_velocity_scale_->getFloat());
+                                      std::get<1>(history_.at(i)).z + std::get<0>(history_.at(i))->twist.linear.x * property_velocity_scale_->getFloat());
     velocity_manual_object_->colour(color);
   }
   velocity_manual_object_->end();

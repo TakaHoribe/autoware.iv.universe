@@ -22,12 +22,12 @@
 
 #include <autoware_planning_msgs/Trajectory.h>
 
+#include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <autoware_planning_msgs/Trajectory.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <tf2/utils.h>
 #include <tf2_ros/transform_listener.h>
-#include <sensor_msgs/PointCloud2.h>
 
 #include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
@@ -35,13 +35,12 @@
 
 #include "stop_planner/obstacle_pcd_velocity_planner.h"
 
-class StopPlanner
-{
-public:
+class StopPlanner {
+ public:
   StopPlanner();
   ~StopPlanner();
 
-private:
+ private:
   void trajecotyCallback();
 
   // ros
@@ -53,8 +52,8 @@ private:
   ros::Subscriber trajectory_sub_;
   ros::Subscriber obstacle_pcd_sub_;
 
-  tf2_ros::Buffer tf_buffer_;              //!< @brief tf buffer for current_pose
-  tf2_ros::TransformListener tf_listener_; //!< @brief tf listener for current_pose
+  tf2_ros::Buffer tf_buffer_;               //!< @brief tf buffer for current_pose
+  tf2_ros::TransformListener tf_listener_;  //!< @brief tf listener for current_pose
 
   std::shared_ptr<sensor_msgs::PointCloud2> in_obstacle_pcd_ptr_;
   std::shared_ptr<autoware_planning_msgs::Trajectory> in_trajectory_ptr_;

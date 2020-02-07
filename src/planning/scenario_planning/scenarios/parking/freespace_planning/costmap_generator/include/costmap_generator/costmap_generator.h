@@ -57,9 +57,6 @@ class CostmapGenerator {
  public:
   CostmapGenerator();
 
-  void init();
-  void run();
-
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
