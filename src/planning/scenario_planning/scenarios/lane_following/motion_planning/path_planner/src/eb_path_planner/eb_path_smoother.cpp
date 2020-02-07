@@ -131,7 +131,8 @@ backward_fixing_distance_(backward_fixing_distance),
 fixing_distance_(fixing_distance),
 delta_arc_length_for_path_smoothing_(delta_arc_length_for_path_smoothing),
 delta_arc_length_for_explored_points_(delta_arc_length_for_explored_points),
-loose_constrain_disntance_(0.2)
+loose_constrain_disntance_(0.2),
+tighten_constrain_disntance_(0.2)
 {
   cold_start(&workspace);
 }
@@ -438,7 +439,7 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
         clearance = 0.5;
       }
       float diff = 
-        std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_,
+        std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_,
                   loose_constrain_disntance_);
       lower_bound[i] = interpolated_x[i] - diff;
       upper_bound[i] = interpolated_x[i] + diff;
@@ -496,7 +497,7 @@ bool EBPathSmoother::generateOptimizedExploredPoints(
         clearance = 0.5;
       }
       float diff = 
-        std::fmax(clearance - exploring_minimum_radius_ - loose_constrain_disntance_,
+        std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_,
                   loose_constrain_disntance_);
       lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - diff;
       upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + diff;

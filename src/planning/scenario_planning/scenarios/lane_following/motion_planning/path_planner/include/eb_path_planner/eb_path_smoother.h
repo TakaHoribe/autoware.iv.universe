@@ -35,6 +35,7 @@ private:
   const double delta_arc_length_for_path_smoothing_;
   const double delta_arc_length_for_explored_points_;
   const double loose_constrain_disntance_;
+  const double tighten_constrain_disntance_;
   std::unique_ptr<int> previous_number_of_optimized_points_ptr_;
   
   bool preprocessExploredPoints(
