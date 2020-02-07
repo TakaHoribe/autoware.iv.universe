@@ -33,7 +33,7 @@ sim = lgsvl.Simulator(os.environ.get("SIMULATOR_HOST", "127.0.0.1"), 8181)
 
 proj_autoware = "+proj=tmerc +lat_0=0 +lon_0=141 +k_0=0.9996 +x_0=100000 +y_0=-3900000 +ellps=WGS84 +units=m +no_defs"
 proj_unity = "+proj=tmerc +lat_0=0 +lon_0=141 +k_0=0.9996 +x_0=96259.134544 +y_0=-3973770.93847699 +ellps=WGS84 +units=m +no_defs"
-tf_world2map = tf.transformations.translation_matrix((-3837, -73748, 0))  # TODO: rotation​
+tf_map2map = tf.transformations.translation_matrix((0, 0, 0))  # TODO: rotation​
 
 
 def vector2array(v):
@@ -45,15 +45,15 @@ def array2vector(a):
 
 
 class Transformer:
-    def __init__(self, proj_autoware, proj_unity, tf_world2map):
+    def __init__(self, proj_autoware, proj_unity, tf_map2map):
         self.proj_autoware = proj_autoware
         self.proj_unity = proj_unity
-        self.tf_world2map = tf_world2map
+        self.tf_map2map = tf_map2map
 
-    def world2map(self, transform):
+    def map2map(self, transform):
         new_transform = lgsvl.Transform()
 
-        R = np.linalg.inv(self.tf_world2map)
+        R = np.linalg.inv(self.tf_map2map)
         t = vector2array(transform.position)
         new_transform.position = array2vector(np.dot(R, t))
         new_transform.rotation = transform.rotation
@@ -63,7 +63,7 @@ class Transformer:
     def map2world(self, transform):
         new_transform = lgsvl.Transform()
 
-        R = self.tf_world2map
+        R = self.tf_map2map
         t = vector2array(transform.position)
 
         new_transform.position = array2vector(np.dot(R, t))
@@ -72,7 +72,7 @@ class Transformer:
         return new_transform
 
     def autoware2unity(self, transform_aw_world):
-        transform_aw_map = self.world2map(transform_aw_world)
+        transform_aw_map = self.map2map(transform_aw_world)
 
         x, y = pyproj.transform(
             self.proj_autoware, self.proj_unity, transform_aw_map.position.x, transform_aw_map.position.y
@@ -120,7 +120,7 @@ spawns = sim.get_spawn()
 original_state = copy.deepcopy(lgsvl.AgentState())
 state = lgsvl.AgentState()
 
-transformer = Transformer(proj_autoware, proj_unity, tf_world2map)
+transformer = Transformer(proj_autoware, proj_unity, tf_map2map)
 
 state.transform = transformer.autoware2unity(
     lgsvl.Transform(lgsvl.Vector(gen_x, gen_y, 0.0), lgsvl.Vector(0.0, 0.0, np.rad2deg(gen_theta) - 90))
