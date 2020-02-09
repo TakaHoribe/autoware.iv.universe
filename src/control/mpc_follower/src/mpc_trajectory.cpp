@@ -16,10 +16,8 @@
 
 #include "mpc_follower/mpc_trajectory.h"
 
-void MPCTrajectory::push_back(const double &xp, const double &yp, const double &zp,
-                              const double &yawp, const double &vxp, const double &kp,
-                              const double &tp)
-{
+void MPCTrajectory::push_back(const double &xp, const double &yp, const double &zp, const double &yawp,
+                              const double &vxp, const double &kp, const double &tp) {
   x.push_back(xp);
   y.push_back(yp);
   z.push_back(zp);
@@ -27,10 +25,9 @@ void MPCTrajectory::push_back(const double &xp, const double &yp, const double &
   vx.push_back(vxp);
   k.push_back(kp);
   relative_time.push_back(tp);
-};
+}
 
-void MPCTrajectory::clear()
-{
+void MPCTrajectory::clear() {
   x.clear();
   y.clear();
   z.clear();
@@ -38,17 +35,13 @@ void MPCTrajectory::clear()
   vx.clear();
   k.clear();
   relative_time.clear();
-};
+}
 
-unsigned int MPCTrajectory::size() const
-{
-  if (x.size() == y.size() && x.size() == z.size() && x.size() == yaw.size() &&
-      x.size() == vx.size() && x.size() == k.size() && x.size() == relative_time.size())
-  {
+unsigned int MPCTrajectory::size() const {
+  if (x.size() == y.size() && x.size() == z.size() && x.size() == yaw.size() && x.size() == vx.size() &&
+      x.size() == k.size() && x.size() == relative_time.size()) {
     return x.size();
-  }
-  else
-  {
+  } else {
     std::cerr << "[MPC trajectory] trajectory size is inappropriate" << std::endl;
     return 0;
   }

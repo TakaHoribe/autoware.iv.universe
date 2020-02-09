@@ -17,13 +17,12 @@
 #include "mpc_follower/qp_solver/qp_solver_qpoases.h"
 
 QPSolverQpoasesHotstart::QPSolverQpoasesHotstart(const int max_iter)
-  : is_solver_initialized_(false), max_iter_(max_iter){};
+    : is_solver_initialized_(false), max_iter_(max_iter) {}
 
 bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
                                     const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::MatrixXd& lbA,
-                                    const Eigen::MatrixXd& ubA, Eigen::VectorXd& U)
-{
-  int max_iter = max_iter_; // redeclaration to give a non-const value to solver
+                                    const Eigen::MatrixXd& ubA, Eigen::VectorXd& U) {
+  int max_iter = max_iter_;  // redeclaration to give a non-const value to solver
 
   const int kNumOfMatrixElements = Hmat.rows() * Hmat.cols();
   double h_matrix[kNumOfMatrixElements];
@@ -42,44 +41,36 @@ bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::Ma
 
   int index = 0;
 
-  for (int r = 0; r < Hmat.rows(); ++r)
-  {
+  for (int r = 0; r < Hmat.rows(); ++r) {
     g_matrix[r] = fvec(r, 0);
-    for (int c = 0; c < Hmat.cols(); ++c)
-    {
+    for (int c = 0; c < Hmat.cols(); ++c) {
       h_matrix[index] = Hmat(r, c);
       a_constraint_matirx[index] = Aconstraint(r, c);
       index++;
     }
   }
 
-  for (int i = 0; i < kNumOfOffsetRows; ++i)
-  {
+  for (int i = 0; i < kNumOfOffsetRows; ++i) {
     lower_bound[i] = lb[i];
     upper_bound[i] = ub[i];
   }
 
-  solver_.setPrintLevel(qpOASES::PL_NONE); // options: PL_DEBUG_ITER, PL_TABULAR, PL_NONE, PL_LOW, PL_MEDIUM, PL_HIGH
+  solver_.setPrintLevel(qpOASES::PL_NONE);  // options: PL_DEBUG_ITER, PL_TABULAR, PL_NONE, PL_LOW, PL_MEDIUM, PL_HIGH
 
-  if (!is_solver_initialized_)
-  {
+  if (!is_solver_initialized_) {
     solver_ = qpOASES::SQProblem(kNumOfOffsetRows, kNumOfOffsetRows);
     auto ret = solver_.init(h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound, upper_bound,
                             max_iter);
-    if (ret != qpOASES::SUCCESSFUL_RETURN)
-    {
+    if (ret != qpOASES::SUCCESSFUL_RETURN) {
       std::cerr << "[QPOASES] not successfully solved in init()" << std::endl;
       return false;
     }
 
     is_solver_initialized_ = true;
-  }
-  else
-  {
+  } else {
     auto ret = solver_.hotstart(h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound,
                                 upper_bound, max_iter);
-    if (ret != qpOASES::SUCCESSFUL_RETURN)
-    {
+    if (ret != qpOASES::SUCCESSFUL_RETURN) {
       std::cerr << "[QPOASES] not successfully solved in hotstart()" << std::endl;
       return false;
     }
@@ -87,10 +78,10 @@ bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::Ma
 
   solver_.getPrimalSolution(result);
 
-  for (int i = 0; i < kNumOfOffsetRows; ++i)
-  {
+  for (int i = 0; i < kNumOfOffsetRows; ++i) {
     U(i) = result[i];
   }
 
   return true;
-};
+}
+

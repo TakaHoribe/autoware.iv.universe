@@ -23,15 +23,14 @@
 
 #pragma once
 
+#include <cmath>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
-#include <cmath>
 #include "mpc_follower/qp_solver/qp_solver_interface.h"
 
-class QPSolverEigenLeastSquareLLT : public QPSolverInterface
-{
-public:
+class QPSolverEigenLeastSquareLLT : public QPSolverInterface {
+ public:
   /**
    * @brief constructor
    */

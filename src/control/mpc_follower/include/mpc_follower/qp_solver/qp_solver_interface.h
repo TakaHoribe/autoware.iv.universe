@@ -27,9 +27,8 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
 
-class QPSolverInterface
-{
-public:
+class QPSolverInterface {
+ public:
   /**
    * @brief solve QP problem : minimize J = U' * Hmat * U + fvec' * U without constraint
    * @param [in] Hmat parameter matrix in object function

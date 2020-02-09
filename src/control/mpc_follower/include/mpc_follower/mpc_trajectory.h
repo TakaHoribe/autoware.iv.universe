@@ -15,30 +15,28 @@
  */
 
 #pragma once
-#include <vector>
 #include <iostream>
+#include <vector>
 
-/** 
+/**
  * @class trajectory class for mpc follower
  * @brief calculate control command to follow reference waypoints
  */
-class MPCTrajectory
-{
-public:
-  std::vector<double> x;             //!< @brief x position x vector
-  std::vector<double> y;             //!< @brief y position y vector
-  std::vector<double> z;             //!< @brief z position z vector
-  std::vector<double> yaw;           //!< @brief yaw pose yaw vector
-  std::vector<double> vx;            //!< @brief vx velocity vx vector
-  std::vector<double> k;             //!< @brief k curvature k vector
-  std::vector<double> relative_time; //!< @brief relative_time duration time from start point
+class MPCTrajectory {
+ public:
+  std::vector<double> x;              //!< @brief x position x vector
+  std::vector<double> y;              //!< @brief y position y vector
+  std::vector<double> z;              //!< @brief z position z vector
+  std::vector<double> yaw;            //!< @brief yaw pose yaw vector
+  std::vector<double> vx;             //!< @brief vx velocity vx vector
+  std::vector<double> k;              //!< @brief k curvature k vector
+  std::vector<double> relative_time;  //!< @brief relative_time duration time from start point
 
   /**
    * @brief push_back for all values
    */
-  void push_back(const double &xp, const double &yp, const double &zp,
-                 const double &yawp, const double &vxp, const double &kp,
-                 const double &tp);
+  void push_back(const double &xp, const double &yp, const double &zp, const double &yawp, const double &vxp,
+                 const double &kp, const double &tp);
   /**
    * @brief clear for all values
    */

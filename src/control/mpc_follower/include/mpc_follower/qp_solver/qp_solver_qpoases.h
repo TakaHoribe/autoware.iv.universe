@@ -23,23 +23,22 @@
 
 #pragma once
 
-#include <iostream>
+#include <cmath>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
+#include <iostream>
 #include <qpoases_vendor/qpOASES.hpp>
-#include <cmath>
 
 #include "mpc_follower/qp_solver/qp_solver_interface.h"
 
-class QPSolverQpoasesHotstart : public QPSolverInterface
-{
-private:
+class QPSolverQpoasesHotstart : public QPSolverInterface {
+ private:
   bool is_solver_initialized_;  //!< @brief flag to check initialization
   const int max_iter_;          //!< @brief max iteration number
   qpOASES::SQProblem solver_;   //!< @brief solver for QP
 
-public:
+ public:
   /**
    * @brief constructor
    * @param max_iter max iteration for QP

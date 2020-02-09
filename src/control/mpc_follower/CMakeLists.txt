@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(mpc_follower)
 
-add_compile_options(-std=c++11 -Wall -Werror)
+add_compile_options(-std=c++14 -Wall -Werror)
 
 find_package(
   catkin REQUIRED COMPONENTS
