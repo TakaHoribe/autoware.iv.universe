@@ -23,15 +23,14 @@
 
 #pragma once
 
+#include <cmath>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
-#include <cmath>
 #include "mpc_follower/qp_solver/qp_solver_interface.h"
 
-class QPSolverEigenLeastSquareLLT : public QPSolverInterface
-{
-public:
+class QPSolverEigenLeastSquareLLT : public QPSolverInterface {
+ public:
   /**
    * @brief constructor
    */
@@ -55,6 +54,6 @@ public:
    * @return bool to check the problem is solved
    */
   bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
-             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::MatrixXd &lbA,
-             const Eigen::MatrixXd &ubA, Eigen::VectorXd &U) override;
+             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
+             const Eigen::VectorXd &ubA, Eigen::VectorXd &U) override;
 };

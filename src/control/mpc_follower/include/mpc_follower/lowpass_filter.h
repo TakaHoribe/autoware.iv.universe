@@ -22,12 +22,12 @@
  */
 
 #pragma once
-#include <cmath>
-#include <vector>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
+#include <vector>
 
-/** 
+/**
  * @class 2nd-order Butterworth Filter
  * @brief filtering values
  */
@@ -36,21 +36,20 @@
  * reference : S. Butterworth, "On the Theory of Filter Amplifier", Experimental wireless, 1930.
  */
 
-class Butterworth2dFilter
-{
-private:
-  double y1_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double y2_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double u1_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double u2_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double a0_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double a1_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double a2_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double b0_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double b1_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
-  double b2_; //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+class Butterworth2dFilter {
+ private:
+  double y1_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double y2_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double u1_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double u2_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double a0_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double a1_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double a2_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double b0_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double b1_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
+  double b2_;  //!< @brief filter coefficient calculated with cutoff frequency and sampling time
 
-public:
+ public:
   /**
    * @brief constructor with initialization
    * @param [in] dt sampling time
@@ -89,7 +88,8 @@ public:
    * @param [in] t time-series data for input vector
    * @param [out] u object vector
    */
-  void filtfilt_vector(const std::vector<double> &t, std::vector<double> &u); // filtering forward and backward direction
+  void filtfilt_vector(const std::vector<double> &t,
+                       std::vector<double> &u);  // filtering forward and backward direction
 
   /**
    * @brief get filter coefficients
@@ -98,13 +98,12 @@ public:
   void getCoefficients(std::vector<double> &coeffs);
 };
 
-/** 
+/**
  * @class Move Average Filter
  * @brief filtering values
  */
-class MoveAverageFilter
-{
-public:
+class MoveAverageFilter {
+ public:
   /**
    * @brief constructor
    */

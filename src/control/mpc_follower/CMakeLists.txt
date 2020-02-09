@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(mpc_follower)
 
-add_compile_options(-std=c++11 -Wall -Werror)
+add_compile_options(-std=c++14 -Wall -Werror)
 
 find_package(
   catkin REQUIRED COMPONENTS
@@ -53,7 +53,7 @@ set(
     src/vehicle_model/vehicle_model_bicycle_dynamics.cpp
     src/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.cpp
     src/qp_solver/qp_solver_unconstr_fast.cpp
-    # src/qp_solver/qp_solver_qpoases.cpp
+    src/qp_solver/qp_solver_osqp.cpp
 )
 
 add_executable(mpc_follower src/mpc_follower_node.cpp src/mpc_follower_core.cpp ${MPC_FOLLOWER_SRC})

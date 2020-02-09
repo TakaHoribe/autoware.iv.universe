@@ -16,15 +16,11 @@
 
 #include "mpc_follower/lowpass_filter.h"
 
-Butterworth2dFilter::Butterworth2dFilter(double dt, double f_cutoff_hz)
-{
-  initialize(dt, f_cutoff_hz);
-};
+Butterworth2dFilter::Butterworth2dFilter(double dt, double f_cutoff_hz) { initialize(dt, f_cutoff_hz); }
 
-Butterworth2dFilter::~Butterworth2dFilter(){};
+Butterworth2dFilter::~Butterworth2dFilter() {}
 
-void Butterworth2dFilter::initialize(const double &dt, const double &f_cutoff_hz)
-{
+void Butterworth2dFilter::initialize(const double &dt, const double &f_cutoff_hz) {
   y1_ = 0.0;
   y2_ = 0.0;
   u2_ = 0.0;
@@ -41,8 +37,7 @@ void Butterworth2dFilter::initialize(const double &dt, const double &f_cutoff_hz
   b2_ = b0_;
 }
 
-double Butterworth2dFilter::filter(const double &u0)
-{
+double Butterworth2dFilter::filter(const double &u0) {
   double y0 = (b2_ * u2_ + b1_ * u1_ + b0_ * u0 - a2_ * y2_ - a1_ * y1_) / a0_;
   y2_ = y1_;
   y1_ = y0;
@@ -51,16 +46,14 @@ double Butterworth2dFilter::filter(const double &u0)
   return y0;
 }
 
-void Butterworth2dFilter::filt_vector(const std::vector<double> &t, std::vector<double> &u)
-{
+void Butterworth2dFilter::filt_vector(const std::vector<double> &t, std::vector<double> &u) {
   double y1 = u.at(0);
   double y2 = u.at(0);
   double u2 = u.at(0);
   double u1 = u.at(0);
   double y0 = 0.0;
   double u0 = 0.0;
-  for (unsigned int i = 0; i < u.size(); ++i)
-  {
+  for (unsigned int i = 0; i < u.size(); ++i) {
     u0 = u.at(i);
     y0 = (b2_ * u2 + b1_ * u1 + b0_ * u0 - a2_ * y2 - a1_ * y1) / a0_;
     y2 = y1;
@@ -72,8 +65,7 @@ void Butterworth2dFilter::filt_vector(const std::vector<double> &t, std::vector<
 }
 
 // filtering forward and backward direction
-void Butterworth2dFilter::filtfilt_vector(const std::vector<double> &t, std::vector<double> &u)
-{
+void Butterworth2dFilter::filtfilt_vector(const std::vector<double> &t, std::vector<double> &u) {
   std::vector<double> u_rev(u);
 
   // forward filtering
@@ -85,14 +77,12 @@ void Butterworth2dFilter::filtfilt_vector(const std::vector<double> &t, std::vec
   std::reverse(u_rev.begin(), u_rev.end());
 
   // merge
-  for (unsigned int i = 0; i < u.size(); ++i)
-  {
+  for (unsigned int i = 0; i < u.size(); ++i) {
     u[i] = (u[i] + u_rev[i]) * 0.5;
   }
 }
 
-void Butterworth2dFilter::getCoefficients(std::vector<double> &coeffs)
-{
+void Butterworth2dFilter::getCoefficients(std::vector<double> &coeffs) {
   coeffs.clear();
   coeffs.push_back(a0_);
   coeffs.push_back(a1_);
@@ -103,34 +93,25 @@ void Butterworth2dFilter::getCoefficients(std::vector<double> &coeffs)
   return;
 }
 
-bool MoveAverageFilter::filt_vector(const int num, std::vector<double> &u)
-{
-  if ((int)u.size() < num)
-  {
+bool MoveAverageFilter::filt_vector(const int num, std::vector<double> &u) {
+  if ((int)u.size() < num) {
     // std::cout << "[MovingAverageFilter] vector size is lower than moving average number" << std::endl;
     return false;
   }
   std::vector<double> filtered_u(u);
-  for (int i = 0; i < (int)u.size(); ++i)
-  {
+  for (int i = 0; i < (int)u.size(); ++i) {
     double tmp = 0.0;
     int num_tmp = 0;
     int count = 0;
-    if (i - num < 0)
-    {
+    if (i - num < 0) {
       num_tmp = i;
-    }
-    else if (i + num > (int)u.size() - 1)
-    {
+    } else if (i + num > (int)u.size() - 1) {
       num_tmp = (int)u.size() - i - 1;
-    }
-    else
-    {
+    } else {
       num_tmp = num;
     }
 
-    for (int j = -num_tmp; j <= num_tmp; ++j)
-    {
+    for (int j = -num_tmp; j <= num_tmp; ++j) {
       tmp += u[i + j];
       ++count;
     }
