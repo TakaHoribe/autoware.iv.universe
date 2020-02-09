@@ -96,7 +96,7 @@ class Butterworth2dFilter {
    * @param [out] coeffs coefficients of filter [a0, a1, a2, b0, b1, b2].
    */
   void getCoefficients(std::vector<double> &coeffs);
-}
+};
 
 /**
  * @class Move Average Filter
@@ -120,4 +120,4 @@ class MoveAverageFilter {
    * @param [out] u object vector
    */
   static bool filt_vector(const int num, std::vector<double> &u);
-}
+};

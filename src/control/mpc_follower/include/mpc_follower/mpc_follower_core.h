@@ -100,10 +100,9 @@ class MPCFollower {
   double ctrl_period_;               //!< @brief control frequency [s]
   double steering_lpf_cutoff_hz_;    //!< @brief cutoff frequency of lowpass filter for steering command [Hz]
   double admisible_position_error_;  //!< @brief stop MPC calculation when lateral error is large than this value [m]
-  double admisible_yaw_error_deg_;   //!< @brief stop MPC calculation when heading error is large than this value [deg]
-  double steer_lim_deg_;             //!< @brief steering command limit [rad]
-  bool enable_steer_rate_lim_;       //!< @brief flag for steering rate limit
-  double steer_rate_lim_deg_;        //!< @brief steering rate limit [rad]
+  double admisible_yaw_error_;       //!< @brief stop MPC calculation when heading error is large than this value [rad]
+  double steer_lim_;                 //!< @brief steering command limit [rad]
+  double steer_rate_lim_;            //!< @brief steering rate limit [rad/s]
   double wheelbase_;  //!< @brief vehicle wheelbase length [m] to convert steering angle to angular velocity
 
   /* parameters for path smoothing */
@@ -116,7 +115,7 @@ class MPCFollower {
 
   struct MPCParam {
     int prediction_horizon;                          //< @brief prediction horizon step
-    double prediction_sampling_time;                 //< @brief prediction horizon period
+    double prediction_dt;                            //< @brief prediction horizon sampleing time
     double weight_lat_error;                         //< @brief lateral error weight in matrix Q
     double weight_heading_error;                     //< @brief heading error weight in matrix Q
     double weight_heading_error_squared_vel_coeff;   //< @brief heading error * velocity weight in matrix Q
@@ -129,6 +128,16 @@ class MPCFollower {
     double delay_compensation_time;                  //< @brief delay time for steering input to be compensated
   };
   MPCParam mpc_param_;  // for mpc design parameter
+
+  struct MPCMatrix {
+    Eigen::MatrixXd Aex;
+    Eigen::MatrixXd Bex;
+    Eigen::MatrixXd Wex;
+    Eigen::MatrixXd Cex;
+    Eigen::MatrixXd Qex;
+    Eigen::MatrixXd Rex;
+    Eigen::MatrixXd Urefex;
+  };
 
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;       //!< @brief current measured pose
   std::shared_ptr<geometry_msgs::TwistStamped> current_velocity_ptr_;  //!< @brief current measured velocity
@@ -178,15 +187,14 @@ class MPCFollower {
    * @brief calculate control command by MPC algorithm
    * @param [out] cmd calculated control command with mpc algorithm
    */
-  bool calculateMPC(autoware_control_msgs::ControlCommand &cmd);
+  bool calculateMPC(autoware_control_msgs::ControlCommand *cmd);
 
   /**
    * @brief set initial condition for mpc
    * @param [in] lat_err lateral error
    * @param [in] yaw_err yaw error
-   * @param [out] x0 initial state
    */
-  bool setInitialState(const double &lat_err, const double &yaw_err, const double &steer, Eigen::VectorXd &x0);
+  Eigen::VectorXd getInitialState(const double &lat_err, const double &yaw_err, const double &steer);
 
   /**
    * @brief update status for delay compensation
@@ -194,27 +202,29 @@ class MPCFollower {
    * @param [out] x updated state at delayed_time
    * @param [out] delayed_time start_time + delay_compensation_time
    */
-  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd &x, double &delayed_time);
+  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd *x, double *delayed_time);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
    * @param [in] reference_trajectory used for linearization around reference trajectory
    */
-  bool generateMPCMatrix(const MPCTrajectory &reference_trajectory, Eigen::MatrixXd &Aex, Eigen::MatrixXd &Bex,
-                         Eigen::MatrixXd &Wex, Eigen::MatrixXd &Cex, Eigen::MatrixXd &Qex, Eigen::MatrixXd &Rex,
-                         Eigen::MatrixXd &Urefex);
+  bool generateMPCMatrix(const MPCTrajectory &reference_trajectory, MPCMatrix *mpc_matrix);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
    * @param [out] Uex optimized input vector
    */
-  bool executeOptimization(const Eigen::MatrixXd &Aex, const Eigen::MatrixXd &Bex, const Eigen::MatrixXd &Wex,
-                           const Eigen::MatrixXd &Cex, const Eigen::MatrixXd &Qex, const Eigen::MatrixXd &Rex,
-                           const Eigen::MatrixXd &Urefex, const Eigen::VectorXd &x0, Eigen::VectorXd &Uex, double dt);
+  bool executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::VectorXd &x0, Eigen::VectorXd *Uex);
+
   /**
    * @brief get stop command
    */
   autoware_control_msgs::ControlCommand getStopControlCommand() const;
+
+  bool resampleMPCTrajectoryTime(double start_time, MPCTrajectory *mpc_resampled_ref_traj);
+  double getPredictionTime() const;
+  double calcLateralError(const geometry_msgs::Pose &ego_pose, const geometry_msgs::Pose &ref_pose) const;
+
 
   /* debug */
   bool show_debug_info_;  //!< @brief flag to display debug info
