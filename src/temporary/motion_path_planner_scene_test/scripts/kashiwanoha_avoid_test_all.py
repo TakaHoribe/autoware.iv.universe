@@ -16,7 +16,8 @@ from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, Quat
 from std_msgs.msg import Bool, Float32, Header, Int32
 
 ROSBUG_ID_FIRST = 0
-ROSBUG_ID_END = 5
+ROSBUG_ID_END = 60
+
 ENABLE_COLLISION_CHECK = True
 
 GOAL_DIST_THRESHOLD = 3.0
@@ -79,6 +80,10 @@ class AvoidTest:
         self.run_test_all()
 
         self.report.close()
+        
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print('!!!!! Finished all scenario tests !!!!!')
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
 
 
     def set_start_goal_pose(self):
@@ -116,18 +121,18 @@ class AvoidTest:
 
             start_pose = Pos()
             goal_pose = Pos()
-            if 0 <= current_scene_id < 1:
+            if 0 <= current_scene_id < 20:
                 start_pose = self.start_pose1
                 goal_pose = self.goal_pose1
-            elif 1 <= current_scene_id < 2:
+            elif 20 <= current_scene_id < 40:
                 start_pose = self.start_pose2
                 goal_pose = self.goal_pose2
-            elif 2 <= current_scene_id < 3:
+            elif 40 <= current_scene_id < 60:
                 start_pose = self.start_pose3
                 goal_pose = self.goal_pose3
-            elif 3 <= current_scene_id < 6:
-                start_pose = self.start_pose4
-                goal_pose = self.goal_pose4
+            # elif 3 <= current_scene_id < 6:
+            #     start_pose = self.start_pose4
+            #     goal_pose = self.goal_pose4
             else:
                 print('rosbag id is out of scope')
 
