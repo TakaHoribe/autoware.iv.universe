@@ -62,14 +62,14 @@ class AvoidTest:
 
         time.sleep(1.0)  # wait for ready to publish/subscribe
 
-        self.report = open('report.csv',  mode='w')
+        self.report = open('./report.csv',  mode='w')
         self.report.write('rosbag id, result, detail\n')
         # self.report.save('report.csv')
 
 
         print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         print('!!!!! start sscenario test all !!!!!')
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
 
         self.run_test_all()
 
@@ -86,11 +86,8 @@ class AvoidTest:
             now_time = rospy.Time.now().to_sec()
             if now_time - self.prev_pub_rosbag_time > duration:
                 rosbag_play = 'rosbag play ./scene/' + str(self.current_scene_id) + '.bag --wait-for-subscribers -r 100'
-                print('run : ' + rosbag_play)
-                os.system(rosbag_play)
-                # rosbag_play = "rosbag play ./scene/" + str(self.current_scene_id) + ".bag --wait-for-subscribers -r 100"
-                # subprocess.call("rosbag play ./scene/0.bag")
-                # subprocess.call("pwd")
+                # print('run : ' + rosbag_play)
+                subprocess.check_output(rosbag_play.split())
                 self.prev_pub_rosbag_time = now_time
 
 
@@ -104,37 +101,28 @@ class AvoidTest:
             if 0 <= current_scene_id < 2:
                 start_pose = Pos(3698.361, 73761.133, 0.495)
                 goal_pose = Pos(3800.940, 73813.547, 0.453)
-            elif 2 <= current_scene_id < 5:
+            elif 2 <= current_scene_id < 6:
                 start_pose = Pos(3788.597, 73807.820, 0.487)
                 goal_pose = Pos(3812.777, 73770.305, -2.71)
             else:
-                print('error')
+                print('rosbag id is out of scope')
 
-            print('start test, id : ', current_scene_id)
+            print '----- start test. id : ', current_scene_id, ' -----'
+            # sys.stdout.write("----- start test. id : " + str(current_scene_id) + " -----")
+            
             self.current_start_pose = start_pose
 
             res = self.run_test(start_pose, goal_pose)
 
-            if res in self.finish_reasons:
-                print('test id : ', current_scene_id, ', result : ', res)
-            else:
-                print('test result is undesired')
-
 
             if res == 'goal':
-                print('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
-                print('OOOOOOOOOOOO GOAL OOOOOOOOOOOOOOOOOOOO')
-                print('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n')
+                print '===== test result id :', current_scene_id, ' =====> SUCCESS (goal)\n'
                 self.report.write(str(current_scene_id) + ', success, goal\n')
             if res == 'collision':
-                print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-                print('XXXXXXXXXXXXXX collision XXXXXXXXXXXXX')
-                print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n')
+                print '===== test result id :', current_scene_id, ' =====> FAIL (collision)\n'
                 self.report.write(str(current_scene_id) + ', fail, collision\n')
             if res == 'timeout':
-                print('======================================')
-                print('============== timeout ===============')
-                print('======================================\n')
+                print '===== test result id :', current_scene_id, ' =====> FAIL (timeout)\n'
                 self.report.write(str(current_scene_id) + ', fail, timeout\n')
 
             time.sleep(0.1)  # wait for initialpose
@@ -181,23 +169,9 @@ class AvoidTest:
         time.sleep(0.5)
         self.publish_initialize(self.current_start_pose)     
 
-        
-    def play_rosbag(self):
-        args = sys.argv
-        print(len(args))
-        if len(args) > 1:
-            scene_number = args[1]
-            rosbag_play = 'rosbag play ./scene/' + scene_number + '.bag --wait-for-subscribers -r 100'
-            print('run : ' + rosbag_play)
-            os.system(rosbag_play)
-        else:
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            print('!!!!!!! you must set rosbag id !!!!!!!')
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
     def publish_initialize(self, pose):
         posewcs = self.make_posestamped_with_cov(pose)
-        print('pub initial pose!!, x:', posewcs.pose.pose.position.x, ', y: ', posewcs.pose.pose.position.y)
+        # print('pub initial pose!!, x:', posewcs.pose.pose.position.x, ', y: ', posewcs.pose.pose.position.y)
         self.pub_initialpose.publish(posewcs)
 
     def publish_goal(self, goal):
