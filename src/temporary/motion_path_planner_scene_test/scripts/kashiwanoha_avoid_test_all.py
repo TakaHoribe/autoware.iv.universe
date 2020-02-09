@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import csv
+import rosparam
 
 import numpy as np
 import rospy
@@ -50,7 +51,6 @@ class AvoidTest:
         self.goal_yaw_thr = GOAL_YAW_THRESHOLD_RAD
         self.rosbag_pub_duration_sec = ROSBAG_PUB_DURATION_SEC
         self.prev_pub_rosbag_time = 0.0
-        rospy.Timer(rospy.Duration(1), self.timerCallback)
 
         self.tfl = tf.TransformListener()  # for get self-position
         
@@ -61,11 +61,16 @@ class AvoidTest:
         self.sub_collsion = rospy.Subscriber("/collsion_detection_result", Bool, self.callback_collision, queue_size=1)
 
         time.sleep(1.0)  # wait for ready to publish/subscribe
-
-        self.report = open('./report.csv',  mode='w')
+        report_path = rosparam.get_param("/kashiwanoha_avoid_test_all/report_path")
+        print "report path : ", report_path
+        self.report = open(str(report_path),  mode='w')
         self.report.write('rosbag id, result, detail\n')
-        # self.report.save('report.csv')
 
+        self.scene_dir = rosparam.get_param("/kashiwanoha_avoid_test_all/scene_dir")
+
+
+        self.set_start_goal_pose()
+        rospy.Timer(rospy.Duration(1), self.timerCallback)
 
         print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         print('!!!!! start sscenario test all !!!!!')
@@ -73,8 +78,21 @@ class AvoidTest:
 
         self.run_test_all()
 
-        # self.report.save('report.csv')
         self.report.close()
+
+
+    def set_start_goal_pose(self):
+        self.start_pose1 = Pos(3698.361, 73761.133, 0.495)
+        self.goal_pose1 = Pos(3800.940, 73813.547, 0.453)
+
+        self.start_pose2 = Pos(3788.597, 73807.820, 0.487)
+        self.goal_pose2 = Pos(3812.777, 73770.305, -2.71)
+
+        self.start_pose3 = Pos(3822.781, 73787.133, -1.114)
+        self.goal_pose3 = Pos(3778.500, 73717.477, -1.094)
+
+        self.start_pose4 = Pos(3698.361, 73761.133, 0.495)
+        self.goal_pose4 = Pos(3778.500, 73717.477, -1.094)
 
 
     def timerCallback(self, event):
@@ -85,7 +103,7 @@ class AvoidTest:
         if self.publish_rosbag:
             now_time = rospy.Time.now().to_sec()
             if now_time - self.prev_pub_rosbag_time > duration:
-                rosbag_play = 'rosbag play ./scene/' + str(self.current_scene_id) + '.bag --wait-for-subscribers -r 100'
+                rosbag_play = 'rosbag play ' + str(self.scene_dir) + '/' + str(self.current_scene_id) + '.bag --wait-for-subscribers -r 100'
                 # print('run : ' + rosbag_play)
                 subprocess.check_output(rosbag_play.split())
                 self.prev_pub_rosbag_time = now_time
@@ -98,12 +116,18 @@ class AvoidTest:
 
             start_pose = Pos()
             goal_pose = Pos()
-            if 0 <= current_scene_id < 2:
-                start_pose = Pos(3698.361, 73761.133, 0.495)
-                goal_pose = Pos(3800.940, 73813.547, 0.453)
-            elif 2 <= current_scene_id < 6:
-                start_pose = Pos(3788.597, 73807.820, 0.487)
-                goal_pose = Pos(3812.777, 73770.305, -2.71)
+            if 0 <= current_scene_id < 1:
+                start_pose = self.start_pose1
+                goal_pose = self.goal_pose1
+            elif 1 <= current_scene_id < 2:
+                start_pose = self.start_pose2
+                goal_pose = self.goal_pose2
+            elif 2 <= current_scene_id < 3:
+                start_pose = self.start_pose3
+                goal_pose = self.goal_pose3
+            elif 3 <= current_scene_id < 6:
+                start_pose = self.start_pose4
+                goal_pose = self.goal_pose4
             else:
                 print('rosbag id is out of scope')
 
@@ -134,6 +158,7 @@ class AvoidTest:
 
     def run_test(self, start_pose, goal_pose):
 
+        self.publish_engage(False)
         self.reset_obstacles()
         time.sleep(0.5)  # wait for initialpose
         self.publish_initialize(start_pose)
@@ -141,6 +166,7 @@ class AvoidTest:
         self.publish_goal(goal_pose)
         self.publish_engage(True)
         self.prev_pub_rosbag_time = 0.0
+        self.collision = False
         
         start_time = rospy.Time.now().to_sec()
 
