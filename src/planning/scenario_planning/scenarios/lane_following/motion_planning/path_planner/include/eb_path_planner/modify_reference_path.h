@@ -51,16 +51,14 @@ private:
   bool is_fix_pose_mode_for_debug_;
   bool is_debug_each_iteration_mode_;
   bool is_debug_driveable_area_mode_;
-  bool is_debug_clearance_map_mode_;
   int clearance_map_y_width_;
   int clearance_map_x_length_;
-  //should be deprecated when implementing appropriate driveable area
+  //TODO: should be deprecated when implementing appropriate driveable area
   double resolution_;
   double time_limit_millisecond_;
   double min_radius_;
   double max_radius_;
   double backward_distance_;
-  double loosing_clerance_for_explore_goal_threshold_;
   double clearance_weight_when_exploring_;
   std::unique_ptr<geometry_msgs::Pose> debug_fix_pose_;
   std::unique_ptr<geometry_msgs::Pose> previous_exploring_goal_pose_in_map_ptr_;
@@ -103,16 +101,13 @@ private:
 public:
   bool generateModifiedPath(
     geometry_msgs::Pose& ego_pose,
-    const geometry_msgs::Pose& start_exploring_pose,
+    const geometry_msgs::Point& start_exploring_point,
+    const geometry_msgs::Point& goal_exploring_point,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
-    const std::vector<geometry_msgs::Point>& non_fixed_explored_points,
     std::vector<geometry_msgs::Point>& explored_points,
     const cv::Mat& clearance_map,
-    const nav_msgs::MapMetaData& map_info,
-    geometry_msgs::Point& debug_goal_point,
-    std::vector<geometry_msgs::Point>& debug_rearrange_points
-  );
+    const nav_msgs::MapMetaData& map_info);
   ModifyReferencePath(
     double min_radius,
     double backward_distance,

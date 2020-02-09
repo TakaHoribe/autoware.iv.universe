@@ -99,10 +99,6 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   double map_y_in_image_resolution = relative_p.y/resolution;
   double image_x = map_y_height - map_y_in_image_resolution;
   double image_y = map_x_width - map_x_in_image_resolution;
-  // std::cout << "image x "<<  image_x << std::endl;
-  // std::cout << "image y "<<  image_y << std::endl;
-  // std::cout << "max x "<<  map_y_height << std::endl;
-  // std::cout << "max y "<<  map_x_width << std::endl;
   if(image_x>=0 && 
      image_x<(int)map_y_height &&
      image_y>=0 && 
@@ -150,7 +146,6 @@ ModifyReferencePath::ModifyReferencePath(
 is_fix_pose_mode_for_debug_(false),
 is_debug_each_iteration_mode_(false),
 is_debug_driveable_area_mode_(false),
-is_debug_clearance_map_mode_(false),
 clearance_map_y_width_(100),
 clearance_map_x_length_(100),
 resolution_(0.1),
@@ -158,7 +153,6 @@ time_limit_millisecond_(200.0),
 min_radius_(min_radius),
 max_radius_(min_radius),
 backward_distance_(backward_distance),
-loosing_clerance_for_explore_goal_threshold_(0.0),
 clearance_weight_when_exploring_(clearance_weight_when_exploring)
 {
 }
@@ -709,105 +703,21 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
 
 bool ModifyReferencePath::generateModifiedPath(
   geometry_msgs::Pose& ego_pose,
-  const geometry_msgs::Pose& start_exploring_pose,
+  const geometry_msgs::Point& start_exploring_point,
+  const geometry_msgs::Point& goal_exploring_point,
   const std::vector<autoware_planning_msgs::PathPoint>& path_points,
   const std::vector<autoware_perception_msgs::DynamicObject>& objects,
-  const std::vector<geometry_msgs::Point>& non_fixed_explored_points,
   std::vector<geometry_msgs::Point>& explored_points,
   const cv::Mat& clearance_map,
-  const nav_msgs::MapMetaData& map_info,
-  geometry_msgs::Point& debug_goal_point_in_map,
-  std::vector<geometry_msgs::Point>& debug_rearrange_points)
+  const nav_msgs::MapMetaData& map_info)
 {
   
   std::chrono::high_resolution_clock::time_point begin2= 
     std::chrono::high_resolution_clock::now();
-  if(is_debug_clearance_map_mode_)
-  { 
-    cv::Mat tmp;
-    clearance_map.copyTo(tmp);
-    cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
-    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("image", tmp);
-    cv::waitKey(10);
-  }
-  
-  int nearest_path_point_ind_from_start_exploring_point = 0;
-  double min_dist = 999999999;
-  for (int i = 0; i < path_points.size(); i++)
-  {
-    double dx = path_points[i].pose.position.x - 
-                start_exploring_pose.position.x;
-    double dy = path_points[i].pose.position.y - 
-                start_exploring_pose.position.y;
-    double dist = std::sqrt(dx*dx+dy*dy);
-    if(dist < min_dist)
-    {
-      min_dist = dist;
-      nearest_path_point_ind_from_start_exploring_point = i;
-    }
-  }
-  
-  std::unique_ptr<geometry_msgs::Pose> exploring_goal_pose_in_map_ptr;
-  double accum_dist = 0;
-  for (int i = nearest_path_point_ind_from_start_exploring_point; 
-           i < path_points.size(); i++)
-  {
-    if(path_points.size()<=1)
-    {
-      exploring_goal_pose_in_map_ptr = 
-          std::make_unique<geometry_msgs::Pose>(ego_pose);
-      break;
-    }
-    
-    if(i!=nearest_path_point_ind_from_start_exploring_point)
-    {
-      double dx = path_points[i].pose.position.x - 
-                  path_points[i-1].pose.position.x;
-      double dy = path_points[i].pose.position.y - 
-                  path_points[i-1].pose.position.y;
-      accum_dist+= std::sqrt(dx*dx+dy*dy);
-      
-    }
-    geometry_msgs::Point image_point;
-    if(transformMapToImage(path_points[i].pose.position, 
-                           map_info,
-                           image_point))
-    {
-      int pixel_x = image_point.x;
-      int pixel_y = image_point.y;
-      float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
-      if(clearance*resolution_>=min_radius_-loosing_clerance_for_explore_goal_threshold_)
-      {
-        if(accum_dist > max_radius_*15)
-        {
-          exploring_goal_pose_in_map_ptr = 
-            std::make_unique<geometry_msgs::Pose>(path_points[i].pose);
-        }
-        if(accum_dist > max_radius_*15)
-        {
-          // ROS_WARN("Set farrest foal");
-          break;
-        }
-      }
-    }
-    else
-    {
-      break;
-    }
-  }
-  if(!exploring_goal_pose_in_map_ptr)
-  {
-    ROS_WARN_THROTTLE(2.0,"[EBPathPlanner] Could not find appropriate goal, usinga previous explored points"); 
-    explored_points = non_fixed_explored_points;
-    return true;
-  }
-  
-  debug_goal_point_in_map = exploring_goal_pose_in_map_ptr->position;
   
   bool is_explore_success = solveGraphAStar(ego_pose, 
-                          start_exploring_pose.position, 
-                          exploring_goal_pose_in_map_ptr->position, 
+                          start_exploring_point, 
+                          goal_exploring_point, 
                           clearance_map, 
                           map_info,
                           explored_points);
@@ -815,7 +725,7 @@ bool ModifyReferencePath::generateModifiedPath(
   {
     return is_explore_success;
   }                
-  // solveAStar(start_exploring_pose.position, 
+  // solveAStar(start_exploring_point.position, 
   //            exploring_goal_pose_in_map_ptr->position, 
   //            clearance_map, 
   //            map_info,
@@ -825,7 +735,7 @@ bool ModifyReferencePath::generateModifiedPath(
   if(!explored_points.empty())
   {
     explored_points.erase(explored_points.end());
-    explored_points.push_back(exploring_goal_pose_in_map_ptr->position);
+    explored_points.push_back(goal_exploring_point);
   }
   
   std::chrono::high_resolution_clock::time_point end2= 

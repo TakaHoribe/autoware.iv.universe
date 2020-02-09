@@ -64,6 +64,7 @@ private:
   bool is_debug_clearance_map_mode_;
   bool is_debug_drivable_area_mode_;
   bool is_publishing_clearance_map_as_occupancy_grid_;
+  bool is_previously_avoidance_mode_;
   int number_of_backward_detection_range_path_points_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
@@ -81,6 +82,7 @@ private:
   std::unique_ptr<geometry_msgs::Point> previous_ego_point_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
+  // std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_explored_points_ptr_;
   std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
   // void isRelayPathCallback(const std_msgs::Bool& msg);
@@ -95,6 +97,28 @@ private:
     const nav_msgs::MapMetaData& map_info,
     const std::vector<geometry_msgs::Point>& fixed_explored_points,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects);
+  
+  bool isAvoidanceNeeded(
+    const std::vector<autoware_planning_msgs::PathPoint> in_path,
+    const geometry_msgs::Pose self_pose);
+  
+  bool isPoseCloseToPath(
+    const std::vector<autoware_planning_msgs::PathPoint> in_path,
+    const geometry_msgs::Pose in_pose, const double thr);
+  
+  bool needExprolation(
+    const geometry_msgs::Point& ego_point,
+    const std::vector<geometry_msgs::Point>& previous_explored_points,
+    const autoware_planning_msgs::Path& in_path,
+    const cv::Mat& clearance_map,
+    geometry_msgs::Point& start_exploring_point,
+    geometry_msgs::Point& goal_exploring_point,
+    std::vector<geometry_msgs::Point>& truncated_explored_points);
+  
+  std::vector<geometry_msgs::Point> truncateExploredPointsWithEgoVehicle(
+    const geometry_msgs::Point& ego_point,
+    const std::vector<geometry_msgs::Point>& explored_points);
+    
   
   bool seperateExploredPointsToFixedAndNonFixed(
     const geometry_msgs::Pose& ego_pose,

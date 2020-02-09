@@ -20,15 +20,15 @@ class Murakami:
         self.pub_initialpose = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
         self.pub_engage = rospy.Publisher("/autoware/engage", Bool, queue_size=1)
-        
+            
         time.sleep(1.0)  # wait for ready to publish/subscribe
         self.publish_engage(False)
-        self.publish_initialize(20000.259, 13.462, 0.477) # reset
+        self.publish_initialize(222222220, 0, 0) # reset obstacle
         time.sleep(0.5)  # wait for ready to publish/subscribe
-        self.publish_initialize(-138.259, 13.462, 0.477)
+        self.publish_initialize(3698.741, 73761.462, 0.477)
 
         time.sleep(0.5)  # wait for ready to publish/subscribe
-        self.publish_goal(-58.820, -29.568, -1.116)
+        self.publish_goal(3778.18, 73718.432, -1.116)
 
 
         self.play_rosbag()
@@ -63,7 +63,7 @@ class Murakami:
         self.pub_engage.publish(engage_msg)
 
     def make_posstmp_with_cov(
-        self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id="world"
+        self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id="map"
     ):  # pose: x[m], y[m], th[deg]
         x = pose[0]
         y = pose[1]
@@ -77,7 +77,7 @@ class Murakami:
         posewcmsg.pose.covariance[35] = thcov  # cov of rot_z, rot_z
         return posewcmsg
 
-    def make_posstmp(self, pose, frame_id="world"):
+    def make_posstmp(self, pose, frame_id="map"):
         x = pose[0]
         y = pose[1]
         th = pose[2]

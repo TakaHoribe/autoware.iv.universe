@@ -62,13 +62,13 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
   double map_y_in_image_resolution = relative_p.y/resolution;
   double image_x = map_y_height - map_y_in_image_resolution;
   double image_y = map_x_width - map_x_in_image_resolution;
-  image_point.x = image_x;
-  image_point.y = image_y;
   if(image_x>=0 && 
      image_x<(int)map_y_height &&
      image_y>=0 && 
      image_y<(int)map_x_width)
   {
+    image_point.x = image_x;
+    image_point.y = image_y;
     return true;
   }
   else
@@ -76,6 +76,7 @@ bool transformMapToImage(const geometry_msgs::Point& map_point,
     return false;
   } 
 }
+
 
 
 bool transformImageToMap(const geometry_msgs::Point& image_point,
@@ -156,10 +157,77 @@ private_nh_("~")
                              max_avoiding_objects_velocity_ms_, 0.1);
   private_nh_.param<double>("clearance_weight_when_exploring", 
                              clearance_weight_when_exploring_, 0.0);
+  is_previously_avoidance_mode_ = false;
   doResetting();
 }
 
 EBPathPlannerNode::~EBPathPlannerNode() {}
+
+bool EBPathPlannerNode::isAvoidanceNeeded(
+  const std::vector<autoware_planning_msgs::PathPoint> in_path,
+  const geometry_msgs::Pose self_pose) 
+{
+  
+  bool is_objects_detected = 
+    detectAvoidingObjectsOnPath(
+      self_pose, 
+      in_objects_ptr_->objects,
+      in_path);
+  
+  if (is_objects_detected)
+  {
+    return true;
+  } 
+  
+  
+  if (!is_previously_avoidance_mode_)
+  {
+    return false;
+  }
+  
+  double thr = 0.3;
+  return isPoseCloseToPath(in_path, self_pose, thr) ? false : true;
+}
+
+bool EBPathPlannerNode::isPoseCloseToPath(
+  const std::vector<autoware_planning_msgs::PathPoint> in_path,
+  const geometry_msgs::Pose in_pose, const double thr) 
+{
+  std::vector<double> tmp_x;
+  std::vector<double> tmp_y;
+  for(size_t i = 0; i <  in_path.size(); i++)
+  {
+    tmp_x.push_back(in_path[i].pose.position.x);
+    tmp_y.push_back(in_path[i].pose.position.y);
+  }
+  
+  std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+  std::vector<double> new_s;
+  double interval_dist = 0.1;
+  for(double i = 0.0; 
+      i <= base_s.back();
+      i += interval_dist)
+  {
+    new_s.push_back(i);
+  }
+  horibe_spline::SplineInterpolate spline;
+  std::vector<double> new_x;
+  std::vector<double> new_y;
+  spline.interpolate(base_s, tmp_x, new_s, new_x);
+  spline.interpolate(base_s, tmp_y, new_s, new_y);
+  double min_dist = 99999999;
+  for (int i = 0; i < new_x.size(); i++)
+  {
+    double dx = new_x[i] - in_pose.position.x;
+    double dy = new_y[i] - in_pose.position.y;
+    double dist = (dx*dx+dy*dy); 
+    if(dist < thr * thr)
+    {
+      return true;
+    }
+  }
+  return false;
+}
 
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_msg,
                                  autoware_planning_msgs::Trajectory &output_trajectory_msg)
@@ -181,17 +249,14 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
     return;
   }
-  bool is_objects_detected = 
-    detectAvoidingObjectsOnPath(
-      self_pose, 
-      in_objects_ptr_->objects,
-      input_path_msg.points);
-  if(!is_objects_detected)
+  
+  if (!isAvoidanceNeeded(input_path_msg.points, self_pose))
   {
     generateSmoothTrajectory(
       self_pose,
       input_path_msg,
       output_trajectory_msg);
+    is_previously_avoidance_mode_ = false;
     doResetting();
   }
   else
@@ -202,166 +267,89 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       in_objects_ptr_->objects,
       self_pose,
       clearance_map);
-      
-    
-    geometry_msgs::Pose start_exploring_pose;
-    std::vector<geometry_msgs::Point> fixed_explored_points; 
-    std::vector<geometry_msgs::Point> non_fixed_explored_points; 
-    seperateExploredPointsToFixedAndNonFixed(
-        self_pose, 
-        previous_explored_points_ptr_,
-        clearance_map,
-        input_path_msg.drivable_area.info, 
-        fixed_explored_points,
-        non_fixed_explored_points);
-    if(!fixed_explored_points.empty())
-    {
-      start_exploring_pose.position = fixed_explored_points.back();
-    }
-    else
-    {
-      double min_dist = 99999999;
-      int min_ind = -1;
-      if(!input_path_msg.points.empty())
-      {
-        for (int i = 0; i < input_path_msg.points.size(); i++)
-        {
-          double dx1 = input_path_msg.points[i].pose.position.x - self_pose.position.x;
-          double dy1 = input_path_msg.points[i].pose.position.y - self_pose.position.y;
-          double dist = std::sqrt(dx1*dx1+dy1*dy1);
-          if(dist < min_dist)
-          {
-            min_dist = dist;
-            min_ind = i;
-          }
-        }
-        int back_ind = std::max(min_ind - 4, 0);
-        if(min_ind != -1)
-        {
-          start_exploring_pose = input_path_msg.points[back_ind].pose;
-        }
-      }
-      else
-      {
-        ROS_WARN("Path is empty");
-        return;
-      }
-      if(min_ind == -1)
-      {
-        start_exploring_pose = self_pose;
-      }
-    }
     
     if(needReset(self_pose.position,
                  previous_ego_point_ptr_,
                  clearance_map,
                  input_path_msg.drivable_area.info,
-                 fixed_explored_points,
+                 *previous_explored_points_ptr_,
                  in_objects_ptr_->objects))
     {
-      // ROS_WARN("[EBPathPLanner] Reset is triggered");
-      start_exploring_pose = self_pose;
       doResetting();
     }
     
-    std::vector<geometry_msgs::Point> explored_points;
-    geometry_msgs::Point debug_goal_point;
-    std::vector<geometry_msgs::Point> debug_rearranged_points;
-    bool is_explore_success = 
-      modify_reference_path_ptr_->generateModifiedPath(
-            self_pose, 
-            start_exploring_pose,
-            input_path_msg.points,
-            in_objects_ptr_->objects,
-            non_fixed_explored_points,
-            explored_points,
-            clearance_map, 
-            input_path_msg.drivable_area.info,
-            debug_goal_point,
-            debug_rearranged_points);
-    for (int i = 0; i < explored_points.size(); i++)
+    std::cout << "prev ex point size "<< previous_explored_points_ptr_->size() << std::endl;
+    geometry_msgs::Point start_exploring_point;
+    geometry_msgs::Point goal_exploring_point;
+    std::vector<geometry_msgs::Point> truncated_explored_points;
+    if(needExprolation(self_pose.position,
+                  *previous_explored_points_ptr_,
+                  input_path_msg,
+                  clearance_map,
+                  start_exploring_point,
+                  goal_exploring_point,
+                  truncated_explored_points))
     {
-      fixed_explored_points.push_back(explored_points[i]);
-    }
-    explored_points = fixed_explored_points;
-    //remove redundant explored points 
-    std::vector<geometry_msgs::Point> non_redundant_explored_points;
-    for (int i = 0; i < explored_points.size(); i++)
-    {
-      if(i>0)
-      {
-        double dx = explored_points[i].x -explored_points[i-1].x;
-        double dy = explored_points[i].y -explored_points[i-1].y;
-        double dist = std::sqrt(dx*dx+dy*dy);
-        if(dist < 1e-6)
-        {
-          continue;
-        }
-      }
-      non_redundant_explored_points.push_back(explored_points[i]);
-    }
-    explored_points.clear();
-    explored_points = non_redundant_explored_points;
-    
-    
-    previous_explored_points_ptr_ = 
-      std::make_unique<std::vector<geometry_msgs::Point>>(explored_points);    
-    std::cout << "prev explored size "<< previous_explored_points_ptr_->size()<<std::endl;
-    if(!is_explore_success)
-    {
-      ROS_WARN("[EBPathPlanner] Could not find path; relay path");
-      generateSmoothTrajectory(
-        self_pose,
-        input_path_msg,
-        output_trajectory_msg);
-      doResetting();
-      //debug; marker array
-      visualization_msgs::MarkerArray marker_array;
-      int unique_id = 0;
-      // visualize cubic spline point
-      visualization_msgs::Marker debug_goal_point_marker;
-      debug_goal_point_marker.lifetime = ros::Duration(1.0);
-      debug_goal_point_marker.header = input_path_msg.header;
-      debug_goal_point_marker.ns = std::string("goal_point_marker");
-      debug_goal_point_marker.action = visualization_msgs::Marker::MODIFY;
-      debug_goal_point_marker.pose.orientation.w = 1.0;
-      debug_goal_point_marker.id = unique_id;
-      debug_goal_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-      debug_goal_point_marker.scale.x = 1.0f;
-      debug_goal_point_marker.scale.y = 0.1f;
-      debug_goal_point_marker.scale.z = 0.1f;
-      debug_goal_point_marker.color.r = 1.0f;
-      debug_goal_point_marker.color.a = 0.999;
-      debug_goal_point_marker.points.push_back(debug_goal_point);
-      marker_array.markers.push_back(debug_goal_point_marker);
-      unique_id++;
       
-      visualization_msgs::Marker debug_start_point_marker;
-      debug_start_point_marker.lifetime = ros::Duration(1.0);
-      debug_start_point_marker.header = input_path_msg.header;
-      debug_start_point_marker.ns = std::string("start_point_marker");
-      debug_start_point_marker.action = visualization_msgs::Marker::MODIFY;
-      debug_start_point_marker.pose.orientation.w = 1.0;
-      debug_start_point_marker.id = unique_id;
-      debug_start_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-      debug_start_point_marker.scale.x = 1.0f;
-      debug_start_point_marker.scale.y = 0.1f;
-      debug_start_point_marker.scale.z = 0.1f;
-      debug_start_point_marker.color.r = 1.0f;
-      debug_start_point_marker.color.a = 0.999;
-      debug_start_point_marker.points.push_back(start_exploring_pose.position);
-      marker_array.markers.push_back(debug_start_point_marker);
-      unique_id++;
-      return;
+      std::vector<geometry_msgs::Point> explored_points;
+      bool is_explore_success = 
+        modify_reference_path_ptr_->generateModifiedPath(
+              self_pose, 
+              start_exploring_point,
+              goal_exploring_point,
+              input_path_msg.points,
+              in_objects_ptr_->objects,
+              explored_points,
+              clearance_map, 
+              input_path_msg.drivable_area.info);
+      if(!is_explore_success)
+      {
+        ROS_WARN_THROTTLE(3.0,
+          "[EBPathPlanner] Could not find avoiging path; relay path");
+        generateSmoothTrajectory(
+          self_pose,
+          input_path_msg,
+          output_trajectory_msg);
+        is_previously_avoidance_mode_ = false;
+        previous_ego_point_ptr_ = 
+          std::make_unique<geometry_msgs::Point>(self_pose.position);
+        return;
+      }
+      
+      //merge truncate with explored point
+      for (int i = 0; i < explored_points.size(); i++)
+      {
+        truncated_explored_points.push_back(explored_points[i]);
+      }
+      // remove redundant explored points 
+      std::vector<geometry_msgs::Point> non_redundant_explored_points;
+      for (int i = 0; i < truncated_explored_points.size(); i++)
+      {
+        if(i>0)
+        {
+          double dx = truncated_explored_points[i].x -truncated_explored_points[i-1].x;
+          double dy = truncated_explored_points[i].y -truncated_explored_points[i-1].y;
+          double dist = std::sqrt(dx*dx+dy*dy);
+          if(dist < 1e-6)
+          {
+            continue;
+          }
+        }
+        non_redundant_explored_points.push_back(truncated_explored_points[i]);
+      }
+      std::cout << "non redundant point "<< non_redundant_explored_points.size() << std::endl;
+      previous_explored_points_ptr_ = 
+        std::make_unique<std::vector<geometry_msgs::Point>>(non_redundant_explored_points);    
+      std::cout << "prev explored size "<< previous_explored_points_ptr_->size()<<std::endl;
     }
+    
     
     std::vector<geometry_msgs::Point> debug_interpolated_points;
     std::vector<geometry_msgs::Point> debug_constrain_points;
     std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
     eb_path_smoother_ptr_->generateOptimizedExploredPoints(
           input_path_msg.points,
-          explored_points, 
-          start_exploring_pose,
+          *previous_explored_points_ptr_, 
           self_pose,
           clearance_map, 
           input_path_msg.drivable_area.info,
@@ -380,6 +368,8 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     output_trajectory_msg.points = fine_optimized_points;
     output_trajectory_msg.header = input_path_msg.header;
     
+    is_previously_avoidance_mode_ = true;
+    
     std::chrono::high_resolution_clock::time_point end= 
       std::chrono::high_resolution_clock::now();
     std::chrono::nanoseconds time = 
@@ -390,64 +380,6 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     //debug; marker array
     visualization_msgs::MarkerArray marker_array;
     int unique_id = 0;
-    // visualize cubic spline point
-    visualization_msgs::Marker debug_cubic_spline;
-    debug_cubic_spline.lifetime = ros::Duration(0.1);
-    debug_cubic_spline.header = input_path_msg.header;
-    debug_cubic_spline.ns = std::string("explored_points");
-    debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
-    debug_cubic_spline.pose.orientation.w = 1.0;
-    debug_cubic_spline.id = unique_id;
-    debug_cubic_spline.type = visualization_msgs::Marker::SPHERE_LIST;
-    debug_cubic_spline.scale.x = 1.0f;
-    debug_cubic_spline.scale.y = 0.1f;
-    debug_cubic_spline.scale.z = 0.1f;
-    debug_cubic_spline.color.g = 1.0f;
-    debug_cubic_spline.color.a = 0.999;
-    for(const auto& point: explored_points)
-    {
-      debug_cubic_spline.points.push_back(point);
-    }
-    if(!debug_cubic_spline.points.empty())
-    {
-      marker_array.markers.push_back(debug_cubic_spline);
-    }
-    unique_id++;
-    
-    // visualize cubic spline point
-    visualization_msgs::Marker debug_goal_point_marker;
-    debug_goal_point_marker.lifetime = ros::Duration(0.1);
-    debug_goal_point_marker.header = input_path_msg.header;
-    debug_goal_point_marker.ns = std::string("goal_point_marker");
-    debug_goal_point_marker.action = visualization_msgs::Marker::MODIFY;
-    debug_goal_point_marker.pose.orientation.w = 1.0;
-    debug_goal_point_marker.id = unique_id;
-    debug_goal_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    debug_goal_point_marker.scale.x = 1.0f;
-    debug_goal_point_marker.scale.y = 0.1f;
-    debug_goal_point_marker.scale.z = 0.1f;
-    debug_goal_point_marker.color.r = 1.0f;
-    debug_goal_point_marker.color.a = 0.999;
-    debug_goal_point_marker.points.push_back(debug_goal_point);
-    marker_array.markers.push_back(debug_goal_point_marker);
-    unique_id++;
-    
-    visualization_msgs::Marker debug_start_point_marker;
-    debug_start_point_marker.lifetime = ros::Duration(0.1);
-    debug_start_point_marker.header = input_path_msg.header;
-    debug_start_point_marker.ns = std::string("start_point_marker");
-    debug_start_point_marker.action = visualization_msgs::Marker::MODIFY;
-    debug_start_point_marker.pose.orientation.w = 1.0;
-    debug_start_point_marker.id = unique_id;
-    debug_start_point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    debug_start_point_marker.scale.x = 1.0f;
-    debug_start_point_marker.scale.y = 0.1f;
-    debug_start_point_marker.scale.z = 0.1f;
-    debug_start_point_marker.color.r = 1.0f;
-    debug_start_point_marker.color.a = 0.999;
-    debug_start_point_marker.points.push_back(start_exploring_pose.position);
-    marker_array.markers.push_back(debug_start_point_marker);
-    unique_id++;
     
     // visualize cubic spline point
     visualization_msgs::Marker debug_interpolated_points_marker;
@@ -473,6 +405,32 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
     }
     unique_id++;
     
+    // visualize cubic spline point
+    visualization_msgs::Marker debug_cubic_spline;
+    debug_cubic_spline.lifetime = ros::Duration(0.1);
+    debug_cubic_spline.header = input_path_msg.header;
+    debug_cubic_spline.ns = std::string("explored_points");
+    debug_cubic_spline.action = visualization_msgs::Marker::MODIFY;
+    debug_cubic_spline.pose.orientation.w = 1.0;
+    debug_cubic_spline.id = unique_id;
+    debug_cubic_spline.type = visualization_msgs::Marker::SPHERE_LIST;
+    debug_cubic_spline.scale.x = 1.0f;
+    debug_cubic_spline.scale.y = 0.1f;
+    debug_cubic_spline.scale.z = 0.1f;
+    debug_cubic_spline.color.g = 1.0f;
+    debug_cubic_spline.color.a = 0.999;
+    if(previous_explored_points_ptr_)
+    {
+      for(const auto& point: *previous_explored_points_ptr_)
+      {
+        debug_cubic_spline.points.push_back(point);
+      }
+      if(!debug_cubic_spline.points.empty())
+      {
+        marker_array.markers.push_back(debug_cubic_spline);
+      }
+    }
+    unique_id++;
     // visualize cubic spline point
     visualization_msgs::Marker debug_optimized_points_marker;
     debug_optimized_points_marker.lifetime = ros::Duration(0.1);
@@ -529,8 +487,8 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       constrain_points_marker.pose.position.z = self_pose.position.z;
       constrain_points_marker.id = unique_id;
       constrain_points_marker.type = visualization_msgs::Marker::SPHERE;
-      constrain_points_marker.scale.x = debug_constrain_points[i].z*2;
-      constrain_points_marker.scale.y = debug_constrain_points[i].z*2;
+      constrain_points_marker.scale.x = std::abs(debug_constrain_points[i].z*2);
+      constrain_points_marker.scale.y = std::abs(debug_constrain_points[i].z*2);
       constrain_points_marker.scale.z = 0.1;
       constrain_points_marker.color.r = 1.0f;
       constrain_points_marker.color.g = 0.5f;
@@ -538,28 +496,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
       unique_id++;
       marker_array.markers.push_back(constrain_points_marker);
     }
-        
-    for (size_t i = 0; i < explored_points.size(); i++)
-    {
-      visualization_msgs::Marker text_marker;
-      text_marker.lifetime = ros::Duration(0.1);
-      text_marker.header = input_path_msg.header;
-      text_marker.ns = std::string("text_explored_points");
-      text_marker.action = visualization_msgs::Marker::MODIFY;
-      text_marker.pose.orientation.w = 1.0;
-      text_marker.id = unique_id;
-      text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-      text_marker.scale.z = 1.0f;
-      text_marker.color.r = 1.0f;
-      text_marker.color.g = 1.0f;
-      text_marker.color.a = 0.999;
-      text_marker.text = std::to_string((int)i);
-      text_marker.pose.position = explored_points[i];
-      text_marker.pose.orientation.w = 1.0;
-      marker_array.markers.push_back(text_marker);
-      unique_id++;
-    }
-    
+          
     for (size_t i = 0; i < optimized_points.size(); i++)
     {
       visualization_msgs::Marker text_marker;
@@ -661,29 +598,6 @@ bool EBPathPlannerNode::needReset(
   
   
   //check3
-  // int count = 0;
-  // for(const auto& point: fixed_explored_points)
-  // {
-  //   geometry_msgs::Point point_in_image;
-  //   if(tmp1::transformMapToImage(
-  //           point, 
-  //           map_info,
-  //           point_in_image))
-  //   {
-  //     float clearance = 
-  //         clearance_map.ptr<float>((int)point_in_image.y)
-  //                                 [(int)point_in_image.x]*map_info.resolution;
-  //     if(clearance < 1e-6)
-  //     {
-  //       // ROS_WARN("count %d", count);
-  //       ROS_WARN(
-  //         "[EBPathPlanner] Reset eb path planner since explored points are outside of drivavle area");
-  //       is_need_reset = true;
-  //       return is_need_reset;
-  //     }
-  //   }
-  //   count++;
-  // }
   bool is_object_on_explored_points =  
     detectAvoidingObjectsOnPoints(
       objects,
@@ -707,19 +621,191 @@ bool EBPathPlannerNode::needReset(
   return is_need_reset;
 }
 
+bool EBPathPlannerNode::needExprolation(
+  const geometry_msgs::Point& ego_point,
+  const std::vector<geometry_msgs::Point>& previous_explored_points,
+  const autoware_planning_msgs::Path& in_path,
+  const cv::Mat& clearance_map,
+  geometry_msgs::Point& start_exploring_point,
+  geometry_msgs::Point& goal_exploring_point,
+  std::vector<geometry_msgs::Point>& truncated_explored_points)
+{
+  double min_dist = 8888888;
+  int min_ind = -1;
+  for (int i = 0; i < previous_explored_points.size(); i++)
+  {
+    double dx = previous_explored_points[i].x - ego_point.x;
+    double dy = previous_explored_points[i].y - ego_point.y;
+    double dist = std::sqrt(dx*dx+dy*dy);
+    if (dist < min_dist)
+    {
+      min_dist = dist;
+      min_ind = i;
+    }
+  }
+  
+  double accum_dist = 0;
+  for (int i = min_ind; i < previous_explored_points.size(); i++)
+  {
+    if(i>min_ind)
+    {
+      double dx = previous_explored_points[i].x - previous_explored_points[i-1].x;
+      double dy = previous_explored_points[i].y - previous_explored_points[i-1].y;
+      accum_dist += std::sqrt(dx*dx+dy*dy);
+    }
+  }
+  if(accum_dist > 30)
+  {
+    return false;
+  }
+  
+  std::cout << "need extend" << std::endl;
+  truncated_explored_points = 
+    truncateExploredPointsWithEgoVehicle
+        (ego_point,
+         previous_explored_points);
+  std::cout << "truncate size "<<truncated_explored_points.size() << std::endl;
+  // geometry_msgs::Point start_exploring_point;
+  if(truncated_explored_points.empty())
+  {
+    //TODO: search nearest back path point
+    double min_dist = 9999999999;
+    int min_ind = 0;
+    for (int i = 0; i < in_path.points.size(); i++)
+    {
+      double dx = in_path.points[i].pose.position.x - ego_point.x;
+      double dy = in_path.points[i].pose.position.y - ego_point.y;
+      double dist = std::sqrt(dx*dx+dy*dy);
+      if(dist < min_dist)
+      {
+        min_dist = dist; 
+        min_ind = i;
+      }
+    }
+    //assuming delta_arc_length in path is about 1m
+    const double delta_arc_length_for_path = 1;
+    const double backward_distace_for_exploration = 5;
+    int start_exploring_ind = std::max(
+      (int)(min_ind - backward_distace_for_exploration/delta_arc_length_for_path ),
+      0);
+    start_exploring_point = in_path.points[start_exploring_ind].pose.position;
+    // start_exploring_point = ego_point;
+  }
+  else
+  {
+    start_exploring_point = truncated_explored_points.back();
+  }
+  int nearest_path_point_ind_from_start_exploring_point = 0;
+  double min_dist2 = 999999999;
+  for (int i = 0; i < in_path.points.size(); i++)
+  {
+    double dx = in_path.points[i].pose.position.x - 
+                start_exploring_point.x;
+    double dy = in_path.points[i].pose.position.y - 
+                start_exploring_point.y;
+    double dist = std::sqrt(dx*dx+dy*dy);
+    if(dist < min_dist2)
+    {
+      min_dist2 = dist;
+      nearest_path_point_ind_from_start_exploring_point = i;
+    }
+  }
+  std::unique_ptr<geometry_msgs::Pose> exploring_goal_pose_in_map_ptr;
+  double accum_dist2 = 0;
+  for (int i = nearest_path_point_ind_from_start_exploring_point; 
+           i < in_path.points.size(); i++)
+  {
+    if(i>nearest_path_point_ind_from_start_exploring_point)
+    {
+      double dx = in_path.points[i].pose.position.x - 
+                  in_path.points[i-1].pose.position.x;
+      double dy = in_path.points[i].pose.position.y - 
+                  in_path.points[i-1].pose.position.y;
+      accum_dist2+= std::sqrt(dx*dx+dy*dy);
+      
+    }
+    geometry_msgs::Point image_point;
+    if(tmp1::transformMapToImage(
+        in_path.points[i].pose.position, 
+        in_path.drivable_area.info,
+        image_point))
+    {
+      int pixel_x = image_point.x;
+      int pixel_y = image_point.y;
+      float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
+      if(clearance*in_path.drivable_area.info.resolution
+          >=exploring_minimum_radius_)
+      {
+        if(accum_dist2 > exploring_minimum_radius_*15)
+        {
+          exploring_goal_pose_in_map_ptr = 
+            std::make_unique<geometry_msgs::Pose>(in_path.points[i].pose);
+        }
+        if(accum_dist2 > exploring_minimum_radius_*20)
+        {
+          break;
+        }
+      }
+    }
+    else
+    {
+      break;
+    }
+  }
+  
+  if(!exploring_goal_pose_in_map_ptr)
+  {
+    ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
+    return false;
+  }
+  else
+  {
+    goal_exploring_point = exploring_goal_pose_in_map_ptr->position;
+    return true;
+  } 
+}
+
+std::vector<geometry_msgs::Point> 
+  EBPathPlannerNode::truncateExploredPointsWithEgoVehicle(
+    const geometry_msgs::Point& ego_point,
+    const std::vector<geometry_msgs::Point>& explored_points)
+{
+  double min_dist = 8888888;
+  int min_ind = -1;
+  for (int i = 0; i < explored_points.size(); i++)
+  {
+    double dx = explored_points[i].x - ego_point.x;
+    double dy = explored_points[i].y - ego_point.y;
+    double dist = std::sqrt(dx*dx+dy*dy);
+    if (dist < min_dist)
+    {
+      min_dist = dist;
+      min_ind = i;
+    }
+  }
+  int start_ind = 
+    std::max((int)(min_ind-backward_fixing_distance_/exploring_minimum_radius_), 0);
+  std::vector<geometry_msgs::Point> truncated_explored_points;
+  for (int i = start_ind; i < explored_points.size(); i++)
+  {
+    truncated_explored_points.push_back(explored_points[i]);
+  }
+  return truncated_explored_points;
+}
+
 bool EBPathPlannerNode::generateSmoothTrajectory(
   const geometry_msgs::Pose& ego_pose,
   const autoware_planning_msgs::Path& input_path,
   autoware_planning_msgs::Trajectory& output_trajectory)
 {
-  std::vector<geometry_msgs::Point> debug_fixed_optimzied_points_used_for_constrain;
+  std::vector<geometry_msgs::Point> debug_constrain_points;
   std::vector<geometry_msgs::Point> debug_interpolated_points_used_for_optimization;
   std::vector<autoware_planning_msgs::TrajectoryPoint> smooth_trajectory_points;
   convertPathToSmoothTrajectory(
     ego_pose,
     input_path.points,
     smooth_trajectory_points,
-    debug_fixed_optimzied_points_used_for_constrain,
+    debug_constrain_points,
     debug_interpolated_points_used_for_optimization);
   alighWithPathPoints(
     input_path.points,
@@ -735,32 +821,8 @@ bool EBPathPlannerNode::generateSmoothTrajectory(
   
   visualization_msgs::MarkerArray marker_array;
   int unique_id = 0;
-  visualization_msgs::Marker smooth_debug_fixed_constrain_marker;
-  smooth_debug_fixed_constrain_marker.lifetime = ros::Duration(1.0);
-  smooth_debug_fixed_constrain_marker.header = input_path.header;
-  smooth_debug_fixed_constrain_marker.ns = std::string("smooth_debug_fixed_constrain_marker");
-  smooth_debug_fixed_constrain_marker.action = visualization_msgs::Marker::MODIFY;
-  smooth_debug_fixed_constrain_marker.pose.orientation.w = 1.0;
-  smooth_debug_fixed_constrain_marker.id = unique_id;
-  smooth_debug_fixed_constrain_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  smooth_debug_fixed_constrain_marker.scale.x = 0.5f;
-  smooth_debug_fixed_constrain_marker.scale.y = 0.1f;
-  smooth_debug_fixed_constrain_marker.scale.z = 0.1f;
-  smooth_debug_fixed_constrain_marker.color.r = 1.0f;
-  smooth_debug_fixed_constrain_marker.color.g = 1.0f;
-  smooth_debug_fixed_constrain_marker.color.a = 0.999;
-  for (int i = 0; i < debug_fixed_optimzied_points_used_for_constrain.size(); i++)
-  {
-    smooth_debug_fixed_constrain_marker.points.push_back(debug_fixed_optimzied_points_used_for_constrain[i]);
-  }
-  if(!smooth_debug_fixed_constrain_marker.points.empty())
-  {
-    marker_array.markers.push_back(smooth_debug_fixed_constrain_marker);
-  }
-  unique_id++;
-  
   visualization_msgs::Marker smooth_interpolated_points;
-  smooth_interpolated_points.lifetime = ros::Duration(1.0);
+  smooth_interpolated_points.lifetime = ros::Duration(0.1);
   smooth_interpolated_points.header = input_path.header;
   smooth_interpolated_points.ns = std::string("smooth_interpolated_points");
   smooth_interpolated_points.action = visualization_msgs::Marker::MODIFY;
@@ -772,7 +834,6 @@ bool EBPathPlannerNode::generateSmoothTrajectory(
   smooth_interpolated_points.scale.z = 0.1f;
   smooth_interpolated_points.color.r = 1.0f;
   smooth_interpolated_points.color.g = 1.0f;
-  // smooth_interpolated_points.color.g = 1.0f;
   smooth_interpolated_points.color.a = 0.999;
   for (int i = 0; i < debug_interpolated_points_used_for_optimization.size(); i++)
   {
@@ -781,6 +842,52 @@ bool EBPathPlannerNode::generateSmoothTrajectory(
   if(!smooth_interpolated_points.points.empty())
   {
     marker_array.markers.push_back(smooth_interpolated_points);
+  }
+  unique_id++;
+  for (int i = 0; i < debug_constrain_points.size(); i++)
+  {
+    visualization_msgs::Marker constrain_points_marker;
+    constrain_points_marker.lifetime = ros::Duration(0.1);
+    constrain_points_marker.header = input_path.header;
+    constrain_points_marker.ns = std::string("constrain_points_marker");
+    constrain_points_marker.action = visualization_msgs::Marker::MODIFY;
+    constrain_points_marker.pose.orientation.w = 1.0;
+    constrain_points_marker.pose.position = debug_constrain_points[i];
+    constrain_points_marker.pose.position.z = ego_pose.position.z;
+    constrain_points_marker.id = unique_id;
+    constrain_points_marker.type = visualization_msgs::Marker::SPHERE;
+    constrain_points_marker.scale.x = std::abs(debug_constrain_points[i].z*2);
+    constrain_points_marker.scale.y = std::abs(debug_constrain_points[i].z*2);
+    constrain_points_marker.scale.z = 0.1;
+    constrain_points_marker.color.r = 1.0f;
+    constrain_points_marker.color.g = 0.5f;
+    constrain_points_marker.color.a = 0.199;
+    unique_id++;
+    marker_array.markers.push_back(constrain_points_marker);
+  }
+  
+  visualization_msgs::Marker smooth_optimized_poitns_marker;
+  smooth_optimized_poitns_marker.lifetime = ros::Duration(0.1);
+  smooth_optimized_poitns_marker.header = input_path.header;
+  smooth_optimized_poitns_marker.ns = std::string("smooth_optimized_poitns_marker");
+  smooth_optimized_poitns_marker.action = visualization_msgs::Marker::MODIFY;
+  smooth_optimized_poitns_marker.pose.orientation.w = 1.0;
+  smooth_optimized_poitns_marker.id = unique_id;
+  smooth_optimized_poitns_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  smooth_optimized_poitns_marker.scale.x = 0.5f;
+  smooth_optimized_poitns_marker.scale.y = 0.1f;
+  smooth_optimized_poitns_marker.scale.z = 0.1f;
+  smooth_optimized_poitns_marker.color.r = 1.0f;
+  smooth_optimized_poitns_marker.color.g = 1.0f;
+  smooth_optimized_poitns_marker.color.a = 0.999;
+  for (int i = 0; i < smooth_trajectory_points.size(); i++)
+  {
+    smooth_optimized_poitns_marker.points.push_back(
+      smooth_trajectory_points[i].pose.position);
+  }
+  if(!smooth_optimized_poitns_marker.points.empty())
+  {
+    marker_array.markers.push_back(smooth_optimized_poitns_marker);
   }
   unique_id++;
   markers_pub_.publish(marker_array);
@@ -1355,7 +1462,7 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points,
-    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
+    std::vector<geometry_msgs::Point>& debug_constrain_points,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization)
 {
   std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
@@ -1363,7 +1470,7 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     ego_pose,
     path_points,
     optimized_points,
-    debug_fixed_optimzied_points_used_for_constrain,
+    debug_constrain_points,
     debug_interpolated_points_used_for_optimization);
   
   if(optimized_points.empty())

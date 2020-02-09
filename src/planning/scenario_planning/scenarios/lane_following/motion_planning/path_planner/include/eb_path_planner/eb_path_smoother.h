@@ -80,7 +80,6 @@ public:
   bool generateOptimizedExploredPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<geometry_msgs::Point>& explored_points,
-    const geometry_msgs::Pose& start_exploring_pose,
     const geometry_msgs::Pose& ego_pose,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
@@ -91,7 +90,7 @@ public:
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
+    std::vector<geometry_msgs::Point>& debug_constrain_points,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
 };
 
