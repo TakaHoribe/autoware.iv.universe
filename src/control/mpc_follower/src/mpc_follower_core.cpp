@@ -91,7 +91,7 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
     // qpsolver_ptr_ = std::make_shared<QPSolverQpoasesHotstart>(max_iter);
     // ROS_INFO("[MPC] set qp solver = qpoases_hotstart");
   } else if (qp_solver_type_ == "osqp") {
-    osqpsolver_ptr_ = std::make_shared<osqp::OSQPInterface>();
+    qpsolver_ptr_ = std::make_shared<QPSolverOSQP>();
   } else {
     ROS_ERROR("[MPC] qp_solver_type is undefined");
   }
@@ -152,9 +152,9 @@ void MPCFollower::timerCallback(const ros::TimerEvent &te) {
   autoware_control_msgs::ControlCommand ctrl_cmd = getStopControlCommand();
 
   /* guard */
-  if (!vehicle_model_ptr_ || (!qpsolver_ptr_ && !osqpsolver_ptr_)) {
-    ROS_INFO_COND(show_debug_info_, "[MPC] vehicle_model = %d, qp_solver = %d, osqp_solver = %d",
-                  !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr), !(osqpsolver_ptr_));
+  if (!vehicle_model_ptr_ || !qpsolver_ptr_) {
+    ROS_INFO_COND(show_debug_info_, "[MPC] vehicle_model = %d, qp_solver = %d",
+                  !(vehicle_model_ptr_ == nullptr), !(qpsolver_ptr_ == nullptr));
     publishCtrlCmd(ctrl_cmd);  // publish brake
     return;
   }
@@ -528,6 +528,10 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
  * solve quadratic optimization.
  * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
  *                , Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
+ * constraint matrix : lb < U < ub, lbA < A*U < ubA
+ * current considered constraint
+ *  - steering limit
+ *  - steering rate limit
  */
 bool MPCFollower::executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::VectorXd &x0, Eigen::VectorXd *Uex) {
   const int N = mpc_param_.prediction_horizon;
@@ -538,106 +542,48 @@ bool MPCFollower::executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::
   const Eigen::MatrixXd CB = mpc_matrix.Cex * mpc_matrix.Bex;
   const Eigen::MatrixXd QCB = mpc_matrix.Qex * CB;
   Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-  H.triangularView<Eigen::Upper>() =
-      CB.transpose() * QCB;  // NOTE: This calculation is very heavy. looking for a good way...
+  H.triangularView<Eigen::Upper>() = CB.transpose() * QCB;  // NOTE: This calculation is heavy. looking for a good way.
   H.triangularView<Eigen::Upper>() += mpc_matrix.Rex;
   H.triangularView<Eigen::Lower>() = H.transpose();
   Eigen::MatrixXd f = (mpc_matrix.Cex * (mpc_matrix.Aex * x0 + mpc_matrix.Wex)).transpose() * QCB -
                       mpc_matrix.Urefex.transpose() * mpc_matrix.Rex;
 
   /*
-   * constraint matrix : lb < U < ub, lbA < A*U < ubA
-   * current considered constraint
-   *  - steering limit
+   * (1)lb < u < ub && (2)lbA < Au < ubA --> (3)[lb, lbA] < [I, A]u < [ub, ubA]
+   * (1)lb < u < ub ...
+   * [-u_lim] < [ u0 ] < [u_lim]
+   * [-u_lim] < [ u1 ] < [u_lim]
+   *              ~~~
+   * [-u_lim] < [ uN ] < [u_lim] (*N... DIM_U)
+   * (2)lbA < Au < ubA ...
+   * [prev_u0 - au_lim*ctp] < [   u0  ] < [prev_u0 + au_lim*ctp] (*ctp ... ctrl_period)
+   * [    -au_lim * dt    ] < [u1 - u0] < [     au_lim * dt    ]
+   * [    -au_lim * dt    ] < [u2 - u1] < [     au_lim * dt    ]
+   *                            ~~~
+   * [    -au_lim * dt    ] < [uN-uN-1] < [     au_lim * dt    ] (*N... DIM_U)
    */
-  const double u_lim = steer_lim_;
-  const double au_lim = steer_rate_lim_;
-
-  auto start = std::chrono::system_clock::now();
-
-  bool solve_result;
-  if (qp_solver_type_ == "osqp") {
-    /*
-    (1)lb < u < ub && (2)lbA < Au < ubA --> (3)[lb, lbA] < [I, A]u < [ub, ubA]
-    (1)lb < u < ub ...
-    [-u_lim] < [ u0 ] < [u_lim]
-    [-u_lim] < [ u1 ] < [u_lim]
-                 ~~~
-    [-u_lim] < [ uN ] < [u_lim] (*N... DIM_U)
-    (2)lbA < Au < ubA ...
-    [prev_u0 - au_lim*ctp] < [   u0  ] < [prev_u0 + au_lim*ctp] (*ctp ... ctrl_period)
-    [    -au_lim * dt    ] < [u1 - u0] < [     au_lim * dt    ]
-    [    -au_lim * dt    ] < [u2 - u1] < [     au_lim * dt    ]
-                               ~~~
-    [    -au_lim * dt    ] < [uN-uN-1] < [     au_lim * dt    ] (*N... DIM_U)
-    */
-
-    Eigen::MatrixXd I = Eigen::MatrixXd::Identity(DIM_U * N, DIM_U * N);
-
-    // convert matrix to vector for osqpsolver
-    std::vector<double> f_(&f(0), f.data() + f.cols() * f.rows());
-    std::vector<double> lb(DIM_U * N, -u_lim);
-    std::vector<double> ub(DIM_U * N, u_lim);
-
-    Eigen::MatrixXd osqpA;
-    std::vector<double> lower_bound;
-    std::vector<double> upper_bound;
-
-    if (true) {  // with steering rate limit
-      /* optimize by formula(3) */
-
-      // create additional Martix A in formula(2)
-      Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-      for (int i = 0; i < N; i++) {
-        A(i, i) = 1.0f;
-        if (i != 0) A(i, i - 1) = -1.0f;
-      }
-
-      // concatenate matrix. osqpA = [I, A]
-      osqpA = Eigen::MatrixXd(DIM_U * N * 2, DIM_U * N);
-      osqpA << I, A;
-
-      // create additional vector lbA, ubA in formula(2)
-      std::vector<double> lbA(DIM_U * N, -au_lim * dt);
-      std::vector<double> ubA(DIM_U * N, au_lim * dt);
-      lbA[0] = raw_steer_cmd_prev_ - au_lim * ctrl_period_;
-      ubA[0] = raw_steer_cmd_prev_ + au_lim * ctrl_period_;
-
-      // concatenate vector. lower_bound = [lb, lbA], upper_bound = [ub, ubA]
-      lower_bound = lb;
-      lower_bound.insert(lower_bound.end(), lbA.begin(), lbA.end());
-      upper_bound = ub;
-      upper_bound.insert(upper_bound.end(), ubA.begin(), ubA.end());
-    } else {
-      /* optimize by formula(1) */
-      osqpA = I;
-      lower_bound = lb;
-      upper_bound = ub;
-    }
-
-    /* execute optimization */
-    std::tuple<std::vector<double>, std::vector<double>, int> result =
-        osqpsolver_ptr_->optimize(H, osqpA, f_, lower_bound, upper_bound);
-    std::vector<double> U_osqp = std::get<0>(result);
-    *Uex = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1> >(&U_osqp[0], U_osqp.size(), 1);
-    // osqp does not judge the success of optimization
-    solve_result = true;
-  } else {
-    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
-    Eigen::MatrixXd lbA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-    Eigen::MatrixXd ubA = Eigen::MatrixXd::Zero(DIM_U * N, 1);
-    Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -u_lim);  // min steering angle
-    Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, u_lim);   // max steering angle
-    solve_result = qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, *Uex);
+  Eigen::MatrixXd A = Eigen::MatrixXd::Identity(DIM_U * N, DIM_U * N);
+  for (int i = 1; i < DIM_U * N; i++) {
+    A(i, i - 1) = -1.0;
   }
 
+  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -steer_lim_);  // min steering angle
+  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, steer_lim_);   // max steering angle
+
+  Eigen::VectorXd lbA = Eigen::VectorXd::Constant(DIM_U * N, -steer_rate_lim_ * dt);
+  Eigen::VectorXd ubA = Eigen::VectorXd::Constant(DIM_U * N, steer_rate_lim_ * dt);
+  lbA(0, 0) = raw_steer_cmd_prev_ - steer_rate_lim_ * ctrl_period_;
+  ubA(0, 0) = raw_steer_cmd_prev_ + steer_rate_lim_ * ctrl_period_;
+
+  auto t_start = std::chrono::system_clock::now();
+  bool solve_result = qpsolver_ptr_->solve(H, f.transpose(), A, lb, ub, lbA, ubA, *Uex);
+  auto t_end = std::chrono::system_clock::now();
   if (!solve_result) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[MPC] qp solver error");
     return false;
   }
 
-  double elapsed =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() * 1.0e-6;
+  double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count() * 1.0e-6;
   ROS_INFO_COND(show_debug_info_, "[MPC] qp solver calculation time = %f [ms]", elapsed);
 
   if (Uex->array().isNaN().any()) {

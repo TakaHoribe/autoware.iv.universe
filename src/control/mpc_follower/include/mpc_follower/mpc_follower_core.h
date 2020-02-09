@@ -56,7 +56,7 @@
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_dynamics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.h"
-// #include "mpc_follower/qp_solver/qp_solver_qpoases.h"
+#include "mpc_follower/qp_solver/qp_solver_osqp.h"
 
 /**
  * @class MPC-based waypoints follower class
@@ -92,7 +92,6 @@ class MPCFollower {
   std::string vehicle_model_type_;                            //!< @brief vehicle model type for MPC
   std::string qp_solver_type_;                                //!< @brief solver type of MPC
   std::shared_ptr<QPSolverInterface> qpsolver_ptr_;           //!< @brief qp solver for MPC
-  std::shared_ptr<osqp::OSQPInterface> osqpsolver_ptr_;       //!< @brief osqp solver for MPC
   std::string output_interface_;                              //!< @brief output command type
   std::deque<double> input_buffer_;  //!< @brief control input (mpc_output) buffer for delay time conpemsation
 

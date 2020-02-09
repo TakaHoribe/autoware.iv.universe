@@ -20,8 +20,8 @@ QPSolverQpoasesHotstart::QPSolverQpoasesHotstart(const int max_iter)
     : is_solver_initialized_(false), max_iter_(max_iter) {}
 
 bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
-                                    const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::MatrixXd& lbA,
-                                    const Eigen::MatrixXd& ubA, Eigen::VectorXd& U) {
+                                    const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
+                                    const Eigen::VectorXd& ubA, Eigen::VectorXd& U) {
   int max_iter = max_iter_;  // redeclaration to give a non-const value to solver
 
   const int kNumOfMatrixElements = Hmat.rows() * Hmat.cols();

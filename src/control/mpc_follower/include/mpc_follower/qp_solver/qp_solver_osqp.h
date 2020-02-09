@@ -15,33 +15,49 @@
  */
 
 /**
- * @file qp_solver_interface.h
- * @brief qp solver interface class
+ * @file qp_solver_osqp.h
+ * @brief qp solver with Eigen
  * @author Takamasa Horibe
- * @date 2019.05.01
+ * @date 2020.02
  */
 
 #pragma once
 
+#include <cmath>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
+#include "mpc_follower/qp_solver/qp_solver_interface.h"
+#include <osqp_interface/osqp_interface.h>
 
-class QPSolverInterface {
+class QPSolverOSQP : public QPSolverInterface {
  public:
+  /**
+   * @brief constructor
+   */
+  QPSolverOSQP();
+
+  /**
+   * @brief destructor
+   */
+  ~QPSolverOSQP() = default;
+
   /**
    * @brief solve QP problem : minimize J = U' * Hmat * U + fvec' * U without constraint
    * @param [in] Hmat parameter matrix in object function
    * @param [in] fvec parameter matrix in object function
-   * @param [in] A parameter matrix for constraint lbA < A*U < ubA
-   * @param [in] lb parameter matrix for constraint lb < U < ub
-   * @param [in] up parameter matrix for constraint lb < U < ub
-   * @param [in] lbA parameter matrix for constraint lbA < A*U < ubA
-   * @param [in] ubA parameter matrix for constraint lbA < A*U < ubA
+   * @param [in] A parameter matrix for constraint lbA < A*U < ubA (not used here)
+   * @param [in] lb parameter matrix for constraint lb < U < ub (not used here)
+   * @param [in] up parameter matrix for constraint lb < U < ub (not used here)
+   * @param [in] lbA parameter matrix for constraint lbA < A*U < ubA (not used here)
+   * @param [in] ubA parameter matrix for constraint lbA < A*U < ubA (not used here)
    * @param [out] U optimal variable vector
    * @return bool to check the problem is solved
    */
-  virtual bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
-                     const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
-                     const Eigen::VectorXd &ubA, Eigen::VectorXd &U) = 0;
+  bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
+             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
+             const Eigen::VectorXd &ubA, Eigen::VectorXd &U) override;
+
+ private:
+  osqp::OSQPInterface osqpsolver;
 };

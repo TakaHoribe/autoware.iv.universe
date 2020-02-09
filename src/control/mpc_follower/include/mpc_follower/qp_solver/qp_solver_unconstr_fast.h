@@ -54,6 +54,6 @@ class QPSolverEigenLeastSquareLLT : public QPSolverInterface {
    * @return bool to check the problem is solved
    */
   bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
-             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::MatrixXd &lbA,
-             const Eigen::MatrixXd &ubA, Eigen::VectorXd &U) override;
+             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
+             const Eigen::VectorXd &ubA, Eigen::VectorXd &U) override;
 };
