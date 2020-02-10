@@ -39,7 +39,6 @@
   <xacro:aipxx_macro parent="base_link" x="${calibration['base_link2aipxx_base_link']['x']}" y="${calibration['base_link2aipxx_base_link']['y']}" z="${calibration['base_link2aipxx_base_link']['z']}" roll="${calibration['base_link2aipxx_base_link']['roll']}" pitch="${calibration['base_link2aipxx_base_link']['pitch']}" yaw="${calibration['base_link2aipxx_base_link']['yaw']}" />
   <!-- imu -->
   <xacro:imu_macro suffix="gx5/imu" parent="base_link" namespace="" x="${calibration['base_link2imu_gx5']['x']}" y="${calibration['base_link2imu_gx5']['y']}" z="${calibration['base_link2imu_gx5']['z']}" roll="${calibration['base_link2imu_gx5']['roll']}" pitch="${calibration['base_link2imu_gx5']['pitch']}" yaw="${calibration['base_link2imu_gx5']['yaw']}" fps="100" />
-  <xacro:imu_macro suffix="tamagawa/imu" parent="base_link" namespace="" x="${calibration['base_link2imu_tamagawa']['x']}" y="${calibration['base_link2imu_tamagawa']['y']}" z="${calibration['base_link2imu_tamagawa']['z']}" roll="${calibration['base_link2imu_tamagawa']['roll']}" pitch="${calibration['base_link2imu_tamagawa']['pitch']}" yaw="${calibration['base_link2imu_tamagawa']['yaw']}" fps="100" />
   <!-- gnss -->
   <xacro:imu_macro suffix="gnss" parent="base_link" namespace="" x="${calibration['base_link2gnss']['x']}" y="${calibration['base_link2gnss']['y']}" z="${calibration['base_link2gnss']['z']}" roll="${calibration['base_link2gnss']['roll']}" pitch="${calibration['base_link2gnss']['pitch']}" yaw="${calibration['base_link2gnss']['yaw']}" fps="100" />
 

@@ -19,13 +19,6 @@ base_link2imu_gx5:
   roll: 3.14159265359
   pitch: 0.0
   yaw: 0.0
-base_link2imu_tamagawa:
-  x: 0.0
-  y: 0.0
-  z: 0.0
-  roll: 3.14159265359
-  pitch: 0.0
-  yaw: 0.0
 base_link2gnss:
   x: 0.0
   y: 0.0

@@ -61,3 +61,10 @@ aipxx_base_link2velodyne_right_base_link:
   roll: -0.01
   pitch: 0.71
   yaw: -1.580
+aipxx_base_link2imu_tamagawa:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  roll: 3.14159265359
+  pitch: 0.0
+  yaw: 3.14159265359

@@ -40,6 +40,9 @@
     <xacro:monocular_camera_macro suffix="camera4/camera" parent="aipxx_base_link" namespace="" x="${calibration['aipxx_base_link2camera4']['x']}" y="${calibration['aipxx_base_link2camera4']['y']}" z="${calibration['aipxx_base_link2camera4']['z']}" roll="${calibration['aipxx_base_link2camera4']['roll']}" pitch="${calibration['aipxx_base_link2camera4']['pitch']}" yaw="${calibration['aipxx_base_link2camera4']['yaw']}" fps="30" width="800" height="400" fov="1.3"/>
     <xacro:monocular_camera_macro suffix="camera5/camera" parent="aipxx_base_link" namespace="" x="${calibration['aipxx_base_link2camera5']['x']}" y="${calibration['aipxx_base_link2camera5']['y']}" z="${calibration['aipxx_base_link2camera5']['z']}" roll="${calibration['aipxx_base_link2camera5']['roll']}" pitch="${calibration['aipxx_base_link2camera5']['pitch']}" yaw="${calibration['aipxx_base_link2camera5']['yaw']}" fps="30" width="800" height="400" fov="1.3"/>
     <xacro:monocular_camera_macro suffix="camera6/camera" parent="aipxx_base_link" namespace="" x="${calibration['aipxx_base_link2camera6']['x']}" y="${calibration['aipxx_base_link2camera6']['y']}" z="${calibration['aipxx_base_link2camera6']['z']}" roll="${calibration['aipxx_base_link2camera6']['roll']}" pitch="${calibration['aipxx_base_link2camera6']['pitch']}" yaw="${calibration['aipxx_base_link2camera6']['yaw']}" fps="30" width="800" height="400" fov="1.3"/>
+
+    <!-- imu -->
+    <xacro:imu_macro suffix="tamagawa/imu" parent="aipxx_base_link" namespace="" x="${calibration['aipxx_base_link2imu_tamagawa']['x']}" y="${calibration['aipxx_base_link2imu_tamagawa']['y']}" z="${calibration['aipxx_base_link2imu_tamagawa']['z']}" roll="${calibration['aipxx_base_link2imu_tamagawa']['roll']}" pitch="${calibration['aipxx_base_link2imu_tamagawa']['pitch']}" yaw="${calibration['aipxx_base_link2imu_tamagawa']['yaw']}" fps="100" />
   </xacro:macro>
 
 </robot>
