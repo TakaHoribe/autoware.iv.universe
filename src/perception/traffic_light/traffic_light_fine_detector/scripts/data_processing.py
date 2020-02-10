@@ -52,23 +52,6 @@ from PIL import Image
 import numpy as np
 import os
 
-
-# YOLOv3-608 has been trained with these 80 categories from COCO:
-# Lin, Tsung-Yi, et al. "Microsoft COCO: Common Objects in Context."
-# European Conference on Computer Vision. Springer, Cham, 2014.
-
-def load_label_categories(label_file_path):
-    categories = [line.rstrip('\n') for line in open(label_file_path)]
-    return categories
-
-LABEL_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'coco_labels_tlr.txt')
-ALL_CATEGORIES = load_label_categories(LABEL_FILE_PATH)
-
-# Let's make sure that there are 80 classes, as expected for the COCO data set:
-CATEGORY_NUM = len(ALL_CATEGORIES)
-assert CATEGORY_NUM == 1
-
-
 class PreprocessYOLO(object):
     """A simple class for loading images with PIL and reshaping them to the specified
     input resolution for YOLOv3-608.

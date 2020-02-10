@@ -4,8 +4,9 @@
 
 ## Convert cfg and weight files into onnx file
 ```bash
-	pip install onnx==1.6.0
-    python scripts/yolov3_to_onnx.py [cfg_file_path] [weights_file_path] [label_flle_path] --ouput_file_path [ouput_file_path] --input_size [input_size]
+    cd scripts
+	pip install -r requirements.txt
+    python yolov3_to_onnx.py [cfg_file_path] [weights_file_path] [label_flle_path] --ouput_file_path [ouput_file_path] --input_size [input_size]
 ```
 ## Build engine
 * If yolov3_tlr.engine does not exist in data directory, this node will build engine file from onnx file in data directory.
