@@ -22,7 +22,7 @@
 namespace osqp
 {
 
-OSQPInterface::OSQPInterface(const c_float eps_abs)
+OSQPInterface::OSQPInterface(const c_float eps_abs, const bool polish)
 {
   /************************
    * INITIALIZE WORKSPACE
@@ -44,6 +44,7 @@ OSQPInterface::OSQPInterface(const c_float eps_abs)
     settings->warm_start = true;
     settings->max_iter = 4000;
     settings->verbose = false;
+    settings->polish = polish;
   }
   // Set flag for successful initialization
   exitflag = 0;
