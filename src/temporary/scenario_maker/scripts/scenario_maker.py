@@ -359,10 +359,12 @@ class ScenarioMaker:
 
     def traffic_light_changer(self, traffic_light):  # according to self posture, change the traffic light to reference
         # temporary function!!! TODO: fix this
-        if not self.judge_dist(-72.7, -2.31, 0, 45.0, 180.0):
+        if not self.judge_dist(
+            s_tlpos["x"], s_tlpos["y"], s_tlpos["th"], s_tlpos["judge_dist_xy"], s_tlpos["judge_dist_th"]
+        ):
             return COLOR_BRACK  # no traffic light
 
-        if np.abs(np.cos((np.deg2rad(self.self_th - 117.2)))) > np.sqrt(2.0) / 2.0:
+        if np.abs(np.cos((np.deg2rad(self.self_th - s_tlpos["turn_traffic_light_th"])))) > np.sqrt(2.0) / 2.0:
             return traffic_light
         else:
             if traffic_light == COLOR_RED:
