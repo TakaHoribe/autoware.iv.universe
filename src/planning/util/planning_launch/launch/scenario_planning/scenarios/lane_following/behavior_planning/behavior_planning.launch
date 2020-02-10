@@ -23,6 +23,14 @@
     <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
   </node>
 
+  <node pkg="turn_signal_decider" type="turn_signal_decider" name="turn_signal_decider" output="screen">
+    <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
+    <remap from="~input/vector_map" to="$(arg map_topic_name)"/>
+    <remap from="~output/turn_signal_cmd" to="/vehicle/turn_signal_cmd"/>
+    <param name="lane_change_search_distance" value="30.0"/>
+    <param name="intersection_search_distance" value="30.0"/>
+  </node>
+
   <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
     <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
     <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>

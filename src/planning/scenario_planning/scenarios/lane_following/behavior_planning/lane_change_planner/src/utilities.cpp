@@ -426,6 +426,10 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
 {
   try
   {
+    if(input.points.empty())
+    {
+      return false;
+    }
     size_t min_dist_index;
     double min_dist = std::numeric_limits<double>::max();
     double goal_z;
@@ -474,6 +478,7 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     refined_goal.point.pose = goal;
     refined_goal.point.pose.position.z = goal_z;
     refined_goal.point.twist.linear.x = 0.0;
+    refined_goal.lane_ids = input.points.back().lane_ids;
 
     autoware_planning_msgs::PathPointWithLaneId pre_refined_goal;
     double roll, pitch, yaw;
@@ -485,6 +490,7 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     pre_refined_goal.point.pose.position.y -= std::sin(yaw);
     pre_refined_goal.point.pose.position.z = goal_z;
     pre_refined_goal.point.twist.linear.x = input.points.at(min_dist_out_of_range_index).point.twist.linear.x;
+    pre_refined_goal.lane_ids = input.points.back().lane_ids;
 
     for (size_t i = 0; i <= min_dist_out_of_range_index; ++i)
     {
