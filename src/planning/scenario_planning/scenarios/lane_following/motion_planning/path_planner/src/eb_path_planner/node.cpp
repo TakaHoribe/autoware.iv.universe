@@ -135,6 +135,8 @@ private_nh_("~")
                            is_debug_drivable_area_mode_,false);
   private_nh_.param<bool>("is_publishing_clearance_map_as_occupancy_grid", 
                            is_publishing_clearance_map_as_occupancy_grid_,false);
+  private_nh_.param<bool>("enable_avoidance", 
+                           enable_avoidance_,true);
   private_nh_.param<int>("number_of_backward_detection_range_path_points", 
                              number_of_backward_detection_range_path_points_, 5);
   private_nh_.param<double>("forward_fixing_distance", 
@@ -319,21 +321,13 @@ void EBPathPlannerNode::callback(
     previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
     return;
   }
-  
-  if (!isAvoidanceNeeded(
+  if (isAvoidanceNeeded(
       input_path_msg.points, 
       self_pose,
-      *previous_optimized_points_ptr_))
+      *previous_optimized_points_ptr_) &&
+      enable_avoidance_)
   {
-    generateSmoothTrajectory(
-      self_pose,
-      input_path_msg,
-      output_trajectory_msg);
-    is_previously_avoidance_mode_ = false;
-    doResetting();
-  }
-  else
-  {
+    
     cv::Mat clearance_map;
     generateClearanceMap(
       input_path_msg.drivable_area,
@@ -630,6 +624,15 @@ void EBPathPlannerNode::callback(
     }
     
     markers_pub_.publish(marker_array);
+  }
+  else
+  {
+    generateSmoothTrajectory(
+      self_pose,
+      input_path_msg,
+      output_trajectory_msg);
+    is_previously_avoidance_mode_ = false;
+    doResetting(); 
   }
   previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(self_pose.position);
   previous_optimized_points_ptr_ = 

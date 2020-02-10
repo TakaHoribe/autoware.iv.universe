@@ -65,6 +65,7 @@ private:
   bool is_debug_drivable_area_mode_;
   bool is_publishing_clearance_map_as_occupancy_grid_;
   bool is_previously_avoidance_mode_;
+  bool enable_avoidance_;
   int number_of_backward_detection_range_path_points_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
