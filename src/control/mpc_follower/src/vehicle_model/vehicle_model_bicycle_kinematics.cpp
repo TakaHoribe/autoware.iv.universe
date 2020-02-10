@@ -15,6 +15,7 @@
  */
 
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
+#include <iostream>
 
 KinematicsBicycleModel::KinematicsBicycleModel(const double &wheelbase, const double &steer_lim,
                                                const double &steer_tau)
@@ -32,8 +33,10 @@ void KinematicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd &Ad, Eigen:
   double delta_r = atan(wheelbase_ * curvature_);
   if (abs(delta_r) >= steer_lim_) delta_r = steer_lim_ * (double)sign(delta_r);
   double cos_delta_r_squared_inv = 1 / (cos(delta_r) * cos(delta_r));
+  double velocity = velocity_;
+  if (abs(velocity_) < 1e-04) velocity = 1e-04 *(velocity_ >= 0  ? 1 : -1);
 
-  Ad << 0.0, velocity_, 0.0, 0.0, 0.0, velocity_ / wheelbase_ * cos_delta_r_squared_inv, 0.0, 0.0, -1.0 / steer_tau_;
+  Ad << 0.0, velocity, 0.0, 0.0, 0.0, velocity / wheelbase_ * cos_delta_r_squared_inv, 0.0, 0.0, -1.0 / steer_tau_;
   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(dim_x_, dim_x_);
   Ad = (I - dt * 0.5 * Ad).inverse() * (I + dt * 0.5 * Ad);  // bilinear discretization
 
@@ -42,7 +45,7 @@ void KinematicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd &Ad, Eigen:
 
   Cd << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0;
 
-  Wd << 0.0, -velocity_ * curvature_ + velocity_ / wheelbase_ * (tan(delta_r) - delta_r * cos_delta_r_squared_inv), 0.0;
+  Wd << 0.0, -velocity * curvature_ + velocity / wheelbase_ * (tan(delta_r) - delta_r * cos_delta_r_squared_inv), 0.0;
   Wd *= dt;
 }
 

@@ -116,7 +116,7 @@ public:
   // Steps:
   //   1. Initializes the OSQP object (incl. settings, data objects).
   //   2. Solver settings (accuracy etc.).
-  OSQPInterface(const c_float eps_abs = 1.0e-4);
+  OSQPInterface(const c_float eps_abs = 1.0e-4, const bool polish = true);
 
   // Initializes the OSQP solver interface and sets up the problem.
   //
