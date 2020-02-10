@@ -668,10 +668,8 @@ bool EBPathPlannerNode::needExprolation(
         (ego_point,
          previous_explored_points);
   std::cout << "truncate size "<<truncated_explored_points.size() << std::endl;
-  // geometry_msgs::Point start_exploring_point;
   if(truncated_explored_points.empty())
   {
-    //TODO: search nearest back path point
     double min_dist = 9999999999;
     int min_ind = 0;
     for (int i = 0; i < in_path.points.size(); i++)
@@ -718,14 +716,15 @@ bool EBPathPlannerNode::needExprolation(
            i < in_path.points.size(); i++)
   {
     if(in_path.points[i].twist.linear.x < 1e-6 &&
-       i == in_path.points.size()-1)
+       i == in_path.points.size()-1 && 
+       !truncated_explored_points.empty())
     {
       double dx =  in_path.points[i].pose.position.x - truncated_explored_points.back().x;
       double dy =  in_path.points[i].pose.position.y - truncated_explored_points.back().y;
       double dist = std::sqrt(dx*dx+dy*dy);
       if(dist < 1e-6)
       {
-        ROS_WARN("prevent redundant goal");
+        ROS_WARN_THROTTLE(2.0,"prevent redundant goal");
         return false;
       }
       exploring_goal_pose_in_map_ptr = 
@@ -771,7 +770,7 @@ bool EBPathPlannerNode::needExprolation(
   
   if(!exploring_goal_pose_in_map_ptr)
   {
-    ROS_WARN( "[EBPathPlanner] Could not find appropriate goal");
+    ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
     return false;
   }
   else
