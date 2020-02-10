@@ -191,7 +191,7 @@ void MapBasedPredictionROS::objectsCallback(
   
   if(!lanelet_map_ptr_)
   {
-    std::cout << "has not been subscribed to map " << std::endl;
+    // std::cout << "has not been subscribed to map " << std::endl;
     return;
   }
   
