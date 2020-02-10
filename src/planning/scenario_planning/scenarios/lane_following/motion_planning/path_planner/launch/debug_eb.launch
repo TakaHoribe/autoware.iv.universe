@@ -10,7 +10,7 @@
         <arg name="is_debug_drivable_area_mode" default="false" />
         <arg name="is_publishing_clearance_map_as_occupancy_grid" default="true" />
         <arg name="forward_fixing_distance" default="20" />
-        <arg name="backward_fixing_distance" default="20" />
+        <arg name="backward_fixing_distance" default="15" />
         <arg name="detection_radius_from_ego" default="50" />
         <arg name="detection_radius_around_path_point" default="2.5" />
         <arg name="number_of_backward_detection_range_path_points" default="5" />
@@ -20,7 +20,7 @@
         <arg name="max_avoiding_objects_velocity_ms" default="1.1" />
         <arg name="clearance_weight_when_exploring" default="0.0" />
         <node pkg="path_planner" type="eb_path_planner_node" 
-          name="eb_path_planner_node" output="screen">
+          name="eb_path_planner_node" output="log">
           <remap from="~input/path" to="$(arg input_path_topic)" />
           <remap from="~output/path" to="path_planner/trajectory" />
           <param name="is_debug_clearance_map_mode" value="$(arg is_debug_clearance_map_mode)"/>

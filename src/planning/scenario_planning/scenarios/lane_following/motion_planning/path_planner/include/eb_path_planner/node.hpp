@@ -100,11 +100,17 @@ private:
   
   bool isAvoidanceNeeded(
     const std::vector<autoware_planning_msgs::PathPoint> in_path,
-    const geometry_msgs::Pose self_pose);
+    const geometry_msgs::Pose self_pose,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& previous_output_trajectory_points);
+    
+  bool getNearestPose(
+    const geometry_msgs::Pose self_pose,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& trajectory_points,
+    geometry_msgs::Pose& nearest_pose);
   
   bool isPoseCloseToPath(
     const std::vector<autoware_planning_msgs::PathPoint> in_path,
-    const geometry_msgs::Pose in_pose, const double thr);
+    const geometry_msgs::Pose in_pose);
   
   bool needExprolation(
     const geometry_msgs::Point& ego_point,
@@ -119,19 +125,10 @@ private:
     const geometry_msgs::Point& ego_point,
     const std::vector<geometry_msgs::Point>& explored_points);
     
-  
-  bool seperateExploredPointsToFixedAndNonFixed(
-    const geometry_msgs::Pose& ego_pose,
-    const std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr,
-    const cv::Mat& clearance_map,
-    const nav_msgs::MapMetaData& map_info,
-    std::vector<geometry_msgs::Point>& fixed_points,
-    std::vector<geometry_msgs::Point>& non_fixed_points);
-    
   bool alighWithPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);
-  
+    
   bool generateFineOptimizedPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points,
