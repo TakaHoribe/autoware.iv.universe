@@ -21,7 +21,7 @@
 
 
     <!-- Relay -->
-    <node pkg="topic_tools" type="relay" name="relay" args="/sensing/imu/gx5/imu_raw /sensing/imu/imu_raw" />
+    <node pkg="topic_tools" type="relay" name="relay" args="/sensing/imu/tamagawa/imu_raw /sensing/imu/imu_raw" />
   </group>
 
 </launch>
