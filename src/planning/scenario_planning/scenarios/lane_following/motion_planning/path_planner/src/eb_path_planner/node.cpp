@@ -725,6 +725,7 @@ bool EBPathPlannerNode::needExprolation(
       if(dist < 1e-6)
       {
         ROS_WARN_THROTTLE(2.0,"prevent redundant goal");
+        // ROS_WARN("prevent redundant goal");
         return false;
       }
       exploring_goal_pose_in_map_ptr = 
@@ -1086,7 +1087,6 @@ bool EBPathPlannerNode::seperateExploredPointsToFixedAndNonFixed(
     double dx = previous_explored_points_ptr->at(i).x -  ego_pose.position.x; 
     double dy = previous_explored_points_ptr->at(i).y -  ego_pose.position.y; 
     double dist = std::sqrt(dx*dx+dy*dy);
-    // std::cout << "dist "<< dist << std::endl;
     if(dist < min_dist)
     {
       min_dist = dist;
@@ -1166,9 +1166,6 @@ bool EBPathPlannerNode::seperateExploredPointsToFixedAndNonFixed(
     non_fixed_explored_points.push_back(previous_explored_points_ptr->at(i));
   }     
       
-      
-  // std::cout << "valid backward fixing ind "<< valid_backward_fixing_idx << std::endl;
-  // std::cout << "valid forward fixing ind "<< valid_forward_fixing_idx<< std::endl;
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
@@ -1179,40 +1176,57 @@ bool EBPathPlannerNode::seperateExploredPointsToFixedAndNonFixed(
 
 bool EBPathPlannerNode::alighWithPathPoints(
   const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-  std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points)
+  std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points)
 {
   std::chrono::high_resolution_clock::time_point begin= 
     std::chrono::high_resolution_clock::now();
-  if(merged_optimized_points.empty())
+  if(optimized_points.empty())
   {
     return false;
   }
   size_t previously_used_index = 0;
-  for(size_t i = 0; i <  merged_optimized_points.size(); i++)
+  for(size_t i = 0; i <  optimized_points.size(); i++)
   {
-    bool flag = false;
-    for (size_t j = previously_used_index; j < path_points.size(); j++)
-    {
-      double dx1 = merged_optimized_points[i].pose.position.x - path_points[j].pose.position.x;
-      double dy1 = merged_optimized_points[i].pose.position.y - path_points[j].pose.position.y;
-      double yaw = tf2::getYaw(path_points[j].pose.orientation);
-      double dx2 = std::cos(yaw);
-      double dy2 = std::sin(yaw);
-      double inner_product = dx1*dx2+dy1*dy2;
-      if(inner_product < 0)
-      {
-        merged_optimized_points[i].pose.position.z = path_points[j].pose.position.z;
-        merged_optimized_points[i].twist.linear.x = path_points[j].twist.linear.x;
-        previously_used_index = j;
-        flag = true;
-        break;
-      }
-    }
-    if(!flag)
-    {
-      ROS_WARN_THROTTLE(1.0, "[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
-    }
+    optimized_points[i].twist.linear.x = path_points.front().twist.linear.x;
+    optimized_points[i].pose.position.z = path_points.front().pose.position.z;
+    // bool flag = false;
+    // double min_dist = 9999999999;
+    // for (size_t j = 0; j < path_points.size(); j++)
+    // {
+    //   double dx1 = optimized_points[i].pose.position.x - path_points[j].pose.position.x;
+    //   double dy1 = optimized_points[i].pose.position.y - path_points[j].pose.position.y;
+    //   double yaw = tf2::getYaw(path_points[j].pose.orientation);
+    //   double dx2 = std::cos(yaw);
+    //   double dy2 = std::sin(yaw);
+    //   double inner_product = dx1*dx2+dy1*dy2;
+    //   double dist = std::sqrt(dx1*dx1+dy1*dy1);
+    //   if(inner_product < 0 && dist < min_dist)
+    //   {
+    //     min_dist = dist;
+    //     optimized_points[i].pose.position.z = path_points[j].pose.position.z;
+    //     optimized_points[i].twist.linear.x = path_points[j].twist.linear.x;
+    //     previously_used_index = j;
+    //     flag = true;
+    //     // break;
+    //   }
+    // }
+    // if(!flag)
+    // {
+    //   ROS_WARN_THROTTLE(1.0, "[EBPathPlanner] Could not find corresponding velocity in path points. Insert 0 velocity");
+    // }
   }
+  // if(!path_points.empty())
+  // {
+  //   double dx = path_points.back().pose.position.x - optimized_points.back().pose.position.x;
+  //   double dy = path_points.back().pose.position.y - optimized_points.back().pose.position.y;
+  //   double dist = std::sqrt(dx*dx+dy*dy);
+  //   if(path_points.back().twist.linear.x < 1e-6&&
+  //      dist < 2)
+  //   {
+  //     optimized_points.back().twist.linear.x = 0;    
+  //   }
+    
+  // }
 }
 
 bool EBPathPlannerNode::generateFineOptimizedPoints(
@@ -1250,7 +1264,7 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
     double dx2 = std::cos(yaw);
     double dy2 = std::sin(yaw);
     double inner_product = dx1*dx2+dy1*dy2;
-    if(dist1 < 2.0 && 
+    if(dist1 < 5.0 && 
       inner_product < 0 &&
       path_points.back().twist.linear.x < 1e-6)
     {
@@ -1296,21 +1310,18 @@ bool EBPathPlannerNode::generateFineOptimizedPoints(
     tf2::Quaternion quaternion;
     quaternion.setRPY( roll, pitch, yaw );
     traj_point.pose.orientation = tf2::toMsg(quaternion);
-    auto it = std::lower_bound(base_s.begin(), 
-                               base_s.end(),
-                               new_s[i]);
-    size_t ind = std::distance(base_s.begin(), it);
-    traj_point.twist.linear.x = tmp_v[ind];
-    traj_point.pose.position.z = tmp_z[ind];
+    // auto it = std::lower_bound(base_s.begin(), 
+    //                            base_s.end(),
+    //                            new_s[i]);
+    // size_t ind = std::distance(base_s.begin(), it);
+    // traj_point.twist.linear.x = tmp_v[ind];
+    // traj_point.pose.position.z = tmp_z[ind];
+    traj_point.twist.linear.x = tmp_v.front();
+    traj_point.pose.position.z = tmp_z.front();
     fine_optimized_points.push_back(traj_point); 
   }
-  double dx = fine_optimized_points.back().pose.position.x - 
-                path_points.back().pose.position.x;
-  double dy = fine_optimized_points.back().pose.position.y -
-                path_points.back().pose.position.y;
-  double dist = std::sqrt(dx*dx+dy*dy);
-  double diff_dist_for_goal_thres = 10;
-  if(dist < diff_dist_for_goal_thres && !fine_optimized_points.empty())
+  if(tmp_v.back() < 1e-6 && 
+     !fine_optimized_points.empty())
   {
     fine_optimized_points.back().twist.linear.x = 0;
   }

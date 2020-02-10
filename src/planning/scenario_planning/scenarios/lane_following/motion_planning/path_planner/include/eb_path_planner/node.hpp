@@ -130,7 +130,7 @@ private:
     
   bool alighWithPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-    std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points);
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);
   
   bool generateFineOptimizedPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
