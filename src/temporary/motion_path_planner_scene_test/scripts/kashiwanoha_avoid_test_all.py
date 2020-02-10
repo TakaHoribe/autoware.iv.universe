@@ -196,8 +196,8 @@ class AvoidTest:
         
 
     def reset_obstacles(self):
-        self.publish_initialize(Pos(10000, 10000, 0)) # reset
-        time.sleep(0.5)
+        self.publish_initialize(Pos(0, 0, 0)) # reset
+        time.sleep(2.0)
         self.publish_initialize(self.current_start_pose)     
 
     def publish_initialize(self, pose):

@@ -182,6 +182,7 @@ bool EBPathPlannerNode::isAvoidanceNeeded(
   
   if (!is_previously_avoidance_mode_)
   {
+    // ROS_WARN("previous mode was not avoidance && does not detect objects on path; relay path");
     return false;
   }
   
@@ -252,6 +253,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
   
   if (!isAvoidanceNeeded(input_path_msg.points, self_pose))
   {
+    // ROS_WARN("avoidance is not needed, relay path");
     generateSmoothTrajectory(
       self_pose,
       input_path_msg,
@@ -304,6 +306,7 @@ void EBPathPlannerNode::callback(const autoware_planning_msgs::Path &input_path_
               input_path_msg.drivable_area.info);
       if(!is_explore_success)
       {
+        // ROS_WARN("explore fail, relay path");
         ROS_WARN_THROTTLE(3.0,
           "[EBPathPlanner] Could not find avoiging path; relay path");
         generateSmoothTrajectory(
@@ -654,7 +657,7 @@ bool EBPathPlannerNode::needExprolation(
       accum_dist += std::sqrt(dx*dx+dy*dy);
     }
   }
-  if(accum_dist > 30)
+  if(accum_dist > 40)
   {
     return false;
   }
@@ -689,7 +692,6 @@ bool EBPathPlannerNode::needExprolation(
       (int)(min_ind - backward_distace_for_exploration/delta_arc_length_for_path ),
       0);
     start_exploring_point = in_path.points[start_exploring_ind].pose.position;
-    // start_exploring_point = ego_point;
   }
   else
   {
@@ -715,14 +717,28 @@ bool EBPathPlannerNode::needExprolation(
   for (int i = nearest_path_point_ind_from_start_exploring_point; 
            i < in_path.points.size(); i++)
   {
+    if(in_path.points[i].twist.linear.x < 1e-6 &&
+       i == in_path.points.size()-1)
+    {
+      double dx =  in_path.points[i].pose.position.x - truncated_explored_points.back().x;
+      double dy =  in_path.points[i].pose.position.y - truncated_explored_points.back().y;
+      double dist = std::sqrt(dx*dx+dy*dy);
+      if(dist < 1e-6)
+      {
+        ROS_WARN("prevent redundant goal");
+        return false;
+      }
+      exploring_goal_pose_in_map_ptr = 
+            std::make_unique<geometry_msgs::Pose>(in_path.points[i].pose);
+      break;
+    }
     if(i>nearest_path_point_ind_from_start_exploring_point)
     {
       double dx = in_path.points[i].pose.position.x - 
                   in_path.points[i-1].pose.position.x;
       double dy = in_path.points[i].pose.position.y - 
                   in_path.points[i-1].pose.position.y;
-      accum_dist2+= std::sqrt(dx*dx+dy*dy);
-      
+      accum_dist2+= std::sqrt(dx*dx+dy*dy); 
     }
     geometry_msgs::Point image_point;
     if(tmp1::transformMapToImage(
@@ -755,7 +771,7 @@ bool EBPathPlannerNode::needExprolation(
   
   if(!exploring_goal_pose_in_map_ptr)
   {
-    ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
+    ROS_WARN( "[EBPathPlanner] Could not find appropriate goal");
     return false;
   }
   else
@@ -929,18 +945,89 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
   {
     for(const auto& avoiding_object: avoiding_objects)
     {
-      double dx1 = path_points[i].pose.position.x - 
-                  avoiding_object.state.pose_covariance.pose.position.x;
-      double dy1 = path_points[i].pose.position.y - 
-                  avoiding_object.state.pose_covariance.pose.position.y;
-      double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+      double dist_from_path_point_to_obstalce;
+      if(avoiding_object.semantic.type == avoiding_object.semantic.CAR ||
+         avoiding_object.semantic.type == avoiding_object.semantic.BUS ||
+         avoiding_object.semantic.type == avoiding_object.semantic.TRUCK)
+      {
+        double yaw = tf2::getYaw(avoiding_object.state.pose_covariance.pose.orientation);
+        geometry_msgs::Point top_left;
+        top_left.x = avoiding_object.shape.dimensions.x*0.5;
+        top_left.y = avoiding_object.shape.dimensions.y*0.5;
+        geometry_msgs::Point top_left_map;
+        top_left_map.x =  std::cos(yaw)*top_left.x+  
+                            -1*std::sin(yaw)*top_left.y;
+        top_left_map.y =  std::sin(yaw)*top_left.x+  
+                            std::cos(yaw)*top_left.y;
+        top_left_map.x += avoiding_object.state.pose_covariance.pose.position.x;
+        top_left_map.y += avoiding_object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point top_right;
+        top_right.x = avoiding_object.shape.dimensions.x*0.5;
+        top_right.y = -1*avoiding_object.shape.dimensions.y*0.5;
+        geometry_msgs::Point top_right_map;
+        top_right_map.x =  std::cos(yaw)*top_right.x+  
+                            -1*std::sin(yaw)*top_right.y;
+        top_right_map.y =  std::sin(yaw)*top_right.x+  
+                            std::cos(yaw)*top_right.y;
+        top_right_map.x += avoiding_object.state.pose_covariance.pose.position.x;
+        top_right_map.y += avoiding_object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point bottom_left;
+        bottom_left.x = -1*avoiding_object.shape.dimensions.x*0.5;
+        bottom_left.y = avoiding_object.shape.dimensions.y*0.5;
+        geometry_msgs::Point bottom_left_map;
+        bottom_left_map.x =  std::cos(yaw)*bottom_left.x+  
+                            -1*std::sin(yaw)*bottom_left.y;
+        bottom_left_map.y =  std::sin(yaw)*bottom_left.x+  
+                            std::cos(yaw)*bottom_left.y;
+        bottom_left_map.x += avoiding_object.state.pose_covariance.pose.position.x;
+        bottom_left_map.y += avoiding_object.state.pose_covariance.pose.position.y;
+        
+        geometry_msgs::Point bottom_right;
+        bottom_right.x = -1*avoiding_object.shape.dimensions.x*0.5;
+        bottom_right.y = -1*avoiding_object.shape.dimensions.y*0.5;
+        geometry_msgs::Point bottom_right_map;
+        bottom_right_map.x =  std::cos(yaw)*bottom_right.x+  
+                            -1*std::sin(yaw)*bottom_right.y;
+        bottom_right_map.y =  std::sin(yaw)*bottom_right.x+  
+                            std::cos(yaw)*bottom_right.y;
+        bottom_right_map.x += avoiding_object.state.pose_covariance.pose.position.x;
+        bottom_right_map.y += avoiding_object.state.pose_covariance.pose.position.y;
+        
+        double dx1 = path_points[i].pose.position.x - top_left_map.x;
+        double dy1 = path_points[i].pose.position.y - top_left_map.y;
+        double dx2 = path_points[i].pose.position.x - top_right_map.x;
+        double dy2 = path_points[i].pose.position.y - top_right_map.y;
+        double dx3 = path_points[i].pose.position.x - bottom_right_map.x;
+        double dy3 = path_points[i].pose.position.y - bottom_right_map.y;
+        double dx4 = path_points[i].pose.position.x - bottom_left_map.x;
+        double dy4 = path_points[i].pose.position.y - bottom_left_map.y;
+        double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+        double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+        double dist3 = std::sqrt(dx3*dx3+dy3*dy3);
+        double dist4 = std::sqrt(dx4*dx4+dy4*dy4);
+        float min_dist = std::fmin(dist1, dist2);
+        min_dist = std::fmin(min_dist, dist3);
+        min_dist = std::fmin(min_dist, dist4);
+        dist_from_path_point_to_obstalce = min_dist;
+      }
+      else
+      {
+        double dx1 = path_points[i].pose.position.x - 
+                    avoiding_object.state.pose_covariance.pose.position.x;
+        double dy1 = path_points[i].pose.position.y - 
+                    avoiding_object.state.pose_covariance.pose.position.y;
+        dist_from_path_point_to_obstalce = std::sqrt(dx1*dx1+dy1*dy1);
+      }
       double dx2 = ego_pose.position.x - 
                   avoiding_object.state.pose_covariance.pose.position.x;
       double dy2 = ego_pose.position.y - 
                   avoiding_object.state.pose_covariance.pose.position.y;
-      double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
-      if(dist1 < detection_radius_around_path_point_ && 
-         dist2<detection_radius_from_ego_)
+      double dist_from_ego_to_obstacle = std::sqrt(dx2*dx2+dy2*dy2);
+      
+      if(dist_from_path_point_to_obstalce < detection_radius_around_path_point_ && 
+         dist_from_ego_to_obstacle < detection_radius_from_ego_)
       {
         return true;
       }
