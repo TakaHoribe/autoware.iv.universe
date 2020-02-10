@@ -186,6 +186,11 @@ bool BlockedByObstacleState::isLaneBlocked() const
   constexpr double static_obj_velocity_thresh = 0.1;
 
   const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
+  if(polygon.size() < 3)
+  {
+    ROS_WARN_STREAM("could not get polygon from lanelet with arc lengths: " << arc.length << " to " << arc.length + check_distance);
+    return false;
+  }
 
   for (const auto& obj : dynamic_objects_->objects)
   {
@@ -208,6 +213,7 @@ bool BlockedByObstacleState::isLaneChangeApproved() const
 {
   return lane_change_approved_;
 }
+
 bool BlockedByObstacleState::hasEnoughDistance() const
 {
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;

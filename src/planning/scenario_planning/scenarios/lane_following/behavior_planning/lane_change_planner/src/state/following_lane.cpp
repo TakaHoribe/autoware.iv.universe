@@ -142,6 +142,12 @@ bool FollowingLaneState::isLaneBlocked() const
 
   const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
 
+  if(polygon.size() < 3)
+  {
+    ROS_WARN_STREAM("could not get polygon from lanelet with arc lengths: " << arc.length << " to " << arc.length + check_distance);
+    return false;
+  }
+
   for (const auto& obj : dynamic_objects_->objects)
   {
     const auto velocity = util::l2Norm(obj.state.twist_covariance.twist.linear);
