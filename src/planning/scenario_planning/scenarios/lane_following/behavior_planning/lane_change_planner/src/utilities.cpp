@@ -549,6 +549,13 @@ PathWithLaneId refinePath(const double search_radius_range, const double search_
 {
   PathWithLaneId filtered_path, path_with_goal;
   filtered_path = removeOverlappingPoints(input);
+
+  // always set zero velocity at the end of path for safety
+  if(!filtered_path.points.empty())
+  {
+    filtered_path.points.back().point.twist.linear.x = 0.0;
+  }
+
   if (setGoal(search_radius_range, search_rad_range, filtered_path, goal, goal_lane_id, &path_with_goal))
   {
     return path_with_goal;
