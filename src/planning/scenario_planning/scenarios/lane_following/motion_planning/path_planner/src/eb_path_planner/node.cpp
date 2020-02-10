@@ -884,8 +884,8 @@ bool EBPathPlannerNode::needExprolation(
   
   if(!exploring_goal_pose_in_map_ptr)
   {
-    // ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
-    ROS_WARN( "[EBPathPlanner] Could not find appropriate goal");
+    ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
+    // ROS_WARN( "[EBPathPlanner] Could not find appropriate goal");
     return false;
   }
   else
