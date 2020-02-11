@@ -346,7 +346,7 @@ void EBPathPlannerNode::callback(
     std::cout << "prev ex point size "<< previous_explored_points_ptr_->size() << std::endl;
     geometry_msgs::Point start_exploring_point;
     geometry_msgs::Point goal_exploring_point;
-    std::vector<geometry_msgs::Point> truncated_explored_points;
+    std::vector<geometry_msgs::Point> trimmed_explored_points;
     if(needExprolation(
         self_pose.position,
         *previous_explored_points_ptr_,
@@ -354,7 +354,7 @@ void EBPathPlannerNode::callback(
         clearance_map,
         start_exploring_point,
         goal_exploring_point,
-        truncated_explored_points))
+        trimmed_explored_points))
     {
       visualization_msgs::MarkerArray marker_array;
       int unique_id = 0;
@@ -423,26 +423,26 @@ void EBPathPlannerNode::callback(
         return;
       }
       
-      //merge truncate with explored point
+      //merge trimmed ones with explored points
       for (int i = 0; i < explored_points.size(); i++)
       {
-        truncated_explored_points.push_back(explored_points[i]);
+        trimmed_explored_points.push_back(explored_points[i]);
       }
       // remove redundant explored points 
       std::vector<geometry_msgs::Point> non_redundant_explored_points;
-      for (int i = 0; i < truncated_explored_points.size(); i++)
+      for (int i = 0; i < trimmed_explored_points.size(); i++)
       {
         if(i>0)
         {
-          double dx = truncated_explored_points[i].x -truncated_explored_points[i-1].x;
-          double dy = truncated_explored_points[i].y -truncated_explored_points[i-1].y;
+          double dx = trimmed_explored_points[i].x -trimmed_explored_points[i-1].x;
+          double dy = trimmed_explored_points[i].y -trimmed_explored_points[i-1].y;
           double dist = std::sqrt(dx*dx+dy*dy);
           if(dist < 1e-6)
           {
             continue;
           }
         }
-        non_redundant_explored_points.push_back(truncated_explored_points[i]);
+        non_redundant_explored_points.push_back(trimmed_explored_points[i]);
       }
       previous_explored_points_ptr_ = 
         std::make_unique<std::vector<geometry_msgs::Point>>(non_redundant_explored_points);    
@@ -743,7 +743,7 @@ bool EBPathPlannerNode::needExprolation(
   const cv::Mat& clearance_map,
   geometry_msgs::Point& start_exploring_point,
   geometry_msgs::Point& goal_exploring_point,
-  std::vector<geometry_msgs::Point>& truncated_explored_points)
+  std::vector<geometry_msgs::Point>& trimmed_explored_points)
 {
   double min_dist = 8888888;
   int min_ind = -1;
@@ -774,13 +774,24 @@ bool EBPathPlannerNode::needExprolation(
     return false;
   }
   
-  std::cout << "need extend" << std::endl;
-  truncated_explored_points = 
-    truncateExploredPointsWithEgoVehicle
+  cv::Mat objects_image = 
+    cv::Mat::ones(clearance_map.rows, clearance_map.cols, CV_8UC1)*255;
+  drawObstalcesOnImage(in_objects_ptr_->objects,
+                      in_path.drivable_area.info,
+                      objects_image);
+  
+  cv::Mat only_objects_clearance_map;
+  cv::distanceTransform(objects_image, 
+                        only_objects_clearance_map, 
+                        cv::DIST_L2, 5);
+  
+  trimmed_explored_points = 
+    generateTrimmedExploredPoints
         (ego_point,
-         previous_explored_points);
-  std::cout << "truncate size "<<truncated_explored_points.size() << std::endl;
-  if(truncated_explored_points.empty())
+         previous_explored_points,
+         only_objects_clearance_map,
+         in_path.drivable_area.info);
+  if(trimmed_explored_points.empty())
   {
     double min_dist = 9999999999;
     int min_ind = 0;
@@ -805,7 +816,7 @@ bool EBPathPlannerNode::needExprolation(
   }
   else
   {
-    start_exploring_point = truncated_explored_points.back();
+    start_exploring_point = trimmed_explored_points.back();
   }
   
   int nearest_path_point_ind_from_start_exploring_point = 0;
@@ -823,14 +834,6 @@ bool EBPathPlannerNode::needExprolation(
       nearest_path_point_ind_from_start_exploring_point = i;
     }
   }
-  cv::Mat only_objects_clearance_map = 
-    cv::Mat::ones(clearance_map.rows, clearance_map.cols, CV_8UC1)*255;
-  drawObstalcesOnImage(in_objects_ptr_->objects,
-                      in_path.drivable_area.info,
-                      only_objects_clearance_map);
-  cv::distanceTransform(only_objects_clearance_map, 
-                        only_objects_clearance_map, 
-                        cv::DIST_L2, 5);
   
   std::unique_ptr<geometry_msgs::Pose> exploring_goal_pose_in_map_ptr;
   double accum_dist2 = 0;
@@ -839,10 +842,10 @@ bool EBPathPlannerNode::needExprolation(
   {
     if(in_path.points[i].twist.linear.x < 1e-6 &&
        i == in_path.points.size()-1 && 
-       !truncated_explored_points.empty())
+       !trimmed_explored_points.empty())
     {
-      double dx =  in_path.points[i].pose.position.x - truncated_explored_points.back().x;
-      double dy =  in_path.points[i].pose.position.y - truncated_explored_points.back().y;
+      double dx =  in_path.points[i].pose.position.x - trimmed_explored_points.back().x;
+      double dy =  in_path.points[i].pose.position.y - trimmed_explored_points.back().y;
       double dist = std::sqrt(dx*dx+dy*dy);
       if(dist < 1e-6)
       {
@@ -870,9 +873,6 @@ bool EBPathPlannerNode::needExprolation(
     {
       int pixel_x = image_point.x;
       int pixel_y = image_point.y;
-      // float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
-      // if(clearance*in_path.drivable_area.info.resolution
-      //     >=exploring_minimum_radius_)
       float clearance = only_objects_clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
       if(clearance*in_path.drivable_area.info.resolution
           >=exploring_goal_clearance_from_obstacle_)
@@ -908,9 +908,11 @@ bool EBPathPlannerNode::needExprolation(
 }
 
 std::vector<geometry_msgs::Point> 
-  EBPathPlannerNode::truncateExploredPointsWithEgoVehicle(
+  EBPathPlannerNode::generateTrimmedExploredPoints(
     const geometry_msgs::Point& ego_point,
-    const std::vector<geometry_msgs::Point>& explored_points)
+    const std::vector<geometry_msgs::Point>& explored_points,
+    const cv::Mat& only_objects_clearance_map,
+    const nav_msgs::MapMetaData& map_info)
 {
   double min_dist = 8888888;
   int min_ind = -1;
@@ -929,12 +931,40 @@ std::vector<geometry_msgs::Point>
   int start_ind = 
     std::max((int)(min_ind-
                   backward_fixing_distance_for_truncating/exploring_minimum_radius_), 0);
-  std::vector<geometry_msgs::Point> truncated_explored_points;
+  std::vector<geometry_msgs::Point> trimmed_explored_points;
   for (int i = start_ind; i < explored_points.size(); i++)
   {
-    truncated_explored_points.push_back(explored_points[i]);
+    trimmed_explored_points.push_back(explored_points[i]);
   }
-  return truncated_explored_points;
+  
+  int last_trimmed_idx = 0;
+  for(int i = trimmed_explored_points.size()-1; 
+      i >= 0; i--)
+  {
+    geometry_msgs::Point image_point;
+    if(tmp1::transformMapToImage(
+        trimmed_explored_points[i], 
+        map_info,
+        image_point))
+    {
+      int pixel_x = image_point.x;
+      int pixel_y = image_point.y;
+      float clearance = only_objects_clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
+      if(clearance*map_info.resolution
+          >=exploring_goal_clearance_from_obstacle_)
+      {
+        last_trimmed_idx = i;
+        break;
+      }
+    }
+  }
+  std::vector<geometry_msgs::Point> tmp_trimmed_points;
+  for (int i = 0; i < last_trimmed_idx; i++)
+  {
+    tmp_trimmed_points.push_back(trimmed_explored_points[i]);
+  }
+  trimmed_explored_points = tmp_trimmed_points;
+  return trimmed_explored_points;
 }
 
 bool EBPathPlannerNode::generateSmoothTrajectory(

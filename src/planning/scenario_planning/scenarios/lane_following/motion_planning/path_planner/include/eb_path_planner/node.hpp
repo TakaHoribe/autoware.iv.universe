@@ -115,11 +115,13 @@ private:
     const cv::Mat& clearance_map,
     geometry_msgs::Point& start_exploring_point,
     geometry_msgs::Point& goal_exploring_point,
-    std::vector<geometry_msgs::Point>& truncated_explored_points);
+    std::vector<geometry_msgs::Point>& trimmed_explored_points);
   
-  std::vector<geometry_msgs::Point> truncateExploredPointsWithEgoVehicle(
+  std::vector<geometry_msgs::Point> generateTrimmedExploredPoints(
     const geometry_msgs::Point& ego_point,
-    const std::vector<geometry_msgs::Point>& explored_points);
+    const std::vector<geometry_msgs::Point>& explored_points,
+    const cv::Mat& only_objects_clearance_map,
+    const nav_msgs::MapMetaData& map_info);
     
   bool alighWithPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
