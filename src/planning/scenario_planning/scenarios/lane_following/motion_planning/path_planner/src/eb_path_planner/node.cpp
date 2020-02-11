@@ -959,11 +959,14 @@ std::vector<geometry_msgs::Point>
     }
   }
   std::vector<geometry_msgs::Point> tmp_trimmed_points;
-  for (int i = 0; i < last_trimmed_idx; i++)
+  if(!trimmed_explored_points.empty())
   {
-    tmp_trimmed_points.push_back(trimmed_explored_points[i]);
+    for (int i = 0; i <= last_trimmed_idx; i++)
+    {
+      tmp_trimmed_points.push_back(trimmed_explored_points[i]);
+    }
+    trimmed_explored_points = tmp_trimmed_points;
   }
-  trimmed_explored_points = tmp_trimmed_points;
   return trimmed_explored_points;
 }
 
