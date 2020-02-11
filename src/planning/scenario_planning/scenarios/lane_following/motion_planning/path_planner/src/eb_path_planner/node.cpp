@@ -110,18 +110,8 @@ nh_(),
 private_nh_("~")
 {
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("eb_path_planner_marker", 1, true);
-  path_pub_ = 
-    nh_.advertise<autoware_planning_msgs::Path>
-      ("planning/scenario_planning/scenarios/lane_following/motion_planning/avoiding_path", 
-        1, true);
-  debug_traj_pub_ = 
-   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_traj", 1, true);
-  debug_fixed_traj_pub_ = 
-   nh_.advertise<autoware_planning_msgs::Trajectory>("/debug_fixed_traj", 1, true);  
   debug_clearance_map_in_occupancy_grid_pub_ = 
    nh_.advertise<nav_msgs::OccupancyGrid>("debug_clearance_map", 1, true);
-    
-  
   
   // is_relay_path_sub_ = private_nh_.subscribe("/is_relay_path", 1, 
   //                          &EBPathPlannerNode::isRelayPathCallback, this);
@@ -137,16 +127,16 @@ private_nh_("~")
                            is_publishing_clearance_map_as_occupancy_grid_,false);
   private_nh_.param<bool>("enable_avoidance", 
                            enable_avoidance_,true);
-  private_nh_.param<int>("number_of_backward_detection_range_path_points", 
-                             number_of_backward_detection_range_path_points_, 5);
+  private_nh_.param<int>("number_of_backward_path_points_for_detecting_objects", 
+                          number_of_backward_path_points_for_detecting_objects_, 5);
   private_nh_.param<double>("forward_fixing_distance", 
                              forward_fixing_distance_, 20.0);
   private_nh_.param<double>("backward_fixing_distance", 
                              backward_fixing_distance_, 20.0);
-  private_nh_.param<double>("detection_radius_from_ego", 
-                             detection_radius_from_ego_, 50.0);
-  private_nh_.param<double>("detection_radius_around_path_point", 
-                             detection_radius_around_path_point_, 2.5);
+  private_nh_.param<double>("detecting_objects_radius_from_ego", 
+                             detecting_objects_radius_from_ego_, 50.0);
+  private_nh_.param<double>("detecting_objects_radius_around_path_point", 
+                             detecting_objects_radius_around_path_point_, 2.5);
   private_nh_.param<double>("reset_delta_ego_distance", 
                              reset_delta_ego_distance_, 5.0);
   private_nh_.param<double>("exploring_minumum_radius", 
@@ -159,6 +149,17 @@ private_nh_("~")
                              max_avoiding_objects_velocity_ms_, 0.1);
   private_nh_.param<double>("clearance_weight_when_exploring", 
                              clearance_weight_when_exploring_, 0.0);
+  private_nh_.param<double>("exploring_goal_clearance_from_obstacle", 
+                             exploring_goal_clearance_from_obstacle_, 
+                             exploring_minimum_radius_*3);
+  exploring_goal_clearance_from_obstacle_ = 
+    std::fmax(exploring_minimum_radius_*2, exploring_goal_clearance_from_obstacle_);
+  private_nh_.param<double>("min_distance_threshold_when_switching_avoindance_to_path_following", 
+                             min_distance_threshold_when_switching_avoindance_to_path_following_, 
+                             0.1);
+  private_nh_.param<double>("min_cos_similarity_when_switching_avoindance_to_path_following", 
+                             min_cos_similarity_when_switching_avoindance_to_path_following_, 
+                             0.95);
   is_previously_avoidance_mode_ = false;
   doResetting();
 }
@@ -284,13 +285,10 @@ bool EBPathPlannerNode::isPoseCloseToPath(
     path_yaw = std::atan2(dy1, dx1);
   }
   double traj_yaw = tf2::getYaw(in_pose.orientation); 
-  double delta_yaw = std::fabs(traj_yaw - path_yaw);
   double cos_similarity = std::cos(traj_yaw)*std::cos(path_yaw) +
                           std::sin(traj_yaw)*std::sin(traj_yaw);
-  double distance_threshold = 0.2;
-  double cos_similarity_threshold = 0.9;
-  if(min_dist < distance_threshold && 
-     cos_similarity > cos_similarity_threshold)
+  if(min_dist < min_distance_threshold_when_switching_avoindance_to_path_following_ && 
+     cos_similarity > min_cos_similarity_when_switching_avoindance_to_path_following_)
   {
     return true;
   }
@@ -654,8 +652,6 @@ void EBPathPlannerNode::doResetting()
               delta_arc_length_for_explored_points_);
   previous_explored_points_ptr_ = 
     std::make_unique<std::vector<geometry_msgs::Point>>();
-  // previous_optimized_points_ptr_ = 
-  //   std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>();
 }
 
 void EBPathPlannerNode::currentVelocityCallback(const geometry_msgs::TwistStamped& msg)
@@ -811,6 +807,7 @@ bool EBPathPlannerNode::needExprolation(
   {
     start_exploring_point = truncated_explored_points.back();
   }
+  
   int nearest_path_point_ind_from_start_exploring_point = 0;
   double min_dist2 = 999999999;
   for (int i = 0; i < in_path.points.size(); i++)
@@ -826,6 +823,15 @@ bool EBPathPlannerNode::needExprolation(
       nearest_path_point_ind_from_start_exploring_point = i;
     }
   }
+  cv::Mat only_objects_clearance_map = 
+    cv::Mat::ones(clearance_map.rows, clearance_map.cols, CV_8UC1)*255;
+  drawObstalcesOnImage(in_objects_ptr_->objects,
+                      in_path.drivable_area.info,
+                      only_objects_clearance_map);
+  cv::distanceTransform(only_objects_clearance_map, 
+                        only_objects_clearance_map, 
+                        cv::DIST_L2, 5);
+  
   std::unique_ptr<geometry_msgs::Pose> exploring_goal_pose_in_map_ptr;
   double accum_dist2 = 0;
   for (int i = nearest_path_point_ind_from_start_exploring_point; 
@@ -864,9 +870,12 @@ bool EBPathPlannerNode::needExprolation(
     {
       int pixel_x = image_point.x;
       int pixel_y = image_point.y;
-      float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
+      // float clearance = clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
+      // if(clearance*in_path.drivable_area.info.resolution
+      //     >=exploring_minimum_radius_)
+      float clearance = only_objects_clearance_map.ptr<float>((int)pixel_y)[(int)pixel_x]; 
       if(clearance*in_path.drivable_area.info.resolution
-          >=exploring_minimum_radius_)
+          >=exploring_goal_clearance_from_obstacle_)
       {
         if(accum_dist2 > exploring_minimum_radius_*15)
         {
@@ -1059,7 +1068,7 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
     }
   }
   int search_start_idx = 
-    std::max((int)(min_ind - number_of_backward_detection_range_path_points_), 0);
+    std::max((int)(min_ind - number_of_backward_path_points_for_detecting_objects_), 0);
   for (int i = search_start_idx; i < path_points.size(); i++)
   {
     for(const auto& avoiding_object: avoiding_objects)
@@ -1145,8 +1154,8 @@ bool EBPathPlannerNode::detectAvoidingObjectsOnPath(
                   avoiding_object.state.pose_covariance.pose.position.y;
       double dist_from_ego_to_obstacle = std::sqrt(dx2*dx2+dy2*dy2);
       
-      if(dist_from_path_point_to_obstalce < detection_radius_around_path_point_ && 
-         dist_from_ego_to_obstacle < detection_radius_from_ego_)
+      if(dist_from_path_point_to_obstalce < detecting_objects_radius_around_path_point_ && 
+         dist_from_ego_to_obstacle < detecting_objects_radius_from_ego_)
       {
         return true;
       }
@@ -1373,25 +1382,11 @@ void EBPathPlannerNode::putOccupancyGridValue(
   og.data[i_flip + j_flip*og.info.width] = value;
 }
 
-bool EBPathPlannerNode::generateClearanceMap(
-    const nav_msgs::OccupancyGrid& occupancy_grid,
+bool EBPathPlannerNode::drawObstalcesOnImage(
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
-    const geometry_msgs::Pose& debug_ego_pose,
-    cv::Mat& clearance_map)
+    const nav_msgs::MapMetaData& map_info,
+    cv::Mat& image)
 {
-  std::chrono::high_resolution_clock::time_point begin= 
-    std::chrono::high_resolution_clock::now();
-  cv::Mat drivable_area = 
-    cv::Mat(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1);
-
-  drivable_area.forEach<unsigned char>
-  (
-    [&](unsigned char &value, const int *position) -> void
-    {
-      getOccupancyGridValue(occupancy_grid, position[0], position[1], value);
-    }
-  );
-  
   for(const auto& object: objects)
   {
     if(object.state.twist_covariance.twist.linear.x < max_avoiding_objects_velocity_ms_)
@@ -1449,19 +1444,19 @@ bool EBPathPlannerNode::generateClearanceMap(
         geometry_msgs::Point bottom_right_map_in_image;
         tmp1::transformMapToImage(
               top_left_map, 
-              occupancy_grid.info,
+              map_info,
               top_left_map_in_image);
         tmp1::transformMapToImage(
               top_right_map, 
-              occupancy_grid.info,
+              map_info,
               top_right_map_in_image);
         tmp1::transformMapToImage(
               bottom_left_map, 
-              occupancy_grid.info,
+              map_info,
               bottom_left_map_in_image);
         tmp1::transformMapToImage(
               bottom_right_map, 
-              occupancy_grid.info,
+              map_info,
               bottom_right_map_in_image);
         cv::Point top_left_image_point = 
           cv::Point(top_left_map_in_image.x, top_left_map_in_image.y);
@@ -1472,35 +1467,35 @@ bool EBPathPlannerNode::generateClearanceMap(
         cv::Point bottom_left_image_point = 
           cv::Point(bottom_left_map_in_image.x, bottom_left_map_in_image.y);
         cv::clipLine(
-          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          cv::Rect(0, 0, image.size().width, image.size().height),
           top_left_image_point,
           top_right_image_point);
         cv::clipLine(
-          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          cv::Rect(0, 0, image.size().width, image.size().height),
           top_right_image_point,
           bottom_right_image_point);
         cv::clipLine(
-          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          cv::Rect(0, 0, image.size().width, image.size().height),
           bottom_right_image_point,
           bottom_left_image_point);
         cv::clipLine(
-          cv::Rect(0, 0, drivable_area.size().width, drivable_area.size().height),
+          cv::Rect(0, 0, image.size().width, image.size().height),
           bottom_left_image_point,
           top_left_image_point);
           
-        cv::line(drivable_area,
+        cv::line(image,
                   top_left_image_point,
                   top_right_image_point,
                   cv::Scalar(0), 10);
-        cv::line(drivable_area,
+        cv::line(image,
                   top_right_image_point,
                   bottom_right_image_point,
                   cv::Scalar(0), 10);
-        cv::line(drivable_area,
+        cv::line(image,
                   bottom_right_image_point,
                   bottom_left_image_point,
                   cv::Scalar(0), 10);
-        cv::line(drivable_area,
+        cv::line(image,
                   bottom_left_image_point,
                   top_left_image_point,
                   cv::Scalar(0), 10);
@@ -1510,20 +1505,41 @@ bool EBPathPlannerNode::generateClearanceMap(
         geometry_msgs::Point point_in_image;
         if(tmp1::transformMapToImage(
                 object.state.pose_covariance.pose.position, 
-                occupancy_grid.info,
+                map_info,
                 point_in_image))
         {
-          cv::circle(drivable_area, 
+          cv::circle(image, 
                     cv::Point(point_in_image.x, point_in_image.y), 
                     15, 
                     cv::Scalar(0),
                     -1);
             
         } 
-        
       }      
     }
   }
+}
+
+bool EBPathPlannerNode::generateClearanceMap(
+    const nav_msgs::OccupancyGrid& occupancy_grid,
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+    const geometry_msgs::Pose& debug_ego_pose,
+    cv::Mat& clearance_map)
+{
+  std::chrono::high_resolution_clock::time_point begin= 
+    std::chrono::high_resolution_clock::now();
+  cv::Mat drivable_area = 
+    cv::Mat(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1);
+
+  drivable_area.forEach<unsigned char>
+  (
+    [&](unsigned char &value, const int *position) -> void
+    {
+      getOccupancyGridValue(occupancy_grid, position[0], position[1], value);
+    }
+  );
+  
+  drawObstalcesOnImage(objects, occupancy_grid.info, drivable_area);
   
   cv::distanceTransform(drivable_area, clearance_map, cv::DIST_L2, 5);
   std::chrono::high_resolution_clock::time_point end= 
@@ -1594,9 +1610,6 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     }
     return false;
   }
-  autoware_planning_msgs::Trajectory tmp_traj;
-  tmp_traj.points = optimized_points;
-  debug_traj_pub_.publish(tmp_traj);
   
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
