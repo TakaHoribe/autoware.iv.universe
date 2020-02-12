@@ -522,16 +522,15 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
 
   /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
   for (int i = 1; i < N - 1; ++i) {
-    // const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
-    const double steer_acc_r = mpc_param_.weight_steer_acc;
+    const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
     R2ex(i - 1, i - 1) += (steer_acc_r);
-    R2ex(i - 1, i + 0) += (steer_acc_r * -1.0);
+    R2ex(i - 1, i + 0) += (steer_acc_r * -2.0);
     R2ex(i - 1, i + 1) += (steer_acc_r);
-    R2ex(i + 0, i - 1) += (steer_acc_r * -1.0);
+    R2ex(i + 0, i - 1) += (steer_acc_r * -2.0);
     R2ex(i + 0, i + 0) += (steer_acc_r * 4.0);
-    R2ex(i + 0, i + 1) += (steer_acc_r * -1.0);
+    R2ex(i + 0, i + 1) += (steer_acc_r * -2.0);
     R2ex(i + 1, i - 1) += (steer_acc_r);
-    R2ex(i + 1, i + 0) += (steer_acc_r * -1.0);
+    R2ex(i + 1, i + 0) += (steer_acc_r * -2.0);
     R2ex(i + 1, i + 1) += (steer_acc_r);
   }
 
