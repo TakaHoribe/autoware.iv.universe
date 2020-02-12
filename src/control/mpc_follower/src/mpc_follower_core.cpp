@@ -42,6 +42,8 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
   pnh_.param<double>("mpc_weight_steering_input_squared_vel_coeff", mpc_param_.weight_steering_input_squared_vel_coeff,
                      0.25);
   pnh_.param<double>("mpc_weight_lat_jerk", mpc_param_.weight_lat_jerk, 0.0);
+  pnh_.param<double>("mpc_weight_steer_rate", mpc_param_.weight_steer_rate, 0.0);
+  pnh_.param<double>("mpc_weight_steer_acc", mpc_param_.weight_steer_acc, 0.0);
   pnh_.param<double>("mpc_weight_terminal_lat_error", mpc_param_.weight_terminal_lat_error, 1.0);
   pnh_.param<double>("mpc_weight_terminal_heading_error", mpc_param_.weight_terminal_heading_error, 0.1);
   pnh_.param<double>("mpc_zero_ff_steer_deg", mpc_param_.zero_ff_steer_deg, 2.0);
@@ -420,15 +422,16 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
 
   /*
    * predict equation: Xec = Aex * x0 + Bex * Uex + Wex
-   * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
-   * Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
+   * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * R1ex * (Uex - Urefex) + Uex' * R2ex * Uex
+   * Qex = diag([Q,Q,...]), R1ex = diag([R,R,...])
    */
   Eigen::MatrixXd Aex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_X);
   Eigen::MatrixXd Bex = Eigen::MatrixXd::Zero(DIM_X * N, DIM_U * N);
   Eigen::MatrixXd Wex = Eigen::MatrixXd::Zero(DIM_X * N, 1);
   Eigen::MatrixXd Cex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_X * N);
   Eigen::MatrixXd Qex = Eigen::MatrixXd::Zero(DIM_Y * N, DIM_Y * N);
-  Eigen::MatrixXd Rex = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  Eigen::MatrixXd R1ex = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  Eigen::MatrixXd R2ex = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
   Eigen::MatrixXd Urefex = Eigen::MatrixXd::Zero(DIM_U * N, 1);
 
   /* weight matrix depends on the vehicle model */
@@ -448,7 +451,8 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
 
   /* predict dynamics for N times */
   for (int i = 0; i < N; ++i) {
-    const double sign_vx = reference_trajectory.vx[i] > 0 ? 1 : (reference_trajectory.vx[i] < 0 ? -1 : 0);
+    const double ep = 1.0e-3;
+    const double sign_vx = reference_trajectory.vx[i] > ep ? 1 : (reference_trajectory.vx[i] < -ep ? -1 : 0);
     const double ref_k = reference_trajectory.k[i] * sign_vx;
     const double ref_vx = reference_trajectory.vx[i];
     const double ref_vx_squared = ref_vx * ref_vx;
@@ -487,25 +491,48 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
     Bex.block(idx_x_i, idx_u_i, DIM_X, DIM_U) = Bd;
     Cex.block(idx_y_i, idx_x_i, DIM_Y, DIM_X) = Cd;
     Qex.block(idx_y_i, idx_y_i, DIM_Y, DIM_Y) = Q_adaptive;
-    Rex.block(idx_u_i, idx_u_i, DIM_U, DIM_U) = R_adaptive;
+    R1ex.block(idx_u_i, idx_u_i, DIM_U, DIM_U) = R_adaptive;
 
     /* get reference input (feed-forward) */
     vehicle_model_ptr_->calculateReferenceInput(Uref);
     if (std::fabs(Uref(0, 0)) < DEG2RAD * mpc_param_.zero_ff_steer_deg) {
       Uref(0, 0) = 0.0;  // ignore curvature noise
     }
-
     Urefex.block(i * DIM_U, 0, DIM_U, 1) = Uref;
   }
 
   /* add lateral jerk : weight for (v * {u(i) - u(i-1)} )^2 */
   for (int i = 0; i < N - 1; ++i) {
     const double v = reference_trajectory.vx[i];
-    const double lateral_jerk_weight = v * v * mpc_param_.weight_lat_jerk;
-    Rex(i, i) += lateral_jerk_weight;
-    Rex(i + 1, i) -= lateral_jerk_weight;
-    Rex(i, i + 1) -= lateral_jerk_weight;
-    Rex(i + 1, i + 1) += lateral_jerk_weight;
+    const double lateral_jerk_r = v * v * mpc_param_.weight_lat_jerk / (DT * DT);
+    R2ex(i + 0, i + 0) += lateral_jerk_r;
+    R2ex(i + 1, i + 0) -= lateral_jerk_r;
+    R2ex(i + 0, i + 1) -= lateral_jerk_r;
+    R2ex(i + 1, i + 1) += lateral_jerk_r;
+  }
+
+  /* add steering rate : weight for (u(i) - u(i-1) / dt )^2 */
+  for (int i = 0; i < N - 1; ++i) {
+    const double steer_rate_r = mpc_param_.weight_steer_rate / (DT * DT);
+    R2ex(i + 0, i + 0) += steer_rate_r;
+    R2ex(i + 1, i + 0) -= steer_rate_r;
+    R2ex(i + 0, i + 1) -= steer_rate_r;
+    R2ex(i + 1, i + 1) += steer_rate_r;
+  }
+
+  /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
+  for (int i = 1; i < N - 1; ++i) {
+    // const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
+    const double steer_acc_r = mpc_param_.weight_steer_acc;
+    R2ex(i - 1, i - 1) += (steer_acc_r);
+    R2ex(i - 1, i + 0) += (steer_acc_r * -1.0);
+    R2ex(i - 1, i + 1) += (steer_acc_r);
+    R2ex(i + 0, i - 1) += (steer_acc_r * -1.0);
+    R2ex(i + 0, i + 0) += (steer_acc_r * 4.0);
+    R2ex(i + 0, i + 1) += (steer_acc_r * -1.0);
+    R2ex(i + 1, i - 1) += (steer_acc_r);
+    R2ex(i + 1, i + 0) += (steer_acc_r * -1.0);
+    R2ex(i + 1, i + 1) += (steer_acc_r);
   }
 
   if (Aex.array().isNaN().any() || Bex.array().isNaN().any() || Cex.array().isNaN().any() ||
@@ -519,15 +546,16 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
   mpc_matrix->Wex = Wex;
   mpc_matrix->Cex = Cex;
   mpc_matrix->Qex = Qex;
-  mpc_matrix->Rex = Rex;
+  mpc_matrix->R1ex = R1ex;
+  mpc_matrix->R2ex = R2ex;
   mpc_matrix->Urefex = Urefex;
   return true;
 }
 
 /*
  * solve quadratic optimization.
- * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * Rex * (Uex - Urefex)
- *                , Qex = diag([Q,Q,...]), Rex = diag([R,R,...])
+ * cost function: J = Xex' * Qex * Xex + (Uex - Uref)' * R1ex * (Uex - Urefex) + Uex' * R2ex * Uex
+ *                , Qex = diag([Q,Q,...]), R1ex = diag([R,R,...])
  * constraint matrix : lb < U < ub, lbA < A*U < ubA
  * current considered constraint
  *  - steering limit
@@ -543,10 +571,10 @@ bool MPCFollower::executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::
   const Eigen::MatrixXd QCB = mpc_matrix.Qex * CB;
   Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
   H.triangularView<Eigen::Upper>() = CB.transpose() * QCB;  // NOTE: This calculation is heavy. looking for a good way.
-  H.triangularView<Eigen::Upper>() += mpc_matrix.Rex;
+  H.triangularView<Eigen::Upper>() += mpc_matrix.R1ex + mpc_matrix.R2ex;
   H.triangularView<Eigen::Lower>() = H.transpose();
   Eigen::MatrixXd f = (mpc_matrix.Cex * (mpc_matrix.Aex * x0 + mpc_matrix.Wex)).transpose() * QCB -
-                      mpc_matrix.Urefex.transpose() * mpc_matrix.Rex;
+                      mpc_matrix.Urefex.transpose() * mpc_matrix.R1ex;
 
   /*
    * (1)lb < u < ub && (2)lbA < Au < ubA --> (3)[lb, lbA] < [I, A]u < [ub, ubA]
