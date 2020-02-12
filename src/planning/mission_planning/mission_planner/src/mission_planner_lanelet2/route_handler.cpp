@@ -20,7 +20,8 @@
 namespace mission_planner
 {
 RouteHandler::RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                           const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::ConstLanelets& path_lanelets)
+                           const lanelet::routing::RoutingGraphPtr& routing_graph,
+                           const lanelet::ConstLanelets& path_lanelets)
 {
   setRouteLanelets(lanelet_map_ptr, routing_graph, path_lanelets);
 }
@@ -374,7 +375,7 @@ bool RouteHandler::getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanele
   lanelet::ConstLanelets following_lanelets = routing_graph_ptr_->following(lanelet);
   for (const auto& llt : following_lanelets)
   {
-    if (exists(route_lanelets_, llt))
+    if (exists(route_lanelets_, llt) && !exists(start_lanelets_, llt))
     {
       *next_lanelet = llt;
       return true;
@@ -393,7 +394,7 @@ bool RouteHandler::getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& la
   lanelet::ConstLanelets previous_lanelets = routing_graph_ptr_->previous(lanelet);
   for (const auto& llt : previous_lanelets)
   {
-    if (exists(route_lanelets_, llt))
+    if (exists(route_lanelets_, llt) && !(exists(goal_lanelets_, llt)))
     {
       *prev_lanelet = llt;
       return true;
