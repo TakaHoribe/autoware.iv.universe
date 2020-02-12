@@ -29,12 +29,13 @@
 
 #include <tf/transform_listener.h>
 
-# include "geometry_msgs/PoseStamped.h"
-# include "geometry_msgs/TwistStamped.h"
+#include "dummy_perception_publisher/Object.h"
 
 #include "rviz/display_context.h"
 #include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"
+
+#include <unique_id/unique_id.h>
 
 #include "pedestrian_pose.hpp"
 
@@ -45,19 +46,18 @@ PedestrianInitialPoseTool::PedestrianInitialPoseTool()
 {
   shortcut_key_ = 'l';
 
-  pose_topic_property_ = new StringProperty( "Pose Topic", "initial_pedestrian_pose",
-                                        "The topic on which to publish initial pose estimates.",
+  topic_property_ = new StringProperty( "Pose Topic", "/simulator/dummy_perceotion/publisher/object_info",
+                                        "The topic on which to publish dummy object info.",
                                         getPropertyContainer(), SLOT( updateTopic() ), this );
-  twist_topic_property_ = new StringProperty( "Twist Topic", "initial_pedestrian_twist",
-                                        "The topic on which to publish initial twist estimates.",
-                                        getPropertyContainer(), SLOT( updateTopic() ), this );
-  std_dev_x_ = new FloatProperty("X std deviation", 0.5, "X standard deviation for initial pose [m]", getPropertyContainer());
-  std_dev_y_ = new FloatProperty("Y std deviation", 0.5, "Y standard deviation for initial pose [m]", getPropertyContainer());
-  std_dev_theta_ = new FloatProperty("Theta std deviation", M_PI / 12.0, "Theta standard deviation for initial pose [rad]", getPropertyContainer());
+  std_dev_x_ = new FloatProperty("X std deviation", 0.03, "X standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_y_ = new FloatProperty("Y std deviation", 0.03, "Y standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_z_ = new FloatProperty("Z std deviation", 0.03, "Z standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_theta_ = new FloatProperty("Theta std deviation", 5.0 * M_PI / 180.0, "Theta standard deviation for initial pose [rad]", getPropertyContainer());
   position_z_ = new FloatProperty("Z position", 0.0, "Z position for initial pose [m]", getPropertyContainer());
   velocity_ = new FloatProperty("Velocity", 0.0, "velocity [m/s]", getPropertyContainer());
   std_dev_x_->setMin(0);
   std_dev_y_->setMin(0);
+  std_dev_z_->setMin(0);
   std_dev_theta_->setMin(0);
   position_z_->setMin(0);
 }
@@ -65,46 +65,63 @@ PedestrianInitialPoseTool::PedestrianInitialPoseTool()
 void PedestrianInitialPoseTool::onInitialize()
 {
   PoseTool::onInitialize();
-  setName( "2D Pedestrian Pose" );
+  setName( "2D Dummy Pedestrian" );
   updateTopic();
 }
 
 void PedestrianInitialPoseTool::updateTopic()
 {
-  pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>( pose_topic_property_->getStdString(), 1 );
-  twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>( twist_topic_property_->getStdString(), 1 );
+  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>( topic_property_->getStdString(), 1 );
 }
 
 void PedestrianInitialPoseTool::onPoseSet(double x, double y, double theta)
 {
   const ros::Time current_time = ros::Time::now();
-  // pose
+  dummy_perception_publisher::Object output_msg;
   std::string fixed_frame = context_->getFixedFrame().toStdString();
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = fixed_frame;
-  pose.header.stamp = current_time;
-  pose.pose.position.x = x;
-  pose.pose.position.y = y;
-  pose.pose.position.z = position_z_->getFloat();
 
+  // header
+  output_msg.header.frame_id = fixed_frame;
+  output_msg.header.stamp = current_time;
+
+  // semantic
+  output_msg.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
+  output_msg.semantic.confidence = 1.0;
+
+  // shape
+  output_msg.shape.type = autoware_perception_msgs::Shape::CYLINDER;
+  const double width = 0.8;
+  const double length = 0.8;
+  output_msg.shape.dimensions.x = length;
+  output_msg.shape.dimensions.y = width;
+  output_msg.shape.dimensions.z = 2.0;
+
+  // inital state
+  // pose
+  output_msg.initial_state.pose_covariance.pose.position.x = x;
+  output_msg.initial_state.pose_covariance.pose.position.y = y;
+  output_msg.initial_state.pose_covariance.pose.position.z = position_z_->getFloat();
+  output_msg.initial_state.pose_covariance.covariance[0] = std_dev_x_->getFloat() * std_dev_x_->getFloat();
+  output_msg.initial_state.pose_covariance.covariance[7] = std_dev_y_->getFloat() * std_dev_y_->getFloat();
+  output_msg.initial_state.pose_covariance.covariance[14] = std_dev_z_->getFloat() * std_dev_z_->getFloat();
+  output_msg.initial_state.pose_covariance.covariance[35] = std_dev_theta_->getFloat() * std_dev_theta_->getFloat();
   tf::Quaternion quat;
   quat.setRPY(0.0, 0.0, theta);
-  tf::quaternionTFToMsg(quat,
-                        pose.pose.orientation);
+  tf::quaternionTFToMsg(quat, output_msg.initial_state.pose_covariance.pose.orientation);
   ROS_INFO("Setting pose: %.3f %.3f %.3f %.3f [frame=%s]", x, y, position_z_->getFloat(), theta, fixed_frame.c_str());
-  pose_pub_.publish(pose);
-
   // twist
-  geometry_msgs::TwistStamped twist;
-  twist.header.frame_id = fixed_frame;
-  twist.header.stamp = current_time;
-  twist.twist.linear.x = velocity_->getFloat();
-  twist.twist.linear.y = 0.0;
-  twist.twist.linear.z = 0.0;
-
+  output_msg.initial_state.twist_covariance.twist.linear.x = velocity_->getFloat();
+  output_msg.initial_state.twist_covariance.twist.linear.y = 0.0;
+  output_msg.initial_state.twist_covariance.twist.linear.z = 0.0;
   ROS_INFO("Setting twist: %.3f %.3f %.3f [frame=%s]", velocity_->getFloat(), 0.0, 0.0, fixed_frame.c_str());
-  twist_pub_.publish(twist);
 
+  // action
+  output_msg.action = dummy_perception_publisher::Object::ADD;
+
+  // id
+  output_msg.id = unique_id::toMsg(unique_id::fromRandom());
+
+  dummy_object_info_pub_.publish(output_msg);
 }
 
 } // end namespace rviz

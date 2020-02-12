@@ -18,8 +18,8 @@ Panels:
     Expanded:
       - /2D Pose Estimate1
       - /2D Nav Goal1
-      - /2D Pedestrian Pose1
-      - /2D Car Pose1
+      - /2D Dummy Pedestrian1
+      - /2D Dummy Car1
       - /2D Checkpoint Pose1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
@@ -1018,20 +1018,18 @@ Visualization Manager:
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PedestrianInitialPoseTool
-      Pose Topic: initial_pedestrian_pose
-      Theta std deviation: 0.2617993950843811
-      Twist Topic: initial_pedestrian_twist
+      Pose Topic: /simulation/dummy_perception_publisher/object_info
+      Theta std deviation: 0.0872664600610733
       Velocity: 1
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      X std deviation: 0.029999999329447746
+      Y std deviation: 0.029999999329447746
       Z position: 0
     - Class: rviz/CarInitialPoseTool
-      Pose Topic: initial_car_pose
-      Theta std deviation: 0.2617993950843811
-      Twist Topic: initial_car_twist
+      Pose Topic: /simulation/dummy_perception_publisher/object_info
+      Theta std deviation: 0.0872664600610733
       Velocity: 3
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      X std deviation: 0.029999999329447746
+      Y std deviation: 0.029999999329447746
       Z position: 0
     - Class: rviz/MissionCheckpointTool
       Pose Topic: checkpoint
@@ -1042,7 +1040,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -2.670001268386841
+      Angle: -2.6699976921081543
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -1052,11 +1050,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 17.623416900634766
+      Scale: 17.995317459106445
       Target Frame: viewer
       Value: TopDownOrtho (rviz)
-      X: -11.548897743225098
-      Y: -23.440082550048828
+      X: -11.578725814819336
+      Y: -25.955673217773438
     Saved: ~
 Window Geometry:
   Displays:

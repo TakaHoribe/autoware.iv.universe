@@ -1,3 +1,5 @@
+import uuid, unique_id
+
 # Define
 # for dist judge
 GENERATE_DIST_ALLWAYS = 0
@@ -42,6 +44,7 @@ s_staticobstacle = [
         "v_sigma": 0,
         "obstacle_type": "car",
         "obstacle_id": 0,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
     },
     {
         "x": -17.8 + 3837,
@@ -54,6 +57,7 @@ s_staticobstacle = [
         "v_sigma": 0,
         "obstacle_type": "car",
         "obstacle_id": 0,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
     },
 ]
 
@@ -78,6 +82,7 @@ s_dynamicobstacle = [
         "generate_loop": 25.0,
         "obstacle_type": "car",
         "obstacle_id": 1,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -101,6 +106,7 @@ s_dynamicobstacle = [
         "generate_loop": 12.0,
         "obstacle_type": "pedestrian",
         "obstacle_id": 2,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -124,6 +130,7 @@ s_dynamicobstacle = [
         "generate_loop": 11.0,
         "obstacle_type": "car",
         "obstacle_id": 3,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -147,6 +154,7 @@ s_dynamicobstacle = [
         "generate_loop": 11.0,
         "obstacle_type": "car",
         "obstacle_id": 4,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -170,6 +178,7 @@ s_dynamicobstacle = [
         "generate_loop": 14.0,
         "obstacle_type": "pedestrian",
         "obstacle_id": 5,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -193,6 +202,7 @@ s_dynamicobstacle = [
         "generate_loop": 10.0,
         "obstacle_type": "car",
         "obstacle_id": 6,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -216,6 +226,7 @@ s_dynamicobstacle = [
         "generate_loop": 8.0,
         "obstacle_type": "car",
         "obstacle_id": 7,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": True,
         "alternate_timing": BEFORE,
     },
@@ -239,6 +250,7 @@ s_dynamicobstacle = [
         "generate_loop": 8.0,
         "obstacle_type": "car",
         "obstacle_id": 8,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": True,
         "alternate_timing": AFTER,
     },
@@ -262,6 +274,7 @@ s_dynamicobstacle = [
         "generate_loop": 4.0,
         "obstacle_type": "pedestrian",
         "obstacle_id": 9,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },
@@ -285,6 +298,7 @@ s_dynamicobstacle = [
         "generate_loop": 3.0,
         "obstacle_type": "pedestrian",
         "obstacle_id": 10,
+        "obstacle_uuid": unique_id.toMsg(unique_id.fromRandom()),
         "alternate_mode": False,
         "alternate_timing": None,
     },

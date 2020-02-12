@@ -12,6 +12,8 @@ import tf
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, Quaternion, Twist, TwistStamped
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Bool, Float32, Header, Int32
+from dummy_perception_publisher.msg import Object, InitialState
+from autoware_perception_msgs.msg import Semantic, Shape
 from config.scenario_kashiwanoha import *  # scenario
 
 OBSTACLE_NUM = 4096
@@ -114,6 +116,7 @@ class ScenarioMaker:
 
         self.pub_engage = rospy.Publisher("/autoware/engage", Bool, queue_size=1)
 
+        """
         self.pub_pedestrianpose = rospy.Publisher("/initial_pedestrian_pose", PoseStamped, queue_size=1)
 
         self.pub_pedestriantwist = rospy.Publisher("/initial_pedestrian_twist", TwistStamped, queue_size=1)
@@ -125,6 +128,11 @@ class ScenarioMaker:
         self.pub_objectid = rospy.Publisher("/object_id", Int32, queue_size=1)
 
         self.pub_resetobjectid = rospy.Publisher("/reset_object_id", Int32, queue_size=1)
+        """
+
+        self.pub_objectinfo = rospy.Publisher(
+            "/simulation/dummy_perception_publisher/object_info", Object, queue_size=1
+        )
 
         self.pub_traffic_light_image = rospy.Publisher("/sensing/camera/traffic_light/image_raw", Image, queue_size=1)
 
@@ -298,10 +306,8 @@ class ScenarioMaker:
 
     def scenario_obstacle1(self):
         ###obstacle 0: fixed pedestrian
-        self.PubObjectId(0)
-        time.sleep(0.2)
         for sb in s_staticobstacle:
-            self.PubObstacle(
+            self.PubObject(
                 pose=self.random_pose_maker(
                     x=sb["x"],
                     y=sb["y"],
@@ -312,7 +318,7 @@ class ScenarioMaker:
                 ),
                 vel=self.random_velocity_maker(v=sb["v"], v_sigma=sb["v_sigma"]),
                 obstacle_type=sb["obstacle_type"],
-                obstacle_id=sb["obstacle_id"],
+                obstacle_uuid=sb["obstacle_uuid"],
             )
 
     def scenario_obstacle_manager1(self):
@@ -333,6 +339,7 @@ class ScenarioMaker:
                 generate_loop=db["generate_loop"],
                 obstacle_type=db["obstacle_type"],
                 obstacle_id=db["obstacle_id"],
+                obstacle_uuid=db["obstacle_uuid"],
                 alternate_mode=db["alternate_mode"],
                 alternate_timing=db["alternate_timing"],
             )
@@ -374,10 +381,10 @@ class ScenarioMaker:
             else:
                 return traffic_light
 
-    def reset_id_obstacle(self, obs_id):
+    def reset_id_obstacle(self, obs_id, obs_uuid):
         self.obstacle_generated[obs_id] = 0
         self.obstacle_generated_time[obs_id] = 0
-        self.PubResetObject(obs_id)
+        self.PubResetObject(obs_uuid)
 
     def reset_obstacle(self):
         self.obstacle_generated = np.zeros((OBSTACLE_NUM + 1))
@@ -430,6 +437,14 @@ class ScenarioMaker:
         posewcmsg.pose.covariance[7] = ycov  # cov of y, y
         posewcmsg.pose.covariance[35] = thcov  # cov of rot_z, rot_z
         return posewcmsg
+
+    def make_pose_twist(self, pose, vel, frame_id=REF_LINK):
+        x = pose[0]
+        y = pose[1]
+        th = pose[2]
+        psmsg = self.make_pose(x, y, th)
+        tsmsg = self.make_twist(vel)
+        return psmsg, tsmsg
 
     def make_pose_twist_stamped(self, pose, vel, frame_id=REF_LINK):
         x = pose[0]
@@ -568,6 +583,7 @@ class ScenarioMaker:
         generate_loop,
         obstacle_type,
         obstacle_id,
+        obstacle_uuid,
         alternate_mode=False,
         alternate_timing=BEFORE,
         frame_id=REF_LINK,
@@ -601,30 +617,26 @@ class ScenarioMaker:
 
         if generate_now_dist and generate_now_traffic:
             if self.obstacle_generated[obstacle_id] == 0:
-                self.PubObjectId(obstacle_id)
-                time.sleep(0.1)
                 if generate_now_alternate:
-                    self.PubObstacle(
+                    self.PubObject(
                         pose=self.random_pose_maker(
                             x=x_obj, y=y_obj, th=th_obj, ver_sigma=ver_sigma, lat_sigma=lat_sigma, th_sigma=th_sigma
                         ),
                         vel=self.random_velocity_maker(v=vel, v_sigma=vel_sigma),
                         obstacle_type=obstacle_type,
-                        obstacle_id=obstacle_id,
+                        obstacle_uuid=obstacle_uuid,
                     )
                 self.obstacle_generated[obstacle_id] = 1
                 self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
                 self.obstacle_generated_count[obstacle_id] += 1
             else:
                 if rospy.Time.now().to_sec() - self.obstacle_generated_time[obstacle_id] > generate_loop:
-                    self.reset_id_obstacle(obstacle_id)
+                    self.reset_id_obstacle(obstacle_id, obstacle_uuid)
                     if generate_once:
                         self.obstacle_generated[obstacle_id] = 1  # no more generate(generate once)
                     else:
-                        self.PubObjectId(obstacle_id)
-                        time.sleep(0.1)
                         if generate_now_alternate:
-                            self.PubObstacle(
+                            self.PubObject(
                                 pose=self.random_pose_maker(
                                     x=x_obj,
                                     y=y_obj,
@@ -635,40 +647,65 @@ class ScenarioMaker:
                                 ),
                                 vel=self.random_velocity_maker(v=vel, v_sigma=vel_sigma),
                                 obstacle_type=obstacle_type,
-                                obstacle_id=obstacle_id,
+                                obstacle_uuid=obstacle_uuid,
                             )
                         self.obstacle_generated[obstacle_id] = 1
                         self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
                         self.obstacle_generated_count[obstacle_id] += 1
                     time.sleep(0.1)
         else:
-            self.reset_id_obstacle(obstacle_id)
+            self.reset_id_obstacle(obstacle_id, obstacle_uuid)
 
-    def PubObstacle(self, pose, vel, obstacle_type, obstacle_id, frame_id=REF_LINK):
-        if obstacle_type == "pedestrian":
-            pubpose = self.pub_pedestrianpose
-            pubtwist = self.pub_pedestriantwist
-        elif obstacle_type == "car":
-            pubpose = self.pub_carpose
-            pubtwist = self.pub_cartwist
+    def PubObject(self, pose, vel, obstacle_type, obstacle_uuid, frame_id=REF_LINK):
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = frame_id
+
+        init_state = InitialState()
+        pose, twist = self.make_pose_twist(pose, vel)
+        init_state.pose_covariance.pose = pose
+        init_state.twist_covariance.twist = twist
+
+        obj = Object()
+        obj.header = header
+        obj.action = Object.ADD
+        obj.id = obstacle_uuid
+        obj.initial_state = init_state
+        if obstacle_type == "car":
+            obj.semantic.type = Semantic.CAR
+            obj.semantic.confidence = 1.0
+            obj.shape.type = Shape.BOUNDING_BOX
+            obj.shape.dimensions.x = 4.0
+            obj.shape.dimensions.y = 1.8
+            obj.shape.dimensions.z = 2.0
+        elif obstacle_type == "pedestrian":
+            obj.semantic.type = Semantic.PEDESTRIAN
+            obj.semantic.confidence = 1.0
+            obj.shape.type = Shape.CYLINDER
+            obj.shape.dimensions.x = 0.8
+            obj.shape.dimensions.y = 0.8
+            obj.shape.dimensions.z = 2.0
+
         else:
-            rospy.logwarn("invalid obstacle type")
-            return False
-        pose, twist = self.make_pose_twist_stamped(pose, vel)
-        pubpose.publish(pose)
-        pubtwist.publish(twist)
+            obj.semantic.type = Semantic.UNKNOWN
+        self.pub_objectinfo.publish(obj)
         time.sleep(0.1)
         return True
 
-    def PubObjectId(self, id=0):
-        idmsg = Int32()
-        idmsg.data = id
-        self.pub_objectid.publish(idmsg)
-
-    def PubResetObject(self, id=-1):  # id=-1 -> reset all object
-        idmsg = Int32()
-        idmsg.data = id
-        self.pub_resetobjectid.publish(idmsg)
+    def PubResetObject(self, uuid=0, frame_id=REF_LINK):  # id=0 -> reset all object
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = frame_id
+        obj = Object()
+        obj.header = header
+        if uuid == 0:
+            obj.id = unique_id.toMsg(unique_id.fromRandom())  # no mean
+            obj.action = Object.DELETEALL
+        else:
+            obj.id = uuid
+            obj.action = Object.DELETE
+        self.pub_objectinfo.publish(obj)
+        time.sleep(0.1)
 
     def PubTrafficLightImage(self, color):
         if color == COLOR_GREEN:
