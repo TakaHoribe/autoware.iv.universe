@@ -18,49 +18,52 @@
 #ifndef COMMON_MATH_PLANNING_UTILS_H
 #define COMMON_MATH_PLANNING_UTILS_H
 
-#include <vector>
-#include <autoware_planning_msgs/Trajectory.h>
-#include <autoware_planning_msgs/TrajectoryPoint.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <autoware_planning_msgs/Trajectory.h>
+#include <autoware_planning_msgs/TrajectoryPoint.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <tf2/utils.h>
+#include <vector>
 
+namespace planning_utils {
+inline geometry_msgs::Point getPoint(const geometry_msgs::Point& p) { return p; }
+inline geometry_msgs::Point getPoint(const geometry_msgs::Pose& p) { return p.position; }
+inline geometry_msgs::Point getPoint(const geometry_msgs::PoseStamped& p) { return p.pose.position; }
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint& p) { return p.pose.position; }
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint& p) { return p.pose.position; }
+inline geometry_msgs::Pose getPose(const autoware_planning_msgs::Path& path, int idx) {
+  return path.points.at(idx).pose;
+}
+inline geometry_msgs::Pose getPose(const autoware_planning_msgs::PathWithLaneId& path, int idx) {
+  return path.points.at(idx).point.pose;
+}
+inline geometry_msgs::Pose getPose(const autoware_planning_msgs::Trajectory& traj, int idx) {
+  return traj.points.at(idx).pose;
+}
 
-namespace planning_utils
-{
-inline geometry_msgs::Point getPoint(const geometry_msgs::Point &p) { return p; }
-inline geometry_msgs::Point getPoint(const geometry_msgs::Pose &p) { return p.position; }
-inline geometry_msgs::Point getPoint(const geometry_msgs::PoseStamped &p) { return p.pose.position; }
-inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint &p) { return p.pose.position; }
-inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint &p) { return p.pose.position; }
-inline geometry_msgs::Pose getPose(const autoware_planning_msgs::Path &path, int idx) { return path.points.at(idx).pose; }
-inline geometry_msgs::Pose getPose(const autoware_planning_msgs::PathWithLaneId &path, int idx) { return path.points.at(idx).point.pose; }
-inline geometry_msgs::Pose getPose(const autoware_planning_msgs::Trajectory &traj, int idx) { return traj.points.at(idx).pose; }
-
-inline double square(const double &a) {return a * a; }
+inline double square(const double& a) { return a * a; }
 double normalizeEulerAngle(double euler);
 geometry_msgs::Quaternion getQuaternionFromYaw(double yaw);
 
-template<class T1, class T2> 
-double calcSquaredDist2d(const T1 &a, const T2 &b)
-{
+template <class T1, class T2>
+double calcSquaredDist2d(const T1& a, const T2& b) {
   return square(getPoint(a).x - getPoint(b).x) + square(getPoint(a).y - getPoint(b).y);
 }
 
-template<class T1, class T2> 
-double calcDist2d(const T1 &a, const T2 &b)
-{
+template <class T1, class T2>
+double calcDist2d(const T1& a, const T2& b) {
   return std::sqrt(calcSquaredDist2d<T1, T2>(a, b));
 }
 
-template<class T> 
-bool calcClosestIndex(const T &path, const geometry_msgs::Pose &pose, int &closest, double dist_thr = 3.0, double angle_thr = M_PI_4);
+template <class T>
+bool calcClosestIndex(const T& path, const geometry_msgs::Pose& pose, int& closest, double dist_thr = 3.0,
+                      double angle_thr = M_PI_4);
 
-geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose &target, const geometry_msgs::Pose &origin);
-geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose &relative, const geometry_msgs::Pose &origin);
+geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose& target, const geometry_msgs::Pose& origin);
+geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose& relative, const geometry_msgs::Pose& origin);
 
-} // namespace planning_utils
+}  // namespace planning_utils
 
-#endif // COMMON_MATH_PLANNING_UTILS_H
+#endif  // COMMON_MATH_PLANNING_UTILS_H
