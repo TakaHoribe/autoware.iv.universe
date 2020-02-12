@@ -90,6 +90,7 @@ PacmodInterface::PacmodInterface()
   brake_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdFloat>("pacmod/as_rx/brake_cmd", 1);
   steer_cmd_pub_ = nh_.advertise<pacmod_msgs::SteerSystemCmd>("pacmod/as_rx/steer_cmd", 1);
   shift_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdInt>("pacmod/as_rx/shift_cmd", 1);
+  turn_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdInt>("pacmod/as_rx/turn_cmd", 1);
 
   // To Autoware
   vehicle_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 1);
@@ -283,6 +284,20 @@ void PacmodInterface::publishCommands() {
   shift_cmd.clear_faults = false;
   shift_cmd.command = desired_shift;
   shift_cmd_pub_.publish(shift_cmd);
+
+  if (!turn_signal_cmd_ptr_)
+  {
+    /* publish shift cmd */
+    pacmod_msgs::SystemCmdInt turn_cmd;
+    turn_cmd.header.frame_id = base_frame_id_;
+    turn_cmd.header.stamp = current_time;
+    turn_cmd.enable = engage_cmd_;
+    turn_cmd.ignore_overrides = false;
+    turn_cmd.clear_override = clear_override;
+    turn_cmd.clear_faults = false;
+    turn_cmd.command = toPacmodTurnCmd(*turn_signal_cmd_ptr_);
+    turn_cmd_pub_.publish(turn_cmd);
+  }
 }
 
 double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt,
@@ -345,5 +360,17 @@ int32_t PacmodInterface::toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shi
     return autoware_vehicle_msgs::Shift::LOW;
   } else {
     return autoware_vehicle_msgs::Shift::NONE;
+  }
+}
+
+uint16_t PacmodInterface::toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn) {
+  if (turn.data == autoware_vehicle_msgs::TurnSignal::LEFT) {
+    return pacmod_msgs::SystemCmdInt::TURN_LEFT;
+  } else if (turn.data == autoware_vehicle_msgs::TurnSignal::RIGHT) {
+    return pacmod_msgs::SystemCmdInt::TURN_RIGHT;
+  } else if (turn.data == autoware_vehicle_msgs::TurnSignal::HAZARD) {
+    return pacmod_msgs::SystemCmdInt::TURN_HAZARDS;
+  } else {
+    return pacmod_msgs::SystemCmdInt::TURN_NONE;
   }
 }

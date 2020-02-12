@@ -85,6 +85,7 @@ class PacmodInterface {
   ros::Publisher brake_cmd_pub_;
   ros::Publisher steer_cmd_pub_;
   ros::Publisher shift_cmd_pub_;
+  ros::Publisher turn_cmd_pub_;
 
   // To Autoware
   ros::Publisher vehicle_twist_pub_;
@@ -152,6 +153,7 @@ class PacmodInterface {
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
   uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift);
   int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shift);
+  uint16_t toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn);
 };
 
 #endif
