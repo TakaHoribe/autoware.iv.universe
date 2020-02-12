@@ -20,11 +20,11 @@
   <arg name="image_number" default="1"/>
   <arg name="use_vector_map" default="true"/>
 
-  <!-- <include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch"/> -->
+  <include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch"/>
   <!-- or -->
-  <include file="$(find euclidean_cluster)/launch/voxel_grid_based_euclidean_cluster.launch" />
+  <!-- <include file="$(find euclidean_cluster)/launch/voxel_grid_based_euclidean_cluster.launch" /> -->
 
-  <include file="$(find tensorrt_yolo3)/launch/yolo3.launch">
+  <!-- <include file="$(find tensorrt_yolo3)/launch/yolo3.launch">
     <arg name="image_raw0" default="$(arg image_raw0)"/>
     <arg name="image_raw1" default="$(arg image_raw1)"/>
     <arg name="image_raw2" default="$(arg image_raw2)"/>
@@ -34,7 +34,7 @@
     <arg name="image_raw6" default="$(arg image_raw6)"/>
     <arg name="image_raw7" default="$(arg image_raw7)"/>
     <arg name="image_number" default="$(arg image_number)"/>
-  </include>
+  </include> -->
   <include file="$(find roi_cluster_fusion)/launch/roi_cluster_fusion.launch">
     <arg name="input_camera_info0" default="$(arg camera_info0)"/>
     <arg name="input_camera_info1" default="$(arg camera_info1)"/>

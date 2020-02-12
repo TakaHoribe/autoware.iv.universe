@@ -26,7 +26,7 @@
 
   <!-- Perception -->
   <include file="$(find perception_launch)/launch/perception.launch">
-    <arg name="mode" default="lidar"/>
+    <arg name="mode" default="camera_lidar_fusion"/>
     <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
