@@ -1,365 +1,254 @@
 #include "dummy_perception_publisher/node.hpp"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <pcl/filters/voxel_grid_occlusion_estimation.h>
 
-DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(),
-                                                               pnh_("~"),
-                                                               tf_listener_(tf_buffer_),
-                                                               pedestrian_sync_(SyncPolicy(10), pedestrian_pose_sub_, pedestrian_twist_sub_),
-                                                               car_sync_(SyncPolicy(10), car_pose_sub_, car_twist_sub_),
-                                                               object_id(0)
-{
-    dynamic_object_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output/dynamic_object", 1, true);
-    pointcloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("output/points_raw", 1, true);
+DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_) {
+  std::random_device seed_gen;
+  random_generator_.seed(seed_gen());
+  dynamic_object_pub_ =
+      pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output/dynamic_object", 1, true);
+  pointcloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("output/points_raw", 1, true);
 
-    pedestrian_pose_sub_.subscribe(pnh_, "input/pedestrian/pose", 1);
-    pedestrian_twist_sub_.subscribe(pnh_, "input/pedestrian/twist", 1);
-    pedestrian_sync_.registerCallback(boost::bind(&DummyPerceptionPublisherNode::pedestrianPoseCallback, this, _1, _2));
+  object_sub_ = pnh_.subscribe("input/object", 1, &DummyPerceptionPublisherNode::objectCallback, this);
 
-    car_pose_sub_.subscribe(pnh_, "input/car/pose", 1);
-    car_twist_sub_.subscribe(pnh_, "input/car/twist", 1);
-    car_sync_.registerCallback(boost::bind(&DummyPerceptionPublisherNode::carPoseCallback, this, _1, _2));
-
-    object_id_sub_ = pnh_.subscribe("input/object_id", 1, &DummyPerceptionPublisherNode::callbackObjectId, this);
-    object_reset_id_sub_ = pnh_.subscribe("input/object_reset_id", 1, &DummyPerceptionPublisherNode::callbackObjectResetId, this);
-
-    timer_ = nh_.createTimer(ros::Duration(0.1), &DummyPerceptionPublisherNode::timerCallback, this);
-    pnh_.param<double>("visible_range", visible_range_, double(100.0));
+  timer_ = nh_.createTimer(ros::Duration(0.1), &DummyPerceptionPublisherNode::timerCallback, this);
+  pnh_.param<double>("visible_range", visible_range_, double(100.0));
+  pnh_.param<bool>("enable_ray_tracing", enable_ray_tracing_, true);
 }
 
-void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
-{
-    autoware_perception_msgs::DynamicObjectWithFeatureArray output_dynamic_object_msg;
-    geometry_msgs::PoseStamped output_moved_object_pose;
-    sensor_msgs::PointCloud2 output_pointcloud_msg;
-    std_msgs::Header header;
-    header.frame_id = "map";
-    header.stamp = ros::Time::now();
+void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &) {
+  // output msgs
+  autoware_perception_msgs::DynamicObjectWithFeatureArray output_dynamic_object_msg;
+  geometry_msgs::PoseStamped output_moved_object_pose;
+  sensor_msgs::PointCloud2 output_pointcloud_msg;
+  std_msgs::Header header;
+  ros::Time current_time = ros::Time::now();
 
+  tf2::Transform tf_base_link2map;
+  try {
+    geometry_msgs::TransformStamped ros_base_link2map;
+    ros_base_link2map =
+        tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map", current_time, ros::Duration(0.5));
+    tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
+  } catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+
+  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> v_pointcloud;
+  std::vector<size_t> delete_idxs;
+  for (size_t i = 0; i < objects_.size(); ++i) {
+    const double std_dev_x = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[0]);
+    const double std_dev_y = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[7]);
+    const double std_dev_z = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[14]);
+    const double std_dev_yaw = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[35]);
+    const double move_distance = objects_.at(i).initial_state.twist_covariance.twist.linear.x *
+                                 (current_time.toSec() - ros::Time(objects_.at(i).header.stamp).toSec());
+    tf2::Transform tf_object_origin2moved_object;
+    tf2::Transform tf_map2object_origin;
+    tf2::Transform tf_map2moved_object;
+    {
+      geometry_msgs::Transform ros_object_origin2moved_object;
+      ros_object_origin2moved_object.translation.x = move_distance;
+      ros_object_origin2moved_object.rotation.x = 0;
+      ros_object_origin2moved_object.rotation.y = 0;
+      ros_object_origin2moved_object.rotation.z = 0;
+      ros_object_origin2moved_object.rotation.w = 1;
+      tf2::fromMsg(ros_object_origin2moved_object, tf_object_origin2moved_object);
+    }
+    tf2::fromMsg(objects_.at(i).initial_state.pose_covariance.pose, tf_map2object_origin);
+    tf_map2moved_object = tf_map2object_origin * tf_object_origin2moved_object;
+    tf2::toMsg(tf_map2moved_object, output_moved_object_pose.pose);
+
+    // pointcloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    createObjectPointcloud(objects_.at(i).shape.dimensions.x, objects_.at(i).shape.dimensions.y,
+                           objects_.at(i).shape.dimensions.z, std_dev_x, std_dev_y, std_dev_z,
+                           tf_base_link2map * tf_map2moved_object, pointcloud_ptr);
+    v_pointcloud.push_back(pointcloud_ptr);
 
-    // pedestrian
-    {
-        std::vector<size_t> delete_idxs;
-        for (size_t i = 0; i < pedestrian_poses_.size(); ++i)
-        {
-            const double move_distance = std::get<TWIST>(pedestrian_poses_.at(i)).twist.linear.x * (ros::Time(header.stamp).toSec() - ros::Time(std::get<POSE>(pedestrian_poses_.at(i)).header.stamp).toSec());
+    // dynamic object
+    std::normal_distribution<> x_random(0.0, std_dev_x);
+    std::normal_distribution<> y_random(0.0, std_dev_y);
+    std::normal_distribution<> yaw_random(0.0, std_dev_yaw);
+    tf2::Quaternion noised_quat;
+    noised_quat.setRPY(0, 0, yaw_random(random_generator_));
+    tf2::Transform tf_moved_object2noised_moved_object(
+        noised_quat, tf2::Vector3(x_random(random_generator_), y_random(random_generator_), 0.0));
+    tf2::Transform tf_base_link2noised_moved_object;
+    tf_base_link2noised_moved_object = tf_base_link2map * tf_map2moved_object * tf_moved_object2noised_moved_object;
+    autoware_perception_msgs::DynamicObjectWithFeature feature_object;
+    feature_object.object.semantic = objects_.at(i).semantic;
+    feature_object.object.state.pose_covariance = objects_.at(i).initial_state.pose_covariance;
+    feature_object.object.state.twist_covariance = objects_.at(i).initial_state.twist_covariance;
+    feature_object.object.state.orientation_reliable = false;
+    feature_object.object.state.twist_reliable = false;
+    feature_object.object.state.acceleration_reliable = false;
+    tf2::toMsg(tf_base_link2noised_moved_object, feature_object.object.state.pose_covariance.pose);
+    feature_object.object.shape = objects_.at(i).shape;
+    pcl::toROSMsg(*pointcloud_ptr, feature_object.feature.cluster);
+    output_dynamic_object_msg.feature_objects.push_back(feature_object);
 
-            tf2::Transform tf_object_origin2moved_object;
-            tf2::Transform tf_map2object_origin;
-            tf2::Transform tf_map2moved_object;
-            {
-                geometry_msgs::Transform ros_object_origin2moved_object;
-                ros_object_origin2moved_object.translation.x = move_distance;
-                ros_object_origin2moved_object.rotation.x = 0;
-                ros_object_origin2moved_object.rotation.y = 0;
-                ros_object_origin2moved_object.rotation.z = 0;
-                ros_object_origin2moved_object.rotation.w = 1;
-                tf2::fromMsg(ros_object_origin2moved_object, tf_object_origin2moved_object);
-            }
-            tf2::fromMsg(std::get<POSE>(pedestrian_poses_.at(i)).pose, tf_map2object_origin);
-            tf_map2moved_object = tf_map2object_origin * tf_object_origin2moved_object;
-            tf2::toMsg(tf_map2moved_object, output_moved_object_pose.pose);
+    // check delete idx
+    tf2::Transform tf_base_link2moved_object;
+    tf_base_link2moved_object = tf_base_link2map * tf_map2moved_object;
+    double dist = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
+                            tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());
+    if (visible_range_ < dist) delete_idxs.push_back(i);
+  }
+  // delete
+  for (int delete_idx = delete_idxs.size() - 1; 0 <= delete_idx; --delete_idx) {
+    objects_.erase(objects_.begin() + delete_idxs.at(delete_idx));
+  }
 
-            const double epsilon = 0.001;
-            const double width = 1.0;
-            const double length = 1.0;
-
-            // pointcloud
-            for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += 0.25)
-            {
-                for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += 0.25)
-                {
-                    tf2::Transform tf_moved_object2point;
-                    tf2::Transform tf_base_link2point;
-                    tf2::Transform tf_base_link2map;
-
-                    geometry_msgs::TransformStamped ros_base_link2map;
-                    try{
-                        ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                                        header.stamp, ros::Duration(0.5));
-                        tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
-                    }
-                    catch (tf2::TransformException &ex)
-                    {
-                        // ROS_WARN("%s", ex.what());
-                        return;
-                    }
-
-                    geometry_msgs::Transform ros_moved_object2point;
-                    ros_moved_object2point.translation.x = x;
-                    ros_moved_object2point.translation.y = y;
-                    ros_moved_object2point.translation.z = output_moved_object_pose.pose.position.z;
-                    ros_moved_object2point.rotation.x = 0;
-                    ros_moved_object2point.rotation.y = 0;
-                    ros_moved_object2point.rotation.z = 0;
-                    ros_moved_object2point.rotation.w = 1;
-                    tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-                    tf_base_link2point = tf_base_link2map * tf_map2moved_object * tf_moved_object2point;
-
-                    pcl::PointXYZ point;
-                    point.x = tf_base_link2point.getOrigin().x();
-                    point.y = tf_base_link2point.getOrigin().y();
-                    point.z = 0.0;
-                    pointcloud_ptr->push_back(point);
-                }
-            }
-
-            // dynamic object
-            autoware_perception_msgs::DynamicObjectWithFeature feature_object;
-            feature_object.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
-            feature_object.object.semantic.confidence = 1.0;
-            feature_object.object.state.pose_covariance.pose = output_moved_object_pose.pose;
-            feature_object.object.state.orientation_reliable = false;
-            feature_object.object.state.twist_covariance.twist.linear.x = std::get<TWIST>(pedestrian_poses_.at(i)).twist.linear.x;
-            feature_object.object.state.twist_reliable = true;
-            feature_object.object.state.acceleration_reliable = true;
-            feature_object.object.shape.type = autoware_perception_msgs::Shape::CYLINDER;
-            feature_object.object.shape.dimensions.x = std::max(width, length);
-            feature_object.object.shape.dimensions.y = std::max(width, length);
-            feature_object.object.shape.dimensions.z = 2.0;
-            output_dynamic_object_msg.feature_objects.push_back(feature_object);
-
-            // check delete idx
-            tf2::Transform tf_base_link2moved_object;
-            tf2::Transform tf_base_link2map;
-            geometry_msgs::TransformStamped ros_base_link2map;
-            try{
-                ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                            header.stamp, ros::Duration(0.5));
-                tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
-            }
-            catch (tf2::TransformException &ex)
-            {
-                ROS_WARN("%s", ex.what());
-                return;
-            }
-            tf_base_link2moved_object = tf_base_link2map * tf_map2moved_object;
-            double dist = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
-                                    tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());
-            if (visible_range_ < dist)
-                delete_idxs.push_back(i);
-        }
-        // delete
-        for (int delete_idx = delete_idxs.size() - 1; 0 <= delete_idx; --delete_idx)
-        {
-            pedestrian_poses_.erase(pedestrian_poses_.begin() + delete_idxs.at(delete_idx));
-        }
+  // merge all pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr merged_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  for (size_t i = 0; i < v_pointcloud.size(); ++i) {
+    for (size_t j = 0; j < v_pointcloud.at(i)->size(); ++j) {
+      merged_pointcloud_ptr->push_back(v_pointcloud.at(i)->at(j));
     }
+  }
+  // no ground
+  pcl::toROSMsg(*merged_pointcloud_ptr, output_pointcloud_msg);
 
-    // car
-    {
-        std::vector<size_t> delete_idxs;
-        for (size_t i = 0; i < car_poses_.size(); ++i)
-        {
-            const double move_distance = std::get<TWIST>(car_poses_.at(i)).twist.linear.x * (ros::Time(header.stamp).toSec() - ros::Time(std::get<POSE>(car_poses_.at(i)).header.stamp).toSec());
-
-            tf2::Transform tf_object_origin2moved_object;
-            tf2::Transform tf_map2object_origin;
-            tf2::Transform tf_map2moved_object;
-            {
-                geometry_msgs::Transform ros_object_origin2moved_object;
-                ros_object_origin2moved_object.translation.x = move_distance;
-                ros_object_origin2moved_object.rotation.x = 0;
-                ros_object_origin2moved_object.rotation.y = 0;
-                ros_object_origin2moved_object.rotation.z = 0;
-                ros_object_origin2moved_object.rotation.w = 1;
-                tf2::fromMsg(ros_object_origin2moved_object, tf_object_origin2moved_object);
-            }
-            tf2::fromMsg(std::get<POSE>(car_poses_.at(i)).pose, tf_map2object_origin);
-            tf_map2moved_object = tf_map2object_origin * tf_object_origin2moved_object;
-            tf2::toMsg(tf_map2moved_object, output_moved_object_pose.pose);
-
-            const double epsilon = 0.001;
-            const double width = 2.5;
-            const double length = 4.0;
-
-            // pointcloud
-            for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += 0.25)
-            {
-                for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += 0.25)
-                {
-                    tf2::Transform tf_moved_object2point;
-                    tf2::Transform tf_base_link2point;
-                    tf2::Transform tf_base_link2map;
-
-                    geometry_msgs::TransformStamped ros_base_link2map;
-                    try{
-                        ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                                    header.stamp, ros::Duration(0.5));
-                        tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
-                    }
-                    catch (tf2::TransformException &ex)
-                    {
-                        ROS_WARN("%s", ex.what());
-                        return;
-                    }
-                    geometry_msgs::Transform ros_moved_object2point;
-                    ros_moved_object2point.translation.x = x;
-                    ros_moved_object2point.translation.y = y;
-                    ros_moved_object2point.translation.z = output_moved_object_pose.pose.position.z;
-                    ros_moved_object2point.rotation.x = 0;
-                    ros_moved_object2point.rotation.y = 0;
-                    ros_moved_object2point.rotation.z = 0;
-                    ros_moved_object2point.rotation.w = 1;
-                    tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-                    tf_base_link2point = tf_base_link2map * tf_map2moved_object * tf_moved_object2point;
-
-                    pcl::PointXYZ point;
-                    point.x = tf_base_link2point.getOrigin().x();
-                    point.y = tf_base_link2point.getOrigin().y();
-                    point.z = 0.0;
-                    pointcloud_ptr->push_back(point);
-                }
-            }
-
-            // dynamic object
-            autoware_perception_msgs::DynamicObjectWithFeature feature_object;
-            feature_object.object.semantic.type = autoware_perception_msgs::Semantic::CAR;
-            feature_object.object.semantic.confidence = 1.0;
-            feature_object.object.state.pose_covariance.pose = output_moved_object_pose.pose;
-            feature_object.object.state.orientation_reliable = false;
-            feature_object.object.state.twist_covariance.twist.linear.x = std::get<TWIST>(car_poses_.at(i)).twist.linear.x;
-            feature_object.object.state.twist_reliable = true;
-            feature_object.object.state.acceleration_reliable = true;
-            feature_object.object.shape.type = autoware_perception_msgs::Shape::BOUNDING_BOX;
-            feature_object.object.shape.dimensions.x = length;
-            feature_object.object.shape.dimensions.y = width;
-            feature_object.object.shape.dimensions.z = 2.0;
-            output_dynamic_object_msg.feature_objects.push_back(feature_object);
-
-            // check delete idx
-            tf2::Transform tf_base_link2moved_object;
-            tf2::Transform tf_base_link2map;
-            geometry_msgs::TransformStamped ros_base_link2map;
-            try{
-                ros_base_link2map = tf_buffer_.lookupTransform(/*target*/ "base_link", /*src*/ "map",
-                                                            header.stamp, ros::Duration(0.5));
-                tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
-                }
-                catch (tf2::TransformException &ex)
-                {
-                    ROS_WARN("%s", ex.what());
-                    return;
-                }
-            tf_base_link2moved_object = tf_base_link2map * tf_map2moved_object;
-            double dist = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
-                                    tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());
-            if (visible_range_ < dist)
-                delete_idxs.push_back(i);
+  // ray tracing
+  if (enable_ray_tracing_) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ray_traced_merged_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::VoxelGridOcclusionEstimation<pcl::PointXYZ> ray_tracing_filter;
+    ray_tracing_filter.setInputCloud(merged_pointcloud_ptr);
+    ray_tracing_filter.setLeafSize(0.2, 0.2, 0.2);
+    ray_tracing_filter.initializeVoxelGrid();
+    for (size_t i = 0; i < v_pointcloud.size(); ++i) {
+      pcl::PointCloud<pcl::PointXYZ>::Ptr ray_traced_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+      for (size_t j = 0; j < v_pointcloud.at(i)->size(); ++j) {
+        Eigen::Vector3i grid_cordinates = ray_tracing_filter.getGridCoordinates(
+            v_pointcloud.at(i)->at(j).x, v_pointcloud.at(i)->at(j).y, v_pointcloud.at(i)->at(j).z);
+        int grid_state;
+        if (ray_tracing_filter.occlusionEstimation(grid_state, grid_cordinates) != 0) ROS_ERROR("ray tracing failed");
+        if (grid_state == 1) {  // occluded
+          continue;
+        } else {  // not occluded
+          ray_traced_pointcloud_ptr->push_back(v_pointcloud.at(i)->at(j));
+          ray_traced_merged_pointcloud_ptr->push_back(v_pointcloud.at(i)->at(j));
         }
-        // delete
-        for (int delete_idx = delete_idxs.size() - 1; 0 <= delete_idx; --delete_idx)
-            car_poses_.erase(car_poses_.begin() + delete_idxs.at(delete_idx));
+      }
+      pcl::toROSMsg(*ray_traced_pointcloud_ptr, output_dynamic_object_msg.feature_objects.at(i).feature.cluster);
+      output_dynamic_object_msg.feature_objects.at(i).feature.cluster.header.frame_id = "base_link";
+      output_dynamic_object_msg.feature_objects.at(i).feature.cluster.header.stamp = current_time;
     }
+    pcl::toROSMsg(*ray_traced_merged_pointcloud_ptr, output_pointcloud_msg);
+  }
 
-    pcl::toROSMsg(*pointcloud_ptr, output_pointcloud_msg);
+  // create output header
+  output_moved_object_pose.header.frame_id = "map";
+  output_moved_object_pose.header.stamp = current_time;
+  output_dynamic_object_msg.header.frame_id = "base_link";
+  output_dynamic_object_msg.header.stamp = current_time;
+  output_pointcloud_msg.header.frame_id = "base_link";
+  output_pointcloud_msg.header.stamp = current_time;
 
-    // create output header
-    output_moved_object_pose.header = header;
-    output_dynamic_object_msg.header = header;
-    output_pointcloud_msg.header.frame_id = "base_link";
-    output_pointcloud_msg.header.stamp = header.stamp;
-
-    // publish
-    pointcloud_pub_.publish(output_pointcloud_msg);
-    dynamic_object_pub_.publish(output_dynamic_object_msg);
+  // publish
+  pointcloud_pub_.publish(output_pointcloud_msg);
+  dynamic_object_pub_.publish(output_dynamic_object_msg);
 }
 
-void DummyPerceptionPublisherNode::pedestrianPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
-                                                          const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg)
-{
-    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> tuple;
-    convert2Tuple(input_pose_msg, input_twist_msg, object_id, tuple);
-    pedestrian_poses_.push_back(tuple);
+void DummyPerceptionPublisherNode::createObjectPointcloud(const double length, const double width, const double height,
+                                                          const double std_dev_x, const double std_dev_y,
+                                                          const double std_dev_z,
+                                                          const tf2::Transform &tf_base_link2moved_object,
+                                                          pcl::PointCloud<pcl::PointXYZ>::Ptr &pointcloud_ptr) {
+  std::normal_distribution<> x_random(0.0, std_dev_x);
+  std::normal_distribution<> y_random(0.0, std_dev_y);
+  std::normal_distribution<> z_random(0.0, std_dev_z);
+  const double epsilon = 0.001;
+  for (double z = -1.0 * (height / 2.0); z <= ((height / 2.0) + epsilon); z += 0.50) {
+    for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += 0.25) {
+      for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += 0.25) {
+        tf2::Transform tf_moved_object2point;
+        tf2::Transform tf_base_link2point;
+
+        geometry_msgs::Transform ros_moved_object2point;
+        ros_moved_object2point.translation.x = x + x_random(random_generator_);
+        ros_moved_object2point.translation.y = y + y_random(random_generator_);
+        ros_moved_object2point.translation.z = z + z_random(random_generator_);
+        ros_moved_object2point.rotation.x = 0;
+        ros_moved_object2point.rotation.y = 0;
+        ros_moved_object2point.rotation.z = 0;
+        ros_moved_object2point.rotation.w = 1;
+        tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
+        tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
+
+        pcl::PointXYZ point;
+        point.x = tf_base_link2point.getOrigin().x();
+        point.y = tf_base_link2point.getOrigin().y();
+        point.z = tf_base_link2point.getOrigin().z();
+        pointcloud_ptr->push_back(point);
+      }
+    }
+  }
 }
 
-void DummyPerceptionPublisherNode::carPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
-                                                   const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg)
-{
-    std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> tuple;
-    convert2Tuple(input_pose_msg, input_twist_msg, object_id, tuple);
-    car_poses_.push_back(tuple);
-}
-
-void DummyPerceptionPublisherNode::convert2Tuple(const geometry_msgs::PoseStamped::ConstPtr &input_pose_msg,
-                                                 const geometry_msgs::TwistStamped::ConstPtr &input_twist_msg,
-                                                 int object_id,
-                                                 std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> &output)
-{
-    geometry_msgs::PoseStamped pose_msg;
-    pose_msg.header = input_pose_msg->header;
-
-    if (input_pose_msg->header.frame_id != "map")
-    {
-        tf2::Transform tf_map2input_world;
-        tf2::Transform tf_input_world2object;
-        tf2::Transform tf_map2objet;
-        try
-        {
-            geometry_msgs::TransformStamped ros_map2input_world;
-            ros_map2input_world = tf_buffer_.lookupTransform(/*target*/ "map", /*src*/ input_pose_msg->header.frame_id,
-                                                             input_pose_msg->header.stamp, ros::Duration(0.5));
-            tf2::fromMsg(ros_map2input_world.transform, tf_map2input_world);
+void DummyPerceptionPublisherNode::objectCallback(const dummy_perception_publisher::Object::ConstPtr &msg) {
+  switch (msg->action) {
+    case dummy_perception_publisher::Object::ADD: {
+      tf2::Transform tf_input2map;
+      tf2::Transform tf_input2object_origin;
+      tf2::Transform tf_map2object_origin;
+      try {
+        geometry_msgs::TransformStamped ros_input2map;
+        ros_input2map = tf_buffer_.lookupTransform(/*target*/ msg->header.frame_id, /*src*/ "map", msg->header.stamp,
+                                                   ros::Duration(0.5));
+        tf2::fromMsg(ros_input2map.transform, tf_input2map);
+      } catch (tf2::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+        return;
+      }
+      tf2::fromMsg(msg->initial_state.pose_covariance.pose, tf_input2object_origin);
+      tf_map2object_origin = tf_input2map.inverse() * tf_input2object_origin;
+      dummy_perception_publisher::Object object;
+      object = *msg;
+      tf2::toMsg(tf_map2object_origin, object.initial_state.pose_covariance.pose);
+      objects_.push_back(object);
+      break;
+    }
+    case dummy_perception_publisher::Object::DELETE: {
+      for (size_t i = 0; i < objects_.size(); ++i) {
+        if (objects_.at(i).id.uuid == msg->id.uuid) {
+          objects_.erase(objects_.begin() + i);
+          break;
         }
-        catch (tf2::TransformException &ex)
-        {
+      }
+      break;
+    }
+    case dummy_perception_publisher::Object::MODIFY: {
+      for (size_t i = 0; i < objects_.size(); ++i) {
+        if (objects_.at(i).id.uuid == msg->id.uuid) {
+          tf2::Transform tf_input2map;
+          tf2::Transform tf_input2object_origin;
+          tf2::Transform tf_map2object_origin;
+          try {
+            geometry_msgs::TransformStamped ros_input2map;
+            ros_input2map = tf_buffer_.lookupTransform(/*target*/ msg->header.frame_id, /*src*/ "map",
+                                                       msg->header.stamp, ros::Duration(0.5));
+            tf2::fromMsg(ros_input2map.transform, tf_input2map);
+          } catch (tf2::TransformException &ex) {
             ROS_WARN("%s", ex.what());
             return;
+          }
+          tf2::fromMsg(msg->initial_state.pose_covariance.pose, tf_input2object_origin);
+          tf_map2object_origin = tf_input2map.inverse() * tf_input2object_origin;
+          dummy_perception_publisher::Object object;
+          objects_.at(i) = *msg;
+          tf2::toMsg(tf_map2object_origin, objects_.at(i).initial_state.pose_covariance.pose);
+          break;
         }
-        tf2::fromMsg(input_pose_msg->pose, tf_input_world2object);
-        tf_map2objet = tf_map2input_world * tf_input_world2object;
-        tf2::toMsg(tf_map2objet, pose_msg.pose);
+      }
+      break;
     }
-    output = std::make_tuple(pose_msg, *input_twist_msg, object_id);
-}
-
-void DummyPerceptionPublisherNode::callbackObjectId(const std_msgs::Int32ConstPtr &msg)
-{
-    int _object_id = msg->data;
-    if(_object_id < 0){
-        ROS_WARN("invalid object id. Ignore input.");
-    }else
-    {
-        object_id = _object_id;
+    case dummy_perception_publisher::Object::DELETEALL: {
+      objects_.clear();
+      break;
     }
-}
-
-void DummyPerceptionPublisherNode::callbackObjectResetId(const std_msgs::Int32ConstPtr &msg)
-{
-    int _object_id = msg->data;
-    if(_object_id < -1){
-        ROS_WARN("invalid object reset id. Ignore input.");
-    }else if(_object_id==-1)
-    {
-        ResetAllObject();
-    }else
-    {
-        ResetObject(_object_id);
-    }
-}
-
-void DummyPerceptionPublisherNode::ResetAllObject(void)
-{
-    car_poses_.clear();
-    pedestrian_poses_.clear();
-}
-
-void DummyPerceptionPublisherNode::ResetObject(int obj_id)
-{
-        for (int i = car_poses_.size()-1; i >= 0; --i)
-    {
-        if (obj_id == std::get<INT>(car_poses_.at(i)))
-        {
-            car_poses_.erase(car_poses_.begin() + i);//reset car object id i
-        }
-    }
-
-        for (int i = pedestrian_poses_.size()-1; i >= 0; --i)
-    {
-        if (obj_id == std::get<INT>(pedestrian_poses_.at(i)))
-        {
-            pedestrian_poses_.erase(pedestrian_poses_.begin() + i);//reset car object id i
-        }
-    }
+  }
 }

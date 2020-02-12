@@ -59,8 +59,6 @@ class PointsToCostmap {
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_sensor_points);
 
  private:
-  friend class TestClass;
-
   double grid_length_x_;
   double grid_length_y_;
   double grid_resolution_;

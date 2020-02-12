@@ -17,27 +17,28 @@
 #ifndef VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
 #define VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H
 
+#include <memory>
 
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 
 #include "autoware_control_msgs/ControlCommandStamped.h"
-#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
 #include "autoware_vehicle_msgs/Shift.h"
+#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
+#include "vehicle_cmd_gate/vehicle_cmd_filter.h"
 
-
-class VehicleCmdGate
-{
-
-public:
+class VehicleCmdGate {
+ public:
   VehicleCmdGate();
   ~VehicleCmdGate() = default;
 
-private:
-
-  void latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
-  void lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr& msg);
+ private:
+  void latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr &msg);
+  void lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr &msg);
   void engageCallback(const std_msgs::Bool msg);
+
+  double getDt();
+  void processCommand();
 
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -47,10 +48,13 @@ private:
   ros::Subscriber lon_control_cmd_sub_;
   ros::Subscriber engage_sub_;
 
+  std::shared_ptr<ros::Time> prev_time_;
+
   autoware_vehicle_msgs::VehicleCommandStamped current_vehicle_cmd_;
+  autoware_vehicle_msgs::VehicleCommandStamped prev_vehicle_cmd_;
   bool is_engaged_;
 
-
+  VehicleCmdFilter filter;
 };
 
 #endif  // VEHICLE_CMD_GATE_VEHICLE_CMD_GATE_H

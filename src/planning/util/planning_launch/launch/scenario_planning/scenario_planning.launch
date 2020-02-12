@@ -9,9 +9,16 @@
     <arg name="input_route" value="/planning/mission_planning/route"/>
     <arg name="input_twist" value="/vehicle/status/twist"/>
     <arg name="output_scenario" value="/planning/scenario_planning/scenario"/>
-    <arg name="output_trajectory" value="/planning/scenario_planning/trajectory"/>
+    <arg name="output_trajectory" value="/planning/scenario_planning/scenario_selector/trajectory"/>
     <arg name="is_parking_completed" value="/planning/scenario_planning/scenarios/parking/freespace_planning/is_completed"/>
   </include>
+
+  <!-- velocity planning with max velocity, acceleration, jerk, stop point constraint -->
+  <group>
+    <remap from="~/input/trajectory" to="/planning/scenario_planning/scenario_selector/trajectory"/>
+    <remap from="~/output/trajectory" to="/planning/scenario_planning/trajectory"/>
+    <include file="$(find motion_velocity_planner)/launch/motion_velocity_planner_osqp.launch"/>
+  </group>
 
   <!-- scenarios-->
   <group ns="scenarios">

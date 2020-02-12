@@ -5,6 +5,7 @@
   roles:
     - lanelet2
     - cuda
+    - osqp
     - cudnn
     - tensorrt
     - {role: ros, release: kinetic}

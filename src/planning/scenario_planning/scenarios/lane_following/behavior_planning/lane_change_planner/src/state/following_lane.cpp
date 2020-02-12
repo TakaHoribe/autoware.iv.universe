@@ -87,16 +87,17 @@ void FollowingLaneState::update()
 
   // update lane_follow_path
   {
-    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(current_lanes_, current_pose_.pose,
-                                                                            backward_path_length, forward_path_length);
+    const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
+    const double lane_changing_duration = ros_parameters_.lane_changing_duration;
+    const double minimum_lane_change_length = ros_parameters_.minimum_lane_change_length;
+    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(
+        current_lanes_, current_pose_.pose, backward_path_length, forward_path_length, minimum_lane_change_length);
 
     if (!lane_change_lanes.empty())
     {
-      const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
-      const double lane_changing_duration = ros_parameters_.lane_changing_duration;
       status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
           current_lanes_, lane_change_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
-          forward_path_length, lane_change_prepare_duration, lane_changing_duration);
+          forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
     }
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
     status_.lane_change_lane_ids = util::getIds(lane_change_lanes);
@@ -140,6 +141,12 @@ bool FollowingLaneState::isLaneBlocked() const
   constexpr double static_obj_velocity_thresh = 0.1;
 
   const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
+
+  if(polygon.size() < 3)
+  {
+    ROS_WARN_STREAM("could not get polygon from lanelet with arc lengths: " << arc.length << " to " << arc.length + check_distance);
+    return false;
+  }
 
   for (const auto& obj : dynamic_objects_->objects)
   {
@@ -267,6 +274,7 @@ bool FollowingLaneState::isLaneChangePathSafe() const
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
+
       if (distance < thresh)
       {
         return false;

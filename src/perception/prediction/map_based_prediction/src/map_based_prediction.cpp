@@ -193,11 +193,11 @@ bool MapBasedPrediction::doPrediction(
     }
     else
     {
-      geometry_msgs::Pose object_pose = object_with_lanes.object.state.pose_covariance.pose;
-      double object_linear_velocity = object_with_lanes.object.state.twist_covariance.twist.linear.x;
+      const geometry_msgs::Pose &object_pose = object_with_lanes.object.state.pose_covariance.pose;
+      const geometry_msgs::Twist &object_twist = object_with_lanes.object.state.twist_covariance.twist;
       autoware_perception_msgs::PredictedPath path;
       getLinearPredictedPath(object_pose, 
-                             object_linear_velocity,
+                             object_twist,
                              in_objects.header,
                              path);
       autoware_perception_msgs::DynamicObject tmp_object;
@@ -226,11 +226,9 @@ bool MapBasedPrediction::doLinearPrediction(
 
   for(const auto object: in_objects.objects)
   {
-    geometry_msgs::Pose object_pose = object.state.pose_covariance.pose;
-    double object_linear_velocity = object.state.twist_covariance.twist.linear.x;
     autoware_perception_msgs::PredictedPath path;
-    getLinearPredictedPath(object_pose, 
-                            object_linear_velocity,
+    getLinearPredictedPath(object.state.pose_covariance.pose, 
+                            object.state.twist_covariance.twist,
                             in_objects.header,
                             path);
     autoware_perception_msgs::DynamicObject tmp_object;
@@ -360,26 +358,38 @@ bool MapBasedPrediction::getPredictedPath(
 
 bool MapBasedPrediction::getLinearPredictedPath(
   const geometry_msgs::Pose& object_pose,
-  const double linear_velocity,
+  const geometry_msgs::Twist& object_twist,
   const std_msgs::Header& origin_header,
-  autoware_perception_msgs::PredictedPath& path)
+  autoware_perception_msgs::PredictedPath& predicted_path)
 {
-  double yaw = tf2::getYaw(object_pose.orientation);
-  double dt = sampling_delta_time_;
-  double time_horizon = time_horizon_;
-  geometry_msgs::PoseWithCovarianceStamped pose;
-  pose.pose.pose  = object_pose;
-  for(double i = 0; i < time_horizon; i+=dt)
+  const double yaw = tf2::getYaw(object_pose.orientation);
+  const double &sampling_delta_time = sampling_delta_time_;
+  const double &time_horizon = time_horizon_;
+  const double ep = 0.001;
+
+  for (double dt = 0.0; dt < time_horizon + ep; dt += sampling_delta_time)
   {
-    double next_x = pose.pose.pose.position.x + std::cos(yaw)*linear_velocity*dt;
-    double next_y = pose.pose.pose.position.y + std::sin(yaw)*linear_velocity*dt;
-    pose.pose.pose.position.x = next_x;
-    pose.pose.pose.position.y = next_y;
-    pose.header = origin_header;
-    pose.header.stamp = origin_header.stamp + ros::Duration(i);
-    path.path.push_back(pose);
+    geometry_msgs::PoseWithCovarianceStamped pose_cov_stamped;
+    pose_cov_stamped.header = origin_header;
+    pose_cov_stamped.header.stamp = origin_header.stamp + ros::Duration(dt);
+    geometry_msgs::Pose object_frame_pose;
+    geometry_msgs::Pose world_frame_pose;
+    object_frame_pose.position.x = object_twist.linear.x * dt;
+    object_frame_pose.position.y = object_twist.linear.y * dt;
+    tf2::Transform tf_object2future;
+    tf2::Transform tf_world2object;
+    tf2::Transform tf_world2future;
+
+    tf2::fromMsg(object_pose, tf_world2object);
+    tf2::fromMsg(object_frame_pose, tf_object2future);
+    tf_world2future = tf_world2object * tf_object2future;
+    tf2::toMsg(tf_world2future, world_frame_pose);
+    pose_cov_stamped.pose.pose = world_frame_pose;
+
+    predicted_path.path.push_back(pose_cov_stamped);
   }
-  path.confidence = 1.0;
+
+  predicted_path.confidence = 1.0;
 }
 
 double MapBasedPrediction::calculateLikelyhood(const double current_d)

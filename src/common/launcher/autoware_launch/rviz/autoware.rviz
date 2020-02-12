@@ -4,24 +4,22 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /System1/VehicleModel1
         - /Sensing1/NoGroundPointCloud1/Autocompute Value Bounds1
         - /Localization1/NDT1/PoseHistory1/Line1
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
         - /Control1/Debug/MPC1/Namespaces1
-        - /Vehicle1/VelocityHistory1/Constant Color1
       Splitter Ratio: 0.64552241563797
-    Tree Height: 580
+    Tree Height: 482
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
     Expanded:
       - /2D Pose Estimate1
       - /2D Nav Goal1
-      - /2D Pedestrian Pose1
-      - /2D Car Pose1
+      - /2D Dummy Pedestrian1
+      - /2D Dummy Car1
       - /2D Checkpoint Pose1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
@@ -42,85 +40,8 @@ Toolbars:
 Visualization Manager:
   Class: ""
   Displays:
-    - Class: rviz/PolarGridDisplay
-      Color: 255; 255; 255
-      Delta Range: 10
-      Enabled: true
-      Max Alpha: 1
-      Max Range: 100
-      Max Wave Alpha: 1
-      Min Alpha: 0.20000000298023224
-      Min Wave Alpha: 0.20000000298023224
-      Name: PolarGridDisplay
-      Reference Frame: base_link
-      Value: true
-      Wave Color: 255; 255; 255
-      Wave Velocity: 40
-    - Alpha: 0.5
-      Cell Size: 1
-      Class: rviz/Grid
-      Color: 160; 160; 164
-      Enabled: false
-      Line Style:
-        Line Width: 0.029999999329447746
-        Value: Lines
-      Name: Grid
-      Normal Cell Count: 0
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Plane: XY
-      Plane Cell Count: 10
-      Reference Frame: <Fixed Frame>
-      Value: false
     - Class: rviz/Group
       Displays:
-        - Alpha: 0.30000001192092896
-          Class: rviz/RobotModel
-          Collision Enabled: false
-          Enabled: true
-          Links:
-            All Links Enabled: true
-            Expand Joint Details: false
-            Expand Link Details: false
-            Expand Tree: false
-            Link Tree Style: Links in Alphabetic Order
-            base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            imu_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            traffic_light/camera_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            traffic_light/camera_optical_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            velodyne:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            velodyne_base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-          Name: VehicleModel
-          Robot Description: robot_description
-          TF Prefix: ""
-          Update Interval: 0
-          Value: true
-          Visual Enabled: true
         - Class: rviz/TF
           Enabled: true
           Frame Timeout: 15
@@ -128,21 +49,55 @@ Visualization Manager:
             All Enabled: true
             base_link:
               Value: true
-            gnss:
+            camera1/camera_link:
               Value: true
-            imu_link:
+            camera1/camera_optical_link:
+              Value: true
+            camera2/camera_link:
+              Value: true
+            camera2/camera_optical_link:
+              Value: true
+            camera3/camera_link:
+              Value: true
+            camera3/camera_optical_link:
+              Value: true
+            camera4/camera_link:
+              Value: true
+            camera4/camera_optical_link:
+              Value: true
+            camera5/camera_link:
+              Value: true
+            camera5/camera_optical_link:
+              Value: true
+            camera6/camera_link:
+              Value: true
+            camera6/camera_optical_link:
+              Value: true
+            gnss_link:
+              Value: true
+            gx5/imu_link:
               Value: true
             map:
+              Value: true
+            tamagawa/imu_link:
               Value: true
             traffic_light/camera_link:
               Value: true
             traffic_light/camera_optical_link:
               Value: true
-            velodyne:
+            velodyne_left:
               Value: true
-            velodyne_base_link:
+            velodyne_left_base_link:
               Value: true
-            world:
+            velodyne_right:
+              Value: true
+            velodyne_right_base_link:
+              Value: true
+            velodyne_top:
+              Value: true
+            velodyne_top_base_link:
+              Value: true
+            viewer:
               Value: true
           Marker Scale: 1
           Name: TF
@@ -150,21 +105,213 @@ Visualization Manager:
           Show Axes: true
           Show Names: true
           Tree:
-            world:
-              map:
-                base_link:
-                  gnss:
-                    {}
-                  imu_link:
-                    {}
-                  traffic_light/camera_link:
-                    traffic_light/camera_optical_link:
-                      {}
-                  velodyne_base_link:
-                    velodyne:
-                      {}
+            map:
+              viewer:
+                {}
           Update Interval: 0
           Value: true
+        - Alpha: 0.5
+          Cell Size: 1
+          Class: rviz/Grid
+          Color: 160; 160; 164
+          Enabled: false
+          Line Style:
+            Line Width: 0.029999999329447746
+            Value: Lines
+          Name: Grid
+          Normal Cell Count: 0
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Plane: XY
+          Plane Cell Count: 10
+          Reference Frame: <Fixed Frame>
+          Value: false
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz_plugins/SteeringAngle
+              Enabled: true
+              Left: 128
+              Length: 256
+              Name: SteeringAngle
+              Scale: 17
+              Text Color: 25; 255; 240
+              Top: 128
+              Topic: /vehicle/status/steering
+              Unreliable: false
+              Value: true
+              Value height offset: 0
+            - Class: rviz_plugins/ConsoleMeter
+              Enabled: true
+              Left: 512
+              Length: 256
+              Name: ConsoleMeter
+              Scale: 3
+              Text Color: 25; 255; 240
+              Top: 128
+              Topic: /vehicle/status/twist
+              Unreliable: false
+              Value: true
+              Value height offset: 0
+            - Alpha: 1
+              Class: rviz_plugins/VelocityHistory
+              Color Border Vel Max: 3
+              Constant Color:
+                Color: 255; 255; 255
+                Value: true
+              Enabled: true
+              Name: VelocityHistory
+              Scale: 0.30000001192092896
+              Timeout: 10
+              Topic: /vehicle/status/twist
+              Unreliable: false
+              Value: true
+            - Alpha: 0.30000001192092896
+              Class: rviz/RobotModel
+              Collision Enabled: false
+              Enabled: true
+              Links:
+                All Links Enabled: true
+                Expand Joint Details: false
+                Expand Link Details: false
+                Expand Tree: false
+                Link Tree Style: Links in Alphabetic Order
+                base_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera1/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera1/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                camera2/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera2/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                camera3/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera3/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                camera4/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera4/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                camera5/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera5/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                camera6/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                camera6/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                gnss_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                gx5/imu_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                tamagawa/imu_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                traffic_light/camera_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                traffic_light/camera_optical_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                velodyne_left:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                velodyne_left_base_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                velodyne_right:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                velodyne_right_base_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                velodyne_top:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+                velodyne_top_base_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
+                  Value: true
+              Name: VehicleModel
+              Robot Description: robot_description
+              TF Prefix: ""
+              Update Interval: 0
+              Value: true
+              Visual Enabled: true
+            - Class: rviz/PolarGridDisplay
+              Color: 255; 255; 255
+              Delta Range: 10
+              Enabled: true
+              Max Alpha: 1
+              Max Range: 100
+              Max Wave Alpha: 1
+              Min Alpha: 0.20000000298023224
+              Min Wave Alpha: 0.20000000298023224
+              Name: PolarGridDisplay
+              Reference Frame: base_link
+              Value: true
+              Wave Color: 255; 255; 255
+              Wave Velocity: 40
+          Enabled: true
+          Name: Vehicle
       Enabled: true
       Name: System
     - Class: rviz/Group
@@ -644,10 +791,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                goal_lanelets: true
-                left_lane_bound: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -671,11 +815,11 @@ Visualization Manager:
           Displays:
             - Class: rviz_plugins/Trajectory
               Color Border Vel Max: 3
-              Enabled: false
+              Enabled: true
               Name: ScenarioTrajectory
               Topic: /planning/scenario_planning/trajectory
               Unreliable: false
-              Value: false
+              Value: true
               View Path:
                 Alpha: 1
                 Color: 0; 0; 0
@@ -688,174 +832,156 @@ Visualization Manager:
                 Constant Color: false
                 Scale: 0.30000001192092896
                 Value: true
+            - Class: rviz/Group
+              Displays:
+                - Class: rviz/Group
+                  Displays:
+                    - Class: rviz_plugins/Path
+                      Color Border Vel Max: 3
+                      Enabled: true
+                      Name: Path
+                      Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
+                      Unreliable: false
+                      Value: true
+                      View Path:
+                        Alpha: 0.4000000059604645
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Value: true
+                        Width: 2
+                      View Velocity:
+                        Alpha: 0.4000000059604645
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Scale: 0.30000001192092896
+                        Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
+                      Name: Arrow
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
+                      Name: PathWithLaneId
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
+                      Name: Crosswalk
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
+                      Name: Intersection
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                    - Class: rviz/MarkerArray
+                      Enabled: false
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
+                      Name: Blind Spot
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: false
+                  Enabled: true
+                  Name: BehaviorPlanning
+                - Class: rviz/Group
+                  Displays:
+                    - Class: rviz_plugins/Trajectory
+                      Color Border Vel Max: 3
+                      Enabled: false
+                      Name: Trajectory
+                      Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
+                      Unreliable: false
+                      Value: false
+                      View Path:
+                        Alpha: 1
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Value: true
+                        Width: 2
+                      View Velocity:
+                        Alpha: 1
+                        Color: 0; 0; 0
+                        Constant Color: false
+                        Scale: 0.30000001192092896
+                        Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
+                      Name: StopDetectionArea
+                      Namespaces:
+                        {}
+                      Queue Size: 100
+                      Value: true
+                  Enabled: true
+                  Name: MotionPlanning
+              Enabled: true
+              Name: LaneFollowing
+            - Class: rviz/Group
+              Displays:
+                - Class: rviz/Group
+                  Displays:
+                    - Alpha: 0.699999988079071
+                      Class: rviz/Map
+                      Color Scheme: map
+                      Draw Behind: false
+                      Enabled: false
+                      Name: Costmap
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
+                      Unreliable: false
+                      Use Timestamp: false
+                      Value: false
+                    - Alpha: 1
+                      Arrow Length: 0.30000001192092896
+                      Axes Length: 0.30000001192092896
+                      Axes Radius: 0.05000000074505806
+                      Class: rviz/PoseArray
+                      Color: 255; 25; 0
+                      Enabled: true
+                      Head Length: 0.10000000149011612
+                      Head Radius: 0.20000000298023224
+                      Name: PartialPoseArray
+                      Shaft Length: 0.20000000298023224
+                      Shaft Radius: 0.05000000074505806
+                      Shape: Arrow (3D)
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/partial_pose_array
+                      Unreliable: false
+                      Value: true
+                    - Alpha: 1
+                      Arrow Length: 0.5
+                      Axes Length: 0.30000001192092896
+                      Axes Radius: 0.009999999776482582
+                      Class: rviz/PoseArray
+                      Color: 0; 0; 255
+                      Enabled: true
+                      Head Length: 0.10000000149011612
+                      Head Radius: 0.20000000298023224
+                      Name: PoseArray
+                      Shaft Length: 0.20000000298023224
+                      Shaft Radius: 0.05000000074505806
+                      Shape: Arrow (Flat)
+                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/pose_array
+                      Unreliable: false
+                      Value: true
+                  Enabled: true
+                  Name: FreespacePlanning
+              Enabled: true
+              Name: Parking
           Enabled: true
           Name: ScenarioPlanning
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz_plugins/Path
-              Color Border Vel Max: 3
-              Enabled: true
-              Name: Path
-              Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 0.4000000059604645
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 0.4000000059604645
-                Color: 0; 0; 0
-                Constant Color: false
-                Scale: 0.30000001192092896
-                Value: true
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
-              Name: Arrow
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: false
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
-              Name: PathWithLaneId
-              Namespaces:
-                {}
-              Queue Size: 100
-              Value: false
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
-              Name: Crosswalk
-              Namespaces:
-                crosswalk polygon line: true
-                crosswalk polygon point: true
-                slow polygon line: true
-                stop polygon line: true
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
-              Name: Intersection
-              Namespaces:
-                intersection_detection_lanelets_0: false
-                intersection_detection_lanelets_1: false
-                intersection_detection_lanelets_2: false
-                intersection_detection_lanelets_3: false
-                intersection_detection_lanelets_4: false
-                intersection_detection_lanelets_5: false
-                intersection_detection_lanelets_6: false
-                intersection_detection_lanelets_7: false
-                judge_point_pose: false
-                path_left_edge: false
-                path_raw: false
-                path_right_edge: false
-                path_with_judgeline: false
-                stop_point_pose: false
-              Queue Size: 100
-              Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
-              Name: Blind Spot
-              Namespaces:
-                blind_spot_detection_area_0: true
-                judge_point_pose: false
-                path_left_edge: false
-                path_raw: false
-                path_right_edge: false
-                path_with_judgeline: false
-                stop_point_pose: false
-              Queue Size: 100
-              Value: true
-          Enabled: true
-          Name: BehaviorPlanning
-        - Class: rviz/Group
-          Displays:
-            - Class: rviz_plugins/Trajectory
-              Color Border Vel Max: 3
-              Enabled: true
-              Name: Trajectory
-              Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
-              Unreliable: false
-              Value: true
-              View Path:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Value: true
-                Width: 2
-              View Velocity:
-                Alpha: 1
-                Color: 0; 0; 0
-                Constant Color: false
-                Scale: 0.30000001192092896
-                Value: true
-            - Class: rviz/MarkerArray
-              Enabled: true
-              Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
-              Name: StopDetectionArea
-              Namespaces:
-                active_detection_area: true
-                active_detection_area_point: true
-                obstacle_perpendicular_point: true
-                obstacle_point: true
-                stop_factor_wall: true
-              Queue Size: 100
-              Value: true
-          Enabled: true
-          Name: MotionPlanning
-        - Class: rviz/Group
-          Displays:
-            - Alpha: 0.699999988079071
-              Class: rviz/Map
-              Color Scheme: map
-              Draw Behind: false
-              Enabled: false
-              Name: Costmap
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
-              Unreliable: false
-              Use Timestamp: false
-              Value: false
-            - Alpha: 1
-              Arrow Length: 0.30000001192092896
-              Axes Length: 0.30000001192092896
-              Axes Radius: 0.05000000074505806
-              Class: rviz/PoseArray
-              Color: 255; 25; 0
-              Enabled: true
-              Head Length: 0.10000000149011612
-              Head Radius: 0.20000000298023224
-              Name: PartialPoseArray
-              Shaft Length: 0.20000000298023224
-              Shaft Radius: 0.05000000074505806
-              Shape: Arrow (3D)
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/partial_pose_array
-              Unreliable: false
-              Value: true
-            - Alpha: 1
-              Arrow Length: 0.5
-              Axes Length: 0.30000001192092896
-              Axes Radius: 0.009999999776482582
-              Class: rviz/PoseArray
-              Color: 0; 0; 255
-              Enabled: true
-              Head Length: 0.10000000149011612
-              Head Radius: 0.20000000298023224
-              Name: PoseArray
-              Shaft Length: 0.20000000298023224
-              Shaft Radius: 0.05000000074505806
-              Shape: Arrow (Flat)
-              Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/astar_navi/debug/pose_array
-              Unreliable: false
-              Value: true
-          Enabled: true
-          Name: FreespacePlanning
       Enabled: true
       Name: Planning
     - Class: rviz/Group
@@ -870,77 +996,11 @@ Visualization Manager:
           Value: false
       Enabled: true
       Name: Control
-    - Class: rviz/Group
-      Displays:
-        - Buffer length: 100
-          Class: jsk_rviz_plugin/Plotter2D
-          Enabled: false
-          Name: velocity [km/h]
-          Show Value: true
-          Topic: /vehicle/status/velocity_kmph
-          Value: false
-          auto color change: false
-          auto scale: true
-          background color: 0; 0; 0
-          backround alpha: 0
-          border: true
-          foreground alpha: 0.699999988079071
-          foreground color: 25; 255; 240
-          height: 128
-          left: 50
-          linewidth: 1
-          max color: 255; 0; 0
-          max value: 1
-          min value: -1
-          show caption: true
-          text size: 12
-          top: 50
-          update interval: 0.03999999910593033
-          width: 128
-        - Class: rviz_plugins/SteeringAngle
-          Enabled: true
-          Left: 128
-          Length: 256
-          Name: SteeringAngle
-          Scale: 3
-          Text Color: 25; 255; 240
-          Top: 128
-          Topic: /vehicle/status
-          Unreliable: false
-          Value: true
-          Value height offset: 0
-        - Class: rviz_plugins/ConsoleMeter
-          Enabled: true
-          Left: 512
-          Length: 256
-          Name: ConsoleMeter
-          Scale: 3
-          Text Color: 25; 255; 240
-          Top: 128
-          Topic: /vehicle/status
-          Unreliable: false
-          Value: true
-          Value height offset: 0
-        - Alpha: 1
-          Class: rviz_plugins/VelocityHistory
-          Color Border Vel Max: 3
-          Constant Color:
-            Color: 255; 255; 255
-            Value: true
-          Enabled: true
-          Name: VelocityHistory
-          Scale: 0.30000001192092896
-          Timeout: 10
-          Topic: /vehicle/status
-          Unreliable: false
-          Value: true
-      Enabled: true
-      Name: Vehicle
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: viewer
     Frame Rate: 30
   Name: root
   Tools:
@@ -958,20 +1018,18 @@ Visualization Manager:
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PedestrianInitialPoseTool
-      Pose Topic: initial_pedestrian_pose
-      Theta std deviation: 0.2617993950843811
-      Twist Topic: initial_pedestrian_twist
+      Pose Topic: /simulation/dummy_perception_publisher/object_info
+      Theta std deviation: 0.0872664600610733
       Velocity: 1
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      X std deviation: 0.029999999329447746
+      Y std deviation: 0.029999999329447746
       Z position: 0
     - Class: rviz/CarInitialPoseTool
-      Pose Topic: initial_car_pose
-      Theta std deviation: 0.2617993950843811
-      Twist Topic: initial_car_twist
+      Pose Topic: /simulation/dummy_perception_publisher/object_info
+      Theta std deviation: 0.0872664600610733
       Velocity: 3
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      X std deviation: 0.029999999329447746
+      Y std deviation: 0.029999999329447746
       Z position: 0
     - Class: rviz/MissionCheckpointTool
       Pose Topic: checkpoint
@@ -982,7 +1040,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -8.95501708984375
+      Angle: -2.6699976921081543
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -992,21 +1050,21 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 18.083356857299805
-      Target Frame: world
+      Scale: 17.995317459106445
+      Target Frame: viewer
       Value: TopDownOrtho (rviz)
-      X: -74.35234832763672
-      Y: -2.907951593399048
+      X: -11.578725814819336
+      Y: -25.955673217773438
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 2105
+  Height: 2049
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000003260000077ffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000281000000c900fffffffb0000000a0056006900650077007301000002c40000014c000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000416000001100000005c00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000052c000002900000001600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000ebd0000005afc0100000002fb0000000800540069006d0065010000000000000ebd000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000b910000077f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000326000006fffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000002500000018200fffffffb0000000a0056006900650077007301000002ca000001320000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000408000000fb000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000050f0000025e0000002600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b48000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1015,6 +1073,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 3773
-  X: 3907
-  Y: 27
+  Width: 3706
+  X: 134
+  Y: 55

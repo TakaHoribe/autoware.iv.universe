@@ -105,15 +105,16 @@ public:
 
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet& lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped& pose) const;
-  autoware_planning_msgs::PathWithLaneId
-  getLaneChangePath(const lanelet::ConstLanelets& original_lanes, const lanelet::ConstLanelets& target_lanes,
-                    const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist,
-                    const double backward_path_length, const double forward_path_length,
-                    const double lane_change_prepare_duration, const double lane_changing_duration) const;
+  autoware_planning_msgs::PathWithLaneId getLaneChangePath(
+      const lanelet::ConstLanelets& original_lanes, const lanelet::ConstLanelets& target_lanes,
+      const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist, const double backward_path_length,
+      const double forward_path_length, const double lane_change_prepare_duration, const double lane_changing_duration,
+      const double minimum_lane_change_length) const;
   autoware_planning_msgs::PathWithLaneId getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                                           const geometry_msgs::Pose& pose,
                                                           const double backward_path_length,
-                                                          const double forward_path_length) const;
+                                                          const double forward_path_length,
+                                                          const double minimum_lane_change_length) const;
   autoware_planning_msgs::PathWithLaneId getReferencePath(const lanelet::ConstLanelets& lanelet_sequence,
                                                           const double s_start, const double s_end,
                                                           bool use_exact = true) const;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(mpc_follower)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14 -Wall -Werror)
 
 find_package(
   catkin REQUIRED COMPONENTS
@@ -16,6 +16,7 @@ find_package(
   autoware_planning_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
+  osqp_interface
 )
 
 catkin_package(
@@ -30,6 +31,7 @@ catkin_package(
     autoware_planning_msgs
     autoware_control_msgs
     autoware_vehicle_msgs
+    osqp_interface
 )
 
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
@@ -43,6 +45,7 @@ include_directories(
 set(
   MPC_FOLLOWER_SRC
     src/mpc_utils.cpp
+    src/interpolate.cpp
     src/mpc_trajectory.cpp
     src/lowpass_filter.cpp
     src/vehicle_model/vehicle_model_interface.cpp
@@ -50,7 +53,7 @@ set(
     src/vehicle_model/vehicle_model_bicycle_dynamics.cpp
     src/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.cpp
     src/qp_solver/qp_solver_unconstr_fast.cpp
-    # src/qp_solver/qp_solver_qpoases.cpp
+    src/qp_solver/qp_solver_osqp.cpp
 )
 
 add_executable(mpc_follower src/mpc_follower_node.cpp src/mpc_follower_core.cpp ${MPC_FOLLOWER_SRC})

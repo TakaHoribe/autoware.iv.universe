@@ -42,20 +42,19 @@ public:
 private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  ros::Publisher pub_trajectory_;
-  ros::Publisher pub_dist_to_stopline_;
-  ros::Subscriber sub_current_velocity_;
-  ros::Subscriber sub_current_trajectory_;
-  ros::Subscriber sub_external_velocity_limit_;
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+  ros::Publisher pub_trajectory_;               //!< @brief publisher for output trajectory
+  ros::Subscriber sub_current_velocity_;        //!< @brief subscriber for current velocity
+  ros::Subscriber sub_current_trajectory_;      //!< @brief subscriber for reference trajectory
+  ros::Subscriber sub_external_velocity_limit_; //!< @brief subscriber for external velocity limit
+  tf2_ros::Buffer tf_buffer_;                   //!< @brief tf butter
+  tf2_ros::TransformListener tf_listener_;      //!< @brief tf listener
 
   boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;          // current vehicle pose
   boost::shared_ptr<geometry_msgs::TwistStamped const> current_velocity_ptr_;     // current vehicle twist
   boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_; // current base_waypoints
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;        // current external_velocity_limit
 
-  autoware_planning_msgs::Trajectory prev_output_;  // velocity replanned waypoints (output of this node)
+  autoware_planning_msgs::Trajectory prev_output_; // previously published trajectory
 
   enum class InitializeType
   {
@@ -69,10 +68,10 @@ private:
 
   osqp::OSQPInterface qp_solver_;
 
-  bool show_debug_info_;      // printF level 1
-  bool show_debug_info_all_;  // print level 2
-  bool show_figure_;          // for plot visualize
-  bool publish_debug_trajs_;
+  bool show_debug_info_;     // printF level 1
+  bool show_debug_info_all_; // print level 2
+  bool show_figure_;         // for plot visualize
+  bool publish_debug_trajs_; // publish planned trajectories
 
   struct MotionVelocityPlannerParam
   {
@@ -90,8 +89,7 @@ private:
     double resample_total_time;   // max time to calculate trajectory length
     double resample_dt;           // dt to calculate trajectory length
     double min_trajectory_interval_distance; // minimum interval distance between each trajectory points
-    double stop_dist_not_to_drive_vehicle; // set zero vel when vehicle stops and stop dist is closer than this
-    double stop_dist_mergin;
+    double stop_dist_to_prohibit_engage; // set zero vel when vehicle stops and stop dist is closer than this
   } planning_param_;
 
   struct QPParam
@@ -114,26 +112,25 @@ private:
 
   void optimizeVelocity(const autoware_planning_msgs::Trajectory &input, const int input_closest,
                       const autoware_planning_msgs::Trajectory &prev_output_traj, const int prev_output_closest,
-                      const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
+                      autoware_planning_msgs::Trajectory &output);
   void calcInitialMotion(const double &base_speed, const autoware_planning_msgs::Trajectory &base_waypoints, const int base_closest,
                          const autoware_planning_msgs::Trajectory &prev_replanned_traj, const int prev_replanned_traj_closest,
                          double &initial_vel, double &initial_acc);
 
-  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output,
-                          std::vector<double> &interval_dist_arr) const;
+  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output) const;
 
-  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input,
-                                 const double &max_lateral_accel, const unsigned int curvature_calc_idx_dist,
-                                 autoware_planning_msgs::Trajectory &output) const;
+  bool lateralAccelerationFilter(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output) const;
+  bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory &input, const int index, autoware_planning_msgs::Trajectory &output) const;
+  bool externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory &input, autoware_planning_msgs::Trajectory &output) const;
+  void preventMoveToCloseStopLine(const int closest, autoware_planning_msgs::Trajectory &trajectory) const;
+
   void publishTrajectory(const autoware_planning_msgs::Trajectory &traj) const;
-  void preventMoveToVeryCloseStopLine(const int closest, const double move_dist_min, autoware_planning_msgs::Trajectory &trajectory) const;
   void publishStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest) const;
 
   void solveOptimization(const double initial_vel, const double initial_acc, const autoware_planning_msgs::Trajectory &input, const int closest,
-                        const std::vector<double> &interval_dist_arr, autoware_planning_msgs::Trajectory &output);
+                         autoware_planning_msgs::Trajectory &output);
   void insertBehindVelocity(const int prev_out_closest, const autoware_planning_msgs::Trajectory &prev_output,
                             const int output_closest, autoware_planning_msgs::Trajectory &output);
-
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
   void dynamicRecofCallback(motion_velocity_planner::MotionVelocityPlannerConfig &config, uint32_t level)
@@ -145,6 +142,7 @@ private:
   }
 
   /* debug */
+  ros::Publisher pub_dist_to_stopline_;//!< @brief publisher for stop distance
   ros::Publisher pub_trajectory_raw_;
   ros::Publisher pub_trajectory_vel_lim_;
   ros::Publisher pub_trajectory_latcc_filtered_;

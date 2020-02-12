@@ -327,11 +327,23 @@ geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::
         double d_next = dist_i - radius;
         double d_prev = radius - prev_dist;
         double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        double prev_weight = d_next / d_all;
         geometry_msgs::Pose p;
-        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
-        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
-        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
-        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        p.position.x = prev_weight * p_prev.x + (1.0 - prev_weight) * p_i.x;
+        p.position.y = prev_weight * p_prev.y + (1.0 - prev_weight) * p_i.y;
+        p.position.z = prev_weight * p_prev.z + (1.0 - prev_weight) * p_i.z;
+        if (i > 0)
+        {
+          tf2::Quaternion curr_q_tf, prev_q_tf;
+          tf2::convert(in_trajectory.points.at(i).pose.orientation, curr_q_tf);
+          tf2::convert(in_trajectory.points.at(i - 1).pose.orientation, prev_q_tf);
+          tf2::Quaternion q = curr_q_tf.slerp(prev_q_tf, prev_weight);
+          p.orientation = tf2::toMsg(q);
+        }
+        else
+        {
+          p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        }
         return p;
       }
       prev_dist = dist_i;
@@ -352,11 +364,23 @@ geometry_msgs::Pose getPoseOnTrajectoryWithRadius(const autoware_planning_msgs::
         double d_next = dist_i - abs_radius;
         double d_prev = abs_radius - prev_dist;
         double d_all = std::max(dist_i - prev_dist, 1.0E-5 /* avoid 0 divide */);
+        double prev_weight = d_next / d_all;
         geometry_msgs::Pose p;
-        p.position.x = (d_next * p_prev.x + d_prev * p_i.x) / d_all;
-        p.position.y = (d_next * p_prev.y + d_prev * p_i.y) / d_all;
-        p.position.z = (d_next * p_prev.z + d_prev * p_i.z) / d_all;
-        p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        p.position.x = prev_weight * p_prev.x + (1.0 - prev_weight) * p_i.x;
+        p.position.y = prev_weight * p_prev.y + (1.0 - prev_weight) * p_i.y;
+        p.position.z = prev_weight * p_prev.z + (1.0 - prev_weight) * p_i.z;
+        if (i > 0)
+        {
+          tf2::Quaternion curr_q_tf, prev_q_tf;
+          tf2::convert(in_trajectory.points.at(i).pose.orientation, curr_q_tf);
+          tf2::convert(in_trajectory.points.at(i - 1).pose.orientation, prev_q_tf);
+          tf2::Quaternion q = curr_q_tf.slerp(prev_q_tf, prev_weight);
+          p.orientation = tf2::toMsg(q);
+        }
+        else
+        {
+          p.orientation = in_trajectory.points.at(i).pose.orientation; // TODO : better to do interpolation by yaw
+        }
         return p;
       }
       prev_dist = dist_i;

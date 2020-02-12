@@ -78,7 +78,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
   }
   catch (tf2::TransformException &ex)
   {
-    ROS_WARN("cannot get transform frome map frame to camera frame");
+    ROS_WARN_THROTTLE(5, "cannot get transform frome map frame to camera frame");
     return;
   }
 

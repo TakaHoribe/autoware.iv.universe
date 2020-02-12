@@ -223,8 +223,8 @@ if(!EngageStatusSubscriber){
 
     <script type="text/javascript">
         <!--
-if(!VhecileEngageStatusSubscriber){
-    var VhecileEngageStatusSubscriber = {
+if(!VehicleEngageStatusSubscriber){
+    var VehicleEngageStatusSubscriber = {
         ros : null,
         name : "",
         init : function(){
@@ -253,12 +253,12 @@ if(!VhecileEngageStatusSubscriber){
             });
         }
     }
-    VhecileEngageStatusSubscriber.init();
+    VehicleEngageStatusSubscriber.init();
 
     window.onload = function(){
     };
     window.onunload = function(){
-        VhecileEngageStatusSubscriber.ros.close();
+        VehicleEngageStatusSubscriber.ros.close();
     };
 }
         //-->
@@ -272,12 +272,7 @@ if(!VhecileEngageStatusSubscriber){
     <form action="javascript:DisengagePublisher.send();" id="ui">
       <input type="submit" value="Disengage" id="btn" /><br/>
     </form>
-    <form action="javascript:VehicleEngagePublisher.send();" id="ui">
-      <input type="submit" value="Engage" id="btn" /><br/>
-    </form>
-    <form action="javascript:VehicleDisengagePublisher.send();" id="ui">
-      <input type="submit" value="Disengage" id="btn" /><br/>
-    </form>
+    <div id="engage_status"><p></p></div>
     <div id="vehicle_engage_status"><p></p></div>
   </body>
 </html>

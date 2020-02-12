@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ekf_localizer)
 
+set(CMAKE_BUILD_TYPE "Release")
+
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED

@@ -230,3 +230,131 @@ Eigen::VectorXd SimModelTimeDelaySteer::calcModel(const Eigen::VectorXd& state, 
 
   return d_state;
 };
+
+SimModelTimeDelaySteerAccel::SimModelTimeDelaySteerAccel(double vx_lim, double steer_lim, double vx_rate_lim,
+                                                   double steer_rate_lim, double wheelbase, double dt, double acc_delay,
+                                                   double acc_time_constant, double steer_delay,
+                                                   double steer_time_constant)
+  : SimModelInterface(6 /* dim x */, 3 /* dim u */)
+  , MIN_TIME_CONSTANT(0.03)
+  , vx_lim_(vx_lim)
+  , vx_rate_lim_(vx_rate_lim)
+  , steer_lim_(steer_lim)
+  , steer_rate_lim_(steer_rate_lim)
+  , wheelbase_(wheelbase)
+  , acc_delay_(acc_delay)
+  , acc_time_constant_(std::max(acc_time_constant, MIN_TIME_CONSTANT))
+  , steer_delay_(steer_delay)
+  , steer_time_constant_(std::max(steer_time_constant, MIN_TIME_CONSTANT))
+{
+  if (acc_time_constant < MIN_TIME_CONSTANT)
+  {
+    ROS_WARN("Settings acc_time_constant is too small, replace it by %f", MIN_TIME_CONSTANT);
+  }
+  if (steer_time_constant < MIN_TIME_CONSTANT)
+  {
+    ROS_WARN("Settings steer_time_constant is too small, replace it by %f", MIN_TIME_CONSTANT);
+  }
+
+  initializeInputQueue(dt);
+};
+
+double SimModelTimeDelaySteerAccel::getX()
+{
+  return state_(IDX::X);
+};
+double SimModelTimeDelaySteerAccel::getY()
+{
+  return state_(IDX::Y);
+};
+double SimModelTimeDelaySteerAccel::getYaw()
+{
+  return state_(IDX::YAW);
+};
+double SimModelTimeDelaySteerAccel::getVx()
+{
+  return state_(IDX::VX);
+};
+double SimModelTimeDelaySteerAccel::getWz()
+{
+  return state_(IDX::VX) * std::tan(state_(IDX::STEER)) / wheelbase_;
+};
+double SimModelTimeDelaySteerAccel::getSteer()
+{
+  return state_(IDX::STEER);
+};
+void SimModelTimeDelaySteerAccel::update(const double& dt)
+{
+  Eigen::VectorXd delayed_input = Eigen::VectorXd::Zero(dim_u_);
+
+  acc_input_queue_.push_back(input_(IDX_U::ACCX_DES));
+  delayed_input(IDX_U::ACCX_DES) = acc_input_queue_.front();
+  acc_input_queue_.pop_front();
+  steer_input_queue_.push_back(input_(IDX_U::STEER_DES));
+  delayed_input(IDX_U::STEER_DES) = steer_input_queue_.front();
+  steer_input_queue_.pop_front();
+  delayed_input(IDX_U::DRIVE_SHIFT) = input_(IDX_U::DRIVE_SHIFT);
+
+  updateRungeKutta(dt, delayed_input);
+  //clip velocity and accel
+  if(delayed_input(IDX_U::DRIVE_SHIFT)>=0.0){
+    state_(IDX::VX) = std::max(0.0, std::min(state_(IDX::VX), vx_lim_));
+    if(std::abs((state_(IDX::VX)-0.0)) < 10e-9 || std::abs((state_(IDX::VX)-vx_lim_)) < 10e-9){
+      state_(IDX::ACCX) = 0.0;
+    }
+  }else{
+    state_(IDX::VX) = std::min(0.0, std::max(state_(IDX::VX), -vx_lim_));
+    if(std::abs((state_(IDX::VX)-0.0)) < 10e-9 || std::abs((state_(IDX::VX)-(-vx_lim_))) < 10e-9){
+      state_(IDX::ACCX) = 0.0;
+    }
+  }
+}
+
+void SimModelTimeDelaySteerAccel::initializeInputQueue(const double& dt)
+{
+  size_t vx_input_queue_size = static_cast<size_t>(round(acc_delay_ / dt));
+  for (size_t i = 0; i < vx_input_queue_size; i++)
+  {
+    acc_input_queue_.push_back(0.0);
+  }
+  size_t steer_input_queue_size = static_cast<size_t>(round(steer_delay_ / dt));
+  for (size_t i = 0; i < steer_input_queue_size; i++)
+  {
+    steer_input_queue_.push_back(0.0);
+  }
+}
+
+Eigen::VectorXd SimModelTimeDelaySteerAccel::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input)
+{
+  double vel = state(IDX::VX);
+  double acc = state(IDX::ACCX);
+  const double yaw = state(IDX::YAW);
+  const double steer = state(IDX::STEER);
+  const double delay_input_acc = input(IDX_U::ACCX_DES);
+  const double delay_input_steer = input(IDX_U::STEER_DES);
+  const double drive_shift = input(IDX_U::DRIVE_SHIFT);
+  double delay_acc_des = std::max(std::min(delay_input_acc, vx_rate_lim_), -vx_rate_lim_);
+  if(!(drive_shift>=0.0))delay_acc_des *= -1;//reverse front-back
+  double delay_steer_des = std::max(std::min(delay_input_steer, steer_lim_), -steer_lim_);
+  double accx_rate = -(acc - delay_acc_des) / acc_time_constant_;
+  double steer_rate = -(steer - delay_steer_des) / steer_time_constant_;
+  acc = std::min(vx_rate_lim_, std::max(-vx_rate_lim_, acc));
+  steer_rate = std::min(steer_rate_lim_, std::max(-steer_rate_lim_, steer_rate));
+
+if(drive_shift>=0.0){
+  vel = std::max(0.0, std::min(vel, vx_lim_));
+}else{
+  vel = std::min(0.0, std::max(vel, -vx_lim_));
+}
+
+  Eigen::VectorXd d_state = Eigen::VectorXd::Zero(dim_x_);
+  d_state(IDX::X) = vel * cos(yaw);
+  d_state(IDX::Y) = vel * sin(yaw);
+  d_state(IDX::YAW) = vel * std::tan(steer) / wheelbase_;
+  d_state(IDX::VX) = acc;
+  d_state(IDX::STEER) = steer_rate;
+  d_state(IDX::ACCX) = accx_rate;
+
+  return d_state;
+};
+

@@ -319,17 +319,29 @@ bool scalingVelocitWithStopPoint(const autoware_planning_msgs::Trajectory &traje
 
 }
 
-void calcWaypointsArclength(const autoware_planning_msgs::Trajectory &path, std::vector<double> &arclength)
+void calcTrajectoryArclength(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &arclength)
 {
   double dist = 0.0;
   arclength.clear();
   arclength.push_back(dist);
-  for (unsigned int i = 1; i < path.points.size(); ++i)
+  for (unsigned int i = 1; i < trajectory.points.size(); ++i)
   {
-    const autoware_planning_msgs::TrajectoryPoint tp = path.points.at(i);
-    const autoware_planning_msgs::TrajectoryPoint tp_prev = path.points.at(i - 1);
+    const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
+    const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
     dist += vpu::calcDist2d(tp.pose, tp_prev.pose);
     arclength.push_back(dist);
+  }
+}
+
+void calcTrajectoryIntervalDistance(const autoware_planning_msgs::Trajectory &trajectory, std::vector<double> &intervals)
+{
+  intervals.clear();
+  for (unsigned int i = 1; i < trajectory.points.size(); ++i)
+  {
+    const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
+    const autoware_planning_msgs::TrajectoryPoint tp_prev = trajectory.points.at(i - 1);
+    const double dist = vpu::calcDist2d(tp.pose, tp_prev.pose);
+    intervals.push_back(dist);
   }
 }
 
@@ -681,7 +693,7 @@ bool backwardAccelerationFilterForStopPoint(const double &accel, autoware_planni
     const double dist = vpu::calcDist2d(trajectory.points.at(i), trajectory.points.at(i + 1));
     const double v0 = trajectory.points.at(i + 1).twist.linear.x;
     const double v1 = std::sqrt(v0 * v0 + 2.0 * std::fabs(accel) * dist);
-    printf("i = %d, dist = %3.3f, v0 = %3.3f, v1 = %3.3f\n", i, dist, v0, v1);
+    // printf("i = %d, dist = %3.3f, v0 = %3.3f, v1 = %3.3f\n", i, dist, v0, v1);
     if (trajectory.points.at(i).twist.linear.x > v1)
     {
       trajectory.points.at(i).twist.linear.x = v1;

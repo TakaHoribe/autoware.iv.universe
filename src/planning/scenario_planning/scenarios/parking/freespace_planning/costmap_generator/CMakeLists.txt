@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.3)
 
 project(costmap_generator)
 
@@ -17,45 +17,36 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package()
 
-set(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
-
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
 
-### costmap_generator ###
-add_library(
-  costmap_generator_lib
+add_library(costmap_generator_lib
   nodes/costmap_generator/points_to_costmap.cpp
   nodes/costmap_generator/objects_to_costmap.cpp
   nodes/costmap_generator/object_map_utils.cpp
 )
 
-target_link_libraries(
-  costmap_generator_lib
+target_link_libraries(costmap_generator_lib
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(
-  costmap_generator_lib
+add_dependencies(costmap_generator_lib
   ${catkin_EXPORTED_TARGETS}
 )
 
-add_executable(
-  costmap_generator
+add_executable(costmap_generator
   nodes/costmap_generator/costmap_generator_node.cpp
-  nodes/costmap_generator/costmap_generator.cpp
+  nodes/costmap_generator/main.cpp
 )
 
-target_link_libraries(
-  costmap_generator
+target_link_libraries(costmap_generator
   costmap_generator_lib
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(
-  costmap_generator
+add_dependencies(costmap_generator
   ${catkin_EXPORTED_TARGETS}
 )
 
@@ -77,6 +68,4 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  catkin_add_gtest(test-costmap_generator test/src/test_costmap_generator.cpp)
-  target_link_libraries(test-costmap_generator ${catkin_LIBRARIES} costmap_generator_lib)
 endif()

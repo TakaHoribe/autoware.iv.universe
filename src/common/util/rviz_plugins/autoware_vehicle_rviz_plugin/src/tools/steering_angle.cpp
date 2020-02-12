@@ -125,7 +125,7 @@ void SteeringAngleDisplay::onDisable()
   overlay_->hide();
 }
 
-void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::SteeringConstPtr &msg_ptr)
 {
   if (!isEnabled())
   {
@@ -152,9 +152,9 @@ void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::VehicleSt
   int h = overlay_->getTextureHeight();
 
   QMatrix rotation_matrix;
-  rotation_matrix.rotate(std::round(property_handle_angle_scale_->getFloat() * (msg_ptr->status.steering_angle / M_PI) * -180.0));
+  rotation_matrix.rotate(std::round(property_handle_angle_scale_->getFloat() * (msg_ptr->data / M_PI) * -180.0));
   // else
-  // rotation_matrix.rotate((property_handle_angle_scale_->getFloat() * (msg_ptr->status.steering_angle / M_PI) * -180.0));
+  // rotation_matrix.rotate((property_handle_angle_scale_->getFloat() * (msg_ptr->data / M_PI) * -180.0));
   int handle_image_width = handle_image_.width(), handle_image_height = handle_image_.height();
   QPixmap rotate_handle_image;
   rotate_handle_image = handle_image_.transformed(rotation_matrix);
@@ -166,7 +166,7 @@ void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::VehicleSt
   font.setBold(true);
   painter.setFont(font);
   std::ostringstream steering_angle_ss;
-  steering_angle_ss << std::fixed << std::setprecision(1) << msg_ptr->status.steering_angle * 180.0 / M_PI << "deg";
+  steering_angle_ss << std::fixed << std::setprecision(1) << msg_ptr->data * 180.0 / M_PI << "deg";
   painter.drawText(0, std::min(property_value_height_offset_->getInt(), h - 1), w, std::max(h - property_value_height_offset_->getInt(), 1),
                    Qt::AlignCenter | Qt::AlignVCenter,
                    steering_angle_ss.str().c_str());

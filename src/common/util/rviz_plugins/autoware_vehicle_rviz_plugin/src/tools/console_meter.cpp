@@ -128,7 +128,7 @@ void ConsoleMeterDisplay::onDisable()
   overlay_->hide();
 }
 
-void ConsoleMeterDisplay::processMessage(const autoware_vehicle_msgs::VehicleStatusStampedConstPtr &msg_ptr)
+void ConsoleMeterDisplay::processMessage(const geometry_msgs::TwistStampedConstPtr &msg_ptr)
 {
   if (!isEnabled())
   {
@@ -155,7 +155,7 @@ void ConsoleMeterDisplay::processMessage(const autoware_vehicle_msgs::VehicleSta
   QColor white_color(Qt::white);
   white_color.setAlpha(255);
   const double velocity_ratio =
-      std::min(std::max(std::fabs(msg_ptr->status.velocity) - meter_min_velocity_, 0.0) / (meter_max_velocity_ - meter_min_velocity_), 1.0);
+      std::min(std::max(std::fabs(msg_ptr->twist.linear.x) - meter_min_velocity_, 0.0) / (meter_max_velocity_ - meter_min_velocity_), 1.0);
   const double theta = (velocity_ratio * (meter_max_angle_ - meter_min_angle_)) + meter_min_angle_ + M_PI_2;
   const double min_range_theta = meter_max_angle_ + M_PI_2;
   const double max_range_theta = meter_min_angle_ + M_PI_2;
@@ -183,7 +183,7 @@ void ConsoleMeterDisplay::processMessage(const autoware_vehicle_msgs::VehicleSta
   font.setBold(true);
   painter.setFont(font);
   std::ostringstream velocity_ss;
-  velocity_ss << std::fixed << std::setprecision(2) << msg_ptr->status.velocity * 3.6 << "km/h";
+  velocity_ss << std::fixed << std::setprecision(2) << msg_ptr->twist.linear.x * 3.6 << "km/h";
   painter.drawText(0, std::min(property_value_height_offset_->getInt(), h - 1), w, std::max(h - property_value_height_offset_->getInt(), 1),
                    Qt::AlignCenter | Qt::AlignVCenter,
                    velocity_ss.str().c_str());

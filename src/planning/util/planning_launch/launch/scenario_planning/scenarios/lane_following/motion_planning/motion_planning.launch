@@ -1,31 +1,20 @@
 <launch>
-  <arg name="input_path_topic" default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
-  <arg name="is_online_path_update" default="false"/>
-  <group if="$(eval is_online_path_update)">
-    <node pkg="path_planner" type="eb_path_planner_node" name="eb_path_planner_node" output="log">
-      <remap from="~input/path" to="$(arg input_path_topic)" />
-      <remap from="~output/path" to="path_planner/trajectory" />
-    </node>
-  </group>
-  <group unless="$(eval is_online_path_update)">
-    <node pkg="path_planner" type="path2trajectory_converter_node" name="path2trajecotry_converter_node" output="screen">
-      <remap from="~input/path" to="$(arg input_path_topic)" />
-      <remap from="~output/path" to="path_planner/trajectory" />
-    </node>
+  <arg name="input_path_topic" 
+    default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
+  <group>
+    <remap from="~input/path" to="$(arg input_path_topic)" />
+    <remap from="~output/path" to="path_planner/trajectory" />
+    <include file="$(find path_planner)/launch/path_planner.launch">
+    </include>
   </group>
 
   <!-- stop velocity planning with obstacle pointcloud info -->
-  <node pkg="stop_planner" type="stop_planner" name="stop_planner" output="log">
+  <group>
     <remap from="~input/trajectory" to="path_planner/trajectory" />
     <remap from="~input/point_cloud" to="/sensing/lidar/no_ground/pointcloud" />
-    <remap from="~output/trajectory" to="stop_planner/trajectory" />
-  </node>
-
-  <!-- velocity planning with max velocity, acceleration, jerk, stop point constraint -->
-  <group>
-    <remap from="~/input/trajectory" to="stop_planner/trajectory"/>
-    <remap from="~/output/trajectory" to="trajectory"/>
-    <include file="$(find motion_velocity_planner)/launch/motion_velocity_planner_osqp.launch"/>
+    <remap from="~output/trajectory" to="trajectory" />
+    <include file="$(find stop_planner)/launch/stop_planner.launch">
+    </include>
   </group>
 
 </launch>

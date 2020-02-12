@@ -1,35 +1,38 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(osqp_interface)
 
-add_compile_options(-std=c++11 -Ofast)
-
+add_compile_options(-std=c++14 -Ofast)
 
 find_package(catkin REQUIRED COMPONENTS
-        roscpp
-        rostest
-        rosunit
+  roscpp
+  rostest
+  rosunit
 )
+
 find_package(Eigen3 REQUIRED)
 
+find_package(osqp REQUIRED)
+get_target_property(osqp_INCLUDE_DIR osqp::osqpstatic INTERFACE_INCLUDE_DIRECTORIES)
+
 catkin_package(
-        INCLUDE_DIRS include lib/osqp-v0.6.0-linux64/include
-        LIBRARIES osqp_interface
-        CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
+  INCLUDE_DIRS
+    include
+    ${osqp_INCLUDE_DIR}
+  LIBRARIES
+    osqp_interface
 )
 
 include_directories(
-        include
-        lib/osqp-v0.6.0-linux64/include
-        ${catkin_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIR}
+  include
+  ${EIGEN3_INCLUDE_DIR}
+  ${osqp_INCLUDE_DIR}
+  ${catkin_INCLUDE_DIRS}
 )
 
 add_library(osqp_interface src/osqp_interface.cpp src/csc_matrix_conv.cpp)
 
 target_link_libraries(osqp_interface
-        ${catkin_LIBRARIES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp-v0.6.0-linux64/lib/libosqp.a
-        ${CMAKE_DL_LIBS}
+  osqp::osqpstatic
+  ${catkin_LIBRARIES}
 )
 

@@ -3,7 +3,8 @@
 <launch>
   <arg name="prediction_time_horizon" default="10" />
   <arg name="prediction_sampling_delta_time" default="0.5" />
-  <node pkg="map_based_prediction" type="map_based_prediction" name="map_based_prediction" output="screen">
+  <node pkg="map_based_prediction" 
+  type="map_based_prediction" name="map_based_prediction" output="screen">
     <param name="prediction_time_horizon" value="$(arg prediction_time_horizon)" />
     <param name="prediction_sampling_delta_time" value="$(arg prediction_sampling_delta_time)" />
   </node>

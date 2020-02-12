@@ -10,13 +10,13 @@ project(autoware_perception_rviz_plugin)
 find_package(catkin REQUIRED COMPONENTS
   rviz
   tf
-  geometry_msgs
+  dummy_perception_publisher
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
   LIBRARIES autoware_perception_rviz_plugin
-  CATKIN_DEPENDS rviz tf geometry_msgs
+  CATKIN_DEPENDS rviz tf dummy_perception_publisher
 #  DEPENDS system_lib
 )
 

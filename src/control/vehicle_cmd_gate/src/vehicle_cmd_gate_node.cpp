@@ -20,8 +20,7 @@
 // User defined includes
 #include "vehicle_cmd_gate/vehicle_cmd_gate.h"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "vehicle_cmd_gate");
 
   VehicleCmdGate vehicle_cmd_gate;

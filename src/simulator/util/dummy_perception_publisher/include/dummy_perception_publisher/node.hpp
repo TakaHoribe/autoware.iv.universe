@@ -2,13 +2,9 @@
 #include <ros/ros.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
-#include <std_msgs/Int32.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <dummy_perception_publisher/Object.h>
+#include <tuple>
 #include <sensor_msgs/PointCloud2.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/exact_time.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2/convert.h>
 #include <tf2/LinearMath/Transform.h>
@@ -18,8 +14,8 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <tuple>
 #include <memory>
+#include <random>
 
 class DummyPerceptionPublisherNode
 {
@@ -27,45 +23,19 @@ private:
   ros::NodeHandle nh_, pnh_;
   ros::Publisher pointcloud_pub_;
   ros::Publisher dynamic_object_pub_;
-  ros::Subscriber object_id_sub_;
-  ros::Subscriber object_reset_id_sub_;
-
-  message_filters::Subscriber<geometry_msgs::PoseStamped> pedestrian_pose_sub_;
-  message_filters::Subscriber<geometry_msgs::TwistStamped> pedestrian_twist_sub_;
-  message_filters::Subscriber<geometry_msgs::PoseStamped> car_pose_sub_;
-  message_filters::Subscriber<geometry_msgs::TwistStamped> car_twist_sub_;
-  typedef message_filters::sync_policies::ExactTime<geometry_msgs::PoseStamped,
-                                                    geometry_msgs::TwistStamped>
-      SyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Sync;
-  Sync pedestrian_sync_;
-  Sync car_sync_;
-
+  ros::Subscriber object_sub_;
   ros::Timer timer_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-
-  enum
-  {
-    POSE = 0,
-    TWIST = 1,
-    INT = 2
-  };
-  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int>> pedestrian_poses_;
-  std::vector<std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int>> car_poses_;
+  std::vector<dummy_perception_publisher::Object> objects_;
   double visible_range_;
-
-  int object_id;
-
+  bool enable_ray_tracing_;
+  std::mt19937 random_generator_;
   void timerCallback(const ros::TimerEvent &);
-  void pedestrianPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
-  void carPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
-  void convert2Tuple(const geometry_msgs::PoseStamped::ConstPtr &pose_msg, const geometry_msgs::TwistStamped::ConstPtr &twist_msg, int object_id,
-                       std::tuple<geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, int> &output);
-  void callbackObjectId(const std_msgs::Int32ConstPtr &msg);
-  void callbackObjectResetId(const std_msgs::Int32ConstPtr &msg);
-  void ResetAllObject(void);
-  void ResetObject(int obj_id);
+  void createObjectPointcloud(const double length, const double width, const double height,const double std_dev_x,
+                              const double std_dev_y, const double std_dev_z,const tf2::Transform &tf_base_link2moved_object,
+                              pcl::PointCloud<pcl::PointXYZ>::Ptr &pointcloud_ptr);
+  void objectCallback(const dummy_perception_publisher::Object::ConstPtr &msg);
 
 public:
   DummyPerceptionPublisherNode();

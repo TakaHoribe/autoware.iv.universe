@@ -21,14 +21,14 @@
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>rviz</build_depend>
   <build_depend>tf</build_depend>
-  <build_depend>geometry_msgs</build_depend>
+  <build_depend>dummy_perception_publisher</build_depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>tf</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>dummy_perception_publisher</exec_depend>
 
   <export>
     <rviz plugin="${prefix}/plugins/plugin_description.xml"/>

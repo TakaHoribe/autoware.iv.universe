@@ -16,9 +16,13 @@
 
 #include "ssc_interface/ssc_interface.h"
 
-SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_initialized_(false),
-                               shift_cmd_initialized_(false), turn_signal_cmd_initialized_(false)
-{
+SSCInterface::SSCInterface()
+    : nh_(),
+      private_nh_("~"),
+      engage_(false),
+      command_initialized_(false),
+      shift_cmd_initialized_(false),
+      turn_signal_cmd_initialized_(false) {
   // setup parameters
   private_nh_.param<bool>("use_rear_wheel_speed", use_rear_wheel_speed_, true);
   private_nh_.param<bool>("use_adaptive_gear_ratio", use_adaptive_gear_ratio_, true);
@@ -82,45 +86,33 @@ SSCInterface::SSCInterface() : nh_(), private_nh_("~"), engage_(false), command_
   gear_pub_ = nh_.advertise<automotive_platform_msgs::GearCommand>("as/gear_select", 1, true);
 }
 
-SSCInterface::~SSCInterface()
-{
-}
+SSCInterface::~SSCInterface() {}
 
-void SSCInterface::run()
-{
-  while (ros::ok())
-  {
+void SSCInterface::run() {
+  while (ros::ok()) {
     ros::spinOnce();
     publishCommand();
     rate_->sleep();
   }
 }
 
-void SSCInterface::callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr& msg)
-{
+void SSCInterface::callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr& msg) {
   command_time_ = ros::Time::now();
   vehicle_cmd_ = *msg;
   command_initialized_ = true;
 }
-void SSCInterface::callbackFromShiftCmd(const autoware_vehicle_msgs::ShiftConstPtr& msg)
-{
+void SSCInterface::callbackFromShiftCmd(const autoware_vehicle_msgs::ShiftConstPtr& msg) {
   shift_cmd_ = *msg;
   shift_cmd_initialized_ = true;
 }
-void SSCInterface::callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr& msg)
-{
+void SSCInterface::callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr& msg) {
   turn_signal_cmd_ = *msg;
   turn_signal_cmd_initialized_ = true;
 }
-void SSCInterface::callbackFromEngage(const std_msgs::BoolConstPtr& msg)
-{
-  engage_ = msg->data;
-}
+void SSCInterface::callbackFromEngage(const std_msgs::BoolConstPtr& msg) { engage_ = msg->data; }
 
-void SSCInterface::callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr& msg)
-{
-  if (msg->name.find("veh_controller") != std::string::npos)
-  {
+void SSCInterface::callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr& msg) {
+  if (msg->name.find("veh_controller") != std::string::npos) {
     module_states_ = *msg;  // *_veh_controller status is used for 'drive/steeringmode'
   }
 }
@@ -131,24 +123,23 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
                                             const automotive_platform_msgs::BrakeFeedbackConstPtr& msg_brake,
                                             const automotive_platform_msgs::GearFeedbackConstPtr& msg_gear,
                                             const pacmod_msgs::WheelSpeedRptConstPtr& msg_wheel_speed,
-                                            const pacmod_msgs::SystemRptFloatConstPtr& msg_steering_wheel)
-{
+                                            const pacmod_msgs::SystemRptFloatConstPtr& msg_steering_wheel) {
   ros::Time stamp = msg_velocity->header.stamp;
   // ros::Time stamp = msg_wheel_speed->header.stamp;
 
   // current speed
   double speed =
-      !use_rear_wheel_speed_ ?
-          (msg_velocity->velocity) :
-          (msg_wheel_speed->rear_left_wheel_speed + msg_wheel_speed->rear_right_wheel_speed) * tire_radius_ / 2.;
+      !use_rear_wheel_speed_
+          ? (msg_velocity->velocity)
+          : (msg_wheel_speed->rear_left_wheel_speed + msg_wheel_speed->rear_right_wheel_speed) * tire_radius_ / 2.;
 
   // update adaptive gear ratio (avoiding zero divizion)
   adaptive_gear_ratio_ =
-    std::max(1e-5, agr_coef_a_ + agr_coef_b_ * speed * speed - agr_coef_c_ * msg_steering_wheel->output);
+      std::max(1e-5, agr_coef_a_ + agr_coef_b_ * speed * speed - agr_coef_c_ * msg_steering_wheel->output);
   // current steering curvature
-  double curvature = !use_adaptive_gear_ratio_ ?
-                         (msg_curvature->curvature) :
-                         std::tan(msg_steering_wheel->output / adaptive_gear_ratio_ - steering_offset_) / wheel_base_;
+  double curvature = !use_adaptive_gear_ratio_
+                         ? (msg_curvature->curvature)
+                         : std::tan(msg_steering_wheel->output / adaptive_gear_ratio_ - steering_offset_) / wheel_base_;
 
   // constexpr double tread = 1.64;  // spec sheet 1.63
   // double omega =
@@ -168,8 +159,6 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   vehicle_status.header.frame_id = BASE_FRAME_ID;
   vehicle_status.header.stamp = stamp;
 
-
-
   // speed [km/h]
   vehicle_status.status.velocity = speed;
 
@@ -182,36 +171,25 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
 
   // drive/steeringmode
   vehicle_status.status.shift.data = (module_states_.state == "active") ? autoware_vehicle_msgs::ControlMode::AUTO
-                                                                 : autoware_vehicle_msgs::ControlMode::MANUAL;
+                                                                        : autoware_vehicle_msgs::ControlMode::MANUAL;
   vehicle_status_pub_.publish(vehicle_status);
 
   // gearshift
-  if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NONE)
-  {
+  if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NONE) {
     vehicle_status.status.shift.data = -1;
-  }
-  else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::PARK)
-  {
+  } else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::PARK) {
     vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::PARKING;
-  }
-  else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::REVERSE)
-  {
+  } else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::REVERSE) {
     vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::REVERSE;
-  }
-  else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NEUTRAL)
-  {
+  } else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NEUTRAL) {
     vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::NEUTRAL;
-  }
-  else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::DRIVE)
-  {
+  } else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::DRIVE) {
     vehicle_status.status.shift.data = autoware_vehicle_msgs::Shift::DRIVE;
   }
 
   // lamp/light cannot be obtain from SSC
   // vehicle_status.lamp
   // vehicle_status.light
-
-
 
   autoware_vehicle_msgs::ControlMode mode;
   mode.data = (module_states_.state == "active") ? autoware_vehicle_msgs::ControlMode::AUTO
@@ -235,10 +213,8 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
   current_steer_wheel_deg_pub_.publish(steer_wheel_deg);
 }
 
-void SSCInterface::publishCommand()
-{
-  if (!command_initialized_)
-  {
+void SSCInterface::publishCommand() {
+  if (!command_initialized_) {
     return;
   }
 
@@ -252,25 +228,20 @@ void SSCInterface::publishCommand()
   double desired_speed = vehicle_cmd_.command.control.velocity;
 
   // Curvature for SSC steer_model
-  double desired_steering_angle = !use_adaptive_gear_ratio_ ?
-                                      vehicle_cmd_.command.control.steering_angle + steering_offset_ :
-                                      (vehicle_cmd_.command.control.steering_angle + steering_offset_) * ssc_gear_ratio_ / adaptive_gear_ratio_;
+  double desired_steering_angle =
+      !use_adaptive_gear_ratio_
+          ? vehicle_cmd_.command.control.steering_angle + steering_offset_
+          : (vehicle_cmd_.command.control.steering_angle + steering_offset_) * ssc_gear_ratio_ / adaptive_gear_ratio_;
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)
   unsigned char desired_shift = automotive_platform_msgs::Gear::NONE;
-  if (shift_cmd_initialized_ || engage_)
-  {
-    if (shift_cmd_.data = autoware_vehicle_msgs::Shift::DRIVE)
-    {
+  if (shift_cmd_initialized_ || engage_) {
+    if (shift_cmd_.data = autoware_vehicle_msgs::Shift::DRIVE) {
       desired_shift = automotive_platform_msgs::Gear::DRIVE;
-    }
-    else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::PARKING)
-    {
+    } else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::PARKING) {
       desired_shift = automotive_platform_msgs::Gear::PARK;
-    }
-    else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::REVERSE)
-    {
+    } else if (shift_cmd_.data = autoware_vehicle_msgs::Shift::REVERSE) {
       desired_shift = automotive_platform_msgs::Gear::REVERSE;
     }
   }
@@ -278,33 +249,23 @@ void SSCInterface::publishCommand()
   // Turn signal
   unsigned char desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
 
-  if (turn_signal_cmd_initialized_)
-  {
-    if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::NONE)
-    {
+  if (turn_signal_cmd_initialized_) {
+    if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::NONE) {
       desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::NONE;
-    }
-    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::LEFT)
-    {
+    } else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::LEFT) {
       desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::LEFT;
-    }
-    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::RIGHT)
-    {
+    } else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::RIGHT) {
       desired_turn_signal = automotive_platform_msgs::TurnSignalCommand::RIGHT;
-    }
-    else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::HAZARD)
-    {
+    } else if (turn_signal_cmd_.data == autoware_vehicle_msgs::TurnSignal::HAZARD) {
       // NOTE: HAZARD signal cannot be used in automotive_platform_msgs::TurnSignalCommand
     }
   }
-
 
   // Override desired speed to ZERO by emergency/timeout
   bool emergency = (vehicle_cmd_.command.emergency == 1);
   bool timeouted = (((ros::Time::now() - command_time_).toSec() * 1000) > command_timeout_);
 
-  if (emergency || timeouted)
-  {
+  if (emergency || timeouted) {
     ROS_ERROR("Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_speed = 0.0;
   }

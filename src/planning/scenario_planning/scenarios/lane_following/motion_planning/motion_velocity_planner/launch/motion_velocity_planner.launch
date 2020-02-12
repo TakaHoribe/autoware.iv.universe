@@ -28,7 +28,7 @@
   <arg name="extract_behind_dist" default="3.0"/>
   <arg name="resample_num" default="10"/>
 
-  <arg name="stop_dist_not_to_drive_vehicle" default="2.0"/>
+  <arg name="stop_dist_to_prohibit_engage" default="2.0"/>
   <arg name="enable_to_publish_emergency" default="true"/>
 
   <arg name="emergency_flag_vel_thr_kmph" default="3.0"/>
@@ -56,7 +56,7 @@
     <param name="jerk_planning_span" value="$(arg jerk_planning_span)"/>
     <param name="stop_dist_mergin" value="$(arg stop_dist_mergin)"/>
     <param name="emergency_flag_vel_thr_kmph" value="$(arg emergency_flag_vel_thr_kmph)"/>
-    <param name="stop_dist_not_to_drive_vehicle" value="$(arg stop_dist_not_to_drive_vehicle)"/>
+    <param name="stop_dist_to_prohibit_engage" value="$(arg stop_dist_to_prohibit_engage)"/>
     <param name="enable_to_publish_emergency" value="$(arg enable_to_publish_emergency)"/>
     <param name="large_jerk_report" value="$(arg large_jerk_report)"/>
   </node>

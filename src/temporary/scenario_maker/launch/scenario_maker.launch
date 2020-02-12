@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
 
-  <arg name="collision_detect" default="true"/>
+  <arg name="collision_detect" default="false" />
 
   <!-- publish camera info -->
-  <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch" />
+  <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch">
+    <arg name="use_real_camera_yaml" default="false" />
+  </include>
 
   <!-- publish collision detection information -->
   <rosparam command="load" file="$(find vehicle_description)/config/vehicle_info.yaml" />
   <!-- load vehicle info(body size) -->
-  <group if="$(eval collision_detect)" >
+  <group if="$(eval collision_detect)">
     <node pkg="scenario_maker" type="collision_detection.py" name="collision_detection" output="screen">
       <param name="margin" value="0.1" />
       <!-- Expand self-body used for collision detection[m] -->
@@ -18,12 +20,14 @@
 
   <!-- scenario -->
   <node pkg="scenario_maker" type="scenario_maker.py" name="scenario_maker" output="screen">
-    <param name="goal_dist" value="0.1" />
+    <param name="goal_dist" value="1.5" />
     <!-- Goal criteria(xy-distance) [m] -->
-    <param name="goal_theta" value="10" />
+    <param name="goal_theta" value="20" />
     <!-- Goal criteria(theta-distance)[deg] -->
-    <param name="goal_velocity" value="0.001" />
+    <param name="goal_velocity" value="0.01" />
     <!-- Goal criteria(velocity)[m/s] -->
+    <param name="max_speed" value="8.5" />
+    <!-- Max speed[m/s](publish at once) (if max_speed is 0, do not publish) -->
     <param name="give_up_time" value="600" />
     <!-- Goal criteria(time)[s] -->
     <param name="generate_obstacle" value="true" />
@@ -32,10 +36,14 @@
     <!-- Engage automaticlly or not -->
     <param name="retry_scenario" value="true" />
     <!-- Retry scenario or not -->
+    <param name="is_retry_by_collision" value="false" />
+    <!-- Retry sceanrio by collison or not -->
     <param name="max_scenario_num" value="10" />
     <!-- Numober of scenarios to try -->
     <param name="traffic_light_time" value="35" />
     <!-- Time until the traffic light changes[s] (larger than 0)-->
+    <param name="is_pub_traffic_image" value="true" /> 
+    <!-- Publish Traffic image or not -->
     <param name="initial_traffic_light" value="green" />
     <!-- initial traffic light. green or red.H -->
     <param name="record_rosbag" value="false" />
@@ -46,6 +54,9 @@
     <!-- delete rosbag of success scenario or not -->
     <param name="rosbag_file_name" value="/media/kimura/extra_ssd/rosbag/scenario" />
     <!-- dir/file name of rosbag file(**it must be absolute path ** ) -->
+    <param name="use_ndt" value="false" />
+    <!-- use ndt or not -->
+    <remap from="/max_speed_mps" to="/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps" />
   </node>
 
 </launch>

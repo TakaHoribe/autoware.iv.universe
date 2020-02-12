@@ -217,15 +217,15 @@ namespace velodyne_pointcloud
       baselinkTF_odom.setOrigin(tf2::Vector3(x, y, 0));
       baselinkTF_odom.setRotation(baselink_quat);
 
-      tf2::Vector3 base_linkTF_tras_point;
-      base_linkTF_tras_point = baselinkTF_odom * base_linkTF_point;
+      tf2::Vector3 base_linkTF_trans_point;
+      base_linkTF_trans_point = baselinkTF_odom * base_linkTF_point;
 
-      tf2::Vector3 sensorTF_tras_point;
-      sensorTF_tras_point = tf2_base_link_to_sensor * base_linkTF_tras_point;
+      tf2::Vector3 sensorTF_trans_point;
+      sensorTF_trans_point = tf2_base_link_to_sensor * base_linkTF_trans_point;
 
-      point.x = sensorTF_tras_point.getX();
-      point.y = sensorTF_tras_point.getY();
-      point.z = sensorTF_tras_point.getZ();
+      point.x = sensorTF_trans_point.getX();
+      point.y = sensorTF_trans_point.getY();
+      point.z = sensorTF_trans_point.getZ();
       point.intensity = p.intensity;
       point.ring = p.ring;
       output_pointcloud->points.push_back(point);

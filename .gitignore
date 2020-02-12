@@ -14,6 +14,7 @@ logs/
 # Ansible
 *.retry
 /ansible/roles/caffe/caffe/
+ansible/roles/osqp/osqp/
 
 # Python
 *.pyc

@@ -15,11 +15,11 @@
  */
 #pragma once
 
-#include <ros/ros.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
-#include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -29,19 +29,19 @@
 
 #include <scene_module/scene_module_interface.hpp>
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace behavior_planning {
 
-class BehaviorVelocityPlannerManager
-{
-public:
-  BehaviorVelocityPlannerManager();
-  bool callback(const autoware_planning_msgs::PathWithLaneId &input_path_msg,
-                autoware_planning_msgs::PathWithLaneId &output_path_msg);
+class BehaviorVelocityPlannerManager {
+ public:
+  void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
 
-private:
+  bool callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,
+                autoware_planning_msgs::PathWithLaneId& output_path_msg);
+
+ private:
   std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_managers_ptr_;
 };
-}
+}  // namespace behavior_planning

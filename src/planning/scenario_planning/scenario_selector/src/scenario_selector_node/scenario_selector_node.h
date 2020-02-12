@@ -76,7 +76,7 @@ class ScenarioSelectorNode {
   // Parameters
   double update_rate_;
   double th_max_message_delay_sec_;
+  double th_arrived_distance_m_;
   double th_stopped_time_sec_;
-  double th_stopped_distance_m_;
   double th_stopped_velocity_mps_;
 };

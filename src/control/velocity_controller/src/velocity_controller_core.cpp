@@ -220,7 +220,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double current_vel = current_vel_ptr_->twist.linear.x;
   double target_vel = calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx);
   double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(*trajectory_ptr_, closest_idx, delay_compensation_time_,
-                                                                      current_vel_ptr_->twist.linear.x);
+                                                                      current_vel);
 
   /* shift check */
   const Shift shift = getCurrentShift(target_vel);
@@ -335,6 +335,10 @@ void VelocityController::resetHandling(const ControlMode control_mode)
     pid_vel_.reset();
     lpf_vel_error_.reset();
   }
+  else if (control_mode == ControlMode::PID_CONTROL)
+  {
+    resetSmoothStop();
+  }
 }
 
 void VelocityController::publishCtrlCmd(const double vel, const double acc)
@@ -353,6 +357,7 @@ void VelocityController::publishCtrlCmd(const double vel, const double acc)
   debug_values_.data.at(7) = (double)controller_mode_;
   debug_values_.data.at(12) = acc;
   pub_debug_.publish(debug_values_);
+  ROS_INFO_COND(show_debug_info_, "debug values is published!");
   debug_values_.data.clear();
   debug_values_.data.resize(num_debug_values_, 0.0);
 }

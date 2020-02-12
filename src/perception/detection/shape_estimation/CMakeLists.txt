@@ -5,7 +5,6 @@ add_compile_options(-std=c++11 -O3)
 
 find_package(catkin REQUIRED
              COMPONENTS autoware_perception_msgs
-                        vector_map_msgs
                         pcl_ros
                         roscpp
                         tf2
@@ -21,7 +20,6 @@ catkin_package(INCLUDE_DIRS
                include
                CATKIN_DEPENDS
                autoware_perception_msgs
-               vector_map_msgs
                pcl_ros
                roscpp
                tf2
@@ -48,10 +46,11 @@ add_executable(shape_estimation
                src/corrector/bus_corrector.cpp
                src/corrector/truck_corrector.cpp
                src/corrector/no_corrector.cpp
-               src/map_corrector/map_corrector_node.cpp
-               src/map_corrector/vector_map.cpp
-               src/map_corrector/vehicle_map_corrector.cpp
-               src/map_corrector/no_map_corrector.cpp)
+        #        src/map_corrector/map_corrector_node.cpp
+        #        src/map_corrector/vector_map.cpp
+        #        src/map_corrector/vehicle_map_corrector.cpp
+        #        src/map_corrector/no_map_corrector.cpp
+               )
 
 add_dependencies(shape_estimation ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

@@ -454,5 +454,13 @@ lanelet::CompoundPolygon3d getPolygonFromArcLength(const lanelet::ConstLanelets&
   return lanelet.polygon3d();
 }
 
+
+double getLaneletAngle(const lanelet::ConstLanelet& lanelet, const geometry_msgs::Point& search_point)
+{
+  lanelet::BasicPoint2d llt_search_point(search_point.x, search_point.y);
+  lanelet::ConstLineString3d segment = getClosestSegment(llt_search_point, lanelet.centerline());
+  return std::atan2(segment.back().y() - segment.front().y(), segment.back().x() - segment.front().x());
+}
+
 }  // namespace utils
 }  // namespace lanelet

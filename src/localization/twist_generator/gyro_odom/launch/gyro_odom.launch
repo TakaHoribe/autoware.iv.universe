@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="input_vehicle_twist_topic" default="/vehicle/status/twist" doc="" />
+  <arg name="input_imu_topic" default="/sensing/imu/imu_raw" doc="" />
+
+  <arg name="output_twist_topic" default="gyro_twist" doc="" />
+
+  <node pkg="gyro_odom" type="gyro_odom" name="gyro_odom" output="log">
+    <remap from="vehicle/twist" to="$(arg input_vehicle_twist_topic)" />
+    <remap from="imu" to="$(arg input_imu_topic)" />
+
+    <remap from="twist" to="$(arg output_twist_topic)" />
+  </node>
+
+</launch>

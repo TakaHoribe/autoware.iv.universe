@@ -57,11 +57,7 @@ class CostmapGenerator {
  public:
   CostmapGenerator();
 
-  void init();
-  void run();
-
  private:
-  friend class TestClass;
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
@@ -69,8 +65,9 @@ class CostmapGenerator {
   bool use_points_;
   bool use_wayarea_;
 
-  bool loaded_lanelet_map_ = false;
   lanelet::LaneletMapPtr lanelet_map_;
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_;
+  sensor_msgs::PointCloud2::ConstPtr points_;
 
   std::string costmap_frame_;
   std::string vehicle_frame_;
@@ -131,12 +128,12 @@ class CostmapGenerator {
   /// \brief callback for DynamicObjectArray
   /// \param[in] in_objects input DynamicObjectArray usually from prediction or perception
   /// component
-  void onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_ojects);
+  void onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg);
 
   /// \brief callback for sensor_msgs::PointCloud2
   /// \param[in] in_points input sensot_msgs::PointCloud2. Assuming groud-fitered pointcloud
   /// by default
-  void onPoints(const sensor_msgs::PointCloud2::ConstPtr& in_points);
+  void onPoints(const sensor_msgs::PointCloud2::ConstPtr& msg);
 
   void onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg);
 

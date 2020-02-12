@@ -5,11 +5,10 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  pcl_ros
-  roscpp
-  sensor_msgs
+  nav_msgs
+  std_msgs
   tf2
-  tf2_ros
+  tf2_geometry_msgs
 )
 
 catkin_package(
@@ -47,13 +46,4 @@ install(TARGETS astar_search
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest_gtest(
-    astar_search-test
-    test/test_astar_search.test
-    test/src/test_main.cpp
-    test/src/test_astar_util.cpp
-    test/src/test_astar_search.cpp
-    test/src/test_class.cpp
-  )
-  target_link_libraries(astar_search-test ${catkin_LIBRARIES} astar_search)
 endif()

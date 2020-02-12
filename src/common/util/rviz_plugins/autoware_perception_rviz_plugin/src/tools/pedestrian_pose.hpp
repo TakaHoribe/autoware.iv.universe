@@ -60,13 +60,12 @@ private Q_SLOTS:
 
 private:
   ros::NodeHandle nh_;
-  ros::Publisher pose_pub_;
-  ros::Publisher twist_pub_;
+  ros::Publisher dummy_object_info_pub_;
 
-  StringProperty* pose_topic_property_;
-  StringProperty* twist_topic_property_;
+  StringProperty* topic_property_;
   FloatProperty* std_dev_x_;
   FloatProperty* std_dev_y_;
+  FloatProperty* std_dev_z_;
   FloatProperty* std_dev_theta_;
   FloatProperty* position_z_;
   FloatProperty* velocity_;

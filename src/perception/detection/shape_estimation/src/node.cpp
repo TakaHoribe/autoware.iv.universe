@@ -24,9 +24,9 @@ ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~")
 {
   sub_ = nh_.subscribe("input", 1, &ShapeEstimationNode::callback, this);
   pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("objects", 1, true);
-  pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
-  if (use_map_correct_)
-    map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
+  // pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
+  // if (use_map_correct_)
+  //   map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
 }
 
 void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr &input_msg)
@@ -56,10 +56,10 @@ void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObject
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
     output_msg.feature_objects.back().object.state.orientation_reliable = orientation;
   }
-  if (use_map_correct_)
-  {
-    map_corrector_node_ptr_->correct(output_msg);
-  }
+  // if (use_map_correct_)
+  // {
+  //   map_corrector_node_ptr_->correct(output_msg);
+  // }
 
   // Publish
   pub_.publish(output_msg);
