@@ -101,6 +101,8 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
   steer_cmd_prev_ = 0.0;
   lateral_error_prev_ = 0.0;
   yaw_error_prev_ = 0.0;
+  raw_steer_cmd_prev_ = 0.0;
+  raw_steer_cmd_pprev_ = 0.0;
 
   /* delay compensation */
   const int delay_step = std::round(mpc_param_.delay_compensation_time / ctrl_period_);
@@ -274,7 +276,7 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand *ctrl_cmd) 
   input_buffer_.push_back(ctrl_cmd->steering_angle);
   input_buffer_.pop_front();
   raw_steer_cmd_prev_ = Uex(0);
-
+  raw_steer_cmd_pprev_ = raw_steer_cmd_prev_;
   /* ---------- DEBUG ---------- */
 
   /* calculate predicted trajectory */
@@ -521,8 +523,8 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
   }
 
   /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
+  const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
   for (int i = 1; i < N - 1; ++i) {
-    const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
     R2ex(i - 1, i - 1) += (steer_acc_r);
     R2ex(i - 1, i + 0) += (steer_acc_r * -2.0);
     R2ex(i - 1, i + 1) += (steer_acc_r);
@@ -532,6 +534,15 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
     R2ex(i + 1, i - 1) += (steer_acc_r);
     R2ex(i + 1, i + 0) += (steer_acc_r * -2.0);
     R2ex(i + 1, i + 1) += (steer_acc_r);
+  }
+  if (N > 1) {
+    // steer acc i = 1
+    R2ex(0, 0) += steer_acc_r * 4.0;
+    R2ex(1, 0) += steer_acc_r * -2.0;
+    R2ex(0, 1) += steer_acc_r * -2.0;
+    R2ex(1, 1) += steer_acc_r * 1.0;
+    // steer acc i = 0
+    R2ex(0, 0) += steer_acc_r * 1.0;
   }
 
   if (Aex.array().isNaN().any() || Bex.array().isNaN().any() || Cex.array().isNaN().any() ||
@@ -574,6 +585,15 @@ bool MPCFollower::executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::
   H.triangularView<Eigen::Lower>() = H.transpose();
   Eigen::MatrixXd f = (mpc_matrix.Cex * (mpc_matrix.Aex * x0 + mpc_matrix.Wex)).transpose() * QCB -
                       mpc_matrix.Urefex.transpose() * mpc_matrix.R1ex;
+  if (N > 1) {
+    // steer acc i = 1
+    const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(mpc_param_.prediction_dt, 4);
+    f(0, 0) += (-4.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
+    f(0, 1) += (2.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
+    // steer acc  i = 0
+    f(0, 0) += ((-2.0 * raw_steer_cmd_prev_ + raw_steer_cmd_pprev_) * steer_acc_r)  * 0.5;
+  }
+
 
   /*
    * (1)lb < u < ub && (2)lbA < Au < ubA --> (3)[lb, lbA] < [I, A]u < [ub, ubA]

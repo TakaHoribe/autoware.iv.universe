@@ -147,6 +147,7 @@ class MPCFollower {
   autoware_planning_msgs::Trajectory current_trajectory_;              //!< @brief current waypoints to be followed
 
   double raw_steer_cmd_prev_;  //< @brief steering command calculated by mpc in previous period
+  double raw_steer_cmd_pprev_;  //< @brief steering command calculated by mpc in two times previous period
   double steer_cmd_prev_;      //< @brief steering command calculated by mpc and some filters in previous period
   double lateral_error_prev_;  //< @brief previous lateral error for derivative
   double yaw_error_prev_;      //< @brief previous lateral error for derivative
