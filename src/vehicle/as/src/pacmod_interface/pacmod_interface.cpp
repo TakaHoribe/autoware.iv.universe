@@ -285,7 +285,7 @@ void PacmodInterface::publishCommands() {
   shift_cmd.command = desired_shift;
   shift_cmd_pub_.publish(shift_cmd);
 
-  if (!turn_signal_cmd_ptr_)
+  if (turn_signal_cmd_ptr_)
   {
     /* publish shift cmd */
     pacmod_msgs::SystemCmdInt turn_cmd;
