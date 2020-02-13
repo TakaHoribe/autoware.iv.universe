@@ -69,8 +69,11 @@ private:
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_ego_point_ptr_;
+  std::unique_ptr<geometry_msgs::Point> previous_start_path_point_ptr_;
+  std::unique_ptr<geometry_msgs::Point> previous_goal_path_point_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
+  std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_path_points_ptr_;
   std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
   ros::NodeHandle nh_, private_nh_;
@@ -142,6 +145,19 @@ private:
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
     const geometry_msgs::Pose& debug_ego_pose,
     cv::Mat& clearance_map);
+    
+  bool areValidStartAndGoal(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::unique_ptr<geometry_msgs::Point>& start_point,
+    const std::unique_ptr<geometry_msgs::Point>& goal_point,
+    const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path);
+  
+  bool calculateNewStartAndGoal(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    std::unique_ptr<geometry_msgs::Point>& start_point,
+    std::unique_ptr<geometry_msgs::Point>& goal_point);
   
   bool detectAvoidingObjectsOnPath(
     const geometry_msgs::Pose& ego_pose,

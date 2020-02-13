@@ -984,6 +984,9 @@ bool EBPathPlannerNode::generateSmoothTrajectory(
     smooth_trajectory_points,
     debug_constrain_points,
     debug_interpolated_points_used_for_optimization);
+  previous_optimized_path_points_ptr_ = 
+          std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>
+            (smooth_trajectory_points);
   alighWithPathPoints(
     input_path.points,
     smooth_trajectory_points);
@@ -1615,6 +1618,178 @@ bool EBPathPlannerNode::generateClearanceMap(
   }
 }
 
+bool EBPathPlannerNode::areValidStartAndGoal(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::unique_ptr<geometry_msgs::Point>& prev_start_point,
+    const std::unique_ptr<geometry_msgs::Point>& prev_goal_point,   
+    const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path)
+{
+  //check0 nullptr
+  if(!prev_start_point|| !prev_goal_point || !prev_optimized_path)
+  {
+    ROS_WARN("1");
+    return false;
+  }
+  visualization_msgs::MarkerArray marker_array;
+  int unique_id = 0;
+  visualization_msgs::Marker start_marker;
+  start_marker.lifetime = ros::Duration(2.0);
+  start_marker.header.frame_id = "map";
+  start_marker.header.stamp = ros::Time();
+  start_marker.ns = std::string("start_point");
+  start_marker.action = visualization_msgs::Marker::MODIFY;
+  start_marker.pose.orientation.w = 1.0;
+  start_marker.pose.position = *prev_start_point;
+  start_marker.id = unique_id;
+  start_marker.type = visualization_msgs::Marker::SPHERE;
+  start_marker.scale.x = 1.0f;
+  start_marker.scale.y = 1.0f;
+  start_marker.scale.z = 1.0f;
+  start_marker.color.r = 1.0f;
+  start_marker.color.a = 1.0;
+  unique_id++;
+  marker_array.markers.push_back(start_marker);
+  
+  visualization_msgs::Marker goal_marker;
+  goal_marker.lifetime = ros::Duration(2.0);
+  goal_marker.header.frame_id = "map";
+  goal_marker.header.stamp = ros::Time();
+  goal_marker.ns = std::string("goal_point");
+  goal_marker.action = visualization_msgs::Marker::MODIFY;
+  goal_marker.pose.orientation.w = 1.0;
+  goal_marker.pose.position = *prev_goal_point;
+  goal_marker.id = unique_id;
+  goal_marker.type = visualization_msgs::Marker::SPHERE;
+  goal_marker.scale.x = 1.0f;
+  goal_marker.scale.y = 1.0f;
+  goal_marker.scale.z = 1.0f;
+  goal_marker.color.r = 1.0f;
+  goal_marker.color.a = 1.0;
+  unique_id++;
+  marker_array.markers.push_back(goal_marker);
+  markers_pub_.publish(marker_array);
+      
+  //check1 exsting prev goal and start in path points
+  bool start_exist = false;
+  bool goal_exist = false;
+  for(const auto& point: path_points)
+  {
+    // double dx1 = point.pose.position.x - prev_start_point->x;
+    // double dy1 = point.pose.position.y - prev_start_point->y;
+    // double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+    // if(dist1 < 1e-4)
+    // {
+    //   start_exist = true;
+    // }
+    double dx2 = point.pose.position.x - prev_goal_point->x;
+    double dy2 = point.pose.position.y - prev_goal_point->y;
+    double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+    // ROS_WARN("dist from prev goal %lf", dist2);
+    if(dist2 < 0.5)
+    {
+      goal_exist = true;
+    }
+  }
+  // if(!start_exist||!goal_exist)
+  if(!goal_exist)
+  {
+    // ROS_WARN("2");
+    return false;
+  }
+  
+  //check2 distance from ego to goal
+  double min_dist= 999999999;
+  double nearest_path_ind_from_ego;
+  for (int i = 0; i < path_points.size(); i++)
+  {
+    double dx = path_points[i].pose.position.x - ego_pose.position.x;
+    double dy = path_points[i].pose.position.y - ego_pose.position.y;
+    double dist = std::sqrt(dx*dx+dy*dy);
+    if(dist < min_dist)
+    {
+      min_dist = dist;
+      nearest_path_ind_from_ego = i;
+    }
+  }
+  double accum_dist = 0;
+  int goal_path_ind = -1;
+  for (int i = nearest_path_ind_from_ego; i < path_points.size(); i++)
+  {
+    if(i>nearest_path_ind_from_ego)
+    {
+      double dx = path_points[i].pose.position.x - path_points[i-1].pose.position.x;
+      double dy = path_points[i].pose.position.y - path_points[i-1].pose.position.y;
+      double dist = std::sqrt(dx*dx+dy*dy);
+      accum_dist+= dist;
+    }
+    double dx2 = path_points[i].pose.position.x - prev_goal_point->x;
+    double dy2 = path_points[i].pose.position.y - prev_goal_point->y;
+    double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+    if(dist2 < 0.5)
+    {
+      goal_path_ind = i;
+      break;
+    }
+  }
+    // ROS_WARN("accum dist from ego %lf", accum_dist);
+  
+  double dx = path_points.back().pose.position.x - prev_optimized_path->back().pose.position.x;
+  double dy = path_points.back().pose.position.y - prev_optimized_path->back().pose.position.y;
+  double dist = std::sqrt(dx*dx+dy*dy);
+    // ROS_WARN("dist from goal %lf", dist);
+  // if(accum_dist < 50 && goal_path_ind != path_points.size()-1)
+  if(accum_dist < 50 && dist >0.5)
+  {
+    // ROS_WARN("3");
+    return false;
+  }
+  return true;
+}
+
+bool EBPathPlannerNode::calculateNewStartAndGoal(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    std::unique_ptr<geometry_msgs::Point>& start_point,
+    std::unique_ptr<geometry_msgs::Point>& goal_point)   
+{
+  //check2 distance from ego to goal
+  double min_dist= 999999999;
+  double nearest_path_ind_from_ego;
+  for (int i = 0; i < path_points.size(); i++)
+  {
+    double dx = path_points[i].pose.position.x - ego_pose.position.x;
+    double dy = path_points[i].pose.position.y - ego_pose.position.y;
+    double dist = std::sqrt(dx*dx+dy*dy);
+    if(dist < min_dist)
+    {
+      min_dist = dist;
+      nearest_path_ind_from_ego = i;
+    }
+  }
+  int start_ind = std::max((int)(nearest_path_ind_from_ego- backward_fixing_distance_), 0);
+  start_point = std::make_unique<geometry_msgs::Point>(path_points[start_ind].pose.position);
+  
+  double accum_dist = 0;
+  int goal_ind;
+  for (int i = start_ind; i < path_points.size(); i++)
+  {
+    if(i>nearest_path_ind_from_ego)
+    {
+      double dx = path_points[i].pose.position.x - path_points[i-1].pose.position.x;
+      double dy = path_points[i].pose.position.y - path_points[i-1].pose.position.y;
+      double dist = std::sqrt(dx*dx+dy*dy);
+      accum_dist+= dist;
+    }
+    goal_ind = i;
+    if(accum_dist > 80)
+    {
+      break;
+    }
+  }
+  goal_point = std::make_unique<geometry_msgs::Point>(path_points[goal_ind].pose.position);
+}
+
 bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
@@ -1622,14 +1797,47 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
     std::vector<geometry_msgs::Point>& debug_constrain_points,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization)
 {
+  
+  //validation for previous start and goal
+  if(areValidStartAndGoal(ego_pose,
+                       path_points,
+                       previous_start_path_point_ptr_,
+                       previous_goal_path_point_ptr_,
+                       previous_optimized_path_points_ptr_))
+  {
+    // ROS_WARN("passing previous optimized path");
+  //yes use previous optimized path
+    smoothed_points =  *previous_optimized_path_points_ptr_;
+    return true;
+  }
+  // ROS_WARN("NOtpassing previous path");
+  
+  //no 1,update start and goal
+  calculateNewStartAndGoal(ego_pose,
+                           path_points,
+                           previous_start_path_point_ptr_,
+                           previous_goal_path_point_ptr_);
+  //no 2.generate optimized path
   std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
   eb_path_smoother_ptr_->generateOptimizedPath(
     ego_pose,
     path_points,
+    *previous_start_path_point_ptr_,
+    *previous_goal_path_point_ptr_,
     optimized_points,
     debug_constrain_points,
     debug_interpolated_points_used_for_optimization);
-  
+    
+  // std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
+  // eb_path_smoother_ptr_->generateOptimizedPath(
+  //   ego_pose,
+  //   path_points,
+  // *previous_start_path_point_ptr_,
+  // *previous_goal_path_point_ptr_,
+  //   optimized_points,
+  //   debug_constrain_points,
+  //   debug_interpolated_points_used_for_optimization);
+
   if(optimized_points.empty())
   {
     ROS_WARN("Path size %d is not enough for smoothing; Relay path to trajetory ",
