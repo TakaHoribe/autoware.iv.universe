@@ -275,8 +275,8 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand *ctrl_cmd) 
   /* save input to buffer for delay compensation*/
   input_buffer_.push_back(ctrl_cmd->steering_angle);
   input_buffer_.pop_front();
-  raw_steer_cmd_prev_ = Uex(0);
   raw_steer_cmd_pprev_ = raw_steer_cmd_prev_;
+  raw_steer_cmd_prev_ = Uex(0);
   /* ---------- DEBUG ---------- */
 
   /* calculate predicted trajectory */
@@ -516,33 +516,41 @@ bool MPCFollower::generateMPCMatrix(const MPCTrajectory &reference_trajectory, M
   /* add steering rate : weight for (u(i) - u(i-1) / dt )^2 */
   for (int i = 0; i < N - 1; ++i) {
     const double steer_rate_r = mpc_param_.weight_steer_rate / (DT * DT);
-    R2ex(i + 0, i + 0) += steer_rate_r;
-    R2ex(i + 1, i + 0) -= steer_rate_r;
-    R2ex(i + 0, i + 1) -= steer_rate_r;
-    R2ex(i + 1, i + 1) += steer_rate_r;
+    R1ex(i + 0, i + 0) += steer_rate_r;
+    R1ex(i + 1, i + 0) -= steer_rate_r;
+    R1ex(i + 0, i + 1) -= steer_rate_r;
+    R1ex(i + 1, i + 1) += steer_rate_r;
   }
+    if(N > 1) {
+    //steer rate i = 0
+    R1ex(0, 0) += mpc_param_.weight_steer_rate / (ctrl_period_ * ctrl_period_);
+    }
+
 
   /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
   const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
+  const double steer_acc_r_cp1 = mpc_param_.weight_steer_acc / (std::pow(DT, 3)*ctrl_period_);
+  const double steer_acc_r_cp2 = mpc_param_.weight_steer_acc / (std::pow(DT, 2)*std::pow(ctrl_period_,2));
+  const double steer_acc_r_cp4 = mpc_param_.weight_steer_acc / std::pow(ctrl_period_, 4);
   for (int i = 1; i < N - 1; ++i) {
-    R2ex(i - 1, i - 1) += (steer_acc_r);
-    R2ex(i - 1, i + 0) += (steer_acc_r * -2.0);
-    R2ex(i - 1, i + 1) += (steer_acc_r);
-    R2ex(i + 0, i - 1) += (steer_acc_r * -2.0);
-    R2ex(i + 0, i + 0) += (steer_acc_r * 4.0);
-    R2ex(i + 0, i + 1) += (steer_acc_r * -2.0);
-    R2ex(i + 1, i - 1) += (steer_acc_r);
-    R2ex(i + 1, i + 0) += (steer_acc_r * -2.0);
-    R2ex(i + 1, i + 1) += (steer_acc_r);
+    R1ex(i - 1, i - 1) += (steer_acc_r);
+    R1ex(i - 1, i + 0) += (steer_acc_r * -2.0);
+    R1ex(i - 1, i + 1) += (steer_acc_r);
+    R1ex(i + 0, i - 1) += (steer_acc_r * -2.0);
+    R1ex(i + 0, i + 0) += (steer_acc_r * 4.0);
+    R1ex(i + 0, i + 1) += (steer_acc_r * -2.0);
+    R1ex(i + 1, i - 1) += (steer_acc_r);
+    R1ex(i + 1, i + 0) += (steer_acc_r * -2.0);
+    R1ex(i + 1, i + 1) += (steer_acc_r);
   }
   if (N > 1) {
     // steer acc i = 1
-    R2ex(0, 0) += steer_acc_r * 4.0;
-    R2ex(1, 0) += steer_acc_r * -2.0;
-    R2ex(0, 1) += steer_acc_r * -2.0;
-    R2ex(1, 1) += steer_acc_r * 1.0;
+    R1ex(0, 0) += steer_acc_r * 1.0 + steer_acc_r_cp2 * 1.0 + steer_acc_r_cp1 * 2.0;
+    R1ex(1, 0) += steer_acc_r * -1.0 + steer_acc_r_cp1 * -1.0;
+    R1ex(0, 1) += steer_acc_r * -1.0 + steer_acc_r_cp1 * -1.0;
+    R1ex(1, 1) += steer_acc_r * 1.0;
     // steer acc i = 0
-    R2ex(0, 0) += steer_acc_r * 1.0;
+    R1ex(0, 0) += steer_acc_r_cp4 * 1.0;
   }
 
   if (Aex.array().isNaN().any() || Bex.array().isNaN().any() || Cex.array().isNaN().any() ||
@@ -586,12 +594,18 @@ bool MPCFollower::executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::
   Eigen::MatrixXd f = (mpc_matrix.Cex * (mpc_matrix.Aex * x0 + mpc_matrix.Wex)).transpose() * QCB -
                       mpc_matrix.Urefex.transpose() * mpc_matrix.R1ex;
   if (N > 1) {
+    //steer rate i = 0
+    f(0, 0) += -2.0 * mpc_param_.weight_steer_rate / (std::pow(mpc_param_.prediction_dt, 2)) * 0.5;
+
     // steer acc i = 1
-    const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(mpc_param_.prediction_dt, 4);
-    f(0, 0) += (-4.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
-    f(0, 1) += (2.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
+    //const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(mpc_param_.prediction_dt, 4);
+    const double steer_acc_r_cp1 = mpc_param_.weight_steer_acc / (std::pow(mpc_param_.prediction_dt, 3)*ctrl_period_);
+    const double steer_acc_r_cp2 = mpc_param_.weight_steer_acc / (std::pow(mpc_param_.prediction_dt, 2)*std::pow(ctrl_period_,2));
+    const double steer_acc_r_cp4 = mpc_param_.weight_steer_acc / std::pow(ctrl_period_, 4);
+    f(0, 0) += (-2.0 * raw_steer_cmd_prev_ * (steer_acc_r_cp1 + steer_acc_r_cp2)) * 0.5;
+    f(0, 1) += (2.0 * raw_steer_cmd_prev_ * steer_acc_r_cp1) * 0.5;
     // steer acc  i = 0
-    f(0, 0) += ((-2.0 * raw_steer_cmd_prev_ + raw_steer_cmd_pprev_) * steer_acc_r)  * 0.5;
+    f(0, 0) += ((-2.0 * raw_steer_cmd_prev_ + raw_steer_cmd_pprev_) * steer_acc_r_cp4) * 0.5;
   }
 
 
