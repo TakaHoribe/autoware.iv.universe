@@ -16,10 +16,6 @@
 
 #include "libplanning_utils/interpolate.h"
 
-/*
- * linear interpolation
- */
-
 bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
                                     const std::vector<double>& return_index, std::vector<double>& return_value) {
   auto isIncrease = [](const std::vector<double>& x) {

@@ -8,8 +8,9 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>roscpp</depend>
+  <depend>autoware_planning_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>roscpp</depend>
   <depend>tf2</depend>
   <depend>tf2_eigen</depend>
 

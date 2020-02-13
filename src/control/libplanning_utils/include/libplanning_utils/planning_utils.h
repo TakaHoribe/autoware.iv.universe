@@ -17,6 +17,8 @@
 #pragma once
 
 #include <memory>
+#include <utility>
+#include <vector>
 
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -24,6 +26,7 @@
 
 #include <ros/ros.h>
 
+#include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 
@@ -45,16 +48,14 @@ double calcLateralError2D(const geometry_msgs::Point& a_start, const geometry_ms
                           const geometry_msgs::Point& b);
 double calcRadius(const geometry_msgs::Point& target, const geometry_msgs::Pose& current_pose);
 double convertCurvatureToSteeringAngle(double wheel_base, double kappa);
-std::vector<geometry_msgs::Pose> extractPoses(const autoware_msgs::Lane& lane);
-std::vector<geometry_msgs::Pose> extractPoses(const std::vector<autoware_msgs::Waypoint>& wps);
-std::vector<geometry_msgs::Pose> extractPoses(const std::vector<autoware_planner_msgs::Motion>& motions);
-std::vector<geometry_msgs::Pose> extractPoses(const autoware_planner_msgs::Trajectory& motions);
-std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry_msgs::Pose>& curr_ps,
-                                                      const geometry_msgs::Pose& curr_pose, double dist_thr = 3.0,
-                                                      double angle_thr = M_PI_2);  // TODO: more test
 
-// 0 : front, 1 : reverse, 2 :invalid
-int8_t getLaneDirection(const std::vector<geometry_msgs::Pose>& poses, double dist_thr = 0.5);
+std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Trajectory& motions);
+
+std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry_msgs::Pose>& poses,
+                                                      const geometry_msgs::Pose& current_pose,
+                                                      const double th_dist = 3.0, const double th_yaw = M_PI_2);
+
+int8_t getLaneDirection(const std::vector<geometry_msgs::Pose>& poses, double th_dist = 0.5);
 bool isDirectionForward(const geometry_msgs::Pose& prev, const geometry_msgs::Pose& next);
 bool isDirectionForward(const geometry_msgs::Pose& prev, const geometry_msgs::Point& next);
 
@@ -99,53 +100,15 @@ bool isInPolygon(const std::vector<T>& polygon, const T& point) {
 template <>
 bool isInPolygon(const std::vector<geometry_msgs::Point>& polygon, const geometry_msgs::Point& point);
 
-double kmph2mps(double velocity_kmph);
-double normalizeEulerAngle(double euler);
+double kmph2mps(const double velocity_kmph);
+double normalizeEulerAngle(const double euler);
+
 geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point& point,
                                                      const geometry_msgs::Pose& current_pose);
-geometry_msgs::Point transformToAbsoluteCoordinate3D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin);  // TODO: test
+
 geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point& point,
                                                      const geometry_msgs::Pose& current_pose);
-geometry_msgs::Point transformToRelativeCoordinate3D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& current_pose);  // TODO: test
-std::vector<geometry_msgs::Pose> splineInterpolatePosesWithConstantDistance(
-    const std::vector<geometry_msgs::Pose>& in_poses, const double& interval_length);
-geometry_msgs::Quaternion getQuaternionFromYaw(const double& _yaw);
 
-std::pair<bool, geometry_msgs::Point> calcFootOfPerpendicular(const geometry_msgs::Point& line_s,
-                                                              const geometry_msgs::Point& line_e,
-                                                              const geometry_msgs::Point& point);
+geometry_msgs::Quaternion getQuaternionFromYaw(const double _yaw);
 
-// which_point: 0 = forward, 1 = backward
-std::pair<bool, geometry_msgs::Point> findIntersectionWithLineCircle(const geometry_msgs::Point& line_s,
-                                                                     const geometry_msgs::Point& line_e,
-                                                                     const geometry_msgs::Point& point, double range,
-                                                                     int8_t which_point = 0);
-
-// which_dir: 0 = forward, 1 = backward
-std::pair<bool, int32_t> findFirstIdxOutOfRange(const std::vector<geometry_msgs::Pose>& pose_v,
-                                                const geometry_msgs::Pose& base_pose, double range, int8_t which_dir);
-
-// which dir 0 : forward 1 : backward
-std::tuple<bool, int32_t, geometry_msgs::Pose> calcDistanceConsideredPoseAndIdx(const autoware_msgs::Lane& lane,
-                                                                                const geometry_msgs::Pose& base_pose,
-                                                                                double stop_dist, int8_t which_dir);
-geometry_msgs::Pose calcVehicleFrontPose(const geometry_msgs::Pose& curr_pose, double base_link_to_front);
-bool isNearBy(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2, double threshold);
-
-template <typename T>
-T waitForGetParam(const ros::NodeHandle& nh, const std::string& key) {
-  T res;
-  ros::Rate loop_rate(10);  // 10Hz
-  while (true) {
-    auto is_succeeded = nh.getParam(key, res);
-    if (is_succeeded) break;
-
-    ROS_WARN("cannot get %s, waiting...", key.c_str());
-    loop_rate.sleep();
-  }
-
-  return res;
-}
 }  // namespace planning_utils

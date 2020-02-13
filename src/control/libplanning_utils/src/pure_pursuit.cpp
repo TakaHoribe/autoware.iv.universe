@@ -27,16 +27,13 @@ std::pair<bool, double> PurePursuit::run() {
   if (!isRequirementsSatisfied()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
 
   auto clst_pair = findClosestIdxWithDistAngThr(*curr_wps_ptr_, *curr_pose_ptr_, clst_thr_dist_, clst_thr_ang_);
-  // ROS_INFO("curr_bool: %d, clst_idx: %d", clst_pair.first, clst_pair.second);
 
   if (!clst_pair.first) {
     ROS_WARN("cannot find, curr_bool: %d, clst_idx: %d", clst_pair.first, clst_pair.second);
     return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
   }
 
-  // ROS_INFO("clst_idx %d", clst_pair.second);
   int32_t next_wp_idx = findNextPointIdx(clst_pair.second);
-  // ROS_INFO("next_wp_idx: %d", next_wp_idx);
   if (next_wp_idx == -1) {
     ROS_WARN("lost next waypoint");
     return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
@@ -47,7 +44,6 @@ std::pair<bool, double> PurePursuit::run() {
   geometry_msgs::Point next_tgt_pos;
   // if use_lerp_ is false or next waypoint is first
   if (!use_lerp_ || next_wp_idx == 0) {
-    // ROS_INFO("use_lerp: %d, next_wp_idx: %d", use_lerp_, next_wp_idx);
     next_tgt_pos = curr_wps_ptr_->at(next_wp_idx).position;
   } else {
     // linear interpolation
@@ -59,8 +55,6 @@ std::pair<bool, double> PurePursuit::run() {
     }
 
     next_tgt_pos = lerp_pair.second;
-    // ROS_INFO("next_tgt_pos.x: %lf, next_tgt_pos.y: %lf, next_tgt_pos.z: %lf", next_tgt_pos.x, next_tgt_pos.y,
-    // next_tgt_pos.z);
   }
   loc_next_tgt_ = next_tgt_pos;
 
@@ -71,7 +65,6 @@ std::pair<bool, double> PurePursuit::run() {
 
 // linear interpolation of next target
 std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_wp_idx) {
-  // ROS_INFO("lerpNextTarget");
   constexpr double ERROR2 = 1e-5;  // 0.00001
   const geometry_msgs::Point& vec_end = curr_wps_ptr_->at(next_wp_idx).position;
   const geometry_msgs::Point& vec_start = curr_wps_ptr_->at(next_wp_idx - 1).position;
@@ -84,8 +77,7 @@ std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_w
     return std::make_pair(false, geometry_msgs::Point());
   }
 
-  double lateral_error = calcLateralError2D(vec_start, vec_end, curr_pose.position);
-  // ROS_INFO("lat_err: %lf, radius: %lf", lateral_error, lookahead_distance_);
+  const double lateral_error = calcLateralError2D(vec_start, vec_end, curr_pose.position);
 
   if (fabs(lateral_error) > lookahead_distance_) {
     ROS_ERROR("lateral error is larger than lookahead distance");
@@ -110,7 +102,7 @@ std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_w
   } else {
     // if there are two intersection
     // get intersection in front of vehicle
-    double s = sqrt(pow(lookahead_distance_, 2) - pow(lateral_error, 2));
+    const double s = sqrt(pow(lookahead_distance_, 2) - pow(lateral_error, 2));
     geometry_msgs::Point res;
     res.x = h.x + s * uva2d.x();
     res.y = h.y + s * uva2d.y();
@@ -125,7 +117,6 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
 
   // look for the next waypoint.
   for (int32_t i = search_start_idx; i < (int32_t)curr_wps_ptr_->size(); i++) {
-    // ROS_INFO("i: %d", i);
     // if search waypoint is the last
     if (i == ((int32_t)curr_wps_ptr_->size() - 1)) {
       ROS_WARN("search waypoint is the last");
@@ -135,23 +126,17 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
     // if waypoint direction is forward
     const auto gld = planning_utils::getLaneDirection(*curr_wps_ptr_, 0.05);
     if (gld == 0) {
-      // ROS_INFO("waypoint direction is forward");
-
       // if waypoint is not in front of ego, skip
       auto ret = planning_utils::transformToRelativeCoordinate2D(curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
-      // ROS_INFO("ret.x: %lf, %lf, %lf",ret.x, ret.y, ret.z);
       if (ret.x < 0) {
-        // ROS_INFO("waypoint is not in front of ego");
         continue;
       }
-    } else if (gld == 1)  // waypoint direction is backward
-    {
-      // ROS_INFO("waypoint direction is backward");
+    } else if (gld == 1) {
+      // waypoint direction is backward
+
       // if waypoint is in front of ego, skip
       auto ret = planning_utils::transformToRelativeCoordinate2D(curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
-      // ROS_INFO("ret.x: %lf, %lf, %lf",ret.x, ret.y, ret.z);
       if (ret.x > 0) {
-        // ROS_INFO("waypoint is in front of ego");
         continue;
       }
     } else {
@@ -162,7 +147,6 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
     const geometry_msgs::Point& curr_pose_point = curr_pose_ptr_->position;
     // if there exists an effective waypoint
     const double ds = calcDistSquared2D(curr_motion_point, curr_pose_point);
-    // ROS_INFO("ds: %lf, lookahead^2: %lf", ds, std::pow(lookahead_distance_, 2));
     if (ds > std::pow(lookahead_distance_, 2)) return i;
   }
 

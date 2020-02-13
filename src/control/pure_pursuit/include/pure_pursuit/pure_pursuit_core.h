@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef PURE_PURSUIT_CORE_H
-#define PURE_PURSUIT_CORE_H
+#pragma once
 
-// ROS includes
+#include <deque>
+#include <memory>
+#include <vector>
+
+#include <ros/ros.h>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
+#include <autoware_control_msgs/ControlCommandStamped.h>
+#include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <ros/ros.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 
-// User defined includes
-#include <autoware_health_checker/health_checker/health_checker.h>
-#include "autoware_config_msgs/ConfigWaypointFollower.h"
-#include "autoware_msgs/ControlCommandStamped.h"
-#include "autoware_planner_msgs/Trajectory.h"
 #include "libplanning_utils/planning_utils.h"
 #include "libplanning_utils/pure_pursuit.h"
-
-// C++ includes
-#include <chrono>
-#include <memory>
-
-namespace waypoint_follower {
 
 enum class Mode : int32_t {
   waypoint,
@@ -69,80 +66,90 @@ struct PurePursuitDynamicConfig {
 class PurePursuitNode {
  public:
   PurePursuitNode();
-  ~PurePursuitNode() = default;
 
  private:
-  // handle
+  // Node Handle
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
-  // publisher
-  ros::Publisher twist_pub_, ctrl_pub_, ld_pub_, le_pub_, viz_pub_, cv_pub_, lec_pub_, sdc_pub_;
+  // Subscriber
+  ros::Subscriber sub_trajectory_;
+  ros::Subscriber sub_current_velocity_;
 
-  // subscriber
-  ros::Subscriber pose_sub_, traj_sub_, vel_sub_, config_sub_;
+  // Callback Function
+  void onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg);
+  void onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
-  // processing Timer
-  ros::Timer proc_timer_;
+  // TF
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  void updateCurrentPose();
+
+  // Publisher
+  ros::Publisher pub_twist_cmd_;
+  ros::Publisher pub_ctrl_cmd_;
+
+  // Debug Publisher
+  ros::Publisher pub_ld_;
+  ros::Publisher pub_le_;
+  ros::Publisher pub_viz_;
+  ros::Publisher pub_cv_;
+  ros::Publisher pub_lec_;
+  ros::Publisher pub_sdc_;
+
+  // Debug Publish Function
+  void publishCommand(const double kappa, const double cmd_vel, const double cmd_acc);
+  void publishZeroCommand();
+  void publishTwistStamped(const double kappa, const double cmd_vel);
+  void publishControlCommandStamped(const double kappa, const double cmd_vel, const double cmd_acc);
+  void publishLateralError(const double lat_error);
+  void publishLateralErrorCompensation(const double lat_error_comp_ratio);
+
+  void publishCurrentCommandVelocity(const double cmd_vel);
+
+  void publishVisualizer(const geometry_msgs::Point& next_wp_pos, const geometry_msgs::Point& next_tgt_pos,
+                         const geometry_msgs::Pose& curr_pose, const double ld);
+  void publishLookaheadDistance(const double ld);
+
+  // Timer
+  ros::Timer timer_;
+  void onTimer(const ros::TimerEvent& event);
 
   std::unique_ptr<planning_utils::PurePursuit> pp_ptr_;
   std::unique_ptr<PurePursuitDynamicConfig> ppdconf_ptr_;
 
-  // variables
-  bool pub_twist_cmd_, pub_ctrl_cmd_, use_lat_error_compensation_, use_steering_delay_compensation_;
+  // Parameter
+  bool use_lerp_;
+  bool publish_twist_cmd_;
+  bool publish_ctrl_cmd_;
+  bool use_lat_error_compensation_;
+  bool use_steering_delay_compensation_;
   double wheel_base_;
   double ctrl_period_;
   double velocity_delay_compensation_time_;
   double lec_ratio_, lec_max_;
   double steering_delay_compensation_time_;
-  std::deque<double> angular_z_buffer_;  //[rad/s]
 
-  geometry_msgs::TwistStampedConstPtr curr_vel_ptr_;
-  autoware_planner_msgs::TrajectoryConstPtr curr_traj_ptr_;
-  geometry_msgs::PoseStampedConstPtr curr_pose_ptr_;
-
-  // initializer
-  void initForROS();
-
-  // callbacks
-  void timerCallback(const ros::TimerEvent& event);
-  void configCallback(const autoware_config_msgs::ConfigWaypointFollowerConstPtr& config);
-  void cpCallback(const geometry_msgs::PoseStampedConstPtr& msg);
-  void cvCallback(const geometry_msgs::TwistStampedConstPtr& msg);
-  void trajCallback(const autoware_planner_msgs::TrajectoryConstPtr& msg);
-
-  // publsihers
-  void publishCommand(double kappa, double cmd_vel, double cmd_acc);
-  void publishZeroCommand();
-  void publishTwistStamped(double kappa, double cmd_vel);
-  void publishControlCommandStamped(double kappa, double cmd_vel, double cmd_acc);
-  void publishLateralError(double lat_error);
-  void publishLateralErrorCompensation(double lat_error_comp_ratio);
-
-  void publishCurrentCommandVelocity(double cmd_vel);
-
-  void publishVisualizer(const geometry_msgs::Point& next_wp_pos, const geometry_msgs::Point& next_tgt_pos,
-                         const geometry_msgs::Pose& curr_pose, double ld);
-  void publishLookaheadDistance(double ld);
+  // Variable
+  std::deque<double> angular_z_buffer_;  // [rad/s]
+  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;
+  autoware_planning_msgs::Trajectory::ConstPtr current_trajectory_ptr_;
+  geometry_msgs::TwistStamped::ConstPtr current_velocity_ptr_;
 };
 
 // functions
 double computeLookaheadDistance(const PurePursuitDynamicConfig& ppdconf, double curr_linear_vel, double cmd_vel);
 double computeCommandVelocity(const PurePursuitDynamicConfig& ppdconf,
-                              const std::vector<autoware_planner_msgs::MotionStamped>& curr_mos, int32_t clst_wp_idx);
+                              const std::vector<autoware_planning_msgs::TrajectoryPoint>& points, int32_t clst_wp_idx);
 double computeCommandAcceleration(const PurePursuitDynamicConfig& ppdconf,
-                                  const std::vector<autoware_planner_msgs::MotionStamped>& curr_mos,
+                                  const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
                                   int32_t clst_wp_idx);
 double computeCommandAccelerationWithDelayCompensation(
-    const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planner_msgs::MotionStamped>& curr_mos,
+    const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
     const int32_t clst_wp_idx, const double& delay, const double& curr_vel);
 double computeLateralError(const geometry_msgs::Point& point,
-                           const std::vector<autoware_planner_msgs::MotionStamped>& curr_mos, int32_t clst_wp_idx);
+                           const std::vector<autoware_planning_msgs::TrajectoryPoint>& points, int32_t clst_wp_idx);
 
 geometry_msgs::Pose computePoseWithSteeringDelayCompensation(const geometry_msgs::Pose& curr_pose, double curr_linear_x,
                                                              const std::deque<double>& curr_angular_z_buf,
                                                              double time_delta);
-
-}  // namespace waypoint_follower
-
-#endif  // PURE_PURSUIT_CORE_H

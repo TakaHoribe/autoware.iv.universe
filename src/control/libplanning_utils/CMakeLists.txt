@@ -4,6 +4,7 @@ project(libplanning_utils)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
+  autoware_planning_msgs
   geometry_msgs
   roscpp
   tf2
@@ -18,6 +19,7 @@ catkin_package(
   LIBRARIES
     planning_utils
   CATKIN_DEPENDS
+    autoware_planning_msgs
     geometry_msgs
     tf2
     tf2_eigen

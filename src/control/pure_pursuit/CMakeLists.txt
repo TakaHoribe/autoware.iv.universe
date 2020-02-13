@@ -4,6 +4,7 @@ project(pure_pursuit)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
+  autoware_control_msgs
   geometry_msgs
   libplanning_utils
   roscpp
@@ -16,6 +17,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
+    autoware_control_msgs
     geometry_msgs
     libplanning_utils
     sensor_msgs
@@ -28,23 +30,23 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(pure_pursuit_rev2
+add_executable(pure_pursuit
   nodes/pure_pursuit/pure_pursuit_node.cpp
   nodes/pure_pursuit/pure_pursuit_core.cpp
   nodes/pure_pursuit/pure_pursuit_viz.cpp
 )
 
-target_link_libraries(pure_pursuit_rev2
+target_link_libraries(pure_pursuit
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(pure_pursuit_rev2
+add_dependencies(pure_pursuit
   ${catkin_EXPORTED_TARGETS}
 )
 
 
 ## Install executables and/or libraries
-install(TARGETS pure_pursuit_rev2
+install(TARGETS pure_pursuit
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

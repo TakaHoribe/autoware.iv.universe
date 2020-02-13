@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-// ROS Includes
 #include <ros/ros.h>
 
-// User defined includes
 #include "pure_pursuit/pure_pursuit_core.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "pure_pursuit");
-  waypoint_follower::PurePursuitNode ppn;
+
+  PurePursuitNode pure_pursuit_node;
+
   ros::spin();
 
   return 0;

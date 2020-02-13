@@ -16,7 +16,6 @@
 
 #include "pure_pursuit/pure_pursuit_viz.h"
 
-namespace waypoint_follower {
 // display the next waypoint by markers.
 std::unique_ptr<visualization_msgs::Marker> displayNextWaypoint(const geometry_msgs::Point& position) {
   std::unique_ptr<visualization_msgs::Marker> marker(new visualization_msgs::Marker);
@@ -143,7 +142,7 @@ std::unique_ptr<visualization_msgs::Marker> displayTrajectoryCircle(
 
 // display the search radius by markers.
 std::unique_ptr<visualization_msgs::Marker> displaySearchRadius(const geometry_msgs::Point& current_pose,
-                                                                double search_radius) {
+                                                                const double search_radius) {
   std::unique_ptr<visualization_msgs::Marker> marker(new visualization_msgs::Marker);
   marker->header.frame_id = MAP_FRAME;
   marker->header.stamp = ros::Time();
@@ -163,7 +162,7 @@ std::unique_ptr<visualization_msgs::Marker> displaySearchRadius(const geometry_m
   return marker;
 }
 
-visualization_msgs::MarkerArray displayControlTrajectory(const autoware_planner_msgs::Trajectory& traj) {
+visualization_msgs::MarkerArray displayControlTrajectory(const autoware_planning_msgs::Trajectory& trajectory) {
   visualization_msgs::MarkerArray ma;
   visualization_msgs::Marker marker;
   marker.header.frame_id = MAP_FRAME;
@@ -180,9 +179,9 @@ visualization_msgs::MarkerArray displayControlTrajectory(const autoware_planner_
   marker.scale.z = 0.005;
   marker.frame_locked = true;
 
-  for (uint32_t i = 0; i < traj.motions.size(); i++) {
+  for (size_t i = 0; i < trajectory.points.size(); i++) {
     marker.id = i;
-    marker.pose = traj.motions.at(i).motion.pose;
+    marker.pose = trajectory.points.at(i).pose;
     ma.markers.push_back(marker);
   }
 
@@ -190,14 +189,12 @@ visualization_msgs::MarkerArray displayControlTrajectory(const autoware_planner_
   marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   marker.action = visualization_msgs::Marker::ADD;
   marker.scale.z = 0.05;
-  for (uint32_t i = 0; i < traj.motions.size(); i++) {
+  for (size_t i = 0; i < trajectory.points.size(); i++) {
     marker.id = i;
-    marker.pose = traj.motions.at(i).motion.pose;
+    marker.pose = trajectory.points.at(i).pose;
     marker.text = std::to_string(i);
     ma.markers.push_back(marker);
   }
 
   return ma;
 }
-
-}  // namespace waypoint_follower
