@@ -34,6 +34,7 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, 0.39);
   private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
   private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
+  private_nh_.param<bool>("enable_steering_rate_control", enable_steering_rate_control_, false);
   private_nh_.param<double>("vgr_coef_a", vgr_coef_a_, 15.713);  // variable gear ratio coeffs
   private_nh_.param<double>("vgr_coef_b", vgr_coef_b_, 0.053);   // variable gear ratio coeffs
   private_nh_.param<double>("vgr_coef_c", vgr_coef_c_, 0.042);   // variable gear ratio coeffs
@@ -262,8 +263,16 @@ void PacmodInterface::publishCommands() {
 
   /* publish steering cmd */
   pacmod_msgs::SteerSystemCmd steer_cmd;
-
-  double desired_rotation_rate = 6.6;
+  double steer_rate_max = 6.6;   // [rad/s]
+  double steer_rate_min = 0.5;   // [rad/s]
+  double desired_rotation_rate;  // [rad/s]
+  if (enable_steering_rate_control_) {
+    const double rate_min = 0.5;
+    desired_rotation_rate = vehicle_cmd_ptr_->command.control.steering_angle * adaptive_gear_ratio;
+    desired_rotation_rate = std::min(std::max(std::fabs(desired_rotation_rate), steer_rate_min), steer_rate_max);
+  } else {
+    desired_rotation_rate = steer_rate_max;
+  }
   steer_cmd.header.frame_id = base_frame_id_;
   steer_cmd.header.stamp = current_time;
   steer_cmd.enable = engage_cmd_;
