@@ -1,0 +1,5 @@
+<launch>
+
+  <test test-name="test-pure_pursuit_viz" pkg="pure_pursuit" type="test-pure_pursuit_viz" name="test_viz"/>
+
+</launch>

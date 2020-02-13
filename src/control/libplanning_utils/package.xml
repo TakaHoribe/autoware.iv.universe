@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>libplanning_utils</name>
+    <version>1.9.1</version>
+    <description>The waypoint_follower package</description>
+    <maintainer email="h_ohta@ertl.jp">h_ohta</maintainer>
+    <license>TODO</license>
+    <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>autoware_build_flags</buildtool_depend>
+
+    <depend>roscpp</depend>
+    <depend>geometry_msgs</depend>
+    <depend>autoware_planner_msgs</depend>
+    <depend>autoware_msgs</depend>
+    <depend>tf2</depend>
+    <depend>tf2_eigen</depend>
+
+    <export>
+    </export>
+</package>

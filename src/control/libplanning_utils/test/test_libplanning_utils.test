@@ -1,0 +1,5 @@
+<launch>
+
+  <test test-name="test-libplanning_utils" pkg="libplanning_utils" type="test-libplanning_utils" name="test"/>
+
+</launch>
