@@ -14,6 +14,7 @@ DummyPerceptionPublisherNode::DummyPerceptionPublisherNode() : nh_(), pnh_("~"),
 
   timer_ = nh_.createTimer(ros::Duration(0.1), &DummyPerceptionPublisherNode::timerCallback, this);
   pnh_.param<double>("visible_range", visible_range_, double(100.0));
+  pnh_.param<double>("detection_successful_rate", detection_successful_rate_, 0.8);
   pnh_.param<bool>("enable_ray_tracing", enable_ray_tracing_, true);
 }
 
@@ -38,7 +39,9 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &) {
 
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> v_pointcloud;
   std::vector<size_t> delete_idxs;
+  static std::uniform_real_distribution<> detection_successful_random(0.0, 1.0);
   for (size_t i = 0; i < objects_.size(); ++i) {
+    if (detection_successful_rate_ < detection_successful_random(random_generator_)) continue;
     const double std_dev_x = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[0]);
     const double std_dev_y = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[7]);
     const double std_dev_z = std::sqrt(objects_.at(i).initial_state.pose_covariance.covariance[14]);
