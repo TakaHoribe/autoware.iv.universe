@@ -275,8 +275,8 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand *ctrl_cmd) 
   /* save input to buffer for delay compensation*/
   input_buffer_.push_back(ctrl_cmd->steering_angle);
   input_buffer_.pop_front();
-  raw_steer_cmd_prev_ = Uex(0);
   raw_steer_cmd_pprev_ = raw_steer_cmd_prev_;
+  raw_steer_cmd_prev_ = Uex(0);
   /* ---------- DEBUG ---------- */
 
   /* calculate predicted trajectory */

@@ -269,7 +269,7 @@ void PacmodInterface::publishCommands() {
   double desired_rotation_rate;  // [rad/s]
   if (enable_steering_rate_control_) {
     const double rate_min = 0.5;
-    desired_rotation_rate = vehicle_cmd_ptr_->command.control.steering_angle * adaptive_gear_ratio;
+    desired_rotation_rate = 3.0 * vehicle_cmd_ptr_->command.control.steering_angle * adaptive_gear_ratio;
     desired_rotation_rate = std::min(std::max(std::fabs(desired_rotation_rate), steer_rate_min), steer_rate_max);
   } else {
     desired_rotation_rate = steer_rate_max;
