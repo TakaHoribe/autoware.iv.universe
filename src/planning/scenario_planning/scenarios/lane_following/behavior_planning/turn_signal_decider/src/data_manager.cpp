@@ -83,7 +83,15 @@ void DataManager::onVehiclePoseUpdate(const ros::TimerEvent& event)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_ERROR_STREAM_THROTTLE(5, ex.what());
+    // if pose has never arrived before, then wait for localizatioon
+    if (!is_pose_ready_)
+    {
+      ROS_WARN_STREAM_THROTTLE(5, ex.what());
+    }
+    else  // if tf suddenly stops comming, then there must be something wrong.
+    {
+      ROS_ERROR_STREAM_THROTTLE(5, ex.what());
+    }
   }
 }
 
