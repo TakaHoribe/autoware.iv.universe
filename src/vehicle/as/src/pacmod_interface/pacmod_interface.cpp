@@ -192,7 +192,8 @@ void PacmodInterface::publishCommands() {
 
   /* check emergency and timeout */
   const bool emergency = (vehicle_cmd_ptr_->command.emergency == 1);
-  const bool timeouted = (((ros::Time::now() - command_received_time_).toSec() * 1000.0) > command_timeout_ms_);
+  const double delta_time_ms = (ros::Time::now() - command_received_time_).toSec() * 1000.0;
+  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (delta_time_ms > command_timeout_ms_) : false;
   if (emergency || timeouted) {
     ROS_ERROR("[pacmod interface] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_acc = acc_emergency_;  // use emergency acceleration
