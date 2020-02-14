@@ -19,9 +19,11 @@
   git:
     repo: https://github.com/fzi-forschungszentrum-informatik/Lanelet2.git
     dest: "{{ AUTOWARE_DIR }}/src/map/lanelet2/"
+    version: 0.9
 
 - name: Lanelet2 (clone mrt_cmake_modules catkin workspace)
   become: no
   git:
     repo: https://github.com/KIT-MRT/mrt_cmake_modules.git
     dest: "{{ AUTOWARE_DIR }}/src/map/mrt_cmake_modules/"
+    version: 803c925528130f1f9b94cec64c4498f1c4dba407
