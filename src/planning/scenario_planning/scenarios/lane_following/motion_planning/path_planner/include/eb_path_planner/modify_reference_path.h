@@ -100,7 +100,7 @@ private:
                         
 public:
   bool generateModifiedPath(
-    geometry_msgs::Pose& ego_pose,
+    const geometry_msgs::Pose& ego_pose,
     const geometry_msgs::Point& start_exploring_point,
     const geometry_msgs::Point& goal_exploring_point,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,

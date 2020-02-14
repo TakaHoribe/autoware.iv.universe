@@ -1,6 +1,11 @@
 #ifndef EB_PATH_SMOOTHER__H
 #define EB_PATH_SMOOTHER__H
 
+enum Mode
+{
+  Avoidance     = 0,
+  LaneFollowing = 1,
+};
 
 namespace geometry_msgs
 { 
@@ -36,7 +41,6 @@ private:
   const double delta_arc_length_for_explored_points_;
   const double loose_constrain_disntance_;
   const double tighten_constrain_disntance_;
-  std::unique_ptr<int> previous_number_of_optimized_points_ptr_;
   
   bool preprocessExploredPoints(
     const std::vector<geometry_msgs::Point>& current_explored_points,
@@ -56,19 +60,10 @@ private:
     const geometry_msgs::Pose& ego_pose,
     std::vector<double>& interpolated_x,
     std::vector<double>& interpolated_y,
-    int& nearest_idx,
+    std::vector<geometry_msgs::Point>& interpolated_points,
     int& farrest_idx,
     std::vector<geometry_msgs::Point>& debug_interpolated_points);
   
-  bool preprocessPathPoints(
-    const std::vector<autoware_planning_msgs::PathPoint>& explored_points,
-    const geometry_msgs::Pose& ego_pose,
-    std::vector<double>& interpolated_x,
-    std::vector<double>& interpolated_y,
-    int& nearest_idx,
-    int& farrest_idx,
-    std::vector<geometry_msgs::Point>& debug_interpolated_points);
-    
   bool preprocessPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const geometry_msgs::Point& start_point,
@@ -76,10 +71,25 @@ private:
     const geometry_msgs::Pose& ego_pose,
     std::vector<double>& interpolated_x,
     std::vector<double>& interpolated_y,
-    int& nearest_idx,
+    std::vector<geometry_msgs::Point>& interpolated_points,
     int& farrest_idx,
     std::vector<geometry_msgs::Point>& debug_interpolated_points);
     
+  void updateQPConstrain(
+    const std::vector<geometry_msgs::Point>& interpolated_points,
+    const int farrest_point_idx,
+    const cv::Mat& clearance_map,
+    const nav_msgs::MapMetaData& map_info,
+    const Mode qp_optimization_mode,
+    std::vector<geometry_msgs::Point>& debug_constrain_points);
+    
+  void solveQP(const Mode qp_optimization_mode);
+  
+  std::vector<autoware_planning_msgs::TrajectoryPoint> 
+    generatePostProcessedTrajectoryPoints(
+      const int number_of_optimized_points,
+      const geometry_msgs::Pose& ego_pose);
+  
 public:
    EBPathSmoother(
      double exploring_minimum_raidus,
@@ -88,6 +98,7 @@ public:
      double delta_arc_length_for_path_smoothing,
      double delta_arc_length_for_explored_points);
   ~EBPathSmoother();
+  
   bool generateOptimizedExploredPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<geometry_msgs::Point>& explored_points,
@@ -97,12 +108,6 @@ public:
     std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
     std::vector<geometry_msgs::Point>& debug_constrain_points,                  
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
-  bool generateOptimizedPath(
-    const geometry_msgs::Pose& ego_pose,
-    const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
-    std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    std::vector<geometry_msgs::Point>& debug_constrain_points,
-    std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
   
   bool generateOptimizedPath(
     const geometry_msgs::Pose& ego_pose,
