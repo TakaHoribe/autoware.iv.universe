@@ -323,6 +323,11 @@ void VelocityController::resetHandling(const ControlMode control_mode)
       is_emergency_stop_ = false;
     }
   }
+  else if (control_mode == ControlMode::ERROR)
+  {
+    pid_vel_.reset();
+    resetSmoothStop();
+  }
   else if (control_mode == ControlMode::STOPPED)
   {
     pid_vel_.reset();
