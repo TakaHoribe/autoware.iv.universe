@@ -34,6 +34,7 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, 0.39);
   private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
   private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
+  private_nh_.param<bool>("enable_steering_rate_control", enable_steering_rate_control_, false);
   private_nh_.param<double>("vgr_coef_a", vgr_coef_a_, 15.713);  // variable gear ratio coeffs
   private_nh_.param<double>("vgr_coef_b", vgr_coef_b_, 0.053);   // variable gear ratio coeffs
   private_nh_.param<double>("vgr_coef_c", vgr_coef_c_, 0.042);   // variable gear ratio coeffs
@@ -90,6 +91,7 @@ PacmodInterface::PacmodInterface()
   brake_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdFloat>("pacmod/as_rx/brake_cmd", 1);
   steer_cmd_pub_ = nh_.advertise<pacmod_msgs::SteerSystemCmd>("pacmod/as_rx/steer_cmd", 1);
   shift_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdInt>("pacmod/as_rx/shift_cmd", 1);
+  turn_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdInt>("pacmod/as_rx/turn_cmd", 1);
 
   // To Autoware
   vehicle_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 1);
@@ -190,7 +192,8 @@ void PacmodInterface::publishCommands() {
 
   /* check emergency and timeout */
   const bool emergency = (vehicle_cmd_ptr_->command.emergency == 1);
-  const bool timeouted = (((ros::Time::now() - command_received_time_).toSec() * 1000.0) > command_timeout_ms_);
+  const double delta_time_ms = (ros::Time::now() - command_received_time_).toSec() * 1000.0;
+  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (delta_time_ms > command_timeout_ms_) : false;
   if (emergency || timeouted) {
     ROS_ERROR("[pacmod interface] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_acc = acc_emergency_;  // use emergency acceleration
@@ -261,8 +264,16 @@ void PacmodInterface::publishCommands() {
 
   /* publish steering cmd */
   pacmod_msgs::SteerSystemCmd steer_cmd;
-
-  double desired_rotation_rate = 6.6;
+  double steer_rate_max = 6.6;   // [rad/s]
+  double steer_rate_min = 0.5;   // [rad/s]
+  double desired_rotation_rate;  // [rad/s]
+  if (enable_steering_rate_control_) {
+    const double rate_min = 0.5;
+    desired_rotation_rate = 3.0 * vehicle_cmd_ptr_->command.control.steering_angle * adaptive_gear_ratio;
+    desired_rotation_rate = std::min(std::max(std::fabs(desired_rotation_rate), steer_rate_min), steer_rate_max);
+  } else {
+    desired_rotation_rate = steer_rate_max;
+  }
   steer_cmd.header.frame_id = base_frame_id_;
   steer_cmd.header.stamp = current_time;
   steer_cmd.enable = engage_cmd_;
@@ -283,6 +294,20 @@ void PacmodInterface::publishCommands() {
   shift_cmd.clear_faults = false;
   shift_cmd.command = desired_shift;
   shift_cmd_pub_.publish(shift_cmd);
+
+  if (turn_signal_cmd_ptr_)
+  {
+    /* publish shift cmd */
+    pacmod_msgs::SystemCmdInt turn_cmd;
+    turn_cmd.header.frame_id = base_frame_id_;
+    turn_cmd.header.stamp = current_time;
+    turn_cmd.enable = engage_cmd_;
+    turn_cmd.ignore_overrides = false;
+    turn_cmd.clear_override = clear_override;
+    turn_cmd.clear_faults = false;
+    turn_cmd.command = toPacmodTurnCmd(*turn_signal_cmd_ptr_);
+    turn_cmd_pub_.publish(turn_cmd);
+  }
 }
 
 double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt,
@@ -345,5 +370,17 @@ int32_t PacmodInterface::toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shi
     return autoware_vehicle_msgs::Shift::LOW;
   } else {
     return autoware_vehicle_msgs::Shift::NONE;
+  }
+}
+
+uint16_t PacmodInterface::toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn) {
+  if (turn.data == autoware_vehicle_msgs::TurnSignal::LEFT) {
+    return pacmod_msgs::SystemCmdInt::TURN_LEFT;
+  } else if (turn.data == autoware_vehicle_msgs::TurnSignal::RIGHT) {
+    return pacmod_msgs::SystemCmdInt::TURN_RIGHT;
+  } else if (turn.data == autoware_vehicle_msgs::TurnSignal::HAZARD) {
+    return pacmod_msgs::SystemCmdInt::TURN_HAZARDS;
+  } else {
+    return pacmod_msgs::SystemCmdInt::TURN_NONE;
   }
 }

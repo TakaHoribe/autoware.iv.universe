@@ -57,17 +57,16 @@ void VoxelGridOutlierFilterNodelet::filter(const PointCloud2::ConstPtr &input, c
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_output(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*input, *pcl_input);
   pcl_voxelized_input->points.reserve(pcl_input->points.size());
-  pcl::VoxelGrid<pcl::PointXYZ> filter;
-  filter.setInputCloud(pcl_input);
-  filter.setSaveLeafLayout(true);
-  filter.setLeafSize(voxel_size_x_, voxel_size_y_, voxel_size_z_);
-  filter.setMinimumPointsNumberPerVoxel(voxel_points_threshold_);
-  filter.filter(*pcl_voxelized_input);
+  voxel_filter.setInputCloud(pcl_input);
+  voxel_filter.setSaveLeafLayout(true);
+  voxel_filter.setLeafSize(voxel_size_x_, voxel_size_y_, voxel_size_z_);
+  voxel_filter.setMinimumPointsNumberPerVoxel(voxel_points_threshold_);
+  voxel_filter.filter(*pcl_voxelized_input);
 
   pcl_output->points.reserve(pcl_input->points.size());
   for (size_t i = 0; i < pcl_input->points.size(); ++i)
   {
-    const int index = filter.getCentroidIndexAt(filter.getGridCoordinates(pcl_input->points.at(i).x, pcl_input->points.at(i).y, pcl_input->points.at(i).z));
+    const int index = voxel_filter.getCentroidIndexAt(voxel_filter.getGridCoordinates(pcl_input->points.at(i).x, pcl_input->points.at(i).y, pcl_input->points.at(i).z));
     if (index != -1) // not empty voxel
     {
       pcl_output->points.push_back(pcl_input->points.at(i));

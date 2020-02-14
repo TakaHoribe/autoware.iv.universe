@@ -85,6 +85,7 @@ class PacmodInterface {
   ros::Publisher brake_cmd_pub_;
   ros::Publisher steer_cmd_pub_;
   ros::Publisher shift_cmd_pub_;
+  ros::Publisher turn_cmd_pub_;
 
   // To Autoware
   ros::Publisher vehicle_twist_pub_;
@@ -111,6 +112,7 @@ class PacmodInterface {
   double max_throttle_;        // max throttle [0~1]
   double max_brake_;           // max throttle [0~1]
   double max_steering_wheel_;  // max steering wheel angle [rad]
+  bool enable_steering_rate_control_; // use steering angle speed for command [rad/s]
 
   /* input values */
   std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> vehicle_cmd_ptr_;
@@ -152,6 +154,7 @@ class PacmodInterface {
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
   uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift);
   int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shift);
+  uint16_t toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn);
 };
 
 #endif

@@ -301,6 +301,115 @@ bool EBPathSmoother::preprocessPathPoints(
                          (int)(interpolated_x.size()-1));
   return true;
 }
+
+bool EBPathSmoother::preprocessPathPoints(
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const geometry_msgs::Point& start_point,
+    const geometry_msgs::Point& goal_point,
+    const geometry_msgs::Pose& ego_pose,
+    std::vector<double>& interpolated_x,
+    std::vector<double>& interpolated_y,
+    int& nearest_idx,
+    int& farrest_idx,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points)
+{
+  
+  
+  if(path_points.empty() || 
+     path_points.size()==1)
+  {
+    ROS_WARN("[EBPathPlanner] Almost no path points");
+    return false;
+  }
+  
+  int start_ind = -1;
+  int goal_ind = -1;
+  // for(const auto& point: path_points)
+  for (int i = 0; i < path_points.size(); i++)
+  {
+    double dx1 = path_points[i].pose.position.x - start_point.x;
+    double dy1 = path_points[i].pose.position.y - start_point.y;
+    double dist1 = std::sqrt(dx1*dx1+dy1*dy1);
+    if(dist1 < 1e-4)
+    {
+      start_ind = i;
+    }
+    double dx2 = path_points[i].pose.position.x - goal_point.x;
+    double dy2 = path_points[i].pose.position.y - goal_point.y;
+    double dist2 = std::sqrt(dx2*dx2+dy2*dy2);
+    if(dist2 < 1e-4)
+    {
+      goal_ind = i;
+    }
+  }
+  if(start_ind == -1 || goal_ind == -1)
+  {
+    ROS_WARN("Could not find correspongin path points with start and/or goal in preprocessPathPoints");
+  }
+  
+  
+  std::vector<double> tmp_x;
+  std::vector<double> tmp_y;
+  for(size_t i = start_ind;
+             i <=  goal_ind; i++)
+  {
+    //backward check
+    if(i > 1)
+    {
+      double dx1 = path_points[i].pose.position.x - 
+                   path_points[i-1].pose.position.x;
+      double dy1 = path_points[i].pose.position.y - 
+                   path_points[i-1].pose.position.y;
+      double dx2 = path_points[i-1].pose.position.x - 
+                   path_points[i-2].pose.position.x;
+      double dy2 = path_points[i-1].pose.position.y - 
+                   path_points[i-2].pose.position.y;
+      double inner_product = dx1*dx2 + dy1*dy2;
+      if(inner_product < 0)
+      {
+        std::cout << "Path points might go backwrd"  << std::endl;
+      }
+    }
+    tmp_x.push_back(path_points[i].pose.position.x);
+    tmp_y.push_back(path_points[i].pose.position.y);
+  }
+  
+  if(tmp_x.empty()||tmp_y.empty())
+  {
+    return false;
+  }
+  std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+  if(base_s.empty())
+  {
+    ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] Fail to calculate arc length for explored points; Skip optimization");
+    return false;
+  }
+  std::vector<double> new_s;
+  for(double i = 0; 
+      i <= base_s.back();
+      i += delta_arc_length_for_path_smoothing_)
+  {
+    new_s.push_back(i);
+  }
+  new_s.push_back(base_s.back());
+  
+  horibe_spline::SplineInterpolate spline;
+  spline.interpolate(base_s, tmp_x, new_s, interpolated_x);
+  spline.interpolate(base_s, tmp_y, new_s, interpolated_y);
+  
+  for (int i = 0; i < interpolated_x.size(); i++)
+  {
+    geometry_msgs::Point point;
+    point.x = interpolated_x[i];
+    point.y = interpolated_y[i];
+    debug_interpolated_points.push_back(point);
+  }
+  
+  nearest_idx = 0;
+  farrest_idx = std::min((int)(number_of_sampling_points_-1),
+                         (int)(interpolated_x.size()-1));
+  return true;
+}
   
   
 
@@ -812,6 +921,238 @@ bool EBPathSmoother::generateOptimizedPath(
     //   workspace.solution->x[i] + av_x;
     // tmp_point.pose.position.y = 
     //   workspace.solution->x[i + number_of_sampling_points_]+av_y;
+    autoware_planning_msgs::TrajectoryPoint tmp_point;
+    tmp_point.pose.position.x = 
+      workspace.solution->x[i];
+    tmp_point.pose.position.y = 
+      workspace.solution->x[i + number_of_sampling_points_];
+    if(i>0)
+    {
+      double dx = tmp_point.pose.position.x - workspace.solution->x[i-1];
+      double dy = tmp_point.pose.position.y - workspace.solution->x[i+number_of_sampling_points_-1];
+    }
+    tmp_x.push_back(tmp_point.pose.position.x);
+    tmp_y.push_back(tmp_point.pose.position.y);
+  }
+  
+  if(tmp_x.empty()||tmp_y.empty())
+  {
+    return false;
+  }
+  std::vector<double> base_s = horibe_spline::calcEuclidDist(tmp_x, tmp_y);
+  if(base_s.empty())
+  {
+    return false;
+  }
+  std::vector<double> new_s;
+  for(double i = 0.0; 
+      i <= base_s.back();
+      i += delta_arc_length_for_path_smoothing_)
+  {
+    new_s.push_back(i);
+  }
+  new_s.push_back(base_s.back());
+  horibe_spline::SplineInterpolate spline;
+  std::vector<double> post_interpolated_x;
+  std::vector<double> post_interpolated_y;
+  spline.interpolate(base_s, tmp_x, new_s, post_interpolated_x);
+  spline.interpolate(base_s, tmp_y, new_s, post_interpolated_y);
+  
+  // std::cout << "last post interpo "<< post_interpolated_x.back()<< " "<< post_interpolated_y.back() << std::endl;
+  for (int i = 0; i < post_interpolated_x.size(); i++)
+  {
+    autoware_planning_msgs::TrajectoryPoint tmp_point;
+    tmp_point.pose.position.x = post_interpolated_x[i];
+    tmp_point.pose.position.y = post_interpolated_y[i];
+    tmp_point.pose.position.z = ego_pose.position.z;
+    double roll = 0;
+    double pitch = 0;
+    double yaw = 0;
+    if(i==post_interpolated_x.size()-1)
+    {
+      double dx = post_interpolated_x[i] - 
+                  post_interpolated_x[i-1]; 
+      double dy = post_interpolated_y[i] - 
+                  post_interpolated_y[i-1]; 
+      yaw = std::atan2(dy, dx);
+    }
+    else
+    {
+      double dx = post_interpolated_x[i+1] - 
+                  post_interpolated_x[i]; 
+      double dy = post_interpolated_y[i+1] - 
+                  post_interpolated_y[i];
+      yaw = std::atan2(dy, dx); 
+    }
+    tf2::Quaternion quaternion;
+    quaternion.setRPY( roll, pitch, yaw );
+    tmp_point.pose.orientation = tf2::toMsg(quaternion);
+    optimized_points.push_back(tmp_point);
+  }
+  
+  previous_number_of_optimized_points_ptr_ = 
+    std::make_unique<int>(number_of_optimized_points);
+  std::chrono::high_resolution_clock::time_point end= 
+    std::chrono::high_resolution_clock::now();
+  std::chrono::nanoseconds time = 
+    std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  std::cout << "  optimization time "<< time.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  
+} 
+
+bool EBPathSmoother::generateOptimizedPath(
+    const geometry_msgs::Pose& ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
+    const geometry_msgs::Point& start_path_point,
+    const geometry_msgs::Point& goal_path_point,
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
+    std::vector<geometry_msgs::Point>& debug_constrain_points,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points)
+{
+  std::chrono::high_resolution_clock::time_point begin= 
+    std::chrono::high_resolution_clock::now();
+  std::chrono::high_resolution_clock::time_point begin3 = 
+    std::chrono::high_resolution_clock::now();
+  std::vector<double> interpolated_x;
+  std::vector<double> interpolated_y;
+  
+  int nearest_idx_from_start_point;
+  int farrest_idx_from_start_point;
+  
+  bool is_preprocess_success = 
+    preprocessPathPoints(path_points, 
+                        start_path_point,
+                        goal_path_point,
+                        ego_pose,
+                        interpolated_x,
+                        interpolated_y,
+                        nearest_idx_from_start_point,
+                        farrest_idx_from_start_point,
+                        debug_interpolated_points);
+  
+  if(!is_preprocess_success)
+  {
+    return false;
+  }           
+  
+  std::cout << "farrest idx when path optimizaing " << farrest_idx_from_start_point<< std::endl;
+  double clearance_map_resolution = 0.1;
+  int x_length = 100;
+  int y_width = 100;
+  double lower_bound[number_of_sampling_points_ * 2];
+  double upper_bound[number_of_sampling_points_ * 2];
+  for (int i = 0; i < number_of_sampling_points_ ; ++i)
+  {
+    if(i==0)
+    {
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
+    }
+    else if (i == 1)//second initial x
+    {
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
+    }
+    else if (i == farrest_idx_from_start_point - 1 )//second last x
+    {
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i]; 
+    }
+    else if (i == farrest_idx_from_start_point )//last x
+    {
+      lower_bound[i] = interpolated_x[i];
+      upper_bound[i] = interpolated_x[i];
+    }
+    else if(i > farrest_idx_from_start_point)
+    {
+      lower_bound[i] = interpolated_x[farrest_idx_from_start_point];
+      upper_bound[i] = interpolated_x[farrest_idx_from_start_point];
+    }
+    else
+    { 
+      lower_bound[i] = interpolated_x[i] - 0.2;
+      upper_bound[i] = interpolated_x[i] + 0.2;
+      
+      geometry_msgs::Point interpolated_p;
+      interpolated_p.x = interpolated_x[i];
+      interpolated_p.y = interpolated_y[i];
+      interpolated_p.z = 0.2;
+      debug_constrain_points.push_back(interpolated_p);
+    }
+  }
+  
+  for (int i = 0; i < number_of_sampling_points_ ; ++i)
+  {
+    if (i == 0)//initial x
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+    }
+    else if (i == 1)//second initial x
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+    }
+    else if (i == farrest_idx_from_start_point - 1)//second last x
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+    }
+    else if (i == farrest_idx_from_start_point)//last x
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i];
+    }
+    else if(i > farrest_idx_from_start_point)
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point];
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[farrest_idx_from_start_point];
+    }
+    else
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_y[i] - 0.2;
+      upper_bound[i+number_of_sampling_points_] = interpolated_y[i] + 0.2;
+    }
+  }
+  
+  std::chrono::high_resolution_clock::time_point end3 =
+   std::chrono::high_resolution_clock::now();
+  std::chrono::nanoseconds elapsed_time3 = 
+    std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
+  std::cout << "  preprocess for optimization  "<< elapsed_time3.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  osqp_update_eps_abs(&workspace, 1e-2f);
+  osqp_update_eps_rel(&workspace, 1e-6f);
+  osqp_update_alpha(&workspace, 1.6);
+  osqp_update_max_iter(&workspace, 16000);
+  std::chrono::high_resolution_clock::time_point begin4 = std::chrono::high_resolution_clock::now();
+  int number_of_optimized_points = 
+    std::min(farrest_idx_from_start_point, number_of_sampling_points_-1);
+  if(previous_number_of_optimized_points_ptr_)
+  {
+    int diff_num = number_of_optimized_points - *previous_number_of_optimized_points_ptr_;
+    if(diff_num > number_of_diff_optimization_points_for_cold_start_)
+    {
+      ROS_WARN("Trigger cold start");
+      cold_start(&workspace);
+    }
+  }
+  c_int a = osqp_update_bounds(&workspace, lower_bound, upper_bound);
+  c_int b = osqp_solve(&workspace);
+  std::chrono::high_resolution_clock::time_point end4 = std::chrono::high_resolution_clock::now();
+  std::chrono::nanoseconds elapsed_time4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end4 - begin4);
+  // printf("Status:                %s\n", (&workspace)->info->status);
+  // printf("Number of iterations:  %d\n", (int)((&workspace)->info->iter));
+  // printf("Objective value:       %.4e\n", (&workspace)->info->obj_val);
+  // std::cout << "last solution "<< workspace.solution->x[number_of_sampling_points_-1]<< " "<< workspace.solution->x[number_of_sampling_points_*2-1] << std::endl;
+  
+  
+  std::vector<geometry_msgs::Point> previous_points;
+  size_t previously_used_index = 0;
+  
+  std::vector<double> tmp_x;
+  std::vector<double> tmp_y;
+  for(size_t i = 0; i <=  number_of_optimized_points; i++)
+  {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
     tmp_point.pose.position.x = 
       workspace.solution->x[i];

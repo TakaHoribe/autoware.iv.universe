@@ -121,6 +121,8 @@ class MPCFollower {
     double weight_steering_input;                    //< @brief steering error weight in matrix R
     double weight_steering_input_squared_vel_coeff;  //< @brief steering error * velocity weight in matrix R
     double weight_lat_jerk;                          //< @brief lateral jerk weight in matrix R
+    double weight_steer_rate;                        //< @brief steering rate weight in matrix R
+    double weight_steer_acc;                         //< @brief steering angle acceleration weight in matrix R
     double weight_terminal_lat_error;                //< @brief terminal lateral error weight in matrix Q
     double weight_terminal_heading_error;            //< @brief terminal heading error weight in matrix Q
     double zero_ff_steer_deg;                        //< @brief threshold that feed-forward angle becomes zero
@@ -134,7 +136,8 @@ class MPCFollower {
     Eigen::MatrixXd Wex;
     Eigen::MatrixXd Cex;
     Eigen::MatrixXd Qex;
-    Eigen::MatrixXd Rex;
+    Eigen::MatrixXd R1ex;
+    Eigen::MatrixXd R2ex;
     Eigen::MatrixXd Urefex;
   };
 
@@ -144,6 +147,7 @@ class MPCFollower {
   autoware_planning_msgs::Trajectory current_trajectory_;              //!< @brief current waypoints to be followed
 
   double raw_steer_cmd_prev_;  //< @brief steering command calculated by mpc in previous period
+  double raw_steer_cmd_pprev_;  //< @brief steering command calculated by mpc in two times previous period
   double steer_cmd_prev_;      //< @brief steering command calculated by mpc and some filters in previous period
   double lateral_error_prev_;  //< @brief previous lateral error for derivative
   double yaw_error_prev_;      //< @brief previous lateral error for derivative
