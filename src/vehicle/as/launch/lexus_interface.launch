@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+
+  <include file="$(find as)/launch/pacmod_interface.launch" >
+    <arg name="command_timeout_ms" value="-1" />
+  </include>
+
+  <arg name="pacmod_vehicle_type" default="LEXUS_RX_450H" />
+  <arg name="kvaser_hardware_id" default="57075" />
+  <arg name="kvaser_circuit_id" default="0" />
+  <arg name="use_kvaser" default="true" />
+  <arg name="use_socketcan" default="false" />
+  <arg name="socketcan_device" default="can0" />
+
+  <group ns="pacmod">
+    <include file="$(find pacmod3)/launch/pacmod3.launch">
+      <arg name="pacmod_vehicle_type" value="$(arg pacmod_vehicle_type)" />
+      <arg name="kvaser_hardware_id" value="$(arg kvaser_hardware_id)" />
+      <arg name="kvaser_circuit_id" value="$(arg kvaser_circuit_id)" />
+      <arg name="use_kvaser" value="$(arg use_kvaser)" />
+      <arg name="use_socketcan" value="$(arg use_socketcan)" />
+      <arg name="socketcan_device" value="$(arg socketcan_device)" />
+    </include>
+  </group>
+
+</launch>
