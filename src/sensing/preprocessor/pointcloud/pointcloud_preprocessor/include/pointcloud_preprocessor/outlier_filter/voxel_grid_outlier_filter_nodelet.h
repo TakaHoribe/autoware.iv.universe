@@ -24,6 +24,8 @@ private:
   double voxel_size_z_;
   int voxel_points_threshold_;
 
+  pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
