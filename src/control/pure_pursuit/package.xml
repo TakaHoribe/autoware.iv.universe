@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pure_pursuit</name>
+  <version>0.0.1</version>
+  <description>The pure_pursuit package</description>
+  <maintainer email="horibe.takamasa@gmail.com">Takamasa Horibe</maintainer>
+  <license>Apache 2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>autoware_control_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>libplanning_utils</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf</depend>
+
+  <export>
+  </export>
+</package>
