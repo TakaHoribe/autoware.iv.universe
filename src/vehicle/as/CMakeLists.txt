@@ -11,6 +11,7 @@ find_package(
   automotive_platform_msgs
   automotive_navigation_msgs
   pacmod_msgs
+  pacmod3
   autoware_control_msgs
   autoware_vehicle_msgs
   accel_map_converter
@@ -25,6 +26,7 @@ catkin_package(
   automotive_platform_msgs
   automotive_navigation_msgs
   pacmod_msgs
+  pacmod3
   autoware_control_msgs
   autoware_vehicle_msgs
   accel_map_converter
