@@ -166,113 +166,96 @@ void DummyPerceptionPublisherNode::createObjectPointcloud(const double length, c
   std::normal_distribution<> z_random(0.0, std_dev_z);
   const double r = std::sqrt(tf_base_link2moved_object.getOrigin().x() * tf_base_link2moved_object.getOrigin().x() +
                              tf_base_link2moved_object.getOrigin().y() * tf_base_link2moved_object.getOrigin().y());
+  auto getBaseLinkTo2DPoint = [tf_base_link2moved_object](double x, double y) -> pcl::PointXYZ {
+    tf2::Transform tf_moved_object2point;
+    tf2::Transform tf_base_link2point;
+    geometry_msgs::Transform ros_moved_object2point;
+    ros_moved_object2point.translation.x = x;
+    ros_moved_object2point.translation.y = y;
+    ros_moved_object2point.translation.z = 0.0;
+    ros_moved_object2point.rotation.x = 0;
+    ros_moved_object2point.rotation.y = 0;
+    ros_moved_object2point.rotation.z = 0;
+    ros_moved_object2point.rotation.w = 1;
+    tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
+    tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
+    pcl::PointXYZ point;
+    point.x = tf_base_link2point.getOrigin().x();
+    point.y = tf_base_link2point.getOrigin().y();
+    point.z = tf_base_link2point.getOrigin().z();
+    return point;
+  };
   const double epsilon = 0.001;
-  const double step = 0.1;
+  const double step = 0.05;
   const double vertical_theta_step = (1.0 / 180.0) * M_PI;
   const double vertical_min_theta = (-15.0 / 180.0) * M_PI;
   const double vertical_max_theta = (15.0 / 180.0) * M_PI;
+  const double horizontal_theta_step = (0.5 / 180.0) * M_PI;
+  const double horizontal_min_theta = (-180.0 / 180.0) * M_PI;
+  const double horizontal_max_theta = (180.0 / 180.0) * M_PI;
+
+  const double min_z = -1.0 * (height / 2.0);
+  const double max_z = 1.0 * (height / 2.0);
+  pcl::PointCloud<pcl::PointXYZ> horizontal_candidate_pointcloud;
+  pcl::PointCloud<pcl::PointXYZ> horizontal_pointcloud;
   {
-    const double min_z = -1.0 * (height / 2.0);
-    const double max_z = 1.0 * (height / 2.0);
-    for (double vertical_theta = vertical_min_theta; vertical_theta <= vertical_max_theta + epsilon;
-         vertical_theta += vertical_theta_step) {
-      const double z = r * std::tan(vertical_theta);  // approximate
-      if (min_z <= z && z <= max_z + epsilon) {
-        {
-          const double y = -1.0 * (width / 2.0);
-          for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += step) {
-            tf2::Transform tf_moved_object2point;
-            tf2::Transform tf_base_link2point;
-
-            geometry_msgs::Transform ros_moved_object2point;
-            ros_moved_object2point.translation.x = x + x_random(random_generator_);
-            ros_moved_object2point.translation.y = y + y_random(random_generator_);
-            ros_moved_object2point.translation.z = z + z_random(random_generator_);
-            ros_moved_object2point.rotation.x = 0;
-            ros_moved_object2point.rotation.y = 0;
-            ros_moved_object2point.rotation.z = 0;
-            ros_moved_object2point.rotation.w = 1;
-            tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-            tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
-
-            pcl::PointXYZ point;
-            point.x = tf_base_link2point.getOrigin().x();
-            point.y = tf_base_link2point.getOrigin().y();
-            point.z = tf_base_link2point.getOrigin().z();
-            pointcloud_ptr->push_back(point);
-          }
-        }
-        {
-          const double y = 1.0 * (width / 2.0);
-          for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += step) {
-            tf2::Transform tf_moved_object2point;
-            tf2::Transform tf_base_link2point;
-
-            geometry_msgs::Transform ros_moved_object2point;
-            ros_moved_object2point.translation.x = x + x_random(random_generator_);
-            ros_moved_object2point.translation.y = y + y_random(random_generator_);
-            ros_moved_object2point.translation.z = z + z_random(random_generator_);
-            ros_moved_object2point.rotation.x = 0;
-            ros_moved_object2point.rotation.y = 0;
-            ros_moved_object2point.rotation.z = 0;
-            ros_moved_object2point.rotation.w = 1;
-            tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-            tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
-
-            pcl::PointXYZ point;
-            point.x = tf_base_link2point.getOrigin().x();
-            point.y = tf_base_link2point.getOrigin().y();
-            point.z = tf_base_link2point.getOrigin().z();
-            pointcloud_ptr->push_back(point);
-          }
-        }
-        {
-          const double x = -1.0 * (length / 2.0);
-          for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += step) {
-            tf2::Transform tf_moved_object2point;
-            tf2::Transform tf_base_link2point;
-
-            geometry_msgs::Transform ros_moved_object2point;
-            ros_moved_object2point.translation.x = x + x_random(random_generator_);
-            ros_moved_object2point.translation.y = y + y_random(random_generator_);
-            ros_moved_object2point.translation.z = z + z_random(random_generator_);
-            ros_moved_object2point.rotation.x = 0;
-            ros_moved_object2point.rotation.y = 0;
-            ros_moved_object2point.rotation.z = 0;
-            ros_moved_object2point.rotation.w = 1;
-            tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-            tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
-
-            pcl::PointXYZ point;
-            point.x = tf_base_link2point.getOrigin().x();
-            point.y = tf_base_link2point.getOrigin().y();
-            point.z = tf_base_link2point.getOrigin().z();
-            pointcloud_ptr->push_back(point);
-          }
-        }
-        {
-          const double x = 1.0 * (length / 2.0);
-          for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += step) {
-            tf2::Transform tf_moved_object2point;
-            tf2::Transform tf_base_link2point;
-
-            geometry_msgs::Transform ros_moved_object2point;
-            ros_moved_object2point.translation.x = x + x_random(random_generator_);
-            ros_moved_object2point.translation.y = y + y_random(random_generator_);
-            ros_moved_object2point.translation.z = z + z_random(random_generator_);
-            ros_moved_object2point.rotation.x = 0;
-            ros_moved_object2point.rotation.y = 0;
-            ros_moved_object2point.rotation.z = 0;
-            ros_moved_object2point.rotation.w = 1;
-            tf2::fromMsg(ros_moved_object2point, tf_moved_object2point);
-            tf_base_link2point = tf_base_link2moved_object * tf_moved_object2point;
-
-            pcl::PointXYZ point;
-            point.x = tf_base_link2point.getOrigin().x();
-            point.y = tf_base_link2point.getOrigin().y();
-            point.z = tf_base_link2point.getOrigin().z();
-            pointcloud_ptr->push_back(point);
-          }
+    const double y = -1.0 * (width / 2.0);
+    for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += step) {
+      horizontal_candidate_pointcloud.push_back(getBaseLinkTo2DPoint(x, y));
+    }
+  }
+  {
+    const double y = 1.0 * (width / 2.0);
+    for (double x = -1.0 * (length / 2.0); x <= ((length / 2.0) + epsilon); x += step) {
+      horizontal_candidate_pointcloud.push_back(getBaseLinkTo2DPoint(x, y));
+    }
+  }
+  {
+    const double x = -1.0 * (length / 2.0);
+    for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += step) {
+      horizontal_candidate_pointcloud.push_back(getBaseLinkTo2DPoint(x, y));
+    }
+  }
+  {
+    const double x = 1.0 * (length / 2.0);
+    for (double y = -1.0 * (width / 2.0); y <= ((width / 2.0) + epsilon); y += step) {
+      horizontal_candidate_pointcloud.push_back(getBaseLinkTo2DPoint(x, y));
+    }
+  }
+  // 2D ray tracing
+  size_t ranges_size = std::ceil((horizontal_max_theta - horizontal_min_theta) / horizontal_theta_step);
+  std::vector<double> horizontal_ray_traced_2d_pointcloud;
+  horizontal_ray_traced_2d_pointcloud.assign(ranges_size, std::numeric_limits<double>::infinity());
+  const int no_data = -1;
+  std::vector<int> horizontal_ray_traced_pointcloud_indices;
+  horizontal_ray_traced_pointcloud_indices.assign(ranges_size, no_data);
+  for (size_t i = 0; i < horizontal_candidate_pointcloud.points.size(); ++i) {
+    double angle = std::atan2(horizontal_candidate_pointcloud.at(i).y, horizontal_candidate_pointcloud.at(i).x);
+    double range = std::hypot(horizontal_candidate_pointcloud.at(i).y, horizontal_candidate_pointcloud.at(i).x);
+    if (angle < horizontal_min_theta || angle > horizontal_max_theta) {
+      continue;
+    }
+    int index = (angle - horizontal_min_theta) / horizontal_theta_step;
+    if (range < horizontal_ray_traced_2d_pointcloud[index]) {
+      horizontal_ray_traced_2d_pointcloud[index] = range;
+      horizontal_ray_traced_pointcloud_indices.at(index) = i;
+    }
+  }
+  for (const auto& pointcloud_index : horizontal_ray_traced_pointcloud_indices) {
+    if (pointcloud_index != no_data) {
+      // generate vertical point
+      horizontal_pointcloud.push_back(horizontal_candidate_pointcloud.at(pointcloud_index));
+      const double distance = std::hypot(horizontal_candidate_pointcloud.at(pointcloud_index).x,
+                                         horizontal_candidate_pointcloud.at(pointcloud_index).y);
+      for (double vertical_theta = vertical_min_theta; vertical_theta <= vertical_max_theta + epsilon;
+           vertical_theta += vertical_theta_step) {
+        const double z = distance * std::tan(vertical_theta);
+        if (min_z <= z && z <= max_z + epsilon) {
+          pcl::PointXYZ point;
+          point.x = horizontal_candidate_pointcloud.at(pointcloud_index).x + x_random(random_generator_);
+          point.y = horizontal_candidate_pointcloud.at(pointcloud_index).y+ y_random(random_generator_);
+          point.z = z +z_random(random_generator_);
+          pointcloud_ptr->push_back(point);
         }
       }
     }
