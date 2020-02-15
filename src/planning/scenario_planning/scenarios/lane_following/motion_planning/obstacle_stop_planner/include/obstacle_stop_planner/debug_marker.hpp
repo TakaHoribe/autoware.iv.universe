@@ -16,7 +16,7 @@
 namespace motion_planning {
 class ObstacleStopPlannerDebugNode {
  public:
-  ObstacleStopPlannerDebugNode();
+  ObstacleStopPlannerDebugNode(const double base_link2front);
   ~ObstacleStopPlannerDebugNode(){};
   void pushPolygon(const std::vector<cv::Point2d>& polygon, const double z);
   void pushPolygon(const std::vector<Eigen::Vector3d>& polygon);
@@ -32,6 +32,7 @@ class ObstacleStopPlannerDebugNode {
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher debug_viz_pub_;
+  double base_link2front_;
 
   std::shared_ptr<geometry_msgs::Pose> stop_pose_ptr_;
   std::shared_ptr<geometry_msgs::Point> stop_obstacle_point_ptr_;

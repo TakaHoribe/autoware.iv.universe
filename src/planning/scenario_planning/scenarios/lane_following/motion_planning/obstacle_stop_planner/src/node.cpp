@@ -67,9 +67,10 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   vehicle_width_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   // Parameters
   stop_margin_ = getParam<double>(pnh_, "stop_margin", 5.0);
-  min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 1.0);
+  min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 2.0);
   stop_margin_ += wheel_base_ + front_overhang_;
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
+  debug_ptr_ = std::make_shared<ObstacleStopPlannerDebugNode>(wheel_base_+front_overhang_);
 }
 
 void ObstacleStopPlannerNode::obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& input_msg) {
@@ -171,7 +172,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
                           std::cos(yaw) * (vehicle_width_ / 2.0)));
     }
     convexHull(one_step_move_vehicle_corner_points, one_step_move_vehicle_polygon);
-    debug_.pushPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z);
+    debug_ptr_->pushPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z);
 
     /*
      * collision check obstacle pointcloud and polygon
@@ -203,7 +204,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
       if (bg::within(point, boost_one_step_move_vehicle_polygon)) {
         collision_pointcloud_ptr->push_back(obstacle_candidate_pointcloud_ptr->at(j));
         is_collision = true;
-        debug_.pushCollisionPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z);
+        debug_ptr_->pushCollisionPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z);
       }
     }
 
@@ -212,7 +213,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
       break;
     }
   }
-  debug_.pushStopObstaclePoint(nearest_collision_point);
+  debug_ptr_->pushStopObstaclePoint(nearest_collision_point);
 
   /*
    * insert stop point
@@ -289,7 +290,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
                ++j) {
             output_msg.points.at(j).twist.linear.x = 0.0;
           }
-          debug_.pushStopPose(stop_trajectory_point.pose);
+          debug_ptr_->pushStopPose(stop_trajectory_point.pose);
         } else {
           autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
               trim_trajectory.points.at(std::max((int)(trim_trajectory_insert_min_behavior_stop_point_idx)-1, 0));
@@ -303,14 +304,14 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
                j < output_msg.points.size(); ++j) {
             output_msg.points.at(j).twist.linear.x = 0.0;
           }
-          debug_.pushStopPose(stop_trajectory_point.pose);
+          debug_ptr_->pushStopPose(stop_trajectory_point.pose);
         }
         break;
       }
     }
   }
   path_pub_.publish(output_msg);
-  debug_.publish();
+  debug_ptr_->publish();
 }
 
 bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory,

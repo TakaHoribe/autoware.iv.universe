@@ -1,7 +1,8 @@
 #include "obstacle_stop_planner/debug_marker.hpp"
 
 namespace motion_planning {
-ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode() : nh_(), pnh_("~") {
+ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode(const double base_link2front)
+    : nh_(), pnh_("~"), base_link2front_(base_link2front) {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/marker", 1);
 }
 
@@ -121,7 +122,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.01;
+    marker.scale.x = 0.05;
     marker.scale.y = 0.0;
     marker.scale.z = 0.0;
     marker.color.a = 0.99;  // Don't forget to set the alpha!
@@ -163,16 +164,21 @@ void ObstacleStopPlannerDebugNode::publish() {
     marker.ns = "stop geofence";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
-    marker.type = visualization_msgs::Marker::CUBE;
+    marker.type = visualization_msgs::Marker::CUBE_LIST;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose = *stop_pose_ptr_;
     marker.scale.x = 0.1;
     marker.scale.y = 5.0;
     marker.scale.z = 2.0;
-    marker.color.a = 1.0;  // Don't forget to set the alpha!
+    marker.color.a = 0.99;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
+    geometry_msgs::Point point;
+    point.x = base_link2front_;
+    point.y = 0.0;
+    point.z = 0.0;
+    marker.points.push_back(point);
     msg.markers.push_back(marker);
   }
 
@@ -193,7 +199,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     marker.scale.x = 0.25;
     marker.scale.y = 0.25;
     marker.scale.z = 0.25;
-    marker.color.a = 1.0;  // Don't forget to set the alpha!
+    marker.color.a = 0.99;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;

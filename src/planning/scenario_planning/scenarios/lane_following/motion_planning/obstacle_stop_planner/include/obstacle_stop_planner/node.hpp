@@ -44,7 +44,7 @@ class ObstacleStopPlannerNode {
   ros::Subscriber path_sub_;
   ros::Subscriber obstacle_pointcloud_sub_;
   ros::Publisher path_pub_;
-  ObstacleStopPlannerDebugNode debug_;
+  std::shared_ptr<ObstacleStopPlannerDebugNode> debug_ptr_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
