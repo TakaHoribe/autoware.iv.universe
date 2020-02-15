@@ -88,6 +88,7 @@ private:
   // emergency stop
   double emergency_stop_acc_;
   double emergency_stop_jerk_;
+  double emergency_overshoot_dist_;
 
   // smooth stop
   struct SmoothStopParam
@@ -177,7 +178,7 @@ private:
   CtrlCmd calcCtrlCmd();
   void publishCtrlCmd(const double vel, const double acc);
 
-  bool checkEmergency();
+  bool checkEmergency(int closest, double target_vel);
   void resetEmergencyStop();
 
   double getDt();
@@ -188,7 +189,7 @@ private:
   enum Shift getCurrentShift(const double target_velocity);
 
   double calcSmoothStopAcc();
-  bool isInSmoothStopRange(const int closest);
+  bool checkSmoothStop(const int closest, const double target_vel);
   void resetSmoothStop();
 
   double calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift);
@@ -196,6 +197,7 @@ private:
   double applyLimitFilter(const double input_val, const double max_val, const double min_val);
   double applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val, const double min_val);
   double applySlopeCompensation(const double acc, const double pitch, const Shift shift);
+  double calcStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int closest);
 
   /* Debug */
   std_msgs::Float32MultiArray debug_values_;
