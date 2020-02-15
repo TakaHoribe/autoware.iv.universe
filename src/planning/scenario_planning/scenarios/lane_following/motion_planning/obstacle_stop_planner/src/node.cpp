@@ -67,7 +67,7 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   vehicle_width_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   // Parameters
   stop_margin_ = getParam<double>(pnh_, "stop_margin", 5.0);
-  min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 0.5);
+  min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 1.0);
   stop_margin_ += wheel_base_ + front_overhang_;
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
 }
