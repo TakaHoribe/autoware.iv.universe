@@ -9,13 +9,7 @@
   </group>
 
   <!-- stop velocity planning with obstacle pointcloud info -->
-  <!-- <group>
-    <remap from="~input/trajectory" to="path_planner/trajectory" />
-    <remap from="~input/point_cloud" to="/sensing/lidar/no_ground/pointcloud" />
-    <remap from="~output/trajectory" to="trajectory" />
-    <include file="$(find stop_planner)/launch/stop_planner.launch">
-    </include>
-  </group> -->
+
   <group>
     <remap from="~input/trajectory" to="path_planner/trajectory" />
     <remap from="~input/pointcloud" to="/sensing/lidar/no_ground/pointcloud" />
