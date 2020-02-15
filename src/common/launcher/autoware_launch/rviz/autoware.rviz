@@ -105,6 +105,43 @@ Visualization Manager:
           Show Names: true
           Tree:
             map:
+              base_link:
+                camera1/camera_link:
+                  camera1/camera_optical_link:
+                    {}
+                camera2/camera_link:
+                  camera2/camera_optical_link:
+                    {}
+                camera3/camera_link:
+                  camera3/camera_optical_link:
+                    {}
+                camera4/camera_link:
+                  camera4/camera_optical_link:
+                    {}
+                camera5/camera_link:
+                  camera5/camera_optical_link:
+                    {}
+                camera6/camera_link:
+                  camera6/camera_optical_link:
+                    {}
+                gnss_link:
+                  {}
+                gx5/imu_link:
+                  {}
+                tamagawa/imu_link:
+                  {}
+                traffic_light/camera_link:
+                  traffic_light/camera_optical_link:
+                    {}
+                velodyne_left_base_link:
+                  velodyne_left:
+                    {}
+                velodyne_right_base_link:
+                  velodyne_right:
+                    {}
+                velodyne_top_base_link:
+                  velodyne_top:
+                    {}
               viewer:
                 {}
           Update Interval: 0
@@ -790,7 +827,11 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                {}
+                end_lanelets: true
+                goal_lanelets: true
+                left_lane_bound: true
+                right_lane_bound: true
+                route_lanelets: true
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -867,7 +908,9 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
                       Name: PathWithLaneId
                       Namespaces:
-                        {}
+                        lane_id: true
+                        line: true
+                        points: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -875,7 +918,10 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
                       Name: Crosswalk
                       Namespaces:
-                        {}
+                        crosswalk polygon line: true
+                        crosswalk polygon point: true
+                        slow polygon line: true
+                        stop polygon line: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -919,10 +965,22 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
-                      Name: StopDetectionArea
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_stop_planner/output/debug/marker
+                      Name: ObstaclePointCloudStop
                       Namespaces:
-                        {}
+                        ego_lane_follow_path: true
+                        end_lanelets: true
+                        goal_lanelets: true
+                        goal_point: true
+                        lane_id: true
+                        left_lane_bound: true
+                        line: true
+                        points: true
+                        polygons: true
+                        right_lane_bound: true
+                        route_lanelets: true
+                        start_point: true
+                        stop obstacle point: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
