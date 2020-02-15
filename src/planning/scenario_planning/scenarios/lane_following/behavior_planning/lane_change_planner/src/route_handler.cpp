@@ -690,6 +690,12 @@ PathWithLaneId RouteHandler::getLaneChangePath(const lanelet::ConstLanelets& ori
   }
   reference_path = combineReferencePath(reference_path1, reference_path2);
 
+  // set fixed flag
+  for ( auto& pt: reference_path.points)
+  {
+    pt.point.type = autoware_planning_msgs::PathPoint::FIXED;
+  }
+
   return reference_path;
 }
 
