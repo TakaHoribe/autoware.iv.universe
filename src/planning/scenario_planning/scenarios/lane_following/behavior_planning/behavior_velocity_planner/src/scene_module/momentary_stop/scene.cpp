@@ -9,17 +9,8 @@ using Polygon = bg::model::polygon<Point>;
 
 MomentaryStopModule::MomentaryStopModule(MomentaryStopModuleManager* manager_ptr,
                                          const lanelet::ConstLineString3d& stop_line, const int lane_id)
-    : manager_ptr_(manager_ptr),
-      state_(State::APPROARCH),
-      stop_line_(stop_line),
-      stop_margin_(0.0),
-      lane_id_(lane_id),
-      task_id_(boost::uuids::random_generator()()) {
-  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(stop_line, task_id_);
-}
-
-MomentaryStopModule::~MomentaryStopModule() {
-  if (manager_ptr_ != nullptr) manager_ptr_->unregisterTask(task_id_);
+    : manager_ptr_(manager_ptr), state_(State::APPROARCH), stop_line_(stop_line), stop_margin_(0.0), lane_id_(lane_id) {
+  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(stop_line);
 }
 
 bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& input,

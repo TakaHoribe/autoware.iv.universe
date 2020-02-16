@@ -43,22 +43,17 @@ bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::Pa
 }
 
 bool MomentaryStopModuleManager::isRegistered(const lanelet::ConstLineString3d& stop_line) {
-  if (task_id_direct_map_.count(stop_line) == 0) return false;
-  return true;
+  return registered_task_id_set_.count(stop_line.id()) != 0;
 }
 
-bool MomentaryStopModuleManager::registerTask(const lanelet::ConstLineString3d& stop_line,
-                                              const boost::uuids::uuid& uuid) {
+void MomentaryStopModuleManager::registerTask(const lanelet::ConstLineString3d& stop_line) {
   ROS_INFO("Registered Momentary Stop Task");
-  task_id_direct_map_.emplace(stop_line, boost::lexical_cast<std::string>(uuid));
-  task_id_reverse_map_.emplace(boost::lexical_cast<std::string>(uuid), stop_line);
-  return true;
+  registered_task_id_set_.emplace(stop_line.id());
 }
-bool MomentaryStopModuleManager::unregisterTask(const boost::uuids::uuid& uuid) {
+
+void MomentaryStopModuleManager::unregisterTask(const lanelet::ConstLineString3d& stop_line) {
   ROS_INFO("Unregistered Momentary Stop Task");
-  task_id_direct_map_.erase(task_id_reverse_map_.at(boost::lexical_cast<std::string>(uuid)));
-  task_id_reverse_map_.erase(boost::lexical_cast<std::string>(uuid));
-  return true;
+  registered_task_id_set_.erase(stop_line.id());
 }
 
 }  // namespace behavior_planning

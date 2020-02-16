@@ -8,10 +8,6 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -29,7 +25,6 @@ class MomentaryStopModule : public SceneModuleInterface {
  public:
   MomentaryStopModule(MomentaryStopModuleManager* manager_ptr, const lanelet::ConstLineString3d& stop_line,
                       const int lane_id);
-  ~MomentaryStopModule();
 
   bool run(const autoware_planning_msgs::PathWithLaneId& input,
            autoware_planning_msgs::PathWithLaneId& output) override;
@@ -46,7 +41,6 @@ class MomentaryStopModule : public SceneModuleInterface {
   int lane_id_;
   lanelet::ConstLineString3d stop_line_;
   double stop_margin_;
-  boost::uuids::uuid task_id_;
 };
 
 }  // namespace behavior_planning

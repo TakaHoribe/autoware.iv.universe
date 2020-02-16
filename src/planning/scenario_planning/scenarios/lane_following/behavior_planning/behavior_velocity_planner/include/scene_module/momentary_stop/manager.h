@@ -1,17 +1,15 @@
 #pragma once
 
+#include <memory>
+#include <set>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 #include <boost/assert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -35,14 +33,13 @@ class MomentaryStopModuleManager : public SceneModuleManagerInterface {
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
 
   bool isRegistered(const lanelet::ConstLineString3d& stop_line);
-  bool registerTask(const lanelet::ConstLineString3d& stop_line, const boost::uuids::uuid& uuid);
-  bool unregisterTask(const boost::uuids::uuid& uuid);
+  void registerTask(const lanelet::ConstLineString3d& stop_line);
+  void unregisterTask(const lanelet::ConstLineString3d& stop_line);
 
   MomentaryStopDebugMarkersManager debuger;
 
  private:
-  std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;
-  std::unordered_map<std::string, lanelet::ConstLineString3d> task_id_reverse_map_;
+  std::set<int64_t> registered_task_id_set_;
 };
 
 }  // namespace behavior_planning
