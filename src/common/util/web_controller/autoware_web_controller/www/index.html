@@ -13,6 +13,7 @@
     <script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
     <script type="text/javascript" src="js/autoware_engage.js"></script>
     <script type="text/javascript" src="js/vehicle_engage.js"></script>
+    <script type="text/javascript" src="js/velocity_limit.js"></script>
     <style>
         .ui-menu {
             min-width: 90px;
@@ -63,6 +64,16 @@
             <div>
                 <span>Status:</span>
                 <span id="vehicle_engage_status"> - </span>
+            </div>
+            <h3>Velocity Limit</h3>
+            <form action="javascript:VelocityLimitPublisher.send();" id="ui" name="velocity_limit_form">
+                <input type="text" name="velocity_limit">
+                <input type="submit" value="Send" id="btn" /><br />
+            </form>
+            <div>
+                <span>Status:</span>
+                <span id="velocity_limit_status"> - </span>
+                <span>m/s</span>
             </div>
         </div>
         <div id="vehicle">
