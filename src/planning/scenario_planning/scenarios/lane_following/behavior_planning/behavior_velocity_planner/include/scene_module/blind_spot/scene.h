@@ -32,7 +32,7 @@ class BlindSpotModuleManager;
 
 class BlindSpotModule : public SceneModuleInterface {
  public:
-  BlindSpotModule(const int lane_id, const std::string& turn_direction,
+  BlindSpotModule(const int64_t lane_id, const std::string& turn_direction,
                   BlindSpotModuleManager* blind_spot_module_manager);
 
   /**
@@ -48,7 +48,7 @@ class BlindSpotModule : public SceneModuleInterface {
   bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
 
  private:
-  const int assigned_lane_id_;                         //! object lane id (unique for this instance)
+  const int64_t assigned_lane_id_;                     //! object lane id (unique for this instance)
   std::string turn_direction_;                         //! turn direction : right or left
   int stop_line_idx_;                                  //! stop-line index
   int judge_line_idx_;                                 //! stop-judgement-line index

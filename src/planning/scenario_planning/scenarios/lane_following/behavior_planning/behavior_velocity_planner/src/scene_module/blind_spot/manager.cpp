@@ -35,23 +35,10 @@ bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWi
   return true;
 }
 
-bool BlindSpotModuleManager::isRegistered(const int lane_id) {
-  for (const auto& id : registered_lane_ids_) {
-    if (id == lane_id) return true;
-  }
-  return false;
-}
+bool BlindSpotModuleManager::isRegistered(const int64_t lane_id) { return registered_lane_id_set_.count(lane_id) != 0; }
 
-void BlindSpotModuleManager::registerTask(const int lane_id) { registered_lane_ids_.push_back(lane_id); }
+void BlindSpotModuleManager::registerTask(const int64_t lane_id) { registered_lane_id_set_.emplace(lane_id); }
 
-void BlindSpotModuleManager::unregisterTask(const int lane_id) {
-  const auto itr = std::find(registered_lane_ids_.begin(), registered_lane_ids_.end(), lane_id);
-  if (itr == registered_lane_ids_.end())
-    ROS_ERROR(
-        "[BlindSpotModuleManager::unregisterTask()] : cannot remove task (lane_id = %d,"
-        " registered_lane_ids_.size() = %lu)",
-        lane_id, registered_lane_ids_.size());
-  registered_lane_ids_.erase(itr);
-}
+void BlindSpotModuleManager::unregisterTask(const int64_t lane_id) { registered_lane_id_set_.erase(lane_id); }
 
 }  // namespace behavior_planning

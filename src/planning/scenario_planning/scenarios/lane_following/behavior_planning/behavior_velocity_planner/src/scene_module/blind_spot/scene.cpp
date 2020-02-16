@@ -10,7 +10,7 @@ namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
-BlindSpotModule::BlindSpotModule(const int lane_id, const std::string& turn_direction,
+BlindSpotModule::BlindSpotModule(const int64_t lane_id, const std::string& turn_direction,
                                  BlindSpotModuleManager* blind_spot_module_manager)
     : assigned_lane_id_(lane_id),
       turn_direction_(turn_direction),
@@ -145,27 +145,12 @@ bool BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_p
 }
 
 bool BlindSpotModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& input) {
-  /* search if the assigned lane_id is still exists */
-  bool is_assigned_lane_id_found = false;
-  for (const auto& point : input.points) {
-    for (const auto& id : point.lane_ids) {
-      if (assigned_lane_id_ == id) {
-        is_assigned_lane_id_found = true;
-        break;
-      }
-    }
-    if (is_assigned_lane_id_found == true) {
-      break;
-    }
-  }
+  // search if the assigned lane_id still exists
+  for (const auto& point : input.points)
+    for (const auto& id : point.lane_ids)
+      if (id == assigned_lane_id_) return false;
 
-  bool is_end_of_life = !is_assigned_lane_id_found;
-
-  if (is_end_of_life) {
-    blind_spot_module_manager_->unregisterTask(assigned_lane_id_);
-  }
-
-  return is_end_of_life;
+  return true;
 }
 
 bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const double judge_line_dist,
