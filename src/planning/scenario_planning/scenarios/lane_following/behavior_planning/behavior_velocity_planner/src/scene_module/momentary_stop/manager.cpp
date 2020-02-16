@@ -31,7 +31,7 @@ bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::Pa
       if (traffic_sign->type() == "stop_sign") {
         lanelet::ConstLineStrings3d traffic_sign_stoplines = traffic_sign->refLines();
         for (const auto& traffic_sign_stopline : traffic_sign_stoplines) {
-          if (!isRunning(traffic_sign_stopline)) {
+          if (!isRegistered(traffic_sign_stopline)) {
             v_module_ptr.push_back(
                 std::make_shared<MomentaryStopModule>(this, traffic_sign_stopline, input.points.at(i).lane_ids.at(j)));
           }
@@ -42,7 +42,7 @@ bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::Pa
   return true;
 }
 
-bool MomentaryStopModuleManager::isRunning(const lanelet::ConstLineString3d& stop_line) {
+bool MomentaryStopModuleManager::isRegistered(const lanelet::ConstLineString3d& stop_line) {
   if (task_id_direct_map_.count(stop_line) == 0) return false;
   return true;
 }

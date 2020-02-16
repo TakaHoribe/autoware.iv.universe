@@ -16,7 +16,7 @@ bool CrosswalkModuleManager::startCondition(const autoware_planning_msgs::PathWi
       lanelet::ConstLanelet road_lanelet = lanelet_map_ptr->laneletLayer.get(input.points.at(i).lane_ids.at(j));
       std::vector<lanelet::ConstLanelet> crosswalks = overall_graphs_ptr_->conflictingInGraph(road_lanelet, 1);
       for (const auto& crosswalk : crosswalks) {
-        if (!isRunning(crosswalk))
+        if (!isRegistered(crosswalk))
           v_module_ptr.push_back(std::make_shared<CrosswalkModule>(this, crosswalk, input.points.at(i).lane_ids.at(j)));
         // -- debug code --
         std::vector<Eigen::Vector3d> points;
@@ -33,7 +33,7 @@ bool CrosswalkModuleManager::startCondition(const autoware_planning_msgs::PathWi
   return true;
 }
 
-bool CrosswalkModuleManager::isRunning(const lanelet::ConstLanelet& crosswalk) {
+bool CrosswalkModuleManager::isRegistered(const lanelet::ConstLanelet& crosswalk) {
   if (task_id_direct_map_.count(crosswalk) == 0) return false;
   return true;
 }

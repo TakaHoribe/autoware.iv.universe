@@ -45,7 +45,7 @@ class CrosswalkModuleManager : public SceneModuleManagerInterface {
   void debug() override { debugger_.publish(); }
   CrosswalkDebugMarkersManager debugger_;  // TODO: remove
 
-  bool isRunning(const lanelet::ConstLanelet& crosswalk);
+  bool isRegistered(const lanelet::ConstLanelet& crosswalk);
   bool registerTask(const lanelet::ConstLanelet& crosswalk, const boost::uuids::uuid& uuid);
   bool unregisterTask(const boost::uuids::uuid& uuid);
 

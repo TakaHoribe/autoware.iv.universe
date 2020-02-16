@@ -36,7 +36,7 @@ class TrafficLightModuleManager : public SceneModuleManagerInterface {
   void debug() override { debugger_.publish(); }
   TrafficLightDebugMarkersManager debugger_;  // TODO: remove
 
-  bool isRunning(const lanelet::TrafficLight& traffic_light);
+  bool isRegistered(const lanelet::TrafficLight& traffic_light);
   bool registerTask(const lanelet::TrafficLight& traffic_light, const boost::uuids::uuid& uuid);
   bool unregisterTask(const boost::uuids::uuid& uuid);
 

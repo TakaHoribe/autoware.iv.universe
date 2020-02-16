@@ -40,7 +40,7 @@ class BlindSpotModuleManager : public SceneModuleManagerInterface {
  private:
   std::vector<int> registered_lane_ids_;
 
-  bool isRunning(const int lane_id);
+  bool isRegistered(const int lane_id);
   void registerTask(const int lane_id);
 };
 

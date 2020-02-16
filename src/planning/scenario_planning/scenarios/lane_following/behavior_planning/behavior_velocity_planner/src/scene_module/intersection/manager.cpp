@@ -21,7 +21,7 @@ bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::Pat
     for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
       const int lane_id = input.points.at(i).lane_ids.at(j);
 
-      if (!isRunning(lane_id)) {
+      if (!isRegistered(lane_id)) {
         lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);
 
         // Is intersection?
@@ -49,7 +49,7 @@ bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::Pat
   return true;
 }
 
-bool IntersectionModuleManager::isRunning(const int lane_id) {
+bool IntersectionModuleManager::isRegistered(const int lane_id) {
   for (const auto& id : registered_lane_ids_) {
     if (id == lane_id) return true;
   }

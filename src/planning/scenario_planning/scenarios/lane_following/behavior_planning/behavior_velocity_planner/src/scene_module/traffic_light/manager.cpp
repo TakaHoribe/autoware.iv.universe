@@ -17,7 +17,7 @@ bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::Pat
       std::vector<std::shared_ptr<const lanelet::TrafficLight>> tl_reg_elems =
           (lanelet_map_ptr->laneletLayer.get(lane_id)).regulatoryElementsAs<const lanelet::TrafficLight>();
       for (const auto& tl_reg_elem : tl_reg_elems) {
-        if (!isRunning(*tl_reg_elem)) {
+        if (!isRegistered(*tl_reg_elem)) {
           v_module_ptr.push_back(std::make_shared<TrafficLightModule>(this, tl_reg_elem, lane_id));
         }
       }
@@ -27,7 +27,7 @@ bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::Pat
   return true;
 }
 
-bool TrafficLightModuleManager::isRunning(const lanelet::TrafficLight& traffic_light) {
+bool TrafficLightModuleManager::isRegistered(const lanelet::TrafficLight& traffic_light) {
   lanelet::ConstLineString3d tl_stop_line;
   lanelet::Optional<lanelet::ConstLineString3d> tl_stopline_opt = traffic_light.stopLine();
   if (!!tl_stopline_opt) {

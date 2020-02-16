@@ -20,7 +20,7 @@ bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWi
       lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);  // get lanelet layer
       std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else");  // get turn_direction
 
-      if (!isRunning(lane_id)) {
+      if (!isRegistered(lane_id)) {
         // check blind_spot tag
         // no plan for straight
         if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0) {
@@ -35,7 +35,7 @@ bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWi
   return true;
 }
 
-bool BlindSpotModuleManager::isRunning(const int lane_id) {
+bool BlindSpotModuleManager::isRegistered(const int lane_id) {
   for (const auto& id : registered_lane_ids_) {
     if (id == lane_id) return true;
   }
