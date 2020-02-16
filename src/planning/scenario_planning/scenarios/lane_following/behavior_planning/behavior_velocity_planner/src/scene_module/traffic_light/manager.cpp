@@ -1,4 +1,4 @@
-#include <scene_module/traffic_light/manager.hpp>
+#include <scene_module/traffic_light/manager.h>
 
 #include <map>
 

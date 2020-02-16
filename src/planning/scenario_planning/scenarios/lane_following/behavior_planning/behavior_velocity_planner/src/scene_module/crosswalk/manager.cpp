@@ -1,4 +1,4 @@
-#include <scene_module/crosswalk/manager.hpp>
+#include <scene_module/crosswalk/manager.h>
 
 #include <cmath>
 

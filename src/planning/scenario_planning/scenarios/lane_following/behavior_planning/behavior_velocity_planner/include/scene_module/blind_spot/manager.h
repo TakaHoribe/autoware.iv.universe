@@ -20,9 +20,9 @@
 #include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/blind_spot/debug.hpp>
-#include <scene_module/blind_spot/scene.hpp>
-#include <scene_module/scene_module_interface.hpp>
+#include <scene_module/blind_spot/debug.h>
+#include <scene_module/blind_spot/scene.h>
+#include <scene_module/scene_module_interface.h>
 
 namespace behavior_planning {
 

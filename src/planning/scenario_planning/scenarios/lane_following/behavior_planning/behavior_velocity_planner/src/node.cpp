@@ -1,18 +1,18 @@
-#include <behavior_velocity_planner/node.hpp>
+#include <behavior_velocity_planner/node.h>
 
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_routing/Route.h>
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <utilization/path_utilization.hpp>
+#include <utilization/path_utilization.h>
 
 // Scene modules
-#include <scene_module/blind_spot/manager.hpp>
-#include <scene_module/crosswalk/manager.hpp>
-#include <scene_module/intersection/manager.hpp>
-#include <scene_module/momentary_stop/manager.hpp>
-#include <scene_module/traffic_light/manager.hpp>
+#include <scene_module/blind_spot/manager.h>
+#include <scene_module/crosswalk/manager.h>
+#include <scene_module/intersection/manager.h>
+#include <scene_module/momentary_stop/manager.h>
+#include <scene_module/traffic_light/manager.h>
 
 namespace {
 template <class T>

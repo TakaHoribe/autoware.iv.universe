@@ -1,4 +1,4 @@
-#include <behavior_velocity_planner/planner_manager.hpp>
+#include <behavior_velocity_planner/planner_manager.h>
 
 namespace behavior_planning {
 

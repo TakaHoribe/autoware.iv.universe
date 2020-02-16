@@ -1,4 +1,4 @@
-#include <scene_module/blind_spot/debug.hpp>
+#include <scene_module/blind_spot/debug.h>
 
 #include "utilization/util.h"
 

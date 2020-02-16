@@ -1,4 +1,4 @@
-#include <scene_module/intersection/manager.hpp>
+#include <scene_module/intersection/manager.h>
 
 #include <lanelet2_core/primitives/BasicRegulatoryElements.h>
 

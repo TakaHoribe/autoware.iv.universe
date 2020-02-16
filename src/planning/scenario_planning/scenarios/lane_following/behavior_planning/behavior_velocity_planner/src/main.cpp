@@ -15,12 +15,13 @@
  */
 
 #include <ros/ros.h>
-#include <behavior_velocity_planner/node.hpp>
+
+#include <behavior_velocity_planner/node.h>
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "behavior_velocity_planner_node");
 
-  behavior_planning::BehaviorVelocityPlannerNode node;
+  BehaviorVelocityPlannerNode node;
 
   ros::spin();
 

@@ -26,7 +26,7 @@
 #include <sensor_msgs/PointCloud2.h>
 
 #include <behavior_velocity_planner/planner_data.h>
-#include <behavior_velocity_planner/planner_manager.hpp>
+#include <behavior_velocity_planner/planner_manager.h>
 
 namespace behavior_planning {
 

@@ -42,8 +42,6 @@ struct TrafficLightStateStamped {
   autoware_traffic_light_msgs::TrafficLightState traffic_light_state;
 };
 
-namespace behavior_planning {
-
 struct PlannerData {
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
   sensor_msgs::PointCloud2::ConstPtr no_ground_pointcloud_msg;
@@ -75,4 +73,3 @@ struct PlannerData {
     return std::make_shared<TrafficLightStateStamped>(traffic_light_id_map_.at(id));
   }
 };
-}  // namespace behavior_planning

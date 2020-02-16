@@ -1,4 +1,4 @@
-#include <scene_module/intersection/debug.hpp>
+#include <scene_module/intersection/debug.h>
 
 #include <tf2/utils.h>
 

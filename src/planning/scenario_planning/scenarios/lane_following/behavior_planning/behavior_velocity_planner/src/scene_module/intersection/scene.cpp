@@ -1,9 +1,9 @@
-#include <scene_module/intersection/scene.hpp>
+#include <scene_module/intersection/scene.h>
 
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_extension/utility/utilities.h>
 
-#include <scene_module/intersection/manager.hpp>
+#include <scene_module/intersection/manager.h>
 
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"

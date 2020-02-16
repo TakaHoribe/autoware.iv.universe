@@ -1,8 +1,8 @@
-#include <scene_module/blind_spot/scene.hpp>
+#include <scene_module/blind_spot/scene.h>
 
 #include "utilization/util.h"
 
-#include <scene_module/blind_spot/manager.hpp>
+#include <scene_module/blind_spot/manager.h>
 
 namespace behavior_planning {
 

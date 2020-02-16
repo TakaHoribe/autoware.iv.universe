@@ -15,7 +15,7 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/scene_module_interface.hpp>
+#include <scene_module/scene_module_interface.h>
 
 namespace behavior_planning {
 

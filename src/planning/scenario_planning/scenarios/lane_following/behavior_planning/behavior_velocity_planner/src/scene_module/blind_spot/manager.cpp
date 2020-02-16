@@ -1,4 +1,4 @@
-#include <scene_module/blind_spot/manager.hpp>
+#include <scene_module/blind_spot/manager.h>
 
 #include "utilization/util.h"
 

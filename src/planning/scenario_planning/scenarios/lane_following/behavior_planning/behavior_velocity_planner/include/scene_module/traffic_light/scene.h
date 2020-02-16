@@ -22,8 +22,8 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/scene_module_interface.hpp>
-#include <scene_module/traffic_light/debug.hpp>
+#include <scene_module/scene_module_interface.h>
+#include <scene_module/traffic_light/debug.h>
 
 namespace behavior_planning {
 class TrafficLightModuleManager;

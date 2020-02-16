@@ -1,8 +1,8 @@
-#include <scene_module/crosswalk/scene.hpp>
+#include <scene_module/crosswalk/scene.h>
 
 #include <cmath>
 
-#include <scene_module/crosswalk/manager.hpp>
+#include <scene_module/crosswalk/manager.h>
 
 namespace behavior_planning {
 namespace bg = boost::geometry;

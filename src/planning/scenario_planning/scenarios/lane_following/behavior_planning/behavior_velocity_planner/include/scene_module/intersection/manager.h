@@ -15,9 +15,9 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/intersection/debug.hpp>  // To be refactored
-#include <scene_module/intersection/scene.hpp>
-#include <scene_module/scene_module_interface.hpp>
+#include <scene_module/intersection/debug.h>  // To be refactored
+#include <scene_module/intersection/scene.h>
+#include <scene_module/scene_module_interface.h>
 
 namespace behavior_planning {
 

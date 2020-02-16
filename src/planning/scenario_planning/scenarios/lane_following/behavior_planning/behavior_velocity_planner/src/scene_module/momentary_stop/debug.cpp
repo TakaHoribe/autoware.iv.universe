@@ -1,4 +1,4 @@
-#include <scene_module/momentary_stop/debug.hpp>
+#include <scene_module/momentary_stop/debug.h>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 

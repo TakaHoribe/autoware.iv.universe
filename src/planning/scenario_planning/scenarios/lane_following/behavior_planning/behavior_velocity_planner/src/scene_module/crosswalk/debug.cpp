@@ -1,4 +1,4 @@
-#include <scene_module/crosswalk/debug.hpp>
+#include <scene_module/crosswalk/debug.h>
 
 #include <visualization_msgs/MarkerArray.h>
 

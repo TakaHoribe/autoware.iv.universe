@@ -1,4 +1,4 @@
-#include <scene_module/momentary_stop/manager.hpp>
+#include <scene_module/momentary_stop/manager.h>
 
 namespace behavior_planning {
 

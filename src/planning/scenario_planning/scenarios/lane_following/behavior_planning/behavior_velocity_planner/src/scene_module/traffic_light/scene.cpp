@@ -1,10 +1,10 @@
-#include <scene_module/traffic_light/scene.hpp>
+#include <scene_module/traffic_light/scene.h>
 
 #include <map>
 
 #include <tf2/utils.h>
 
-#include <scene_module/traffic_light/manager.hpp>
+#include <scene_module/traffic_light/manager.h>
 
 namespace behavior_planning {
 namespace bg = boost::geometry;
