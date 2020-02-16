@@ -22,7 +22,7 @@
 
 class IntersectionModuleManager : public SceneModuleManagerInterface {
  public:
-  const char* getModuleName() override { return "Intersection"; }
+  const char* getModuleName() override { return "intersection"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
 
