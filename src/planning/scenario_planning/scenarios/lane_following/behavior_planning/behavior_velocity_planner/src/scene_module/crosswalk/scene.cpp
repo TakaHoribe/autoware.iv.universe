@@ -18,9 +18,8 @@ CrosswalkModule::CrosswalkModule(CrosswalkModuleManager* manager_ptr, const lane
       stop_margin_(1.0),
       stop_dynamic_object_prediction_time_margin_(3.0),
       slow_margin_(2.0),
-      lane_id_(lane_id),
-      task_id_(boost::uuids::random_generator()()) {
-  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(crosswalk_, task_id_);
+      lane_id_(lane_id) {
+  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(crosswalk_);
 }
 
 bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
@@ -72,7 +71,7 @@ bool CrosswalkModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& in
 
   is_end_of_life = !found;
   if (is_end_of_life)
-    if (manager_ptr_ != nullptr) manager_ptr_->unregisterTask(task_id_);
+    if (manager_ptr_ != nullptr) manager_ptr_->unregisterTask(crosswalk_);
   return is_end_of_life;
 }
 

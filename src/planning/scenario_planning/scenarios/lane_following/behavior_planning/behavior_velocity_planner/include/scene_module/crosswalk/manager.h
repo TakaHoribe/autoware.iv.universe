@@ -1,7 +1,7 @@
 #pragma once
 
+#include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include <memory>
 
@@ -11,9 +11,6 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -46,12 +43,11 @@ class CrosswalkModuleManager : public SceneModuleManagerInterface {
   CrosswalkDebugMarkersManager debugger_;  // TODO: remove
 
   bool isRegistered(const lanelet::ConstLanelet& crosswalk);
-  bool registerTask(const lanelet::ConstLanelet& crosswalk, const boost::uuids::uuid& uuid);
-  bool unregisterTask(const boost::uuids::uuid& uuid);
+  void registerTask(const lanelet::ConstLanelet& crosswalk);
+  void unregisterTask(const lanelet::ConstLanelet& crosswalk);
 
  private:
-  std::unordered_map<lanelet::ConstLanelet, std::string> task_id_direct_map_;
-  std::unordered_map<std::string, lanelet::ConstLanelet> task_id_reverse_map_;
+  std::set<int64_t> registered_task_id_set_;
 };
 
 }  // namespace behavior_planning

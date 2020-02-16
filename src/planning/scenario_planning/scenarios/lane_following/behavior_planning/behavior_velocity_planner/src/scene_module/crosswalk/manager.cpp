@@ -34,22 +34,17 @@ bool CrosswalkModuleManager::startCondition(const autoware_planning_msgs::PathWi
 }
 
 bool CrosswalkModuleManager::isRegistered(const lanelet::ConstLanelet& crosswalk) {
-  if (task_id_direct_map_.count(crosswalk) == 0) return false;
-  return true;
+  return registered_task_id_set_.count(crosswalk.id()) != 0;
 }
 
-bool CrosswalkModuleManager::registerTask(const lanelet::ConstLanelet& crosswalk, const boost::uuids::uuid& uuid) {
+void CrosswalkModuleManager::registerTask(const lanelet::ConstLanelet& crosswalk) {
   ROS_INFO("Registered Crosswalk Task");
-  task_id_direct_map_.emplace(crosswalk, boost::lexical_cast<std::string>(uuid));
-  task_id_reverse_map_.emplace(boost::lexical_cast<std::string>(uuid), crosswalk);
-  return true;
+  registered_task_id_set_.emplace(crosswalk.id());
 }
 
-bool CrosswalkModuleManager::unregisterTask(const boost::uuids::uuid& uuid) {
+void CrosswalkModuleManager::unregisterTask(const lanelet::ConstLanelet& crosswalk) {
   ROS_INFO("Unregistered Crosswalk Task");
-  task_id_direct_map_.erase(task_id_reverse_map_.at(boost::lexical_cast<std::string>(uuid)));
-  task_id_reverse_map_.erase(boost::lexical_cast<std::string>(uuid));
-  return true;
+  registered_task_id_set_.erase(crosswalk.id());
 }
 
 }  // namespace behavior_planning
