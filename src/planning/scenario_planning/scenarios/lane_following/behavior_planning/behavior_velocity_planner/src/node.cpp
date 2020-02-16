@@ -12,7 +12,7 @@
 #include <scene_module/crosswalk/crosswalk.hpp>
 #include <scene_module/intersection/manager.hpp>
 #include <scene_module/momentary_stop/momentary_stop.hpp>
-#include <scene_module/traffic_light/traffic_light.hpp>
+#include <scene_module/traffic_light/manager.hpp>
 
 namespace {
 template <class T>

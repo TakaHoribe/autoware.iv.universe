@@ -1,8 +1,8 @@
 #pragma once
-#include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_extension/utility/query.h>
-#include <lanelet2_routing/RoutingGraph.h>
-#include <ros/ros.h>
+
+#include <string>
+#include <unordered_map>
+
 #include <boost/assert.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
@@ -11,13 +11,19 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <scene_module/scene_module_interface.hpp>
-#include <scene_module/traffic_light/debug_marker.hpp>
-#include <string>
-#include <unordered_map>
+
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+
+#include <ros/ros.h>
+
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_extension/utility/query.h>
+#include <lanelet2_routing/RoutingGraph.h>
+
+#include <scene_module/scene_module_interface.hpp>
+#include <scene_module/traffic_light/debug.hpp>
 
 namespace behavior_planning {
 class TrafficLightModuleManager;
@@ -56,26 +62,6 @@ class TrafficLightModule : public SceneModuleInterface {
   double tl_state_timeout_;
   double max_stop_acceleration_threshold_;
   boost::uuids::uuid task_id_;
-};
-
-class TrafficLightModuleManager : public SceneModuleManagerInterface {
- public:
-  TrafficLightModuleManager();
-  ~TrafficLightModuleManager(){};
-  bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                      std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-  bool isRunning(const lanelet::TrafficLight& traffic_light);
-  bool registerTask(const lanelet::TrafficLight& traffic_light, const boost::uuids::uuid& uuid);
-  bool unregisterTask(const boost::uuids::uuid& uuid);
-  TrafficLightDebugMarkersManager debuger;
-
- private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;
-  std::unordered_map<std::string, lanelet::ConstLineString3d> task_id_reverse_map_;
 };
 
 }  // namespace behavior_planning

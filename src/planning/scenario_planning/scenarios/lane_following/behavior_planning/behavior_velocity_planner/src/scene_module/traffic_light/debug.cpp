@@ -1,5 +1,5 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <scene_module/traffic_light/debug_marker.hpp>
+#include <scene_module/traffic_light/debug.hpp>
 
 namespace behavior_planning {
 // TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~"),

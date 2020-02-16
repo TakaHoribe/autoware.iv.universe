@@ -86,9 +86,9 @@ target_link_libraries(scene_module_intersection
 
 # Scene Module: Traffic Light
 add_library(scene_module_traffic_light
-  src/scene_module/traffic_light/traffic_light.cpp
-  src/scene_module/traffic_light/debug_marker.cpp
-
+  src/scene_module/traffic_light/manager.cpp
+  src/scene_module/traffic_light/scene.cpp
+  src/scene_module/traffic_light/debug.cpp
 )
 
 target_link_libraries(scene_module_intersection
