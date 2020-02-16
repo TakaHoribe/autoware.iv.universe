@@ -3,11 +3,15 @@
 
 import rospy
 import math
-from autoware_control_msgs.msg import VehicleCommandStamped
-from autoware_vehicle_msgs.msg import VehicleStatusStamped
+from autoware_vehicle_msgs.msg import VehicleCommandStamped
+from autoware_vehicle_msgs.msg import Steering
 
-delay_compensation_time = 0.45 #TODO: ->rosparam (subscribe?)
-steer_tau = 0.01 #TODO ->rosparam (subscribe?)
+# delay_compensation_time = 0.2 #TODO: ->rosparam (subscribe?)
+# steer_tau = 0.35 #TODO ->rosparam (subscribe?)
+
+delay_compensation_time = rospy.get_param("/control/mpc_follower/input_delay")
+steer_tau = rospy.get_param("/control/mpc_follower/vehicle_model_steer_tau")
+
 
 class SimulateSteer():
 
@@ -20,10 +24,10 @@ class SimulateSteer():
             "/control/vehicle_cmd", VehicleCommandStamped, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True)
 
         self.substatus = rospy.Subscriber(
-            "/vehicle/status", VehicleStatusStamped, self.CallBackVehicleStatus, queue_size=1, tcp_nodelay=True)
+            "/vehicle/status/steering", Steering, self.CallBackVehicleStatus, queue_size=1, tcp_nodelay=True)
 
         self.pubstatus = rospy.Publisher(
-            "/vehicle_debug/status", VehicleStatusStamped, queue_size=1)
+            "/debug/mpc_predicted_steering", Steering, queue_size=1)
 
     def CallBackVehicleCmd(self, cmdmsg):
         steercmd = cmdmsg.command.control.steering_angle
@@ -31,7 +35,7 @@ class SimulateSteer():
         self.CalcCurrentSteer()
 
     def CallBackVehicleStatus(self, statusmsg):
-        steer = statusmsg.status.steering_angle
+        steer = statusmsg.data
         if self.current_time is None:
             self.current_steer = steer
             self.current_time = rospy.Time.now().to_sec()
@@ -100,13 +104,13 @@ class SimulateSteer():
         self.current_time = steer_time
 
     def PublishSteer(self):
-        vsmsg = VehicleStatusStamped()
-        vsmsg.header.stamp = rospy.Time.now()#self.current_time?
-        vsmsg.status.steering_angle = self.current_steer
-        self.pubstatus.publish(vsmsg)
+        steermsg = Steering()
+        steermsg.header.stamp = rospy.Time.now()#self.current_time?
+        steermsg.data = self.current_steer
+        self.pubstatus.publish(steermsg)
 
 def main():
-    rospy.init_node("simulate_mpc_steer")
+    rospy.init_node("mpc_steer_simulator")
     SimulateSteer()
     rospy.spin()
 

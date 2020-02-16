@@ -31,6 +31,7 @@
 #include <limits>
 #include <vector>
 
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <ros/ros.h>
@@ -88,11 +89,9 @@ class MPCFollower {
   Butterworth2dFilter lpf_steering_cmd_;   //!< @brief lowpass filter for steering command
   Butterworth2dFilter lpf_lateral_error_;  //!< @brief lowpass filter for lateral error to calculate derivatie
   Butterworth2dFilter lpf_yaw_error_;      //!< @brief lowpass filter for heading error to calculate derivatie
-  std::shared_ptr<VehicleModelInterface> vehicle_model_ptr_;  //!< @brief vehicle model for MPC
   std::string vehicle_model_type_;                            //!< @brief vehicle model type for MPC
-  std::string qp_solver_type_;                                //!< @brief solver type of MPC
+  std::shared_ptr<VehicleModelInterface> vehicle_model_ptr_;  //!< @brief vehicle model for MPC
   std::shared_ptr<QPSolverInterface> qpsolver_ptr_;           //!< @brief qp solver for MPC
-  std::string output_interface_;                              //!< @brief output command type
   std::deque<double> input_buffer_;  //!< @brief control input (mpc_output) buffer for delay time conpemsation
 
   /* parameters for control*/
@@ -126,7 +125,7 @@ class MPCFollower {
     double weight_terminal_lat_error;                //< @brief terminal lateral error weight in matrix Q
     double weight_terminal_heading_error;            //< @brief terminal heading error weight in matrix Q
     double zero_ff_steer_deg;                        //< @brief threshold that feed-forward angle becomes zero
-    double delay_compensation_time;                  //< @brief delay time for steering input to be compensated
+    double input_delay;                  //< @brief delay time for steering input to be compensated
   };
   MPCParam mpc_param_;  // for mpc design parameter
 
@@ -141,10 +140,10 @@ class MPCFollower {
     Eigen::MatrixXd Urefex;
   };
 
-  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;       //!< @brief current measured pose
-  std::shared_ptr<geometry_msgs::TwistStamped> current_velocity_ptr_;  //!< @brief current measured velocity
-  std::shared_ptr<double> current_steer_ptr_;                          //!< @brief current measured steering
-  autoware_planning_msgs::Trajectory current_trajectory_;              //!< @brief current waypoints to be followed
+  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;                //!< @brief current measured pose
+  std::shared_ptr<geometry_msgs::TwistStamped> current_velocity_ptr_;           //!< @brief current measured velocity
+  std::shared_ptr<double> current_steer_ptr_;                                   //!< @brief current measured steering
+  std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;  //!< @brief referece trajectory
 
   double raw_steer_cmd_prev_;  //< @brief steering command calculated by mpc in previous period
   double raw_steer_cmd_pprev_;  //< @brief steering command calculated by mpc in two times previous period
@@ -169,6 +168,17 @@ class MPCFollower {
    * @brief update current_pose from tf
    */
   void updateCurrentPose();
+
+  /**
+   * @brief check if the received data is valid.
+   */
+  bool checkData();
+
+  /**
+   * @brief get varables for mpc calculation
+   */
+  bool getVar(int* closest_idx, double* closest_time, geometry_msgs::Pose* closest_pose, double* steer, double* lat_err,
+              double* yaw_err);
 
   /**
    * @brief set curent_steer with receved message
@@ -203,15 +213,14 @@ class MPCFollower {
    * @brief update status for delay compensation
    * @param [in] start_time start time for update
    * @param [out] x updated state at delayed_time
-   * @param [out] delayed_time start_time + delay_compensation_time
    */
-  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd *x, double *delayed_time);
+  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd *x);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
    * @param [in] reference_trajectory used for linearization around reference trajectory
    */
-  bool generateMPCMatrix(const MPCTrajectory &reference_trajectory, MPCMatrix *mpc_matrix);
+  MPCMatrix generateMPCMatrix(const MPCTrajectory &reference_trajectory);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
@@ -224,23 +233,15 @@ class MPCFollower {
    */
   autoware_control_msgs::ControlCommand getStopControlCommand() const;
 
-  bool resampleMPCTrajectoryTime(double start_time, MPCTrajectory *mpc_resampled_ref_traj);
+  bool resampleMPCTrajectoryByTime(double start_time, const MPCTrajectory &input, MPCTrajectory *output) const;
+  MPCTrajectory calcActualVelocity(const int closest, const MPCTrajectory &trajectory);
   double getPredictionTime() const;
-  double calcLateralError(const geometry_msgs::Pose &ego_pose, const geometry_msgs::Pose &ref_pose) const;
 
-
-  /* debug */
+  /* ---------- debug ---------- */
   bool show_debug_info_;  //!< @brief flag to display debug info
-
   ros::Publisher pub_debug_marker_;
   ros::Publisher pub_debug_values_;         //!< @brief publisher for debug info
   ros::Publisher pub_debug_mpc_calc_time_;  //!< @brief publisher for debug info
-
   ros::Subscriber sub_estimate_twist_;          //!< @brief subscriber for /estimate_twist for debug
   geometry_msgs::TwistStamped estimate_twist_;  //!< @brief received /estimate_twist for debug
-
-  /**
-   * @brief callback for estimate twist for debug
-   */
-  void callbackEstimateTwist(const geometry_msgs::TwistStamped &msg) { estimate_twist_ = msg; }
 };
