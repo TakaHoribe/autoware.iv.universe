@@ -28,7 +28,6 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_extension/utility/query.h>
 
-#include <scene_module/crosswalk/debug.h>
 #include <scene_module/crosswalk/scene.h>
 #include <scene_module/scene_module_interface.h>
 
@@ -37,7 +36,4 @@ class CrosswalkModuleManager : public SceneModuleManagerInterface {
   const char* getModuleName() override { return "crosswalk"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
-
-  void debug() override { debugger_.publish(); }
-  CrosswalkDebugMarkersManager debugger_;  // TODO: remove
 };

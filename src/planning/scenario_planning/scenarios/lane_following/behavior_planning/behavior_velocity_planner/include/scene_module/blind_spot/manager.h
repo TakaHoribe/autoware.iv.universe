@@ -21,7 +21,6 @@
 #include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/blind_spot/debug.h>
 #include <scene_module/blind_spot/scene.h>
 #include <scene_module/scene_module_interface.h>
 
@@ -30,9 +29,4 @@ class BlindSpotModuleManager : public SceneModuleManagerInterface {
   const char* getModuleName() override { return "blind_spot"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
-
-  void debug() override {
-    // directly publishing...
-  }
-  BlindSpotModuleDebugger debugger_;  // TODO: remove
 };

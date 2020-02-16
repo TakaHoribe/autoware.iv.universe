@@ -14,8 +14,10 @@ IntersectionModule::IntersectionModule(const int64_t module_id, const int64_t la
 }
 
 bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  debug_data_ = {};
+
   const auto input_path = *path;
-  // debugger_.publishPath(input_path, "path_raw", 0.0, 1.0, 1.0);
+  debug_data_.path_raw = input_path;
 
   State current_state = state_machine_.getState();
   ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d",
@@ -46,14 +48,11 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   if (current_state == State::STOP) {
     // visualize geofence at vehicle front position
-    // debugger_.publishGeofence(getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path), lane_id_);
+    debug_data_.geofence_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
   }
-  // debugger_.publishPose(path->points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 0.0, 0.0,
-  //                       static_cast<int>(current_state));
-  // debugger_.publishPose(path->points.at(judge_line_idx_).point.pose, "judge_point_pose", 1.0, 1.0, 0.5,
-  //                       static_cast<int>(current_state));
-  // debugger_.publishPath(*path, "output", 0.0, 0.5, 1.0);
-  // TODO: rename path_with_judgeline to output
+  debug_data_.stop_point_pose = path->points.at(stop_line_idx_).point.pose;
+  debug_data_.judge_point_pose = path->points.at(judge_line_idx_).point.pose;
+  debug_data_.path_with_judgeline = *path;
 
   /* set approaching speed to stop-line */
   setVelocityFrom(judge_line_idx_, approaching_speed_to_stopline_, path);
@@ -75,7 +74,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   /* get detection area */
   std::vector<lanelet::ConstLanelet> objective_lanelets;
   getObjectiveLanelets(lanelet_map_ptr, routing_graph_ptr, lane_id_, &objective_lanelets);
-  // debugger_.publishLaneletsArea(objective_lanelets, "intersection_detection_lanelets");
+  debug_data_.intersection_detection_lanelets = objective_lanelets;
   ROS_DEBUG_COND(show_debug_info_, "[IntersectionModuleManager::run()] lane_id_ = %ld, objective_lanelets.size() = %lu",
                  lane_id_, objective_lanelets.size());
   if (objective_lanelets.empty()) {
@@ -256,8 +255,8 @@ bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLa
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line
   generateEdgeLine(path, path_width, &path_r, &path_l);
 
-  // debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
-  // debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
+  debug_data_.path_right_edge = path_r;
+  debug_data_.path_left_edge = path_l;
 
   /* check collision for each objects and lanelets area */
   for (const auto& objective_lanelet : objective_lanelets) {
@@ -316,7 +315,7 @@ bool IntersectionModule::generateEdgeLine(const autoware_planning_msgs::PathWith
   }
 }
 
-void IntersectionModule::StateMachine::setStateWithMarginTime(IntersectionModule::State state) {
+void IntersectionModule::StateMachine::setStateWithMarginTime(State state) {
   /* same state request */
   if (state_ == state) {
     start_time_ = nullptr;  // reset timer
@@ -347,12 +346,12 @@ void IntersectionModule::StateMachine::setStateWithMarginTime(IntersectionModule
   }
 
   ROS_ERROR(
-      "[IntersectionModule::StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
+      "[StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
       "request.");
   return;
 }
 
-void IntersectionModule::StateMachine::setState(IntersectionModule::State state) { state_ = state; }
+void IntersectionModule::StateMachine::setState(State state) { state_ = state; }
 
 void IntersectionModule::StateMachine::setMarginTime(const double t) { margin_time_ = t; }
 

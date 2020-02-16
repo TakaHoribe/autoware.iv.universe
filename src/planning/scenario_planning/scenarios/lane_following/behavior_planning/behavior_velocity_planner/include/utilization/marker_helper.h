@@ -62,4 +62,11 @@ inline visualization_msgs::Marker createDefaultMarker(const char* frame_id, cons
   marker.color = color;
 
   return marker;
+} 
+
+inline void appendMarkerArray(const visualization_msgs::MarkerArray& additional_marker_array,
+                              visualization_msgs::MarkerArray* marker_array) {
+  for (const auto& marker : additional_marker_array.markers) {
+    marker_array->markers.push_back(marker);
+  }
 }

@@ -32,9 +32,23 @@
 
 class CrosswalkModule : public SceneModuleInterface {
  public:
-  explicit CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk);
+  struct DebugData {
+    double base_link2front;
+    std::vector<Eigen::Vector3d> collision_points;
+    std::vector<geometry_msgs::Pose> stop_poses;
+    std::vector<geometry_msgs::Pose> slow_poses;
+    std::vector<std::vector<Eigen::Vector3d>> collision_lines;
+    std::vector<std::vector<Eigen::Vector3d>> crosswalk_polygons;
+    std::vector<std::vector<Eigen::Vector3d>> stop_polygons;
+    std::vector<std::vector<Eigen::Vector3d>> slow_polygons;
+  };
+
+ public:
+   CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
@@ -69,4 +83,7 @@ class CrosswalkModule : public SceneModuleInterface {
   const double stop_margin_ = 1.0;
   const double stop_dynamic_object_prediction_time_margin_ = 3.0;
   const double slow_margin_ = 2.0;
+
+  // Debug
+  DebugData debug_data_;
 };

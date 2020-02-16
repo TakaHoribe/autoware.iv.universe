@@ -19,7 +19,6 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/momentary_stop/debug.h>
 #include <scene_module/momentary_stop/scene.h>
 #include <scene_module/scene_module_interface.h>
 
@@ -28,7 +27,4 @@ class MomentaryStopModuleManager : public SceneModuleManagerInterface {
   const char* getModuleName() override { return "momentary_stop"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
-
-  void debug() override { debugger_.publish(); }
-  MomentaryStopDebugMarkersManager debugger_;  // TODO: remove
 };

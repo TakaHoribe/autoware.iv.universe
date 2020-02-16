@@ -1,14 +1,14 @@
-#include <scene_module/blind_spot/debug.h>
+#include <scene_module/blind_spot/scene.h>
 
 #include "utilization/marker_helper.h"
 #include "utilization/util.h"
 
-BlindSpotModuleDebugger::BlindSpotModuleDebugger() : nh_(""), pnh_("~") {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/blind_spot", 20);
-}
+namespace {
 
-void BlindSpotModuleDebugger::publishDetectionArea(
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, int mode, const std::string& ns) {
+using State = BlindSpotModule::State;
+
+visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
+    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, const State& state, const std::string& ns) {
   visualization_msgs::MarkerArray msg;
 
   auto marker = createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
@@ -23,7 +23,7 @@ void BlindSpotModuleDebugger::publishDetectionArea(
     marker.ns = ns + "_" + std::to_string(i);
     marker.id = i;
 
-    if (mode == 0) {
+    if (state == State::STOP) {
       marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
     } else {
       marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
@@ -40,11 +40,11 @@ void BlindSpotModuleDebugger::publishDetectionArea(
     msg.markers.push_back(marker);
   }
 
-  debug_viz_pub_.publish(msg);
+  return msg;
 }
 
-void BlindSpotModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns,
-                                          double r, double g, double b) {
+visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_msgs::PathWithLaneId& path,
+                                                      const std::string& ns, double r, double g, double b) {
   visualization_msgs::MarkerArray msg;
 
   auto marker =
@@ -58,11 +58,11 @@ void BlindSpotModuleDebugger::publishPath(const autoware_planning_msgs::PathWith
     msg.markers.push_back(marker);
   }
 
-  debug_viz_pub_.publish(msg);
+  return msg;
 }
 
-void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g,
-                                          double b, int mode) {
+visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose& pose, const State& state,
+                                                      const std::string& ns, double r, double g, double b) {
   visualization_msgs::MarkerArray msg;
 
   auto marker =
@@ -73,8 +73,7 @@ void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const
   marker.scale = createMarkerScale(0.5, 0.3, 0.3);
   msg.markers.push_back(marker);
 
-  // STOP
-  if (mode == 0) {
+  if (state == State::STOP) {
     auto marker_line = createDefaultMarker("map", (ns + "_line").c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
                                            createMarkerColor(r, g, b, 0.999));
     marker_line.id = 1;
@@ -99,10 +98,10 @@ void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const
     msg.markers.push_back(marker_line);
   }
 
-  debug_viz_pub_.publish(msg);
+  return msg;
 }
 
-void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
+visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_geofence{};
@@ -144,5 +143,37 @@ void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, i
   marker_factor_text.text = "blind spot";
   msg.markers.push_back(marker_factor_text);
 
-  debug_viz_pub_.publish(msg);
+  return msg;
+}
+
+}  // namespace
+
+visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  const auto state = state_machine_.getState();
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_raw, "path_raw", 0.0, 1.0, 1.0), &debug_marker_array);
+
+  appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
+
+  appendMarkerArray(createPoseMarkerArray(debug_data_.stop_point_pose, state, "stop_point_pose", 1.0, 0.0, 0.0),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPoseMarkerArray(debug_data_.judge_point_pose, state, "judge_point_pose", 1.0, 1.0, 0.5),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_with_judgeline, "path_with_judgeline", 0.0, 0.5, 1.0),
+                    &debug_marker_array);
+
+  appendMarkerArray(createDetectionAreaMarkerArray(debug_data_.detection_areas, state, "blind_spot_detection_area"),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", 0.5, 0.0, 0.5),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", 0.0, 0.5, 0.5),
+                    &debug_marker_array);
+
+  return debug_marker_array;
 }

@@ -1,32 +1,21 @@
-#include <scene_module/traffic_light/debug.h>
+#include <scene_module/traffic_light/scene.h>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~") {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/traffic_light", 1);
-}
+#include "utilization/marker_helper.h"
+#include "utilization/util.h"
 
-void TrafficLightDebugMarkersManager::pushTrafficLightState(
-    const std::shared_ptr<const lanelet::TrafficLight>& traffic_light,
-    const autoware_traffic_light_msgs::TrafficLightState& state) {
-  tl_state_.push_back(std::make_tuple(traffic_light, state));
-}
+namespace {
 
-void TrafficLightDebugMarkersManager::pushStopPose(const geometry_msgs::Pose& pose) {
-  stop_poses_.push_back(geometry_msgs::Pose(pose));
-}
+using DebugData = TrafficLightModule::DebugData;
 
-void TrafficLightDebugMarkersManager::pushJudgePose(const geometry_msgs::Pose& pose) {
-  judge_poses_.push_back(geometry_msgs::Pose(pose));
-}
-
-void TrafficLightDebugMarkersManager::publish() {
+visualization_msgs::MarkerArray createMarkerArray(const DebugData& debug_data) {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  double base_link2front = 0.0;  // TODO: fix
-  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
+  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
 
   // Stop Geofence
-  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -36,7 +25,7 @@ void TrafficLightDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.stop_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -50,7 +39,7 @@ void TrafficLightDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
   // Facto Text
-  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -60,7 +49,7 @@ void TrafficLightDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.stop_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -75,7 +64,7 @@ void TrafficLightDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
   // Judge Geofence
-  for (size_t j = 0; j < judge_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.judge_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -85,7 +74,7 @@ void TrafficLightDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(judge_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.judge_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -99,7 +88,7 @@ void TrafficLightDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
   // Facto Text
-  for (size_t j = 0; j < judge_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.judge_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -109,7 +98,7 @@ void TrafficLightDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(judge_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.judge_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -124,10 +113,15 @@ void TrafficLightDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
 
-  debug_viz_pub_.publish(msg);
-  tl_state_.clear();
-  stop_poses_.clear();
-  judge_poses_.clear();
+  return msg;
+}
 
-  return;
+}  // namespace
+
+visualization_msgs::MarkerArray TrafficLightModule::createDebugMarkerArray() {
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  appendMarkerArray(createMarkerArray(debug_data_), &debug_marker_array);
+
+  return debug_marker_array;
 }

@@ -1,15 +1,14 @@
-#include <scene_module/intersection/debug.h>
-
-#include <tf2/utils.h>
+#include <scene_module/intersection/scene.h>
 
 #include "utilization/marker_helper.h"
+#include "utilization/util.h"
 
-IntersectionModuleDebugger::IntersectionModuleDebugger() : nh_(""), pnh_("~") {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/intersection", 20);
-}
+namespace {
 
-void IntersectionModuleDebugger::publishLaneletsArea(const std::vector<lanelet::ConstLanelet>& lanelets,
-                                                     const std::string& ns) {
+using State = IntersectionModule::State;
+
+visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(const std::vector<lanelet::ConstLanelet>& lanelets,
+                                                              const std::string& ns) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
@@ -38,11 +37,13 @@ void IntersectionModuleDebugger::publishLaneletsArea(const std::vector<lanelet::
     marker.points.push_back(marker.points.front());
     msg.markers.push_back(marker);
   }
-  debug_viz_pub_.publish(msg);
+
+  return msg;
 }
 
-void IntersectionModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns,
-                                             const double r, const double g, const double b) {
+visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_msgs::PathWithLaneId& path,
+                                                      const std::string& ns, const double r, const double g,
+                                                      const double b) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
@@ -62,10 +63,10 @@ void IntersectionModuleDebugger::publishPath(const autoware_planning_msgs::PathW
     msg.markers.push_back(marker);
   }
 
-  debug_viz_pub_.publish(msg);
+  return msg;
 }
 
-void IntersectionModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
+visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_geofence{};
@@ -97,11 +98,12 @@ void IntersectionModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose
   marker_factor_text.text = "intersection";
   msg.markers.push_back(marker_factor_text);
 
-  debug_viz_pub_.publish(msg);
+  return msg;
 }
 
-void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const std::string& ns, const double r,
-                                             const double g, const double b, const int mode) {
+visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose& pose, const State& state,
+                                                      const std::string& ns, const double r, const double g,
+                                                      const double b) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
@@ -119,8 +121,7 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, co
   marker.color = createMarkerColor(r, g, b, 0.999);
   msg.markers.push_back(marker);
 
-  // STOP
-  if (mode == 0) {
+  if (state == State::STOP) {
     visualization_msgs::Marker marker_line{};
     marker_line.header.frame_id = "map";
     marker_line.header.stamp = current_time;
@@ -151,5 +152,38 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, co
     msg.markers.push_back(marker_line);
   }
 
-  debug_viz_pub_.publish(msg);
+  return msg;
+}
+
+}  // namespace
+
+visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  const auto state = state_machine_.getState();
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_raw, "path_raw", 0.0, 1.0, 1.0), &debug_marker_array);
+
+  appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
+
+  appendMarkerArray(createPoseMarkerArray(debug_data_.stop_point_pose, state, "stop_point_pose", 1.0, 0.0, 0.0),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPoseMarkerArray(debug_data_.judge_point_pose, state, "judge_point_pose", 1.0, 1.0, 0.5),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_with_judgeline, "path_with_judgeline", 0.0, 0.5, 1.0),
+                    &debug_marker_array);
+
+  appendMarkerArray(
+      createLaneletsAreaMarkerArray(debug_data_.intersection_detection_lanelets, "intersection_detection_lanelets"),
+      &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", 0.5, 0.0, 0.5),
+                    &debug_marker_array);
+
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", 0.0, 0.5, 0.5),
+                    &debug_marker_array);
+
+  return debug_marker_array;
 }

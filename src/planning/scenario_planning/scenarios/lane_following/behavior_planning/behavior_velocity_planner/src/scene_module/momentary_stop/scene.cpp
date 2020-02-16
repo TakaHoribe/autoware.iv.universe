@@ -8,6 +8,9 @@ MomentaryStopModule::MomentaryStopModule(const int64_t module_id, const lanelet:
     : SceneModuleInterface(module_id), stop_line_(stop_line), state_(State::APPROARCH) {}
 
 bool MomentaryStopModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  debug_data_ = {};
+  debug_data_.base_link2front = planner_data_->base_link2front;
+
   Eigen::Vector2d stop_point;
   bg::model::linestring<Point> stop_line = {{stop_line_[0].x(), stop_line_[0].y()},
                                             {stop_line_[1].x(), stop_line_[1].y()}};
@@ -48,7 +51,7 @@ bool MomentaryStopModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
       stop_point_with_lane_id.point.pose.position.x = stop_point.x();
       stop_point_with_lane_id.point.pose.position.y = stop_point.y();
       stop_point_with_lane_id.point.twist.linear.x = 0.0;
-      manager_ptr_->debuger.pushStopPose(stop_point_with_lane_id.point.pose);
+      debug_data_.stop_poses.push_back(stop_point_with_lane_id.point.pose);
 
       // insert stop point
       path->points.insert(path->points.begin() + insert_stop_point_idx, stop_point_with_lane_id);

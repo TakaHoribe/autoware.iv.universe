@@ -1,94 +1,21 @@
-#include <scene_module/crosswalk/debug.h>
+#include <scene_module/crosswalk/scene.h>
 
-#include <visualization_msgs/MarkerArray.h>
+#include "utilization/marker_helper.h"
+#include "utilization/util.h"
 
-CrosswalkDebugMarkersManager::CrosswalkDebugMarkersManager() : nh_(), pnh_("~") {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/crosswalk", 1);
-}
+namespace {
 
-void CrosswalkDebugMarkersManager::pushCollisionLine(const std::vector<Eigen::Vector3d>& line) {
-  collision_lines_.push_back(std::vector<Eigen::Vector3d>(line));
-}
+using DebugData = CrosswalkModule::DebugData;
 
-void CrosswalkDebugMarkersManager::pushCollisionLine(const std::vector<Eigen::Vector2d>& line) {
-  std::vector<Eigen::Vector3d> line3d;
-  for (const auto& point : line) {
-    Eigen::Vector3d point3d;
-    point3d << point.x(), point.y(), 0.0;
-    line3d.push_back(point3d);
-  }
-  pushCollisionLine(line3d);
-}
-
-void CrosswalkDebugMarkersManager::pushCollisionPoint(const Eigen::Vector3d& point) {
-  collision_points_.push_back(Eigen::Vector3d(point));
-}
-
-void CrosswalkDebugMarkersManager::pushCollisionPoint(const Eigen::Vector2d& point) {
-  Eigen::Vector3d point3d;
-  point3d << point.x(), point.y(), 0.0;
-  pushCollisionPoint(point3d);
-}
-
-void CrosswalkDebugMarkersManager::pushStopPose(const geometry_msgs::Pose& pose) {
-  stop_poses_.push_back(geometry_msgs::Pose(pose));
-}
-
-void CrosswalkDebugMarkersManager::pushSlowPose(const geometry_msgs::Pose& pose) {
-  slow_poses_.push_back(geometry_msgs::Pose(pose));
-}
-
-void CrosswalkDebugMarkersManager::pushCrosswalkPolygon(const std::vector<Eigen::Vector3d>& polygon) {
-  crosswalk_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
-}
-
-void CrosswalkDebugMarkersManager::pushCrosswalkPolygon(const std::vector<Eigen::Vector2d>& polygon) {
-  std::vector<Eigen::Vector3d> polygon3d;
-  for (const auto& point : polygon) {
-    Eigen::Vector3d point3d;
-    point3d << point.x(), point.y(), 0;
-    polygon3d.push_back(point3d);
-  }
-  pushCrosswalkPolygon(polygon3d);
-}
-
-void CrosswalkDebugMarkersManager::pushStopPolygon(const std::vector<Eigen::Vector3d>& polygon) {
-  stop_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
-}
-
-void CrosswalkDebugMarkersManager::pushStopPolygon(const std::vector<Eigen::Vector2d>& polygon) {
-  std::vector<Eigen::Vector3d> polygon3d;
-  for (const auto& point : polygon) {
-    Eigen::Vector3d point3d;
-    point3d << point.x(), point.y(), 0;
-    polygon3d.push_back(point3d);
-  }
-  pushStopPolygon(polygon3d);
-}
-
-void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vector3d>& polygon) {
-  slow_polygons_.push_back(std::vector<Eigen::Vector3d>(polygon));
-}
-
-void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vector2d>& polygon) {
-  std::vector<Eigen::Vector3d> polygon3d;
-  for (const auto& point : polygon) {
-    Eigen::Vector3d point3d;
-    point3d << point.x(), point.y(), 0;
-    polygon3d.push_back(point3d);
-  }
-  pushSlowPolygon(polygon3d);
-}
-
-void CrosswalkDebugMarkersManager::publish() {
+visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  double base_link2front = 0.0;  // TODO: fix
-  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
+  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
+                                    tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
 
   // Crosswalk polygons
-  for (size_t i = 0; i < crosswalk_polygons_.size(); ++i) {
-    std::vector<Eigen::Vector3d> polygon = crosswalk_polygons_.at(i);
+  for (size_t i = 0; i < debug_data.crosswalk_polygons.size(); ++i) {
+    std::vector<Eigen::Vector3d> polygon = debug_data.crosswalk_polygons.at(i);
 
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -150,7 +77,7 @@ void CrosswalkDebugMarkersManager::publish() {
   }
 
   // Collision line
-  for (size_t i = 0; i < collision_lines_.size(); ++i) {
+  for (size_t i = 0; i < debug_data.collision_lines.size(); ++i) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -171,18 +98,18 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    for (size_t j = 0; j < collision_lines_.at(i).size(); ++j) {
+    for (size_t j = 0; j < debug_data.collision_lines.at(i).size(); ++j) {
       geometry_msgs::Point point;
-      point.x = collision_lines_.at(i).at(j).x();
-      point.y = collision_lines_.at(i).at(j).y();
-      point.z = collision_lines_.at(i).at(j).z();
+      point.x = debug_data.collision_lines.at(i).at(j).x();
+      point.y = debug_data.collision_lines.at(i).at(j).y();
+      point.z = debug_data.collision_lines.at(i).at(j).z();
       marker.points.push_back(point);
     }
     msg.markers.push_back(marker);
   }
 
   // Collision point
-  if (!collision_points_.empty()) {
+  if (!debug_data.collision_points.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -204,19 +131,19 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    for (size_t j = 0; j < collision_points_.size(); ++j) {
+    for (size_t j = 0; j < debug_data.collision_points.size(); ++j) {
       geometry_msgs::Point point;
-      point.x = collision_points_.at(j).x();
-      point.y = collision_points_.at(j).y();
-      point.z = collision_points_.at(j).z();
+      point.x = debug_data.collision_points.at(j).x();
+      point.y = debug_data.collision_points.at(j).y();
+      point.z = debug_data.collision_points.at(j).z();
       marker.points.push_back(point);
     }
     msg.markers.push_back(marker);
   }
 
   // Slow polygon
-  for (size_t i = 0; i < slow_polygons_.size(); ++i) {
-    std::vector<Eigen::Vector3d> polygon = slow_polygons_.at(i);
+  for (size_t i = 0; i < debug_data.slow_polygons.size(); ++i) {
+    std::vector<Eigen::Vector3d> polygon = debug_data.slow_polygons.at(i);
 
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -251,7 +178,7 @@ void CrosswalkDebugMarkersManager::publish() {
   }
 
   // Slow point
-  if (!slow_poses_.empty()) {
+  if (!debug_data.slow_poses.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -273,19 +200,19 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    for (size_t j = 0; j < slow_poses_.size(); ++j) {
+    for (size_t j = 0; j < debug_data.slow_poses.size(); ++j) {
       geometry_msgs::Point point;
-      point.x = slow_poses_.at(j).position.x;
-      point.y = slow_poses_.at(j).position.y;
-      point.z = slow_poses_.at(j).position.z;
+      point.x = debug_data.slow_poses.at(j).position.x;
+      point.y = debug_data.slow_poses.at(j).position.y;
+      point.z = debug_data.slow_poses.at(j).position.z;
       marker.points.push_back(point);
     }
     msg.markers.push_back(marker);
   }
 
   // Stop polygon
-  for (size_t i = 0; i < stop_polygons_.size(); ++i) {
-    std::vector<Eigen::Vector3d> polygon = stop_polygons_.at(i);
+  for (size_t i = 0; i < debug_data.stop_polygons.size(); ++i) {
+    std::vector<Eigen::Vector3d> polygon = debug_data.stop_polygons.at(i);
 
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -320,7 +247,7 @@ void CrosswalkDebugMarkersManager::publish() {
   }
 
   // Stop point
-  if (!stop_poses_.empty()) {
+  if (!debug_data.stop_poses.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -342,18 +269,18 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
-    for (size_t j = 0; j < stop_poses_.size(); ++j) {
+    for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
       geometry_msgs::Point point;
-      point.x = stop_poses_.at(j).position.x;
-      point.y = stop_poses_.at(j).position.y;
-      point.z = stop_poses_.at(j).position.z;
+      point.x = debug_data.stop_poses.at(j).position.x;
+      point.y = debug_data.stop_poses.at(j).position.y;
+      point.z = debug_data.stop_poses.at(j).position.z;
       marker.points.push_back(point);
     }
     msg.markers.push_back(marker);
   }
 
   // Stop Geofence
-  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -363,7 +290,7 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.stop_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -377,7 +304,7 @@ void CrosswalkDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
   // Factor Text
-  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -387,7 +314,7 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.stop_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -403,7 +330,7 @@ void CrosswalkDebugMarkersManager::publish() {
   }
 
   // Slow Geofence
-  for (size_t j = 0; j < slow_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.slow_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -413,7 +340,7 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(slow_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.slow_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -427,7 +354,7 @@ void CrosswalkDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
   // Slow Factor Text
-  for (size_t j = 0; j < slow_poses_.size(); ++j) {
+  for (size_t j = 0; j < debug_data.slow_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
@@ -437,7 +364,7 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(slow_poses_.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.slow_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -452,14 +379,15 @@ void CrosswalkDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
 
-  debug_viz_pub_.publish(msg);
-  collision_points_.clear();
-  stop_poses_.clear();
-  slow_poses_.clear();
-  collision_lines_.clear();
-  crosswalk_polygons_.clear();
-  slow_polygons_.clear();
-  stop_polygons_.clear();
+  return msg;
+}
 
-  return;
+}  // namespace
+
+visualization_msgs::MarkerArray CrosswalkModule::createDebugMarkerArray() {
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  appendMarkerArray(createMarkers(debug_data_), &debug_marker_array);
+
+  return debug_marker_array;
 }

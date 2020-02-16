@@ -20,13 +20,26 @@
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.h>
-#include <scene_module/traffic_light/debug.h>
 
 class TrafficLightModule : public SceneModuleInterface {
  public:
-  explicit TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem);
+  enum class State { APPROARCH, GO_OUT };
+
+  struct DebugData {
+    double base_link2front;
+    std::vector<
+        std::tuple<std::shared_ptr<const lanelet::TrafficLight>, autoware_traffic_light_msgs::TrafficLightState>>
+        tl_state;  // TODO: replace tuple with struct
+    std::vector<geometry_msgs::Pose> stop_poses;
+    std::vector<geometry_msgs::Pose> judge_poses;
+  };
+
+ public:
+  TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
@@ -51,7 +64,6 @@ class TrafficLightModule : public SceneModuleInterface {
   const lanelet::TrafficLight& traffic_light_reg_elem_;
 
   // State
-  enum class State { APPROARCH, GO_OUT };
   State state_;
 
   // Parameter
@@ -60,4 +72,5 @@ class TrafficLightModule : public SceneModuleInterface {
   const double max_stop_acceleration_threshold_ = -5.0;
 
   // Debug
+  DebugData debug_data_;
 };

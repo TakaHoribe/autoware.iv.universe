@@ -19,7 +19,6 @@
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.h>
-#include <scene_module/traffic_light/debug.h>
 #include <scene_module/traffic_light/scene.h>
 
 class TrafficLightModuleManager : public SceneModuleManagerInterface {
@@ -27,7 +26,4 @@ class TrafficLightModuleManager : public SceneModuleManagerInterface {
   const char* getModuleName() override { return "traffic_light"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
-
-  void debug() override { debugger_.publish(); }
-  TrafficLightDebugMarkersManager debugger_;  // TODO: remove
 };

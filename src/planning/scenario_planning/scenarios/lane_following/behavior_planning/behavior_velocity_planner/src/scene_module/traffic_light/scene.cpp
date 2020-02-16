@@ -13,6 +13,8 @@ TrafficLightModule::TrafficLightModule(const int64_t module_id, const lanelet::T
     : SceneModuleInterface(module_id), traffic_light_reg_elem_(traffic_light_reg_elem), state_(State::APPROARCH) {}
 
 bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  debug_data_ = {};
+
   const auto input_path = *path;
 
   // get lanelet2 traffic light
@@ -61,7 +63,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           // -- debug code --
           geometry_msgs::Pose judge_pose;
           tf2::toMsg(tf_map2judge_pose, judge_pose);
-          // debuger_.pushJudgePose(judge_pose);
+          debug_data_.judge_poses.push_back(judge_pose);
           // ----------------
           if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
             state_ = State::GO_OUT;
@@ -165,7 +167,7 @@ bool TrafficLightModule::insertTargetVelocityPoint(
   for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
     output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
   // -- debug code --
-  // if (velocity == 0.0) debugger_.pushStopPose(target_point_with_lane_id.point.pose);
+  if (velocity == 0.0) debug_data_.stop_poses.push_back(target_point_with_lane_id.point.pose);
   // ----------------
   return true;
 }

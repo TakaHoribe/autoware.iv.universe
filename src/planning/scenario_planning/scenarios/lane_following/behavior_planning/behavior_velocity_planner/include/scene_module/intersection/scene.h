@@ -19,13 +19,69 @@
 
 class IntersectionModule : public SceneModuleInterface {
  public:
-  explicit IntersectionModule(const int64_t module_id, const int64_t lane_id);
+  enum class State {
+    STOP = 0,
+    GO,
+  };
+
+  /**
+   * @brief Manage stop-go states with safety margin time.
+   */
+  class StateMachine {
+   public:
+    StateMachine() {
+      state_ = State::GO;
+      margin_time_ = 0.0;
+    }
+
+    /**
+     * @brief set request state command with margin time
+     */
+    void setStateWithMarginTime(State state);
+
+    /**
+     * @brief set request state command directly
+     */
+    void setState(State state);
+
+    /**
+     * @brief set margin time
+     */
+    void setMarginTime(const double t);
+
+    /**
+     * @brief get current state
+     */
+    State getState();
+
+   private:
+    State state_;                            //! current state
+    double margin_time_;                     //! margin time when transit to Go from Stop
+    std::shared_ptr<ros::Time> start_time_;  //! timer start time when received Go state when current state is Stop
+  };
+
+  struct DebugData {
+    autoware_planning_msgs::PathWithLaneId path_raw;
+
+    geometry_msgs::Pose geofence_pose;
+    geometry_msgs::Pose stop_point_pose;
+    geometry_msgs::Pose judge_point_pose;
+    autoware_planning_msgs::PathWithLaneId path_with_judgeline;
+    std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
+    autoware_planning_msgs::PathWithLaneId path_right_edge;
+    autoware_planning_msgs::PathWithLaneId path_left_edge;
+  };
+
+ public:
+  IntersectionModule(const int64_t module_id, const int64_t lane_id);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
    * and object predicted path
    */
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
  private:
   int64_t lane_id_;
@@ -82,44 +138,8 @@ class IntersectionModule : public SceneModuleInterface {
   geometry_msgs::Pose getAheadPose(const size_t start_idx, const double ahead_dist,
                                    const autoware_planning_msgs::PathWithLaneId& path) const;
 
-  enum class State {
-    STOP = 0,
-    GO,
-  };
+  StateMachine state_machine_;  //! for state
 
-  /**
-   * @brief Manage stop-go states with safety margin time.
-   */
-  class StateMachine {
-   public:
-    StateMachine() {
-      state_ = IntersectionModule::State::GO;
-      margin_time_ = 0.0;
-    }
-
-    /**
-     * @brief set request state command with margin time
-     */
-    void setStateWithMarginTime(IntersectionModule::State state);
-
-    /**
-     * @brief set request state command directly
-     */
-    void setState(IntersectionModule::State state);
-
-    /**
-     * @brief set margin time
-     */
-    void setMarginTime(const double t);
-
-    /**
-     * @brief get current state
-     */
-    IntersectionModule::State getState();
-
-   private:
-    State state_;                            //! current state
-    double margin_time_;                     //! margin time when transit to Go from Stop
-    std::shared_ptr<ros::Time> start_time_;  //! timer start time when received Go state when current state is Stop
-  } state_machine_;                          //! for state management
+  // Debug
+  DebugData debug_data_;
 };

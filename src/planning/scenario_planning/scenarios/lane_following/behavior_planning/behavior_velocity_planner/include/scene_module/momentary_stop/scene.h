@@ -20,20 +20,31 @@
 
 class MomentaryStopModule : public SceneModuleInterface {
  public:
-  explicit MomentaryStopModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line);
+  enum class State { APPROARCH, STOP, START };
+
+  struct DebugData {
+    double base_link2front;
+    std::vector<geometry_msgs::Pose> stop_poses;
+  };
+
+ public:
+  MomentaryStopModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
                                      const Eigen::Vector2d& base_point, const double backward_length,
                                      Eigen::Vector2d& output_point);
 
-  enum class State { APPROARCH, STOP, START };
-
   lanelet::ConstLineString3d stop_line_;
   State state_;
 
   // Paramter
   const double stop_margin_ = 0.0;
+
+  // Debug
+  DebugData debug_data_;
 };

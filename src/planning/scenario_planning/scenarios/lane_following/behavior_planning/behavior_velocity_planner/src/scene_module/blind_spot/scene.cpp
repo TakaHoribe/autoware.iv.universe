@@ -12,8 +12,10 @@ BlindSpotModule::BlindSpotModule(const int64_t module_id, const int64_t lane_id,
 }
 
 bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  debug_data_ = {};
+
   const auto input_path = *path;
-  // debugger_.publishPath(input_path, "path_raw", 0.0, 1.0, 1.0);
+  debug_data_.path_raw = input_path;
 
   State current_state = state_machine_.getState();
   ROS_DEBUG_COND(show_debug_info_, "[BlindSpotModule]: run: state_machine_.getState() = %d", (int)current_state);
@@ -43,15 +45,11 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
 
   if (current_state == State::STOP) {
     // visualize geofence at vehicle front position
-    // debugger_.publishGeofence(getAheadPose(stop_line_idx_, planner_data_->base_link2front, output),
-    // assigned_lane_id_);
+    debug_data_.geofence_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
   }
-  // debugger_.publishPose(path->points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 0.0, 0.0,
-  // static_cast<int>(current_state));
-  // debugger_.publishPose(path->points.at(judge_line_idx_).point.pose,
-  // "judge_point_pose", 1.0, 1.0, 0.5,
-  // static_cast<int>(current_state));
-  // debugger_.publishPath(*path, "path_with_judgeline", 0.0, 0.5, 1.0);
+  debug_data_.stop_point_pose = path->points.at(stop_line_idx_).point.pose;
+  debug_data_.judge_point_pose = path->points.at(judge_line_idx_).point.pose;
+  debug_data_.path_with_judgeline = *path;
 
   if (current_state == State::GO) {
     const auto p =
@@ -67,8 +65,8 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
   /* get detection area */
   std::vector<std::vector<geometry_msgs::Point>> detection_areas;
   generateDetectionArea(current_pose.pose, detection_areas);
-  // debugger_.publishDetectionArea(detection_areas, static_cast<int>(current_state),
-  // "blind_spot_detection_area");
+
+  debug_data_.detection_areas = detection_areas;
 
   /* get dynamic object */
   const auto objects_ptr = planner_data_->dynamic_objects;
@@ -275,8 +273,8 @@ bool BlindSpotModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
     if (is_collision) break;
   }
 
-  // debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
-  // debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
+  debug_data_.path_right_edge = path_r;
+  debug_data_.path_left_edge = path_l;
 
   return true;
 }
@@ -321,7 +319,7 @@ bool BlindSpotModule::generateEdgeLine(const autoware_planning_msgs::PathWithLan
   }
 }
 
-void BlindSpotModule::StateMachine::setStateWithMarginTime(BlindSpotModule::State state) {
+void BlindSpotModule::StateMachine::setStateWithMarginTime(State state) {
   /* same state request */
   if (state_ == state) {
     start_time_ = nullptr;  // reset timer
@@ -351,12 +349,12 @@ void BlindSpotModule::StateMachine::setStateWithMarginTime(BlindSpotModule::Stat
   }
 
   ROS_ERROR(
-      "[BlindSpotModule::StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
+      "[StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
       "request.");
   return;
 }
 
-void BlindSpotModule::StateMachine::setState(BlindSpotModule::State state) { state_ = state; }
+void BlindSpotModule::StateMachine::setState(State state) { state_ = state; }
 
 void BlindSpotModule::StateMachine::setMarginTime(const double t) { margin_time_ = t; }
 
