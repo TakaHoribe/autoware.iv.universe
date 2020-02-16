@@ -1,4 +1,3 @@
-#include <behavior_velocity_planner/api.hpp>
 #include <scene_module/momentary_stop/momentary_stop.hpp>
 
 namespace behavior_planning {
@@ -39,12 +38,9 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& inpu
 
       // search stop point index
       size_t insert_stop_point_idx = 0;
-      double base_link2front;
+      double base_link2front = *planner_data_->base_link2front;
       double length_sum = 0;
-      if (!getBaselink2FrontLength(base_link2front)) {
-        ROS_ERROR("cannot get vehicle front to base_link");
-        return false;
-      }
+
       const double stop_length = stop_margin_ + base_link2front;
       Eigen::Vector2d point1, point2;
       point1 << collision_points.at(0).x(), collision_points.at(0).y();
@@ -79,15 +75,14 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& inpu
     }
 
     // update state
-    geometry_msgs::PoseStamped self_pose;
-    if (!getCurrentSelfPose(self_pose)) return true;
+    geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
     const double x = stop_point.x() - self_pose.pose.position.x;
     const double y = stop_point.y() - self_pose.pose.position.y;
     const double dist = std::sqrt(x * x + y * y);
-    if (dist < 2.0 && isVehicleStopping()) state_ = State::STOP;
+    if (dist < 2.0 && planner_data_->is_vehicle_stopping) state_ = State::STOP;
     return true;
   } else if (state_ == State::STOP) {
-    if (!isVehicleStopping()) state_ = State::START;
+    if (!planner_data_->is_vehicle_stopping) state_ = State::START;
     return true;
   }
 }
@@ -128,11 +123,10 @@ bool MomentaryStopModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& l
 
 bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                 std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) return false;
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) return false;
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
+
   for (size_t i = 0; i < input.points.size(); ++i) {
     for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
       std::vector<std::shared_ptr<const lanelet::TrafficSign>> traffic_sign_reg_elems =

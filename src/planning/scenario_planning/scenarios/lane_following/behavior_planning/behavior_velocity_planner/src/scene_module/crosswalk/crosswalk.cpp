@@ -1,7 +1,8 @@
-#include <visualization_msgs/MarkerArray.h>
-#include <behavior_velocity_planner/api.hpp>
-#include <cmath>
 #include <scene_module/crosswalk/crosswalk.hpp>
+
+#include <cmath>
+
+#include <visualization_msgs/MarkerArray.h>
 
 namespace behavior_planning {
 namespace bg = boost::geometry;
@@ -35,8 +36,7 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   polygon.outer().push_back(polygon.outer().front());
 
   // check state
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) return false;
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
   if (bg::within(Point(self_pose.pose.position.x, self_pose.pose.position.y), polygon))
     state_ = State::INSIDE;
   else if (state_ == State::INSIDE)
@@ -44,16 +44,10 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
 
   if (state_ == State::APPROARCH) {
     // check person in polygon
-    std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr =
-        std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
-    if (!getDynemicObjects(objects_ptr)) {
-      return false;
-    }
-    pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    const auto objects_ptr = planner_data_->dynamic_objects;
+    const auto no_ground_pointcloud_ptr = planner_data_->no_ground_pointcloud;
+
     autoware_planning_msgs::PathWithLaneId slow_path, stop_path;
-    if (!getNoGroundPointcloud(no_ground_pointcloud_ptr)) {
-      // return false;
-    }
     if (!checkSlowArea(input, polygon, objects_ptr, no_ground_pointcloud_ptr, slow_path)) {
       return false;
     }
@@ -85,7 +79,7 @@ bool CrosswalkModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& in
 bool CrosswalkModule::checkStopArea(
     const autoware_planning_msgs::PathWithLaneId& input,
     const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& crosswalk_polygon,
-    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects_ptr,
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
     autoware_planning_msgs::PathWithLaneId& output) {
   output = input;
@@ -109,11 +103,9 @@ bool CrosswalkModule::checkStopArea(
     ROS_ERROR_THROTTLE(1, "Must be 2. Size is %d", (int)path_collision_points.size());
     return false;
   }
-  double width;
-  if (!getVehicleWidth(width)) {
-    ROS_ERROR("cannot get vehicle width");
-    return false;
-  }
+
+  double width = *planner_data_->vehicle_width;
+
   const double yaw = std::atan2(path_collision_points.at(1).y() - path_collision_points.at(0).y(),
                                 path_collision_points.at(1).x() - path_collision_points.at(0).x()) +
                      M_PI_2;
@@ -185,7 +177,7 @@ bool CrosswalkModule::checkStopArea(
 bool CrosswalkModule::checkSlowArea(
     const autoware_planning_msgs::PathWithLaneId& input,
     const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
-    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects_ptr,
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
     autoware_planning_msgs::PathWithLaneId& output) {
   const double slow_velocity = 1.39;  // 5kmph
@@ -261,12 +253,9 @@ bool CrosswalkModule::insertTargetVelocityPoint(
 
     // search target point index
     size_t insert_target_point_idx = 0;
-    double base_link2front;
+    double base_link2front = *planner_data_->base_link2front;
     double length_sum = 0;
-    if (!getBaselink2FrontLength(base_link2front)) {
-      ROS_ERROR("cannot get vehicle front to base_link");
-      return false;
-    }
+
     const double target_length = margin + base_link2front;
     Eigen::Vector2d point1, point2;
     point1 << nearest_collision_point.x(), nearest_collision_point.y();
@@ -319,11 +308,9 @@ bool CrosswalkModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_
 }
 
 CrosswalkModuleManager::CrosswalkModuleManager() {
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;
-  while (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr) && ros::ok()) {
-    ros::spinOnce();
-  }
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
+
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules =
       lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
   lanelet::traffic_rules::TrafficRulesPtr pedestrian_rules = lanelet::traffic_rules::TrafficRulesFactory::create(
@@ -338,13 +325,9 @@ CrosswalkModuleManager::CrosswalkModuleManager() {
 
 bool CrosswalkModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                             std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) return false;
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) {
-    return false;
-  }
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
   if (overall_graphs_ptr_ == nullptr) return false;
 
   for (size_t i = 0; i < input.points.size(); ++i) {
@@ -481,8 +464,7 @@ void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vect
 void CrosswalkDebugMarkersManager::publish() {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  double base_link2front;
-  getBaselink2FrontLength(base_link2front);
+  double base_link2front = 0.0;  // TODO: fix
   tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
 
   // Crosswalk polygons
@@ -850,7 +832,6 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.text = "crosswalk";
     msg.markers.push_back(marker);
   }
-
 
   debug_viz_pub_.publish(msg);
   collision_points_.clear();

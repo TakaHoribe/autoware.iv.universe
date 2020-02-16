@@ -72,7 +72,7 @@ class IntersectionModule : public SceneModuleInterface {
    */
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
                       const std::vector<lanelet::ConstLanelet>& objective_lanelets,
-                      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
+                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
                       const double path_width);
 
   /**

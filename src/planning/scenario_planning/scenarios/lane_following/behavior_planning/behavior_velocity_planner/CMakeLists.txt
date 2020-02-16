@@ -49,7 +49,6 @@ include_directories(
 
 # Common
 add_library(scene_module_lib
-  src/api.cpp
   src/data_manager.cpp
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp

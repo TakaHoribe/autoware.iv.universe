@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
@@ -28,9 +33,6 @@
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 #include <scene_module/scene_module_interface.hpp>
-
-#include <memory>
-#include <string>
 
 namespace behavior_planning {
 

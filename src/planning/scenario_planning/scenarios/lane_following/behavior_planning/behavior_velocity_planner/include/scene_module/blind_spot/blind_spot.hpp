@@ -76,7 +76,7 @@ class BlindSpotModule : public SceneModuleInterface {
    */
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
                       const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
-                      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
+                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
                       const double path_width, bool& is_collision);
   /**
    * @brief generates detection area

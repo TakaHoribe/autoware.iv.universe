@@ -1,9 +1,7 @@
-#include <behavior_velocity_planner/api.hpp>
 #include <scene_module/blind_spot/blind_spot.hpp>
 
 #include "utilization/util.h"
 
-// clang-format on
 namespace behavior_planning {
 
 namespace bg = boost::geometry;
@@ -37,11 +35,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   ROS_DEBUG_COND(show_debug_info_, "[BlindSpotModule]: run: state_machine_.getState() = %d", (int)current_state);
 
   /* get current pose */
-  geometry_msgs::PoseStamped current_pose;
-  if (!getCurrentSelfPose(current_pose)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] getCurrentSelfPose fail");
-    return false;
-  }
+  geometry_msgs::PoseStamped current_pose = *planner_data_->current_pose;
 
   /* check if the current_pose is ahead from judgement line */
   int closest = -1;
@@ -91,12 +85,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
                                                              "blind_spot_detection_area");
 
   /* get dynamic object */
-  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr =
-      std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
-  if (!getDynemicObjects(objects_ptr)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModuleManager::run()] cannot get dynamic object");
-    return false;
-  }
+  const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
   bool is_collision = false;
@@ -292,11 +281,10 @@ Polygon BlindSpotModule::convertToBoostGeometryPolygon(const std::vector<geometr
   return polygon;
 }
 
-bool BlindSpotModule::checkCollision(
-    const autoware_planning_msgs::PathWithLaneId& path,
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
-    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, const double path_width,
-    bool& is_collision) {
+bool BlindSpotModule::checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
+                                     const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
+                                     const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
+                                     const double path_width, bool& is_collision) {
   /* generates side edge line */
   autoware_planning_msgs::PathWithLaneId path_r;  // right side edge line
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line
@@ -427,19 +415,11 @@ BlindSpotModule::State BlindSpotModule::StateMachine::getState() { return state_
 bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                             std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
   /* get self pose */
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModuleManager::startCondition()] cannot get current self pose");
-    return false;
-  }
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
 
   /* get lanelet map */
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;               // objects info
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;  // route info
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModuleManager::startCondition()] cannot get lanelet map");
-    return false;
-  }
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
 
   /* search blind_spot tag */
   for (size_t i = 0; i < input.points.size(); ++i) {

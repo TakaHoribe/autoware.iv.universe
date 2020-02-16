@@ -45,13 +45,13 @@ class CrosswalkModule : public SceneModuleInterface {
   bool checkSlowArea(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
-      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects_ptr,
+      const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
       const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
       autoware_planning_msgs::PathWithLaneId& output);
   bool checkStopArea(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
-      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects_ptr,
+      const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
       const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
       autoware_planning_msgs::PathWithLaneId& output);
   bool insertTargetVelocityPoint(

@@ -1,7 +1,8 @@
-#include <tf2/utils.h>
-#include <behavior_velocity_planner/api.hpp>
-#include <map>
 #include <scene_module/traffic_light/traffic_light.hpp>
+
+#include <map>
+
+#include <tf2/utils.h>
 
 namespace behavior_planning {
 namespace bg = boost::geometry;
@@ -38,19 +39,12 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
   lanelet::ConstLineStringsOrPolygons3d traffic_lights = traffic_light_ptr_->trafficLights();
 
   // get vehicle info
-  std::shared_ptr<geometry_msgs::TwistStamped const> self_twist_ptr;
-  if (!getCurrentSelfVelocity(self_twist_ptr)) {
-    ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot get vehicle velocity.");
-    return false;
-  }
+  geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
+
   const double stop_border_distance_threshold =
       (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
       (2.0 * max_stop_acceleration_threshold_);
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) {
-    ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot get vehicle pose.");
-    return false;
-  }
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
 
   // check state
   if (state_ == State::GO_OUT)
@@ -147,10 +141,8 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     }
     const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
     std_msgs::Header header;
-    autoware_traffic_light_msgs::TrafficLightState tl_state;
-    if (!getTrafficLightState(id, header, tl_state)) {
-      continue;
-    }
+    autoware_traffic_light_msgs::TrafficLightState tl_state = *planner_data_->traffic_light_state;
+
     if (!((ros::Time::now() - header.stamp).toSec() < tl_state_timeout_)) {
       continue;
     }
@@ -240,12 +232,9 @@ bool TrafficLightModule::createTargetPoint(
 
     // search target point index
     target_point_idx = 0;
-    double base_link2front;
+    double base_link2front = *planner_data_->base_link2front;
     double length_sum = 0;
-    if (!getBaselink2FrontLength(base_link2front)) {
-      ROS_ERROR("cannot get vehicle front to base_link");
-      return false;
-    }
+
     const double target_length = margin + base_link2front;
     Eigen::Vector2d point1, point2;
     if (0 <= target_length) {
@@ -296,11 +285,9 @@ TrafficLightModuleManager::TrafficLightModuleManager() : nh_(""), pnh_("~") {}
 
 bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) return false;
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) return false;
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
 
   for (const auto& point : input.points) {
     for (const auto& lane_id : point.lane_ids) {

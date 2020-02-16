@@ -3,7 +3,6 @@
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_extension/utility/utilities.h>
 
-#include <behavior_velocity_planner/api.hpp>  // To be refactored
 #include <scene_module/intersection/manager.hpp>
 
 #include "utilization/boost_geometry_helper.h"
@@ -36,11 +35,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d", (int)current_state);
 
   /* get current pose */
-  geometry_msgs::PoseStamped current_pose;
-  if (!getCurrentSelfPose(current_pose)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] getCurrentSelfPose fail");
-    return false;
-  }
+  geometry_msgs::PoseStamped current_pose = *planner_data_->current_pose;
 
   /* check if the current_pose is ahead from judgement line */
   int closest = -1;
@@ -87,12 +82,8 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   }
 
   /* get lanelet map */
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;               // objects info
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;  // route info
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::run()] cannot get lanelet map");
-    return false;
-  }
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
 
   /* get detection area */
   std::vector<lanelet::ConstLanelet> objective_lanelets;
@@ -107,11 +98,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   }
 
   /* get dynamic object */
-  auto objects_ptr = std::make_shared<const autoware_perception_msgs::DynamicObjectArray>();
-  if (!getDynemicObjects(objects_ptr)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::run()] cannot get dynamic object");
-    return false;
-  }
+  const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
   if (checkCollision(output, objective_lanelets, objects_ptr, path_expand_width_)) {
@@ -298,9 +285,10 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   return true;
 }
 
-bool IntersectionModule::checkCollision(
-    const autoware_planning_msgs::PathWithLaneId& path, const std::vector<lanelet::ConstLanelet>& objective_lanelets,
-    const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr, const double path_width) {
+bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
+                                        const std::vector<lanelet::ConstLanelet>& objective_lanelets,
+                                        const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
+                                        const double path_width) {
   /* generates side edge line */
   autoware_planning_msgs::PathWithLaneId path_r;  // right side edge line
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line

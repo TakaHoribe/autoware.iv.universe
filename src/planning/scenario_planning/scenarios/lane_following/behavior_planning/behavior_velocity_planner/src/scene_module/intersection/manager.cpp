@@ -2,8 +2,6 @@
 
 #include <lanelet2_core/primitives/BasicRegulatoryElements.h>
 
-#include <behavior_velocity_planner/api.hpp>  // To be refactored
-
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
 
@@ -12,19 +10,11 @@ namespace behavior_planning {
 bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
   /* get self pose */
-  geometry_msgs::PoseStamped self_pose;
-  if (!getCurrentSelfPose(self_pose)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::startCondition()] cannot get current self pose");
-    return false;
-  }
+  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
 
   /* get lanelet map */
-  lanelet::LaneletMapConstPtr lanelet_map_ptr;               // objects info
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr;  // route info
-  if (!getLaneletMap(lanelet_map_ptr, routing_graph_ptr)) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModuleManager::startCondition()] cannot get lanelet map");
-    return false;
-  }
+  const auto lanelet_map_ptr = planner_data_->lanelet_map;
+  const auto routing_graph_ptr = planner_data_->routing_graph;
 
   /* search intersection tag */
   for (size_t i = 0; i < input.points.size(); ++i) {

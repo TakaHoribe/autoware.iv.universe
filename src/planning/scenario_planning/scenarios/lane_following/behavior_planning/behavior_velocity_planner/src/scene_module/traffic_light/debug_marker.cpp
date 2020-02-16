@@ -1,6 +1,5 @@
-#include <behavior_velocity_planner/api.hpp>
-#include <scene_module/traffic_light/debug_marker.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <scene_module/traffic_light/debug_marker.hpp>
 
 namespace behavior_planning {
 // TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~"),
@@ -90,8 +89,7 @@ void MapBasedDetector::publishVisibleTrafficLights(const geometry_msgs::PoseStam
 void TrafficLightDebugMarkersManager::publish() {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  double base_link2front;
-  getBaselink2FrontLength(base_link2front);
+  double base_link2front = 0.0;  // TODO: fix
   tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
 
   // Stop Geofence

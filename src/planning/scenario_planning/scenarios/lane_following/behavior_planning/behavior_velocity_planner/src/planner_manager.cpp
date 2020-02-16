@@ -1,5 +1,7 @@
 #include <behavior_velocity_planner/planner_manager.hpp>
 
+#include <behavior_velocity_planner/data_manager.hpp>
+
 namespace behavior_planning {
 
 void BehaviorVelocityPlannerManager::launchSceneModule(
@@ -9,7 +11,10 @@ void BehaviorVelocityPlannerManager::launchSceneModule(
 
 bool BehaviorVelocityPlannerManager::callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,
                                               autoware_planning_msgs::PathWithLaneId& output_path_msg) {
+  const auto planner_data = std::make_shared<PlannerData>(SingletonDataManager::getInstance().getPlannerData());
+
   for (size_t i = 0; i < scene_managers_ptr_.size(); ++i) {
+    scene_managers_ptr_.at(i)->setPlannerData(planner_data);
     if (!scene_managers_ptr_.at(i)->updateSceneModuleInstances(input_path_msg)) {
       return false;
     }
