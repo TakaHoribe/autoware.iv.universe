@@ -11,7 +11,7 @@
 #include <scene_module/blind_spot/blind_spot.hpp>
 #include <scene_module/crosswalk/manager.hpp>
 #include <scene_module/intersection/manager.hpp>
-#include <scene_module/momentary_stop/momentary_stop.hpp>
+#include <scene_module/momentary_stop/manager.hpp>
 #include <scene_module/traffic_light/manager.hpp>
 
 namespace {

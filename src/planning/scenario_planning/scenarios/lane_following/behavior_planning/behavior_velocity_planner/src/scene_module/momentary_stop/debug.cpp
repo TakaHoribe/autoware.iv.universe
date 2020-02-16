@@ -1,5 +1,5 @@
-#include <behavior_velocity_planner/api.hpp>
-#include <scene_module/momentary_stop/debug_marker.hpp>
+#include <scene_module/momentary_stop/debug.hpp>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace behavior_planning {
@@ -11,12 +11,10 @@ void MomentaryStopDebugMarkersManager::pushStopPose(const geometry_msgs::Pose& p
   stop_poses_.push_back(geometry_msgs::Pose(pose));
 }
 
-
 void MomentaryStopDebugMarkersManager::publish() {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  double base_link2front;
-  getBaselink2FrontLength(base_link2front);
+  double base_link2front = 0.0;  // TODO: fix
   tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
 
   // Stop Geofence
