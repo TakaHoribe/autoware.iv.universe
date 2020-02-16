@@ -40,32 +40,37 @@ class CrosswalkModuleManager;
 class CrosswalkModule : public SceneModuleInterface {
  public:
   CrosswalkModule(CrosswalkModuleManager* manager_ptr, const lanelet::ConstLanelet& crosswalk, const int lane_id);
+
   bool run(const autoware_planning_msgs::PathWithLaneId& input,
            autoware_planning_msgs::PathWithLaneId& output) override;
   bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
-  ~CrosswalkModule(){};
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
                                      const Eigen::Vector2d& base_point, const double backward_length,
                                      Eigen::Vector2d& output_point);
+
   bool checkSlowArea(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
       const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
       const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
       autoware_planning_msgs::PathWithLaneId& output);
+
   bool checkStopArea(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
       const autoware_perception_msgs::DynamicObjectArray::ConstPtr& objects_ptr,
       const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& no_ground_pointcloud_ptr,
       autoware_planning_msgs::PathWithLaneId& output);
+
   bool insertTargetVelocityPoint(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false>& polygon,
       const double& margin, const double& velocity, autoware_planning_msgs::PathWithLaneId& output);
+
   enum class State { APPROARCH, INSIDE, GO_OUT };
+
   CrosswalkModuleManager* manager_ptr_;
   State state_;
   int lane_id_;

@@ -30,20 +30,17 @@ namespace behavior_planning {
 
 class TrafficLightModuleManager : public SceneModuleManagerInterface {
  public:
-  TrafficLightModuleManager();
-
   bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
+
+  void debug() override { debugger_.publish(); }
+  TrafficLightDebugMarkersManager debugger_;  // TODO: remove
+
   bool isRunning(const lanelet::TrafficLight& traffic_light);
   bool registerTask(const lanelet::TrafficLight& traffic_light, const boost::uuids::uuid& uuid);
   bool unregisterTask(const boost::uuids::uuid& uuid);
-  TrafficLightDebugMarkersManager debuger;
 
  private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
   std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;
   std::unordered_map<std::string, lanelet::ConstLineString3d> task_id_reverse_map_;
 };

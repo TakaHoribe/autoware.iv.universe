@@ -12,9 +12,11 @@ namespace behavior_planning {
 
 class SceneModuleInterface {
  public:
+  virtual bool endOfLife(
+      const autoware_planning_msgs::PathWithLaneId& input) = 0;  // TODO: in the same class as startCondition
+
   virtual bool run(const autoware_planning_msgs::PathWithLaneId& input,
                    autoware_planning_msgs::PathWithLaneId& output) = 0;
-  virtual bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) = 0;
 
   virtual void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
 
@@ -30,36 +32,43 @@ class SceneModuleManagerInterface {
   virtual bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                               std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) = 0;
 
+  virtual void debug() {
+    // do nothing by default
+  }
+
  public:
   SceneModuleManagerInterface() = default;
   virtual ~SceneModuleManagerInterface() = default;
 
-  virtual bool updateSceneModuleInstances(const autoware_planning_msgs::PathWithLaneId& input) {
+  virtual void updateSceneModuleInstances(const std::shared_ptr<const PlannerData>& planner_data,
+                                          const autoware_planning_msgs::PathWithLaneId& input) {
+    setPlannerData(planner_data);
+
     // create instance
     std::vector<std::shared_ptr<SceneModuleInterface>> scene_modules_ptr;
     startCondition(input, scene_modules_ptr);
     for (const auto& scene_module_ptr : scene_modules_ptr) {
-      if (scene_module_ptr != nullptr) scene_modules_ptr_.push_back(scene_module_ptr);
+      if (scene_module_ptr != nullptr) scene_module_ptrs_.push_back(scene_module_ptr);
     }
 
     // delete instance
-    for (int i = 0; i < static_cast<int>(scene_modules_ptr_.size()); ++i) {
-      if (scene_modules_ptr_.at(i)->endOfLife(input)) {
-        scene_modules_ptr_.erase(scene_modules_ptr_.begin() + i);
+    for (size_t i = 0; i < scene_module_ptrs_.size(); ++i) {
+      if (scene_module_ptrs_.at(i)->endOfLife(input)) {
+        scene_module_ptrs_.erase(scene_module_ptrs_.begin() + i);
         i += -1;
       }
     }
-
-    return true;
   }
 
   virtual bool run(const autoware_planning_msgs::PathWithLaneId& input,
                    autoware_planning_msgs::PathWithLaneId& output) {
     autoware_planning_msgs::PathWithLaneId input_path = input;
-    for (size_t i = 0; i < scene_modules_ptr_.size(); ++i) {
+
+    for (const auto& scene_module_ptr : scene_module_ptrs_) {
+      scene_module_ptr->setPlannerData(planner_data_);
+
       autoware_planning_msgs::PathWithLaneId output_path;
-      scene_modules_ptr_.at(i)->setPlannerData(planner_data_);
-      if (scene_modules_ptr_.at(i)->run(input_path, output_path)) input_path = output_path;
+      if (scene_module_ptr->run(input_path, output_path)) input_path = output_path;
     }
 
     output = input_path;
@@ -70,7 +79,7 @@ class SceneModuleManagerInterface {
   virtual void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
 
  protected:
-  std::vector<std::shared_ptr<SceneModuleInterface>> scene_modules_ptr_;
+  std::vector<std::shared_ptr<SceneModuleInterface>> scene_module_ptrs_;
   std::shared_ptr<const PlannerData> planner_data_;
 };
 

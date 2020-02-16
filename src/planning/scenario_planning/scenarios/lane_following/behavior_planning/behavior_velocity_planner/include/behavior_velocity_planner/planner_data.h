@@ -34,6 +34,7 @@
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_routing/RoutingGraphContainer.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 // TODO(Kenji Miyake): Add msg
@@ -43,19 +44,23 @@ struct TrafficLightStateStamped {
 };
 
 struct PlannerData {
-  autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
-  sensor_msgs::PointCloud2::ConstPtr no_ground_pointcloud_msg;
-  pcl::PointCloud<pcl::PointXYZ>::ConstPtr no_ground_pointcloud;
-
-  std::map<int, TrafficLightStateStamped> traffic_light_id_map_;
-
+  // tf
   geometry_msgs::PoseStamped current_pose;
-  geometry_msgs::TwistStamped::ConstPtr current_velocity;
 
+  // msgs from callbacks that are used for data-ready
+  geometry_msgs::TwistStamped::ConstPtr current_velocity;
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
+  autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr traffic_light_state_array;
+  pcl::PointCloud<pcl::PointXYZ>::ConstPtr no_ground_pointcloud;
   lanelet::LaneletMapPtr lanelet_map;
+
+  // other internal data
+  std::map<int, TrafficLightStateStamped> traffic_light_id_map_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules;
   lanelet::routing::RoutingGraphPtr routing_graph;
+  std::shared_ptr<const lanelet::routing::RoutingGraphContainer> overall_graphs;
 
+  // parameters
   double wheel_base;
   double front_overhang;
   double vehicle_width;

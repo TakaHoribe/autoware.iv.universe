@@ -30,7 +30,11 @@ class BlindSpotModuleManager : public SceneModuleManagerInterface {
  public:
   bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
-  BlindSpotModuleDebugger debugger_;
+  void debug() override {
+    // directly publishing...
+  }
+  BlindSpotModuleDebugger debugger_;  // TODO: remove
+
   void unregisterTask(const int lane_id);
 
  private:

@@ -58,16 +58,17 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
         getAheadPose(stop_line_idx_, planner_data_->base_link2front, output), assigned_lane_id_);
   }
   blind_spot_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0,
-                                                    0.0, 0.0, (int)current_state);
+                                                    0.0, 0.0, static_cast<int>(current_state));
   blind_spot_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose",
-                                                    1.0, 1.0, 0.5, (int)current_state);
+                                                    1.0, 1.0, 0.5, static_cast<int>(current_state));
   blind_spot_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
 
   if (current_state == State::GO) {
     geometry_msgs::Pose p =
         planning_utils::transformRelCoordinate2D(current_pose.pose, output.points.at(judge_line_idx_).point.pose);
-    if (p.position.x > 0.0)  // current_pose is ahead of judge_line
-    {
+
+    // current_pose is ahead of judge_line
+    if (p.position.x > 0.0) {
       ROS_INFO_COND(show_debug_info_, "[BlindSpotModule::run] no plan needed. skip collision check.");
       return true;  // no plan needed.
     }
@@ -76,7 +77,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   /* get detection area */
   std::vector<std::vector<geometry_msgs::Point>> detection_areas;
   generateDetectionArea(current_pose.pose, detection_areas);
-  blind_spot_module_manager_->debugger_.publishDetectionArea(detection_areas, (int)current_state,
+  blind_spot_module_manager_->debugger_.publishDetectionArea(detection_areas, static_cast<int>(current_state),
                                                              "blind_spot_detection_area");
 
   /* get dynamic object */
@@ -287,24 +288,20 @@ bool BlindSpotModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
 
   /* check collision for each objects and lanelets area */
   is_collision = false;
-  for (size_t i = 0; i < detection_areas.size(); ++i)  // for each objective lanelets
-  {
+  // for each objective lanelets
+  for (size_t i = 0; i < detection_areas.size(); ++i) {
     Polygon polygon = convertToBoostGeometryPolygon(detection_areas.at(i));
 
-    for (size_t j = 0; j < objects_ptr->objects.size(); ++j)  // for each dynamic objects
-    {
+    // for each dynamic objects
+    for (size_t j = 0; j < objects_ptr->objects.size(); ++j) {
       Point point(objects_ptr->objects.at(j).state.pose_covariance.pose.position.x,
                   objects_ptr->objects.at(j).state.pose_covariance.pose.position.y);
-      if (bg::within(point,
-                     polygon))  // if the dynamic object is in the lanelet polygon, check collision
-      {
-        // ROS_INFO("lanelet_id: %lu, object_no: %lu, INSIDE POLYGON", i, j);
+      // if the dynamic object is in the lanelet polygon, check collision
+      if (bg::within(point, polygon)) {
         if (checkPathCollision(path_r, objects_ptr->objects.at(j)) ||
             checkPathCollision(path_l, objects_ptr->objects.at(j))) {
           is_collision = true;
         }
-      } else {
-        // ROS_INFO("lanelet_id: %lu, object_no: %lu, out of polygon", i, j);
       }
 
       if (is_collision) break;
@@ -383,11 +380,6 @@ void BlindSpotModule::StateMachine::setStateWithMarginTime(BlindSpotModule::Stat
       if (duration > margin_time_) {
         state_ = State::GO;
         start_time_ = nullptr;  // reset timer
-        // ROS_INFO("[BlindSpotModule::StateMachine::setStateWithMarginTime()]: timer counting...
-        // (%3.3f < %3.3f)", duration, margin_time_);
-      } else {
-        // ROS_INFO("[BlindSpotModule::StateMachine::setStateWithMarginTime()]: state changed. STOP
-        // -> GO (%3.3f > %3.3f)", duration, margin_time_);
       }
       return;
     }

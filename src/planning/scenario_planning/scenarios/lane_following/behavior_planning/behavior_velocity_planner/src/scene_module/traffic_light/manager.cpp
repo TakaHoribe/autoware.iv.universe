@@ -6,8 +6,6 @@
 
 namespace behavior_planning {
 
-TrafficLightModuleManager::TrafficLightModuleManager() : nh_(""), pnh_("~") {}
-
 bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
@@ -29,24 +27,12 @@ bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::Pat
   return true;
 }
 
-bool TrafficLightModuleManager::run(const autoware_planning_msgs::PathWithLaneId& input,
-                                    autoware_planning_msgs::PathWithLaneId& output) {
-  autoware_planning_msgs::PathWithLaneId input_path = input;
-  for (size_t i = 0; i < scene_modules_ptr_.size(); ++i) {
-    autoware_planning_msgs::PathWithLaneId output_path;
-    if (scene_modules_ptr_.at(i)->run(input_path, output_path)) input_path = output_path;
-  }
-  debuger.publish();
-  output = input_path;
-  return true;
-}
-
 bool TrafficLightModuleManager::isRunning(const lanelet::TrafficLight& traffic_light) {
   lanelet::ConstLineString3d tl_stop_line;
   lanelet::Optional<lanelet::ConstLineString3d> tl_stopline_opt = traffic_light.stopLine();
-  if (!!tl_stopline_opt)
+  if (!!tl_stopline_opt) {
     tl_stop_line = tl_stopline_opt.get();
-  else {
+  } else {
     ROS_ERROR("cannot get traffic light stop line. This is dangerous. f**k lanelet2. (line: %d)", __LINE__);
     return true;
   }
@@ -60,9 +46,9 @@ bool TrafficLightModuleManager::registerTask(const lanelet::TrafficLight& traffi
   ROS_INFO("Registered Traffic Light Task");
   lanelet::ConstLineString3d tl_stop_line;
   lanelet::Optional<lanelet::ConstLineString3d> tl_stopline_opt = traffic_light.stopLine();
-  if (!!tl_stopline_opt)
+  if (!!tl_stopline_opt) {
     tl_stop_line = tl_stopline_opt.get();
-  else {
+  } else {
     ROS_ERROR("cannot get traffic light stop line. This is dangerous. f**k lanelet2. (line: %d)", __LINE__);
     return false;
   }

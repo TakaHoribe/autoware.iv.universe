@@ -44,19 +44,19 @@ class BehaviorVelocityPlannerNode {
   tf2_ros::TransformListener tf_listener_;
 
   // subscriber
-  ros::Subscriber perception_sub_;
-  ros::Subscriber pointcloud_sub_;
-  ros::Subscriber vehicle_velocity_sub_;
-  ros::Subscriber traffic_light_states_sub_;
-  ros::Subscriber map_sub_;
-  ros::Subscriber path_with_lane_id_sub_;
+  ros::Subscriber trigger_sub_path_with_lane_id_;
+  ros::Subscriber sub_dynamic_objects_;
+  ros::Subscriber sub_no_ground_pointcloud_;
+  ros::Subscriber sub_vehicle_velocity_;
+  ros::Subscriber sub_traffic_light_states_;
+  ros::Subscriber sub_lanelet_map_;
 
-  void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg);
-  void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
-  void velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
-  void mapCallback(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg);
-  void trafficLightStatesCallback(const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg);
-  void pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId& input_path_msg);
+  void onTrigger(const autoware_planning_msgs::PathWithLaneId& input_path_msg);
+  void onDynamicObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg);
+  void onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  void onVehicleVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg);
+  void onTrafficLightStates(const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg);
 
   // publisher
   ros::Publisher path_pub_;
@@ -70,9 +70,10 @@ class BehaviorVelocityPlannerNode {
 
   // member
   PlannerData planner_data_;
-  std::shared_ptr<BehaviorVelocityPlannerManager> planner_manager_ptr_;
+  BehaviorVelocityPlannerManager planner_manager_;
 
   // function
   geometry_msgs::PoseStamped getCurrentPose();
+  bool isDataReady();
 };
 }  // namespace behavior_planning

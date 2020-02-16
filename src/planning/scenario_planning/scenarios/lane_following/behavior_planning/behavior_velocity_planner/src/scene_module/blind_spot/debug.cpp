@@ -103,8 +103,8 @@ void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const
   marker.color.b = b;
   msg.markers.push_back(marker);
 
-  if (mode == 0)  // STOP
-  {
+  // STOP
+  if (mode == 0) {
     visualization_msgs::Marker marker_line;
     marker_line.header.frame_id = "map";
     marker_line.header.stamp = curr_time;

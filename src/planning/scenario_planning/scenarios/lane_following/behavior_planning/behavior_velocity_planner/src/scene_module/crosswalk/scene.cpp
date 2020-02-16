@@ -132,7 +132,7 @@ bool CrosswalkModule::checkStopArea(
     point << stop_polygon.outer().at(i).x(), stop_polygon.outer().at(i).y(), 0.0;
     points.push_back(point);
   }
-  manager_ptr_->debuger.pushStopPolygon(points);
+  manager_ptr_->debugger_.pushStopPolygon(points);
   // ----------------
   // check object pointcloud
   for (size_t i = 0; i < no_ground_pointcloud_ptr->size(); ++i) {
@@ -199,7 +199,7 @@ bool CrosswalkModule::checkSlowArea(
     point << polygon.outer().at(i).x(), polygon.outer().at(i).y(), 0.0;
     points.push_back(point);
   }
-  manager_ptr_->debuger.pushSlowPolygon(points);
+  manager_ptr_->debugger_.pushSlowPolygon(points);
   // ----------------
 
   if (!pedestrian_found) return true;
@@ -225,7 +225,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     for (const auto& collision_point : collision_points) {
       Eigen::Vector3d point3d;
       point3d << collision_point.x(), collision_point.y(), 0;
-      manager_ptr_->debuger.pushCollisionPoint(point3d);
+      manager_ptr_->debugger_.pushCollisionPoint(point3d);
     }
     std::vector<Eigen::Vector3d> line3d;
     Eigen::Vector3d point3d;
@@ -235,7 +235,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y,
         output.points.at(i + 1).point.pose.position.z;
     line3d.push_back(point3d);
-    manager_ptr_->debuger.pushCollisionLine(line3d);
+    manager_ptr_->debugger_.pushCollisionLine(line3d);
     // ----------------
 
     // check nearest collision point
@@ -275,15 +275,15 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     Eigen::Vector2d target_point;
     autoware_planning_msgs::PathPointWithLaneId target_point_with_lane_id;
     getBackwordPointFromBasePoint(point2, point1, point2, length_sum - target_length, target_point);
-    target_point_with_lane_id = output.points.at(std::max(int(insert_target_point_idx - 1), 0));
+    target_point_with_lane_id = output.points.at(std::max(static_cast<int>(insert_target_point_idx - 1), 0));
     target_point_with_lane_id.point.pose.position.x = target_point.x();
     target_point_with_lane_id.point.pose.position.y = target_point.y();
     target_point_with_lane_id.point.twist.linear.x = velocity;
     // -- debug code --
     if (velocity == 0.0)
-      manager_ptr_->debuger.pushStopPose(target_point_with_lane_id.point.pose);
+      manager_ptr_->debugger_.pushStopPose(target_point_with_lane_id.point.pose);
     else
-      manager_ptr_->debuger.pushSlowPose(target_point_with_lane_id.point.pose);
+      manager_ptr_->debugger_.pushSlowPose(target_point_with_lane_id.point.pose);
     // ----------------
 
     // insert target point

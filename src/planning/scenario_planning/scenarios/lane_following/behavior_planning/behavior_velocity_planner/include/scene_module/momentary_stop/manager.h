@@ -33,6 +33,7 @@ class MomentaryStopModuleManager : public SceneModuleManagerInterface {
            autoware_planning_msgs::PathWithLaneId& output) override;
   bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
+
   bool isRunning(const lanelet::ConstLineString3d& stop_line);
   bool registerTask(const lanelet::ConstLineString3d& stop_line, const boost::uuids::uuid& uuid);
   bool unregisterTask(const boost::uuids::uuid& uuid);

@@ -80,7 +80,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
           // -- debug code --
           geometry_msgs::Pose judge_pose;
           tf2::toMsg(tf_map2judge_pose, judge_pose);
-          manager_ptr_->debuger.pushJudgePose(judge_pose);
+          manager_ptr_->debuger_.pushJudgePose(judge_pose);
           // ----------------
           if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
             state_ = State::GO_OUT;
@@ -106,13 +106,6 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
                           "at the stop line");
         return true;
       }
-
-      // debug code
-      // autoware_traffic_light_msgs::LampState lamp_state;
-      // lamp_state.type = autoware_traffic_light_msgs::LampState::RED;
-      // lamp_state.confidence = 1.0;
-      // tl_state.lamp_states.push_back(lamp_state);
-      // manager_ptr_->debuger.pushTrafficLightState(traffic_light_ptr_, tl_state);
 
       // if state is red, insert stop point into path
       if (highest_confidence_tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED) {
@@ -204,7 +197,7 @@ bool TrafficLightModule::insertTargetVelocityPoint(
   for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
     output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
   // -- debug code --
-  if (velocity == 0.0) manager_ptr_->debuger.pushStopPose(target_point_with_lane_id.point.pose);
+  if (velocity == 0.0) manager_ptr_->debugger_.pushStopPose(target_point_with_lane_id.point.pose);
   // ----------------
   return true;
 }

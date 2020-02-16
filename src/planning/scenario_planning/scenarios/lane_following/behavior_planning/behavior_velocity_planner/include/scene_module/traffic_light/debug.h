@@ -1,6 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <string>
+#include <vector>
 
 #include <ros/ros.h>
 
@@ -30,7 +32,7 @@ class TrafficLightDebugMarkersManager {
   ros::Publisher debug_viz_pub_;
 
   std::vector<std::tuple<std::shared_ptr<lanelet::TrafficLight const>, autoware_traffic_light_msgs::TrafficLightState>>
-      tl_state_;
+      tl_state_;  // TODO: replace tuple with struct
   std::vector<geometry_msgs::Pose> stop_poses_;
   std::vector<geometry_msgs::Pose> judge_poses_;
 };

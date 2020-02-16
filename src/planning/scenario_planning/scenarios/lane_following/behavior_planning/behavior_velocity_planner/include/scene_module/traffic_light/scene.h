@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -33,27 +34,33 @@ class TrafficLightModule : public SceneModuleInterface {
  public:
   TrafficLightModule(TrafficLightModuleManager* manager_ptr,
                      const std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr, const int lane_id);
+  ~TrafficLightModule();
+
   bool run(const autoware_planning_msgs::PathWithLaneId& input,
            autoware_planning_msgs::PathWithLaneId& output) override;
   bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
-  ~TrafficLightModule();
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
                                      const Eigen::Vector2d& base_point, const double backward_length,
                                      Eigen::Vector2d& output_point);
+
   bool insertTargetVelocityPoint(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
       const double& margin, const double& velocity, autoware_planning_msgs::PathWithLaneId& output);
+
   bool getHighestConfidenceTrafficLightState(
       lanelet::ConstLineStringsOrPolygons3d& traffic_lights,
       autoware_traffic_light_msgs::TrafficLightState& highest_confidence_tl_state);
+
   bool createTargetPoint(
       const autoware_planning_msgs::PathWithLaneId& input,
       const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
       const double& margin, size_t& target_point_idx, Eigen::Vector2d& target_point);
+
   enum class State { APPROARCH, GO_OUT };
+
   TrafficLightModuleManager* manager_ptr_;
   State state_;
   std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr_;

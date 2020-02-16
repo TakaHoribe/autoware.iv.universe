@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry.hpp>

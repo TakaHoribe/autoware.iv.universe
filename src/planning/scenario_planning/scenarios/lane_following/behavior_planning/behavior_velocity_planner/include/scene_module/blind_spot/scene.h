@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <boost/assign/list_of.hpp>
@@ -47,13 +48,13 @@ class BlindSpotModule : public SceneModuleInterface {
   bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
 
  private:
-  const int assigned_lane_id_;                         //< @brief object lane id (unique for this instance)
-  std::string turn_direction_;                         //< @brief turn direction : right or left
-  int stop_line_idx_;                                  //< @brief stop-line index
-  int judge_line_idx_;                                 //< @brief stop-judgement-line index
-  double judge_line_dist_;                             //< @brief distance from stop-line to stop-judgement line
-  double path_expand_width_;                           //< @brief path width to calculate the edge line for both side
-  BlindSpotModuleManager* blind_spot_module_manager_;  //< @brief manager pointer
+  const int assigned_lane_id_;                         //! object lane id (unique for this instance)
+  std::string turn_direction_;                         //! turn direction : right or left
+  int stop_line_idx_;                                  //! stop-line index
+  int judge_line_idx_;                                 //! stop-judgement-line index
+  double judge_line_dist_;                             //! distance from stop-line to stop-judgement line
+  double path_expand_width_;                           //! path width to calculate the edge line for both side
+  BlindSpotModuleManager* blind_spot_module_manager_;  //! manager pointer
   bool show_debug_info_;
 
   /**
@@ -113,7 +114,7 @@ class BlindSpotModule : public SceneModuleInterface {
     StateMachine() {
       state_ = BlindSpotModule::State::GO;
       margin_time_ = 0.0;
-    };
+    }
 
     /**
      * @brief set request state command with margin time
@@ -136,11 +137,10 @@ class BlindSpotModule : public SceneModuleInterface {
     BlindSpotModule::State getState();
 
    private:
-    State state_;         //< @brief current state
-    double margin_time_;  //< @brief margin time when transit to Go from Stop
-    std::shared_ptr<ros::Time>
-        start_time_;  //< @brief timer start time when received Go state when current state is Stop
-  } state_machine_;   //< @brief for state management
+    State state_;                            //!  current state
+    double margin_time_;                     //!  margin time when transit to Go from Stop
+    std::shared_ptr<ros::Time> start_time_;  //!  timer start time when received Go state when current state is Stop
+  } state_machine_;                          //!  for state management
 };
 
 }  // namespace behavior_planning

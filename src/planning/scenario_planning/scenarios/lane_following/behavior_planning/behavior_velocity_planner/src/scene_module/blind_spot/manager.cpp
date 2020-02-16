@@ -22,8 +22,8 @@ bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWi
 
       if (!isRunning(lane_id)) {
         // check blind_spot tag
-        if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0)  // no plan for straight
-        {
+        // no plan for straight
+        if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0) {
           // blind_spot tag is found. set module.
           v_module_ptr.push_back(std::make_shared<BlindSpotModule>(lane_id, turn_direction, this));
           registerTask(lane_id);
