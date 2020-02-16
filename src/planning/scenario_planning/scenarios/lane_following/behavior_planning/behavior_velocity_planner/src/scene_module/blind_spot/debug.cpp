@@ -1,5 +1,6 @@
 #include <scene_module/blind_spot/debug.h>
 
+#include "utilization/marker_helper.h"
 #include "utilization/util.h"
 
 BlindSpotModuleDebugger::BlindSpotModuleDebugger() : nh_(""), pnh_("~") {
@@ -8,69 +9,52 @@ BlindSpotModuleDebugger::BlindSpotModuleDebugger() : nh_(""), pnh_("~") {
 
 void BlindSpotModuleDebugger::publishDetectionArea(
     const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, int mode, const std::string& ns) {
-  ros::Time curr_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
-  for (size_t i = 0; i < detection_areas.size(); ++i) {
-    std::vector<geometry_msgs::Point> detection_area = detection_areas.at(i);
+  auto marker = createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
+                                    createMarkerColor(0.0, 0.0, 0.0, 0.999));
+  marker.lifetime = ros::Duration(0.3);
+  marker.pose.orientation = createMarkerOrientation(0.0, 0.0, 0.0, 1.0);
+  marker.scale = createMarkerScale(0.1, 0.0, 0.0);
 
+  for (size_t i = 0; i < detection_areas.size(); ++i) {
     visualization_msgs::Marker marker;
-    marker.header.frame_id = "map";
-    marker.header.stamp = curr_time;
 
     marker.ns = ns + "_" + std::to_string(i);
     marker.id = i;
-    marker.lifetime = ros::Duration(0.3);
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.1;
-    marker.color.a = 0.99;  // Don't forget to set the alpha!
+
     if (mode == 0) {
-      marker.color.r = 1.0;
-      marker.color.g = 0.0;
-      marker.color.b = 0.0;
+      marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
     } else {
-      marker.color.r = 0.0;
-      marker.color.g = 1.0;
-      marker.color.b = 1.0;
+      marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
     }
-    for (size_t j = 0; j < detection_area.size(); ++j) {
-      geometry_msgs::Point point;
-      point.x = detection_area[j].x;
-      point.y = detection_area[j].y;
-      point.z = detection_area[j].z;
-      marker.points.push_back(point);
+
+    // Add each vertex
+    for (const auto& area_point : detection_areas.at(i)) {
+      marker.points.push_back(area_point);
     }
+
+    // Close polygon
     marker.points.push_back(marker.points.front());
+
     msg.markers.push_back(marker);
   }
+
   debug_viz_pub_.publish(msg);
 }
 
 void BlindSpotModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns,
                                           double r, double g, double b) {
-  ros::Time curr_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = curr_time;
-  marker.ns = ns;
+  auto marker =
+      createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::ARROW, createMarkerColor(r, g, b, 0.999));
+  marker.lifetime = ros::Duration(0.3);
+  marker.scale = createMarkerScale(0.5, 0.3, 0.3);
 
   for (int i = 0; i < path.points.size(); ++i) {
     marker.id = i;
-    marker.lifetime = ros::Duration(0.3);
-    marker.type = visualization_msgs::Marker::ARROW;
-    marker.action = visualization_msgs::Marker::ADD;
     marker.pose = path.points.at(i).point.pose;
-    marker.scale.x = 0.5;
-    marker.scale.y = 0.3;
-    marker.scale.z = 0.3;
-    marker.color.a = 0.999;  // Don't forget to set the alpha!
-    marker.color.r = r;
-    marker.color.g = g;
-    marker.color.b = b;
     msg.markers.push_back(marker);
   }
 
@@ -79,44 +63,23 @@ void BlindSpotModuleDebugger::publishPath(const autoware_planning_msgs::PathWith
 
 void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g,
                                           double b, int mode) {
-  ros::Time curr_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = curr_time;
-  marker.ns = ns;
-
+  auto marker =
+      createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::ARROW, createMarkerColor(r, g, b, 0.999));
   marker.id = 0;
   marker.lifetime = ros::Duration(0.3);
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.action = visualization_msgs::Marker::ADD;
   marker.pose = pose;
-  marker.scale.x = 0.5;
-  marker.scale.y = 0.3;
-  marker.scale.z = 0.3;
-  marker.color.a = 0.999;  // Don't forget to set the alpha!
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
+  marker.scale = createMarkerScale(0.5, 0.3, 0.3);
   msg.markers.push_back(marker);
 
   // STOP
   if (mode == 0) {
-    visualization_msgs::Marker marker_line;
-    marker_line.header.frame_id = "map";
-    marker_line.header.stamp = curr_time;
-    marker_line.ns = ns + "_line";
+    auto marker_line = createDefaultMarker("map", (ns + "_line").c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
+                                           createMarkerColor(r, g, b, 0.999));
     marker_line.id = 1;
     marker_line.lifetime = ros::Duration(0.3);
-    marker_line.type = visualization_msgs::Marker::LINE_STRIP;
-    marker_line.action = visualization_msgs::Marker::ADD;
-    marker_line.pose.orientation.w = 1.0;
-    marker_line.scale.x = 0.1;
-    marker_line.color.a = 0.99;  // Don't forget to set the alpha!
-    marker_line.color.r = r;
-    marker_line.color.g = g;
-    marker_line.color.b = b;
+    marker_line.scale = createMarkerScale(0.1, 0.0, 0.0);
 
     const double yaw = tf2::getYaw(pose.orientation);
 

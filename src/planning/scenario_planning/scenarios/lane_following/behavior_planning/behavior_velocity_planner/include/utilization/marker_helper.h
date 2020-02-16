@@ -43,3 +43,23 @@ inline std_msgs::ColorRGBA createMarkerColor(float r, float g, float b, float a)
 
   return color;
 }
+
+inline visualization_msgs::Marker createDefaultMarker(const char* frame_id, const char* ns, const int32_t id,
+                                                      const int32_t type, const std_msgs::ColorRGBA& color) {
+  visualization_msgs::Marker marker;
+
+  marker.header.frame_id = frame_id;
+  marker.header.stamp = ros::Time::now();
+  marker.ns = ns;
+  marker.id = id;
+  marker.type = type;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration(0);
+
+  marker.pose.position = createMarkerPosition(0.0, 0.0, 0.0);
+  marker.pose.orientation = createMarkerOrientation(0.0, 0.0, 0.0, 1.0);
+  marker.scale = createMarkerScale(1.0, 1.0, 1.0);
+  marker.color = color;
+
+  return marker;
+}
