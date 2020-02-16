@@ -66,7 +66,9 @@ target_link_libraries(scene_module_momentary_stop
 
 # Scene Module: Crosswalk
 add_library(scene_module_crosswalk
-  src/scene_module/crosswalk/crosswalk.cpp
+  src/scene_module/crosswalk/manager.cpp
+  src/scene_module/crosswalk/scene.cpp
+  src/scene_module/crosswalk/debug.cpp
 )
 
 target_link_libraries(scene_module_crosswalk
