@@ -1,6 +1,8 @@
-#include <scene_module/blind_spot/blind_spot.hpp>
+#include <scene_module/blind_spot/scene.hpp>
 
 #include "utilization/util.h"
+
+#include <scene_module/blind_spot/manager.hpp>
 
 namespace behavior_planning {
 
@@ -8,9 +10,6 @@ namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
-/*
- * ========================= BlindSpot Module =========================
- */
 BlindSpotModule::BlindSpotModule(const int lane_id, const std::string& turn_direction,
                                  BlindSpotModuleManager* blind_spot_module_manager)
     : assigned_lane_id_(lane_id),
@@ -20,10 +19,6 @@ BlindSpotModule::BlindSpotModule(const int lane_id, const std::string& turn_dire
   state_machine_.setMarginTime(2.0);  // [sec]
   path_expand_width_ = 2.0;
   show_debug_info_ = false;
-  if (!getBaselink2FrontLength(baselink_to_front_length_)) {
-    ROS_WARN("[IntersectionModule] : cannot get vehicle front to base_link. set default.");
-    baselink_to_front_length_ = 5.0;
-  }
 }
 
 bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
@@ -60,7 +55,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   if (current_state == State::STOP) {
     // visualize geofence at vehicle front position
     blind_spot_module_manager_->debugger_.publishGeofence(
-        getAheadPose(stop_line_idx_, baselink_to_front_length_, output), assigned_lane_id_);
+        getAheadPose(stop_line_idx_, planner_data_->base_link2front, output), assigned_lane_id_);
   }
   blind_spot_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0,
                                                     0.0, 0.0, (int)current_state);
@@ -409,198 +404,6 @@ void BlindSpotModule::StateMachine::setState(BlindSpotModule::State state) { sta
 void BlindSpotModule::StateMachine::setMarginTime(const double t) { margin_time_ = t; }
 
 BlindSpotModule::State BlindSpotModule::StateMachine::getState() { return state_; }
-/*
- * ========================= BlindSpot Module Manager =========================
- */
-bool BlindSpotModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                                            std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  /* get self pose */
-  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
-
-  /* get lanelet map */
-  const auto lanelet_map_ptr = planner_data_->lanelet_map;
-  const auto routing_graph_ptr = planner_data_->routing_graph;
-
-  /* search blind_spot tag */
-  for (size_t i = 0; i < input.points.size(); ++i) {
-    for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
-      const int lane_id = input.points.at(i).lane_ids.at(j);
-      lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);  // get lanelet layer
-      std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else");  // get turn_direction
-
-      if (!isRunning(lane_id)) {
-        // check blind_spot tag
-        if (turn_direction.compare("right") == 0 || turn_direction.compare("left") == 0)  // no plan for straight
-        {
-          // blind_spot tag is found. set module.
-          v_module_ptr.push_back(std::make_shared<BlindSpotModule>(lane_id, turn_direction, this));
-          registerTask(lane_id);
-        }
-      }
-    }
-  }
-
-  return true;
-}
-
-bool BlindSpotModuleManager::isRunning(const int lane_id) {
-  for (const auto& id : registered_lane_ids_) {
-    if (id == lane_id) return true;
-  }
-  return false;
-}
-
-void BlindSpotModuleManager::registerTask(const int lane_id) { registered_lane_ids_.push_back(lane_id); }
-
-void BlindSpotModuleManager::unregisterTask(const int lane_id) {
-  const auto itr = std::find(registered_lane_ids_.begin(), registered_lane_ids_.end(), lane_id);
-  if (itr == registered_lane_ids_.end())
-    ROS_ERROR(
-        "[BlindSpotModuleManager::unregisterTask()] : cannot remove task (lane_id = %d,"
-        " registered_lane_ids_.size() = %lu)",
-        lane_id, registered_lane_ids_.size());
-  registered_lane_ids_.erase(itr);
-}
-
-/*
- * ========================= BlindSpot Module Debugger =========================
- */
-BlindSpotModuleDebugger::BlindSpotModuleDebugger() : nh_(""), pnh_("~") {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/blind_spot", 20);
-}
-
-void BlindSpotModuleDebugger::publishDetectionArea(
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, int mode, const std::string& ns) {
-  ros::Time curr_time = ros::Time::now();
-  visualization_msgs::MarkerArray msg;
-
-  for (size_t i = 0; i < detection_areas.size(); ++i) {
-    std::vector<geometry_msgs::Point> detection_area = detection_areas.at(i);
-
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "map";
-    marker.header.stamp = curr_time;
-
-    marker.ns = ns + "_" + std::to_string(i);
-    marker.id = i;
-    marker.lifetime = ros::Duration(0.3);
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.1;
-    marker.color.a = 0.99;  // Don't forget to set the alpha!
-    if (mode == 0) {
-      marker.color.r = 1.0;
-      marker.color.g = 0.0;
-      marker.color.b = 0.0;
-    } else {
-      marker.color.r = 0.0;
-      marker.color.g = 1.0;
-      marker.color.b = 1.0;
-    }
-    for (size_t j = 0; j < detection_area.size(); ++j) {
-      geometry_msgs::Point point;
-      point.x = detection_area[j].x;
-      point.y = detection_area[j].y;
-      point.z = detection_area[j].z;
-      marker.points.push_back(point);
-    }
-    marker.points.push_back(marker.points.front());
-    msg.markers.push_back(marker);
-  }
-  debug_viz_pub_.publish(msg);
-}
-
-void BlindSpotModuleDebugger::publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns,
-                                          double r, double g, double b) {
-  ros::Time curr_time = ros::Time::now();
-  visualization_msgs::MarkerArray msg;
-
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = curr_time;
-  marker.ns = ns;
-
-  for (int i = 0; i < path.points.size(); ++i) {
-    marker.id = i;
-    marker.lifetime = ros::Duration(0.3);
-    marker.type = visualization_msgs::Marker::ARROW;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose = path.points.at(i).point.pose;
-    marker.scale.x = 0.5;
-    marker.scale.y = 0.3;
-    marker.scale.z = 0.3;
-    marker.color.a = 0.999;  // Don't forget to set the alpha!
-    marker.color.r = r;
-    marker.color.g = g;
-    marker.color.b = b;
-    msg.markers.push_back(marker);
-  }
-
-  debug_viz_pub_.publish(msg);
-}
-
-void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g,
-                                          double b, int mode) {
-  ros::Time curr_time = ros::Time::now();
-  visualization_msgs::MarkerArray msg;
-
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = curr_time;
-  marker.ns = ns;
-
-  marker.id = 0;
-  marker.lifetime = ros::Duration(0.3);
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose = pose;
-  marker.scale.x = 0.5;
-  marker.scale.y = 0.3;
-  marker.scale.z = 0.3;
-  marker.color.a = 0.999;  // Don't forget to set the alpha!
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
-  msg.markers.push_back(marker);
-
-  if (mode == 0)  // STOP
-  {
-    visualization_msgs::Marker marker_line;
-    marker_line.header.frame_id = "map";
-    marker_line.header.stamp = curr_time;
-    marker_line.ns = ns + "_line";
-    marker_line.id = 1;
-    marker_line.lifetime = ros::Duration(0.3);
-    marker_line.type = visualization_msgs::Marker::LINE_STRIP;
-    marker_line.action = visualization_msgs::Marker::ADD;
-    marker_line.pose.orientation.w = 1.0;
-    marker_line.scale.x = 0.1;
-    marker_line.color.a = 0.99;  // Don't forget to set the alpha!
-    marker_line.color.r = r;
-    marker_line.color.g = g;
-    marker_line.color.b = b;
-
-    const double yaw = tf2::getYaw(pose.orientation);
-
-    const double a = 3.0;
-    geometry_msgs::Point p0;
-    p0.x = pose.position.x - a * std::sin(yaw);
-    p0.y = pose.position.y + a * std::cos(yaw);
-    p0.z = pose.position.z;
-    marker_line.points.push_back(p0);
-
-    geometry_msgs::Point p1;
-    p1.x = pose.position.x + a * std::sin(yaw);
-    p1.y = pose.position.y - a * std::cos(yaw);
-    p1.z = pose.position.z;
-    marker_line.points.push_back(p1);
-
-    msg.markers.push_back(marker_line);
-  }
-
-  debug_viz_pub_.publish(msg);
-}
 
 void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;

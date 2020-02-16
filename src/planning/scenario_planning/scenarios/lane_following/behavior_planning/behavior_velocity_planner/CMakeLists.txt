@@ -100,7 +100,9 @@ target_link_libraries(scene_module_intersection
 
 # Scene Module: Blind Spot
 add_library(scene_module_blind_spot
-  src/scene_module/blind_spot/blind_spot.cpp
+  src/scene_module/blind_spot/manager.cpp
+  src/scene_module/blind_spot/scene.cpp
+  src/scene_module/blind_spot/debug.cpp
 )
 
 target_link_libraries(scene_module_intersection

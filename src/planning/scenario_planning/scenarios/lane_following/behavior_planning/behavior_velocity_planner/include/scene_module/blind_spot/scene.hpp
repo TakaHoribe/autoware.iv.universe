@@ -1,17 +1,20 @@
 #pragma once
-#include <autoware_perception_msgs/DynamicObject.h>
-#include <autoware_perception_msgs/DynamicObjectArray.h>
-#include <autoware_planning_msgs/PathWithLaneId.h>
-#include <geometry_msgs/Point.h>
-#include <ros/ros.h>
-#include <std_msgs/Float32MultiArray.h>
-#include <visualization_msgs/MarkerArray.h>
+
 #include <string>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+
+#include <ros/ros.h>
+
+#include <autoware_perception_msgs/DynamicObject.h>
+#include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_planning_msgs/PathWithLaneId.h>
+#include <geometry_msgs/Point.h>
+#include <std_msgs/Float32MultiArray.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_extension/utility/utilities.h>
@@ -20,21 +23,16 @@
 #include <scene_module/scene_module_interface.hpp>
 
 namespace behavior_planning {
-namespace bg = boost::geometry;
-using Point = bg::model::d2::point_xy<double>;
-using Polygon = bg::model::polygon<Point, false>;
+
+using Point = boost::geometry::model::d2::point_xy<double>;
+using Polygon = boost::geometry::model::polygon<Point, false>;
 
 class BlindSpotModuleManager;
-class BlindSpotModuleDebugger;
 
-/*
- * ========================= BlindSpot Module =========================
- */
 class BlindSpotModule : public SceneModuleInterface {
  public:
   BlindSpotModule(const int lane_id, const std::string& turn_direction,
                   BlindSpotModuleManager* blind_spot_module_manager);
-  ~BlindSpotModule(){};
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -57,7 +55,6 @@ class BlindSpotModule : public SceneModuleInterface {
   double path_expand_width_;                           //< @brief path width to calculate the edge line for both side
   BlindSpotModuleManager* blind_spot_module_manager_;  //< @brief manager pointer
   bool show_debug_info_;
-  double baselink_to_front_length_;
 
   /**
    * @brief set velocity from idx to the end point
@@ -76,8 +73,8 @@ class BlindSpotModule : public SceneModuleInterface {
    */
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
                       const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
-                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
-                      const double path_width, bool& is_collision);
+                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const double path_width,
+                      bool& is_collision);
   /**
    * @brief generates detection area
    */
@@ -144,48 +141,6 @@ class BlindSpotModule : public SceneModuleInterface {
     std::shared_ptr<ros::Time>
         start_time_;  //< @brief timer start time when received Go state when current state is Stop
   } state_machine_;   //< @brief for state management
-};
-
-/*
- * ========================= BlindSpot Module Debugger =========================
- */
-class BlindSpotModuleDebugger {
- public:
-  BlindSpotModuleDebugger();
-  ~BlindSpotModuleDebugger(){};
-
-  void publishDetectionArea(const std::vector<std::vector<geometry_msgs::Point>>& detection_area, int mode,
-                            const std::string& ns);
-  void publishPath(const autoware_planning_msgs::PathWithLaneId& path, const std::string& ns, double r, double g,
-                   double b);
-  void publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g, double b, int mode);
-  void publishDebugValues(const std_msgs::Float32MultiArray& msg);
-  void publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id);
-
- private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Publisher debug_viz_pub_;
-  ros::Publisher debug_values_pub_;
-};
-
-/*
- * ========================= BlindSpot Module Manager =========================
- */
-class BlindSpotModuleManager : public SceneModuleManagerInterface {
- public:
-  BlindSpotModuleManager(){};
-  ~BlindSpotModuleManager(){};
-  bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                      std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
-  BlindSpotModuleDebugger debugger_;
-  void unregisterTask(const int lane_id);
-
- private:
-  std::vector<int> registered_lane_ids_;
-
-  bool isRunning(const int lane_id);
-  void registerTask(const int lane_id);
 };
 
 }  // namespace behavior_planning

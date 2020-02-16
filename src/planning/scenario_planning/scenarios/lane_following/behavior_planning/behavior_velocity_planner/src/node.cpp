@@ -8,7 +8,7 @@
 #include <utilization/path_utilization.hpp>
 
 // Scene modules
-#include <scene_module/blind_spot/blind_spot.hpp>
+#include <scene_module/blind_spot/manager.hpp>
 #include <scene_module/crosswalk/manager.hpp>
 #include <scene_module/intersection/manager.hpp>
 #include <scene_module/momentary_stop/manager.hpp>
