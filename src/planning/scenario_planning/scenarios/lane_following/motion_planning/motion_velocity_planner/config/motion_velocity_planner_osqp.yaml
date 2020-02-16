@@ -1,7 +1,7 @@
 max_velocity: 20.0      # max velocity limit [m/s]
 max_accel: 1.5          # max acceleration limit [m/ss]
 min_decel: -1.5         # min deceleration limit [m/ss]
-max_lateral_accel: 0.05 # max lateral acceleration limit [m/ss]
+max_lateral_accel: 0.01 # max lateral acceleration limit [m/ss]
 
 replan_vel_deviation: 5.53 # velocity deviation to replan initial velocity [m/s]
 engage_velocity: 0.3       # engage velocity threshold [m/s] (if the trajectory velocity is higher than this value, use this velocity for engage vehicle speed) 
