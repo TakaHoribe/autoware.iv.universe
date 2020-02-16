@@ -18,8 +18,6 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
 class IntersectionModuleDebugger {
  public:
   IntersectionModuleDebugger();
@@ -38,5 +36,3 @@ class IntersectionModuleDebugger {
   ros::Publisher debug_viz_pub_;
   ros::Publisher debug_values_pub_;
 };
-
-}  // namespace behavior_planning

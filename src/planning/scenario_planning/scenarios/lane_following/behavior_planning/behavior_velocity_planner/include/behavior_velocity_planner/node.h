@@ -28,8 +28,6 @@
 #include <behavior_velocity_planner/planner_data.h>
 #include <behavior_velocity_planner/planner_manager.h>
 
-namespace behavior_planning {
-
 class BehaviorVelocityPlannerNode {
  public:
   BehaviorVelocityPlannerNode();
@@ -76,4 +74,3 @@ class BehaviorVelocityPlannerNode {
   geometry_msgs::PoseStamped getCurrentPose();
   bool isDataReady();
 };
-}  // namespace behavior_planning

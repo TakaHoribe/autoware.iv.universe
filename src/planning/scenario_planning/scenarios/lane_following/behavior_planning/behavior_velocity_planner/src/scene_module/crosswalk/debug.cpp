@@ -2,8 +2,6 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-namespace behavior_planning {
-
 CrosswalkDebugMarkersManager::CrosswalkDebugMarkersManager() : nh_(), pnh_("~") {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/crosswalk", 1);
 }
@@ -465,5 +463,3 @@ void CrosswalkDebugMarkersManager::publish() {
 
   return;
 }
-
-}  // namespace behavior_planning

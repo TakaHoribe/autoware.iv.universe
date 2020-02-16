@@ -1,86 +1,73 @@
 #pragma once
 
 #include <memory>
-#include <vector>
+#include <set>
 
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 
 #include <behavior_velocity_planner/planner_data.h>
 
-namespace behavior_planning {
-
 class SceneModuleInterface {
  public:
-  virtual bool endOfLife(
-      const autoware_planning_msgs::PathWithLaneId& input) = 0;  // TODO: in the same class as startCondition
-
-  virtual bool run(const autoware_planning_msgs::PathWithLaneId& input,
-                   autoware_planning_msgs::PathWithLaneId& output) = 0;
-
-  virtual void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
-
- public:
-  SceneModuleInterface() = default;
+  explicit SceneModuleInterface(const int64_t module_id) : module_id_(module_id) {}
   virtual ~SceneModuleInterface() = default;
 
+  virtual bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) = 0;
+
+  int64_t getModuleId() const { return module_id_; }
+  void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
+
+ protected:
+  const int64_t module_id_;
   std::shared_ptr<const PlannerData> planner_data_;
 };
 
 class SceneModuleManagerInterface {
  public:
-  virtual bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                              std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) = 0;
+  SceneModuleManagerInterface() = default;
+  virtual ~SceneModuleManagerInterface() = default;
+
+  virtual const char* getModuleName() = 0;
+  virtual void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) = 0;
+  virtual void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) = 0;
 
   virtual void debug() {
     // do nothing by default
   }
 
  public:
-  SceneModuleManagerInterface() = default;
-  virtual ~SceneModuleManagerInterface() = default;
+  bool isModuleRegistered(const int64_t module_id) { return registered_module_id_set_.count(module_id) != 0; }
 
-  virtual void updateSceneModuleInstances(const std::shared_ptr<const PlannerData>& planner_data,
-                                          const autoware_planning_msgs::PathWithLaneId& input) {
-    setPlannerData(planner_data);
-
-    // create instance
-    std::vector<std::shared_ptr<SceneModuleInterface>> scene_modules_ptr;
-    startCondition(input, scene_modules_ptr);
-    for (const auto& scene_module_ptr : scene_modules_ptr) {
-      if (scene_module_ptr != nullptr) scene_module_ptrs_.push_back(scene_module_ptr);
-    }
-
-    // delete instance
-    for (size_t i = 0; i < scene_module_ptrs_.size(); ++i) {
-      if (scene_module_ptrs_.at(i)->endOfLife(input)) {
-        scene_module_ptrs_.erase(scene_module_ptrs_.begin() + i);
-        i += -1;
-      }
-    }
+  void registerModule(const std::shared_ptr<SceneModuleInterface>& scene_module) {
+    ROS_INFO("register task: module = %s, id = %lu", getModuleName(), scene_module->getModuleId());
+    scene_modules_.insert(scene_module);
+    registered_module_id_set_.emplace(scene_module->getModuleId());
   }
 
-  virtual bool run(const autoware_planning_msgs::PathWithLaneId& input,
-                   autoware_planning_msgs::PathWithLaneId& output) {
-    autoware_planning_msgs::PathWithLaneId input_path = input;
-
-    for (const auto& scene_module_ptr : scene_module_ptrs_) {
-      scene_module_ptr->setPlannerData(planner_data_);
-
-      autoware_planning_msgs::PathWithLaneId output_path;
-      if (scene_module_ptr->run(input_path, output_path)) input_path = output_path;
-    }
-
-    output = input_path;
-
-    return true;
+  void unregisterModule(const std::shared_ptr<SceneModuleInterface>& scene_module) {
+    ROS_INFO("unregister task: module = %s, id = %lu", getModuleName(), scene_module->getModuleId());
+    scene_modules_.erase(scene_module);
+    registered_module_id_set_.erase(scene_module->getModuleId());
   }
 
-  virtual void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
+  void updateSceneModuleInstances(const std::shared_ptr<const PlannerData>& planner_data,
+                                  const autoware_planning_msgs::PathWithLaneId& path) {
+    planner_data_ = planner_data;
+    launchNewModules(path);
+    deleteExpiredModules(path);
+  }
+
+  void modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+    for (const auto& scene_module : scene_modules_) {
+      scene_module->setPlannerData(planner_data_);
+      scene_module->modifyPathVelocity(path);
+    }
+  }
 
  protected:
-  std::vector<std::shared_ptr<SceneModuleInterface>> scene_module_ptrs_;
+  std::set<std::shared_ptr<SceneModuleInterface>> scene_modules_;
+  std::set<int64_t> registered_module_id_set_;
+
   std::shared_ptr<const PlannerData> planner_data_;
 };
-
-}  // namespace behavior_planning

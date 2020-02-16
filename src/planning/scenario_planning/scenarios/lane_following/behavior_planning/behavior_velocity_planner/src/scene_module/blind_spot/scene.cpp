@@ -2,29 +2,18 @@
 
 #include "utilization/util.h"
 
-#include <scene_module/blind_spot/manager.h>
-
-namespace behavior_planning {
-
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
-BlindSpotModule::BlindSpotModule(const int64_t lane_id, const std::string& turn_direction,
-                                 BlindSpotModuleManager* blind_spot_module_manager)
-    : assigned_lane_id_(lane_id),
-      turn_direction_(turn_direction),
-      blind_spot_module_manager_(blind_spot_module_manager) {
-  judge_line_dist_ = 1.5;             // [m]
+BlindSpotModule::BlindSpotModule(const int64_t module_id, const int64_t lane_id, const std::string& turn_direction)
+    : SceneModuleInterface(module_id), lane_id_(lane_id), turn_direction_(turn_direction) {
   state_machine_.setMarginTime(2.0);  // [sec]
-  path_expand_width_ = 2.0;
-  show_debug_info_ = false;
 }
 
-bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
-                          autoware_planning_msgs::PathWithLaneId& output) {
-  output = input;
-  blind_spot_module_manager_->debugger_.publishPath(output, "path_raw", 0.0, 1.0, 1.0);
+bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  const auto input_path = *path;
+  // debugger_.publishPath(input_path, "path_raw", 0.0, 1.0, 1.0);
 
   State current_state = state_machine_.getState();
   ROS_DEBUG_COND(show_debug_info_, "[BlindSpotModule]: run: state_machine_.getState() = %d", (int)current_state);
@@ -34,13 +23,13 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
 
   /* check if the current_pose is ahead from judgement line */
   int closest = -1;
-  if (!planning_utils::calcClosestIndex(output, current_pose.pose, closest)) {
+  if (!planning_utils::calcClosestIndex(input_path, current_pose.pose, closest)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] calcClosestIndex fail");
     return false;
   }
 
   /* set stop-line and stop-judgement-line */
-  if (!setStopLineIdx(closest, judge_line_dist_, output, stop_line_idx_, judge_line_idx_)) {
+  if (!setStopLineIdx(closest, judge_line_dist_, *path, stop_line_idx_, judge_line_idx_)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] setStopLineIdx fail");
     return false;
   }
@@ -54,18 +43,19 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
 
   if (current_state == State::STOP) {
     // visualize geofence at vehicle front position
-    blind_spot_module_manager_->debugger_.publishGeofence(
-        getAheadPose(stop_line_idx_, planner_data_->base_link2front, output), assigned_lane_id_);
+    // debugger_.publishGeofence(getAheadPose(stop_line_idx_, planner_data_->base_link2front, output),
+    // assigned_lane_id_);
   }
-  blind_spot_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0,
-                                                    0.0, 0.0, static_cast<int>(current_state));
-  blind_spot_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose",
-                                                    1.0, 1.0, 0.5, static_cast<int>(current_state));
-  blind_spot_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
+  // debugger_.publishPose(path->points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0, 0.0, 0.0,
+  // static_cast<int>(current_state));
+  // debugger_.publishPose(path->points.at(judge_line_idx_).point.pose,
+  // "judge_point_pose", 1.0, 1.0, 0.5,
+  // static_cast<int>(current_state));
+  // debugger_.publishPath(*path, "path_with_judgeline", 0.0, 0.5, 1.0);
 
   if (current_state == State::GO) {
-    geometry_msgs::Pose p =
-        planning_utils::transformRelCoordinate2D(current_pose.pose, output.points.at(judge_line_idx_).point.pose);
+    const auto p =
+        planning_utils::transformRelCoordinate2D(current_pose.pose, path->points.at(judge_line_idx_).point.pose);
 
     // current_pose is ahead of judge_line
     if (p.position.x > 0.0) {
@@ -77,15 +67,15 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   /* get detection area */
   std::vector<std::vector<geometry_msgs::Point>> detection_areas;
   generateDetectionArea(current_pose.pose, detection_areas);
-  blind_spot_module_manager_->debugger_.publishDetectionArea(detection_areas, static_cast<int>(current_state),
-                                                             "blind_spot_detection_area");
+  // debugger_.publishDetectionArea(detection_areas, static_cast<int>(current_state),
+  // "blind_spot_detection_area");
 
   /* get dynamic object */
   const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
   bool is_collision = false;
-  if (!checkCollision(output, detection_areas, objects_ptr, path_expand_width_, is_collision)) {
+  if (!checkCollision(*path, detection_areas, objects_ptr, path_expand_width_, is_collision)) {
     return false;
   }
 
@@ -98,7 +88,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   /* set stop speed */
   if (state_machine_.getState() == State::STOP) {
     const double stop_vel = 0.0;
-    setVelocityFrom(stop_line_idx_, stop_vel, output);
+    setVelocityFrom(stop_line_idx_, stop_vel, *path);
   }
 
   return true;
@@ -144,15 +134,6 @@ bool BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_p
   return true;
 }
 
-bool BlindSpotModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& input) {
-  // search if the assigned lane_id still exists
-  for (const auto& point : input.points)
-    for (const auto& id : point.lane_ids)
-      if (id == assigned_lane_id_) return false;
-
-  return true;
-}
-
 bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const double judge_line_dist,
                                      autoware_planning_msgs::PathWithLaneId& path, int& stop_line_idx,
                                      int& judge_line_idx) {
@@ -160,7 +141,7 @@ bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const doubl
   stop_line_idx = -1;
   for (size_t i = 0; i < path.points.size(); ++i) {
     for (const auto& id : path.points.at(i).lane_ids) {
-      if (id == assigned_lane_id_) {
+      if (id == lane_id_) {
         stop_line_idx = i;
       }
       if (stop_line_idx != -1) break;
@@ -294,9 +275,8 @@ bool BlindSpotModule::checkCollision(const autoware_planning_msgs::PathWithLaneI
     if (is_collision) break;
   }
 
-  /* for debug */
-  blind_spot_module_manager_->debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
-  blind_spot_module_manager_->debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
+  // debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
+  // debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
 
   return true;
 }
@@ -381,50 +361,3 @@ void BlindSpotModule::StateMachine::setState(BlindSpotModule::State state) { sta
 void BlindSpotModule::StateMachine::setMarginTime(const double t) { margin_time_ = t; }
 
 BlindSpotModule::State BlindSpotModule::StateMachine::getState() { return state_; }
-
-void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
-  visualization_msgs::MarkerArray msg;
-
-  visualization_msgs::Marker marker_geofence{};
-  marker_geofence.header.frame_id = "map";
-  marker_geofence.header.stamp = ros::Time::now();
-  marker_geofence.ns = "stop geofence";
-  marker_geofence.id = lane_id;
-  marker_geofence.lifetime = ros::Duration(0.5);
-  marker_geofence.type = visualization_msgs::Marker::CUBE;
-  marker_geofence.action = visualization_msgs::Marker::ADD;
-  marker_geofence.pose = pose;
-  marker_geofence.pose.position.z += 1.0;
-  marker_geofence.scale.x = 0.1;
-  marker_geofence.scale.y = 5.0;
-  marker_geofence.scale.z = 2.0;
-  marker_geofence.color.r = 1.0;
-  marker_geofence.color.g = 0.0;
-  marker_geofence.color.b = 0.0;
-  marker_geofence.color.a = 0.5;
-  msg.markers.push_back(marker_geofence);
-
-  visualization_msgs::Marker marker_factor_text{};
-  marker_factor_text.header.frame_id = "map";
-  marker_factor_text.header.stamp = ros::Time::now();
-  marker_factor_text.ns = "factor text";
-  marker_factor_text.id = lane_id;
-  marker_factor_text.lifetime = ros::Duration(0.5);
-  marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-  marker_factor_text.action = visualization_msgs::Marker::ADD;
-  marker_factor_text.pose = pose;
-  marker_factor_text.pose.position.z += 2.0;
-  marker_factor_text.scale.x = 0.0;
-  marker_factor_text.scale.y = 0.0;
-  marker_factor_text.scale.z = 1.0;
-  marker_factor_text.color.r = 1.0;
-  marker_factor_text.color.g = 1.0;
-  marker_factor_text.color.b = 1.0;
-  marker_factor_text.color.a = 0.999;
-  marker_factor_text.text = "blind spot";
-  msg.markers.push_back(marker_factor_text);
-
-  debug_viz_pub_.publish(msg);
-}
-
-}  // namespace behavior_planning

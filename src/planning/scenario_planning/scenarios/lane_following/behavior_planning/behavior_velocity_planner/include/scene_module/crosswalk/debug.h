@@ -30,8 +30,6 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
 class CrosswalkDebugMarkersManager {
  public:
   CrosswalkDebugMarkersManager();
@@ -63,5 +61,3 @@ class CrosswalkDebugMarkersManager {
   std::vector<std::vector<Eigen::Vector3d>> stop_polygons_;
   std::vector<std::vector<Eigen::Vector3d>> slow_polygons_;
 };
-
-}  // namespace behavior_planning

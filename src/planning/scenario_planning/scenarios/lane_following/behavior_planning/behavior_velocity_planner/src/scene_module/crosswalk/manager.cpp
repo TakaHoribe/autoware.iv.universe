@@ -1,50 +1,55 @@
 #include <scene_module/crosswalk/manager.h>
 
-#include <cmath>
+namespace {
 
-namespace behavior_planning {
+std::vector<lanelet::ConstLanelet> getCrosswalksOnPath(
+    const autoware_planning_msgs::PathWithLaneId& path, const lanelet::LaneletMapPtr lanelet_map,
+    const std::shared_ptr<const lanelet::routing::RoutingGraphContainer>& overall_graphs) {
+  std::vector<lanelet::ConstLanelet> crosswalks;
 
-bool CrosswalkModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                                            std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
-  const auto lanelet_map_ptr = planner_data_->lanelet_map;
-  const auto routing_graph_ptr = planner_data_->routing_graph;
-  const auto overall_graphs_ptr_ = planner_data_->overall_graphs;
+  for (const auto& p : path.points) {
+    const auto lane_id = p.lane_ids.at(0);
+    const auto ll = lanelet_map->laneletLayer.get(lane_id);
 
-  for (size_t i = 0; i < input.points.size(); ++i) {
-    for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
-      lanelet::ConstLanelet road_lanelet = lanelet_map_ptr->laneletLayer.get(input.points.at(i).lane_ids.at(j));
-      std::vector<lanelet::ConstLanelet> crosswalks = overall_graphs_ptr_->conflictingInGraph(road_lanelet, 1);
-      for (const auto& crosswalk : crosswalks) {
-        if (!isRegistered(crosswalk))
-          v_module_ptr.push_back(std::make_shared<CrosswalkModule>(this, crosswalk, input.points.at(i).lane_ids.at(j)));
-        // -- debug code --
-        std::vector<Eigen::Vector3d> points;
-        for (const auto& lanelet_point : crosswalk.polygon3d()) {
-          Eigen::Vector3d point;
-          point << lanelet_point.x(), lanelet_point.y(), lanelet_point.z();
-          points.push_back(point);
-        }
-        debugger_.pushCrosswalkPolygon(points);
-        // ----------------
-      }
+    const auto conflicting_crosswalks = overall_graphs->conflictingInGraph(ll, 1);
+    for (const auto& crosswalk : conflicting_crosswalks) {
+      crosswalks.push_back(crosswalk);
     }
   }
-  return true;
+
+  return crosswalks;
 }
 
-bool CrosswalkModuleManager::isRegistered(const lanelet::ConstLanelet& crosswalk) {
-  return registered_task_id_set_.count(crosswalk.id()) != 0;
+std::set<int64_t> getCrosswalkIdSetOnPath(
+    const autoware_planning_msgs::PathWithLaneId& path, const lanelet::LaneletMapPtr lanelet_map,
+    const std::shared_ptr<const lanelet::routing::RoutingGraphContainer>& overall_graphs) {
+  std::set<int64_t> crosswalk_id_set;
+
+  for (const auto& crosswalk : getCrosswalksOnPath(path, lanelet_map, overall_graphs)) {
+    crosswalk_id_set.insert(crosswalk.id());
+  }
+
+  return crosswalk_id_set;
 }
 
-void CrosswalkModuleManager::registerTask(const lanelet::ConstLanelet& crosswalk) {
-  ROS_INFO("Registered Crosswalk Task");
-  registered_task_id_set_.emplace(crosswalk.id());
+}  // namespace
+
+void CrosswalkModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  for (const auto& crosswalk : getCrosswalksOnPath(path, planner_data_->lanelet_map, planner_data_->overall_graphs)) {
+    const auto module_id = crosswalk.id();
+    if (!isModuleRegistered(module_id)) {
+      registerModule(std::make_shared<CrosswalkModule>(module_id, crosswalk));
+    }
+  }
 }
 
-void CrosswalkModuleManager::unregisterTask(const lanelet::ConstLanelet& crosswalk) {
-  ROS_INFO("Unregistered Crosswalk Task");
-  registered_task_id_set_.erase(crosswalk.id());
-}
+void CrosswalkModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  const auto crosswalk_id_set =
+      getCrosswalkIdSetOnPath(path, planner_data_->lanelet_map, planner_data_->overall_graphs);
 
-}  // namespace behavior_planning
+  for (const auto scene_module : scene_modules_) {
+    if (crosswalk_id_set.count(scene_module->getModuleId()) == 0) {
+      unregisterModule(scene_module);
+    }
+  }
+}

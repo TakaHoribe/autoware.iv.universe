@@ -18,17 +18,11 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-class MomentaryStopModuleManager;
-
 class MomentaryStopModule : public SceneModuleInterface {
  public:
-  MomentaryStopModule(MomentaryStopModuleManager* manager_ptr, const lanelet::ConstLineString3d& stop_line,
-                      const int lane_id);
+  explicit MomentaryStopModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line);
 
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
@@ -36,11 +30,10 @@ class MomentaryStopModule : public SceneModuleInterface {
                                      Eigen::Vector2d& output_point);
 
   enum class State { APPROARCH, STOP, START };
-  MomentaryStopModuleManager* manager_ptr_;
-  State state_;
-  int lane_id_;
-  lanelet::ConstLineString3d stop_line_;
-  double stop_margin_;
-};
 
-}  // namespace behavior_planning
+  lanelet::ConstLineString3d stop_line_;
+  State state_;
+
+  // Paramter
+  const double stop_margin_ = 0.0;
+};

@@ -23,39 +23,30 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
 using Point = boost::geometry::model::d2::point_xy<double>;
 using Polygon = boost::geometry::model::polygon<Point, false>;
 
-class BlindSpotModuleManager;
-
 class BlindSpotModule : public SceneModuleInterface {
  public:
-  BlindSpotModule(const int64_t lane_id, const std::string& turn_direction,
-                  BlindSpotModuleManager* blind_spot_module_manager);
+  BlindSpotModule(const int64_t module_id, const int64_t lane_id, const std::string& turn_direction);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
    * and object predicted path
    */
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-
-  /**
-   * @brief kill instance if there is no assigned_lane_id in input path
-   */
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
  private:
-  const int64_t assigned_lane_id_;                     //! object lane id (unique for this instance)
-  std::string turn_direction_;                         //! turn direction : right or left
-  int stop_line_idx_;                                  //! stop-line index
-  int judge_line_idx_;                                 //! stop-judgement-line index
-  double judge_line_dist_;                             //! distance from stop-line to stop-judgement line
-  double path_expand_width_;                           //! path width to calculate the edge line for both side
-  BlindSpotModuleManager* blind_spot_module_manager_;  //! manager pointer
-  bool show_debug_info_;
+  int64_t lane_id_;
+  std::string turn_direction_;  //! turn direction : right or left
+
+  int stop_line_idx_;   //! stop-line index
+  int judge_line_idx_;  //! stop-judgement-line index
+
+  // Parameter
+  const double judge_line_dist_ = 1.5;    //! distance from stop-line to stop-judgement line
+  const double path_expand_width_ = 2.0;  //! path width to calculate the edge line for both side
+  const bool show_debug_info_ = false;
 
   /**
    * @brief set velocity from idx to the end point
@@ -142,5 +133,3 @@ class BlindSpotModule : public SceneModuleInterface {
     std::shared_ptr<ros::Time> start_time_;  //!  timer start time when received Go state when current state is Stop
   } state_machine_;                          //!  for state management
 };
-
-}  // namespace behavior_planning

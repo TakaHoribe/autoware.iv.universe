@@ -34,8 +34,6 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
 class BehaviorVelocityPlannerManager {
  public:
   void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
@@ -46,4 +44,3 @@ class BehaviorVelocityPlannerManager {
  private:
   std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_manager_ptrs_;
 };
-}  // namespace behavior_planning

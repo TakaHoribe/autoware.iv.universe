@@ -4,8 +4,6 @@
 
 #include "utilization/marker_helper.h"
 
-namespace behavior_planning {
-
 IntersectionModuleDebugger::IntersectionModuleDebugger() : nh_(""), pnh_("~") {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/intersection", 20);
 }
@@ -155,5 +153,3 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, co
 
   debug_viz_pub_.publish(msg);
 }
-
-}  // namespace behavior_planning

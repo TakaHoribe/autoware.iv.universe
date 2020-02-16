@@ -17,36 +17,27 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
-class IntersectionModuleManager;  // To be refactored
-
 class IntersectionModule : public SceneModuleInterface {
  public:
-  IntersectionModule(const int64_t lane_id, IntersectionModuleManager* intersection_module_manager);
+  explicit IntersectionModule(const int64_t module_id, const int64_t lane_id);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
    * and object predicted path
    */
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-
-  /**
-   * @brief kill instance if there is no assigned_lane_id in input path
-   */
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
  private:
-  const int64_t assigned_lane_id_;                          //! object lane id (unique for this instance)
-  int stop_line_idx_;                                       //! stop-line index
-  int judge_line_idx_;                                      //! stop-judgement-line index
-  double judge_line_dist_;                                  //! distance from stop-line to stop-judgement line
-  double approaching_speed_to_stopline_;                    //! speed when approaching stop-line (should be slow)
-  double path_expand_width_;                                //! path width to calculate the edge line for both side
-  IntersectionModuleManager* intersection_module_manager_;  //! manager pointer
-  bool show_debug_info_;
-  double baselink_to_front_length_;
+  int64_t lane_id_;
+
+  int stop_line_idx_;   //! stop-line index
+  int judge_line_idx_;  //! stop-judgement-line index
+
+  // Parameter
+  double judge_line_dist_ = 1.5;                        //! distance from stop-line to stop-judgement line
+  double approaching_speed_to_stopline_ = 100.0 / 3.6;  //! speed when approaching stop-line (should be slow)
+  double path_expand_width_ = 2.0;                      //! path width to calculate the edge line for both side
+  bool show_debug_info_ = false;
 
   /**
    * @brief set velocity from idx to the end point
@@ -132,5 +123,3 @@ class IntersectionModule : public SceneModuleInterface {
     std::shared_ptr<ros::Time> start_time_;  //! timer start time when received Go state when current state is Stop
   } state_machine_;                          //! for state management
 };
-
-}  // namespace behavior_planning

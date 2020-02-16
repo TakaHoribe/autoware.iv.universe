@@ -30,16 +30,11 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-class CrosswalkModuleManager;
-
 class CrosswalkModule : public SceneModuleInterface {
  public:
-  CrosswalkModule(CrosswalkModuleManager* manager_ptr, const lanelet::ConstLanelet& crosswalk, const int lane_id);
+  explicit CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk);
 
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
@@ -67,13 +62,11 @@ class CrosswalkModule : public SceneModuleInterface {
 
   enum class State { APPROARCH, INSIDE, GO_OUT };
 
-  CrosswalkModuleManager* manager_ptr_;
-  State state_;
-  int lane_id_;
   lanelet::ConstLanelet crosswalk_;
-  double stop_margin_;
-  double stop_dynamic_object_prediction_time_margin_;
-  double slow_margin_;
-};
+  State state_;
 
-}  // namespace behavior_planning
+  // Parameter
+  const double stop_margin_ = 1.0;
+  const double stop_dynamic_object_prediction_time_margin_ = 3.0;
+  const double slow_margin_ = 2.0;
+};

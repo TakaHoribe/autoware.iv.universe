@@ -2,7 +2,6 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-namespace behavior_planning {
 MomentaryStopDebugMarkersManager::MomentaryStopDebugMarkersManager() : nh_(), pnh_("~") {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/momentary_stop", 1);
 }
@@ -71,5 +70,3 @@ void MomentaryStopDebugMarkersManager::publish() {
 
   return;
 }
-
-}  // namespace behavior_planning

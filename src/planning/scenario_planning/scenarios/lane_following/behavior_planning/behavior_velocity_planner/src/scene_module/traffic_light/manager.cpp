@@ -1,61 +1,65 @@
 #include <scene_module/traffic_light/manager.h>
 
-#include <map>
-
 #include <tf2/utils.h>
 
-namespace behavior_planning {
+namespace {
 
-bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                                               std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
-  const auto lanelet_map_ptr = planner_data_->lanelet_map;
-  const auto routing_graph_ptr = planner_data_->routing_graph;
+std::vector<lanelet::TrafficLightConstPtr> getTrafficLightRegElemsOnPath(
+    const autoware_planning_msgs::PathWithLaneId& path, const lanelet::LaneletMapPtr lanelet_map) {
+  std::vector<lanelet::TrafficLightConstPtr> traffic_light_reg_elems;
 
-  for (const auto& point : input.points) {
-    for (const auto& lane_id : point.lane_ids) {
-      std::vector<std::shared_ptr<const lanelet::TrafficLight>> tl_reg_elems =
-          (lanelet_map_ptr->laneletLayer.get(lane_id)).regulatoryElementsAs<const lanelet::TrafficLight>();
-      for (const auto& tl_reg_elem : tl_reg_elems) {
-        if (!isRegistered(*tl_reg_elem)) {
-          v_module_ptr.push_back(std::make_shared<TrafficLightModule>(this, tl_reg_elem, lane_id));
-        }
-      }
+  for (const auto& p : path.points) {
+    const auto lane_id = p.lane_ids.at(0);
+    const auto ll = lanelet_map->laneletLayer.get(lane_id);
+
+    const auto tls = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
+    for (const auto& tl : tls) {
+      traffic_light_reg_elems.push_back(tl);
     }
   }
 
-  return true;
+  return traffic_light_reg_elems;
 }
 
-bool TrafficLightModuleManager::isRegistered(const lanelet::TrafficLight& traffic_light) {
-  const auto tl_stop_line_opt = traffic_light.stopLine();
+std::set<int64_t> getStopLineIdSetOnPath(const autoware_planning_msgs::PathWithLaneId& path,
+                                         const lanelet::LaneletMapPtr lanelet_map) {
+  std::set<int64_t> stop_line_id_set;
 
-  if (!tl_stop_line_opt) {
-    ROS_FATAL("No stop line at traffic_light_id = %ld, please fix the map!", traffic_light.id());
-    return true;
+  for (const auto& traffic_light_reg_elem : getTrafficLightRegElemsOnPath(path, lanelet_map)) {
+    const auto stop_line = traffic_light_reg_elem->stopLine();
+    if (stop_line) {
+      stop_line_id_set.insert(stop_line->id());
+    }
   }
 
-  return registered_task_id_set_.count(tl_stop_line_opt->id()) != 0;
+  return stop_line_id_set;
 }
 
-void TrafficLightModuleManager::registerTask(const lanelet::TrafficLight& traffic_light) {
-  ROS_INFO("Registered Traffic Light Task");
+}  // namespace
 
-  const auto tl_stop_line_opt = traffic_light.stopLine();
+void TrafficLightModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  for (const auto& traffic_light_reg_elem : getTrafficLightRegElemsOnPath(path, planner_data_->lanelet_map)) {
+    const auto stop_line = traffic_light_reg_elem->stopLine();
 
-  if (!tl_stop_line_opt) {
-    ROS_FATAL("No stop line at traffic_light_id = %ld, please fix the map!", traffic_light.id());
-    return;
+    if (!stop_line) {
+      ROS_FATAL("No stop line at traffic_light_reg_elem_id = %ld, please fix the map!", traffic_light_reg_elem->id());
+      continue;
+    }
+
+    // Use stop_line_id as module_id because some traffic lights may indicate the same stop line
+    const auto module_id = stop_line->id();
+    if (!isModuleRegistered(module_id)) {
+      registerModule(std::make_shared<TrafficLightModule>(module_id, *traffic_light_reg_elem));
+    }
   }
-
-  registered_task_id_set_.emplace(tl_stop_line_opt->id());
 }
 
-void TrafficLightModuleManager::unregisterTask(const lanelet::TrafficLight& traffic_light) {
-  ROS_INFO("Unregistered Traffic Light Task");
+void TrafficLightModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  const auto stop_line_id_set = getStopLineIdSetOnPath(path, planner_data_->lanelet_map);
 
-  const auto tl_stop_line_opt = traffic_light.stopLine();
-  registered_task_id_set_.emplace(tl_stop_line_opt->id());
+  for (const auto scene_module : scene_modules_) {
+    if (stop_line_id_set.count(scene_module->getModuleId()) == 0) {
+      unregisterModule(scene_module);
+    }
+  }
 }
-
-}  // namespace behavior_planning

@@ -11,7 +11,6 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-namespace behavior_planning {
 class MomentaryStopDebugMarkersManager {
  public:
   MomentaryStopDebugMarkersManager();
@@ -27,5 +26,3 @@ class MomentaryStopDebugMarkersManager {
 
   std::vector<geometry_msgs::Pose> stop_poses_;
 };
-
-}  // namespace behavior_planning

@@ -1,13 +1,12 @@
 #include <scene_module/traffic_light/debug.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-namespace behavior_planning {
 TrafficLightDebugMarkersManager::TrafficLightDebugMarkersManager() : nh_(), pnh_("~") {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/traffic_light", 1);
 }
 
 void TrafficLightDebugMarkersManager::pushTrafficLightState(
-    const std::shared_ptr<lanelet::TrafficLight const>& traffic_light,
+    const std::shared_ptr<const lanelet::TrafficLight>& traffic_light,
     const autoware_traffic_light_msgs::TrafficLightState& state) {
   tl_state_.push_back(std::make_tuple(traffic_light, state));
 }
@@ -132,5 +131,3 @@ void TrafficLightDebugMarkersManager::publish() {
 
   return;
 }
-
-}  // namespace behavior_planning

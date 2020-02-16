@@ -23,8 +23,6 @@
 
 #include <scene_module/scene_module_interface.h>
 
-namespace behavior_planning {
-
 class BlindSpotModuleDebugger {
  public:
   BlindSpotModuleDebugger();
@@ -43,5 +41,3 @@ class BlindSpotModuleDebugger {
   ros::Publisher debug_viz_pub_;
   ros::Publisher debug_values_pub_;
 };
-
-}  // namespace behavior_planning

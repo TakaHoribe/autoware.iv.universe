@@ -22,18 +22,11 @@
 #include <scene_module/scene_module_interface.h>
 #include <scene_module/traffic_light/debug.h>
 
-namespace behavior_planning {
-class TrafficLightModuleManager;
-
 class TrafficLightModule : public SceneModuleInterface {
  public:
- public:
-  TrafficLightModule(TrafficLightModuleManager* manager_ptr,
-                     const std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr, const int lane_id);
+  explicit TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem);
 
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
  private:
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
@@ -54,15 +47,17 @@ class TrafficLightModule : public SceneModuleInterface {
       const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
       const double& margin, size_t& target_point_idx, Eigen::Vector2d& target_point);
 
+  // Key Feature
+  const lanelet::TrafficLight& traffic_light_reg_elem_;
+
+  // State
   enum class State { APPROARCH, GO_OUT };
-
-  TrafficLightModuleManager* manager_ptr_;
   State state_;
-  std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr_;
-  int lane_id_;
-  double stop_margin_;
-  double tl_state_timeout_;
-  double max_stop_acceleration_threshold_;
-};
 
-}  // namespace behavior_planning
+  // Parameter
+  const double stop_margin_ = 0.0;
+  const double tl_state_timeout_ = 1.0;
+  const double max_stop_acceleration_threshold_ = -5.0;
+
+  // Debug
+};

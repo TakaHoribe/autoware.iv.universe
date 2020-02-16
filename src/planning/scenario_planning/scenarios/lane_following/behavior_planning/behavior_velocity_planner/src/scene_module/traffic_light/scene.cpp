@@ -4,34 +4,20 @@
 
 #include <tf2/utils.h>
 
-#include <scene_module/traffic_light/manager.h>
-
-namespace behavior_planning {
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Line = bg::model::linestring<Point>;
 using Polygon = bg::model::polygon<Point, false>;
 
-TrafficLightModule::TrafficLightModule(TrafficLightModuleManager* manager_ptr,
-                                       const std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr,
-                                       const int lane_id)
-    : manager_ptr_(manager_ptr),
-      state_(State::APPROARCH),
-      traffic_light_ptr_(traffic_light_ptr),
-      lane_id_(lane_id),
-      stop_margin_(0.0),
-      tl_state_timeout_(1.0),
-      max_stop_acceleration_threshold_(-5.0) {
-  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(*traffic_light_ptr);
-}
+TrafficLightModule::TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem)
+    : SceneModuleInterface(module_id), traffic_light_reg_elem_(traffic_light_reg_elem), state_(State::APPROARCH) {}
 
-bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input,
-                             autoware_planning_msgs::PathWithLaneId& output) {
-  output = input;
+bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  const auto input_path = *path;
 
   // get lanelet2 traffic light
-  lanelet::ConstLineString3d lanelet_stop_line = *(traffic_light_ptr_->stopLine());
-  lanelet::ConstLineStringsOrPolygons3d traffic_lights = traffic_light_ptr_->trafficLights();
+  lanelet::ConstLineString3d lanelet_stop_line = *(traffic_light_reg_elem_.stopLine());
+  lanelet::ConstLineStringsOrPolygons3d traffic_lights = traffic_light_reg_elem_.trafficLights();
 
   // get vehicle info
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
@@ -52,7 +38,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
       {
         Eigen::Vector2d judge_point;
         size_t judge_point_idx;
-        if (!createTargetPoint(input, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) continue;
+        if (!createTargetPoint(input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) continue;
         const double sq_dist =
             (judge_point.x() - self_pose.pose.position.x) * (judge_point.x() - self_pose.pose.position.x) +
             (judge_point.y() - self_pose.pose.position.y) * (judge_point.y() - self_pose.pose.position.y);
@@ -60,11 +46,11 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
         if (sq_dist < range * range) {
           double yaw;
           if (judge_point_idx == 0)
-            yaw = std::atan2(input.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
-                             input.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
+            yaw = std::atan2(input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
+                             input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
           else
-            yaw = std::atan2(judge_point.y() - input.points.at(judge_point_idx - 1).point.pose.position.y,
-                             judge_point.x() - input.points.at(judge_point_idx - 1).point.pose.position.x);
+            yaw = std::atan2(judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
+                             judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
           tf2::Quaternion quat;
           quat.setRPY(0, 0, yaw);
           tf2::Transform tf_map2judge_pose(quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
@@ -75,7 +61,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
           // -- debug code --
           geometry_msgs::Pose judge_pose;
           tf2::toMsg(tf_map2judge_pose, judge_pose);
-          manager_ptr_->debuger_.pushJudgePose(judge_pose);
+          // debuger_.pushJudgePose(judge_pose);
           // ----------------
           if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
             state_ = State::GO_OUT;
@@ -90,7 +76,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
       // check stop border distance
       Eigen::Vector2d stop_line_point;
       size_t stop_line_point_idx;
-      if (!createTargetPoint(input, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) continue;
+      if (!createTargetPoint(input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) continue;
       Eigen::Vector2d self_point;
       self_point << self_pose.pose.position.x, self_pose.pose.position.y;
       const double sq_dist = (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
@@ -104,7 +90,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
 
       // if state is red, insert stop point into path
       if (highest_confidence_tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED) {
-        if (!insertTargetVelocityPoint(input, stop_line, stop_margin_, 0.0, output)) {
+        if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
           continue;
         }
       }
@@ -156,19 +142,6 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
   return true;
 }
 
-bool TrafficLightModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& input) {
-  bool is_end_of_life = false;
-  bool found = false;
-  for (size_t i = 0; i < input.points.size(); ++i) {
-    for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
-      if (lane_id_ == input.points.at(i).lane_ids.at(j)) found = true;
-    }
-  }
-
-  is_end_of_life = !found;
-  return is_end_of_life;
-}
-
 bool TrafficLightModule::insertTargetVelocityPoint(
     const autoware_planning_msgs::PathWithLaneId& input,
     const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
@@ -192,7 +165,7 @@ bool TrafficLightModule::insertTargetVelocityPoint(
   for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
     output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
   // -- debug code --
-  if (velocity == 0.0) manager_ptr_->debugger_.pushStopPose(target_point_with_lane_id.point.pose);
+  // if (velocity == 0.0) debugger_.pushStopPose(target_point_with_lane_id.point.pose);
   // ----------------
   return true;
 }
@@ -272,5 +245,3 @@ bool TrafficLightModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& li
   output_point = base_point + backward_vec;
   return true;
 }
-
-}  // namespace behavior_planning

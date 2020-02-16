@@ -74,7 +74,6 @@ autoware_planning_msgs::Path to_path(const autoware_planning_msgs::PathWithLaneI
 }
 }  // namespace
 
-namespace behavior_planning {
 BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_) {
   // Trigger Subscriber
   trigger_sub_path_with_lane_id_ =
@@ -241,4 +240,3 @@ void BehaviorVelocityPlannerNode::publishDebugMarker(const autoware_planning_msg
   }
   pub.publish(output_msg);
 }
-}  // namespace behavior_planning

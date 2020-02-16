@@ -2,8 +2,6 @@
 
 #include "utilization/util.h"
 
-namespace behavior_planning {
-
 BlindSpotModuleDebugger::BlindSpotModuleDebugger() : nh_(""), pnh_("~") {
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/blind_spot", 20);
 }
@@ -185,5 +183,3 @@ void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, i
 
   debug_viz_pub_.publish(msg);
 }
-
-}  // namespace behavior_planning

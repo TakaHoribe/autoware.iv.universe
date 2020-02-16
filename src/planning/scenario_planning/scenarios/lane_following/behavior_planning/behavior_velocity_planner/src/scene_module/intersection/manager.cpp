@@ -5,56 +5,67 @@
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
 
-namespace behavior_planning {
+namespace {
 
-bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
-                                               std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  /* get self pose */
-  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
+std::vector<lanelet::ConstLanelet> getLaneletsOnPath(const autoware_planning_msgs::PathWithLaneId& path,
+                                                     const lanelet::LaneletMapPtr lanelet_map) {
+  std::vector<lanelet::ConstLanelet> lanelets;
 
-  /* get lanelet map */
-  const auto lanelet_map_ptr = planner_data_->lanelet_map;
-  const auto routing_graph_ptr = planner_data_->routing_graph;
-
-  /* search intersection tag */
-  for (size_t i = 0; i < input.points.size(); ++i) {
-    for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
-      const int lane_id = input.points.at(i).lane_ids.at(j);
-
-      if (!isRegistered(lane_id)) {
-        lanelet::ConstLanelet lanelet_ij = lanelet_map_ptr->laneletLayer.get(lane_id);
-
-        // Is intersection?
-        const std::string turn_direction = lanelet_ij.attributeOr("turn_direction", "else");  // get turn_direction
-        const auto is_intersection =
-            turn_direction == "right" || turn_direction == "left" || turn_direction == "straight";
-        if (!is_intersection) {
-          continue;
-        }
-
-        // Is has traffic light and straight?
-        const auto is_straight = turn_direction == "straight";
-        const auto traffic_lights = lanelet_ij.regulatoryElementsAs<const lanelet::TrafficLight>();
-        const auto has_traffic_light = !traffic_lights.empty();
-        if (has_traffic_light && is_straight) {
-          continue;
-        }
-
-        v_module_ptr.push_back(std::make_shared<IntersectionModule>(lane_id, this));
-        registerTask(lane_id);
-      }
-    }
+  for (const auto& p : path.points) {
+    const auto lane_id = p.lane_ids.at(0);
+    lanelets.push_back(lanelet_map->laneletLayer.get(lane_id));
   }
 
-  return true;
+  return lanelets;
 }
 
-bool IntersectionModuleManager::isRegistered(const int64_t lane_id) {
-  return registered_lane_id_set_.count(lane_id) != 0;
+std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneId& path) {
+  std::set<int64_t> lane_id_set;
+
+  for (const auto& p : path.points) {
+    const auto lane_id = p.lane_ids.at(0);
+    lane_id_set.insert(lane_id);
+  }
+
+  return lane_id_set;
 }
 
-void IntersectionModuleManager::registerTask(const int64_t lane_id) { registered_lane_id_set_.emplace(lane_id); }
+}  // namespace
 
-void IntersectionModuleManager::unregisterTask(const int64_t lane_id) { registered_lane_id_set_.erase(lane_id); }
+void IntersectionModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  for (const auto& ll : getLaneletsOnPath(path, planner_data_->lanelet_map)) {
+    const auto lane_id = ll.id();
+    const auto module_id = lane_id;
 
-}  // namespace behavior_planning
+    if (isModuleRegistered(module_id)) {
+      continue;
+    }
+
+    // Is intersection?
+    const std::string turn_direction = ll.attributeOr("turn_direction", "else");
+    const auto is_intersection = turn_direction == "right" || turn_direction == "left" || turn_direction == "straight";
+    if (!is_intersection) {
+      continue;
+    }
+
+    // Has traffic light and straight?
+    const auto traffic_lights = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
+    const auto has_traffic_light = !traffic_lights.empty();
+    const auto is_straight = turn_direction == "straight";
+    if (has_traffic_light && is_straight) {
+      continue;
+    }
+
+    registerModule(std::make_shared<IntersectionModule>(module_id, lane_id));
+  }
+}
+
+void IntersectionModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  const auto lane_id_set = getLaneIdSetOnPath(path);
+
+  for (const auto scene_module : scene_modules_) {
+    if (lane_id_set.count(scene_module->getModuleId()) == 0) {
+      unregisterModule(scene_module);
+    }
+  }
+}

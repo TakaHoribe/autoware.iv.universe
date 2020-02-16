@@ -2,29 +2,16 @@
 
 #include <cmath>
 
-#include <scene_module/crosswalk/manager.h>
-
-namespace behavior_planning {
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 using Line = bg::model::linestring<Point>;
 
-CrosswalkModule::CrosswalkModule(CrosswalkModuleManager* manager_ptr, const lanelet::ConstLanelet& crosswalk,
-                                 const int lane_id)
-    : manager_ptr_(manager_ptr),
-      state_(State::APPROARCH),
-      crosswalk_(crosswalk),
-      stop_margin_(1.0),
-      stop_dynamic_object_prediction_time_margin_(3.0),
-      slow_margin_(2.0),
-      lane_id_(lane_id) {
-  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(crosswalk_);
-}
+CrosswalkModule::CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk)
+    : SceneModuleInterface(module_id), crosswalk_(crosswalk), state_(State::APPROARCH) {}
 
-bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
-                          autoware_planning_msgs::PathWithLaneId& output) {
-  output = input;
+bool CrosswalkModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  const auto input = *path;
 
   // create polygon
   lanelet::CompoundPolygon3d lanelet_polygon = crosswalk_.polygon3d();
@@ -54,25 +41,9 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
       return false;
     }
     // stop_path = slow_path;
-    output = stop_path;
+    *path = stop_path;
   }
   return true;
-}
-
-bool CrosswalkModule::endOfLife(const autoware_planning_msgs::PathWithLaneId& input) {
-  bool is_end_of_life = false;
-
-  bool found = false;
-  for (size_t i = 0; i < input.points.size(); ++i) {
-    for (size_t j = 0; j < input.points.at(i).lane_ids.size(); ++j) {
-      if (lane_id_ == input.points.at(i).lane_ids.at(j)) found = true;
-    }
-  }
-
-  is_end_of_life = !found;
-  if (is_end_of_life)
-    if (manager_ptr_ != nullptr) manager_ptr_->unregisterTask(crosswalk_);
-  return is_end_of_life;
 }
 
 bool CrosswalkModule::checkStopArea(
@@ -131,8 +102,9 @@ bool CrosswalkModule::checkStopArea(
     point << stop_polygon.outer().at(i).x(), stop_polygon.outer().at(i).y(), 0.0;
     points.push_back(point);
   }
-  manager_ptr_->debugger_.pushStopPolygon(points);
+  // debugger_.pushStopPolygon(points);
   // ----------------
+
   // check object pointcloud
   for (size_t i = 0; i < no_ground_pointcloud_ptr->size(); ++i) {
     Point point(no_ground_pointcloud_ptr->at(i).x, no_ground_pointcloud_ptr->at(i).y);
@@ -198,7 +170,7 @@ bool CrosswalkModule::checkSlowArea(
     point << polygon.outer().at(i).x(), polygon.outer().at(i).y(), 0.0;
     points.push_back(point);
   }
-  manager_ptr_->debugger_.pushSlowPolygon(points);
+  // debugger_.pushSlowPolygon(points);
   // ----------------
 
   if (!pedestrian_found) return true;
@@ -224,7 +196,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     for (const auto& collision_point : collision_points) {
       Eigen::Vector3d point3d;
       point3d << collision_point.x(), collision_point.y(), 0;
-      manager_ptr_->debugger_.pushCollisionPoint(point3d);
+      // debugger_.pushCollisionPoint(point3d);
     }
     std::vector<Eigen::Vector3d> line3d;
     Eigen::Vector3d point3d;
@@ -234,7 +206,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     point3d << output.points.at(i + 1).point.pose.position.x, output.points.at(i + 1).point.pose.position.y,
         output.points.at(i + 1).point.pose.position.z;
     line3d.push_back(point3d);
-    manager_ptr_->debugger_.pushCollisionLine(line3d);
+    // debugger_.pushCollisionLine(line3d);
     // ----------------
 
     // check nearest collision point
@@ -279,10 +251,10 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     target_point_with_lane_id.point.pose.position.y = target_point.y();
     target_point_with_lane_id.point.twist.linear.x = velocity;
     // -- debug code --
-    if (velocity == 0.0)
-      manager_ptr_->debugger_.pushStopPose(target_point_with_lane_id.point.pose);
-    else
-      manager_ptr_->debugger_.pushSlowPose(target_point_with_lane_id.point.pose);
+    // if (velocity == 0.0)
+    //   debugger_.pushStopPose(target_point_with_lane_id.point.pose);
+    // else
+    //   debugger_.pushSlowPose(target_point_with_lane_id.point.pose);
     // ----------------
 
     // insert target point
@@ -305,5 +277,3 @@ bool CrosswalkModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_
   output_point = base_point + backward_vec;
   return true;
 }
-
-}  // namespace behavior_planning
