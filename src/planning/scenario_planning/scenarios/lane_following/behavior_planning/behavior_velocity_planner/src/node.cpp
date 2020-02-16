@@ -1,5 +1,8 @@
 #include <behavior_velocity_planner/node.h>
 
+#include <pcl_ros/transforms.h>
+#include <tf2_eigen/tf2_eigen.h>
+
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_routing/Route.h>
 
@@ -40,18 +43,30 @@ T waitForParam(const ros::NodeHandle& nh, const std::string& key) {
   return {};
 }
 
+std::shared_ptr<geometry_msgs::TransformStamped> getTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
+                                                              const std::string& to,
+                                                              const ros::Time& time = ros::Time(0),
+                                                              const ros::Duration& duration = ros::Duration(0.1)) {
+  try {
+    return std::make_shared<geometry_msgs::TransformStamped>(tf_buffer.lookupTransform(from, to, time, duration));
+  } catch (tf2::TransformException& ex) {
+    return {};
+  }
+}
+
 geometry_msgs::TransformStamped waitForTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
-                                                 const std::string& to) {
+                                                 const std::string& to, const ros::Time& time = ros::Time(0),
+                                                 const ros::Duration& duration = ros::Duration(0.1)) {
   ros::Rate rate(1.0);
   while (ros::ok()) {
-    try {
-      const geometry_msgs::TransformStamped transform =
-          tf_buffer.lookupTransform(from, to, ros::Time(0), ros::Duration(0.1));
-      return transform;
-    } catch (tf2::TransformException& ex) {
-      ROS_INFO("waiting for transform from `%s` to `%s` ...", from.c_str(), to.c_str());
-      rate.sleep();
+    const auto transform = getTransform(tf_buffer, from, to, time, duration);
+    if (transform) {
+      return *transform;
     }
+
+    ROS_INFO("waiting for transform from `%s` to `%s` ... (time = %f, now = %f)", from.c_str(), to.c_str(),
+             time.toSec(), ros::Time::now().toSec());
+    rate.sleep();
   }
 }
 
@@ -143,8 +158,20 @@ void BehaviorVelocityPlannerNode::onDynamicObjects(const autoware_perception_msg
 }
 
 void BehaviorVelocityPlannerNode::onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+  const auto transform = getTransform(tf_buffer_, "map", msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));
+  if (!transform) {
+    ROS_WARN("no transform found for no_ground_pointcloud");
+    return;
+  }
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(*msg, *no_ground_pointcloud);
+
+  Eigen::Matrix4f affine = tf2::transformToEigen(transform->transform).matrix().cast<float>();
+  sensor_msgs::PointCloud2 transformed_msg;
+  pcl_ros::transformPointCloud(affine, *msg, transformed_msg);
+
+  pcl::fromROSMsg(transformed_msg, *no_ground_pointcloud);
+
   planner_data_.no_ground_pointcloud = no_ground_pointcloud;
 }
 
