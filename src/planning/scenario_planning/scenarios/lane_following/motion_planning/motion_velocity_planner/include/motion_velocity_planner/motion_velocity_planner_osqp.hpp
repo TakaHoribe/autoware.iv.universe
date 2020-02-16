@@ -74,6 +74,7 @@ class MotionVelocityPlanner {
     double max_accel;                         // max acceleration in planning [m/s2] > 0
     double min_decel;                         // min deceltion in planning [m/s2] < 0
     double max_lateral_accel;                 // max lateral acceleartion [m/ss] > 0
+    double pre_decel_distance_for_latacc;     // distance before you slow down for lateral acceleration limit at a curve
     double replan_vel_deviation;              // replan with current speed if speed deviation exceeds this value [m/s]
     double engage_velocity;                   // use this speed when start moving [m/s]
     double engage_acceleration;               // use this acceleration when start moving [m/ss]
