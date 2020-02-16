@@ -21,13 +21,8 @@ TrafficLightModule::TrafficLightModule(TrafficLightModuleManager* manager_ptr,
       lane_id_(lane_id),
       stop_margin_(0.0),
       tl_state_timeout_(1.0),
-      max_stop_acceleration_threshold_(-5.0),
-      task_id_(boost::uuids::random_generator()()) {
-  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(*traffic_light_ptr, task_id_);
-}
-
-TrafficLightModule::~TrafficLightModule() {
-  if (manager_ptr_ != nullptr) manager_ptr_->unregisterTask(task_id_);
+      max_stop_acceleration_threshold_(-5.0) {
+  if (manager_ptr_ != nullptr) manager_ptr_->registerTask(*traffic_light_ptr);
 }
 
 bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input,

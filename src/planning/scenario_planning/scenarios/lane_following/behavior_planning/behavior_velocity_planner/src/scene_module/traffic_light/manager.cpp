@@ -28,40 +28,34 @@ bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::Pat
 }
 
 bool TrafficLightModuleManager::isRegistered(const lanelet::TrafficLight& traffic_light) {
-  lanelet::ConstLineString3d tl_stop_line;
-  lanelet::Optional<lanelet::ConstLineString3d> tl_stopline_opt = traffic_light.stopLine();
-  if (!!tl_stopline_opt) {
-    tl_stop_line = tl_stopline_opt.get();
-  } else {
-    ROS_ERROR("cannot get traffic light stop line. This is dangerous. f**k lanelet2. (line: %d)", __LINE__);
+  const auto tl_stop_line_opt = traffic_light.stopLine();
+
+  if (!tl_stop_line_opt) {
+    ROS_FATAL("No stop line at traffic_light_id = %ld, please fix the map!", traffic_light.id());
     return true;
   }
-  // lanelet::ConstLineString3d tl_stop_line = *(traffic_light.stopLine());
-  if (task_id_direct_map_.count(tl_stop_line) == 0) return false;
-  return true;
+
+  return registered_task_id_set_.count(tl_stop_line_opt->id()) != 0;
 }
 
-bool TrafficLightModuleManager::registerTask(const lanelet::TrafficLight& traffic_light,
-                                             const boost::uuids::uuid& uuid) {
+void TrafficLightModuleManager::registerTask(const lanelet::TrafficLight& traffic_light) {
   ROS_INFO("Registered Traffic Light Task");
-  lanelet::ConstLineString3d tl_stop_line;
-  lanelet::Optional<lanelet::ConstLineString3d> tl_stopline_opt = traffic_light.stopLine();
-  if (!!tl_stopline_opt) {
-    tl_stop_line = tl_stopline_opt.get();
-  } else {
-    ROS_ERROR("cannot get traffic light stop line. This is dangerous. f**k lanelet2. (line: %d)", __LINE__);
-    return false;
+
+  const auto tl_stop_line_opt = traffic_light.stopLine();
+
+  if (!tl_stop_line_opt) {
+    ROS_FATAL("No stop line at traffic_light_id = %ld, please fix the map!", traffic_light.id());
+    return;
   }
-  // const lanelet::ConstLineString3d tl_stop_line = *(traffic_light.stopLine());
-  task_id_direct_map_.emplace(tl_stop_line, boost::lexical_cast<std::string>(uuid));
-  task_id_reverse_map_.emplace(boost::lexical_cast<std::string>(uuid), tl_stop_line);
-  return true;
+
+  registered_task_id_set_.emplace(tl_stop_line_opt->id());
 }
-bool TrafficLightModuleManager::unregisterTask(const boost::uuids::uuid& uuid) {
+
+void TrafficLightModuleManager::unregisterTask(const lanelet::TrafficLight& traffic_light) {
   ROS_INFO("Unregistered Traffic Light Task");
-  task_id_direct_map_.erase(task_id_reverse_map_.at(boost::lexical_cast<std::string>(uuid)));
-  task_id_reverse_map_.erase(boost::lexical_cast<std::string>(uuid));
-  return true;
+
+  const auto tl_stop_line_opt = traffic_light.stopLine();
+  registered_task_id_set_.emplace(tl_stop_line_opt->id());
 }
 
 }  // namespace behavior_planning

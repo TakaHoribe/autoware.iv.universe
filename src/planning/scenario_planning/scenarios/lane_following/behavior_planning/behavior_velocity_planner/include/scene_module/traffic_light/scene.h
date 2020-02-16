@@ -8,10 +8,6 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -34,7 +30,6 @@ class TrafficLightModule : public SceneModuleInterface {
  public:
   TrafficLightModule(TrafficLightModuleManager* manager_ptr,
                      const std::shared_ptr<lanelet::TrafficLight const> traffic_light_ptr, const int lane_id);
-  ~TrafficLightModule();
 
   bool run(const autoware_planning_msgs::PathWithLaneId& input,
            autoware_planning_msgs::PathWithLaneId& output) override;
@@ -68,7 +63,6 @@ class TrafficLightModule : public SceneModuleInterface {
   double stop_margin_;
   double tl_state_timeout_;
   double max_stop_acceleration_threshold_;
-  boost::uuids::uuid task_id_;
 };
 
 }  // namespace behavior_planning
