@@ -30,7 +30,7 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   ROS_DEBUG_COND(show_debug_info_, "[BlindSpotModule]: run: state_machine_.getState() = %d", (int)current_state);
 
   /* get current pose */
-  geometry_msgs::PoseStamped current_pose = *planner_data_->current_pose;
+  geometry_msgs::PoseStamped current_pose = planner_data_->current_pose;
 
   /* check if the current_pose is ahead from judgement line */
   int closest = -1;

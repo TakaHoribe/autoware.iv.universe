@@ -36,7 +36,7 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
   polygon.outer().push_back(polygon.outer().front());
 
   // check state
-  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
   if (bg::within(Point(self_pose.pose.position.x, self_pose.pose.position.y), polygon))
     state_ = State::INSIDE;
   else if (state_ == State::INSIDE)
@@ -104,7 +104,7 @@ bool CrosswalkModule::checkStopArea(
     return false;
   }
 
-  double width = *planner_data_->vehicle_width;
+  const double width = planner_data_->vehicle_width;
 
   const double yaw = std::atan2(path_collision_points.at(1).y() - path_collision_points.at(0).y(),
                                 path_collision_points.at(1).x() - path_collision_points.at(0).x()) +
@@ -253,7 +253,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
 
     // search target point index
     size_t insert_target_point_idx = 0;
-    double base_link2front = *planner_data_->base_link2front;
+    const double base_link2front = planner_data_->base_link2front;
     double length_sum = 0;
 
     const double target_length = margin + base_link2front;

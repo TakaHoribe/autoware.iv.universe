@@ -40,7 +40,7 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& inpu
 
       // search stop point index
       size_t insert_stop_point_idx = 0;
-      double base_link2front = *planner_data_->base_link2front;
+      const double base_link2front = planner_data_->base_link2front;
       double length_sum = 0;
 
       const double stop_length = stop_margin_ + base_link2front;
@@ -77,14 +77,14 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& inpu
     }
 
     // update state
-    geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+    geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
     const double x = stop_point.x() - self_pose.pose.position.x;
     const double y = stop_point.y() - self_pose.pose.position.y;
     const double dist = std::sqrt(x * x + y * y);
-    if (dist < 2.0 && planner_data_->is_vehicle_stopping) state_ = State::STOP;
+    if (dist < 2.0 && planner_data_->isVehicleStopping()) state_ = State::STOP;
     return true;
   } else if (state_ == State::STOP) {
-    if (!planner_data_->is_vehicle_stopping) state_ = State::START;
+    if (!planner_data_->isVehicleStopping()) state_ = State::START;
     return true;
   }
 }

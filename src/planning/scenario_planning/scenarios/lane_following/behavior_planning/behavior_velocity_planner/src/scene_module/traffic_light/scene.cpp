@@ -22,9 +22,7 @@ TrafficLightModule::TrafficLightModule(TrafficLightModuleManager* manager_ptr,
       stop_margin_(0.0),
       tl_state_timeout_(1.0),
       max_stop_acceleration_threshold_(-5.0),
-      task_id_(boost::uuids::random_generator()())
-
-{
+      task_id_(boost::uuids::random_generator()()) {
   if (manager_ptr_ != nullptr) manager_ptr_->registerTask(*traffic_light_ptr, task_id_);
 }
 
@@ -46,12 +44,12 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
   const double stop_border_distance_threshold =
       (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
       (2.0 * max_stop_acceleration_threshold_);
-  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // check state
-  if (state_ == State::GO_OUT)
+  if (state_ == State::GO_OUT) {
     return true;
-  else if (state_ == State::APPROARCH) {
+  } else if (state_ == State::APPROARCH) {
     for (int i = 0; i < lanelet_stop_line.size() - 1; i++) {
       Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
                         {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
@@ -137,13 +135,17 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
   bool found = false;
   double highest_confidence = 0.0;
   for (const auto& traffic_light : traffic_lights) {
-    if (!traffic_light.isLineString())  // traffic ligth must be linestrings
-    {
+    // traffic ligth must be linestrings
+    if (!traffic_light.isLineString()) {
       continue;
     }
     const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
-    std_msgs::Header header;
-    autoware_traffic_light_msgs::TrafficLightState tl_state = *planner_data_->traffic_light_state;
+    const auto tl_state_stamped = planner_data_->getTrafficLightState(id);
+    if (!tl_state_stamped) {
+      continue;
+    }
+    const auto header = tl_state_stamped->header;
+    const auto tl_state = tl_state_stamped->traffic_light_state;
 
     if (!((ros::Time::now() - header.stamp).toSec() < tl_state_timeout_)) {
       continue;
@@ -189,7 +191,7 @@ bool TrafficLightModule::insertTargetVelocityPoint(
   autoware_planning_msgs::PathPointWithLaneId target_point_with_lane_id;
 
   if (!createTargetPoint(input, stop_line, margin, insert_target_point_idx, target_point)) return false;
-  target_point_with_lane_id = output.points.at(std::max(int(insert_target_point_idx - 1), 0));
+  target_point_with_lane_id = output.points.at(std::max(static_cast<int>(insert_target_point_idx - 1), 0));
   target_point_with_lane_id.point.pose.position.x = target_point.x();
   target_point_with_lane_id.point.pose.position.y = target_point.y();
   target_point_with_lane_id.point.twist.linear.x = velocity;
@@ -234,7 +236,7 @@ bool TrafficLightModule::createTargetPoint(
 
     // search target point index
     target_point_idx = 0;
-    double base_link2front = *planner_data_->base_link2front;
+    const double base_link2front = planner_data_->base_link2front;
     double length_sum = 0;
 
     const double target_length = margin + base_link2front;

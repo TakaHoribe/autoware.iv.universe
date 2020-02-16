@@ -10,7 +10,7 @@ namespace behavior_planning {
 bool IntersectionModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
   /* get self pose */
-  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   /* get lanelet map */
   const auto lanelet_map_ptr = planner_data_->lanelet_map;

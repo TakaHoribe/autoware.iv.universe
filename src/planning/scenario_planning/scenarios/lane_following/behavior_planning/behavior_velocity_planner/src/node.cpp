@@ -25,38 +25,59 @@ T getParam(const ros::NodeHandle& nh, const std::string& key, const T& default_v
 template <class T>
 T waitForParam(const ros::NodeHandle& nh, const std::string& key) {
   T value;
-  ros::Rate rate(1.0);
 
+  ros::Rate rate(1.0);
   while (ros::ok()) {
     const auto result = nh.getParam(key, value);
     if (result) {
       return value;
     }
 
-    ROS_WARN("waiting for parameter `%s` ...", key);
+    ROS_INFO("waiting for parameter `%s` ...", key.c_str());
     rate.sleep();
   }
 
   return {};
 }
+
+geometry_msgs::TransformStamped waitForTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
+                                                 const std::string& to) {
+  ros::Rate rate(1.0);
+  while (ros::ok()) {
+    try {
+      const geometry_msgs::TransformStamped transform =
+          tf_buffer.lookupTransform(from, to, ros::Time(0), ros::Duration(0.1));
+      return transform;
+    } catch (tf2::TransformException& ex) {
+      ROS_INFO("waiting for transform from `%s` to `%s` ...", from.c_str(), to.c_str());
+      rate.sleep();
+    }
+  }
+}
+
+geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped& transform) {
+  geometry_msgs::PoseStamped pose;
+  pose.header = transform.header;
+  pose.pose.position.x = transform.transform.translation.x;
+  pose.pose.position.y = transform.transform.translation.y;
+  pose.pose.position.z = transform.transform.translation.z;
+  pose.pose.orientation = transform.transform.rotation;
+  return pose;
+}
 }  // namespace
 
 namespace behavior_planning {
-BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
+BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_) {
   // Subscribers
   path_with_lane_id_sub_ =
       pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorVelocityPlannerNode::pathWithLaneIdCallback, this);
-  perception_sub_ = pnh_.subscribe("input/perception", 1, &SingletonDataManager::perceptionCallback,
-                                   &SingletonDataManager::getInstance());
-  pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &SingletonDataManager::pointcloudCallback,
-                                   &SingletonDataManager::getInstance());
-  vehicle_velocity_sub_ = pnh_.subscribe("input/vehicle/velocity", 1, &SingletonDataManager::velocityCallback,
-                                         &SingletonDataManager::getInstance());
-  map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &SingletonDataManager::mapCallback,
-                            &SingletonDataManager::getInstance());
+  perception_sub_ = pnh_.subscribe("input/perception", 1, &BehaviorVelocityPlannerNode::perceptionCallback, this);
+  pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &BehaviorVelocityPlannerNode::pointcloudCallback, this);
+  vehicle_velocity_sub_ =
+      pnh_.subscribe("input/vehicle/velocity", 1, &BehaviorVelocityPlannerNode::velocityCallback, this);
+  map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorVelocityPlannerNode::mapCallback, this);
   traffic_light_states_sub_ =
-      pnh_.subscribe("input/traffic_light_states", 10, &SingletonDataManager::trafficLightStatesCallback,
-                     &SingletonDataManager::getInstance());
+      pnh_.subscribe("input/traffic_light_states", 10, &BehaviorVelocityPlannerNode::trafficLightStatesCallback, this);
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
@@ -67,13 +88,11 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
   pnh_.param("backward_path_length", backward_path_length_, 5.0);
 
   // Vehicle Parameters
-  double wheel_base, front_overhang, vehicle_width;
-  pnh_.param("/vehicle_info/wheel_base", wheel_base, 2.95);
-  pnh_.param("/vehicle_info/front_overhang", front_overhang, 1.0);
-  pnh_.param("/vehicle_info/vehicle_width", vehicle_width, 1.775);
-  SingletonDataManager::getInstance().setWheelBase(wheel_base);
-  SingletonDataManager::getInstance().setFrontOverhang(front_overhang);
-  SingletonDataManager::getInstance().setVehicleWidth(vehicle_width);
+  planner_data_.wheel_base = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
+  planner_data_.front_overhang = waitForParam<double>(pnh_, "/vehicle_info/front_overhang");
+  planner_data_.vehicle_width = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
+  // TODO(Kenji Miyake): get from additional vehicle_info?
+  planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
 
   // Initialize PlannerManager
   planner_manager_ptr_ = std::make_shared<BehaviorVelocityPlannerManager>();
@@ -88,12 +107,52 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~") {
     planner_manager_ptr_->launchSceneModule(std::make_shared<IntersectionModuleManager>());
   if (getParam<bool>(pnh_, "launch_blind_spot", true))
     planner_manager_ptr_->launchSceneModule(std::make_shared<BlindSpotModuleManager>());
+
+  // Wait for first current pose
+  getCurrentPose();
+}
+
+geometry_msgs::PoseStamped BehaviorVelocityPlannerNode::getCurrentPose() {
+  return transform2pose(waitForTransform(tf_buffer_, "map", "base_link"));
+}
+
+void BehaviorVelocityPlannerNode::perceptionCallback(
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg) {
+  planner_data_.dynamic_objects = msg;
+}
+
+void BehaviorVelocityPlannerNode::pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+  planner_data_.no_ground_pointcloud_msg = msg;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud;
+  pcl::fromROSMsg(*msg, *no_ground_pointcloud);
+  planner_data_.no_ground_pointcloud = no_ground_pointcloud;
+}
+
+void BehaviorVelocityPlannerNode::velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+  planner_data_.current_velocity = msg;
+}
+
+void BehaviorVelocityPlannerNode::mapCallback(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg) {
+  planner_data_.lanelet_map = std::make_shared<lanelet::LaneletMap>();
+  lanelet::utils::conversion::fromBinMsg(*msg, planner_data_.lanelet_map, &planner_data_.traffic_rules,
+                                         &planner_data_.routing_graph);
+}
+
+void BehaviorVelocityPlannerNode::trafficLightStatesCallback(
+    const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg) {
+  for (const auto& state : msg->states) {
+    planner_data_.traffic_light_id_map_[state.id] = {msg->header, state};
+  }
 }
 
 void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning_msgs::PathWithLaneId& input_path_msg) {
-  // if (path_pub_.getNumSubscribers() < 1)
+  // Prepare planner data
+  planner_data_.current_pose = getCurrentPose();
+  const auto planner_data = std::make_shared<const PlannerData>(planner_data_);
+
   autoware_planning_msgs::PathWithLaneId veloctiy_planed_path;
-  if (planner_manager_ptr_->callback(input_path_msg, veloctiy_planed_path)) {
+  if (planner_manager_ptr_->callback(planner_data, input_path_msg, veloctiy_planed_path)) {
     // convert
     autoware_planning_msgs::Path path;
     for (const auto& path_point : veloctiy_planed_path.points) {
@@ -111,8 +170,10 @@ void BehaviorVelocityPlannerNode::pathWithLaneIdCallback(const autoware_planning
 
     output_path_msg.header.frame_id = "map";
     output_path_msg.header.stamp = ros::Time::now();
-    output_path_msg.drivable_area = input_path_msg.drivable_area;  // TODO: This must be updated in each scene module,
-                                                                   // but copy from input message for now.
+
+    // TODO: This must be updated in each scene module, but copy from input message for now.
+    output_path_msg.drivable_area = input_path_msg.drivable_area;
+
     path_pub_.publish(output_path_msg);
     publishDebugMarker(output_path_msg, debug_viz_pub_);
   }

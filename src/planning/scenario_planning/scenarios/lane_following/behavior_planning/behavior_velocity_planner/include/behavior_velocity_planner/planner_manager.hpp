@@ -40,7 +40,8 @@ class BehaviorVelocityPlannerManager {
  public:
   void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
 
-  bool callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,
+  bool callback(const std::shared_ptr<const PlannerData>& planner_data,
+                const autoware_planning_msgs::PathWithLaneId& input_path_msg,
                 autoware_planning_msgs::PathWithLaneId& output_path_msg);
 
  private:

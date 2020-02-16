@@ -6,7 +6,7 @@
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 
-#include <behavior_velocity_planner/data_manager.hpp>
+#include <behavior_velocity_planner/planner_data.h>
 
 namespace behavior_planning {
 

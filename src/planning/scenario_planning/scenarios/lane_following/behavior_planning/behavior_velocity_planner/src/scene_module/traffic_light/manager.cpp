@@ -10,7 +10,7 @@ TrafficLightModuleManager::TrafficLightModuleManager() : nh_(""), pnh_("~") {}
 
 bool TrafficLightModuleManager::startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                                                std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) {
-  geometry_msgs::PoseStamped self_pose = *planner_data_->current_pose;
+  geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
   const auto lanelet_map_ptr = planner_data_->lanelet_map;
   const auto routing_graph_ptr = planner_data_->routing_graph;
 
