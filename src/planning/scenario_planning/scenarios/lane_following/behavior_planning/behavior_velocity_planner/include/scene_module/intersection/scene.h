@@ -23,7 +23,7 @@ class IntersectionModuleManager;  // To be refactored
 
 class IntersectionModule : public SceneModuleInterface {
  public:
-  IntersectionModule(const int lane_id, IntersectionModuleManager* intersection_module_manager);
+  IntersectionModule(const int64_t lane_id, IntersectionModuleManager* intersection_module_manager);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -38,7 +38,7 @@ class IntersectionModule : public SceneModuleInterface {
   bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
 
  private:
-  const int assigned_lane_id_;                              //! object lane id (unique for this instance)
+  const int64_t assigned_lane_id_;                          //! object lane id (unique for this instance)
   int stop_line_idx_;                                       //! stop-line index
   int judge_line_idx_;                                      //! stop-judgement-line index
   double judge_line_dist_;                                  //! distance from stop-line to stop-judgement line

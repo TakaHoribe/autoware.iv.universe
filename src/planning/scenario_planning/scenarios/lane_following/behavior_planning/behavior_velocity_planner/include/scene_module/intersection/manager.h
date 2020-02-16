@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -30,13 +31,12 @@ class IntersectionModuleManager : public SceneModuleManagerInterface {
   }
   IntersectionModuleDebugger debugger_;  // TODO: remove
 
-  void unregisterTask(const int lane_id);
+  bool isRegistered(const int64_t lane_id);
+  void registerTask(const int64_t lane_id);
+  void unregisterTask(const int64_t lane_id);
 
  private:
-  std::vector<int> registered_lane_ids_;
-
-  bool isRegistered(const int lane_id);
-  void registerTask(const int lane_id);
+  std::set<int64_t> registered_lane_id_set_;
 };
 
 }  // namespace behavior_planning

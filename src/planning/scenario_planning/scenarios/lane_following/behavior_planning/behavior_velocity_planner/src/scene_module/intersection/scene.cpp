@@ -12,7 +12,7 @@ namespace behavior_planning {
 
 namespace bg = boost::geometry;
 
-IntersectionModule::IntersectionModule(const int lane_id, IntersectionModuleManager* intersection_module_manager)
+IntersectionModule::IntersectionModule(const int64_t lane_id, IntersectionModuleManager* intersection_module_manager)
     : assigned_lane_id_(lane_id), intersection_module_manager_(intersection_module_manager) {
   judge_line_dist_ = 1.5;                        // [m]
   approaching_speed_to_stopline_ = 100.0 / 3.6;  // 100[km/h]
@@ -32,7 +32,8 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   intersection_module_manager_->debugger_.publishPath(output, "path_raw", 0.0, 1.0, 1.0);
 
   State current_state = state_machine_.getState();
-  ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d", (int)current_state);
+  ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d",
+                 static_cast<int>(current_state));
 
   /* get current pose */
   geometry_msgs::PoseStamped current_pose = planner_data_->current_pose;
@@ -90,7 +91,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   getObjectiveLanelets(lanelet_map_ptr, routing_graph_ptr, assigned_lane_id_, &objective_lanelets);
   intersection_module_manager_->debugger_.publishLaneletsArea(objective_lanelets, "intersection_detection_lanelets");
   ROS_DEBUG_COND(show_debug_info_,
-                 "[IntersectionModuleManager::run()] assigned_lane_id_ = %d, objective_lanelets.size() = %lu",
+                 "[IntersectionModuleManager::run()] assigned_lane_id_ = %ld, objective_lanelets.size() = %lu",
                  assigned_lane_id_, objective_lanelets.size());
   if (objective_lanelets.empty()) {
     ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule::run]: detection area number is zero. skip computation.");
