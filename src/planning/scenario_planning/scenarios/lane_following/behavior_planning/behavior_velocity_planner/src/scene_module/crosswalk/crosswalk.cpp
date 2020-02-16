@@ -1,8 +1,10 @@
+#include <geometry_msgs/TransformStamped.h>
+#include <tf2/utils.h>
+#include <tf2_eigen/tf2_eigen.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <behavior_velocity_planner/api.hpp>
 #include <cmath>
 #include <scene_module/crosswalk/crosswalk.hpp>
-
 namespace behavior_planning {
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
@@ -47,16 +49,35 @@ bool CrosswalkModule::run(const autoware_planning_msgs::PathWithLaneId& input,
     std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr =
         std::make_shared<autoware_perception_msgs::DynamicObjectArray>();
     if (!getDynemicObjects(objects_ptr)) {
-      return false;
-    }
-    pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    autoware_planning_msgs::PathWithLaneId slow_path, stop_path;
-    if (!getNoGroundPointcloud(no_ground_pointcloud_ptr)) {
+      ROS_ERROR_THROTTLE(1, "cannot recieve dynamic object. maybe don't stop at crosswalk");
       // return false;
     }
+
+    // get no ground pointcloud (map frame)
+    std::shared_ptr<sensor_msgs::PointCloud2 const> no_ground_ros_pointcloud_ptr= std::make_shared<sensor_msgs::PointCloud2 const>();
+    if (!getNoGroundPointcloud(no_ground_ros_pointcloud_ptr)) {
+      ROS_ERROR_THROTTLE(1, "cannot recieve pointcloud. maybe don't stop at crosswalk");
+    }
+    geometry_msgs::TransformStamped transform_stamped;
+    if (!getTransform("map", no_ground_ros_pointcloud_ptr->header.frame_id, no_ground_ros_pointcloud_ptr->header.stamp,
+                      ros::Duration(0.5), transform_stamped)) {
+      ROS_ERROR_THROTTLE(1, "cannot transform pointcloud. don't stop at crosswalk");
+      return false;
+    }
+    Eigen::Matrix4f affine_matrix = tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
+    sensor_msgs::PointCloud2 transformed_ros_pointcloud;
+    pcl_ros::transformPointCloud(affine_matrix, *no_ground_ros_pointcloud_ptr, transformed_ros_pointcloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr no_ground_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(transformed_ros_pointcloud, *no_ground_pointcloud_ptr);
+
+    // check areas
+    autoware_planning_msgs::PathWithLaneId slow_path, stop_path;
+    // check slow area
     if (!checkSlowArea(input, polygon, objects_ptr, no_ground_pointcloud_ptr, slow_path)) {
       return false;
     }
+
+    // check stop area
     if (!checkStopArea(slow_path, polygon, objects_ptr, no_ground_pointcloud_ptr, stop_path)) {
       return false;
     }

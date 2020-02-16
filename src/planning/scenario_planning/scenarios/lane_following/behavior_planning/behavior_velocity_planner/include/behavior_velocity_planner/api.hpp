@@ -14,12 +14,14 @@
 namespace behavior_planning {
 bool getDynemicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects);
 bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& pointcloud);
-bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud);
+bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud, std_msgs::Header &header);
 bool getTrafficLightState(const int id, std_msgs::Header& header,
                           autoware_traffic_light_msgs::TrafficLightState& traffic_light);
 bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const>& twist);
 bool getBaselink2FrontLength(double& length);
 bool getVehicleWidth(double& width);
+bool getTransform(const std::string& target_frame, const std::string& source_frame, const ros::Time& time,
+                  const ros::Duration timeout, geometry_msgs::TransformStamped& transform_stamped);
 bool isVehicleStopping();
 bool getCurrentSelfPose(geometry_msgs::PoseStamped& pose);
 bool getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_pt,

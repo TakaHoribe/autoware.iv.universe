@@ -66,6 +66,7 @@ private:
   double exploring_goal_clearance_from_obstacle_;
   double min_distance_threshold_when_switching_avoindance_to_path_following_;
   double min_cos_similarity_when_switching_avoindance_to_path_following_;
+  geometry_msgs::Pose::ConstPtr current_ego_pose_;
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_ego_point_ptr_;
@@ -79,13 +80,9 @@ private:
   ros::NodeHandle nh_, private_nh_;
   ros::Publisher markers_pub_;
   ros::Publisher debug_clearance_map_in_occupancy_grid_pub_;
-  // ros::Subscriber is_relay_path_sub_;
-  ros::Subscriber twist_sub_;
   ros::Subscriber objects_sub_;
-  // void isRelayPathCallback(const std_msgs::Bool& msg);
   void callback(const autoware_planning_msgs::Path &input_path_msg, 
                 autoware_planning_msgs::Trajectory &output_trajectory_msg) override;
-  void currentVelocityCallback(const geometry_msgs::TwistStamped& msg);
   void objectsCallback(const autoware_perception_msgs::DynamicObjectArray& msg);
   void doResetting();
   
@@ -119,6 +116,10 @@ private:
     geometry_msgs::Point& start_exploring_point,
     geometry_msgs::Point& goal_exploring_point,
     std::vector<geometry_msgs::Point>& trimmed_explored_points);
+  
+  std::vector<geometry_msgs::Point> generatePostProcessedExploredPoints(
+    const std::vector<geometry_msgs::Point>& fixed_explored_points,
+    const std::vector<geometry_msgs::Point>& explored_points);
   
   std::vector<geometry_msgs::Point> generateTrimmedExploredPoints(
     const geometry_msgs::Point& ego_point,
@@ -168,9 +169,11 @@ private:
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
     const std::vector<geometry_msgs::Point>& points);
   
-  bool generateSmoothTrajectory(const geometry_msgs::Pose& ego_pose,
-                            const autoware_planning_msgs::Path& input_path,
-                            autoware_planning_msgs::Trajectory& output_trajectory);
+  autoware_planning_msgs::Trajectory::Ptr generateSmoothTrajectoryFromPath(
+                            const autoware_planning_msgs::Path& input_path);
+                            
+  autoware_planning_msgs::Trajectory::Ptr generateSmoothTrajectoryFromExploredPoints(
+    const autoware_planning_msgs::Path& input_path);
   
   void getOccupancyGridValue(const nav_msgs::OccupancyGrid& occupancy_grid, 
                              const int i, 
@@ -188,6 +191,16 @@ private:
     std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points,
     std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
     std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
+  
+  autoware_planning_msgs::Trajectory generateSmoothTrajectory(
+    const autoware_planning_msgs::Path& in_path);
+  
+  void debugStartAndGoalMarkers(
+    const geometry_msgs::Point& start_point,
+    const geometry_msgs::Point& goal_point);
+    
+  void debugMarkers(
+    const std::vector<geometry_msgs::Point>& constrain_points);
   
 public:
    EBPathPlannerNode();

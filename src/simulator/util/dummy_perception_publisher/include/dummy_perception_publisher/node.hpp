@@ -29,6 +29,7 @@ private:
   tf2_ros::TransformListener tf_listener_;
   std::vector<dummy_perception_publisher::Object> objects_;
   double visible_range_;
+  double detection_successful_rate_;
   bool enable_ray_tracing_;
   std::mt19937 random_generator_;
   void timerCallback(const ros::TimerEvent &);

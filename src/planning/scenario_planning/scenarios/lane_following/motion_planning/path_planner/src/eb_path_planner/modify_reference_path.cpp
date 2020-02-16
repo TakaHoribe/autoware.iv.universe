@@ -19,7 +19,9 @@
 #include "autoware_perception_msgs/DynamicObject.h"
 #include "autoware_planning_msgs/PathPoint.h"
 #include "autoware_planning_msgs/Route.h"
+
 #include "eb_path_planner/modify_reference_path.h"
+#include "eb_path_planner/util.h"
 
 class Node
 {
@@ -54,88 +56,6 @@ public:
 };
 GridNode::GridNode(){}
 GridNode::~GridNode(){}
-
-// ref: http://www.mech.tohoku-gakuin.ac.jp/rde/contents/course/robotics/coordtrans.html
-// (pu, pv): retative, (px, py): absolute, (ox, oy): origin
-// (pu, pv) = rot^-1 * {(px, py) - (ox, oy)}
-geometry_msgs::Point transformToRelativeCoordinate2D(
-  const geometry_msgs::Point &point,
-  const geometry_msgs::Pose &origin)
-{
-  // translation
-  geometry_msgs::Point trans_p;
-  trans_p.x = point.x - origin.position.x;
-  trans_p.y = point.y - origin.position.y;
-
-  // rotation (use inverse matrix of rotation)
-  double yaw = tf2::getYaw(origin.orientation);
-
-  geometry_msgs::Point res;
-  res.x = (cos(yaw) * trans_p.x) + (sin(yaw) * trans_p.y);
-  res.y = ((-1) * sin(yaw) * trans_p.x) + (cos(yaw) * trans_p.y);
-  res.z = origin.position.z;
-
-  return res;
-}
-
-double calculateEigen2DDistance(const Eigen::Vector2d& a, 
-                                const Eigen::Vector2d& b)
-{
-  double dx = a(0)-b(0);
-  double dy = a(1)-b(1);
-  return std::sqrt(dx*dx+dy*dy);
-}
-
-bool transformMapToImage(const geometry_msgs::Point& map_point,
-                         const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& image_point)
-{
-  geometry_msgs::Point relative_p = 
-    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
-  double resolution = occupancy_grid_info.resolution;
-  double map_y_height = occupancy_grid_info.height;
-  double map_x_width = occupancy_grid_info.width;
-  double map_x_in_image_resolution = relative_p.x/resolution;
-  double map_y_in_image_resolution = relative_p.y/resolution;
-  double image_x = map_y_height - map_y_in_image_resolution;
-  double image_y = map_x_width - map_x_in_image_resolution;
-  if(image_x>=0 && 
-     image_x<(int)map_y_height &&
-     image_y>=0 && 
-     image_y<(int)map_x_width)
-  {
-    image_point.x = image_x;
-    image_point.y = image_y;
-    return true;
-  }
-  else
-  {
-    return false;
-  } 
-}
-
-
-bool transformImageToMap(const geometry_msgs::Point& image_point,
-                         const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& map_point)
-{
-  double resolution = occupancy_grid_info.resolution;
-  double map_y_height = occupancy_grid_info.height;
-  double map_x_width = occupancy_grid_info.width;
-  double map_x_in_image_resolution = map_x_width - image_point.y;
-  double map_y_in_image_resolution = map_y_height - image_point.x;
-  double relative_x = map_x_in_image_resolution*resolution;
-  double relative_y = map_y_in_image_resolution*resolution;
-  double yaw = tf2::getYaw(occupancy_grid_info.origin.orientation);
-  geometry_msgs::Point res;
-  res.x = (cos(-yaw) * relative_x) + (sin(-yaw) * relative_y);
-  res.y = ((-1) * sin(-yaw) * relative_x) + (cos(-yaw) * relative_y);
-  
-  map_point.x = res.x + occupancy_grid_info.origin.position.x;
-  map_point.y = res.y + occupancy_grid_info.origin.position.y;
-  map_point.z = occupancy_grid_info.origin.position.z;
-  return true;
-}
 
 
 
@@ -223,7 +143,7 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
     child_node.g = parent_node.g + explore_radius - 
                     clearance_weight_when_exploring_*child_node.d*child_node.d;
     child_node.h = 
-      calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_;
+      util::calculateEigen2DDistance(child_node.p, goal_node.p)*resolution_;
     child_node.f = child_node.g + child_node.h;
     
     child_node.parent_node = std::make_shared<Node>(parent_node);
@@ -234,7 +154,7 @@ bool ModifyReferencePath::expandNode(Node& parent_node,
 
 bool ModifyReferencePath::isOverlap(Node& node, Node& goal_node)
 {
-  double image_distance = calculateEigen2DDistance(node.p, goal_node.p);
+  double image_distance = util::calculateEigen2DDistance(node.p, goal_node.p);
   if(image_distance*resolution_< node.r)
   {
     return true;
@@ -249,7 +169,7 @@ bool ModifyReferencePath::nodeExistInClosedNodes(Node node, std::vector<Node> cl
 {
   for(const auto& closed_node: closed_nodes)
   {
-    double image_distance = calculateEigen2DDistance(node.p, closed_node.p);
+    double image_distance = util::calculateEigen2DDistance(node.p, closed_node.p);
     if(image_distance*resolution_ <closed_node.r*0.5)
     {
       return true;
@@ -267,10 +187,10 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
 {
   geometry_msgs::Point start_point_in_image;
   geometry_msgs::Point goal_point_in_image;
-  bool is_start_point_inside = transformMapToImage(start_point_in_map,
+  bool is_start_point_inside = util::transformMapToImage(start_point_in_map,
                                   map_info,
                                   start_point_in_image);
-  bool is_goal_point_inside = transformMapToImage(goal_point_in_map,
+  bool is_goal_point_inside = util::transformMapToImage(goal_point_in_map,
                                   map_info,
                                   goal_point_in_image);
   if(is_start_point_inside && is_goal_point_inside)
@@ -292,7 +212,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     Eigen::Vector2d goal_p(goal_point_in_image.x, goal_point_in_image.y);
     
     initial_node.p = initial_p;
-    initial_node.h = calculateEigen2DDistance(initial_node.p, goal_p)*resolution_;
+    initial_node.h = util::calculateEigen2DDistance(initial_node.p, goal_p)*resolution_;
     initial_node.f = initial_node.g + initial_node.h;
     initial_node.parent_node = nullptr;
     std::priority_queue<
@@ -411,7 +331,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     for(const auto& point: explored_image_points)
     {
       geometry_msgs::Point map_point;
-      transformImageToMap(point,
+      util::transformImageToMap(point,
                           map_info,
                           map_point);
       explored_points.push_back(map_point);
@@ -702,7 +622,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
 
 
 bool ModifyReferencePath::generateModifiedPath(
-  geometry_msgs::Pose& ego_pose,
+  const geometry_msgs::Pose& ego_pose,
   const geometry_msgs::Point& start_exploring_point,
   const geometry_msgs::Point& goal_exploring_point,
   const std::vector<autoware_planning_msgs::PathPoint>& path_points,
@@ -731,7 +651,7 @@ bool ModifyReferencePath::generateModifiedPath(
   //            map_info,
   //            explored_points);
   
-  //experimental: swap last explored points with actual explored goal
+  //swap last explored points with actual explored goal
   if(!explored_points.empty())
   {
     explored_points.erase(explored_points.end());
