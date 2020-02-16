@@ -9,13 +9,10 @@ bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& poin
   return SingletonDataManager::getInstance().getNoGroundPointcloud(pointcloud);
 }
 
-bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud, std_msgs::Header &header) {
+bool getNoGroundPointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud) {
   std::shared_ptr<sensor_msgs::PointCloud2 const> ros_pointcloud;
   bool ret = SingletonDataManager::getInstance().getNoGroundPointcloud(ros_pointcloud);
-  if (ret) {
-    pcl::fromROSMsg(*ros_pointcloud, *pointcloud);
-    header = ros_pointcloud->header;
-  }
+  if (ret) pcl::fromROSMsg(*ros_pointcloud, *pointcloud);
   return ret;
 }
 
@@ -38,10 +35,6 @@ bool getBaselink2FrontLength(double& length) {
   return true;
 }
 bool getVehicleWidth(double& width) { return SingletonDataManager::getInstance().getVehicleWidth(width); }
-bool getTransform(const std::string& target_frame, const std::string& source_frame, const ros::Time& time,
-                  const ros::Duration timeout, geometry_msgs::TransformStamped& transform_stamped) {
-  return SingletonDataManager::getInstance().getTransform(target_frame, source_frame, time, timeout, transform_stamped);
-}
 
 bool isVehicleStopping() {
   std::shared_ptr<geometry_msgs::TwistStamped const> twist_ptr;

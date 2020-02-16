@@ -31,6 +31,16 @@
 #include <memory>
 
 namespace behavior_planning {
+class SelfPoseLinstener {
+ public:
+  SelfPoseLinstener();
+  bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
+
+ private:
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+};
+
 class SingletonDataManager {
  private:
   explicit SingletonDataManager();
@@ -64,13 +74,9 @@ class SingletonDataManager {
   std::map<int, std::tuple<std_msgs::Header, autoware_traffic_light_msgs::TrafficLightState>> traffic_light_id_map_;
 
   /*
-   * Tf listener
+   * SelfPoseLinstener
    */
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;
-  /*
-   * Callback
-   */
+  std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
   void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray& input_perception_msg);
   void pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg);
   void velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg);
@@ -94,8 +100,6 @@ class SingletonDataManager {
   bool getWheelBase(double& wheel_base);
   bool getFrontOverhang(double& front_overhang);
   bool getVehicleWidth(double& width);
-  bool getTransform(const std::string& target_frame, const std::string& source_frame, const ros::Time& time,
-                    const ros::Duration timeout, geometry_msgs::TransformStamped& transform_stamped);
 };
 
 }  // namespace behavior_planning
