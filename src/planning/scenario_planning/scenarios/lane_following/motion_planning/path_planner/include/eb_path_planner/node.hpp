@@ -99,6 +99,9 @@ private:
     const geometry_msgs::Pose self_pose,
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& previous_output_trajectory_points);
     
+  bool isDetectingFixedPathPoint(
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points);
+    
   bool getNearestPose(
     const geometry_msgs::Pose self_pose,
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& trajectory_points,
