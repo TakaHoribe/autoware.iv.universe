@@ -109,11 +109,152 @@ private_nh_("~")
 
 EBPathPlannerNode::~EBPathPlannerNode() {}
 
+void EBPathPlannerNode::callback(
+  const autoware_planning_msgs::Path &input_path_msg,
+  autoware_planning_msgs::Trajectory &output_trajectory_msg)                               
+{
+  if(!in_objects_ptr_)
+  {
+    in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
+  }
+  current_ego_pose_ = getCurrentEgoPose(tf_buffer_);
+  if(!current_ego_pose_)
+  {
+    return;
+  }  
+  if(!previous_ego_point_ptr_)
+  {
+    previous_ego_point_ptr_ = 
+      std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
+    return;
+  }
+  output_trajectory_msg = generateSmoothTrajectory(input_path_msg);
+}
+
+autoware_planning_msgs::Trajectory EBPathPlannerNode::generateSmoothTrajectory
+  (const autoware_planning_msgs::Path& input_path)
+{
+  autoware_planning_msgs::Trajectory::Ptr smoothed_trajectory = 
+    generateSmoothTrajectoryFromExploredPoints(input_path);
+  if(!smoothed_trajectory)
+  {
+    smoothed_trajectory = generateSmoothTrajectoryFromPath(input_path);
+  }
+  previous_ego_point_ptr_ = 
+    std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
+  previous_optimized_points_ptr_ = 
+    std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>
+      (smoothed_trajectory->points);
+  return *smoothed_trajectory;
+}
+
+autoware_planning_msgs::Trajectory::Ptr
+  EBPathPlannerNode::generateSmoothTrajectoryFromExploredPoints(
+    const autoware_planning_msgs::Path& input_path)
+{
+  bool is_avoidance_needed  = isAvoidanceNeeded(
+      input_path.points, 
+      *current_ego_pose_,
+      *previous_optimized_points_ptr_);
+  if(!is_avoidance_needed || !enable_avoidance_)
+  {
+    doResetting();
+    return nullptr;
+  }
+    
+  cv::Mat clearance_map;
+  generateClearanceMap(
+    input_path.drivable_area,
+    in_objects_ptr_->objects,
+    *current_ego_pose_,
+    clearance_map);
+  
+  if(needReset(current_ego_pose_->position,
+                previous_ego_point_ptr_,
+                clearance_map,
+                input_path.drivable_area.info,
+                *previous_explored_points_ptr_,
+                in_objects_ptr_->objects))
+  {
+    doResetting();
+  }
+  
+  geometry_msgs::Point start_exploring_point;
+  geometry_msgs::Point goal_exploring_point;
+  std::vector<geometry_msgs::Point> trimmed_explored_points;
+  bool need_exploration =  needExprolation(
+                            current_ego_pose_->position,
+                            *previous_explored_points_ptr_,
+                            input_path,
+                            clearance_map,
+                            start_exploring_point,
+                            goal_exploring_point,
+                            trimmed_explored_points);
+  if(need_exploration)
+  {
+    debugStartAndGoalMarkers(start_exploring_point, goal_exploring_point);
+    
+    std::vector<geometry_msgs::Point> explored_points;
+    bool is_explore_success = 
+      modify_reference_path_ptr_->generateModifiedPath(
+            *current_ego_pose_, 
+            start_exploring_point,
+            goal_exploring_point,
+            input_path.points,
+            in_objects_ptr_->objects,
+            explored_points,
+            clearance_map, 
+            input_path.drivable_area.info);
+    if(!is_explore_success)
+    {
+      return nullptr;
+    }
+    previous_explored_points_ptr_ = 
+      std::make_unique<std::vector<geometry_msgs::Point>>
+        (generatePostProcessedExploredPoints(trimmed_explored_points, explored_points));    
+    
+  }
+  
+  
+  std::vector<geometry_msgs::Point> debug_interpolated_points;
+  std::vector<geometry_msgs::Point> debug_constrain_points;
+  std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
+  eb_path_smoother_ptr_->generateOptimizedExploredPoints(
+        input_path.points,
+        *previous_explored_points_ptr_, 
+        *current_ego_pose_,
+        clearance_map, 
+        input_path.drivable_area.info,
+        debug_interpolated_points,
+        debug_constrain_points,
+        optimized_points);
+  
+  alighWithPathPoints(input_path.points,optimized_points);
+  
+  std::vector<autoware_planning_msgs::TrajectoryPoint> fine_optimized_points;
+  generateFineOptimizedPoints(
+    input_path.points,
+    optimized_points, 
+    fine_optimized_points);
+  autoware_planning_msgs::Trajectory::Ptr 
+    output_smooth_trajectory (new autoware_planning_msgs::Trajectory());
+  output_smooth_trajectory->header = input_path.header;
+  output_smooth_trajectory->points = fine_optimized_points;
+  is_previously_avoidance_mode_ = true;
+  debugMarkers(debug_constrain_points);
+  return output_smooth_trajectory;
+}
+
 bool EBPathPlannerNode::isAvoidanceNeeded(
   const std::vector<autoware_planning_msgs::PathPoint> in_path,
   const geometry_msgs::Pose self_pose,
   const std::vector<autoware_planning_msgs::TrajectoryPoint>& previous_output_trajectory_points) 
 {
+  bool is_detecting_fixed_path_points = isDetectingFixedPathPoint(in_path);
+  if(is_detecting_fixed_path_points)
+  {
+    return false;
+  }
   
   bool is_objects_detected = 
     detectAvoidingObjectsOnPath(
@@ -140,6 +281,20 @@ bool EBPathPlannerNode::isAvoidanceNeeded(
   
   return isPoseCloseToPath(in_path, nearest_pose) ? false : true;
 }
+
+bool EBPathPlannerNode::isDetectingFixedPathPoint(
+  const std::vector<autoware_planning_msgs::PathPoint>& path_points)
+{
+  for(const auto path_point: path_points)
+  {
+    if(path_point.type == path_point.FIXED)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 bool EBPathPlannerNode::getNearestPose(
   const geometry_msgs::Pose self_pose,
@@ -230,44 +385,6 @@ bool EBPathPlannerNode::isPoseCloseToPath(
   }
 }
 
-void EBPathPlannerNode::callback(
-  const autoware_planning_msgs::Path &input_path_msg,
-  autoware_planning_msgs::Trajectory &output_trajectory_msg)                               
-{
-  if(!in_objects_ptr_)
-  {
-    in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
-  }
-  current_ego_pose_ = getCurrentEgoPose(tf_buffer_);
-  if(!current_ego_pose_)
-  {
-    return;
-  }  
-  if(!previous_ego_point_ptr_)
-  {
-    previous_ego_point_ptr_ = 
-      std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
-    return;
-  }
-  output_trajectory_msg = generateSmoothTrajectory(input_path_msg); 
-}
-
-autoware_planning_msgs::Trajectory EBPathPlannerNode::generateSmoothTrajectory
-  (const autoware_planning_msgs::Path& input_path)
-{
-  autoware_planning_msgs::Trajectory::Ptr smoothed_trajectory = 
-    generateSmoothTrajectoryFromExploredPoints(input_path);
-  if(!smoothed_trajectory)
-  {
-    smoothed_trajectory = generateSmoothTrajectoryFromPath(input_path);
-  }
-  previous_ego_point_ptr_ = 
-    std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
-  previous_optimized_points_ptr_ = 
-    std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>
-      (smoothed_trajectory->points);
-  return *smoothed_trajectory;
-}
 
 void EBPathPlannerNode::doResetting()
 {
@@ -648,103 +765,6 @@ autoware_planning_msgs::Trajectory::Ptr
   autoware_planning_msgs::Trajectory::Ptr output_trajectory_ptr 
     (new autoware_planning_msgs::Trajectory(output_trajectory));
   return output_trajectory_ptr;
-}
-
-autoware_planning_msgs::Trajectory::Ptr
-  EBPathPlannerNode::generateSmoothTrajectoryFromExploredPoints(
-    const autoware_planning_msgs::Path& input_path)
-{
-  bool is_avoidance_needed  = isAvoidanceNeeded(
-      input_path.points, 
-      *current_ego_pose_,
-      *previous_optimized_points_ptr_);
-  if(!is_avoidance_needed || !enable_avoidance_)
-  {
-    doResetting();
-    return nullptr;
-  }
-    
-  cv::Mat clearance_map;
-  generateClearanceMap(
-    input_path.drivable_area,
-    in_objects_ptr_->objects,
-    *current_ego_pose_,
-    clearance_map);
-  
-  if(needReset(current_ego_pose_->position,
-                previous_ego_point_ptr_,
-                clearance_map,
-                input_path.drivable_area.info,
-                *previous_explored_points_ptr_,
-                in_objects_ptr_->objects))
-  {
-    doResetting();
-  }
-  
-  geometry_msgs::Point start_exploring_point;
-  geometry_msgs::Point goal_exploring_point;
-  std::vector<geometry_msgs::Point> trimmed_explored_points;
-  bool need_exploration =  needExprolation(
-                            current_ego_pose_->position,
-                            *previous_explored_points_ptr_,
-                            input_path,
-                            clearance_map,
-                            start_exploring_point,
-                            goal_exploring_point,
-                            trimmed_explored_points);
-  if(need_exploration)
-  {
-    debugStartAndGoalMarkers(start_exploring_point, goal_exploring_point);
-    
-    std::vector<geometry_msgs::Point> explored_points;
-    bool is_explore_success = 
-      modify_reference_path_ptr_->generateModifiedPath(
-            *current_ego_pose_, 
-            start_exploring_point,
-            goal_exploring_point,
-            input_path.points,
-            in_objects_ptr_->objects,
-            explored_points,
-            clearance_map, 
-            input_path.drivable_area.info);
-    if(!is_explore_success)
-    {
-      return nullptr;
-    }
-    previous_explored_points_ptr_ = 
-      std::make_unique<std::vector<geometry_msgs::Point>>
-        (generatePostProcessedExploredPoints(trimmed_explored_points, explored_points));    
-    
-  }
-  
-  
-  std::vector<geometry_msgs::Point> debug_interpolated_points;
-  std::vector<geometry_msgs::Point> debug_constrain_points;
-  std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
-  eb_path_smoother_ptr_->generateOptimizedExploredPoints(
-        input_path.points,
-        *previous_explored_points_ptr_, 
-        *current_ego_pose_,
-        clearance_map, 
-        input_path.drivable_area.info,
-        debug_interpolated_points,
-        debug_constrain_points,
-        optimized_points);
-  
-  alighWithPathPoints(input_path.points,optimized_points);
-  
-  std::vector<autoware_planning_msgs::TrajectoryPoint> fine_optimized_points;
-  generateFineOptimizedPoints(
-    input_path.points,
-    optimized_points, 
-    fine_optimized_points);
-  autoware_planning_msgs::Trajectory::Ptr 
-    output_smooth_trajectory (new autoware_planning_msgs::Trajectory());
-  output_smooth_trajectory->header = input_path.header;
-  output_smooth_trajectory->points = fine_optimized_points;
-  is_previously_avoidance_mode_ = true;
-  debugMarkers(debug_constrain_points);
-  return output_smooth_trajectory;
 }
 
 bool EBPathPlannerNode::detectAvoidingObjectsOnPath(

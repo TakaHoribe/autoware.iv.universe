@@ -1,11 +1,12 @@
 max_velocity: 20.0      # max velocity limit [m/s]
 max_accel: 1.5          # max acceleration limit [m/ss]
 min_decel: -1.5         # min deceleration limit [m/ss]
-max_lateral_accel: 0.05 # max lateral acceleration limit [m/ss]
+max_lateral_accel: 0.01 # max lateral acceleration limit [m/ss]
 
-replan_vel_deviation: 5.53 # velocity deviation to replan initial velocity [m/s]
-engage_velocity: 0.3       # engage velocity threshold [m/s] (if the trajectory velocity is higher than this value, use this velocity for engage vehicle speed) 
-engage_acceleration: 0.0   # engage acceleration [m/ss] (use this acceleration when engagement)
+pre_decel_distance_for_latacc: 3.5 # distance before the vehicle slow down at a curve for lateral acceleration limit
+replan_vel_deviation: 5.53         # velocity deviation to replan initial velocity [m/s]
+engage_velocity: 0.3               # engage velocity threshold [m/s] (if the trajectory velocity is higher than this value, use this velocity for engage vehicle speed) 
+engage_acceleration: 0.0           # engage acceleration [m/ss] (use this acceleration when engagement)
 
 extract_ahead_dist: 200.0         # forward trajectory distance used for planning [m]
 extract_behind_dist: 5.0          # backward trajectory distance used for planning [m]
