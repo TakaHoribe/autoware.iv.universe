@@ -54,6 +54,7 @@ namespace autoware_lanelet2_msgs
 namespace autoware_perception_msgs
 {
   ROS_DECLARE_MESSAGE(DynamicObjectArray); 
+  ROS_DECLARE_MESSAGE(DynamicObject); 
 }
 
 namespace uuid_msgs
@@ -79,7 +80,6 @@ private:
   ros::Publisher pub_objects_;
   ros::Publisher pub_markers_;
   
-  std::shared_ptr<uuid_msgs::UniqueID> debug_ego_uid_;
   std::unordered_map<std::string, std::vector<int>> uuid2laneids_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_ptr_;
@@ -97,10 +97,11 @@ private:
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
   
   bool getClosestLanelet(
-                const geometry_msgs::Pose& search_pose, 
+    const autoware_perception_msgs::DynamicObject& object,
+    
+                // const geometry_msgs::Pose& search_pose, 
                 const lanelet::LaneletMapPtr& lanelet_map_ptr_,
                 lanelet::Lanelet* closest_lanelet,
-                double distance_thresh,
                 std::string uuid_string);
 
 public:

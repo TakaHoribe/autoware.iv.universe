@@ -27,6 +27,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_perception_msgs/DynamicObject.h>
 #include <geometry_msgs/Pose.h>
 #include <tf2/utils.h>
 #include <tf2_ros/transform_listener.h>
@@ -49,20 +50,19 @@
 
 
 
-//copy from mission planner code; could extract from utility function in the future
 bool MapBasedPredictionROS::getClosestLanelet(
-  const geometry_msgs::Pose& search_pose, 
+  const autoware_perception_msgs::DynamicObject& object,
+  // const geometry_msgs::Pose& search_pose, 
   const lanelet::LaneletMapPtr& lanelet_map_ptr_,
   lanelet::Lanelet* closest_lanelet,
-  double distance_thresh,
   std::string uuid_string)
 {
-  // 1. 現在日時を取得
   std::chrono::high_resolution_clock::time_point begin= 
     std::chrono::high_resolution_clock::now();
-  lanelet::BasicPoint2d search_point(search_pose.position.x, search_pose.position.y);
+  lanelet::BasicPoint2d search_point(object.state.pose_covariance.pose.position.x,
+                                     object.state.pose_covariance.pose.position.y);
   std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
-      lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 3);
+      lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 10);
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
@@ -71,45 +71,138 @@ bool MapBasedPredictionROS::getClosestLanelet(
   
   if (nearest_lanelets.empty())
   {
-    ROS_ERROR("Failed to find the closest lane!");
     return false;
   }
   
   if(uuid2laneids_.size()==0 || 
      uuid2laneids_.count(uuid_string)==0)
   {
-    if(nearest_lanelets.front().first < 0.1)
+    bool is_found_target_closest_lanelet = false;
+    double min_delta_yaw = 999999999;
+    const double max_dist_for_searching_lanelet = 3;
+    lanelet::Lanelet target_closest_lanelet;
+    for(const auto& lanelet: nearest_lanelets)
     {
-      *closest_lanelet=nearest_lanelets.front().second;
-      return true;
+      double object_yaw = 0;
+      if(object.state.orientation_reliable)
+      {
+        object_yaw = tf2::getYaw(object.state.pose_covariance.pose.orientation);
+      }
+      else
+      {
+        geometry_msgs::Pose object_frame_pose;
+        geometry_msgs::Pose map_frame_pose;
+        object_frame_pose.position.x = object.state.twist_covariance.twist.linear.x * 0.1;
+        object_frame_pose.position.y = object.state.twist_covariance.twist.linear.y * 0.1;
+        tf2::Transform tf_object2future;
+        tf2::Transform tf_map2object;
+        tf2::Transform tf_map2future;
+
+        tf2::fromMsg(object.state.pose_covariance.pose, tf_map2object);
+        tf2::fromMsg(object_frame_pose, tf_object2future);
+        tf_map2future = tf_map2object * tf_object2future;
+        tf2::toMsg(tf_map2future, map_frame_pose);
+        double dx = map_frame_pose.position.x - object.state.pose_covariance.pose.position.x ;
+        double dy = map_frame_pose.position.y - object.state.pose_covariance.pose.position.y ;
+        object_yaw = std::atan2(dy, dx);
+      }
       
+      if(lanelet.second.centerline().size()<=1)
+      {
+        continue;
+      }
+      double dx2 =  lanelet.second.centerline().back().x() - 
+                    lanelet.second.centerline()[lanelet.second.centerline().size()-2].x();
+      double dy2 =  lanelet.second.centerline().back().y() - 
+                    lanelet.second.centerline()[lanelet.second.centerline().size()-2].y();
+      double lane_yaw = std::atan2(dy2, dx2);
+      double delta_yaw = object_yaw - lane_yaw;
+      double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
+      double abs_norm_delta = std::fabs(normalized_delta_yaw);
+      
+      if(lanelet.first < max_dist_for_searching_lanelet &&
+         abs_norm_delta < min_delta_yaw)
+      {
+        min_delta_yaw = abs_norm_delta;
+        target_closest_lanelet = lanelet.second;
+        is_found_target_closest_lanelet = true;
+      }
+    }
+    if(is_found_target_closest_lanelet)
+    {
+      *closest_lanelet = target_closest_lanelet;
+      return true;
     }
   }
   else
   {
+    bool is_found_target_closest_lanelet = false;
+    double min_delta_yaw = 999999999;
+    const double max_dist_for_searching_lanelet = 3;
+    lanelet::Lanelet target_closest_lanelet;
+    // std::cout << "map "<<uuid2laneids_.at(uuid_string).size()<<std::endl;
     for(const auto& laneid: uuid2laneids_.at(uuid_string))
     {
       for(const auto& lanelet: nearest_lanelets)
       {
-        if(laneid == lanelet.second.id() && 
-           lanelet.first < 0.1)
+        if(laneid != lanelet.second.id())
         {
-          *closest_lanelet=lanelet.second;
-          return true;
+          continue;
+        }
+        double object_yaw = 0;
+        if(object.state.orientation_reliable)
+        {
+          object_yaw = tf2::getYaw(object.state.pose_covariance.pose.orientation);
+        }
+        else
+        {
+          geometry_msgs::Pose object_frame_pose;
+          geometry_msgs::Pose map_frame_pose;
+          object_frame_pose.position.x = object.state.twist_covariance.twist.linear.x * 0.1;
+          object_frame_pose.position.y = object.state.twist_covariance.twist.linear.y * 0.1;
+          tf2::Transform tf_object2future;
+          tf2::Transform tf_map2object;
+          tf2::Transform tf_map2future;
+
+          tf2::fromMsg(object.state.pose_covariance.pose, tf_map2object);
+          tf2::fromMsg(object_frame_pose, tf_object2future);
+          tf_map2future = tf_map2object * tf_object2future;
+          tf2::toMsg(tf_map2future, map_frame_pose);
+          double dx = map_frame_pose.position.x - object.state.pose_covariance.pose.position.x ;
+          double dy = map_frame_pose.position.y - object.state.pose_covariance.pose.position.y ;
+          object_yaw = std::atan2(dy, dx);
+        }
+        
+        if(lanelet.second.centerline().size()<=1)
+        {
+          continue;
+        }
+        double dx2 =  lanelet.second.centerline().back().x() - 
+                      lanelet.second.centerline()[lanelet.second.centerline().size()-2].x();
+        double dy2 =  lanelet.second.centerline().back().y() - 
+                      lanelet.second.centerline()[lanelet.second.centerline().size()-2].y();
+        double lane_yaw = std::atan2(dy2, dx2);
+        double delta_yaw = object_yaw - lane_yaw;
+        double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
+        double abs_norm_delta = std::fabs(normalized_delta_yaw);
+        
+        if(lanelet.first < max_dist_for_searching_lanelet &&
+           abs_norm_delta < min_delta_yaw)
+        {
+          min_delta_yaw = abs_norm_delta;
+          target_closest_lanelet = lanelet.second;
+          is_found_target_closest_lanelet = true;
         }
       }
     }
-  }
-  
-  //in case cannnot match with the uid, associate with nearest lanelet
-  for(const auto& lanelet: nearest_lanelets)
-  {
-    if(lanelet.first < 0.1)
+    
+    if(is_found_target_closest_lanelet)
     {
-      *closest_lanelet = nearest_lanelets.front().second;
+      *closest_lanelet = target_closest_lanelet;
       return true;
     }
   }
+  
   return false;
 }
 
@@ -123,38 +216,6 @@ double calculateDistance(
   return distance;
 }
 
-//depricated in the future begin ----
-bool MapBasedPredictionROS::getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs::Header &header)
-{
-  try
-  {
-    geometry_msgs::TransformStamped transform;
-    transform = tf_buffer_ptr_->lookupTransform(header.frame_id, "base_link",
-                                           header.stamp, ros::Duration(0.1));
-    self_pose.position.x = transform.transform.translation.x;
-    self_pose.position.y = transform.transform.translation.y;
-    self_pose.position.z = transform.transform.translation.z;
-    self_pose.orientation.x = transform.transform.rotation.x;
-    self_pose.orientation.y = transform.transform.rotation.y;
-    self_pose.orientation.z = transform.transform.rotation.z;
-    self_pose.orientation.w = transform.transform.rotation.w;
-    return true;
-  }
-  catch (tf2::TransformException &ex)
-  {
-    return false;
-  }
-}
-
-bool MapBasedPredictionROS::getSelfPoseInMap(geometry_msgs::Pose &self_pose)
-{
-  std_msgs::Header header;
-  header.frame_id = "map";
-  header.stamp = ros::Time();
-  return getSelfPose(self_pose, header);
-}
-//deprecated in the future end -----
-
 MapBasedPredictionROS::MapBasedPredictionROS()
 :
 pnh_("~"),
@@ -166,8 +227,6 @@ interpolating_resolution_(0.5)
   pnh_.param<double>("prediction_time_horizon", prediction_time_horizon_, 10.0);
   pnh_.param<double>("prediction_sampling_delta_time", prediction_sampling_delta_time_, 0.5);
   map_based_prediction_ = std::make_shared<MapBasedPrediction>(interpolating_resolution_,prediction_time_horizon_, prediction_sampling_delta_time_);
-  debug_ego_uid_= std::make_shared<uuid_msgs::UniqueID>
-                    (unique_id::toMsg(unique_id::fromRandom()));
 }
 
 void MapBasedPredictionROS::createROSPubSub()
@@ -185,13 +244,11 @@ void MapBasedPredictionROS::objectsCallback(
   const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects)
 {
   debug_accumulated_time_ = 0.0;
-  // 1. 現在日時を取得
   std::chrono::high_resolution_clock::time_point begin= 
     std::chrono::high_resolution_clock::now();
   
   if(!lanelet_map_ptr_)
   {
-    // std::cout << "has not been subscribed to map " << std::endl;
     return;
   }
   
@@ -225,6 +282,7 @@ void MapBasedPredictionROS::objectsCallback(
   tmp_objects_whitout_map.header = in_objects->header;
   DynamicObjectWithLanesArray prediction_input;
   prediction_input.header = in_objects->header;
+  
   for(const auto& object: in_objects->objects)
   {
     DynamicObjectWithLanes tmp_object;
@@ -246,24 +304,6 @@ void MapBasedPredictionROS::objectsCallback(
       continue;
     }
     
-    if(tmp_object.object.state.twist_covariance.twist.linear.x< 0 && 
-       tmp_object.object.state.orientation_reliable)
-    {
-      tmp_objects_whitout_map.objects.push_back(tmp_object.object);
-      continue;
-    }
-    else if(tmp_object.object.state.twist_covariance.twist.linear.x < 0)
-    {
-      tmp_object.object.state.twist_covariance.twist.linear.x *= -1;
-      double yaw = M_PI + 
-                   tf2::getYaw(tmp_object.object.state.pose_covariance.pose.orientation);
-      float roll = 0;
-      float pitch = 0;
-      tf2::Quaternion q;
-      q.setRPY( roll, pitch, yaw );
-      tmp_object.object.state.pose_covariance.pose.orientation = 
-        tf2::toMsg(q);
-    }
                      
                      
     lanelet::Lanelet start_lanelet;
@@ -271,12 +311,10 @@ void MapBasedPredictionROS::objectsCallback(
     std::vector<geometry_msgs::Pose> path_points;
     std::vector<geometry_msgs::Pose> second_path_points;
     std::vector<geometry_msgs::Pose> right_path_points;
-    std::string uuid_string = unique_id::toHexString(*debug_ego_uid_);
-    double epsilon = std::numeric_limits<double>::epsilon();
-    if(!getClosestLanelet(tmp_object.object.state.pose_covariance.pose, 
+    std::string uuid_string = unique_id::toHexString(object.id);
+    if(!getClosestLanelet(tmp_object.object, 
                           lanelet_map_ptr_,
                           &start_lanelet,
-                          epsilon,
                           uuid_string))
     {
       geometry_msgs::Point debug_point;
@@ -293,7 +331,7 @@ void MapBasedPredictionROS::objectsCallback(
     {
       right_paths =  
         routing_graph_ptr_->possiblePaths(*opt_right, 
-                                          150, 0,false);
+                                          10, 0,false);
     }
     auto opt_left = routing_graph_ptr_->left(start_lanelet);
     lanelet::routing::LaneletPaths left_paths;
@@ -301,12 +339,12 @@ void MapBasedPredictionROS::objectsCallback(
     {
       left_paths =  
         routing_graph_ptr_->possiblePaths(*opt_left, 
-                                          150, 0,false);
+                                          10, 0,false);
     }
     
     lanelet::routing::LaneletPaths paths =  
       routing_graph_ptr_->possiblePaths(start_lanelet, 
-                                        150, 0,false);
+                                        10, 0,false);
    
     paths.insert(paths.end(), right_paths.begin(), right_paths.end());
     paths.insert(paths.end(), left_paths.begin(), left_paths.end());
@@ -321,10 +359,14 @@ void MapBasedPredictionROS::objectsCallback(
     }
     
     std::vector<int> lanelet_ids;
-    for(const auto& lanelet: paths.front())
+    for(const auto& lanelets: paths)
     {
-      lanelet_ids.push_back(lanelet.id());
+      for(const auto& lanelet: lanelets)
+      {
+        lanelet_ids.push_back(lanelet.id());
+      }
     }
+    // std::cout << "path size "<< paths.size() << std::endl;
     
     std::string uid_string = unique_id::toHexString(object.id);
     if(uuid2laneids_.count(uid_string)==0)
@@ -333,7 +375,30 @@ void MapBasedPredictionROS::objectsCallback(
     }
     else
     {
-      uuid2laneids_.at(uid_string) = lanelet_ids;
+      // uuid2laneids_.at(uid_string) = lanelet_ids;
+      for(const auto& current_uid: lanelet_ids)
+      {
+        bool is_redundant = false;
+        for(const auto& chached_uid: uuid2laneids_.at(uid_string))
+        {
+          if(chached_uid == current_uid)
+          {
+            is_redundant = true;
+            break;
+          }
+        }
+        if(is_redundant)
+        {
+          continue;
+        }
+        else
+        {
+          uuid2laneids_.at(uid_string).push_back(current_uid);
+        }
+      }
+      // std::cout << "size "<< uuid2laneids_.at(uid_string).size() << std::endl;
+      // uuid2laneids_.at(uid_string)
+      // uuid2laneids_.at(uid_string).insert(uuid2laneids_.at(uid_string).end(),lanelet_ids.begin(), lanelet_ids.end());
     }
     
     geometry_msgs::Point debug_point;
@@ -344,6 +409,23 @@ void MapBasedPredictionROS::objectsCallback(
     for(const auto& path: paths)
     {
       std::vector<geometry_msgs::Pose> tmp_path;
+      // std::cout << "lanlet id " << lanelet.id() << std::endl;
+      if(!path.empty())
+      {
+        lanelet::ConstLanelets prev_lanelets= routing_graph_ptr_->previous(path.front());
+        if(!prev_lanelets.empty())
+        {
+          lanelet::ConstLanelet prev_lanelet = prev_lanelets.front();
+          for(const auto& point: prev_lanelet.centerline())
+          {
+            geometry_msgs::Pose tmp_pose;
+            tmp_pose.position.x = point.x();
+            tmp_pose.position.y = point.y();
+            tmp_pose.position.z = point.z();
+            tmp_path.push_back(tmp_pose);
+          }
+        }
+      }
       for(const auto& lanelet: path)
       {
         for(const auto& point: lanelet.centerline())
@@ -360,14 +442,11 @@ void MapBasedPredictionROS::objectsCallback(
     tmp_object.lanes = tmp_paths;
     prediction_input.objects.push_back(tmp_object);
   }
-  // std::cerr <<"lookup times: "<<in_objects->objects.size()<<", total lookup time: " <<debug_accumulated_time_<< " milli sec" << std::endl;
   
-  // 1. 現在日時を取得
   std::chrono::high_resolution_clock::time_point end= 
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = 
     std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  // std::cerr <<"prediction preprocess time " <<time.count()/(1000.0*1000.0)<< " milli sec" << std::endl;
   
   std::vector<autoware_perception_msgs::DynamicObject> out_objects_in_map;
   std::vector<geometry_msgs::Point> interpolated_points;
@@ -380,28 +459,6 @@ void MapBasedPredictionROS::objectsCallback(
   std::vector<autoware_perception_msgs::DynamicObject> out_objects_without_map;
   map_based_prediction_->doLinearPrediction(tmp_objects_whitout_map, out_objects_without_map);
   output.objects.insert(output.objects.begin(), out_objects_without_map.begin(), out_objects_without_map.end());
-  // for(const auto& object: out_objects_in_map)
-  // {
-  //   autoware_perception_msgs::DynamicObject tmp_object;
-  //   tmp_object = object;
-  //   geometry_msgs::Pose pose;
-  //   tf2::doTransform(object.state.pose_covariance.pose,
-  //                    pose,
-  //                    map2world_transform);
-  //   tmp_object.state.pose_covariance.pose = pose;
-  //   for(auto& path: tmp_object.state.predicted_paths)
-  //   {
-  //     for(auto& point: path.path)
-  //     {
-  //       geometry_msgs::Pose tmp_pose;
-  //       tf2::doTransform(point.pose.pose,
-  //                        tmp_pose,
-  //                        map2world_transform);
-  //       point.pose.pose = tmp_pose;
-  //     }
-  //   }
-  //   output.objects.push_back(tmp_object);
-  // }
   pub_objects_.publish(output);
   
   // std::cerr << "-------------"  << std::endl;

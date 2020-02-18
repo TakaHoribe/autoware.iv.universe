@@ -86,19 +86,6 @@ bool MapBasedPrediction::doPrediction(
   std::chrono::high_resolution_clock::now();
   for (auto& object_with_lanes: in_objects.objects)
   {
-    if(object_with_lanes.object.semantic.type == autoware_perception_msgs::Semantic::CAR||
-       object_with_lanes.object.semantic.type == autoware_perception_msgs::Semantic::BUS||
-       object_with_lanes.object.semantic.type == autoware_perception_msgs::Semantic::TRUCK)
-    {
-      const double abs_velo = 
-          std::sqrt(std::pow(object_with_lanes.object.state.twist_covariance.twist.linear.x, 2)+
-                    std::pow(object_with_lanes.object.state.twist_covariance.twist.linear.y,2));
-      double minimum_velocity_threshold = 0.5;
-      if(abs_velo < minimum_velocity_threshold)
-      {
-        out_objects.push_back(object_with_lanes.object);
-        continue;
-      }
       
       autoware_perception_msgs::DynamicObject tmp_object;
       tmp_object = object_with_lanes.object;
@@ -140,7 +127,7 @@ bool MapBasedPrediction::doPrediction(
         debug_interpolated_points = interpolated_points;
         
         geometry_msgs::Point object_point = 
-        object_with_lanes.object.state.pose_covariance.pose.position;
+          object_with_lanes.object.state.pose_covariance.pose.position;
         geometry_msgs::Point nearest_point;
         size_t nearest_point_idx;
         if(getNearestPointIdx(interpolated_points, object_point, nearest_point, nearest_point_idx))
@@ -163,12 +150,14 @@ bool MapBasedPrediction::doPrediction(
             current_d_position*= -1;
           }
           
-          double current_d_velocity = 0;
-          double current_s_velocity = object_with_lanes.object.state.twist_covariance.twist.linear.x;
+          //Does not consider orientation of twist since predicting lane-direction
+          double current_d_velocity = 
+            object_with_lanes.object.state.twist_covariance.twist.linear.y;
+          double current_s_velocity = 
+            std::fabs(object_with_lanes.object.state.twist_covariance.twist.linear.x);
           double target_s_position = std::min(spline2d.s.back(), current_s_position+10);
           autoware_perception_msgs::PredictedPath path;
 
-          // for ego point
           geometry_msgs::PoseWithCovarianceStamped point;
           point.pose.pose.position = object_point;
           getPredictedPath(object_point.z,
@@ -184,32 +173,14 @@ bool MapBasedPrediction::doPrediction(
         }
         else
         {
-          // std::cerr << "could not find nearest point"  << std::endl;
           continue;
         }
       }
       normalizeLikelyhood(tmp_object.state.predicted_paths);
       out_objects.push_back(tmp_object);
-    }
-    else
-    {
-      const geometry_msgs::Pose &object_pose = object_with_lanes.object.state.pose_covariance.pose;
-      const geometry_msgs::Twist &object_twist = object_with_lanes.object.state.twist_covariance.twist;
-      autoware_perception_msgs::PredictedPath path;
-      getLinearPredictedPath(object_pose, 
-                             object_twist,
-                             in_objects.header,
-                             path);
-      autoware_perception_msgs::DynamicObject tmp_object;
-      tmp_object = object_with_lanes.object;
-      tmp_object.state.predicted_paths.push_back(path);
-      out_objects.push_back(tmp_object);
-    }
   }
-  // 3. 現在日時を再度取得
   std::chrono::high_resolution_clock::time_point end = 
   std::chrono::high_resolution_clock::now();
-  // 経過時間を取得
   std::chrono::nanoseconds time = 
   std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   // std::cerr <<"prediction time " <<time.count()/(1000.0*1000.0)<< " milli sec" << std::endl;
