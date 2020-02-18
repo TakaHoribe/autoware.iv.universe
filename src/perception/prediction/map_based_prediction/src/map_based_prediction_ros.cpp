@@ -52,7 +52,6 @@
 
 bool MapBasedPredictionROS::getClosestLanelet(
   const autoware_perception_msgs::DynamicObject& object,
-  // const geometry_msgs::Pose& search_pose, 
   const lanelet::LaneletMapPtr& lanelet_map_ptr_,
   lanelet::Lanelet* closest_lanelet,
   std::string uuid_string)
@@ -140,7 +139,6 @@ bool MapBasedPredictionROS::getClosestLanelet(
     double min_delta_yaw = 999999999;
     const double max_dist_for_searching_lanelet = 3;
     lanelet::Lanelet target_closest_lanelet;
-    // std::cout << "map "<<uuid2laneids_.at(uuid_string).size()<<std::endl;
     for(const auto& laneid: uuid2laneids_.at(uuid_string))
     {
       for(const auto& lanelet: nearest_lanelets)
@@ -366,7 +364,6 @@ void MapBasedPredictionROS::objectsCallback(
         lanelet_ids.push_back(lanelet.id());
       }
     }
-    // std::cout << "path size "<< paths.size() << std::endl;
     
     std::string uid_string = unique_id::toHexString(object.id);
     if(uuid2laneids_.count(uid_string)==0)
@@ -375,7 +372,7 @@ void MapBasedPredictionROS::objectsCallback(
     }
     else
     {
-      // uuid2laneids_.at(uid_string) = lanelet_ids;
+      //add if not yet having lanelet_id
       for(const auto& current_uid: lanelet_ids)
       {
         bool is_redundant = false;
@@ -396,20 +393,12 @@ void MapBasedPredictionROS::objectsCallback(
           uuid2laneids_.at(uid_string).push_back(current_uid);
         }
       }
-      // std::cout << "size "<< uuid2laneids_.at(uid_string).size() << std::endl;
-      // uuid2laneids_.at(uid_string)
-      // uuid2laneids_.at(uid_string).insert(uuid2laneids_.at(uid_string).end(),lanelet_ids.begin(), lanelet_ids.end());
     }
     
-    geometry_msgs::Point debug_point;
-    tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position,
-                     debug_point,
-                     debug_map2lidar_transform);
     std::vector<std::vector<geometry_msgs::Pose>> tmp_paths;
     for(const auto& path: paths)
     {
       std::vector<geometry_msgs::Pose> tmp_path;
-      // std::cout << "lanlet id " << lanelet.id() << std::endl;
       if(!path.empty())
       {
         lanelet::ConstLanelets prev_lanelets= routing_graph_ptr_->previous(path.front());
@@ -461,67 +450,6 @@ void MapBasedPredictionROS::objectsCallback(
   output.objects.insert(output.objects.begin(), out_objects_without_map.begin(), out_objects_without_map.end());
   pub_objects_.publish(output);
   
-  // std::cerr << "-------------"  << std::endl;
-  // visualization_msgs::MarkerArray marker_array;
-  // int unique_id = 0;
-  
-  // // visualize cubic spline point
-  // visualization_msgs::Marker debug_interpolated_points; 
-  // debug_interpolated_points.lifetime = ros::Duration(1.0);
-  // debug_interpolated_points.header.frame_id = "map";
-  // debug_interpolated_points.header.stamp = in_objects->header.stamp;
-  // debug_interpolated_points.ns = std::string("debug_interpolated_points");
-  // debug_interpolated_points.action = visualization_msgs::Marker::MODIFY;
-  // debug_interpolated_points.pose.orientation.w = 1.0;
-  // debug_interpolated_points.id = unique_id;
-  // debug_interpolated_points.type = visualization_msgs::Marker::SPHERE_LIST;
-  // debug_interpolated_points.scale.x = 1.0f;
-  // debug_interpolated_points.scale.y = 0.1f;
-  // debug_interpolated_points.scale.z = 0.1f;
-  // debug_interpolated_points.color.r = 1.0f;
-  // debug_interpolated_points.color.a = 0.999;
-  // for(const auto& point: interpolated_points)
-  // {
-  //   debug_interpolated_points.points.push_back(point);
-  // }
-  // unique_id++;
-  // if(interpolated_points.size()>0)
-  // {
-  //   marker_array.markers.push_back(debug_interpolated_points);
-  // }
-  
-  // // visualize cubic spline point
-  // visualization_msgs::Marker debug_out_points;
-  // debug_out_points.lifetime = ros::Duration(1.0);
-  // debug_out_points.header.frame_id = "map";
-  // debug_out_points.header.stamp = ros::Time();
-  // debug_out_points.ns = std::string("debug_out_points");
-  // debug_out_points.action = visualization_msgs::Marker::MODIFY;
-  // debug_out_points.pose.orientation.w = 1.0;
-  // debug_out_points.id = unique_id;
-  // debug_out_points.type = visualization_msgs::Marker::SPHERE_LIST;
-  // debug_out_points.scale.x = 1.0f;
-  // debug_out_points.scale.y = 0.1f;
-  // debug_out_points.scale.z = 0.1f;
-  // debug_out_points.color.r = 1.0f;
-  // debug_out_points.color.a = 0.999;
-  // for(const auto& object: out_objects_in_map)
-  // {
-  //   for(const auto& path: object.state.predicted_paths)
-  //   {
-  //     for(const auto& point: path.path)
-  //     {
-  //       debug_out_points.points.push_back(point.pose.pose.position);
-  //     }
-  //   }
-  // }
-  // unique_id++;
-  // if(debug_out_points.points.size()>0)
-  // {
-  //   marker_array.markers.push_back(debug_out_points);
-  // }
-  
-  // pub_markers_.publish(marker_array);
 }
 
 void MapBasedPredictionROS::mapCallback(

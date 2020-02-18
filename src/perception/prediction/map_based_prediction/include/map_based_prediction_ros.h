@@ -98,11 +98,9 @@ private:
   
   bool getClosestLanelet(
     const autoware_perception_msgs::DynamicObject& object,
-    
-                // const geometry_msgs::Pose& search_pose, 
-                const lanelet::LaneletMapPtr& lanelet_map_ptr_,
-                lanelet::Lanelet* closest_lanelet,
-                std::string uuid_string);
+    const lanelet::LaneletMapPtr& lanelet_map_ptr_,
+    lanelet::Lanelet* closest_lanelet,
+    std::string uuid_string);
 
 public:
   MapBasedPredictionROS();
