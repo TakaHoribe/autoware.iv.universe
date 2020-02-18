@@ -295,7 +295,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
                                                    : min_dist_stop_point_idx;
         const Eigen::Vector2d stop_point = !is_inserted_already_stop_point ? max_dist_stop_point : min_dist_stop_point;
         autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
-            trim_trajectory.points.at(std::max((int)(insert_stop_point_index)-1, 0));
+            output_msg.points.at(std::max((int)(insert_stop_point_index)-1, 0));
         stop_trajectory_point.pose.position.x = stop_point.x();
         stop_trajectory_point.pose.position.y = stop_point.y();
         stop_trajectory_point.twist.linear.x = 0.0;
