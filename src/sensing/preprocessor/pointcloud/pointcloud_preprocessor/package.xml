@@ -52,6 +52,7 @@
       <nodelet plugin="${prefix}/plugins/nodelet/libdownsample_filter.xml"/>
       <nodelet plugin="${prefix}/plugins/nodelet/libpassthrough_filter.xml"/>
       <nodelet plugin="${prefix}/plugins/nodelet/libcrop_box_filter.xml"/>
+      <nodelet plugin="${prefix}/plugins/nodelet/libconcatenate_data.xml"/>
   </export>
 
 </package>
