@@ -45,7 +45,7 @@
     </node> -->
 
     <!-- PointCloud Concat Filter -->
-    <!-- <node pkg="nodelet" type="nodelet" name="concatenate_filter" args="load pcl/PointCloudConcatenateDataSynchronizer $(arg manager)">
+    <node pkg="nodelet" type="nodelet" name="concatenate_filter" args="load pcl/PointCloudConcatenateDataSynchronizer $(arg manager)">
       <rosparam param="input_topics" subst_value="true">
         [/sensing/lidar/top/rectified/pointcloud,
         /sensing/lidar/left/rectified/pointcloud,
@@ -54,16 +54,6 @@
       <remap from="~output" to="concatenated/pointcloud" />
       <param name="output_frame" value="base_link" />
       <param name="approximate_sync" value="true" />
-    </node> -->
-
-    <node pkg="nodelet" type="nodelet" name="concatenate_data" args="load pointcloud_preprocessor/concatenate_data_nodelet $(arg manager)">
-      <rosparam param="input_topics" subst_value="true">
-        [/sensing/lidar/top/rectified/pointcloud,
-        /sensing/lidar/left/rectified/pointcloud,
-        /sensing/lidar/right/rectified/pointcloud]
-      </rosparam>
-      <remap from="~output" to="concatenated/pointcloud" />
-      <param name="output_frame" value="base_link" />
     </node>
 
 
@@ -82,7 +72,6 @@
       <param name="input_frame" value="base_link" />
       <param name="output_frame" value="base_link" />
     </node>
-
 
     <!-- PointCloud Ground Filter -->
     <node pkg="nodelet" type="nodelet" name="ray_ground_filter" args="load pointcloud_preprocessor/ray_ground_filter_nodelet $(arg manager)">
