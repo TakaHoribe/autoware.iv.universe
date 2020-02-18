@@ -10,7 +10,7 @@
   <arg name="show_debug_info" default="false"/>
 
   <arg name="acc_emergency" default="-2.0"/>
-  <arg name="max_throttle" default="0.2"/>
+  <arg name="max_throttle" default="0.4"/>
   <arg name="min_throttle" default="0.0"/>
   <arg name="max_brake" default="0.8"/>
   <arg name="min_brake" default="0.0"/>
