@@ -5,13 +5,13 @@ if (!VelocityLimitPublisher) {
         init: function() {
             this.ros = new ROSLIB.Ros();
             this.ros.on('error', function(error) {
-                document.getElementById('state').innerHTML = "Error";
+                document.getElementById('velocity_limit_info').innerHTML = "Error";
             });
             this.ros.on('connection', function(error) {
-                document.getElementById('state').innerHTML = "Connected";
+                document.getElementById('velocity_limit_info').innerHTML = "Connected";
             });
             this.ros.on('close', function(error) {
-                document.getElementById('state').innerHTML = "Closed";
+                document.getElementById('velocity_limit_info').innerHTML = "Closed";
             });
             this.ros.connect('ws://' + location.hostname + ':9090');
         },
