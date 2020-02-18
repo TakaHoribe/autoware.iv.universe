@@ -1,4 +1,4 @@
-var lastTabName = "#main";
+var lastTabName = "#autoware";
 
 $(function() {
     $("#menu").menu();
@@ -30,8 +30,12 @@ $(function() {
     };
 
     // set effect from select menu value
-    $("#menu_main").click(function() {
-        runEffect("#main");
+    $("#menu_autoware").click(function() {
+        runEffect("#autoware");
+        return false;
+    });
+    $("#menu_monitor").click(function() {
+        runEffect("#monitor");
         return false;
     });
     $("#menu_vehicle").click(function() {
@@ -42,10 +46,10 @@ $(function() {
 
 
 function ChangeTab(tabName) {
-    document.getElementById('main').style.display = 'none';
+    document.getElementById('autoware').style.display = 'none';
+    document.getElementById('monitor').style.display = 'none';
     document.getElementById('vehicle').style.display = 'none';
-    // document.getElementById('status').style.display = 'none';
     document.getElementById(tabName).style.display = 'block';
 }
 
-ChangeTab('main');
+ChangeTab('autoware');

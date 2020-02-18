@@ -79,13 +79,13 @@ if (!VehicleEngageStatusSubscriber) {
         init: function() {
             this.ros = new ROSLIB.Ros();
             this.ros.on('error', function(error) {
-                document.getElementById('state').innerHTML = "Error";
+                document.getElementById('vehicle_engage_info').innerHTML = "Error";
             });
             this.ros.on('connection', function(error) {
-                document.getElementById('state').innerHTML = "Connect";
+                document.getElementById('vehicle_engage_info').innerHTML = "Connected";
             });
             this.ros.on('close', function(error) {
-                document.getElementById('state').innerHTML = "Close";
+                document.getElementById('vehicle_engage_info').innerHTML = "Close";
             });
             this.ros.connect('ws://' + location.hostname + ':9090');
 
