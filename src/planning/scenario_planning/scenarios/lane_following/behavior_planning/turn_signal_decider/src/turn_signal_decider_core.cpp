@@ -189,12 +189,15 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
   double accumulated_distance = 0;
 
   auto prev_point = path.points.front();
-  auto prev_lane_id = path.points.front().lane_ids.front();
+  auto prev_lane_id = lanelet::InvalId;
   for (const auto& path_point : path.points)
   {
     accumulated_distance += getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
     const double distance_from_vehicle = accumulated_distance - vehicle_pose_frenet.length;
-
+    if (distance_from_vehicle < 0)
+    {
+      continue;
+    }
     for (const auto& lane_id : path_point.lane_ids)
     {
       if (lane_id == prev_lane_id)
