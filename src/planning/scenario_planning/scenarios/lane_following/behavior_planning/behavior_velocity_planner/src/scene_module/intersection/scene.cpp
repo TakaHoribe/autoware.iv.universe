@@ -213,16 +213,22 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   lanelet::ConstLanelet assigned_lanelet = lanelet_map_ptr->laneletLayer.get(lane_id);  // current assigned lanelets
 
   // get conflicting lanes on assigned lanelet
-  *objective_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+  const auto conflicting_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+  auto candidate_lanelets = conflicting_lanelets;
 
   // get previous lanelet of conflicting lanelets
-  const size_t conflicting_lanelets_num = objective_lanelets->size();
-  for (size_t i = 0; i < conflicting_lanelets_num; ++i) {
-    lanelet::ConstLanelets previous_lanelets = routing_graph_ptr->previous(objective_lanelets->at(i));
-    for (size_t j = 0; j < previous_lanelets.size(); ++j) {
-      objective_lanelets->push_back(previous_lanelets.at(j));
+  for (const auto& conflicting_lanelet : conflicting_lanelets) {
+    lanelet::ConstLanelets previous_lanelets = routing_graph_ptr->previous(conflicting_lanelet);
+    for (const auto& previous_lanelet : previous_lanelets) {
+      candidate_lanelets.push_back(previous_lanelet);
     }
+    }
+
+  // Filter candidates
+  for (const auto& candidate_lanelet : candidate_lanelets) {
+    objective_lanelets->push_back(candidate_lanelet);
   }
+
   return true;
 }
 
@@ -234,30 +240,31 @@ bool IntersectionModule::checkCollision(
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line
   generateEdgeLine(path, path_width, &path_r, &path_l);
 
-  /* check collision for each objects and lanelets area */
-  bool is_collision_detected = false;
-  for (size_t i = 0; i < objective_lanelets.size(); ++i) {
-    const auto objective_lanelet = objective_lanelets.at(i);
-
-    for (size_t j = 0; j < objects_ptr->objects.size(); ++j) {
-      const auto position = objects_ptr->objects.at(j).state.pose_covariance.pose.position;
-      if (bg::within(to_bg2d(position), objective_lanelet.polygon2d())) {
-        if (checkPathCollision(path_r, objects_ptr->objects.at(j)) ||
-            checkPathCollision(path_l, objects_ptr->objects.at(j))) {
-          is_collision_detected = true;
-        }
-      }
-
-      if (is_collision_detected) break;
-    }
-    if (is_collision_detected) break;
-  }
-
   /* for debug */
   intersection_module_manager_->debugger_.publishPath(path_r, "path_right_edge", 0.5, 0.0, 0.5);
   intersection_module_manager_->debugger_.publishPath(path_l, "path_left_edge", 0.0, 0.5, 0.5);
 
-  return is_collision_detected;
+  /* check collision for each objects and lanelets area */
+  for (const auto& objective_lanelet : objective_lanelets) {
+    for (const auto& object : objects_ptr->objects) {
+      const auto object_pose = object.state.pose_covariance.pose;
+
+      const auto is_in_objective_lanelet = bg::within(to_bg2d(object_pose.position), objective_lanelet.polygon2d());
+      if (!is_in_objective_lanelet) {
+        continue;
+      }
+
+      const auto has_right_collision = checkPathCollision(path_r, object);
+      const auto has_left_collision = checkPathCollision(path_l, object);
+      if (!has_right_collision && !has_left_collision) {
+        continue;
+      }
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool IntersectionModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId& path,
