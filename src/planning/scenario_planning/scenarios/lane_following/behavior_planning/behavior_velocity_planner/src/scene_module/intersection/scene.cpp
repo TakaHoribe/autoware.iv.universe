@@ -222,10 +222,30 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
     for (const auto& previous_lanelet : previous_lanelets) {
       candidate_lanelets.push_back(previous_lanelet);
     }
+  }
+
+  const auto isConnectedTo = [&routing_graph_ptr](const auto& from_lanelet, const auto& to_lanelet) {
+    const auto following_lanelets = routing_graph_ptr->following(from_lanelet);
+    return lanelet::utils::contains(following_lanelets, to_lanelet);
+  };
+
+  // get same-group lanelets of assigned lanelet
+  std::vector<lanelet::ConstLanelet> same_group_lanelets;
+  for (const auto& previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
+    if (!isConnectedTo(previous_lanelet, assigned_lanelet)) {
+      continue;
     }
+
+    same_group_lanelets = routing_graph_ptr->following(previous_lanelet);
+    break;
+  }
 
   // Filter candidates
   for (const auto& candidate_lanelet : candidate_lanelets) {
+    if (lanelet::utils::contains(same_group_lanelets, candidate_lanelet)) {
+      continue;
+    }
+
     objective_lanelets->push_back(candidate_lanelet);
   }
 
@@ -249,6 +269,8 @@ bool IntersectionModule::checkCollision(
     for (const auto& object : objects_ptr->objects) {
       const auto object_pose = object.state.pose_covariance.pose;
 
+      // TODO(Kenji Miyake): Map Matching of objects
+
       const auto is_in_objective_lanelet = bg::within(to_bg2d(object_pose.position), objective_lanelet.polygon2d());
       if (!is_in_objective_lanelet) {
         continue;
@@ -257,6 +279,13 @@ bool IntersectionModule::checkCollision(
       const auto has_right_collision = checkPathCollision(path_r, object);
       const auto has_left_collision = checkPathCollision(path_l, object);
       if (!has_right_collision && !has_left_collision) {
+        continue;
+      }
+
+      const auto is_in_path =
+          bg::within(to_bg2d(object_pose.position), lines2polygon(to_bg2d(path_l.points), to_bg2d(path_r.points)));
+      if (is_in_path) {
+        // TODO(Kenji Miyake): check direction?
         continue;
       }
 
