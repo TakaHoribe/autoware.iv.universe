@@ -332,6 +332,10 @@ bool MapBasedPrediction::getPredictedPath(
     tmp_point.pose.pose.position.x = p[0]+ std::cos(yaw-M_PI/2.0)*calculated_d;
     tmp_point.pose.pose.position.y = p[1]+ std::sin(yaw-M_PI/2.0)*calculated_d;
     tmp_point.pose.pose.position.z = height;
+    tmp_point.pose.pose.orientation.x = 0;
+    tmp_point.pose.pose.orientation.y = 0;
+    tmp_point.pose.pose.orientation.z = 0;
+    tmp_point.pose.pose.orientation.w = 1;
     tmp_point.header = origin_header;
     tmp_point.header.stamp = origin_header.stamp + ros::Duration(i);
     path.path.push_back(tmp_point);
@@ -370,6 +374,10 @@ bool MapBasedPrediction::getLinearPredictedPath(
     tf_world2future = tf_world2object * tf_object2future;
     tf2::toMsg(tf_world2future, world_frame_pose);
     pose_cov_stamped.pose.pose = world_frame_pose;
+    pose_cov_stamped.pose.pose.orientation.x = 0;
+    pose_cov_stamped.pose.pose.orientation.y = 0;
+    pose_cov_stamped.pose.pose.orientation.z = 0;
+    pose_cov_stamped.pose.pose.orientation.w = 1;
 
     predicted_path.path.push_back(pose_cov_stamped);
   }
