@@ -1,3 +1,4 @@
+#include <pcl/filters/voxel_grid.h>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <boost/assert.hpp>
@@ -7,7 +8,6 @@
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <obstacle_stop_planner/node.hpp>
 #include <vector>
-#include <pcl/filters/voxel_grid.h>
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -70,7 +70,7 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 2.0);
   stop_margin_ += wheel_base_ + front_overhang_;
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
-  debug_ptr_ = std::make_shared<ObstacleStopPlannerDebugNode>(wheel_base_+front_overhang_);
+  debug_ptr_ = std::make_shared<ObstacleStopPlannerDebugNode>(wheel_base_ + front_overhang_);
 }
 
 void ObstacleStopPlannerNode::obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& input_msg) {
@@ -88,7 +88,7 @@ void ObstacleStopPlannerNode::obstaclePointcloudCallback(const sensor_msgs::Poin
   filter.setLeafSize(0.05f, 0.05f, 100000.0f);
   filter.filter(*no_height_filtered_pointcloud_ptr);
   pcl::toROSMsg(*no_height_filtered_pointcloud_ptr, *obstacle_ros_pointcloud_ptr_);
-  obstacle_ros_pointcloud_ptr_->header= input_msg->header;
+  obstacle_ros_pointcloud_ptr_->header = input_msg->header;
 }
 void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr& input_msg) {
   if (obstacle_ros_pointcloud_ptr_ == nullptr) return;
@@ -210,102 +210,100 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 
     if (is_collision) {
       getNearestPoint(*collision_pointcloud_ptr, trajectory.points.at(i).pose, nearest_collision_point);
+      debug_ptr_->pushStopObstaclePoint(nearest_collision_point);
       break;
     }
   }
-  debug_ptr_->pushStopObstaclePoint(nearest_collision_point);
-
+  
   /*
    * insert stop point
    */
   if (is_collision) {
-    for (int i = 0; i < (int)trim_trajectory.points.size() - 1; ++i) {
-      Eigen::Vector2d trajectory_line_vec;
-      trajectory_line_vec << trim_trajectory.points.at(i + 1).pose.position.x -
-                                 trim_trajectory.points.at(i).pose.position.x,
-          trim_trajectory.points.at(i + 1).pose.position.y - trim_trajectory.points.at(i).pose.position.y;
+    for (int i = trajectory_trim_index; i < (int)output_msg.points.size(); ++i) {
+      Eigen::Vector2d trajectory_vec;
+      {
+        const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(i).pose.orientation);
+        trajectory_vec << std::cos(yaw), std::sin(yaw);
+      }
       Eigen::Vector2d collision_point_vec;
-      collision_point_vec << nearest_collision_point.x - trim_trajectory.points.at(i).pose.position.x,
-          nearest_collision_point.y - trim_trajectory.points.at(i).pose.position.y;
-      if (trajectory_line_vec.dot(collision_point_vec) < 0) {
-        Eigen::Vector2d stop_point;
-        size_t trim_trajectory_insert_stop_point_idx = 0;
+      collision_point_vec << nearest_collision_point.x - output_msg.points.at(i).pose.position.x,
+          nearest_collision_point.y - output_msg.points.at(i).pose.position.y;
+      if (trajectory_vec.dot(collision_point_vec) < 0.0 ||
+          (i + 1 == output_msg.points.size() && 0 <= trajectory_vec.dot(collision_point_vec))) {
+        Eigen::Vector2d max_dist_stop_point;
+        // search insert point
+        size_t max_dist_stop_point_idx = 0;
         {
           double length_sum = 0.0;
-          length_sum += collision_point_vec.norm();
+          length_sum += trajectory_vec.normalized().dot(collision_point_vec);
           Eigen::Vector2d line_start_point, line_end_point;
+          {
+            line_start_point << output_msg.points.at(0).pose.position.x, output_msg.points.at(0).pose.position.y;
+            const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(0).pose.orientation);
+            line_end_point << std::cos(yaw), std::sin(yaw);
+          }
           for (size_t j = i; 0 < j; --j) {
+            line_start_point << output_msg.points.at(j - 1).pose.position.x,
+                output_msg.points.at(j - 1).pose.position.y;
+            line_end_point << output_msg.points.at(j).pose.position.x, output_msg.points.at(j).pose.position.y;
             if (stop_margin_ < length_sum) {
-              trim_trajectory_insert_stop_point_idx = j + 1;
+              max_dist_stop_point_idx = j;
               break;
             }
-            line_start_point << trim_trajectory.points.at(j - 1).pose.position.x,
-                trim_trajectory.points.at(j - 1).pose.position.y;
-            line_end_point << trim_trajectory.points.at(j).pose.position.x,
-                trim_trajectory.points.at(j).pose.position.y;
             length_sum += (line_end_point - line_start_point).norm();
           }
           getBackwordPointFromBasePoint(line_start_point, line_end_point, line_start_point, length_sum - stop_margin_,
-                                        stop_point);
+                                        max_dist_stop_point);
         }
-        // check already insert stop point
-        bool is_behavior_insert_stop_point = false;
-        Eigen::Vector2d worst_stop_point;
-        size_t trim_trajectory_insert_min_behavior_stop_point_idx = 0;
+        Eigen::Vector2d min_dist_stop_point;
+        size_t min_dist_stop_point_idx = 0;
         {
           double length_sum = 0.0;
-          length_sum += collision_point_vec.norm();
+          length_sum += trajectory_vec.normalized().dot(collision_point_vec);
           Eigen::Vector2d line_start_point, line_end_point;
+                   {
+            line_start_point << output_msg.points.at(0).pose.position.x, output_msg.points.at(0).pose.position.y;
+            const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(0).pose.orientation);
+            line_end_point << std::cos(yaw), std::sin(yaw);
+          }
           for (size_t j = i; 0 < j; --j) {
+            line_start_point << output_msg.points.at(j - 1).pose.position.x,
+                output_msg.points.at(j - 1).pose.position.y;
+            line_end_point << output_msg.points.at(j).pose.position.x, output_msg.points.at(j).pose.position.y;
             if (min_behavior_stop_margin_ < length_sum) {
-              trim_trajectory_insert_min_behavior_stop_point_idx = j + 1;
+              min_dist_stop_point_idx = j;
               break;
             }
-            line_start_point << trim_trajectory.points.at(j - 1).pose.position.x,
-                trim_trajectory.points.at(j - 1).pose.position.y;
-            line_end_point << trim_trajectory.points.at(j).pose.position.x,
-                trim_trajectory.points.at(j).pose.position.y;
             length_sum += (line_end_point - line_start_point).norm();
           }
-          getBackwordPointFromBasePoint(line_start_point, line_end_point, line_start_point, length_sum - min_behavior_stop_margin_,
-                                        worst_stop_point);
+          getBackwordPointFromBasePoint(line_start_point, line_end_point, line_start_point,
+                                        length_sum - min_behavior_stop_margin_, min_dist_stop_point);
         }
-        for (int j = trim_trajectory_insert_stop_point_idx - 1;
-             j < (int)trim_trajectory_insert_min_behavior_stop_point_idx; ++j) {
-          if (trim_trajectory.points.at(std::max(j, 0)).twist.linear.x == 0.0) {
-            is_behavior_insert_stop_point = true;
+
+        // check already insert stop point
+        bool is_inserted_already_stop_point = false;
+        for (int j = max_dist_stop_point_idx - 1;
+             j < (int)min_dist_stop_point_idx; ++j) {
+          if (output_msg.points.at(std::max(j, 0)).twist.linear.x == 0.0) {
+            is_inserted_already_stop_point = true;
             break;
           }
         }
-        if (!is_behavior_insert_stop_point) {
-          autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
-              trim_trajectory.points.at(std::max((int)(trim_trajectory_insert_stop_point_idx)-1, 0));
-          stop_trajectory_point.pose.position.x = stop_point.x();
-          stop_trajectory_point.pose.position.y = stop_point.y();
-          stop_trajectory_point.twist.linear.x = 0.0;
-          output_msg.points.insert(
-              output_msg.points.begin() + trajectory_trim_index + trim_trajectory_insert_stop_point_idx,
-              stop_trajectory_point);
-          for (size_t j = trajectory_trim_index + trim_trajectory_insert_stop_point_idx; j < output_msg.points.size();
-               ++j) {
-            output_msg.points.at(j).twist.linear.x = 0.0;
-          }
-          debug_ptr_->pushStopPose(stop_trajectory_point.pose);
-        } else {
-          autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
-              trim_trajectory.points.at(std::max((int)(trim_trajectory_insert_min_behavior_stop_point_idx)-1, 0));
-          stop_trajectory_point.pose.position.x = worst_stop_point.x();
-          stop_trajectory_point.pose.position.y = worst_stop_point.y();
-          stop_trajectory_point.twist.linear.x = 0.0;
-          output_msg.points.insert(
-              output_msg.points.begin() + trajectory_trim_index + trim_trajectory_insert_min_behavior_stop_point_idx,
-              stop_trajectory_point);
-          for (size_t j = trajectory_trim_index + trim_trajectory_insert_min_behavior_stop_point_idx;
-               j < output_msg.points.size(); ++j) {
-            output_msg.points.at(j).twist.linear.x = 0.0;
-          }
-          debug_ptr_->pushStopPose(stop_trajectory_point.pose);
+        // insert stop point
+        const size_t insert_stop_point_index = !is_inserted_already_stop_point
+                                                   ? max_dist_stop_point_idx
+                                                   : min_dist_stop_point_idx;
+        const Eigen::Vector2d stop_point = !is_inserted_already_stop_point ? max_dist_stop_point : min_dist_stop_point;
+        autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
+            output_msg.points.at(std::max((int)(insert_stop_point_index)-1, 0));
+        stop_trajectory_point.pose.position.x = stop_point.x();
+        stop_trajectory_point.pose.position.y = stop_point.y();
+        stop_trajectory_point.twist.linear.x = 0.0;
+        output_msg.points.insert(output_msg.points.begin() + insert_stop_point_index, stop_trajectory_point);
+        for (size_t j = insert_stop_point_index; j < output_msg.points.size(); ++j) {
+          output_msg.points.at(j).twist.linear.x = 0.0;
         }
+        debug_ptr_->pushStopPose(stop_trajectory_point.pose);
         break;
       }
     }

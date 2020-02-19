@@ -47,9 +47,9 @@
     <!-- PointCloud Concat Filter -->
     <node pkg="nodelet" type="nodelet" name="concatenate_filter" args="load pcl/PointCloudConcatenateDataSynchronizer $(arg manager)">
       <rosparam param="input_topics" subst_value="true">
-        [/sensing/lidar/top/rectified/pointcloud,
-        /sensing/lidar/left/rectified/pointcloud,
-        /sensing/lidar/right/rectified/pointcloud]
+        [/sensing/lidar/top/outlier_filtered/pointcloud,
+        /sensing/lidar/left/outlier_filtered/pointcloud,
+        /sensing/lidar/right/outlier_filtered/pointcloud]
       </rosparam>
       <remap from="~output" to="concatenated/pointcloud" />
       <param name="output_frame" value="base_link" />

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(behavior_velocity_planner)
 
 # Compile as C++14, supported in ROS Melodic and newer
-add_compile_options(-std=c++14 -O3)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs

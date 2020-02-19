@@ -74,7 +74,7 @@
   </node>
 
   <!-- PointCloud Outlier Filter -->
-  <!-- <node pkg="nodelet" type="nodelet" name="$(arg manager)_voxel_grid_outlier_filter" args="load pointcloud_preprocessor/voxel_grid_outlier_filter_nodelet $(arg manager)">
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_voxel_grid_outlier_filter" args="load pointcloud_preprocessor/voxel_grid_outlier_filter_nodelet $(arg manager)">
     <remap from="~input" to="rectified/pointcloud" />
     <remap from="~output" to="outlier_filtered/pointcloud" />
     <rosparam>
@@ -83,6 +83,6 @@
       voxel_size_z: 0.5
       voxel_points_threshold: 2
     </rosparam>
-  </node> -->
+  </node>
 
 </launch>

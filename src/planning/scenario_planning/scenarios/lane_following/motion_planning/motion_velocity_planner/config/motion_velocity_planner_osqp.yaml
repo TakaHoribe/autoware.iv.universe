@@ -1,6 +1,6 @@
 max_velocity: 20.0      # max velocity limit [m/s]
-max_accel: 1.5          # max acceleration limit [m/ss]
-min_decel: -1.5         # min deceleration limit [m/ss]
+max_accel: 1.0          # max acceleration limit [m/ss]
+min_decel: -1.0         # min deceleration limit [m/ss]
 max_lateral_accel: 0.01 # max lateral acceleration limit [m/ss]
 
 pre_decel_distance_for_latacc: 3.5 # distance before the vehicle slow down at a curve for lateral acceleration limit
