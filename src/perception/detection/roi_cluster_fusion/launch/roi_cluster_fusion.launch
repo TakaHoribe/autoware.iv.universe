@@ -2,7 +2,7 @@
 
 <launch>
   <arg name="input_rois_number" default="1"/>
-  <arg name="input_rois0" default="rois4"/>
+  <arg name="input_rois0" default="rois0"/>
   <arg name="input_camera_info0" default="/camera_info"/>
   <arg name="input_rois1" default="rois1"/>
   <arg name="input_camera_info1" default="/camera_info1"/>
