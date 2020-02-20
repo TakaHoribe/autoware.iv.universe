@@ -21,9 +21,9 @@
 namespace pointcloud_preprocessor
 {
 
-  /** \brief @b PointCloudConcatenateFieldsSynchronizer is a special form of data 
-    * synchronizer: it listens for a set of input PointCloud messages on the same topic, 
-    * checks their timestamps, and concatenates their fields together into a single 
+  /** \brief @b PointCloudConcatenateFieldsSynchronizer is a special form of data
+    * synchronizer: it listens for a set of input PointCloud messages on the same topic,
+    * checks their timestamps, and concatenates their fields together into a single
     * PointCloud output message.
     * \author Radu Bogdan Rusu
     */
@@ -83,8 +83,9 @@ namespace pointcloud_preprocessor
       std::map<std::string, sensor_msgs::PointCloud2::ConstPtr> cloud_stdmap_;
       std::map<std::string, sensor_msgs::PointCloud2::ConstPtr> cloud_stdmap_tmp_;
       std::mutex mutex_;
-      
-      void combineClouds (const PointCloud2 &in1, const PointCloud2 &in2, PointCloud2 &out);
+
+      void transformPointCloud (const PointCloud2::ConstPtr &in, PointCloud2::Ptr &out);
+      void combineClouds (const PointCloud2::ConstPtr &in1, const PointCloud2::ConstPtr &in2, PointCloud2::Ptr &out);
       void publish();
 
       void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr &input_ptr, const std::string &topic_name);
