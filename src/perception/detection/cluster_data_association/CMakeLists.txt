@@ -140,6 +140,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(cluster_data_association_node 
+src/utils/utils.cpp
+src/data_association/data_association.cpp
+src/data_association/successive_shortest_path/successive_shortest_path.cpp
 src/node.cpp
 src/main.cpp)
 

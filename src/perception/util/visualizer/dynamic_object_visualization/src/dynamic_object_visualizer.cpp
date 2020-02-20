@@ -150,7 +150,6 @@ void DynamicObjectVisualizer::dynamicObjectCallback(const autoware_perception_ms
     if (!getLabel(input_msg->objects.at(i).semantic, label))
       continue;
     marker.scale.x = 0.5;
-    marker.scale.y = 0.5;
     marker.scale.z = 0.5;
     std::string id_str = unique_id::toHexString(input_msg->objects.at(i).id);
     std::remove(id_str.begin(), id_str.end(), '-');
