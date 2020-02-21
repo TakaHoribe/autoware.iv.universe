@@ -18,17 +18,17 @@
 #include <lane_change_planner/utilities.h>
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_core/geometry/Lanelet.h>
+#include <lanelet2_core/primitives/LaneletSequence.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/utilities.h>
-#include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_core/primitives/LaneletSequence.h>
-#include <lanelet2_core/geometry/Lanelet.h>
 
 #include <ros/ros.h>
 
-#include <unordered_set>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <unordered_set>
 
 using autoware_planning_msgs::PathPointWithLaneId;
 using autoware_planning_msgs::PathWithLaneId;
@@ -691,12 +691,50 @@ PathWithLaneId RouteHandler::getLaneChangePath(const lanelet::ConstLanelets& ori
   reference_path = combineReferencePath(reference_path1, reference_path2);
 
   // set fixed flag
-  for ( auto& pt: reference_path.points)
+  for (auto& pt : reference_path.points)
   {
     pt.point.type = autoware_planning_msgs::PathPoint::FIXED;
   }
 
   return reference_path;
+}
+
+double RouteHandler::getLaneChangeableDistance(const geometry_msgs::Pose& current_pose,
+                                               const LaneChangeDirection& direction)
+{
+  lanelet::ConstLanelet current_lane;
+  if(!getClosestLaneletWithinRoute(current_pose, &current_lane))
+  {
+    return 0;
+  }
+  const auto current_lanes = getLaneletSequence(current_lane);
+
+  double accumulated_distance = 0;
+  const auto current_position = lanelet::utils::conversion::toLaneletPoint(current_pose.position);
+  const auto arc_coordinate = lanelet::geometry::toArcCoordinates(lanelet::utils::to2D(current_lane.centerline()),
+                                                                  lanelet::utils::to2D(current_position).basicPoint());
+
+  accumulated_distance = lanelet::utils::getLaneletLength3d(current_lane) - arc_coordinate.length;
+  for (const auto& lane : current_lanes)
+  {
+    lanelet::ConstLanelet target_lane;
+    if (direction == LaneChangeDirection::RIGHT)
+    {
+      if (!getRightLaneletWithinRoute(lane, &target_lane))
+      {
+        break;
+      }
+    }
+    if (direction == LaneChangeDirection::LEFT)
+    {
+      if (!getLeftLaneletWithinRoute(lane, &target_lane))
+      {
+        break;
+      }
+    }
+    accumulated_distance += lanelet::utils::getLaneletLength3d(target_lane);
+  }
+  return accumulated_distance;
 }
 
 }  // namespace lane_change_planner
