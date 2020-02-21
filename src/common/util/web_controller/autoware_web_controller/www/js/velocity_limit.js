@@ -22,7 +22,7 @@ if (!VelocityLimitPublisher) {
                 messageType: 'std_msgs/Float32'
             });
             var str = new ROSLIB.Message({
-                data: parseFloat(velocity_limit_form.velocity_limit.value) / 3.6;
+                data: parseFloat(velocity_limit_form.velocity_limit.value) / 3.6
             });
             pub.publish(str);
         }
