@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_dynamic_reconfigure_options(cfg/CompareMapFilter.cfg
                                      cfg/VoxelGridOutlierFilter.cfg
+                                     cfg/RingOutlierFilter.cfg
                                      cfg/VoxelGridDownsampleFilter.cfg
                                      cfg/PointcloudAccumulator.cfg
                                      cfg/PassThroughFilter.cfg
@@ -206,6 +207,7 @@ add_dependencies(voxel_based_compare_map_filter_node
 # Outlier Filter
 add_library(outlier_filter
             src/outlier_filter/voxel_grid_outlier_filter_nodelet.cpp
+            src/outlier_filter/ring_outlier_filter_nodelet.cpp
             src/filter.cpp # copy from pcl_ros https://github.com/ros-
                            # perception/perception_pcl/issues/9
             )
@@ -222,6 +224,17 @@ target_link_libraries(voxel_grid_outlier_filter_node
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(voxel_grid_outlier_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
+
+add_executable(ring_outlier_filter_node
+               src/outlier_filter/ring_outlier_filter_node.cpp)
+target_link_libraries(ring_outlier_filter_node
+                      outlier_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(ring_outlier_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
 
 # Downsample Filter
 add_library(downsample_filter
