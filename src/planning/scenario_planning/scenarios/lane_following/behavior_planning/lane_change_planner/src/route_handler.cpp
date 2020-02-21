@@ -703,18 +703,21 @@ double RouteHandler::getLaneChangeableDistance(const geometry_msgs::Pose& curren
                                                const LaneChangeDirection& direction)
 {
   lanelet::ConstLanelet current_lane;
-  lanelet::ConstLanelets current_lanes;
-  lanelet::ConstLanelet target_lane;
-  lanelet::ConstLanelets target_lanes;
+  if(!getClosestLaneletWithinRoute(current_pose, &current_lane))
+  {
+    return 0;
+  }
+  const auto current_lanes = getLaneletSequence(current_lane);
 
   double accumulated_distance = 0;
   const auto current_position = lanelet::utils::conversion::toLaneletPoint(current_pose.position);
-  const auto arc_corrdinate = lanelet::geometry::toArcCoordinates(lanelet::utils::to2D(current_lane.centerline()),
+  const auto arc_coordinate = lanelet::geometry::toArcCoordinates(lanelet::utils::to2D(current_lane.centerline()),
                                                                   lanelet::utils::to2D(current_position).basicPoint());
 
-  accumulated_distance = arc_corrdinate.length;
+  accumulated_distance = lanelet::utils::getLaneletLength3d(current_lane) - arc_coordinate.length;
   for (const auto& lane : current_lanes)
   {
+    lanelet::ConstLanelet target_lane;
     if (direction == LaneChangeDirection::RIGHT)
     {
       if (!getRightLaneletWithinRoute(lane, &target_lane))
