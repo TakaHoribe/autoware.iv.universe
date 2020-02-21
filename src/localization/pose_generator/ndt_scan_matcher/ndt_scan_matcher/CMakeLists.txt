@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
         geometry_msgs
         sensor_msgs
         nav_msgs
+        visualization_msgs
+        diagnostic_msgs
         pcl_conversions
         pcl_ros
         dynamic_reconfigure
