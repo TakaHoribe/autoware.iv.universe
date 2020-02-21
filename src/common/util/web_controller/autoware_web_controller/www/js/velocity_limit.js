@@ -22,7 +22,7 @@ if (!VelocityLimitPublisher) {
                 messageType: 'std_msgs/Float32'
             });
             var str = new ROSLIB.Message({
-                data: parseFloat(velocity_limit_form.velocity_limit.value) / 3.6
+                data: parseFloat(velocity_limit_form.velocity_limit.value) / 3.6;
             });
             pub.publish(str);
         }
@@ -63,7 +63,7 @@ if (!VelocityLimitSubscriber) {
                 }
                 var res = message.data;
                 var el = document.createElement("span");
-                el.innerHTML = res * 3.6
+                el.innerHTML = res * 3.6;
                 document.getElementById("velocity_limit_status").appendChild(el);
             });
         }
