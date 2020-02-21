@@ -12,7 +12,9 @@
     <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
     <script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
     <script type="text/javascript" src="js/autoware_engage.js"></script>
+    <script type="text/javascript" src="js/vehicle_engage.js"></script>
     <script type="text/javascript" src="js/velocity_limit.js"></script>
+    <script type="text/javascript" src="js/jetson.js"></script>
     <style>
         .ui-menu {
             min-width: 90px;
@@ -31,6 +33,7 @@
     <!-- menu -->
     <ul id="menu" class="menu">
         <li id="menu_autoware"><a href="#autoware">Autoware</a></li>
+        <li id="menu_monitor"><a href="#monitor">Monitor</a></li>
         <li id="menu_vehicle"><a href="#vehicle">Vehicle</a></li>
         <li><a href="https://github.com/tier4/Autoware-T4B" target="_blank">Github</a></li>
         <li><a href="https://webviz.io/app/" target="_blank">Webviz</a></li>
@@ -54,6 +57,17 @@
                 <span>Status:</span>
                 <span id="autoware_engage_status"> - </span>
             </div>
+            <h3>Vehicle Engage : <span id="vehicle_engage_info"> - </span></h3>
+            <form action="javascript:VehicleEngagePublisher.send();" id="ui">
+                <input type="submit" value="Engage" id="btn" /><br />
+            </form>
+            <form action="javascript:VehicleDisengagePublisher.send();" id="ui">
+                <input type="submit" value="Disengage" id="btn" /><br />
+            </form>
+            <div>
+                <span>Status:</span>
+                <span id="vehicle_engage_status"> - </span>
+            </div>
             <h3>Velocity Limit : <span id="velocity_limit_info"> - </span></h3>
             <form action="javascript:VelocityLimitPublisher.send();" id="ui" name="velocity_limit_form">
                 <input type="text" name="velocity_limit">
@@ -63,6 +77,39 @@
                 <span>Status:</span>
                 <span id="velocity_limit_status"> - </span>
                 <span>km/h</span>
+            </div>
+        </div>
+        <div id="monitor">
+            <h2>Jetson</h2>
+            <h3>Jetson 1 : <span id="jetson1_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson1_status"> - </span><span>[Hz]</span>
+            </div>
+            <h3>Jetson 2 : <span id="jetson2_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson2_status"> - </span><span>[Hz]</span>
+            </div>
+            <h3>Jetson 3 : <span id="jetson3_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson3_status"> - </span><span>[Hz]</span>
+            </div>
+            <h3>Jetson 4 : <span id="jetson4_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson4_status"> - </span><span>[Hz]</span>
+            </div>
+            <h3>Jetson 5 : <span id="jetson5_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson5_status"> - </span><span>[Hz]</span>
+            </div>
+            <h3>Jetson 6 : <span id="jetson6_info"> - </span></h3>
+            <div>
+                <span>Status:</span>
+                <span id="jetson6_status"> - </span><span>[Hz]</span>
             </div>
         </div>
         <div id="vehicle">
