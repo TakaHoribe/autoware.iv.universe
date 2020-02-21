@@ -27,11 +27,16 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pnh_.param<double>("max_velocity", planning_param_.max_velocity, 20.0);           // 72.0 kmph
   pnh_.param<double>("max_accel", planning_param_.max_accel, 2.0);                  // 0.11G
   pnh_.param<double>("min_decel", planning_param_.min_decel, -3.0);                 // -0.2G
+
   pnh_.param<double>("max_lateral_accel", planning_param_.max_lateral_accel, 0.2);  //
-  pnh_.param<double>("pre_decel_distance_for_latacc", planning_param_.pre_decel_distance_for_latacc, 3.5);
+  pnh_.param<double>("decel_distance_before_curve", planning_param_.decel_distance_before_curve, 3.5);
+  pnh_.param<double>("decel_distance_after_curve", planning_param_.decel_distance_after_curve, 0.0);
+  pnh_.param<double>("min_curve_velocity", planning_param_.min_curve_velocity, 1.38);
+
   pnh_.param<double>("replan_vel_deviation", planning_param_.replan_vel_deviation, 3.0);
   pnh_.param<double>("engage_velocity", planning_param_.engage_velocity, 0.3);
   pnh_.param<double>("engage_acceleration", planning_param_.engage_acceleration, 0.1);
+
   pnh_.param<double>("extract_ahead_dist", planning_param_.extract_ahead_dist, 200.0);
   pnh_.param<double>("extract_behind_dist", planning_param_.extract_behind_dist, 3.0);
   pnh_.param<double>("max_trajectory_length", planning_param_.max_trajectory_length, 200.0);
@@ -562,10 +567,10 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
     return false;
   }
 
-  const double trajectory_points_interval = 0.1;  // [m]
+  const double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
-  for (double s = 0; s < in_arclength.back(); s += trajectory_points_interval) {
+  for (double s = 0; s < in_arclength.back(); s += points_interval) {
     out_arclength.push_back(s);
   }
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
@@ -574,24 +579,29 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
   }
 
   const double curvature_calc_dist = 3.0;         // [m] calc curvature with 3m away points
-  const unsigned int idx_dist = std::max((int)(curvature_calc_dist / trajectory_points_interval), 1);
+  const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
   output = input;  // initialize
 
   std::vector<double> curvature_v;
   vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, curvature_v);
 
-  const int pre_decel_index =
-      static_cast<int>(std::round(planning_param_.pre_decel_distance_for_latacc / trajectory_points_interval));
+  const int before_decel_index =
+      static_cast<int>(std::round(planning_param_.decel_distance_before_curve / points_interval));
+  const int after_decel_index =
+      static_cast<int>(std::round(planning_param_.decel_distance_after_curve / points_interval));
   const double max_lateral_accel_abs = std::fabs(planning_param_.max_lateral_accel);
 
-  for (size_t i = 0; i < input.points.size(); ++i) {
+  const int input_size = static_cast<int>(input.points.size());
+  for (int i = 0; i < input_size; ++i) {
     double curvature = 0.0;
-    for (size_t j = i; j < input.points.size() && j < i + pre_decel_index; ++j) {
+    const int start = std::max(i - after_decel_index, 0);
+    const int end = std::min(input_size, i + before_decel_index);
+    for (int j = start; j < end; ++j) {
       curvature = std::max(curvature, std::fabs(curvature_v.at(j)));
     }
     const double v_curvature_max =
-        std::max(std::sqrt(max_lateral_accel_abs / std::max(curvature, 1.0E-5)), planning_param_.engage_velocity);
+        std::max(std::sqrt(max_lateral_accel_abs / std::max(curvature, 1.0E-5)), planning_param_.min_curve_velocity);
     if (output.points.at(i).twist.linear.x > v_curvature_max) {
       output.points.at(i).twist.linear.x = v_curvature_max;
     }
