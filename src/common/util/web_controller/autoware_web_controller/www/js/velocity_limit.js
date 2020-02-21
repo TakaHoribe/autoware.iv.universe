@@ -63,7 +63,7 @@ if (!VelocityLimitSubscriber) {
                 }
                 var res = message.data;
                 var el = document.createElement("span");
-                el.innerHTML = res * 3.6
+                el.innerHTML = res * 3.6;
                 document.getElementById("velocity_limit_status").appendChild(el);
             });
         }
