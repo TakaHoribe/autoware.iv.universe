@@ -236,6 +236,9 @@ class MPCFollower {
   bool resampleMPCTrajectoryByTime(double start_time, const MPCTrajectory &input, MPCTrajectory *output) const;
   MPCTrajectory calcActualVelocity(const int closest, const MPCTrajectory &trajectory);
   double getPredictionTime() const;
+  void addSteerWeightR(Eigen::MatrixXd* R) const;
+  void addSteerWeightF(Eigen::MatrixXd* f) const;
+
 
   /* ---------- debug ---------- */
   bool show_debug_info_;  //!< @brief flag to display debug info

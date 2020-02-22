@@ -527,37 +527,7 @@ MPCFollower::MPCMatrix MPCFollower::generateMPCMatrix(const MPCTrajectory& refer
     R2ex(i + 1, i + 1) += lateral_jerk_r;
   }
 
-  /* add steering rate : weight for (u(i) - u(i-1) / dt )^2 */
-  for (int i = 0; i < N - 1; ++i) {
-    const double steer_rate_r = mpc_param_.weight_steer_rate / (DT * DT);
-    R2ex(i + 0, i + 0) += steer_rate_r;
-    R2ex(i + 1, i + 0) -= steer_rate_r;
-    R2ex(i + 0, i + 1) -= steer_rate_r;
-    R2ex(i + 1, i + 1) += steer_rate_r;
-  }
-
-  /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
-  const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
-  for (int i = 1; i < N - 1; ++i) {
-    R2ex(i - 1, i - 1) += (steer_acc_r);
-    R2ex(i - 1, i + 0) += (steer_acc_r * -2.0);
-    R2ex(i - 1, i + 1) += (steer_acc_r);
-    R2ex(i + 0, i - 1) += (steer_acc_r * -2.0);
-    R2ex(i + 0, i + 0) += (steer_acc_r * 4.0);
-    R2ex(i + 0, i + 1) += (steer_acc_r * -2.0);
-    R2ex(i + 1, i - 1) += (steer_acc_r);
-    R2ex(i + 1, i + 0) += (steer_acc_r * -2.0);
-    R2ex(i + 1, i + 1) += (steer_acc_r);
-  }
-  if (N > 1) {
-    // steer acc i = 1
-    R2ex(0, 0) += steer_acc_r * 4.0;
-    R2ex(1, 0) += steer_acc_r * -2.0;
-    R2ex(0, 1) += steer_acc_r * -2.0;
-    R2ex(1, 1) += steer_acc_r * 1.0;
-    // steer acc i = 0
-    R2ex(0, 0) += steer_acc_r * 1.0;
-  }
+  addSteerWeightR(&R1ex);
 
   MPCMatrix m;
   m.Aex = Aex;
@@ -601,36 +571,29 @@ bool MPCFollower::executeOptimization(const MPCMatrix& m, const Eigen::VectorXd&
     return false;
   }
 
-  const int N = mpc_param_.prediction_horizon;
-  const int DIM_U = vehicle_model_ptr_->getDimU();
+  const int DIM_U_N = mpc_param_.prediction_horizon * vehicle_model_ptr_->getDimU();
 
   // cost function: 1/2 * Uex' * H * Uex + f' * Uex,  H = B' * C' * Q * C * B + R
   const Eigen::MatrixXd CB = m.Cex * m.Bex;
   const Eigen::MatrixXd QCB = m.Qex * CB;
   // Eigen::MatrixXd H = CB.transpose() * QCB + m.R1ex + m.R2ex; // This calculation is heavy. looking for a good way.
-  Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U * N, DIM_U * N);
+  Eigen::MatrixXd H = Eigen::MatrixXd::Zero(DIM_U_N, DIM_U_N);
   H.triangularView<Eigen::Upper>() = CB.transpose() * QCB;
   H.triangularView<Eigen::Upper>() += m.R1ex + m.R2ex;
   H.triangularView<Eigen::Lower>() = H.transpose();
   Eigen::MatrixXd f = (m.Cex * (m.Aex * x0 + m.Wex)).transpose() * QCB - m.Urefex.transpose() * m.R1ex;
-  if (N > 1) {
-    // steer acc i = 1
-    const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(mpc_param_.prediction_dt, 4);
-    f(0, 0) += (-4.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
-    f(0, 1) += (2.0 * raw_steer_cmd_prev_ * steer_acc_r) * 0.5;
-    // steer acc  i = 0
-    f(0, 0) += ((-2.0 * raw_steer_cmd_prev_ + raw_steer_cmd_pprev_) * steer_acc_r) * 0.5;
-  }
+  addSteerWeightF(&f);
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Identity(DIM_U * N, DIM_U * N);
-  for (int i = 1; i < DIM_U * N; i++) {
+
+  Eigen::MatrixXd A = Eigen::MatrixXd::Identity(DIM_U_N, DIM_U_N);
+  for (int i = 1; i < DIM_U_N; i++) {
     A(i, i - 1) = -1.0;
   }
 
-  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U * N, -steer_lim_);  // min steering angle
-  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U * N, steer_lim_);   // max steering angle
-  Eigen::VectorXd lbA = Eigen::VectorXd::Constant(DIM_U * N, -steer_rate_lim_ * mpc_param_.prediction_dt);
-  Eigen::VectorXd ubA = Eigen::VectorXd::Constant(DIM_U * N, steer_rate_lim_ * mpc_param_.prediction_dt);
+  Eigen::VectorXd lb = Eigen::VectorXd::Constant(DIM_U_N, -steer_lim_);  // min steering angle
+  Eigen::VectorXd ub = Eigen::VectorXd::Constant(DIM_U_N, steer_lim_);   // max steering angle
+  Eigen::VectorXd lbA = Eigen::VectorXd::Constant(DIM_U_N, -steer_rate_lim_ * mpc_param_.prediction_dt);
+  Eigen::VectorXd ubA = Eigen::VectorXd::Constant(DIM_U_N, steer_rate_lim_ * mpc_param_.prediction_dt);
   lbA(0, 0) = raw_steer_cmd_prev_ - steer_rate_lim_ * ctrl_period_;
   ubA(0, 0) = raw_steer_cmd_prev_ + steer_rate_lim_ * ctrl_period_;
 
@@ -652,12 +615,76 @@ bool MPCFollower::executeOptimization(const MPCMatrix& m, const Eigen::VectorXd&
   return true;
 }
 
-double MPCFollower::getPredictionTime() const {
+void MPCFollower::addSteerWeightR(Eigen::MatrixXd* R) const {
   const int N = mpc_param_.prediction_horizon;
   const double DT = mpc_param_.prediction_dt;
-  return (N - 1) * DT + mpc_param_.input_delay + ctrl_period_;
+
+  /* add steering rate : weight for (u(i) - u(i-1) / dt )^2 */
+  for (int i = 0; i < N - 1; ++i) {
+    const double steer_rate_r = mpc_param_.weight_steer_rate / (DT * DT);
+    (*R)(i + 0, i + 0) += steer_rate_r;
+    (*R)(i + 1, i + 0) -= steer_rate_r;
+    (*R)(i + 0, i + 1) -= steer_rate_r;
+    (*R)(i + 1, i + 1) += steer_rate_r;
+  }
+  if (N > 1) {
+    // steer rate i = 0
+    (*R)(0, 0) += mpc_param_.weight_steer_rate / (ctrl_period_ * ctrl_period_);
+  }
+
+  /* add steering acceleration : weight for { (u(i+1) - 2*u(i) + u(i-1)) / dt^2 }^2 */
+  const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
+  const double steer_acc_r_cp1 = mpc_param_.weight_steer_acc / (std::pow(DT, 3) * ctrl_period_);
+  const double steer_acc_r_cp2 = mpc_param_.weight_steer_acc / (std::pow(DT, 2) * std::pow(ctrl_period_, 2));
+  const double steer_acc_r_cp4 = mpc_param_.weight_steer_acc / std::pow(ctrl_period_, 4);
+  for (int i = 1; i < N - 1; ++i) {
+    (*R)(i - 1, i - 1) += (steer_acc_r);
+    (*R)(i - 1, i + 0) += (steer_acc_r * -2.0);
+    (*R)(i - 1, i + 1) += (steer_acc_r);
+    (*R)(i + 0, i - 1) += (steer_acc_r * -2.0);
+    (*R)(i + 0, i + 0) += (steer_acc_r * 4.0);
+    (*R)(i + 0, i + 1) += (steer_acc_r * -2.0);
+    (*R)(i + 1, i - 1) += (steer_acc_r);
+    (*R)(i + 1, i + 0) += (steer_acc_r * -2.0);
+    (*R)(i + 1, i + 1) += (steer_acc_r);
+  }
+  if (N > 1) {
+    // steer acc i = 1
+    (*R)(0, 0) += steer_acc_r * 1.0 + steer_acc_r_cp2 * 1.0 + steer_acc_r_cp1 * 2.0;
+    (*R)(1, 0) += steer_acc_r * -1.0 + steer_acc_r_cp1 * -1.0;
+    (*R)(0, 1) += steer_acc_r * -1.0 + steer_acc_r_cp1 * -1.0;
+    (*R)(1, 1) += steer_acc_r * 1.0;
+    // steer acc i = 0
+    (*R)(0, 0) += steer_acc_r_cp4 * 1.0;
+  }
 }
 
+void MPCFollower::addSteerWeightF(Eigen::MatrixXd* f) const {
+  if (f->rows() < 2) {
+    return;
+  }
+
+  const double DT = mpc_param_.prediction_dt;
+
+  // steer rate for i = 0
+  (*f)(0, 0) += -2.0 * mpc_param_.weight_steer_rate / (std::pow(DT, 2)) * 0.5;
+
+  // const double steer_acc_r = mpc_param_.weight_steer_acc / std::pow(DT, 4);
+  const double steer_acc_r_cp1 = mpc_param_.weight_steer_acc / (std::pow(DT, 3) * ctrl_period_);
+  const double steer_acc_r_cp2 = mpc_param_.weight_steer_acc / (std::pow(DT, 2) * std::pow(ctrl_period_, 2));
+  const double steer_acc_r_cp4 = mpc_param_.weight_steer_acc / std::pow(ctrl_period_, 4);
+
+  // steer acc  i = 0
+  (*f)(0, 0) += ((-2.0 * raw_steer_cmd_prev_ + raw_steer_cmd_pprev_) * steer_acc_r_cp4) * 0.5;
+
+  // steer acc for i = 1
+  (*f)(0, 0) += (-2.0 * raw_steer_cmd_prev_ * (steer_acc_r_cp1 + steer_acc_r_cp2)) * 0.5;
+  (*f)(0, 1) += (2.0 * raw_steer_cmd_prev_ * steer_acc_r_cp1) * 0.5;
+}
+
+double MPCFollower::getPredictionTime() const {
+  return (mpc_param_.prediction_horizon - 1) * mpc_param_.prediction_dt + mpc_param_.input_delay + ctrl_period_;
+}
 
 void MPCFollower::callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg) {
   current_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
