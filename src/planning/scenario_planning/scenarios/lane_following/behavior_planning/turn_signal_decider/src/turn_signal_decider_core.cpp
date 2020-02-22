@@ -70,6 +70,8 @@ void TurnSignalDecider::onTurnSignalTimer(const ros::TimerEvent& event)
     }
   }
 
+  turn_signal.header.stamp = ros::Time::now();
+  turn_signal.header.frame_id = "base_link";
   turn_signal_publisher_.publish(turn_signal);
 }
 
