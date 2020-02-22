@@ -576,8 +576,8 @@ visualization::detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionA
     ls_c.r = 1;
     ls_c.g = 1;
     ls_c.b = 1;
-    ls_c.a = 1;
-    visualization::lineString2Marker(da_reg_elem->stopLine(), &ls_marker, "map", "detection_area", ls_c, 0.2);
+    ls_c.a = 0.999;
+    visualization::lineString2Marker(da_reg_elem->stopLine(), &ls_marker, "map", "detection_area", ls_c, 0.1);
     marker_array.markers.push_back(ls_marker);
   }  // for regulatory elements
 
@@ -646,7 +646,7 @@ visualization::lineStringsAsMarkerArray(const std::vector<lanelet::ConstLineStri
     if (!exists(added, ls.id()))
     {
       visualization_msgs::Marker ls_marker;
-      visualization::lineString2Marker(ls, &ls_marker, "map", name_space, c, 0.2);
+      visualization::lineString2Marker(ls, &ls_marker, "map", name_space, c, 0.1);
       ls_marker_array.markers.push_back(ls_marker);
       added.insert(ls.id());
     }
@@ -659,7 +659,7 @@ visualization_msgs::MarkerArray visualization::laneletsBoundaryAsMarkerArray(con
                                                                              const std_msgs::ColorRGBA c,
                                                                              const bool viz_centerline)
 {
-  double lss = 0.2;  // line string size
+  double lss = 0.05;  // line string size
   std::unordered_set<lanelet::Id> added;
   visualization_msgs::MarkerArray marker_array;
   for (auto li = lanelets.begin(); li != lanelets.end(); li++)
@@ -685,7 +685,7 @@ visualization_msgs::MarkerArray visualization::laneletsBoundaryAsMarkerArray(con
     }
     if (viz_centerline && !exists(added, center_ls.id()))
     {
-      visualization::lineString2Marker(center_ls, &center_line_strip, "map", "center_lane_line", c, lss * 0.5);
+      visualization::lineString2Marker(center_ls, &center_line_strip, "map", "center_lane_line", c, std::max(lss * 0.1, 0.01));
       marker_array.markers.push_back(center_line_strip);
       added.insert(center_ls.id());
     }
