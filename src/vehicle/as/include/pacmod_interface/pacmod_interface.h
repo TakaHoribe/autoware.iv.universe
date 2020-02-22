@@ -112,6 +112,7 @@ class PacmodInterface {
   double max_throttle_;        // max throttle [0~1]
   double max_brake_;           // max throttle [0~1]
   double max_steering_wheel_;  // max steering wheel angle [rad]
+  bool enable_steering_rate_control_; // use steering angle speed for command [rad/s]
 
   /* input values */
   std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> vehicle_cmd_ptr_;

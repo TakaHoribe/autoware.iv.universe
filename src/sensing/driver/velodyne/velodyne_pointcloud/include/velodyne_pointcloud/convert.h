@@ -46,7 +46,7 @@ namespace velodyne_pointcloud
     ~Convert() {}
 
   private:
-    
+
     void callback(velodyne_pointcloud::CloudNodeConfig &config, uint32_t level);
     void processScan(const velodyne_msgs::VelodyneScan::ConstPtr &scanMsg);
     visualization_msgs::MarkerArray createVelodyneModelMakerMsg(const std_msgs::Header& header);
@@ -56,6 +56,7 @@ namespace velodyne_pointcloud
     ros::Publisher velodyne_points_pub_;
     ros::Publisher velodyne_points_ex_pub_;
     ros::Publisher velodyne_points_invalid_near_pub_;
+    ros::Publisher velodyne_points_combined_ex_pub_;
     ros::Publisher marker_array_pub_;
 
     tf2_ros::Buffer tf2_buffer_;
@@ -63,7 +64,7 @@ namespace velodyne_pointcloud
 
     ///Pointer to dynamic reconfigure service srv_
     boost::shared_ptr<dynamic_reconfigure::Server<velodyne_pointcloud::CloudNodeConfig> > srv_;
-    
+
     boost::shared_ptr<velodyne_rawdata::RawData> data_;
 
     int num_points_thresthold_;

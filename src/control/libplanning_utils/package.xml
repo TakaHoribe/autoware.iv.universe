@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>libplanning_utils</name>
+  <version>0.0.1</version>
+  <description>The libplanning_utils package</description>
+  <maintainer email="horibe.takamasa@gmail.com">Takamasa Horibe</maintainer>
+  <license>Apache 2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>autoware_planning_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+
+  <export>
+  </export>
+</package>

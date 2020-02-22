@@ -34,6 +34,7 @@
 
 namespace lanelet
 {
+using TrafficSignConstPtr = std::shared_ptr<const lanelet::TrafficSign>;
 using TrafficLightConstPtr = std::shared_ptr<const lanelet::TrafficLight>;
 using AutowareTrafficLightConstPtr = std::shared_ptr<const lanelet::autoware::AutowareTrafficLight>;
 using DetectionAreaConstPtr = std::shared_ptr<const lanelet::autoware::DetectionArea>;

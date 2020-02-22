@@ -49,6 +49,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_library(autoware_perception_rviz_plugin
   src/tools/pedestrian_pose.cpp
   src/tools/car_pose.cpp
+  src/tools/delete_all_objects.cpp
 )
 
 target_link_libraries(autoware_perception_rviz_plugin ${QT_LIBRARIES} ${catkin_LIBRARIES})

@@ -41,7 +41,7 @@ namespace velodyne_pointcloud
     ~Interpolate() {}
 
   private:
-    
+
     void callback(velodyne_pointcloud::CloudNodeConfig &config, uint32_t level);
     void processPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &points_xyziradt);
     void processTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg);
@@ -50,6 +50,7 @@ namespace velodyne_pointcloud
     ros::Subscriber velodyne_points_ex_sub_;
     ros::Subscriber twist_sub_;
     ros::Publisher velodyne_points_interpolate_pub_;
+    ros::Publisher velodyne_points_interpolate_ex_pub_;
 
     tf2_ros::Buffer tf2_buffer_;
     tf2_ros::TransformListener tf2_listener_;

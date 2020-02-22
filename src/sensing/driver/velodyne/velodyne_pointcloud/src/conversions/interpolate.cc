@@ -26,12 +26,13 @@ namespace velodyne_pointcloud
   {
     // advertise
     velodyne_points_interpolate_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_interpolate", 10);
+    velodyne_points_interpolate_ex_pub_ = node.advertise<sensor_msgs::PointCloud2>("velodyne_points_interpolate_ex", 10);
 
     // subscribe
     twist_sub_ = node.subscribe("/vehicle/status/twist", 10, &Interpolate::processTwist, (Interpolate *) this, ros::TransportHints().tcpNoDelay(true));
     velodyne_points_ex_sub_ = node.subscribe("velodyne_points_ex", 10, &Interpolate::processPoints, (Interpolate *) this, ros::TransportHints().tcpNoDelay(true));
   }
-  
+
   void Interpolate::processTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg)
   {
     twist_queue_.push_back(*twist_msg);
@@ -52,15 +53,22 @@ namespace velodyne_pointcloud
 
   void Interpolate::processPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &points_xyziradt)
   {
-    if(velodyne_points_interpolate_pub_.getNumSubscribers() <= 0 ) {
+    if(velodyne_points_interpolate_pub_.getNumSubscribers() <= 0  && velodyne_points_interpolate_ex_pub_.getNumSubscribers() <= 0) {
       return;
     }
 
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpolate_points_xyzir(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr interpolate_points_xyziradt(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
     tf2::Transform tf2_base_link_to_sensor;
     getTransform(points_xyziradt->header.frame_id, base_link_frame_, &tf2_base_link_to_sensor);
-    interpolate_points_xyzir = interpolate(points_xyziradt, twist_queue_, tf2_base_link_to_sensor);
-    velodyne_points_interpolate_pub_.publish(interpolate_points_xyzir);
+    interpolate_points_xyziradt = interpolate(points_xyziradt, twist_queue_, tf2_base_link_to_sensor);
+
+    if(velodyne_points_interpolate_pub_.getNumSubscribers() > 0) {
+      const auto interpolate_points_xyzir = convert(interpolate_points_xyziradt);
+      velodyne_points_interpolate_pub_.publish(interpolate_points_xyzir);
+    }
+    if(velodyne_points_interpolate_ex_pub_.getNumSubscribers() > 0) {
+      velodyne_points_interpolate_ex_pub_.publish(interpolate_points_xyziradt);
+    }
   }
 
   bool Interpolate::getTransform(const std::string &target_frame, const std::string &source_frame, tf2::Transform *tf2_transform_ptr)

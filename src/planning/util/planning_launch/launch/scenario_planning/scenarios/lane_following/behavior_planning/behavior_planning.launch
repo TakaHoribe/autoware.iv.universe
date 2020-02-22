@@ -15,6 +15,19 @@
     <remap from="~input/velocity" to="/vehicle/status/twist"/>
     <remap from="~output/lane_change_path" to="path_with_lane_id"/>
     <remap from="~input/lane_change_approval" to="/lane_change_approval"/>
+    <param name="min_stop_distance" value="5.0"/>
+    <param name="stop_time" value="2.0"/>
+    <param name="hysteresis_buffer_distance" value="2.0"/>
+    <param name="backward_path_length" value="5.0"/>
+    <param name="forward_path_length" value="100.0"/>
+    <param name="lane_change_prepare_duration" value="2.0"/>
+    <param name="lane_changing_duration" value="8.0"/>
+    <param name="minimum_lane_change_length" value="12.0"/>
+    <param name="prediction_duration" value="8.0"/>
+    <param name="prediction_time_resolution" value="0.5"/>
+    <param name="drivable_area_resolution" value="0.1"/>
+    <param name="drivable_area_width" value="100.0"/>
+    <param name="drivable_area_height" value="50.0"/>
   </node>
 
   <node pkg="rostopic" type="rostopic" name="auto_approve_lane_change" args='pub /lane_change_approval std_msgs/Bool "data: true" -r 10'/>

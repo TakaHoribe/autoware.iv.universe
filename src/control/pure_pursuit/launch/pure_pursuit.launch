@@ -1,0 +1,20 @@
+<launch>
+  <node pkg="pure_pursuit" type="pure_pursuit" name="pure_pursuit" output="screen">
+    <remap from="~input/reference_trajectory" to="/planning/scenario_planning/trajectory"/>
+    <remap from="~input/current_velocity" to="/vehicle/status/twist"/>
+    <remap from="~output/twist_raw" to="lateral/twist_raw"/>
+    <remap from="~output/control_raw" to="lateral/control_cmd"/>
+
+    <param name="uses_lerp" value="true"/>
+    <param name="publish_twist_cmd" value="false"/>
+    <param name="publish_ctrl_cmd" value="true"/>
+    <param name="reverse_minimum_lookahead_distance" value="7.0"/>
+    <param name="control_period" value="0.033"/>
+    <param name="velocity_delay_compensation_time" value="0.57"/>
+    <param name="use_lateral_error_compensation" value="false"/>
+    <param name="lateral_error_compensation_ratio" value="1.0"/>
+    <param name="lateral_error_compensation_max" value="2.0"/>
+    <param name="steering_delay_compensation_time" value="0.5"/>
+    <param name="use_steering_delay_compensation" value="false"/>
+  </node>
+</launch>

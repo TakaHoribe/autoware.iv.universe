@@ -46,6 +46,7 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   // parameters for emergency stop by this controller
   pnh_.param("emergency_stop_acc", emergency_stop_acc_, double(-2.0));   // [m/s^2]
   pnh_.param("emergency_stop_jerk", emergency_stop_jerk_, double(-1.5)); // [m/s^3]
+  pnh_.param("emergency_overshoot_dist", emergency_overshoot_dist_, double(1.5)); // [m]
 
   // parameters for smooth stop
   pnh_.param("smooth_stop/exit_ego_speed", smooth_stop_param_.exit_ego_speed, double(2.0));                         // [m/s]
@@ -213,7 +214,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
     double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::ERROR;
-    ROS_INFO_COND(show_debug_info_, "[closest error]. vel: %f, acc: %f", vel_cmd, acc_cmd);
+    ROS_INFO_COND(show_debug_info_, "[closest error]. vel: %3.3f, acc: %3.3f", vel_cmd, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
@@ -229,8 +230,9 @@ CtrlCmd VelocityController::calcCtrlCmd()
   prev_shift_ = shift;
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
-  ROS_INFO_COND(show_debug_info_, "current_vel = %f, target_vel = %f, target_acc = %f, pitch_filtered = %f, is_smooth_stop_ = %d",
-                current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_);
+  const double stop_dist = calcStopDistance(*trajectory_ptr_, closest_idx);
+  // ROS_INFO_COND(show_debug_info_, "current_vel = %3.3f, target_vel = %3.3f, target_acc = %3.3f, pitch_filtered = %3.3f, is_smooth_stop_ = %d, stop_dist = %3.3f",
+  //               current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_, stop_dist);
   writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx);
 
   /* ===== STOPPED =====
@@ -247,7 +249,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
   {
     double acc_cmd = calcFilteredAcc(stop_state_acc_, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::STOPPED;
-    ROS_INFO_COND(show_debug_info_, "[Stopped]. vel: %f, acc: %f", stop_state_vel_, acc_cmd);
+    ROS_INFO_COND(show_debug_info_, "[Stopped]. vel: %3.3f, acc: %3.3f", stop_state_vel_, acc_cmd);
     return CtrlCmd{stop_state_vel_, acc_cmd};
   }
 
@@ -261,13 +263,13 @@ CtrlCmd VelocityController::calcCtrlCmd()
    * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
    * 
    */
-  is_emergency_stop_ = checkEmergency();
+  is_emergency_stop_ = checkEmergency(closest_idx, target_vel);
   if (is_emergency_stop_)
   {
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
     double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::EMERGENCY_STOP;
-    ROS_INFO_COND(show_debug_info_, "[Emergency stop] vel: %f, acc: %f", 0.0, acc_cmd);
+    ROS_ERROR_COND(show_debug_info_, "[Emergency stop] vel: %3.3f, acc: %3.3f", 0.0, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
@@ -280,10 +282,9 @@ CtrlCmd VelocityController::calcCtrlCmd()
    * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
    * 
    */  
-  if (enable_smooth_stop_ && std::fabs(current_vel) < smooth_stop_param_.entry_ego_speed &&
-      std::fabs(target_vel) < smooth_stop_param_.entry_target_speed && isInSmoothStopRange(closest_idx))
+  is_smooth_stop_ = checkSmoothStop(closest_idx, target_vel);
+  if (is_smooth_stop_)
   {
-    is_smooth_stop_ = true;
     if (!start_time_smooth_stop_)
     {
       start_time_smooth_stop_ = std::make_shared<ros::Time>(ros::Time::now());
@@ -291,7 +292,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
     double smooth_stop_acc_cmd = calcSmoothStopAcc();
     double acc_cmd = calcFilteredAcc(smooth_stop_acc_cmd, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::SMOOTH_STOP;
-    ROS_INFO_COND(show_debug_info_, "[smooth stop]: Smooth stopping. vel: %f, acc: %f", target_vel, acc_cmd);
+    ROS_WARN_COND(show_debug_info_, "[smooth stop]: Smooth stopping. vel: %3.3f, acc: %3.3f", target_vel, acc_cmd);
     return CtrlCmd{target_vel, acc_cmd};
   }
 
@@ -306,8 +307,8 @@ CtrlCmd VelocityController::calcCtrlCmd()
   double feedback_acc_cmd = applyVelocityFeedback(target_acc, target_vel, dt, current_vel);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[feedback control]  target_acc: %f, dt: %f, current_vel: %f, feedback_acc_cmd: %f, shift: %d, out_vel: %f, out_acc: %f",
-                target_acc, dt, current_vel, feedback_acc_cmd, shift, target_vel, acc_cmd);
+  ROS_INFO_COND(show_debug_info_, "[feedback control]  vel: %3.3f, acc: %3.3f, dt: %3.3f, vcurr: %3.3f, vref: %3.3f feedback_acc_cmd: %3.3f, shift: %d",
+                target_vel, acc_cmd, dt, current_vel, target_vel, feedback_acc_cmd, shift);
   return CtrlCmd{target_vel, acc_cmd};
 }
 
@@ -322,6 +323,11 @@ void VelocityController::resetHandling(const ControlMode control_mode)
     {
       is_emergency_stop_ = false;
     }
+  }
+  else if (control_mode == ControlMode::ERROR)
+  {
+    pid_vel_.reset();
+    resetSmoothStop();
   }
   else if (control_mode == ControlMode::STOPPED)
   {
@@ -357,14 +363,31 @@ void VelocityController::publishCtrlCmd(const double vel, const double acc)
   debug_values_.data.at(7) = (double)controller_mode_;
   debug_values_.data.at(12) = acc;
   pub_debug_.publish(debug_values_);
-  ROS_INFO_COND(show_debug_info_, "debug values is published!");
   debug_values_.data.clear();
   debug_values_.data.resize(num_debug_values_, 0.0);
 }
 
+bool VelocityController::checkSmoothStop(const int closest, const double target_vel)
+{
+  if (!enable_smooth_stop_)
+  {
+    return false;
+  }
 
+  if (std::fabs(current_vel_ptr_->twist.linear.x) > smooth_stop_param_.entry_ego_speed ||
+      std::fabs(target_vel) > smooth_stop_param_.entry_target_speed) {
+    return false;
+  }
 
-bool VelocityController::checkEmergency()
+  const double stop_dist = calcStopDistance(*trajectory_ptr_, closest);
+  if (std::fabs(stop_dist) < smooth_stop_param_.stop_dist_)
+  {
+    return true; // stop point is found around ego position.
+  }
+  return false;
+}
+
+bool VelocityController::checkEmergency(int closest, double target_vel)
 {
   // already in emergency.
   if (is_emergency_stop_)
@@ -372,7 +395,7 @@ bool VelocityController::checkEmergency()
     return true;
   }
 
-  // velocity is getting high when smoth stopping. This is undesired.
+  // velocity is getting high when smoth stopping.
   if (is_smooth_stop_ && (std::fabs(current_vel_ptr_->twist.linear.x) > smooth_stop_param_.exit_ego_speed))
   {
     return true;
@@ -381,9 +404,12 @@ bool VelocityController::checkEmergency()
   // overshoot stop line.
   if (enable_overshoot_emergency_)
   {
-    // TODO
+    double stop_dist = calcStopDistance(*trajectory_ptr_, closest);
+    if (stop_dist < -emergency_overshoot_dist_)
+    {
+      return true;
+    }
   }
-
   return false;
 }
 
@@ -465,22 +491,36 @@ double VelocityController::calcSmoothStopAcc()
   return acc_cmd;
 }
 
-bool VelocityController::isInSmoothStopRange(const int closest)
+double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int origin)
 {
   const double zero_velocity = 0.01;
-  for (uint i = 0; i < trajectory_ptr_->points.size(); ++i)
+  const double origin_velocity = trajectory.points.at(origin).twist.linear.x;
+  double stop_dist = 0.0;
+
+  // search forward
+  if (std::fabs(origin_velocity) > zero_velocity)
   {
-    const double vel = trajectory_ptr_->points.at(i).twist.linear.x;
-    if (std::fabs(vel) < zero_velocity)
+    for (int i = origin + 1; i < (int)trajectory.points.size() - 1; ++i)
     {
-      const double dist = vcutils::calcDistance2D(trajectory_ptr_->points.at(i).pose, current_pose_ptr_->pose);
-      if (dist < smooth_stop_param_.stop_dist_)
+      stop_dist += vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i - 1).pose);
+      if (std::fabs(trajectory.points.at(i).twist.linear.x) < zero_velocity)
       {
-        return true; // stop point is found around ego position.
+        break;
       }
     }
+    return stop_dist;
   }
-  return false; // stop point is not found around ego position. (threshold = smooth_stop_param_.stop_dist_)
+
+  // search backward
+  for (int i = origin - 1; 0 < i; --i)
+  {
+    if (std::fabs(trajectory.points.at(i).twist.linear.x) > zero_velocity)
+    {
+      break;
+    }
+    stop_dist -= vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
+  }
+  return stop_dist;
 }
 
 double VelocityController::calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj,

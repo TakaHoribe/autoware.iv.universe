@@ -4,14 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Sensing1/NoGroundPointCloud1/Autocompute Value Bounds1
         - /Localization1/NDT1/PoseHistory1/Line1
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
         - /Control1/Debug/MPC1/Namespaces1
       Splitter Ratio: 0.64552241563797
-    Tree Height: 482
+    Tree Height: 481
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -21,6 +20,7 @@ Panels:
       - /2D Dummy Pedestrian1
       - /2D Dummy Car1
       - /2D Checkpoint Pose1
+      - /Delete All Objects1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
@@ -106,6 +106,43 @@ Visualization Manager:
           Show Names: true
           Tree:
             map:
+              base_link:
+                camera1/camera_link:
+                  camera1/camera_optical_link:
+                    {}
+                camera2/camera_link:
+                  camera2/camera_optical_link:
+                    {}
+                camera3/camera_link:
+                  camera3/camera_optical_link:
+                    {}
+                camera4/camera_link:
+                  camera4/camera_optical_link:
+                    {}
+                camera5/camera_link:
+                  camera5/camera_optical_link:
+                    {}
+                camera6/camera_link:
+                  camera6/camera_optical_link:
+                    {}
+                gnss_link:
+                  {}
+                gx5/imu_link:
+                  {}
+                tamagawa/imu_link:
+                  {}
+                traffic_light/camera_link:
+                  traffic_light/camera_optical_link:
+                    {}
+                velodyne_left_base_link:
+                  velodyne_left:
+                    {}
+                velodyne_right_base_link:
+                  velodyne_right:
+                    {}
+                velodyne_top_base_link:
+                  velodyne_top:
+                    {}
               viewer:
                 {}
           Update Interval: 0
@@ -331,7 +368,7 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 4096
+          Max Intensity: 237
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: PointCloudMap
@@ -376,44 +413,6 @@ Visualization Manager:
       Name: Map
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
-          Class: rviz/Polygon
-          Color: 25; 255; 0
-          Enabled: false
-          Name: MesurementRange
-          Topic: /sensing/preprocess/pointcloud_preprocessor/crop_box_filter_mesurement_range/crop_box_polygon
-          Unreliable: false
-          Value: false
-        - Alpha: 1
-          Autocompute Intensity Bounds: false
-          Autocompute Value Bounds:
-            Max Value: 15
-            Min Value: -2
-            Value: false
-          Axis: Z
-          Channel Name: z
-          Class: rviz/PointCloud2
-          Color: 0; 240; 255
-          Color Transformer: FlatColor
-          Decay Time: 0
-          Enabled: true
-          Invert Rainbow: false
-          Max Color: 255; 255; 255
-          Max Intensity: 15
-          Min Color: 0; 0; 0
-          Min Intensity: -5
-          Name: NoGroundPointCloud
-          Position Transformer: XYZ
-          Queue Size: 10
-          Selectable: true
-          Size (Pixels): 5
-          Size (m): 0.009999999776482582
-          Style: Points
-          Topic: /sensing/lidar/no_ground/pointcloud
-          Unreliable: false
-          Use Fixed Frame: true
-          Use rainbow: true
-          Value: true
         - Class: rviz/Group
           Displays:
             - Alpha: 1
@@ -441,7 +440,7 @@ Visualization Manager:
               Size (Pixels): 2
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /sensor/lidar/pointcloud
+              Topic: /sensing/lidar/pointcloud
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
@@ -454,8 +453,46 @@ Visualization Manager:
               Topic: /sensor/lidar/main/crop_box_filter_self/crop_box_polygon
               Unreliable: false
               Value: true
+            - Alpha: 1
+              Autocompute Intensity Bounds: false
+              Autocompute Value Bounds:
+                Max Value: 15
+                Min Value: -2
+                Value: false
+              Axis: Z
+              Channel Name: z
+              Class: rviz/PointCloud2
+              Color: 0; 240; 255
+              Color Transformer: FlatColor
+              Decay Time: 0
+              Enabled: true
+              Invert Rainbow: false
+              Max Color: 255; 255; 255
+              Max Intensity: 15
+              Min Color: 0; 0; 0
+              Min Intensity: -5
+              Name: NoGroundPointCloud
+              Position Transformer: XYZ
+              Queue Size: 10
+              Selectable: true
+              Size (Pixels): 10
+              Size (m): 0.009999999776482582
+              Style: Points
+              Topic: /sensing/lidar/no_ground/pointcloud
+              Unreliable: false
+              Use Fixed Frame: true
+              Use rainbow: true
+              Value: true
+            - Alpha: 1
+              Class: rviz/Polygon
+              Color: 25; 255; 0
+              Enabled: false
+              Name: MesurementRange
+              Topic: /sensing/preprocess/pointcloud_preprocessor/crop_box_filter_mesurement_range/crop_box_polygon
+              Unreliable: false
+              Value: false
           Enabled: true
-          Name: MainLiDAR
+          Name: LiDAR
       Enabled: true
       Name: Sensing
     - Class: rviz/Group
@@ -594,11 +631,11 @@ Visualization Manager:
               Value: true
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
-              Enabled: true
+              Enabled: false
               Name: NDTExeTime[ms]
               Show Value: true
               Topic: /localization/pose_generator/exe_time_ms
-              Value: true
+              Value: false
               auto color change: true
               auto scale: false
               background color: 0; 0; 0
@@ -619,11 +656,11 @@ Visualization Manager:
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
-              Enabled: true
+              Enabled: false
               Name: NDTTransProb [score]
               Show Value: true
               Topic: /localization/pose_generator/transform_probability
-              Value: true
+              Value: false
               auto color change: true
               auto scale: false
               background color: 0; 0; 0
@@ -644,11 +681,11 @@ Visualization Manager:
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
-              Enabled: true
+              Enabled: false
               Name: NDTIteration [num]
               Show Value: true
               Topic: /localization/pose_generator/iteration_num
-              Value: true
+              Value: false
               auto color change: true
               auto scale: false
               background color: 0; 0; 0
@@ -669,11 +706,11 @@ Visualization Manager:
               width: 100
             - Buffer length: 100
               Class: jsk_rviz_plugin/Plotter2D
-              Enabled: true
+              Enabled: false
               Name: NDTDistanceInitial2Alinged [m]
               Show Value: true
               Topic: /localization/pose_generator/initial_to_result_distance
-              Value: true
+              Value: false
               auto color change: true
               auto scale: false
               background color: 0; 0; 0
@@ -751,7 +788,11 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                {}
+                label: true
+                path: true
+                path confidence: true
+                shape: true
+                twist: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -791,7 +832,10 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                {}
+                goal_lanelets: true
+                left_lane_bound: true
+                right_lane_bound: true
+                route_lanelets: true
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -868,7 +912,9 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
                       Name: PathWithLaneId
                       Namespaces:
-                        {}
+                        lane_id: true
+                        line: true
+                        points: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -920,10 +966,13 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/stop_planner/debug/markers
-                      Name: StopDetectionArea
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_stop_planner/output/debug/marker
+                      Name: ObstaclePointCloudStop
                       Namespaces:
-                        {}
+                        collision polygons: true
+                        polygons: true
+                        stop geofence: true
+                        stop obstacle point: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -1021,26 +1070,30 @@ Visualization Manager:
       Pose Topic: /simulation/dummy_perception_publisher/object_info
       Theta std deviation: 0.0872664600610733
       Velocity: 1
-      X std deviation: 0.029999999329447746
-      Y std deviation: 0.029999999329447746
+      X std deviation: 0.009999999776482582
+      Y std deviation: 0.009999999776482582
       Z position: 0
+      Z std deviation: 0.009999999776482582
     - Class: rviz/CarInitialPoseTool
       Pose Topic: /simulation/dummy_perception_publisher/object_info
       Theta std deviation: 0.0872664600610733
       Velocity: 3
-      X std deviation: 0.029999999329447746
-      Y std deviation: 0.029999999329447746
+      X std deviation: 0.009999999776482582
+      Y std deviation: 0.009999999776482582
       Z position: 0
+      Z std deviation: 0.009999999776482582
     - Class: rviz/MissionCheckpointTool
       Pose Topic: checkpoint
       Theta std deviation: 0.2617993950843811
       X std deviation: 0.5
       Y std deviation: 0.5
       Z position: 0
+    - Class: rviz/DeleteAllObjectsTool
+      Pose Topic: /simulation/dummy_perception_publisher/object_info
   Value: true
   Views:
     Current:
-      Angle: -2.6699976921081543
+      Angle: 0
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -1050,11 +1103,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 17.995317459106445
+      Scale: 10
       Target Frame: viewer
       Value: TopDownOrtho (rviz)
-      X: -11.578725814819336
-      Y: -25.955673217773438
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Displays:
@@ -1064,7 +1117,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000326000006fffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000002500000018200fffffffb0000000a0056006900650077007301000002ca000001320000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000408000000fb000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d006100670065010000050f0000025e0000002600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b48000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000326000006fffc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e0000024f0000018200fffffffb0000000a0056006900650077007301000002c9000001330000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000408000000fc000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d00610067006501000005100000025d0000002600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b48000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

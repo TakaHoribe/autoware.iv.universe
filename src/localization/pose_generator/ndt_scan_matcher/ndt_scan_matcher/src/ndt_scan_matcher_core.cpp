@@ -39,6 +39,8 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   , map_frame_("map")
   , converged_param_transform_probability_(4.5)
 {
+  key_value_stdmap_["state"] = "Initializing";
+
   int ndt_implement_type_tmp = 0;
   private_nh_.getParam("ndt_implement_type", ndt_implement_type_tmp);
   ndt_implement_type_ = static_cast<NDTImplementType>(ndt_implement_type_tmp);
@@ -108,23 +110,69 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   ndt_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("ndt_pose", 10);
   ndt_pose_with_covariance_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ndt_pose_with_covariance", 10);
   initial_pose_with_covariance_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initial_pose_with_covariance", 10);
-  exe_time_pub_ = nh.advertise<std_msgs::Float32>("exe_time_ms", 10);
-  transform_probability_pub_ = nh.advertise<std_msgs::Float32>("transform_probability", 10);
-  iteration_num_pub_ = nh.advertise<std_msgs::Float32>("iteration_num", 10);
-  initial_to_result_distance_pub_ = nh.advertise<std_msgs::Float32>("initial_to_result_distance", 10);
-  initial_to_result_distance_old_pub_ = nh.advertise<std_msgs::Float32>("initial_to_result_distance_old", 10);
-  initial_to_result_distance_new_pub_ = nh.advertise<std_msgs::Float32>("initial_to_result_distance_new", 10);
-  ndt_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
-  ndt_monte_colro_initial_pose_marker_pub_= nh.advertise<visualization_msgs::MarkerArray>("monte_colro_initial_pose_marker", 10);
+  exe_time_pub_ = nh_.advertise<std_msgs::Float32>("exe_time_ms", 10);
+  transform_probability_pub_ = nh_.advertise<std_msgs::Float32>("transform_probability", 10);
+  iteration_num_pub_ = nh_.advertise<std_msgs::Float32>("iteration_num", 10);
+  initial_to_result_distance_pub_ = nh_.advertise<std_msgs::Float32>("initial_to_result_distance", 10);
+  initial_to_result_distance_old_pub_ = nh_.advertise<std_msgs::Float32>("initial_to_result_distance_old", 10);
+  initial_to_result_distance_new_pub_ = nh_.advertise<std_msgs::Float32>("initial_to_result_distance_new", 10);
+  ndt_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
+  ndt_monte_colro_initial_pose_marker_pub_= nh_.advertise<visualization_msgs::MarkerArray>("monte_colro_initial_pose_marker", 10);
+  diagnostics_pub_= nh_.advertise<diagnostic_msgs::DiagnosticArray>("diagnostics", 10);
 
-  service_ = nh.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
+  service_ = nh_.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
   // setup dynamic reconfigure server
   // f_ = boost::bind(&NDTScanMatcher::configCallback, this, _1, _2);
   // server_.setCallback(f_);
+
+  diagnostic_thread_ = std::thread(&NDTScanMatcher::timerDiagnostic, this);
+  diagnostic_thread_.detach();
 }
 
 NDTScanMatcher::~NDTScanMatcher()
 {
+}
+
+void NDTScanMatcher::timerDiagnostic()
+{
+  ros::Rate rate(100);
+  while(ros::ok()) {
+
+    diagnostic_msgs::DiagnosticStatus diag_status_msg;
+    diag_status_msg.name = "ndt_scan_matcher";
+    diag_status_msg.hardware_id = "";
+
+    for(const auto& key_value : key_value_stdmap_) {
+      diagnostic_msgs::KeyValue key_value_msg;
+      key_value_msg.key = key_value.first;
+      key_value_msg.value = key_value.second;
+      diag_status_msg.values.push_back(key_value_msg);
+
+    }
+
+    diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::OK;
+    diag_status_msg.message = "";
+    if (key_value_stdmap_.count("state") && key_value_stdmap_["state"] == "Initializing") {
+      diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::WARN;
+      diag_status_msg.message += "Initializing State. ";
+    }
+    if (key_value_stdmap_.count("skipping_publish_num") && std::stoi(key_value_stdmap_["skipping_publish_num"]) > 1) {
+      diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      diag_status_msg.message += "skipping_publish_num > 1. ";
+    }
+    if (key_value_stdmap_.count("skipping_publish_num") && std::stoi(key_value_stdmap_["skipping_publish_num"]) >= 5) {
+      diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      diag_status_msg.message += "skipping_publish_num exceed limit. ";
+    }
+
+    diagnostic_msgs::DiagnosticArray diag_msg;
+    diag_msg.header.stamp = ros::Time::now();
+    diag_msg.status.push_back(diag_status_msg);
+
+    diagnostics_pub_.publish(diag_msg);
+
+    rate.sleep();
+  }
 }
 
 bool NDTScanMatcher::serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res)
@@ -150,7 +198,9 @@ bool NDTScanMatcher::serviceNDTAlign(autoware_localization_srvs::PoseWithCovaria
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
 
+  key_value_stdmap_["state"] = "Aligning";
   res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, *mapTF_initial_pose_msg_ptr);
+  key_value_stdmap_["state"] = "Sleeping";
   res.pose_with_cov.pose.covariance = req.pose_with_cov.pose.covariance;
 
   return true;
@@ -230,7 +280,6 @@ void NDTScanMatcher::callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr 
 
 void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr &sensor_points_sensorTF_msg_ptr)
 {
-
   const auto exe_start_time = std::chrono::system_clock::now();
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
@@ -262,14 +311,14 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   getNearestTimeStampPose(initial_pose_msg_ptr_array_, sensor_ros_time, initial_pose_old_msg_ptr, initial_pose_new_msg_ptr);
   popOldPose(initial_pose_msg_ptr_array_, sensor_ros_time);
   // TODO check pose_timestamp - sensor_ros_time
-  const auto initial_pose_msg = interpolatePose(*initial_pose_old_msg_ptr, *initial_pose_new_msg_ptr, sensor_ros_time);  
+  const auto initial_pose_msg = interpolatePose(*initial_pose_old_msg_ptr, *initial_pose_new_msg_ptr, sensor_ros_time);
 
   geometry_msgs::PoseWithCovarianceStamped initial_pose_cov_msg;
   initial_pose_cov_msg.header = initial_pose_msg.header;
   initial_pose_cov_msg.pose.pose = initial_pose_msg.pose;
 
 
-  
+
   if (ndt_ptr_->getInputTarget() == nullptr) {
     ROS_WARN_STREAM_THROTTLE(1, "No MAP! F***********************************K");
     return;
@@ -281,7 +330,9 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
 
   pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
   const auto align_start_time = std::chrono::system_clock::now();
+  key_value_stdmap_["state"] = "Aligning";
   ndt_ptr_->align(*output_cloud, initial_pose_matrix);
+  key_value_stdmap_["state"] = "Sleeping";
   const auto align_end_time = std::chrono::system_clock::now();
   const double align_time = std::chrono::duration_cast<std::chrono::microseconds>(align_end_time - align_start_time).count() / 1000.0;
 
@@ -308,10 +359,15 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   const size_t iteration_num = ndt_ptr_->getFinalNumIteration();
 
   bool is_converged = true;
+  static size_t skipping_publish_num = 0;
   if (iteration_num >= ndt_ptr_->getMaximumIterations()+2 || transform_probability < converged_param_transform_probability_) {
     is_converged = false;
+    ++skipping_publish_num;
     std::cout << "Not Converged" << std::endl;
     std::cout << "F**********************************************************************************************K" << std::endl;
+  }
+  else {
+    skipping_publish_num = 0;
   }
 
   // publish
@@ -378,7 +434,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   std_msgs::Float32 transform_probability_msg;
   transform_probability_msg.data = transform_probability;
   transform_probability_pub_.publish(transform_probability_msg);
-  
+
   std_msgs::Float32 iteration_num_msg;
   iteration_num_msg.data = iteration_num;
   iteration_num_pub_.publish(iteration_num_msg);
@@ -400,12 +456,18 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
                                                     + std::pow(initial_pose_new_msg_ptr->pose.pose.position.y - result_pose_with_cov_msg.pose.pose.position.y, 2.0)
                                                     + std::pow(initial_pose_new_msg_ptr->pose.pose.position.z - result_pose_with_cov_msg.pose.pose.position.z, 2.0));
   initial_to_result_distance_new_pub_.publish(initial_to_result_distance_new_msg);
-  
+
+  key_value_stdmap_["seq"] = std::to_string(sensor_points_sensorTF_msg_ptr->header.seq);
+  key_value_stdmap_["transform_probability"] = std::to_string(transform_probability);
+  key_value_stdmap_["iteration_num"] = std::to_string(iteration_num);
+  key_value_stdmap_["skipping_publish_num"] = std::to_string(skipping_publish_num);
+
   std::cout << "------------------------------------------------" << std::endl;
   std::cout << "align_time: " << align_time << "ms" << std::endl;
   std::cout << "exe_time: " << exe_time << "ms" << std::endl;
   std::cout << "trans_prob: " << transform_probability << std::endl;
   std::cout << "iter_num: " << iteration_num << std::endl;
+  std::cout << "skipping_publish_num: " << skipping_publish_num << std::endl;
 }
 
 
@@ -438,7 +500,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(co
 
     const auto transform_probability = ndt_ptr->getTransformationProbability();
     const auto num_iteration = ndt_ptr->getFinalNumIteration();
-    
+
     Particle particle(initial_pose, result_pose, transform_probability, num_iteration);
     particle_array.push_back(particle);
     publishMarkerForDebug(particle, i++);
@@ -453,7 +515,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(co
     sensor_aligned_pose_pub_.publish(sensor_points_mapTF_msg);
 
   }
-  
+
   auto best_particle_ptr = std::max_element(std::begin(particle_array), std::end(particle_array),
     [](const Particle& lhs, const Particle& rhs)
     {

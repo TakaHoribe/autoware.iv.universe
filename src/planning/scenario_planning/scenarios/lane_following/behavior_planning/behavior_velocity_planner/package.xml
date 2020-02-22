@@ -59,6 +59,8 @@
   <build_depend>tf2</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>tf2_eigen</build_depend>
+  <build_depend>pcl_ros</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_export_depend>autoware_perception_msgs</build_export_depend>
   <build_export_depend>autoware_planning_msgs</build_export_depend>
@@ -70,6 +72,8 @@
   <build_export_depend>tf2</build_export_depend>
   <build_export_depend>tf2_geometry_msgs</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <build_export_depend>tf2_eigen</build_export_depend>
+  <build_export_depend>pcl_ros</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
   <exec_depend>autoware_perception_msgs</exec_depend>
   <exec_depend>autoware_planning_msgs</exec_depend>
@@ -81,6 +85,8 @@
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_eigen</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
 
 

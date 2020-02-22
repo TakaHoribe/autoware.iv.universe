@@ -38,19 +38,13 @@ namespace velodyne_pointcloud
 		return output_pointcloud;
 	}
 
-  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr extractInvalidPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud)
+  pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud)
 	{
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
     output_pointcloud->reserve(input_pointcloud->points.size());
-    velodyne_pointcloud::PointXYZIR tmp_p;
 		for(const auto &p : input_pointcloud->points) {
       if(p.distance == 0 && p.intensity <= 100) {
-        tmp_p.x = p.x;
-        tmp_p.y = p.y;
-        tmp_p.z = p.z;
-        tmp_p.intensity = p.intensity;
-        tmp_p.ring = p.ring;
-				output_pointcloud->points.push_back(tmp_p);
+				output_pointcloud->points.push_back(p);
 			}
 		}
     output_pointcloud->header = input_pointcloud->header;
@@ -59,19 +53,13 @@ namespace velodyne_pointcloud
 		return output_pointcloud;
 	}
 
-  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr extractInvalidNearPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::vector<float> &invalid_intensity_array, const size_t num_lasers)
+  pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidNearPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::vector<float> &invalid_intensity_array, const size_t num_lasers)
 	{
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
     output_pointcloud->reserve(input_pointcloud->points.size());
-    velodyne_pointcloud::PointXYZIR tmp_p;
 		for(const auto &p : input_pointcloud->points) {
       if(p.distance == 0 && p.intensity <= 100 && p.intensity != invalid_intensity_array[p.ring]) {
-        tmp_p.x = p.x;
-        tmp_p.y = p.y;
-        tmp_p.z = p.z;
-        tmp_p.intensity = p.intensity;
-        tmp_p.ring = p.ring;
-				output_pointcloud->points.push_back(tmp_p);
+				output_pointcloud->points.push_back(p);
 			}
 		}
     output_pointcloud->header = input_pointcloud->header;
@@ -80,7 +68,7 @@ namespace velodyne_pointcloud
 		return output_pointcloud;
 	}
 
-  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr extractInvalidNearPointsFiltered(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::vector<float> &invalid_intensity_array, const size_t num_lasers, const size_t points_size_threshold)
+  pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidNearPointsFiltered(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::vector<float> &invalid_intensity_array, const size_t num_lasers, const size_t points_size_threshold)
 	{
 
     std::vector<uint16_t> ring_id_array;
@@ -92,13 +80,13 @@ namespace velodyne_pointcloud
       ring_id_array = { 30, 1, 2, 5, 6, 9, 10, 14, 13, 17, 18, 22, 21, 25, 26, 0, 29, 31, 4, 8, 3, 7, 12, 16, 11, 15, 20, 19, 24, 23, 27, 28};
     }
 
-    velodyne_pointcloud::PointXYZIRADT tmp_p2;
+    velodyne_pointcloud::PointXYZIRADT tmp_p;
 		cv::Mat image = cv::Mat::zeros(cv::Size(input_pointcloud->size()/num_lasers, num_lasers), CV_8UC1);
 
     for(size_t x = 0; x < image.cols; ++x) {
       for(size_t y = 0; y < image.rows; ++y) {
-        tmp_p2 = input_pointcloud->points.at(ring_id_array.at(y)+x*image.rows);
-        if(tmp_p2.distance == 0 && tmp_p2.intensity <= 100 && tmp_p2.intensity != invalid_intensity_array[tmp_p2.ring]) {
+        tmp_p = input_pointcloud->points.at(ring_id_array.at(y)+x*image.rows);
+        if(tmp_p.distance == 0 && tmp_p.intensity <= 100 && tmp_p.intensity != invalid_intensity_array[tmp_p.ring]) {
 				  image.at<unsigned char>(y, x) = 255;
         }
         else {
@@ -127,21 +115,15 @@ namespace velodyne_pointcloud
 		}
 		// std::cerr << std::endl;
 
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
     output_pointcloud->reserve(input_pointcloud->points.size());
     int label = 0;
-    velodyne_pointcloud::PointXYZIR tmp_p;
     for(size_t x = 0; x < image.cols; ++x) {
 		  for(size_t y = 0; y < image.rows; ++y) {
 				label = label_image.at<int>(y, x);
-				tmp_p2 = input_pointcloud->points.at(ring_id_array.at(y)+x*image.rows);
+				tmp_p = input_pointcloud->points.at(ring_id_array.at(y)+x*image.rows);
         if(label != 0 && stat_area.at(label) >= points_size_threshold
-           && tmp_p2.distance == 0 && tmp_p2.intensity <= 100 && tmp_p2.intensity != invalid_intensity_array[tmp_p2.ring]) {
-      		tmp_p.x = tmp_p2.x;
-      		tmp_p.y = tmp_p2.y;
-      		tmp_p.z = tmp_p2.z;
-      		tmp_p.intensity = tmp_p2.intensity;
-      		tmp_p.ring = tmp_p2.ring;
+           && tmp_p.distance == 0 && tmp_p.intensity <= 100 && tmp_p.intensity != invalid_intensity_array[tmp_p.ring]) {
 				  output_pointcloud->points.push_back(tmp_p);
 				}
 			}
@@ -152,25 +134,14 @@ namespace velodyne_pointcloud
 		return output_pointcloud;
 	}
 
-  pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr interpolate(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::deque<geometry_msgs::TwistStamped> &twist_queue, const tf2::Transform &tf2_base_link_to_sensor)
+  pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr interpolate(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr &input_pointcloud, const std::deque<geometry_msgs::TwistStamped> &twist_queue, const tf2::Transform &tf2_base_link_to_sensor)
 	{
-    pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIR>);
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
     output_pointcloud->reserve(input_pointcloud->points.size());
 
-    velodyne_pointcloud::PointXYZIR point;
     if(input_pointcloud->points.empty() || twist_queue.empty()) {
       ROS_WARN_STREAM_THROTTLE(10, "input_pointcloud->points or twist_queue is empty.");
-      for(const auto& p : input_pointcloud->points) {
-        point.x = p.x;
-        point.y = p.y;
-        point.z = p.z;
-        point.intensity = p.intensity;
-        point.ring = p.ring;
-        output_pointcloud->points.push_back(point);
-      }
-      output_pointcloud->header = input_pointcloud->header;
-      output_pointcloud->height = 1;
-      output_pointcloud->width = output_pointcloud->points.size();
+      *output_pointcloud = *input_pointcloud;
       return output_pointcloud;
     }
 
@@ -223,13 +194,17 @@ namespace velodyne_pointcloud
       tf2::Vector3 sensorTF_trans_point;
       sensorTF_trans_point = tf2_base_link_to_sensor * base_linkTF_trans_point;
 
-      point.x = sensorTF_trans_point.getX();
-      point.y = sensorTF_trans_point.getY();
-      point.z = sensorTF_trans_point.getZ();
-      point.intensity = p.intensity;
-      point.ring = p.ring;
-      output_pointcloud->points.push_back(point);
-  
+      velodyne_pointcloud::PointXYZIRADT tmp_p;
+      tmp_p.x = sensorTF_trans_point.getX();
+      tmp_p.y = sensorTF_trans_point.getY();
+      tmp_p.z = sensorTF_trans_point.getZ();
+      tmp_p.intensity = p.intensity;
+      tmp_p.ring = p.ring;
+      tmp_p.azimuth = p.azimuth;
+      tmp_p.distance = p.distance;
+      tmp_p.time_stamp = p.time_stamp;
+      output_pointcloud->points.push_back(tmp_p);
+
       prev_time_stamp = p.time_stamp;
     }
     output_pointcloud->header = input_pointcloud->header;

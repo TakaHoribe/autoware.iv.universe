@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(behavior_velocity_planner)
 
 # Compile as C++14, supported in ROS Melodic and newer
-add_compile_options(-std=c++14 -O3)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_geometry_msgs
   tf2_ros
+  tf2_eigen
+  pcl_ros
   visualization_msgs
 )
 
@@ -37,6 +39,8 @@ catkin_package(
     tf2
     tf2_geometry_msgs
     tf2_ros
+    tf2_eigen
+    pcl_ros
     visualization_msgs
 )
 

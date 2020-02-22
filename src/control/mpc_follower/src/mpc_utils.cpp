@@ -16,13 +16,13 @@
 
 #include "mpc_follower/mpc_utils.h"
 
-geometry_msgs::Quaternion MPCUtils::getQuaternionFromYaw(const double &yaw) {
+geometry_msgs::Quaternion MPCUtils::getQuaternionFromYaw(const double& yaw) {
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
   return tf2::toMsg(q);
 }
 
-void MPCUtils::convertEulerAngleToMonotonic(std::vector<double> *a) {
+void MPCUtils::convertEulerAngleToMonotonic(std::vector<double>* a) {
   if (!a) {
     return;
   }
@@ -38,32 +38,40 @@ double MPCUtils::normalizeRadian(const double angle) {
   return n_angle;
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::PoseStamped &p0, const geometry_msgs::PoseStamped &p1) {
+double MPCUtils::calcDist2d(const geometry_msgs::PoseStamped& p0, const geometry_msgs::PoseStamped& p1) {
   return calcDist2d(p0.pose.position, p1.pose.position);
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::Pose &p0, const geometry_msgs::Pose &p1) {
+double MPCUtils::calcDist2d(const geometry_msgs::Pose& p0, const geometry_msgs::Pose& p1) {
   return calcDist2d(p0.position, p1.position);
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1) {
+double MPCUtils::calcDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
   return std::hypot(p0.x - p1.x, p0.y - p1.y);
 }
 
-double MPCUtils::calcSquaredDist2d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1) {
+double MPCUtils::calcSquaredDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
   double dx = p1.x - p0.x;
   double dy = p1.y - p0.y;
   return dx * dx + dy * dy;
 }
 
-double MPCUtils::calcDist3d(const geometry_msgs::Point &p0, const geometry_msgs::Point &p1) {
+double MPCUtils::calcDist3d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
   double dx = p1.x - p0.x;
   double dy = p1.y - p0.y;
   double dz = p1.z - p0.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory &trajectory, std::vector<double> *arclength) {
+double MPCUtils::calcLateralError(const geometry_msgs::Pose& ego_pose, const geometry_msgs::Pose& ref_pose) {
+  const double err_x = ego_pose.position.x - ref_pose.position.x;
+  const double err_y = ego_pose.position.y - ref_pose.position.y;
+  const double ref_yaw = tf2::getYaw(ref_pose.orientation);
+  const double lat_err = -std::sin(ref_yaw) * err_x + std::cos(ref_yaw) * err_y;
+  return lat_err;
+}
+
+void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory& trajectory, std::vector<double>* arclength) {
   double dist = 0.0;
   arclength->clear();
   arclength->push_back(dist);
@@ -75,8 +83,8 @@ void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory &trajectory, std::
   }
 }
 
-bool MPCUtils::resampleMPCTrajectorySpline(const MPCTrajectory &input, const double resample_interval_dist,
-                                           MPCTrajectory *output) {
+bool MPCUtils::resampleMPCTrajectoryByDistance(const MPCTrajectory& input, const double resample_interval_dist,
+                                               MPCTrajectory* output) {
   if (!output) {
     return false;
   }
@@ -96,13 +104,29 @@ bool MPCUtils::resampleMPCTrajectorySpline(const MPCTrajectory &input, const dou
     output_arclength.push_back(s);
   }
 
-  splineInterpMPCTrajectory(input_arclength, input, output_arclength, output);
+  // splineInterpMPCTrajectory(input_arclength, input, output_arclength, output);
+
+  std::vector<double> input_yaw = input.yaw;
+  MPCUtils::convertEulerAngleToMonotonic(&input_yaw);
+
+  LinearInterpolate linear_interp;
+  SplineInterpolate spline_interp;
+  if (!spline_interp.interpolate(input_arclength, input.x, output_arclength, output->x) ||
+      !spline_interp.interpolate(input_arclength, input.y, output_arclength, output->y) ||
+      !spline_interp.interpolate(input_arclength, input.z, output_arclength, output->z) ||
+      !spline_interp.interpolate(input_arclength, input_yaw, output_arclength, output->yaw) ||
+      !linear_interp.interpolate(input_arclength, input.vx, output_arclength, output->vx) ||
+      !spline_interp.interpolate(input_arclength, input.k, output_arclength, output->k) ||
+      !linear_interp.interpolate(input_arclength, input.relative_time, output_arclength, output->relative_time)) {
+    std::cerr << "linearInterpMPCTrajectory error!" << std::endl;
+    return false;
+  }
 
   return true;
 }
 
-bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
-                                         const std::vector<double> &out_index, MPCTrajectory *out_traj) {
+bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double>& in_index, const MPCTrajectory& in_traj,
+                                         const std::vector<double>& out_index, MPCTrajectory* out_traj) {
   if (!out_traj) {
     return false;
   }
@@ -135,8 +159,8 @@ bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double> &in_index, co
   return true;
 }
 
-bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double> &in_index, const MPCTrajectory &in_traj,
-                                         const std::vector<double> &out_index, MPCTrajectory *out_traj) {
+bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double>& in_index, const MPCTrajectory& in_traj,
+                                         const std::vector<double>& out_index, MPCTrajectory* out_traj) {
   if (!out_traj) {
     return false;
   }
@@ -171,7 +195,7 @@ bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double> &in_index, co
   return true;
 }
 
-void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory *traj) {
+void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory* traj) {
   if (traj->yaw.size() == 0) return;
 
   for (unsigned int i = 1; i < traj->yaw.size() - 1; ++i) {
@@ -185,7 +209,7 @@ void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory *traj) {
   }
 }
 
-bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajectory *traj) {
+bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajectory* traj) {
   if (!traj) {
     return false;
   }
@@ -218,7 +242,7 @@ bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajector
   return true;
 }
 
-bool MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory &input, MPCTrajectory *output) {
+bool MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory& input, MPCTrajectory* output) {
   if (!output) {
     return false;
   }
@@ -239,7 +263,7 @@ bool MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory &
   return true;
 }
 
-bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory *traj) {
+bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory* traj) {
   if (!traj) {
     return false;
   }
@@ -258,8 +282,30 @@ bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory *traj) {
   }
   return true;
 }
-int MPCUtils::calcNearestIndex(const MPCTrajectory &traj, const geometry_msgs::Pose &self_pose)
-{
+
+void MPCUtils::dynamicSmoothingVelocity(const int start_idx, const double start_vel, const double acc_lim,
+                                        const double tau, MPCTrajectory* traj) {
+  const double ep = 1.0E-3;
+  double curr_v = start_vel;
+  std::vector<double> smoothed_vel;
+  MPCTrajectory tmp = *traj;
+  traj->vx.at(start_idx) = start_vel;
+
+  int traj_size = static_cast<int>(traj->size());
+
+  for (int i = start_idx + 1; i < traj_size; ++i) {
+    const double ds = std::hypot(traj->x.at(i) - traj->x.at(i - 1), traj->y.at(i) - traj->y.at(i - 1));
+    const double dt = ds / std::max(std::fabs(curr_v), ep);
+    const double a = tau / std::max(tau + dt, ep);
+    const double updated_v = a * curr_v + (1.0 - a) * traj->vx.at(i);
+    const double dv = std::max(-acc_lim * dt, std::min(acc_lim * dt, updated_v - curr_v));
+    curr_v = curr_v + dv;
+    traj->vx.at(i) = curr_v;
+  }
+  calcMPCTrajectoryTime(traj);
+}
+
+int MPCUtils::calcNearestIndex(const MPCTrajectory& traj, const geometry_msgs::Pose& self_pose) {
   if (traj.size() == 0) {
     return -1;
   }
@@ -283,21 +329,21 @@ int MPCUtils::calcNearestIndex(const MPCTrajectory &traj, const geometry_msgs::P
   }
   return nearest_idx;
 }
-bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_msgs::Pose &self_pose,
-                                     geometry_msgs::Pose *nearest_pose, unsigned int *nearest_index,
-                                     double *nearest_time) {
+bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory& traj, const geometry_msgs::Pose& self_pose,
+                                     geometry_msgs::Pose* nearest_pose, int* nearest_index,
+                                     double* nearest_time) {
   if (traj.size() == 0 || !nearest_pose || !nearest_index || !nearest_time) {
     return false;
   }
   int nearest_idx = calcNearestIndex(traj, self_pose);
   if (nearest_idx == -1) {
-    ROS_WARN_DELAYED_THROTTLE(3.0, "[calcNearestPoseInterp] yaw error is over PI/3. no closest found.");
+    ROS_WARN_DELAYED_THROTTLE(3.0, "[calcNearestPoseInterp] fail to get nearest. traj.size = %d", (int)traj.size());
     return false;
   }
 
   int traj_size = static_cast<int>(traj.size());
 
-  *nearest_index = static_cast<unsigned int>(nearest_idx);
+  *nearest_index = nearest_idx;
 
   if (traj.size() == 1) {
     nearest_pose->position.x = traj.x[nearest_idx];
@@ -307,7 +353,7 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
     return true;
   }
 
-  auto calcSquaredDist = [](const geometry_msgs::Pose &p, const MPCTrajectory &t, int idx) {
+  auto calcSquaredDist = [](const geometry_msgs::Pose& p, const MPCTrajectory& t, int idx) {
     const double dx = p.position.x - t.x[idx];
     const double dy = p.position.y - t.y[idx];
     return dx * dx + dy * dy;
@@ -346,11 +392,11 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory &traj, const geometry_m
   return true;
 }
 
-void MPCUtils::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs::MarkerArray *markers, std::string ns,
-                                   double r, double g, double b, double z, std::string &frame_id) {
-  if (!markers) {
-    return;
-  }
+visualization_msgs::MarkerArray MPCUtils::convertTrajToMarker(const MPCTrajectory& traj, std::string ns, double r,
+                                                              double g, double b, double z, std::string& frame_id) {
+  visualization_msgs::MarkerArray markers;
+
+  // generate line
   visualization_msgs::Marker marker;
   marker.header.frame_id = frame_id;
   marker.header.stamp = ros::Time();
@@ -371,52 +417,56 @@ void MPCUtils::convertTrajToMarker(const MPCTrajectory &traj, visualization_msgs
     p.z = traj.z.at(i) + z;
     marker.points.push_back(p);
   }
-  markers->markers.push_back(marker);
+  markers.markers.push_back(marker);
 
+  // generate poses
   visualization_msgs::Marker marker_poses;
+  marker_poses.header.frame_id = frame_id;
+  marker_poses.header.stamp = ros::Time();
+  marker_poses.ns = ns + "/poses";
+  marker_poses.lifetime = ros::Duration(0.5);
+  marker_poses.type = visualization_msgs::Marker::ARROW;
+  marker_poses.action = visualization_msgs::Marker::ADD;
+  marker_poses.scale.x = 0.2;
+  marker_poses.scale.y = 0.1;
+  marker_poses.scale.z = 0.2;
+  marker_poses.color.a = 0.99;  // Don't forget to set the alpha!
+  marker_poses.color.r = r;
+  marker_poses.color.g = g;
+  marker_poses.color.b = b;
   for (unsigned int i = 0; i < traj.size(); ++i) {
-    marker_poses.header.frame_id = frame_id;
-    marker_poses.header.stamp = ros::Time();
-    marker_poses.ns = ns + "/poses";
     marker_poses.id = i;
-    marker_poses.lifetime = ros::Duration(0.5);
-    marker_poses.type = visualization_msgs::Marker::ARROW;
-    marker_poses.action = visualization_msgs::Marker::ADD;
     marker_poses.pose.position.x = traj.x.at(i);
     marker_poses.pose.position.y = traj.y.at(i);
     marker_poses.pose.position.z = traj.z.at(i);
     marker_poses.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
-    marker_poses.scale.x = 0.1;
-    marker_poses.scale.y = 0.05;
-    marker_poses.scale.z = 0.1;
-    marker_poses.color.a = 0.99;  // Don't forget to set the alpha!
-    marker_poses.color.r = r;
-    marker_poses.color.g = g;
-    marker_poses.color.b = b;
-    markers->markers.push_back(marker_poses);
+    markers.markers.push_back(marker_poses);
   }
 
-  visualization_msgs::Marker marker_text;
-  marker_text.header.frame_id = frame_id;
-  marker_text.header.stamp = ros::Time();
-  marker_text.ns = ns + "/text";
-  marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-  marker_text.action = visualization_msgs::Marker::ADD;
-  marker_text.scale.z = 0.2;
-  marker_text.color.a = 0.99;  // Don't forget to set the alpha!
-  marker_text.color.r = r;
-  marker_text.color.g = g;
-  marker_text.color.b = b;
+  // generate velocity text
+  // visualization_msgs::Marker marker_text;
+  // marker_text.header.frame_id = frame_id;
+  // marker_text.header.stamp = ros::Time();
+  // marker_text.ns = ns + "/text";
+  // marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  // marker_text.action = visualization_msgs::Marker::ADD;
+  // marker_text.scale.z = 0.2;
+  // marker_text.color.a = 0.99;  // Don't forget to set the alpha!
+  // marker_text.color.r = r;
+  // marker_text.color.g = g;
+  // marker_text.color.b = b;
 
-  for (unsigned int i = 0; i < traj.size(); ++i) {
-    marker_text.id = i;
-    marker_text.pose.position.x = traj.x.at(i);
-    marker_text.pose.position.y = traj.y.at(i);
-    marker_text.pose.position.z = traj.z.at(i);
-    marker_text.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << traj.vx.at(i) << ", " << i;
-    marker_text.text = oss.str();
-    markers->markers.push_back(marker_text);
-  }
+  // for (unsigned int i = 0; i < traj.size(); ++i) {
+  //   marker_text.id = i;
+  //   marker_text.pose.position.x = traj.x.at(i);
+  //   marker_text.pose.position.y = traj.y.at(i);
+  //   marker_text.pose.position.z = traj.z.at(i);
+  //   marker_text.pose.orientation = MPCUtils::getQuaternionFromYaw(traj.yaw.at(i));
+  //   std::ostringstream oss;
+  //   oss << std::fixed << std::setprecision(1) << traj.vx.at(i) << ", " << i;
+  //   marker_text.text = oss.str();
+  //   markers.markers.push_back(marker_text);
+  // }
+
+  return markers;
 }
