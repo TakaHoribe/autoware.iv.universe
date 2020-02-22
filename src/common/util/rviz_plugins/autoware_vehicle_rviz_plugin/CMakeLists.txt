@@ -46,6 +46,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 ## Declare a C++ library
 add_library(autoware_vehicle_rviz_plugin
+  src/tools/turn_signal.cpp
   src/tools/console_meter.cpp
   src/tools/steering_angle.cpp
   src/tools/jsk_overlay_utils.cpp

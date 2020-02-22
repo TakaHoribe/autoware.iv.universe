@@ -21,6 +21,7 @@
 #include <string>
 #include <deque>
 #include <mutex>
+#include <thread>
 
 #include <ros/ros.h>
 
@@ -38,6 +39,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 // #include <pcl/registration/ndt.h>
@@ -99,6 +101,8 @@ private:
 
   void publishMarkerForDebug(const Particle &particle_array, const size_t i);
 
+  void timerDiagnostic();
+
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
@@ -118,6 +122,7 @@ private:
   ros::Publisher initial_to_result_distance_new_pub_;
   ros::Publisher ndt_marker_pub_;
   ros::Publisher ndt_monte_colro_initial_pose_marker_pub_;
+  ros::Publisher diagnostics_pub_;
 
   ros::ServiceServer service_;
 
@@ -138,4 +143,7 @@ private:
   std::mutex ndt_map_mtx_;
 
   OMPParams omp_params_;
+
+  std::thread diagnostic_thread_;
+  std::map <std::string, std::string> key_value_stdmap_;
 };

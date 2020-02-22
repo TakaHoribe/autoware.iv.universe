@@ -46,7 +46,7 @@ CarInitialPoseTool::CarInitialPoseTool()
 {
   shortcut_key_ = 'k';
 
-  topic_property_ = new StringProperty( "Pose Topic", "/simulator/dummy_perceotion/publisher/object_info",
+  topic_property_ = new StringProperty( "Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
                                         "The topic on which to publish dummy object info.",
                                         getPropertyContainer(), SLOT( updateTopic() ), this );
   std_dev_x_ = new FloatProperty("X std deviation", 0.03, "X standard deviation for initial pose [m]", getPropertyContainer());

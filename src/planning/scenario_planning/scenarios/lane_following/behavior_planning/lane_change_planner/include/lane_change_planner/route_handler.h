@@ -31,6 +31,13 @@
 
 namespace lane_change_planner
 {
+
+enum class LaneChangeDirection{
+  NONE,
+  LEFT,
+  RIGHT
+};
+
 class RouteHandler
 {
 private:
@@ -120,6 +127,8 @@ public:
                                                           bool use_exact = true) const;
   bool getLaneChangeTarget(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* target_lanelet) const;
   lanelet::ConstLanelets getLaneChangeTarget(const geometry_msgs::Pose& pose) const;
+
+  double getLaneChangeableDistance(const geometry_msgs::Pose& current_pose, const LaneChangeDirection& direction);
 };
 }  // namespace lane_change_planner
 #endif  // LANE_CHANGE_PLANNER_ROUTE_HANDLER_H

@@ -71,9 +71,9 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   // Paper : Algo.2 Search-Based Rectangle Fitting
   std::vector<std::pair<double /*theta*/, double /*q*/>> Q;
   const double max_angle = M_PI / 2.0;
+  const double eplison = 0.001;
   const double angle_reso = M_PI / 180.0;
-  for (double theta = 0; theta < max_angle; theta += angle_reso)
-  {
+  for (double theta = 0; theta <= max_angle + eplison; theta += angle_reso) {
     Eigen::Vector2d e_1;
     e_1 << std::cos(theta), std::sin(theta); // col.3, Algo.2
     Eigen::Vector2d e_2;
@@ -286,67 +286,66 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
 //     return max_beta;
 // }
 
-double BoundingBoxModel::calcClosenessCriterion(const std::vector<double> &C_1, const std::vector<double> &C_2)
-{
-  // Paper : Algo.4 Closeness Criterion
-  const double min_c_1 = *std::min_element(C_1.begin(), C_1.end()); // col.2, Algo.4
-  const double max_c_1 = *std::max_element(C_1.begin(), C_1.end()); // col.2, Algo.4
-  const double min_c_2 = *std::min_element(C_2.begin(), C_2.end()); // col.3, Algo.4
-  const double max_c_2 = *std::max_element(C_2.begin(), C_2.end()); // col.3, Algo.4
-
-  std::vector<double> D_1; // col.4, Algo.4
-  for (const auto &c_1_element : C_1)
-  {
-    const double v = std::min(max_c_1 - c_1_element, c_1_element - min_c_1);
-    D_1.push_back(std::fabs(v));
-  }
-
-  std::vector<double> D_2; // col.5, Algo.4
-  for (const auto &c_2_element : C_2)
-  {
-    const double v = std::min(max_c_2 - c_2_element, c_2_element - min_c_2);
-    D_2.push_back(v * v);
-  }
-
-  const double d_min = 0.1;
-  const double d_max = 0.20;
-  double beta = 0; // col.6, Algo.4
-  for (size_t i = 0; i < D_1.size(); ++i)
-  {
-    const double d = std::min(std::max(std::min(D_1.at(i), D_2.at(i)), d_min), d_max);
-    beta += 1.0 / d;
-  }
-  return beta;
-}
-
 // double BoundingBoxModel::calcClosenessCriterion(const std::vector<double> &C_1, const std::vector<double> &C_2)
 // {
-//     // Paper : Algo.4 Closeness Criterion
-//     const double min_c_1 = *std::min_element(C_1.begin(), C_1.end()); // col.2, Algo.4
-//     const double max_c_1 = *std::max_element(C_1.begin(), C_1.end()); // col.2, Algo.4
-//     const double min_c_2 = *std::min_element(C_2.begin(), C_2.end()); // col.3, Algo.4
-//     const double max_c_2 = *std::max_element(C_2.begin(), C_2.end()); // col.3, Algo.4
+//   // Paper : Algo.4 Closeness Criterion
+//   const double min_c_1 = *std::min_element(C_1.begin(), C_1.end()); // col.2, Algo.4
+//   const double max_c_1 = *std::max_element(C_1.begin(), C_1.end()); // col.2, Algo.4
+//   const double min_c_2 = *std::min_element(C_2.begin(), C_2.end()); // col.3, Algo.4
+//   const double max_c_2 = *std::max_element(C_2.begin(), C_2.end()); // col.3, Algo.4
 
-//     std::vector<double> D_1; // col.4, Algo.4
-//     for (const auto &c_1_element : C_1)
-//     {
-//         const double v = std::min(max_c_1 - c_1_element, c_1_element - min_c_1);
-//         D_1.push_back(std::fabs(v));
-//     }
+//   std::vector<double> D_1; // col.4, Algo.4
+//   for (const auto &c_1_element : C_1)
+//   {
+//     const double v = std::min(max_c_1 - c_1_element, c_1_element - min_c_1);
+//     D_1.push_back(std::fabs(v));
+//   }
 
-//     std::vector<double> D_2; // col.5, Algo.4
-//     for (const auto &c_2_element : C_2)
-//     {
-//         const double v = std::min(max_c_2 - c_2_element, c_2_element - min_c_2);
-//         D_2.push_back(std::fabs(v));
-//     }
+//   std::vector<double> D_2; // col.5, Algo.4
+//   for (const auto &c_2_element : C_2)
+//   {
+//     const double v = std::min(max_c_2 - c_2_element, c_2_element - min_c_2);
+//     D_2.push_back(v * v);
+//   }
 
-//     const double d_min = 0.1;
-//     double beta = 0; // col.6, Algo.4
-//     for (size_t i = 0; i < D_1.size(); ++i)
-//     {
-//         const double d = std::max(std::min(D_1.at(i), D_2.at(i)), d_min);
-//         beta += 1.0 / d;
-//     }
-//     return beta;
+//   const double d_min = 0.03;
+//   const double d_max = 0.20;
+//   double beta = 0; // col.6, Algo.4
+//   for (size_t i = 0; i < D_1.size(); ++i)
+//   {
+//     const double d = std::min(std::max(std::min(D_1.at(i), D_2.at(i)), d_min), d_max);
+//     beta += 1.0 / d;
+//   }
+//   return beta;
 // }
+
+double BoundingBoxModel::calcClosenessCriterion(const std::vector<double> &C_1, const std::vector<double> &C_2)
+{
+    // Paper : Algo.4 Closeness Criterion
+    const double min_c_1 = *std::min_element(C_1.begin(), C_1.end()); // col.2, Algo.4
+    const double max_c_1 = *std::max_element(C_1.begin(), C_1.end()); // col.2, Algo.4
+    const double min_c_2 = *std::min_element(C_2.begin(), C_2.end()); // col.3, Algo.4
+    const double max_c_2 = *std::max_element(C_2.begin(), C_2.end()); // col.3, Algo.4
+
+    std::vector<double> D_1; // col.4, Algo.4
+    for (const auto &c_1_element : C_1)
+    {
+        const double v = std::min(max_c_1 - c_1_element, c_1_element - min_c_1);
+        D_1.push_back(std::fabs(v));
+    }
+
+    std::vector<double> D_2; // col.5, Algo.4
+    for (const auto &c_2_element : C_2)
+    {
+        const double v = std::min(max_c_2 - c_2_element, c_2_element - min_c_2);
+        D_2.push_back(std::fabs(v));
+    }
+    const double d_min = 0.03;
+    double beta = 0; // col.6, Algo.4
+    for (size_t i = 0; i < D_1.size(); ++i)
+    {
+      const double d = std::max(std::min(D_1.at(i), D_2.at(i)), d_min);
+      beta += 1.0 / d;
+    }
+    return beta;
+}
