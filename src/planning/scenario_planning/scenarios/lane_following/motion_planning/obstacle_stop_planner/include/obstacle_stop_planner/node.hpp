@@ -71,7 +71,9 @@ class ObstacleStopPlannerNode {
   bool searchPointcloudNearTrajectory(const autoware_planning_msgs::Trajectory& trajectory, const double radius,
                                       const pcl::PointCloud<pcl::PointXYZ>::Ptr input_pointcloud_ptr,
                                       pcl::PointCloud<pcl::PointXYZ>::Ptr output_pointcloud_ptr);
-  bool getSelfPose(const std_msgs::Header& header, const tf2_ros::Buffer &tf_buffer, geometry_msgs::Pose& self_pose) ;
+  void createOneStepPolygon(const geometry_msgs::Pose base_stap_pose, const geometry_msgs::Pose next_step_pose,
+                            std::vector<cv::Point2d>& polygon);
+  bool getSelfPose(const std_msgs::Header& header, const tf2_ros::Buffer& tf_buffer, geometry_msgs::Pose& self_pose);
   bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
                                                        const Eigen::Vector2d& line_point2,
                                                        const Eigen::Vector2d& base_point, const double backward_length,

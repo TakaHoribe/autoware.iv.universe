@@ -121,57 +121,8 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
     /*
      * create one step polygon
      */
-    std::vector<cv::Point2d> one_step_move_vehicle_corner_points;
     std::vector<cv::Point2d> one_step_move_vehicle_polygon;
-    // start step
-    {
-      double yaw = getYawFromGeometryMsgsQuaternion(trajectory.points.at(i).pose.orientation);
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i).pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
-                          std::sin(yaw) * (vehicle_width_ / 2.0),
-                      trajectory.points.at(i).pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
-                          std::cos(yaw) * (vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i).pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
-                          std::sin(yaw) * (-vehicle_width_ / 2.0),
-                      trajectory.points.at(i).pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
-                          std::cos(yaw) * (-vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i).pose.position.x + std::cos(yaw) * (-rear_overhang_) -
-                          std::sin(yaw) * (-vehicle_width_ / 2.0),
-                      trajectory.points.at(i).pose.position.y + std::sin(yaw) * (-rear_overhang_) +
-                          std::cos(yaw) * (-vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i).pose.position.x + std::cos(yaw) * (-rear_overhang_) -
-                          std::sin(yaw) * (vehicle_width_ / 2.0),
-                      trajectory.points.at(i).pose.position.y + std::sin(yaw) * (-rear_overhang_) +
-                          std::cos(yaw) * (vehicle_width_ / 2.0)));
-    }
-    // next step
-    {
-      double yaw = getYawFromGeometryMsgsQuaternion(trajectory.points.at(i + 1).pose.orientation);
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i + 1).pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
-                          std::sin(yaw) * (vehicle_width_ / 2.0),
-                      trajectory.points.at(i + 1).pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
-                          std::cos(yaw) * (vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i + 1).pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
-                          std::sin(yaw) * (-vehicle_width_ / 2.0),
-                      trajectory.points.at(i + 1).pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
-                          std::cos(yaw) * (-vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i + 1).pose.position.x + std::cos(yaw) * (-rear_overhang_) -
-                          std::sin(yaw) * (-vehicle_width_ / 2.0),
-                      trajectory.points.at(i + 1).pose.position.y + std::sin(yaw) * (-rear_overhang_) +
-                          std::cos(yaw) * (-vehicle_width_ / 2.0)));
-      one_step_move_vehicle_corner_points.push_back(
-          cv::Point2d(trajectory.points.at(i + 1).pose.position.x + std::cos(yaw) * (-rear_overhang_) -
-                          std::sin(yaw) * (vehicle_width_ / 2.0),
-                      trajectory.points.at(i + 1).pose.position.y + std::sin(yaw) * (-rear_overhang_) +
-                          std::cos(yaw) * (vehicle_width_ / 2.0)));
-    }
-    convexHull(one_step_move_vehicle_corner_points, one_step_move_vehicle_polygon);
+    createOneStepPolygon(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose, one_step_move_vehicle_polygon);
     debug_ptr_->pushPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z);
 
     /*
@@ -198,6 +149,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
     const double search_range = 1.0 + std::hypot((vehicle_width_ / 2.0), (wheel_base_ + front_overhang_));
     searchPointcloudNearTrajectory(trajectory, search_range, transformed_obstacle_pointcloud_ptr,
                                    obstacle_candidate_pointcloud_ptr);
+    // check within polygon
     pcl::PointCloud<pcl::PointXYZ>::Ptr collision_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     for (size_t j = 0; j < obstacle_candidate_pointcloud_ptr->size(); ++j) {
       Point point(obstacle_candidate_pointcloud_ptr->at(j).x, obstacle_candidate_pointcloud_ptr->at(j).y);
@@ -208,13 +160,16 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
       }
     }
 
+    /*
+     * search nearest collision point by begining of path
+     */
     if (is_collision) {
       getNearestPoint(*collision_pointcloud_ptr, trajectory.points.at(i).pose, nearest_collision_point);
       debug_ptr_->pushStopObstaclePoint(nearest_collision_point);
       break;
     }
   }
-  
+
   /*
    * insert stop point
    */
@@ -261,7 +216,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
           double length_sum = 0.0;
           length_sum += trajectory_vec.normalized().dot(collision_point_vec);
           Eigen::Vector2d line_start_point, line_end_point;
-                   {
+          {
             line_start_point << output_msg.points.at(0).pose.position.x, output_msg.points.at(0).pose.position.y;
             const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(0).pose.orientation);
             line_end_point << std::cos(yaw), std::sin(yaw);
@@ -282,17 +237,15 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 
         // check already insert stop point
         bool is_inserted_already_stop_point = false;
-        for (int j = max_dist_stop_point_idx - 1;
-             j < (int)min_dist_stop_point_idx; ++j) {
+        for (int j = max_dist_stop_point_idx - 1; j < (int)min_dist_stop_point_idx; ++j) {
           if (output_msg.points.at(std::max(j, 0)).twist.linear.x == 0.0) {
             is_inserted_already_stop_point = true;
             break;
           }
         }
         // insert stop point
-        const size_t insert_stop_point_index = !is_inserted_already_stop_point
-                                                   ? max_dist_stop_point_idx
-                                                   : min_dist_stop_point_idx;
+        const size_t insert_stop_point_index =
+            !is_inserted_already_stop_point ? max_dist_stop_point_idx : min_dist_stop_point_idx;
         const Eigen::Vector2d stop_point = !is_inserted_already_stop_point ? max_dist_stop_point : min_dist_stop_point;
         autoware_planning_msgs::TrajectoryPoint stop_trajectory_point =
             output_msg.points.at(std::max((int)(insert_stop_point_index)-1, 0));
@@ -392,6 +345,55 @@ bool ObstacleStopPlannerNode::searchPointcloudNearTrajectory(
     }
   }
   return true;
+}
+
+void ObstacleStopPlannerNode::createOneStepPolygon(const geometry_msgs::Pose base_stap_pose,
+                                                   const geometry_msgs::Pose next_step_pose,
+                                                   std::vector<cv::Point2d>& polygon) {
+  std::vector<cv::Point2d> one_step_move_vehicle_corner_points;
+  // start step
+  {
+    double yaw = getYawFromGeometryMsgsQuaternion(base_stap_pose.orientation);
+    one_step_move_vehicle_corner_points.push_back(
+        cv::Point2d(base_stap_pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
+                        std::sin(yaw) * (vehicle_width_ / 2.0),
+                    base_stap_pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
+                        std::cos(yaw) * (vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(
+        cv::Point2d(base_stap_pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
+                        std::sin(yaw) * (-vehicle_width_ / 2.0),
+                    base_stap_pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
+                        std::cos(yaw) * (-vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(cv::Point2d(
+        base_stap_pose.position.x + std::cos(yaw) * (-rear_overhang_) - std::sin(yaw) * (-vehicle_width_ / 2.0),
+        base_stap_pose.position.y + std::sin(yaw) * (-rear_overhang_) + std::cos(yaw) * (-vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(cv::Point2d(
+        base_stap_pose.position.x + std::cos(yaw) * (-rear_overhang_) - std::sin(yaw) * (vehicle_width_ / 2.0),
+        base_stap_pose.position.y + std::sin(yaw) * (-rear_overhang_) + std::cos(yaw) * (vehicle_width_ / 2.0)));
+  }
+  // next step
+  {
+    double yaw = getYawFromGeometryMsgsQuaternion(next_step_pose.orientation);
+    one_step_move_vehicle_corner_points.push_back(
+        cv::Point2d(next_step_pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
+                        std::sin(yaw) * (vehicle_width_ / 2.0),
+                    next_step_pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
+                        std::cos(yaw) * (vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(
+        cv::Point2d(next_step_pose.position.x + std::cos(yaw) * (wheel_base_ + front_overhang_) -
+                        std::sin(yaw) * (-vehicle_width_ / 2.0),
+                    next_step_pose.position.y + std::sin(yaw) * (wheel_base_ + front_overhang_) +
+                        std::cos(yaw) * (-vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(cv::Point2d(
+        next_step_pose.position.x + std::cos(yaw) * (-rear_overhang_) - std::sin(yaw) * (-vehicle_width_ / 2.0),
+        next_step_pose.position.y + std::sin(yaw) * (-rear_overhang_) + std::cos(yaw) * (-vehicle_width_ / 2.0)));
+    one_step_move_vehicle_corner_points.push_back(cv::Point2d(
+        next_step_pose.position.x + std::cos(yaw) * (-rear_overhang_) - std::sin(yaw) * (vehicle_width_ / 2.0),
+        next_step_pose.position.y + std::sin(yaw) * (-rear_overhang_) + std::cos(yaw) * (vehicle_width_ / 2.0)));
+  }
+  convexHull(one_step_move_vehicle_corner_points, polygon);
+
+  return;
 }
 
 bool ObstacleStopPlannerNode::convexHull(const std::vector<cv::Point2d> pointcloud,
