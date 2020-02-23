@@ -8,6 +8,7 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
+        - /Planning1/ScenarioPlanning1/LaneFollowing1/BehaviorPlanning1
         - /Control1/Debug/MPC1/Namespaces1
       Splitter Ratio: 0.64552241563797
     Tree Height: 481
@@ -944,13 +945,36 @@ Visualization Manager:
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
-                      Enabled: false
+                      Enabled: true
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
                       Name: Intersection
                       Namespaces:
-                        {}
+                        intersection_detection_lanelets_0: false
+                        intersection_detection_lanelets_1: false
+                        intersection_detection_lanelets_10: false
+                        intersection_detection_lanelets_11: false
+                        intersection_detection_lanelets_12: false
+                        intersection_detection_lanelets_13: false
+                        intersection_detection_lanelets_14: false
+                        intersection_detection_lanelets_15: false
+                        intersection_detection_lanelets_2: false
+                        intersection_detection_lanelets_3: false
+                        intersection_detection_lanelets_4: false
+                        intersection_detection_lanelets_5: false
+                        intersection_detection_lanelets_6: false
+                        intersection_detection_lanelets_7: false
+                        intersection_detection_lanelets_8: false
+                        intersection_detection_lanelets_9: false
+                        judge_point_pose: false
+                        judge_point_pose_line: false
+                        path_left_edge: false
+                        path_raw: false
+                        path_right_edge: false
+                        path_with_judgeline: false
+                        stop_point_pose: false
+                        stop_point_pose_line: true
                       Queue Size: 100
-                      Value: false
+                      Value: true
                     - Class: rviz/MarkerArray
                       Enabled: false
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
@@ -988,9 +1012,11 @@ Visualization Manager:
                       Name: ObstaclePointCloudStop
                       Namespaces:
                         collision polygons: true
-                        polygons: true
+                        detection polygons: true
+                        factor text: true
                         stop geofence: true
                         stop obstacle point: true
+                        stop obstacle text: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
