@@ -94,7 +94,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
   if (obstacle_ros_pointcloud_ptr_ == nullptr) return;
 
   autoware_planning_msgs::Trajectory output_msg = *input_msg;
-
+  const double epsilon = 0.00001;
   /*
    * trim trajectory from self pose
    */
@@ -183,8 +183,8 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
       Eigen::Vector2d collision_point_vec;
       collision_point_vec << nearest_collision_point.x - output_msg.points.at(i).pose.position.x,
           nearest_collision_point.y - output_msg.points.at(i).pose.position.y;
-      if (trajectory_vec.dot(collision_point_vec) < 0.0 ||
-          (i + 1 == output_msg.points.size() && 0 <= trajectory_vec.dot(collision_point_vec))) {
+      if (trajectory_vec.dot(collision_point_vec) <= 0.0 + epsilon ||
+          (i + 1 == output_msg.points.size() && 0.0 <= trajectory_vec.dot(collision_point_vec)+epsilon)) {
         Eigen::Vector2d max_dist_stop_point;
         // search insert point
         size_t max_dist_stop_point_idx = 0;
