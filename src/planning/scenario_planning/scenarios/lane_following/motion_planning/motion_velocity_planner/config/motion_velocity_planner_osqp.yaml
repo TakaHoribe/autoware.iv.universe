@@ -4,7 +4,7 @@ min_decel: -1.0         # min deceleration limit [m/ss]
 
 # curve parameters
 max_lateral_accel: 0.01            # max lateral acceleration limit [m/ss]
-min_curve_velocity: 1.38           # min velocity at lateral acceleration limit [m/ss]
+min_curve_velocity: 2.74           # min velocity at lateral acceleration limit [m/ss]
 decel_distance_before_curve: 3.5   # slow speed distance before a curve for lateral acceleration limit
 decel_distance_after_curve: 2.0    # slow speed distance after a curve for lateral acceleration limit
 
