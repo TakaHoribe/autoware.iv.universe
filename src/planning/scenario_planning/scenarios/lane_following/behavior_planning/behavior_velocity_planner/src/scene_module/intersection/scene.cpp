@@ -164,22 +164,26 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
     return false;  // cannot find stop line.
   }
 
-  // TEMP: should use interpolation (points distance may be very long)
+  // insert judge line with interpolation
   double curr_dist = 0.0;
   double prev_dist = curr_dist;
   *judge_line_idx = -1;
   for (size_t i = *stop_line_idx; i > 0; --i) {
-    const geometry_msgs::Point p0 = path->points.at(i).point.pose.position;
-    const geometry_msgs::Point p1 = path->points.at(i - 1).point.pose.position;
+    const geometry_msgs::Pose p0 = path->points.at(i).point.pose;
+    const geometry_msgs::Pose p1 = path->points.at(i - 1).point.pose;
     curr_dist += planning_utils::calcDist2d(p0, p1);
     if (curr_dist > judge_line_dist) {
       const double dl = std::max(curr_dist - prev_dist, 0.0001 /* avoid 0 divide */);
       const double w_p0 = (curr_dist - judge_line_dist) / dl;
       const double w_p1 = (judge_line_dist - prev_dist) / dl;
       autoware_planning_msgs::PathPointWithLaneId p = path->points.at(i);
-      p.point.pose.position.x = w_p0 * p0.x + w_p1 * p1.x;
-      p.point.pose.position.y = w_p0 * p0.y + w_p1 * p1.y;
-      p.point.pose.position.z = w_p0 * p0.z + w_p1 * p1.z;
+      p.point.pose.position.x = w_p0 * p0.position.x + w_p1 * p1.position.x;
+      p.point.pose.position.y = w_p0 * p0.position.y + w_p1 * p1.position.y;
+      p.point.pose.position.z = w_p0 * p0.position.z + w_p1 * p1.position.z;
+      tf2::Quaternion q0_tf, q1_tf;
+      tf2::fromMsg(p0.orientation, q0_tf);
+      tf2::fromMsg(p1.orientation, q1_tf);
+      p.point.pose.orientation = tf2::toMsg(q0_tf.slerp(q1_tf, w_p1));
       auto itr = path->points.begin();
       itr += i;
       path->points.insert(itr, p);
