@@ -22,7 +22,11 @@ BlindSpotModule::BlindSpotModule(const int lane_id, const std::string& turn_dire
   state_machine_.setMarginTime(2.0);  // [sec]
   path_expand_width_ = 2.0;
   show_debug_info_ = false;
-};
+  if (!getBaselink2FrontLength(baselink_to_front_length_)) {
+    ROS_WARN("[IntersectionModule] : cannot get vehicle front to base_link. set default.");
+    baselink_to_front_length_ = 5.0;
+  }
+}
 
 bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
                           autoware_planning_msgs::PathWithLaneId& output) {
@@ -57,6 +61,12 @@ bool BlindSpotModule::run(const autoware_planning_msgs::PathWithLaneId& input,
                   "[BlindSpotModule::run] the stop line or judge line is at path[0], ignore "
                   "planning. Maybe it is far behind the current position.");
     return true;
+  }
+
+  if (current_state == State::STOP) {
+    // visualize geofence at vehicle front position
+    blind_spot_module_manager_->debugger_.publishGeofence(
+        getAheadPose(stop_line_idx_, baselink_to_front_length_, output), assigned_lane_id_);
   }
   blind_spot_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose", 1.0,
                                                     0.0, 0.0, (int)current_state);
@@ -201,17 +211,21 @@ bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const doubl
   judge_line_idx = -1;
 
   for (size_t i = stop_line_idx; i > 0; --i) {
-    const geometry_msgs::Point p0 = path.points.at(i).point.pose.position;
-    const geometry_msgs::Point p1 = path.points.at(i - 1).point.pose.position;
+    const geometry_msgs::Pose p0 = path.points.at(i).point.pose;
+    const geometry_msgs::Pose p1 = path.points.at(i - 1).point.pose;
     curr_dist += planning_utils::calcDist2d(p0, p1);
     if (curr_dist > judge_line_dist) {
       const double dl = std::max(curr_dist - prev_dist, 0.0001 /* avoid 0 divide */);
       const double w_p0 = (curr_dist - judge_line_dist) / dl;
       const double w_p1 = (judge_line_dist - prev_dist) / dl;
       autoware_planning_msgs::PathPointWithLaneId p = path.points.at(i);
-      p.point.pose.position.x = w_p0 * p0.x + w_p1 * p1.x;
-      p.point.pose.position.y = w_p0 * p0.y + w_p1 * p1.y;
-      p.point.pose.position.z = w_p0 * p0.z + w_p1 * p1.z;
+      p.point.pose.position.x = w_p0 * p0.position.x + w_p1 * p1.position.x;
+      p.point.pose.position.y = w_p0 * p0.position.y + w_p1 * p1.position.y;
+      p.point.pose.position.z = w_p0 * p0.position.z + w_p1 * p1.position.z;
+      tf2::Quaternion q0_tf, q1_tf;
+      tf2::fromMsg(p0.orientation, q0_tf);
+      tf2::fromMsg(p1.orientation, q1_tf);
+      p.point.pose.orientation = tf2::toMsg(q0_tf.slerp(q1_tf, w_p1));
       auto itr = path.points.begin();
       itr += i;
       path.points.insert(itr, p);
@@ -229,6 +243,37 @@ bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const doubl
         stop_line_idx);
   }
   return true;
+}
+
+geometry_msgs::Pose BlindSpotModule::getAheadPose(const size_t start_idx, const double ahead_dist,
+                                                  const autoware_planning_msgs::PathWithLaneId& path) const {
+  if (path.points.size() == 0) {
+    return geometry_msgs::Pose{};
+  }
+
+  double curr_dist = 0.0;
+  double prev_dist = 0.0;
+  for (size_t i = start_idx; i < path.points.size() - 1 && i >= 0; ++i) {
+    const geometry_msgs::Pose p0 = path.points.at(i).point.pose;
+    const geometry_msgs::Pose p1 = path.points.at(i + 1).point.pose;
+    curr_dist += planning_utils::calcDist2d(p0, p1);
+    if (curr_dist > ahead_dist) {
+      const double dl = std::max(curr_dist - prev_dist, 0.0001 /* avoid 0 divide */);
+      const double w_p0 = (curr_dist - ahead_dist) / dl;
+      const double w_p1 = (ahead_dist - prev_dist) / dl;
+      geometry_msgs::Pose p;
+      p.position.x = w_p0 * p0.position.x + w_p1 * p1.position.x;
+      p.position.y = w_p0 * p0.position.y + w_p1 * p1.position.y;
+      p.position.z = w_p0 * p0.position.z + w_p1 * p1.position.z;
+      tf2::Quaternion q0_tf, q1_tf;
+      tf2::fromMsg(p0.orientation, q0_tf);
+      tf2::fromMsg(p1.orientation, q1_tf);
+      p.orientation = tf2::toMsg(q0_tf.slerp(q1_tf, w_p1));
+      return p;
+    }
+    prev_dist = curr_dist;
+  }
+  return path.points.back().point.pose;
 }
 
 bool BlindSpotModule::setVelocityFrom(const size_t idx, const double vel,
@@ -573,6 +618,51 @@ void BlindSpotModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const
 
     msg.markers.push_back(marker_line);
   }
+
+  debug_viz_pub_.publish(msg);
+}
+
+void BlindSpotModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker_geofence{};
+  marker_geofence.header.frame_id = "map";
+  marker_geofence.header.stamp = ros::Time::now();
+  marker_geofence.ns = "stop geofence";
+  marker_geofence.id = lane_id;
+  marker_geofence.lifetime = ros::Duration(0.5);
+  marker_geofence.type = visualization_msgs::Marker::CUBE;
+  marker_geofence.action = visualization_msgs::Marker::ADD;
+  marker_geofence.pose = pose;
+  marker_geofence.pose.position.z += 1.0;
+  marker_geofence.scale.x = 0.1;
+  marker_geofence.scale.y = 5.0;
+  marker_geofence.scale.z = 2.0;
+  marker_geofence.color.r = 1.0;
+  marker_geofence.color.g = 0.0;
+  marker_geofence.color.b = 0.0;
+  marker_geofence.color.a = 0.5;
+  msg.markers.push_back(marker_geofence);
+
+  visualization_msgs::Marker marker_factor_text{};
+  marker_factor_text.header.frame_id = "map";
+  marker_factor_text.header.stamp = ros::Time::now();
+  marker_factor_text.ns = "factor text";
+  marker_factor_text.id = lane_id;
+  marker_factor_text.lifetime = ros::Duration(0.5);
+  marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_factor_text.action = visualization_msgs::Marker::ADD;
+  marker_factor_text.pose = pose;
+  marker_factor_text.pose.position.z += 2.0;
+  marker_factor_text.scale.x = 0.0;
+  marker_factor_text.scale.y = 0.0;
+  marker_factor_text.scale.z = 1.0;
+  marker_factor_text.color.r = 1.0;
+  marker_factor_text.color.g = 1.0;
+  marker_factor_text.color.b = 1.0;
+  marker_factor_text.color.a = 0.999;
+  marker_factor_text.text = "blind spot";
+  msg.markers.push_back(marker_factor_text);
 
   debug_viz_pub_.publish(msg);
 }
