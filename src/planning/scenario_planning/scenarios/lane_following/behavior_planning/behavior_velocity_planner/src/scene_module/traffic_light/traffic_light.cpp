@@ -56,14 +56,14 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
   if (state_ == State::GO_OUT)
     return true;
   else if (state_ == State::APPROARCH) {
-    for(int i=0; i<lanelet_stop_line.size()-1; i++){
+    for (int i = 0; i < lanelet_stop_line.size() - 1; i++) {
       Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
-                        {lanelet_stop_line[i+1].x(), lanelet_stop_line[i+1].y()}};
+                        {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
       // update state
       {
         Eigen::Vector2d judge_point;
         size_t judge_point_idx;
-        if (!createTargetPoint(input, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point))continue;
+        if (!createTargetPoint(input, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) continue;
         const double sq_dist =
             (judge_point.x() - self_pose.pose.position.x) * (judge_point.x() - self_pose.pose.position.x) +
             (judge_point.y() - self_pose.pose.position.y) * (judge_point.y() - self_pose.pose.position.y);
@@ -72,10 +72,10 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
           double yaw;
           if (judge_point_idx == 0)
             yaw = std::atan2(input.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
-                            input.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
+                             input.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
           else
             yaw = std::atan2(judge_point.y() - input.points.at(judge_point_idx - 1).point.pose.position.y,
-                            judge_point.x() - input.points.at(judge_point_idx - 1).point.pose.position.x);
+                             judge_point.x() - input.points.at(judge_point_idx - 1).point.pose.position.x);
           tf2::Quaternion quat;
           quat.setRPY(0, 0, yaw);
           tf2::Transform tf_map2judge_pose(quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
@@ -105,7 +105,7 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
       Eigen::Vector2d self_point;
       self_point << self_pose.pose.position.x, self_pose.pose.position.y;
       const double sq_dist = (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
-                            (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
+                             (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
       if (sq_dist < stop_border_distance_threshold * stop_border_distance_threshold) {
         ROS_WARN_THROTTLE(1.0,
                           "[traffic_light] state is red. this vehicle are passing too fast to stop "
@@ -126,11 +126,11 @@ bool TrafficLightModule::run(const autoware_planning_msgs::PathWithLaneId& input
           continue;
         }
       }
-      //not go to continue in any index, return true
+      // not go to continue in any index, return true
       return true;
     }
   }
-  //all index in for() go to continue, return false
+  // all index in for() go to continue, return false
   return false;
 }
 
