@@ -13,6 +13,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <scene_module/scene_module_interface.hpp>
+#include <scene_module/momentary_stop/debug_marker.hpp>
 #include <string>
 #include <unordered_map>
 #define EIGEN_MPL2_ONLY
@@ -51,9 +52,12 @@ class MomentaryStopModuleManager : public SceneModuleManagerInterface {
   ~MomentaryStopModuleManager(){};
   bool startCondition(const autoware_planning_msgs::PathWithLaneId& input,
                       std::vector<std::shared_ptr<SceneModuleInterface>>& v_module_ptr) override;
+  bool run(const autoware_planning_msgs::PathWithLaneId& input,
+           autoware_planning_msgs::PathWithLaneId& output) override;
   bool isRunning(const lanelet::ConstLineString3d& stop_line);
   bool registerTask(const lanelet::ConstLineString3d& stop_line, const boost::uuids::uuid& uuid);
   bool unregisterTask(const boost::uuids::uuid& uuid);
+  MomentaryStopDebugMarkersManager debuger;
 
  private:
   std::unordered_map<lanelet::ConstLineString3d, std::string> task_id_direct_map_;

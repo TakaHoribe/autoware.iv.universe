@@ -291,14 +291,14 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     }
     if(!is_explore_success)
     {
-      ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] graph a star could not find path");
+      // ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] pass will be genera");
       return false;
     }
     //backtrack
     Node current_node = s_closed.back();
     if(current_node.parent_node == nullptr)
     {
-      ROS_WARN("[EBPathPlanner] No node is explored");
+      ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] No node is explored");
       // , Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
       //   ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
       //   ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);
@@ -339,8 +339,8 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     }
     if(!is_goal_point_inside)
     {
-      std::cout << "goal point in image "<< goal_point_in_image.x << " "<< goal_point_in_image.y << std::endl;
-      ROS_WARN("Goal point is outside of drivable area");
+      // std::cout << "goal point in image "<< goal_point_in_image.x << " "<< goal_point_in_image.y << std::endl;
+      ROS_WARN("[EBPathPlanner] Goal point is outside of drivable area");
     }
     return false;
   }
@@ -655,6 +655,6 @@ bool ModifyReferencePath::generateModifiedPath(
     std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time2 = 
     std::chrono::duration_cast<std::chrono::nanoseconds>(end2 - begin2);
-  std::cout << " explore goal + decision logic + explore path "<< time2.count()/(1000.0*1000.0)<<" ms" <<std::endl;
+  // std::cout << " explore goal + decision logic + explore path "<< time2.count()/(1000.0*1000.0)<<" ms" <<std::endl;
   return true;
 }

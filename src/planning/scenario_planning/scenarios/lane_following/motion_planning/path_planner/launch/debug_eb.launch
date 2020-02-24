@@ -10,7 +10,7 @@
         <arg name="is_debug_drivable_area_mode" default="false" />
         <arg name="is_publishing_clearance_map_as_occupancy_grid" default="true" />
         <arg name="forward_fixing_distance" default="20" />
-        <arg name="backward_fixing_distance" default="15" />
+        <arg name="backward_fixing_distance" default="10" />
         <arg name="detecting_objects_radius_from_ego" default="50" />
         <arg name="detecting_objects_radius_around_path_point" default="2.5" />
         <arg name="number_of_backward_path_points_for_detecting_objects" default="5" />

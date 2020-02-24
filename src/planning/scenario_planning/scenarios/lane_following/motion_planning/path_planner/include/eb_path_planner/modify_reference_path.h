@@ -61,7 +61,6 @@ private:
   double backward_distance_;
   double clearance_weight_when_exploring_;
   std::unique_ptr<geometry_msgs::Pose> debug_fix_pose_;
-  std::unique_ptr<geometry_msgs::Pose> previous_exploring_goal_pose_in_map_ptr_;
   std::unique_ptr<std::vector<geometry_msgs::Point>> cached_explored_points_ptr_;
   bool expandNode(Node& parent_node, 
                   const cv::Mat& clearence_map,
