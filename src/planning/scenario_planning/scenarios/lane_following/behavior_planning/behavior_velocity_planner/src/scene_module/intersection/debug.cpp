@@ -67,6 +67,41 @@ void IntersectionModuleDebugger::publishPath(const autoware_planning_msgs::PathW
   debug_viz_pub_.publish(msg);
 }
 
+void IntersectionModuleDebugger::publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id) {
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker_geofence{};
+  marker_geofence.header.frame_id = "map";
+  marker_geofence.header.stamp = ros::Time::now();
+  marker_geofence.ns = "stop geofence";
+  marker_geofence.id = lane_id;
+  marker_geofence.lifetime = ros::Duration(0.5);
+  marker_geofence.type = visualization_msgs::Marker::CUBE;
+  marker_geofence.action = visualization_msgs::Marker::ADD;
+  marker_geofence.pose = pose;
+  marker_geofence.pose.position.z += 1.0;
+  marker_geofence.scale = createMarkerScale(0.1, 5.0, 2.0);
+  marker_geofence.color = createMarkerColor(1.0, 0.0, 0.0, 0.5);
+  msg.markers.push_back(marker_geofence);
+
+  visualization_msgs::Marker marker_factor_text{};
+  marker_factor_text.header.frame_id = "map";
+  marker_factor_text.header.stamp = ros::Time::now();
+  marker_factor_text.ns = "factor text";
+  marker_factor_text.id = lane_id;
+  marker_factor_text.lifetime = ros::Duration(0.5);
+  marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker_factor_text.action = visualization_msgs::Marker::ADD;
+  marker_factor_text.pose = pose;
+  marker_factor_text.pose.position.z += 2.0;
+  marker_factor_text.scale = createMarkerScale(0.0, 0.0, 1.0);
+  marker_factor_text.color = createMarkerColor(1.0, 1.0, 1.0, 0.999);
+  marker_factor_text.text = "intersection";
+  msg.markers.push_back(marker_factor_text);
+
+  debug_viz_pub_.publish(msg);
+}
+
 void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, const std::string& ns, const double r,
                                              const double g, const double b, const int mode) {
   const auto current_time = ros::Time::now();

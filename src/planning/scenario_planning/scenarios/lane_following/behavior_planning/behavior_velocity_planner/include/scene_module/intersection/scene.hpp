@@ -46,6 +46,7 @@ class IntersectionModule : public SceneModuleInterface {
   double path_expand_width_;              //< @brief path width to calculate the edge line for both side
   IntersectionModuleManager* intersection_module_manager_;  //< @brief manager pointer
   bool show_debug_info_;
+  double baselink_to_front_length_;
 
   /**
    * @brief set velocity from idx to the end point
@@ -86,6 +87,9 @@ class IntersectionModule : public SceneModuleInterface {
    */
   bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId* path,
                       int* stop_line_idx, int* judge_line_idx);
+
+  geometry_msgs::Pose getAheadPose(const size_t start_idx, const double ahead_dist,
+                                   const autoware_planning_msgs::PathWithLaneId& path) const;
 
   enum class State {
     STOP = 0,
