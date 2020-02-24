@@ -62,6 +62,7 @@ add_library(scene_module_lib
 # Scene Module: Momentary Stop
 add_library(scene_module_momentary_stop
   src/scene_module/momentary_stop/momentary_stop.cpp
+  src/scene_module/momentary_stop/debug_marker.cpp
 )
 
 target_link_libraries(scene_module_momentary_stop

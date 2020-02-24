@@ -8,8 +8,6 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
-        - /Planning1/ScenarioPlanning1
-        - /Planning1/ScenarioPlanning1/LaneFollowing1/BehaviorPlanning1
         - /Control1/Debug/MPC1/Namespaces1
       Splitter Ratio: 0.6545454263687134
     Tree Height: 481
@@ -988,6 +986,14 @@ Visualization Manager:
                         judge factor text: false
                         judge geofence: false
                         stop geofence: true
+                      Queue Size: 100
+                      Value: true
+                    - Class: rviz/MarkerArray
+                      Enabled: true
+                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/momentary_stop
+                      Name: StopLine
+                      Namespaces:
+                        {}
                       Queue Size: 100
                       Value: true
                   Enabled: true

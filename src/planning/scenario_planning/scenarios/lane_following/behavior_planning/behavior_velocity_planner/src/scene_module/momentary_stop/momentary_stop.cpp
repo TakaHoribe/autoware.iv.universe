@@ -67,6 +67,7 @@ bool MomentaryStopModule::run(const autoware_planning_msgs::PathWithLaneId& inpu
       stop_point_with_lane_id.point.pose.position.x = stop_point.x();
       stop_point_with_lane_id.point.pose.position.y = stop_point.y();
       stop_point_with_lane_id.point.twist.linear.x = 0.0;
+      manager_ptr_->debuger.pushStopPose(stop_point_with_lane_id.point.pose);
 
       // insert stop point
       output.points.insert(output.points.begin() + insert_stop_point_idx, stop_point_with_lane_id);
@@ -150,6 +151,18 @@ bool MomentaryStopModuleManager::startCondition(const autoware_planning_msgs::Pa
       }
     }
   }
+  return true;
+}
+
+bool MomentaryStopModuleManager::run(const autoware_planning_msgs::PathWithLaneId& input,
+                                    autoware_planning_msgs::PathWithLaneId& output) {
+  autoware_planning_msgs::PathWithLaneId input_path = input;
+  for (size_t i = 0; i < scene_modules_ptr_.size(); ++i) {
+    autoware_planning_msgs::PathWithLaneId output_path;
+    if (scene_modules_ptr_.at(i)->run(input_path, output_path)) input_path = output_path;
+  }
+  debuger.publish();
+  output = input_path;
   return true;
 }
 
