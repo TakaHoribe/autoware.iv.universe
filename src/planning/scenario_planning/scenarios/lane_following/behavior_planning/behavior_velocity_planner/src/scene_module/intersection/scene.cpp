@@ -184,7 +184,7 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
       itr += i;
       path->points.insert(itr, p);
       *judge_line_idx = i;
-      ++stop_line_idx;
+      ++(*stop_line_idx);
       break;
     }
     prev_dist = curr_dist;
