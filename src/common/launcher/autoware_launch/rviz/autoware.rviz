@@ -43,110 +43,19 @@ Visualization Manager:
     - Class: rviz/Group
       Displays:
         - Class: rviz/TF
-          Enabled: true
+          Enabled: false
           Frame Timeout: 15
           Frames:
             All Enabled: true
-            base_link:
-              Value: true
-            camera1/camera_link:
-              Value: true
-            camera1/camera_optical_link:
-              Value: true
-            camera2/camera_link:
-              Value: true
-            camera2/camera_optical_link:
-              Value: true
-            camera3/camera_link:
-              Value: true
-            camera3/camera_optical_link:
-              Value: true
-            camera4/camera_link:
-              Value: true
-            camera4/camera_optical_link:
-              Value: true
-            camera5/camera_link:
-              Value: true
-            camera5/camera_optical_link:
-              Value: true
-            camera6/camera_link:
-              Value: true
-            camera6/camera_optical_link:
-              Value: true
-            gnss_link:
-              Value: true
-            gx5/imu_link:
-              Value: true
-            map:
-              Value: true
-            tamagawa/imu_link:
-              Value: true
-            traffic_light/camera_link:
-              Value: true
-            traffic_light/camera_optical_link:
-              Value: true
-            velodyne_left:
-              Value: true
-            velodyne_left_base_link:
-              Value: true
-            velodyne_right:
-              Value: true
-            velodyne_right_base_link:
-              Value: true
-            velodyne_top:
-              Value: true
-            velodyne_top_base_link:
-              Value: true
-            viewer:
-              Value: true
           Marker Scale: 1
           Name: TF
           Show Arrows: true
           Show Axes: true
           Show Names: true
           Tree:
-            map:
-              base_link:
-                camera1/camera_link:
-                  camera1/camera_optical_link:
-                    {}
-                camera2/camera_link:
-                  camera2/camera_optical_link:
-                    {}
-                camera3/camera_link:
-                  camera3/camera_optical_link:
-                    {}
-                camera4/camera_link:
-                  camera4/camera_optical_link:
-                    {}
-                camera5/camera_link:
-                  camera5/camera_optical_link:
-                    {}
-                camera6/camera_link:
-                  camera6/camera_optical_link:
-                    {}
-                gnss_link:
-                  {}
-                gx5/imu_link:
-                  {}
-                tamagawa/imu_link:
-                  {}
-                traffic_light/camera_link:
-                  traffic_light/camera_optical_link:
-                    {}
-                velodyne_left_base_link:
-                  velodyne_left:
-                    {}
-                velodyne_right_base_link:
-                  velodyne_right:
-                    {}
-                velodyne_top_base_link:
-                  velodyne_top:
-                    {}
-              viewer:
-                {}
+            {}
           Update Interval: 0
-          Value: true
+          Value: false
         - Alpha: 0.5
           Cell Size: 1
           Class: rviz/Grid
@@ -405,7 +314,7 @@ Visualization Manager:
             parking_lots: true
             parking_space: true
             right_lane_bound: true
-            road_lanelets: true
+            road_lanelets: false
             stop_lines: true
             traffic_light: true
             traffic_light_triangle: true
@@ -826,7 +735,7 @@ Visualization Manager:
               Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/output/debug/markers
               Name: Beam
               Namespaces:
-                beam: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -959,14 +868,11 @@ Visualization Manager:
                         intersection_detection_lanelets_4: false
                         intersection_detection_lanelets_5: false
                         judge_point_pose: false
-                        judge_point_pose_line: false
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
                         stop_point_pose: false
-                        stop_point_pose_line: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -982,10 +888,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/traffic_light
                       Name: TrafficLight
                       Namespaces:
-                        factor text: true
-                        judge factor text: false
-                        judge geofence: false
-                        stop geofence: true
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
