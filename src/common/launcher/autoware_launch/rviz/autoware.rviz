@@ -123,6 +123,10 @@ Visualization Manager:
                 Expand Link Details: false
                 Expand Tree: false
                 Link Tree Style: Links in Alphabetic Order
+                aipxx_base_link:
+                  Alpha: 1
+                  Show Axes: false
+                  Show Trail: false
                 base_link:
                   Alpha: 1
                   Show Axes: false
@@ -197,15 +201,6 @@ Visualization Manager:
                   Show Axes: false
                   Show Trail: false
                   Value: true
-                traffic_light/camera_link:
-                  Alpha: 1
-                  Show Axes: false
-                  Show Trail: false
-                  Value: true
-                traffic_light/camera_optical_link:
-                  Alpha: 1
-                  Show Axes: false
-                  Show Trail: false
                 velodyne_left:
                   Alpha: 1
                   Show Axes: false
@@ -275,14 +270,14 @@ Visualization Manager:
         - Alpha: 0.20000000298023224
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 10
-            Min Value: -10
+            Max Value: 21.507631301879883
+            Min Value: -8.577447891235352
             Value: true
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: Intensity
+          Color Transformer: AxisColor
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
@@ -863,16 +858,29 @@ Visualization Manager:
                       Namespaces:
                         intersection_detection_lanelets_0: false
                         intersection_detection_lanelets_1: false
+                        intersection_detection_lanelets_10: true
+                        intersection_detection_lanelets_11: true
+                        intersection_detection_lanelets_12: true
+                        intersection_detection_lanelets_13: true
+                        intersection_detection_lanelets_14: true
+                        intersection_detection_lanelets_15: true
                         intersection_detection_lanelets_2: false
                         intersection_detection_lanelets_3: false
                         intersection_detection_lanelets_4: false
                         intersection_detection_lanelets_5: false
+                        intersection_detection_lanelets_6: true
+                        intersection_detection_lanelets_7: true
+                        intersection_detection_lanelets_8: true
+                        intersection_detection_lanelets_9: true
                         judge_point_pose: false
+                        judge_point_pose_line: true
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
+                        stop geofence: true
                         stop_point_pose: false
+                        stop_point_pose_line: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -888,7 +896,8 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/traffic_light
                       Name: TrafficLight
                       Namespaces:
-                        {}
+                        judge factor text: true
+                        judge geofence: true
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
