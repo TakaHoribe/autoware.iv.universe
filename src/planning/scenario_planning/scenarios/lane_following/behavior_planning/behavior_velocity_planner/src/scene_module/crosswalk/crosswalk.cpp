@@ -512,6 +512,10 @@ void CrosswalkDebugMarkersManager::pushSlowPolygon(const std::vector<Eigen::Vect
 void CrosswalkDebugMarkersManager::publish() {
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
+  double base_link2front;
+  getBaselink2FrontLength(base_link2front);
+  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front, 0.0, 0.0));
+
   // Crosswalk polygons
   for (size_t i = 0; i < crosswalk_polygons_.size(); ++i) {
     std::vector<Eigen::Vector3d> polygon = crosswalk_polygons_.at(i);
@@ -662,9 +666,9 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.pose.orientation.w = 1.0;
     marker.scale.x = 0.1;
     marker.color.a = 0.999;  // Don't forget to set the alpha!
-    marker.color.r = 0.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
     for (size_t j = 0; j < polygon.size(); ++j) {
       geometry_msgs::Point point;
       point.x = polygon.at(j).x();
@@ -696,9 +700,9 @@ void CrosswalkDebugMarkersManager::publish() {
     marker.scale.x = 0.25;
     marker.scale.y = 0.25;
     marker.color.a = 0.999;  // Don't forget to set the alpha!
-    marker.color.r = 0.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
     for (size_t j = 0; j < slow_poses_.size(); ++j) {
       geometry_msgs::Point point;
       point.x = slow_poses_.at(j).position.x;
@@ -778,38 +782,106 @@ void CrosswalkDebugMarkersManager::publish() {
     msg.markers.push_back(marker);
   }
 
-  // Geofence Stop
+  // Stop Geofence
   for (size_t j = 0; j < stop_poses_.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "geofence";
+    marker.ns = "stop geofence";
     marker.id = j;
     marker.lifetime = ros::Duration(0.5);
-    marker.type = visualization_msgs::Marker::CUBE_LIST;
+    marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = stop_poses_.at(j).position.x;
-    marker.pose.position.y = stop_poses_.at(j).position.y;
-    marker.pose.position.z = stop_poses_.at(j).position.z;
-    marker.pose.orientation.x = stop_poses_.at(j).orientation.x;
-    marker.pose.orientation.y = stop_poses_.at(j).orientation.y;
-    marker.pose.orientation.z = stop_poses_.at(j).orientation.z;
-    marker.pose.orientation.w = stop_poses_.at(j).orientation.w;
-    marker.scale.x = 0.25;
-    marker.scale.y = 3.0;
-    marker.color.a = 0.999;  // Don't forget to set the alpha!
+    tf2::Transform tf_map2base_link;
+    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+    tf2::toMsg(tf_map2front, marker.pose);
+    marker.pose.position.z += 1.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 5.0;
+    marker.scale.z = 2.0;
+    marker.color.a = 0.5;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
-    double base_link2front;
-    getBaselink2FrontLength(base_link2front);
-    geometry_msgs::Point point;
-    point.x = base_link2front;
-    point.y = 0;
-    point.z = 0;
-    marker.points.push_back(point);
-    // msg.markers.push_back(marker);
+    msg.markers.push_back(marker);
   }
+  // Factor Text
+  for (size_t j = 0; j < stop_poses_.size(); ++j) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+    marker.ns = "factor text";
+    marker.id = j;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marker.action = visualization_msgs::Marker::ADD;
+    tf2::Transform tf_map2base_link;
+    tf2::fromMsg(stop_poses_.at(j), tf_map2base_link);
+    tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+    tf2::toMsg(tf_map2front, marker.pose);
+    marker.pose.position.z += 2.0;
+    marker.scale.x = 0.0;
+    marker.scale.y = 0.0;
+    marker.scale.z = 1.0;
+    marker.color.a = 0.999;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 1.0;
+    marker.text = "crosswalk";
+    msg.markers.push_back(marker);
+  }
+
+  // Slow Geofence
+  for (size_t j = 0; j < slow_poses_.size(); ++j) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+    marker.ns = "slow geofence";
+    marker.id = j;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    tf2::Transform tf_map2base_link;
+    tf2::fromMsg(slow_poses_.at(j), tf_map2base_link);
+    tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+    tf2::toMsg(tf_map2front, marker.pose);
+    marker.pose.position.z += 1.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 5.0;
+    marker.scale.z = 2.0;
+    marker.color.a = 0.5;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    msg.markers.push_back(marker);
+  }
+  // Slow Factor Text
+  for (size_t j = 0; j < slow_poses_.size(); ++j) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+    marker.ns = "slow factor text";
+    marker.id = j;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marker.action = visualization_msgs::Marker::ADD;
+    tf2::Transform tf_map2base_link;
+    tf2::fromMsg(slow_poses_.at(j), tf_map2base_link);
+    tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+    tf2::toMsg(tf_map2front, marker.pose);
+    marker.pose.position.z += 2.0;
+    marker.scale.x = 0.0;
+    marker.scale.y = 0.0;
+    marker.scale.z = 1.0;
+    marker.color.a = 0.999;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 1.0;
+    marker.text = "crosswalk";
+    msg.markers.push_back(marker);
+  }
+
 
   debug_viz_pub_.publish(msg);
   collision_points_.clear();

@@ -8,8 +8,10 @@ Panels:
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
+        - /Planning1/ScenarioPlanning1
+        - /Planning1/ScenarioPlanning1/LaneFollowing1/BehaviorPlanning1
         - /Control1/Debug/MPC1/Namespaces1
-      Splitter Ratio: 0.6025974154472351
+      Splitter Ratio: 0.6545454263687134
     Tree Height: 481
   - Class: rviz/Selection
     Name: Selection
@@ -935,10 +937,14 @@ Visualization Manager:
                       Namespaces:
                         collision line: true
                         collision point: true
-                        crosswalk polygon line: true
-                        crosswalk polygon point: true
+                        crosswalk polygon line: false
+                        crosswalk polygon point: false
+                        factor text: true
+                        slow factor text: true
+                        slow geofence: true
                         slow point: true
                         slow polygon line: true
+                        stop geofence: true
                         stop point: true
                         stop polygon line: true
                       Queue Size: 100
@@ -950,20 +956,10 @@ Visualization Manager:
                       Namespaces:
                         intersection_detection_lanelets_0: false
                         intersection_detection_lanelets_1: false
-                        intersection_detection_lanelets_10: false
-                        intersection_detection_lanelets_11: false
-                        intersection_detection_lanelets_12: false
-                        intersection_detection_lanelets_13: false
-                        intersection_detection_lanelets_14: false
-                        intersection_detection_lanelets_15: false
                         intersection_detection_lanelets_2: false
                         intersection_detection_lanelets_3: false
                         intersection_detection_lanelets_4: false
                         intersection_detection_lanelets_5: false
-                        intersection_detection_lanelets_6: false
-                        intersection_detection_lanelets_7: false
-                        intersection_detection_lanelets_8: false
-                        intersection_detection_lanelets_9: false
                         judge_point_pose: false
                         judge_point_pose_line: false
                         path_left_edge: false
