@@ -123,50 +123,34 @@ void IntersectionModuleDebugger::publishPose(const geometry_msgs::Pose& pose, co
 
   // STOP
   if (mode == 0) {
-    {
-      visualization_msgs::Marker marker_line{};
-      marker_line.header.frame_id = "map";
-      marker_line.header.stamp = current_time;
-      marker_line.ns = "stop geofence";
-      marker_line.id = 0;
-      marker_line.lifetime = ros::Duration(0.5);
-      marker_line.type = visualization_msgs::Marker::CUBE;
-      marker_line.action = visualization_msgs::Marker::ADD;
-      marker.pose.position.z += 1.0;
-      marker_line.scale = createMarkerScale(0.1, 5.0, 2.0);
-      marker_line.color = createMarkerColor(1.0, 0.0, 0.0, 0.5);
-      msg.markers.push_back(marker_line);
-    }
-    {
-      visualization_msgs::Marker marker_line{};
-      marker_line.header.frame_id = "map";
-      marker_line.header.stamp = current_time;
-      marker_line.ns = ns + "_line";
-      marker_line.id = 1;
-      marker_line.lifetime = ros::Duration(0.3);
-      marker_line.type = visualization_msgs::Marker::LINE_STRIP;
-      marker_line.action = visualization_msgs::Marker::ADD;
-      marker_line.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
-      marker_line.scale = createMarkerScale(0.1, 0.0, 0.0);
-      marker_line.color = createMarkerColor(r, g, b, 0.999);
+    visualization_msgs::Marker marker_line{};
+    marker_line.header.frame_id = "map";
+    marker_line.header.stamp = current_time;
+    marker_line.ns = ns + "_line";
+    marker_line.id = 1;
+    marker_line.lifetime = ros::Duration(0.3);
+    marker_line.type = visualization_msgs::Marker::LINE_STRIP;
+    marker_line.action = visualization_msgs::Marker::ADD;
+    marker_line.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+    marker_line.scale = createMarkerScale(0.1, 0.0, 0.0);
+    marker_line.color = createMarkerColor(r, g, b, 0.999);
 
-      const double yaw = tf2::getYaw(pose.orientation);
+    const double yaw = tf2::getYaw(pose.orientation);
 
-      const double a = 3.0;
-      geometry_msgs::Point p0;
-      p0.x = pose.position.x - a * std::sin(yaw);
-      p0.y = pose.position.y + a * std::cos(yaw);
-      p0.z = pose.position.z;
-      marker_line.points.push_back(p0);
+    const double a = 3.0;
+    geometry_msgs::Point p0;
+    p0.x = pose.position.x - a * std::sin(yaw);
+    p0.y = pose.position.y + a * std::cos(yaw);
+    p0.z = pose.position.z;
+    marker_line.points.push_back(p0);
 
-      geometry_msgs::Point p1;
-      p1.x = pose.position.x + a * std::sin(yaw);
-      p1.y = pose.position.y - a * std::cos(yaw);
-      p1.z = pose.position.z;
-      marker_line.points.push_back(p1);
+    geometry_msgs::Point p1;
+    p1.x = pose.position.x + a * std::sin(yaw);
+    p1.y = pose.position.y - a * std::cos(yaw);
+    p1.z = pose.position.z;
+    marker_line.points.push_back(p1);
 
-      msg.markers.push_back(marker_line);
-    }
+    msg.markers.push_back(marker_line);
   }
 
   debug_viz_pub_.publish(msg);
