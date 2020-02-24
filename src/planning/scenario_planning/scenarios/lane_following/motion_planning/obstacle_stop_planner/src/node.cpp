@@ -108,7 +108,8 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
    * decimate trajectory for calculation cost
    */
   autoware_planning_msgs::Trajectory decimate_trajectory;
-  decimateTrajectory(trim_trajectory, 1.0 /*step_length*/, decimate_trajectory);
+  std::map<size_t /* decimate */, size_t /* origin */> decimate_trajectory_index_map;
+  decimateTrajectory(trim_trajectory, 1.0 /*step_length*/, decimate_trajectory, decimate_trajectory_index_map);
 
   autoware_planning_msgs::Trajectory& trajectory = decimate_trajectory;
 
@@ -116,6 +117,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
    * check collision
    */
   bool is_collision = false;
+  size_t decimate_trajectory_collision_index;
   pcl::PointXYZ nearest_collision_point;
   for (int i = 0; i < (int)(trajectory.points.size()) - 1; ++i) {
     /*
@@ -166,6 +168,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
     if (is_collision) {
       getNearestPoint(*collision_pointcloud_ptr, trajectory.points.at(i).pose, nearest_collision_point);
       debug_ptr_->pushStopObstaclePoint(nearest_collision_point);
+      decimate_trajectory_collision_index = i;
       break;
     }
   }
@@ -174,7 +177,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
    * insert stop point
    */
   if (is_collision) {
-    for (int i = trajectory_trim_index; i < (int)output_msg.points.size(); ++i) {
+    for (int i = decimate_trajectory_index_map.at(decimate_trajectory_collision_index); i < (int)output_msg.points.size(); ++i) {
       Eigen::Vector2d trajectory_vec;
       {
         const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(i).pose.orientation);
@@ -183,8 +186,9 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
       Eigen::Vector2d collision_point_vec;
       collision_point_vec << nearest_collision_point.x - output_msg.points.at(i).pose.position.x,
           nearest_collision_point.y - output_msg.points.at(i).pose.position.y;
-      if (trajectory_vec.dot(collision_point_vec) <= 0.0 + epsilon ||
-          (i + 1 == output_msg.points.size() && 0.0 <= trajectory_vec.dot(collision_point_vec)+epsilon)) {
+
+      if (trajectory_vec.dot(collision_point_vec) < 0.0 ||
+          (i + 1 == output_msg.points.size() && 0.0 < trajectory_vec.dot(collision_point_vec))) {
         Eigen::Vector2d max_dist_stop_point;
         // search insert point
         size_t max_dist_stop_point_idx = 0;
@@ -268,6 +272,14 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory,
                                                  const double step_length,
                                                  autoware_planning_msgs::Trajectory& output_trajectory) {
+  std::map<size_t /* decimate */, size_t /* origin */> index_map;
+  decimateTrajectory(input_trajectory, step_length, output_trajectory, index_map);
+}
+
+bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory,
+                                                 const double step_length,
+                                                 autoware_planning_msgs::Trajectory& output_trajectory,
+                                                   std::map<size_t /* decimate */, size_t /* origin */>& index_map) {
   output_trajectory.header = input_trajectory.header;
   double trajectory_length_sum = 0.0;
   double next_length = 0.0;
@@ -287,6 +299,7 @@ bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::T
       trajectory_point.pose.position.x = interporated_point.x();
       trajectory_point.pose.position.y = interporated_point.y();
       output_trajectory.points.push_back(trajectory_point);
+      index_map.insert(std::make_pair(output_trajectory.points.size() - 1, size_t(i)));
       next_length += step_length;
       continue;
     }
@@ -296,7 +309,10 @@ bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::T
 
     trajectory_length_sum += distance;
   }
-  if (!input_trajectory.points.empty()) output_trajectory.points.push_back(input_trajectory.points.back());
+  if (!input_trajectory.points.empty()) {
+    output_trajectory.points.push_back(input_trajectory.points.back());
+    index_map.insert(std::make_pair(output_trajectory.points.size() - 1, input_trajectory.points.size() - 1));
+  }
   return true;
 }
 

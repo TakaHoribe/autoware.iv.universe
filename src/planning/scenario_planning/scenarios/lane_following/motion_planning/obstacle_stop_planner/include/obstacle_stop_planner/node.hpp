@@ -62,6 +62,9 @@ class ObstacleStopPlannerNode {
   bool convexHull(const std::vector<cv::Point2d> pointcloud, std::vector<cv::Point2d>& polygon_points);
   bool decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory, const double step_length,
                           autoware_planning_msgs::Trajectory& output_trajectory);
+  bool decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory, const double step_length,
+                          autoware_planning_msgs::Trajectory& output_trajectory,
+                         std::map<size_t /* decimate */, size_t /* origin */>& index_map);
   bool trimTrajectoryFromSelfPose(const autoware_planning_msgs::Trajectory& input_trajectory,
                                   const geometry_msgs::Pose self_pose,
                                   autoware_planning_msgs::Trajectory& output_trajectory);
