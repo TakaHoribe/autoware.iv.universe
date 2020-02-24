@@ -49,7 +49,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
     return false;
   }
 
-  /* set stop-line and stop-judgement-line */
+  /* set stop-line and stop-judgement-line for base_link */
   if (!setStopLineIdx(closest, judge_line_dist_, &output, &stop_line_idx_, &judge_line_idx_)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     return false;
@@ -63,6 +63,7 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
   }
 
   if (current_state == State::STOP) {
+    // visualize geofence at vehicle front position
     intersection_module_manager_->debugger_.publishGeofence(
         getAheadPose(stop_line_idx_, baselink_to_front_length_, output), assigned_lane_id_);
   }
