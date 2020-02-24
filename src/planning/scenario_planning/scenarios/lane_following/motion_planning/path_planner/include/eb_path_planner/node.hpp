@@ -35,6 +35,7 @@ namespace nav_msgs
 namespace geometry_msgs
 { 
   ROS_DECLARE_MESSAGE(PoseStamped);
+  ROS_DECLARE_MESSAGE(PoseWithCovarianceStamped);
   ROS_DECLARE_MESSAGE(Pose);
   ROS_DECLARE_MESSAGE(TwistStamped);
 }
@@ -57,13 +58,13 @@ private:
   double backward_fixing_distance_;
   double detecting_objects_radius_from_ego_;
   double detecting_objects_radius_around_path_point_;
-  double reset_delta_ego_distance_;
   double exploring_minimum_radius_;
   double delta_arc_length_for_path_smoothing_;
   double delta_arc_length_for_explored_points_;
   double max_avoiding_objects_velocity_ms_;
   double clearance_weight_when_exploring_;
   double exploring_goal_clearance_from_obstacle_;
+  double fixing_point_clearance_from_obstacle_;
   double min_distance_threshold_when_switching_avoindance_to_path_following_;
   double min_cos_similarity_when_switching_avoindance_to_path_following_;
   geometry_msgs::Pose::ConstPtr current_ego_pose_;
@@ -72,26 +73,31 @@ private:
   std::unique_ptr<geometry_msgs::Point> previous_ego_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_start_path_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_goal_path_point_ptr_;
+  // std::unique_ptr<geometry_msgs::Point> previous_goal_point_for_exploration_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
-  std::unique_ptr<std::vector<geometry_msgs::Point>> previous_explored_points_ptr_;
-  std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_path_points_ptr_;
-  std::shared_ptr<geometry_msgs::TwistStamped> in_twist_ptr_;
+  std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>> previous_path_points_ptr_;
+  // std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_explored_points_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
   ros::NodeHandle nh_, private_nh_;
   ros::Publisher markers_pub_;
   ros::Publisher debug_clearance_map_in_occupancy_grid_pub_;
   ros::Subscriber objects_sub_;
+  ros::Subscriber initial_sub_;
+  ros::Subscriber goal_sub_;
+  ros::Subscriber enable_avoidance_sub_;
   void callback(const autoware_planning_msgs::Path &input_path_msg, 
                 autoware_planning_msgs::Trajectory &output_trajectory_msg) override;
-  void objectsCallback(const autoware_perception_msgs::DynamicObjectArray& msg);
-  void doResetting();
+  void objectsCallback(const autoware_perception_msgs   ::DynamicObjectArray& msg);
+  void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg);
+  void goalCallback(const geometry_msgs::PoseStamped& msg);
+  void enableAvoidanceCallback(const std_msgs::Bool& msg);
+  void initializing();
+  void resettingPtrForAvoidance();
+  void resettingPtrForLaneFollowing();
   
-  bool needReset(
-    const geometry_msgs::Point& current_ego_point,
-    const std::unique_ptr<geometry_msgs::Point>& previous_ego_point_ptr,
-    const cv::Mat& clearance_map,
-    const nav_msgs::MapMetaData& map_info,
-    const std::vector<geometry_msgs::Point>& fixed_explored_points,
+  bool needResetPrevOptimizedExploredPoints(
+    const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>&
+      previous_optimized_explored_points_ptr,
     const std::vector<autoware_perception_msgs::DynamicObject>& objects);
   
   bool isAvoidanceNeeded(
@@ -113,28 +119,30 @@ private:
   
   bool needExprolation(
     const geometry_msgs::Point& ego_point,
-    const std::vector<geometry_msgs::Point>& previous_explored_points,
     const autoware_planning_msgs::Path& in_path,
     const cv::Mat& clearance_map,
-    geometry_msgs::Point& start_exploring_point,
-    geometry_msgs::Point& goal_exploring_point,
-    std::vector<geometry_msgs::Point>& trimmed_explored_points);
-  
-  std::vector<geometry_msgs::Point> generatePostProcessedExploredPoints(
     const std::vector<geometry_msgs::Point>& fixed_explored_points,
-    const std::vector<geometry_msgs::Point>& explored_points);
+    geometry_msgs::Point& start_exploring_point,
+    geometry_msgs::Point& goal_exploring_point);
   
-  std::vector<geometry_msgs::Point> generateTrimmedExploredPoints(
-    const geometry_msgs::Point& ego_point,
+  std::vector<geometry_msgs::Point> generateFixedOptimizedExploredPoints(
+    const geometry_msgs::Pose& ego_pose,
     const std::vector<geometry_msgs::Point>& explored_points,
+    const cv::Mat& clearance_map,
     const cv::Mat& only_objects_clearance_map,
     const nav_msgs::MapMetaData& map_info);
+  
+  std::unique_ptr<std::vector<geometry_msgs::Point>> 
+    generateNonFixedExploredPoints(
+      const autoware_planning_msgs::Path& input_path,
+      const std::vector<geometry_msgs::Point>& fixed_explored_points,
+      const cv::Mat& clearance_map);
     
   bool alighWithPathPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);
     
-  bool generateFineOptimizedPoints(
+  bool generateFineOptimizedTrajectory(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points,
     std::vector<autoware_planning_msgs::TrajectoryPoint>& fine_optimized_points);
@@ -149,6 +157,11 @@ private:
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
     const geometry_msgs::Pose& debug_ego_pose,
     cv::Mat& clearance_map);
+  
+  cv::Mat generateOnlyObjectsClearanceMap(
+    const cv::Mat& clearance_map,
+    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
+    const nav_msgs::MapMetaData& map_info);
     
   bool areValidStartAndGoal(
     const geometry_msgs::Pose& ego_pose,
@@ -170,7 +183,7 @@ private:
     
   bool detectAvoidingObjectsOnPoints(
     const std::vector<autoware_perception_msgs::DynamicObject>& objects,
-    const std::vector<geometry_msgs::Point>& points);
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& prev_optimized_explored_points);
   
   autoware_planning_msgs::Trajectory::Ptr generateSmoothTrajectoryFromPath(
                             const autoware_planning_msgs::Path& input_path);
@@ -191,19 +204,48 @@ private:
   bool convertPathToSmoothTrajectory(
     const geometry_msgs::Pose& ego_pose,
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-    std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points,
-    std::vector<geometry_msgs::Point>& debug_fixed_optimzied_points_used_for_constrain,
-    std::vector<geometry_msgs::Point>& debug_interpolated_points_used_for_optimization);
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& smoothed_points);
   
+  std::unique_ptr<std::vector<geometry_msgs::Pose>> 
+    generateValidFixedPathPoints(
+      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+      const std::vector<geometry_msgs::Pose>& fixed_path_points);
+  
+  std::vector<geometry_msgs::Pose> 
+    generateFixedOptimizedPathPoints(
+      const geometry_msgs::Pose& ego_pose,
+      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+      const std::unique_ptr<geometry_msgs::Point>& start_point,
+      std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path);
+      
+  bool 
+    isPathShapeChanged(
+      const geometry_msgs::Pose& ego_pose,
+      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+      const std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>>& prev_path_points);
+  
+  std::vector<geometry_msgs::Pose>
+    generateNonFixedPoints(
+      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+      const std::vector<geometry_msgs::Pose>& fixed_points,
+      const std::unique_ptr<geometry_msgs::Point>& goal_point);
+    
   autoware_planning_msgs::Trajectory generateSmoothTrajectory(
     const autoware_planning_msgs::Path& in_path);
+  
+  
+  void debugFixedNonFixedPointsMarker(
+      const std::vector<geometry_msgs::Point>& fixed,
+      const std::vector<geometry_msgs::Point>& non_fixed);
   
   void debugStartAndGoalMarkers(
     const geometry_msgs::Point& start_point,
     const geometry_msgs::Point& goal_point);
     
   void debugMarkers(
-    const std::vector<geometry_msgs::Point>& constrain_points);
+    const std::vector<geometry_msgs::Point>& constrain_points,
+    const std::vector<geometry_msgs::Point>& interpolated_points,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);
   
 public:
    EBPathPlannerNode();
