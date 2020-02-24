@@ -29,6 +29,7 @@ class IntersectionModuleDebugger {
                    const double g, const double b);
   void publishPose(const geometry_msgs::Pose& pose, const std::string& ns, const double r, const double g,
                    const double b, const int mode);
+  void publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id);
   void publishDebugValues(const std_msgs::Float32MultiArray& msg);
 
  private:

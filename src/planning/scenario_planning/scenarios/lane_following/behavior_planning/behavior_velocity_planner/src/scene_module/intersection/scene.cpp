@@ -20,6 +20,11 @@ IntersectionModule::IntersectionModule(const int lane_id, IntersectionModuleMana
   state_machine_.setMarginTime(2.0);             // [sec]
   path_expand_width_ = 2.0;
   show_debug_info_ = false;
+
+  if (!getBaselink2FrontLength(baselink_to_front_length_)) {
+    ROS_WARN("[IntersectionModule] : cannot get vehicle front to base_link. set default.");
+    baselink_to_front_length_ = 5.0;
+  }
 }
 
 bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input,
@@ -56,11 +61,16 @@ bool IntersectionModule::run(const autoware_planning_msgs::PathWithLaneId& input
                   "planning. Maybe it is far behind the current position.");
     return true;
   }
+
+  if (current_state == State::STOP) {
+    intersection_module_manager_->debugger_.publishGeofence(
+        getAheadPose(stop_line_idx_, baselink_to_front_length_, output), assigned_lane_id_);
+  }
   intersection_module_manager_->debugger_.publishPose(output.points.at(stop_line_idx_).point.pose, "stop_point_pose",
                                                       1.0, 0.0, 0.0, static_cast<int>(current_state));
   intersection_module_manager_->debugger_.publishPose(output.points.at(judge_line_idx_).point.pose, "judge_point_pose",
                                                       1.0, 1.0, 0.5, static_cast<int>(current_state));
-  intersection_module_manager_->debugger_.publishPath(output, "path_with_judgeline", 0.0, 0.5, 1.0);
+  intersection_module_manager_->debugger_.publishPath(output, "output_path", 0.0, 0.5, 1.0);
 
   /* set approaching speed to stop-line */
   setVelocityFrom(judge_line_idx_, approaching_speed_to_stopline_, &output);
@@ -164,27 +174,31 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
     return false;  // cannot find stop line.
   }
 
-  // TEMP: should use interpolation (points distance may be very long)
+  // insert judge line with interpolation
   double curr_dist = 0.0;
   double prev_dist = curr_dist;
   *judge_line_idx = -1;
   for (size_t i = *stop_line_idx; i > 0; --i) {
-    const geometry_msgs::Point p0 = path->points.at(i).point.pose.position;
-    const geometry_msgs::Point p1 = path->points.at(i - 1).point.pose.position;
+    const geometry_msgs::Pose p0 = path->points.at(i).point.pose;
+    const geometry_msgs::Pose p1 = path->points.at(i - 1).point.pose;
     curr_dist += planning_utils::calcDist2d(p0, p1);
     if (curr_dist > judge_line_dist) {
       const double dl = std::max(curr_dist - prev_dist, 0.0001 /* avoid 0 divide */);
       const double w_p0 = (curr_dist - judge_line_dist) / dl;
       const double w_p1 = (judge_line_dist - prev_dist) / dl;
       autoware_planning_msgs::PathPointWithLaneId p = path->points.at(i);
-      p.point.pose.position.x = w_p0 * p0.x + w_p1 * p1.x;
-      p.point.pose.position.y = w_p0 * p0.y + w_p1 * p1.y;
-      p.point.pose.position.z = w_p0 * p0.z + w_p1 * p1.z;
+      p.point.pose.position.x = w_p0 * p0.position.x + w_p1 * p1.position.x;
+      p.point.pose.position.y = w_p0 * p0.position.y + w_p1 * p1.position.y;
+      p.point.pose.position.z = w_p0 * p0.position.z + w_p1 * p1.position.z;
+      tf2::Quaternion q0_tf, q1_tf;
+      tf2::fromMsg(p0.orientation, q0_tf);
+      tf2::fromMsg(p1.orientation, q1_tf);
+      p.point.pose.orientation = tf2::toMsg(q0_tf.slerp(q1_tf, w_p1));
       auto itr = path->points.begin();
       itr += i;
       path->points.insert(itr, p);
       *judge_line_idx = i;
-      ++stop_line_idx;
+      ++(*stop_line_idx);
       break;
     }
     prev_dist = curr_dist;
@@ -197,6 +211,37 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
         *stop_line_idx);
   }
   return true;
+}
+
+geometry_msgs::Pose IntersectionModule::getAheadPose(const size_t start_idx, const double ahead_dist,
+                                           const autoware_planning_msgs::PathWithLaneId& path) const {
+  if (path.points.size() == 0) {
+    return geometry_msgs::Pose{};
+  }
+
+  double curr_dist = 0.0;
+  double prev_dist = 0.0;
+  for (size_t i = start_idx; i < path.points.size() - 1 && i >= 0; ++i) {
+    const geometry_msgs::Pose p0 = path.points.at(i).point.pose;
+    const geometry_msgs::Pose p1 = path.points.at(i + 1).point.pose;
+    curr_dist += planning_utils::calcDist2d(p0, p1);
+    if (curr_dist > ahead_dist) {
+      const double dl = std::max(curr_dist - prev_dist, 0.0001 /* avoid 0 divide */);
+      const double w_p0 = (curr_dist - ahead_dist) / dl;
+      const double w_p1 = (ahead_dist - prev_dist) / dl;
+      geometry_msgs::Pose p;
+      p.position.x = w_p0 * p0.position.x + w_p1 * p1.position.x;
+      p.position.y = w_p0 * p0.position.y + w_p1 * p1.position.y;
+      p.position.z = w_p0 * p0.position.z + w_p1 * p1.position.z;
+      tf2::Quaternion q0_tf, q1_tf;
+      tf2::fromMsg(p0.orientation, q0_tf);
+      tf2::fromMsg(p1.orientation, q1_tf);
+      p.orientation = tf2::toMsg(q0_tf.slerp(q1_tf, w_p1));
+      return p;
+    }
+    prev_dist = curr_dist;
+  }
+  return path.points.back().point.pose;
 }
 
 bool IntersectionModule::setVelocityFrom(const size_t idx, const double vel,
