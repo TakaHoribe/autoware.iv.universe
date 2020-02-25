@@ -50,7 +50,6 @@ struct PlannerData {
   // msgs from callbacks that are used for data-ready
   geometry_msgs::TwistStamped::ConstPtr current_velocity;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects;
-  autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr traffic_light_state_array;
   pcl::PointCloud<pcl::PointXYZ>::ConstPtr no_ground_pointcloud;
   lanelet::LaneletMapPtr lanelet_map;
 

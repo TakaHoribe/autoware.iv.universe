@@ -147,7 +147,6 @@ bool BehaviorVelocityPlannerNode::isDataReady() {
   if (!d.current_velocity) return false;
   if (!d.dynamic_objects) return false;
   if (!d.no_ground_pointcloud) return false;
-  if (!d.traffic_light_state_array) return false;
   if (!d.lanelet_map) return false;
 
   return true;
@@ -207,7 +206,6 @@ void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::Map
 
 void BehaviorVelocityPlannerNode::onTrafficLightStates(
     const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg) {
-  planner_data_.traffic_light_state_array = msg;
   for (const auto& state : msg->states) {
     planner_data_.traffic_light_id_map_[state.id] = {msg->header, state};
   }
