@@ -127,7 +127,7 @@ bool CrosswalkModule::checkStopArea(
     }
   }
   if (path_collision_points.size() != 2) {
-    // ROS_ERROR("Must be 2. Size is %d", (int)path_collision_points.size());
+    ROS_ERROR_THROTTLE(1, "Must be 2. Size is %d", (int)path_collision_points.size());
     return false;
   }
   double width;
@@ -139,7 +139,7 @@ bool CrosswalkModule::checkStopArea(
                                 path_collision_points.at(1).x() - path_collision_points.at(0).x()) +
                      M_PI_2;
   Polygon stop_polygon;
-  const double extension_margin = 1.0;
+  const double extension_margin = 0.25;
   stop_polygon.outer().push_back(
       bg::make<Point>(path_collision_points.at(0).x() + std::cos(yaw) * ((width / 2.0) + extension_margin),
                       path_collision_points.at(0).y() + std::sin(yaw) * ((width / 2.0) + extension_margin)));
@@ -155,17 +155,6 @@ bool CrosswalkModule::checkStopArea(
   stop_polygon.outer().push_back(stop_polygon.outer().front());
 
   // -- debug code --
-  // for (size_t i = 0; i < stop_polygon.size(); ++i)
-  // {
-  //     std::vector<Eigen::Vector3d> points;
-  //     for (size_t j = 0; j < stop_polygon.at(i).outer().size(); ++j)
-  //     {
-  //         Eigen::Vector3d point;
-  //         point << stop_polygon.at(i).outer().at(j).x(), stop_polygon.at(i).outer().at(j).y(),
-  //         0.0; points.push_back(point);
-  //     }
-  //     manager_ptr_->debuger.pushCrosswalkPolygon(points);
-  // }
   std::vector<Eigen::Vector3d> points;
   for (size_t i = 0; i < stop_polygon.outer().size(); ++i) {
     Eigen::Vector3d point;
@@ -187,6 +176,7 @@ bool CrosswalkModule::checkStopArea(
     if (object.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
         object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE) {
       Point point(object.state.pose_covariance.pose.position.x, object.state.pose_covariance.pose.position.y);
+      if (!bg::within(point, crosswalk_polygon)) continue;
       if (bg::within(point, stop_polygon)) {
         pedestrian_found = true;
       }
