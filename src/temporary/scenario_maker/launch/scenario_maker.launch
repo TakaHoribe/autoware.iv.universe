@@ -2,6 +2,7 @@
 <launch>
 
   <arg name="collision_detect" default="false" />
+  <arg name="scenario_name" default="kashiwanoha" />
 
   <!-- publish camera info -->
   <include file="$(find yaml_to_camerainfo)/launch/yaml_to_camera.launch">
@@ -20,6 +21,7 @@
 
   <!-- scenario -->
   <node pkg="scenario_maker" type="scenario_maker.py" name="scenario_maker" output="screen">
+    <param name="scenario_name" value="$(arg scenario_name)" />
     <param name="goal_dist" value="1.5" />
     <!-- Goal criteria(xy-distance) [m] -->
     <param name="goal_theta" value="20" />
