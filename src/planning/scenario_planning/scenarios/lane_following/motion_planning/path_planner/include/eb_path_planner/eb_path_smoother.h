@@ -78,17 +78,10 @@ private:
   void updateQPConstrain(
     const std::vector<geometry_msgs::Point>& interpolated_points,
     const int farrest_point_idx,
-    const int num_fixed_points,
     const cv::Mat& clearance_map,
     const nav_msgs::MapMetaData& map_info,
     const Mode qp_optimization_mode,
     std::vector<geometry_msgs::Point>& debug_constrain_points);
-    
-  void updateQPConstrain(
-    const std::vector<geometry_msgs::Point>& interpolated_points,
-    const int num_fixed_points,
-    const int farrest_point_idx,
-    std::vector<geometry_msgs::Point>& debug_constrain);
     
   void solveQP(const Mode qp_optimization_mode);
   
@@ -106,16 +99,15 @@ public:
      double delta_arc_length_for_explored_points);
   ~EBPathSmoother();
   
-  std::vector<autoware_planning_msgs::TrajectoryPoint>  
-    generateOptimizedExploredPoints(
-      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::vector<geometry_msgs::Point>& fixed_points,
-      const std::vector<geometry_msgs::Point>& non_fixed_points,
-      const geometry_msgs::Pose& ego_pose,
-      const cv::Mat& clearance_map,
-      const nav_msgs::MapMetaData& map_info,
-      std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
-      std::vector<geometry_msgs::Point>& debug_constrain_points);                  
+  bool generateOptimizedExploredPoints(
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+    const std::vector<geometry_msgs::Point>& explored_points,
+    const geometry_msgs::Pose& ego_pose,
+    const cv::Mat& clearance_map,
+    const nav_msgs::MapMetaData& map_info,
+    std::vector<geometry_msgs::Point>& debug_interpolated_points,                  
+    std::vector<geometry_msgs::Point>& debug_constrain_points,                  
+    std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points);                  
   
   bool generateOptimizedPath(
     const geometry_msgs::Pose& ego_pose,
@@ -125,14 +117,6 @@ public:
     std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
     std::vector<geometry_msgs::Point>& debug_constrain_points,
     std::vector<geometry_msgs::Point>& debug_interpolated_points);
-    
-  std::vector<autoware_planning_msgs::TrajectoryPoint> 
-    generateOptimizedPoints(
-      const std::vector<autoware_planning_msgs::PathPoint>& path_points, 
-      const std::vector<geometry_msgs::Pose>& fixed_points,
-      const std::vector<geometry_msgs::Pose>& non_fixed_points,
-      std::vector<geometry_msgs::Point>& debug_inter,
-      std::vector<geometry_msgs::Point>& debug_constrain);
 };
 
 #endif
