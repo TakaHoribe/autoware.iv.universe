@@ -624,7 +624,7 @@ bool EBPathPlannerNode::needExprolation(
   if(!exploring_goal_pose_in_map_ptr)
   {
     // ROS_WARN_THROTTLE(3.0, "[EBPathPlanner] Could not find appropriate goal");
-    ROS_WARN_THROTTLE(2.0, "[EBPathPlanner] Could not find appropriate goal");
+    ROS_WARN( "[EBPathPlanner] Could not find appropriate goal");
     return false;
   }
   else
@@ -683,7 +683,7 @@ std::vector<geometry_msgs::Point>
   //TODO: more precise way to calculate backward fixing
   int backward_ind = 
     std::max((int)(min_ind-
-                  backward_fixing_distance_/delta_arc_length_for_explored_points_), 0);
+                  backward_fixing_distance_/0.4), 0);
   int valid_backward_ind = 0;
   for(int i = backward_ind; i < explored_points.size(); i++)
   {

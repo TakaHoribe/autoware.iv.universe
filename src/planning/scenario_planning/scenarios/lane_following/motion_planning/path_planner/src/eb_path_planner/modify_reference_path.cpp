@@ -298,7 +298,7 @@ bool ModifyReferencePath::solveGraphAStar(const geometry_msgs::Pose& ego_pose,
     Node current_node = s_closed.back();
     if(current_node.parent_node == nullptr)
     {
-      ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] No node is explored");
+      ROS_WARN("[EBPathPlanner] No node is explored");
       // , Ego Pose: %lf, %lf, %lf, %lf, %lf, %lf, %lf ", 
       //   ego_pose.position.x, ego_pose.position.y, ego_pose.position.z, 
       //   ego_pose.orientation.x, ego_pose.orientation.y, ego_pose.orientation.z, ego_pose.orientation.w);

@@ -180,7 +180,8 @@ std::vector<autoware_planning_msgs::TrajectoryPoint>
     tmp_y.push_back(candidate_points[i].y);
   }
   std::vector<geometry_msgs::Point> interpolated_points;
-  util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_explored_points_, interpolated_points);
+  // TODO:change resolution adaptively so thay have at least 100 optimizatio points
+  util::interpolate2DPoints(tmp_x, tmp_y, 0.4, interpolated_points);
   debug_interpolated_points = interpolated_points;
   // std::cout << "explore fixed size "<< fixed_points.size() << std::endl;
   // std::cout << "explore non fixed size "<< non_fixed_points.size() << std::endl;
@@ -317,6 +318,7 @@ std::vector<autoware_planning_msgs::TrajectoryPoint>
   
   
   Mode qp_mode = Mode::LaneFollowing;
+  //TODO: deprecate the notion fo "farrest idx" 
   //interpolate point enough to have at least number of sampling points
   int farrest_idx_from_start_point = 
     std::min((int)(number_of_sampling_points_-1),
