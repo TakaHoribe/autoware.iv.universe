@@ -36,6 +36,7 @@
 
 //lanelet
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_core/geometry/BoundingBox.h>
@@ -111,11 +112,9 @@ bool MapBasedPredictionROS::getClosestLanelets(
       {
         continue;
       }
-      double dx2 =  lanelet.second.centerline()[1].x()-
-                    lanelet.second.centerline()[0].x();
-      double dy2 =  lanelet.second.centerline()[1].y()-
-                    lanelet.second.centerline()[0].y();
-      double lane_yaw = std::atan2(dy2, dx2);
+      double lane_yaw = lanelet::utils::getLaneletAngle(
+                          lanelet.second, 
+                          object.state.pose_covariance.pose.position);
       double delta_yaw = object_yaw - lane_yaw;
       double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
       double abs_norm_delta = std::fabs(normalized_delta_yaw);
@@ -174,11 +173,9 @@ bool MapBasedPredictionROS::getClosestLanelets(
         {
           continue;
         }
-        double dx2 =  lanelet.second.centerline()[1].x()-
-                      lanelet.second.centerline()[0].x();
-        double dy2 =  lanelet.second.centerline()[1].y()-
-                      lanelet.second.centerline()[0].y();
-        double lane_yaw = std::atan2(dy2, dx2);
+        double lane_yaw = lanelet::utils::getLaneletAngle(
+                            lanelet.second, 
+                            object.state.pose_covariance.pose.position);
         double delta_yaw = object_yaw - lane_yaw;
         double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
         double abs_norm_delta = std::fabs(normalized_delta_yaw);
