@@ -5,6 +5,7 @@ import math
 import subprocess
 import sys
 import time
+import uuid, unique_id
 
 import numpy as np
 import rospy
@@ -14,7 +15,9 @@ from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Bool, Float32, Header, Int32
 from dummy_perception_publisher.msg import Object, InitialState
 from autoware_perception_msgs.msg import Semantic, Shape
-from config.scenario_kashiwanoha import *  # scenario
+
+# from config.scenario_sanfrancisco_planning_simulator import *  # scenario #TODO: dynamically change import file
+
 
 OBSTACLE_NUM = 4096
 
@@ -47,6 +50,26 @@ class ScenarioMaker:
     def __init__(self):
 
         # TODO: ->rosparam
+        self.scenario_name = rospy.get_param(
+            "~scenario_name", "kashiwanoha"
+        )  # Scenario Name ("kashiwanoha", "sanfrancisco", "sanfrancisco_lg")
+        if self.scenario_name == "kashiwanoha":
+            from config.scenario_kashiwanoha import *  # scenario
+        elif self.scenario_name == "sanfrancisco":
+            from config.scenario_sanfrancisco_planning_simulator import *  # scenario
+        elif self.scenario_name == "sanfrancisco_lg":
+            from config.scenario_sanfrancisco import *  # scenario
+        else:
+            rospy.logwarn("invalid scenario. load default(kashiwanoha) scenario")
+            from config.scenario_kashiwanoha import *  # scenario
+
+        self.initpos = s_initpos
+        self.goalpos = s_goalpos
+        self.checkpoint = s_checkpoint
+        self.staticobstacle = s_staticobstacle
+        self.dynamicobstacle = s_dynamicobstacle
+        self.tlpos = s_tlpos
+
         self.goal_dist = rospy.get_param("~goal_dist", 1.0)  # Goal criteria(xy-distance) [m]
         self.goal_th = rospy.get_param("~goal_theta", 10)  # Goal criteria(theta-distance)[deg]
         self.goal_vel = rospy.get_param("~goal_velocity", 0.001)  # Goal criteria(velocity)[m/s]
@@ -161,28 +184,29 @@ class ScenarioMaker:
         rospy.Timer(rospy.Duration(1 / 3.0), self.timerCallback)
 
         time.sleep(0.2)  # wait for ready to publish/subscribe
+        time.sleep(3.0)  # wait for mission planner
 
         ##################################################### main process start
 
         # set self-position and path
         if self.is_record_rosbag:
             self.record_rosbag(self.trial_num, self.rosbag_node_name, self.rosbag_file_name)
-        self.scenario_path(only_initial_pose=True)
+        self.scenario_path(only_initial_pose=True, frame_id=REF_LINK)
         if self.use_ndt:
             time.sleep(5.0)  # wait to finish ndt matching
-        self.reset_obstacle()
+        self.reset_obstacle(frame_id=REF_LINK)
         time.sleep(1.0)
         if self.generate_obstacle:
-            self.scenario_obstacle()  # obstacle is valid only when self-position is given
+            self.scenario_obstacle(frame_id=REF_LINK)  # obstacle is valid only when self-position is given
         time.sleep(2.0)  # wait for registration of obstacle
-        self.scenario_path()
+        self.scenario_path(frame_id=REF_LINK)
 
         # publish max speed
         self.pubMaxSpeed()
 
         r_time = rospy.Rate(5)
         while not rospy.is_shutdown():
-            self.GetSelfPos()
+            self.GetSelfPos(REF_LINK, SELF_LINK)
             if self.goal_judge(self.goal_dist, self.goal_th, self.goal_vel):
                 print("Scenario Clear!", self.trial_num, "Time:", rospy.Time.now().to_sec() - self.start_time)
                 time.sleep(10.0)
@@ -191,7 +215,7 @@ class ScenarioMaker:
                     if self.delete_success_rosbag:
                         self.delete_rosbag(self.trial_num, self.rosbag_file_name)
                 if self.retry_scenario:
-                    self.retry_senario_path()
+                    self.retry_scenario_path(frame_id=REF_LINK)
                 else:
                     self.pub_engage.publish(False)  # stop vehicle
                     sys.exit()
@@ -207,19 +231,19 @@ class ScenarioMaker:
                 if self.is_record_rosbag:
                     self.end_rosbag(self.rosbag_node_name)
                 if self.retry_scenario:
-                    self.retry_senario_path()
+                    self.retry_scenario_path(frame_id=REF_LINK)
                 else:
                     self.pub_engage.publish(False)  # stop vehicle
                     sys.exit()
             else:
                 if self.generate_obstacle:
-                    self.scenario_obstacle_manager()
+                    self.scenario_obstacle_manager(frame_id=REF_LINK)
             self.traffic_light_manager()
             r_time.sleep()
 
         ##################################################### main process end
 
-    def retry_senario_path(self):
+    def retry_scenario_path(self, frame_id):
         self.trial_num += 1
         if self.trial_num > self.max_scenario_num:
             sys.exit()
@@ -229,42 +253,43 @@ class ScenarioMaker:
         self.pub_engage.publish(False)  # stop vehicle
         self.collision = False
         self.fail_reason = 0
-        self.reset_obstacle()
-        self.scenario_obstacle()
+        self.reset_obstacle(frame_id=frame_id)
+        self.scenario_obstacle(frame_id=frame_id)
         time.sleep(5.0)
         self.start_time = rospy.Time.now().to_sec()
-        self.scenario_path()
+        self.scenario_path(frame_id=frame_id)
 
-    def scenario_path(self, only_initial_pose=False):
+    def scenario_path(self, only_initial_pose=False, frame_id=""):
         self.pub_engage.publish(False)  # stop vehicle
         self.start_time = rospy.Time.now().to_sec()
         # Publish Scenario
-        self.scenario_path1(only_initial_pose)
+        self.scenario_path1(only_initial_pose, frame_id)
         # Publish Engage
         if self.auto_engage:
             self.pub_engage.publish(True)
             time.sleep(0.2)
 
-    def scenario_obstacle(self):
-        self.scenario_obstacle1()
+    def scenario_obstacle(self, frame_id):
+        self.scenario_obstacle1(frame_id)
 
-    def scenario_obstacle_manager(self):
-        self.scenario_obstacle_manager1()
+    def scenario_obstacle_manager(self, frame_id):
+        self.scenario_obstacle_manager1(frame_id)
 
-    def scenario_path1(self, only_inital_pose=False):
+    def scenario_path1(self, only_inital_pose=False, frame_id=""):
         time.sleep(0.2)
 
         # publish Start Position
         self.pub_initialpose.publish(
             self.make_posstmp_with_cov(
                 self.random_pose_maker(
-                    x=s_initpos["x"],
-                    y=s_initpos["y"],
-                    th=s_initpos["th"],
-                    ver_sigma=s_initpos["ver_sigma"],
-                    lat_sigma=s_initpos["lat_sigma"],
-                    th_sigma=s_initpos["th_sigma"],
-                )
+                    x=self.initpos["x"],
+                    y=self.initpos["y"],
+                    th=self.initpos["th"],
+                    ver_sigma=self.initpos["ver_sigma"],
+                    lat_sigma=self.initpos["lat_sigma"],
+                    th_sigma=self.initpos["th_sigma"],
+                ),
+                frame_id=frame_id,
             )
         )
         if self.use_ndt:
@@ -276,20 +301,21 @@ class ScenarioMaker:
         self.pub_goal.publish(
             self.make_posstmp(
                 self.random_pose_maker(
-                    x=s_goalpos["x"],
-                    y=s_goalpos["y"],
-                    th=s_goalpos["th"],
-                    ver_sigma=s_goalpos["ver_sigma"],
-                    lat_sigma=s_goalpos["lat_sigma"],
-                    th_sigma=s_goalpos["th_sigma"],
+                    x=self.goalpos["x"],
+                    y=self.goalpos["y"],
+                    th=self.goalpos["th"],
+                    ver_sigma=self.goalpos["ver_sigma"],
+                    lat_sigma=self.goalpos["lat_sigma"],
+                    th_sigma=self.goalpos["th_sigma"],
                     goal_record=True,
-                )
+                ),
+                frame_id=frame_id,
             )
         )
         time.sleep(0.2)
 
         # Publish Check Point
-        for cp in s_checkpoint:
+        for cp in self.checkpoint:
             self.pub_checkpoint.publish(
                 self.make_posstmp(
                     self.random_pose_maker(
@@ -299,14 +325,15 @@ class ScenarioMaker:
                         ver_sigma=cp["ver_sigma"],
                         lat_sigma=cp["lat_sigma"],
                         th_sigma=cp["th_sigma"],
-                    )
+                    ),
+                    frame_id=frame_id,
                 )
             )
             time.sleep(0.2)
 
-    def scenario_obstacle1(self):
+    def scenario_obstacle1(self, frame_id):
         ###obstacle 0: fixed pedestrian
-        for sb in s_staticobstacle:
+        for sb in self.staticobstacle:
             self.PubObject(
                 pose=self.random_pose_maker(
                     x=sb["x"],
@@ -319,10 +346,11 @@ class ScenarioMaker:
                 vel=self.random_velocity_maker(v=sb["v"], v_sigma=sb["v_sigma"]),
                 obstacle_type=sb["obstacle_type"],
                 obstacle_uuid=sb["obstacle_uuid"],
+                frame_id=frame_id,
             )
 
-    def scenario_obstacle_manager1(self):
-        for db in s_dynamicobstacle:
+    def scenario_obstacle_manager1(self, frame_id):
+        for db in self.dynamicobstacle:
             self.PubPatternedObstacle(
                 pose=(db["x"], db["y"], db["th"]),
                 vel=db["v"],
@@ -342,6 +370,7 @@ class ScenarioMaker:
                 obstacle_uuid=db["obstacle_uuid"],
                 alternate_mode=db["alternate_mode"],
                 alternate_timing=db["alternate_timing"],
+                frame_id=frame_id,
             )
 
     def pubMaxSpeed(self):
@@ -367,11 +396,11 @@ class ScenarioMaker:
     def traffic_light_changer(self, traffic_light):  # according to self posture, change the traffic light to reference
         # temporary function!!! TODO: fix this
         if not self.judge_dist(
-            s_tlpos["x"], s_tlpos["y"], s_tlpos["th"], s_tlpos["judge_dist_xy"], s_tlpos["judge_dist_th"]
+            self.tlpos["x"], self.tlpos["y"], self.tlpos["th"], self.tlpos["judge_dist_xy"], self.tlpos["judge_dist_th"]
         ):
             return COLOR_BRACK  # no traffic light
 
-        if np.abs(np.cos((np.deg2rad(self.self_th - s_tlpos["turn_traffic_light_th"])))) > np.sqrt(2.0) / 2.0:
+        if np.abs(np.cos((np.deg2rad(self.self_th - self.tlpos["turn_traffic_light_th"])))) > np.sqrt(2.0) / 2.0:
             return traffic_light
         else:
             if traffic_light == COLOR_RED:
@@ -381,16 +410,16 @@ class ScenarioMaker:
             else:
                 return traffic_light
 
-    def reset_id_obstacle(self, obs_id, obs_uuid):
+    def reset_id_obstacle(self, obs_id, obs_uuid, frame_id):
         self.obstacle_generated[obs_id] = 0
         self.obstacle_generated_time[obs_id] = 0
-        self.PubResetObject(obs_uuid)
+        self.PubResetObject(obs_uuid, frame_id=frame_id)
 
-    def reset_obstacle(self):
+    def reset_obstacle(self, frame_id):
         self.obstacle_generated = np.zeros((OBSTACLE_NUM + 1))
         self.obstacle_generated_time = np.zeros((OBSTACLE_NUM + 1))
         self.obstacle_generated_count = np.zeros((OBSTACLE_NUM + 1))
-        self.PubResetObject()  # reset all object
+        self.PubResetObject(frame_id=frame_id)  # reset all object
 
     def random_pose_maker(
         self, x, y, th, ver_sigma=0.0, lat_sigma=0.0, th_sigma=0.0, goal_record=False
@@ -413,7 +442,7 @@ class ScenarioMaker:
         v_rand = v + v_error
         return v_rand
 
-    def make_posstmp(self, pose, frame_id=REF_LINK):
+    def make_posstmp(self, pose, frame_id):
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -423,9 +452,7 @@ class ScenarioMaker:
         posemsg.pose = self.make_pose(x, y, th)
         return posemsg
 
-    def make_posstmp_with_cov(
-        self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id=REF_LINK
-    ):  # pose: x[m], y[m], th[deg]
+    def make_posstmp_with_cov(self, pose, xcov=0.25, ycov=0.25, thcov=0.07, frame_id=""):  # pose: x[m], y[m], th[deg]
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -438,7 +465,7 @@ class ScenarioMaker:
         posewcmsg.pose.covariance[35] = thcov  # cov of rot_z, rot_z
         return posewcmsg
 
-    def make_pose_twist(self, pose, vel, frame_id=REF_LINK):
+    def make_pose_twist(self, pose, vel, frame_id):
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -446,7 +473,7 @@ class ScenarioMaker:
         tsmsg = self.make_twist(vel)
         return psmsg, tsmsg
 
-    def make_pose_twist_stamped(self, pose, vel, frame_id=REF_LINK):
+    def make_pose_twist_stamped(self, pose, vel, frame_id):
         x = pose[0]
         y = pose[1]
         th = pose[2]
@@ -531,8 +558,8 @@ class ScenarioMaker:
         else:
             return False
 
-    def GetSelfPos(self):
-        trans, quat = self.get_pose(from_link=REF_LINK, to_link=SELF_LINK)
+    def GetSelfPos(self, from_link, to_link):
+        trans, quat = self.get_pose(from_link=from_link, to_link=to_link)
         rot = tf.transformations.euler_from_quaternion(quat)
         self.self_x = trans[0]  # [m]
         self.self_y = trans[1]  # [m]
@@ -586,7 +613,7 @@ class ScenarioMaker:
         obstacle_uuid,
         alternate_mode=False,
         alternate_timing=BEFORE,
-        frame_id=REF_LINK,
+        frame_id="",
     ):
         x_obj, y_obj, th_obj = pose
         x_jdg, y_jdg, th_jdg = judge_pose
@@ -625,13 +652,14 @@ class ScenarioMaker:
                         vel=self.random_velocity_maker(v=vel, v_sigma=vel_sigma),
                         obstacle_type=obstacle_type,
                         obstacle_uuid=obstacle_uuid,
+                        frame_id=frame_id,
                     )
                 self.obstacle_generated[obstacle_id] = 1
                 self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
                 self.obstacle_generated_count[obstacle_id] += 1
             else:
                 if rospy.Time.now().to_sec() - self.obstacle_generated_time[obstacle_id] > generate_loop:
-                    self.reset_id_obstacle(obstacle_id, obstacle_uuid)
+                    self.reset_id_obstacle(obstacle_id, obstacle_uuid, frame_id=frame_id)
                     if generate_once:
                         self.obstacle_generated[obstacle_id] = 1  # no more generate(generate once)
                     else:
@@ -648,21 +676,22 @@ class ScenarioMaker:
                                 vel=self.random_velocity_maker(v=vel, v_sigma=vel_sigma),
                                 obstacle_type=obstacle_type,
                                 obstacle_uuid=obstacle_uuid,
+                                frame_id=frame_id,
                             )
                         self.obstacle_generated[obstacle_id] = 1
                         self.obstacle_generated_time[obstacle_id] = rospy.Time.now().to_sec()
                         self.obstacle_generated_count[obstacle_id] += 1
                     time.sleep(0.1)
         else:
-            self.reset_id_obstacle(obstacle_id, obstacle_uuid)
+            self.reset_id_obstacle(obstacle_id, obstacle_uuid, frame_id=frame_id)
 
-    def PubObject(self, pose, vel, obstacle_type, obstacle_uuid, frame_id=REF_LINK):
+    def PubObject(self, pose, vel, obstacle_type, obstacle_uuid, frame_id):
         header = Header()
         header.stamp = rospy.Time.now()
         header.frame_id = frame_id
 
         init_state = InitialState()
-        pose, twist = self.make_pose_twist(pose, vel)
+        pose, twist = self.make_pose_twist(pose, vel, frame_id)
         init_state.pose_covariance.pose = pose
         init_state.twist_covariance.twist = twist
 
@@ -692,7 +721,7 @@ class ScenarioMaker:
         time.sleep(0.1)
         return True
 
-    def PubResetObject(self, uuid=0, frame_id=REF_LINK):  # id=0 -> reset all object
+    def PubResetObject(self, uuid=0, frame_id=""):  # id=0 -> reset all object
         header = Header()
         header.stamp = rospy.Time.now()
         header.frame_id = frame_id

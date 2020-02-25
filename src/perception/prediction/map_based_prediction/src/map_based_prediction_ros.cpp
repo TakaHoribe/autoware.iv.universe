@@ -36,6 +36,7 @@
 
 //lanelet
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_core/geometry/BoundingBox.h>
@@ -50,10 +51,10 @@
 
 
 
-bool MapBasedPredictionROS::getClosestLanelet(
+bool MapBasedPredictionROS::getClosestLanelets(
   const autoware_perception_msgs::DynamicObject& object,
   const lanelet::LaneletMapPtr& lanelet_map_ptr_,
-  lanelet::Lanelet* closest_lanelet,
+  std::vector<lanelet::Lanelet>& closest_lanelets,
   std::string uuid_string)
 {
   std::chrono::high_resolution_clock::time_point begin= 
@@ -77,6 +78,7 @@ bool MapBasedPredictionROS::getClosestLanelet(
      uuid2laneids_.count(uuid_string)==0)
   {
     bool is_found_target_closest_lanelet = false;
+    const double max_delta_yaw_threshold = M_PI/4.;
     double min_delta_yaw = 999999999;
     const double max_dist_for_searching_lanelet = 3;
     lanelet::Lanelet target_closest_lanelet;
@@ -110,33 +112,29 @@ bool MapBasedPredictionROS::getClosestLanelet(
       {
         continue;
       }
-      double dx2 =  lanelet.second.centerline().back().x() - 
-                    lanelet.second.centerline()[lanelet.second.centerline().size()-2].x();
-      double dy2 =  lanelet.second.centerline().back().y() - 
-                    lanelet.second.centerline()[lanelet.second.centerline().size()-2].y();
-      double lane_yaw = std::atan2(dy2, dx2);
+      double lane_yaw = lanelet::utils::getLaneletAngle(
+                          lanelet.second, 
+                          object.state.pose_covariance.pose.position);
       double delta_yaw = object_yaw - lane_yaw;
       double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
       double abs_norm_delta = std::fabs(normalized_delta_yaw);
-      
       if(lanelet.first < max_dist_for_searching_lanelet &&
-         abs_norm_delta < min_delta_yaw)
+          abs_norm_delta < max_delta_yaw_threshold)
       {
-        min_delta_yaw = abs_norm_delta;
         target_closest_lanelet = lanelet.second;
         is_found_target_closest_lanelet = true;
+        closest_lanelets.push_back(target_closest_lanelet);
       }
     }
     if(is_found_target_closest_lanelet)
     {
-      *closest_lanelet = target_closest_lanelet;
       return true;
     }
   }
   else
   {
     bool is_found_target_closest_lanelet = false;
-    double min_delta_yaw = 999999999;
+    const double max_delta_yaw_threshold = M_PI/4.;
     const double max_dist_for_searching_lanelet = 3;
     lanelet::Lanelet target_closest_lanelet;
     for(const auto& laneid: uuid2laneids_.at(uuid_string))
@@ -175,28 +173,23 @@ bool MapBasedPredictionROS::getClosestLanelet(
         {
           continue;
         }
-        double dx2 =  lanelet.second.centerline().back().x() - 
-                      lanelet.second.centerline()[lanelet.second.centerline().size()-2].x();
-        double dy2 =  lanelet.second.centerline().back().y() - 
-                      lanelet.second.centerline()[lanelet.second.centerline().size()-2].y();
-        double lane_yaw = std::atan2(dy2, dx2);
+        double lane_yaw = lanelet::utils::getLaneletAngle(
+                            lanelet.second, 
+                            object.state.pose_covariance.pose.position);
         double delta_yaw = object_yaw - lane_yaw;
         double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
         double abs_norm_delta = std::fabs(normalized_delta_yaw);
-        
         if(lanelet.first < max_dist_for_searching_lanelet &&
-           abs_norm_delta < min_delta_yaw)
+           abs_norm_delta < max_delta_yaw_threshold)
         {
-          min_delta_yaw = abs_norm_delta;
           target_closest_lanelet = lanelet.second;
           is_found_target_closest_lanelet = true;
+          closest_lanelets.push_back(target_closest_lanelet);
         }
       }
     }
-    
     if(is_found_target_closest_lanelet)
     {
-      *closest_lanelet = target_closest_lanelet;
       return true;
     }
   }
@@ -303,16 +296,16 @@ void MapBasedPredictionROS::objectsCallback(
     }
     
                      
-                     
-    lanelet::Lanelet start_lanelet;
+    //generate non redundant lanelet vector        
+    std::vector<lanelet::Lanelet> start_lanelets;
     geometry_msgs::Point closest_point;
     std::vector<geometry_msgs::Pose> path_points;
     std::vector<geometry_msgs::Pose> second_path_points;
     std::vector<geometry_msgs::Pose> right_path_points;
     std::string uuid_string = unique_id::toHexString(object.id);
-    if(!getClosestLanelet(tmp_object.object, 
+    if(!getClosestLanelets(tmp_object.object, 
                           lanelet_map_ptr_,
-                          &start_lanelet,
+                          start_lanelets,
                           uuid_string))
     {
       geometry_msgs::Point debug_point;
@@ -323,29 +316,63 @@ void MapBasedPredictionROS::objectsCallback(
       continue;
     }
     
-    auto opt_right = routing_graph_ptr_->right(start_lanelet);
-    lanelet::routing::LaneletPaths right_paths;
-    if (!!opt_right)
+    // lanelet vector
+    std::vector<lanelet::ConstLanelet> valid_lanelets;
+    for(const auto&start_lanelet: start_lanelets)
     {
-      right_paths =  
-        routing_graph_ptr_->possiblePaths(*opt_right, 
-                                          10, 0,false);
-    }
-    auto opt_left = routing_graph_ptr_->left(start_lanelet);
-    lanelet::routing::LaneletPaths left_paths;
-    if (!!opt_left)
-    {
-      left_paths =  
-        routing_graph_ptr_->possiblePaths(*opt_left, 
-                                          10, 0,false);
+      lanelet::ConstLanelets prev_lanelets= routing_graph_ptr_->previous(start_lanelet);
+      bool is_skip = false;
+      for(const auto& valid_lanelet: valid_lanelets)
+      {
+        if(valid_lanelet.id() == start_lanelet.id())
+        {
+          is_skip = true;
+        }
+        for(const auto& prev_lanelet: prev_lanelets)
+        {
+          if(valid_lanelet.id() == prev_lanelet.id())
+          {
+            is_skip = true;
+          }
+        }
+      }
+      if(is_skip)
+      {
+        continue;
+      }
+      valid_lanelets.push_back(start_lanelet);
     }
     
-    lanelet::routing::LaneletPaths paths =  
-      routing_graph_ptr_->possiblePaths(start_lanelet, 
-                                        10, 0,false);
-   
-    paths.insert(paths.end(), right_paths.begin(), right_paths.end());
-    paths.insert(paths.end(), left_paths.begin(), left_paths.end());
+    lanelet::routing::LaneletPaths paths;
+    for(const auto&start_lanelet: valid_lanelets)
+    {
+      lanelet::ConstLanelet origin_lanelet;
+        origin_lanelet = start_lanelet;
+      
+      auto opt_right = routing_graph_ptr_->right(origin_lanelet);
+      lanelet::routing::LaneletPaths right_paths;
+      if (!!opt_right)
+      {
+        right_paths =  
+          routing_graph_ptr_->possiblePaths(*opt_right, 
+                                            20, 0,false);
+      }
+      auto opt_left = routing_graph_ptr_->left(origin_lanelet);
+      lanelet::routing::LaneletPaths left_paths;
+      if (!!opt_left)
+      {
+        left_paths =  
+          routing_graph_ptr_->possiblePaths(*opt_left, 
+                                            20, 0,false);
+      }
+      
+      lanelet::routing::LaneletPaths center_paths =  
+        routing_graph_ptr_->possiblePaths(origin_lanelet, 
+                                          20, 0,false);
+      paths.insert(paths.end(), center_paths.begin(), center_paths.end());
+      paths.insert(paths.end(), right_paths.begin(), right_paths.end());
+      paths.insert(paths.end(), left_paths.begin(), left_paths.end());
+    }
     if(paths.size() == 0)
     {
       geometry_msgs::Point debug_point;

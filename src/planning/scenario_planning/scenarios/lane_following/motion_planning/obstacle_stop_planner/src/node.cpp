@@ -241,7 +241,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 
         // check already insert stop point
         bool is_inserted_already_stop_point = false;
-        for (int j = max_dist_stop_point_idx - 1; j < (int)min_dist_stop_point_idx; ++j) {
+        for (int j = max_dist_stop_point_idx - 1; j < (int)i; ++j) {
           if (output_msg.points.at(std::max(j, 0)).twist.linear.x == 0.0) {
             is_inserted_already_stop_point = true;
             break;

@@ -96,10 +96,10 @@ private:
   void objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
   
-  bool getClosestLanelet(
+  bool getClosestLanelets(
     const autoware_perception_msgs::DynamicObject& object,
-    const lanelet::LaneletMapPtr& lanelet_map_ptr_,
-    lanelet::Lanelet* closest_lanelet,
+    const lanelet::LaneletMapPtr& lanelet_map_ptr,
+    std::vector<lanelet::Lanelet>& closest_lanelets,
     std::string uuid_string);
 
 public:

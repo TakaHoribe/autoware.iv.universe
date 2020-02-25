@@ -57,6 +57,7 @@ class BlindSpotModule : public SceneModuleInterface {
   double path_expand_width_;                           //< @brief path width to calculate the edge line for both side
   BlindSpotModuleManager* blind_spot_module_manager_;  //< @brief manager pointer
   bool show_debug_info_;
+  double baselink_to_front_length_;
 
   /**
    * @brief set velocity from idx to the end point
@@ -95,6 +96,8 @@ class BlindSpotModule : public SceneModuleInterface {
   bool setStopLineIdx(const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId& path,
                       int& stop_line_idx, int& judge_line_idx);
 
+  geometry_msgs::Pose getAheadPose(const size_t start_idx, const double ahead_dist,
+                                   const autoware_planning_msgs::PathWithLaneId& path) const;
   /**
    * @brief convert from lanelet to boost polygon
    */
@@ -157,6 +160,7 @@ class BlindSpotModuleDebugger {
                    double b);
   void publishPose(const geometry_msgs::Pose& pose, const std::string& ns, double r, double g, double b, int mode);
   void publishDebugValues(const std_msgs::Float32MultiArray& msg);
+  void publishGeofence(const geometry_msgs::Pose& pose, int32_t lane_id);
 
  private:
   ros::NodeHandle nh_;
