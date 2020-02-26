@@ -43,6 +43,7 @@ add_executable(lane_change_planner
   src/state/aborting_lane_change.cpp
   src/state/state_base_class.cpp
   src/state/blocked_by_obstacle.cpp
+  src/state/common_functions.cpp
 )
 add_dependencies(lane_change_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(lane_change_planner

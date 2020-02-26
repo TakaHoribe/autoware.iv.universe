@@ -36,6 +36,7 @@ private:
   bool force_lane_change_;
   bool found_safe_path_;
   lanelet::ConstLanelets current_lanes_;
+  lanelet::ConstLanelets lane_change_lanes_;
 
   // State transition conditions
   bool foundSafeLaneChangePath() const;

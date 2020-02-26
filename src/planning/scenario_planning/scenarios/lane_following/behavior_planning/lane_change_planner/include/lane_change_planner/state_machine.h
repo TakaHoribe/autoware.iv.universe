@@ -17,6 +17,7 @@
 #ifndef LANE_CHANGE_PLANNER_STATE_MACHINE_H
 #define LANE_CHANGE_PLANNER_STATE_MACHINE_H
 
+#include <ros/ros.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_planning_msgs/Route.h>
 #include <lanelet2_core/primitives/Lanelet.h>
