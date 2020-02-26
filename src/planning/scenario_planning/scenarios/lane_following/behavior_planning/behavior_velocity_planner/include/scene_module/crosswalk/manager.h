@@ -37,5 +37,8 @@ class CrosswalkModuleManager : public SceneModuleManagerInterface {
 
   const char* getModuleName() override { return "crosswalk"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
-  void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+
+ private:
+  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
+      const autoware_planning_msgs::PathWithLaneId& path) override;
 };

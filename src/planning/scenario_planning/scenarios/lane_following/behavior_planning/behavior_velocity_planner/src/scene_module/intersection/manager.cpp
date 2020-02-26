@@ -60,12 +60,11 @@ void IntersectionModuleManager::launchNewModules(const autoware_planning_msgs::P
   }
 }
 
-void IntersectionModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> IntersectionModuleManager::getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId& path) {
   const auto lane_id_set = getLaneIdSetOnPath(path);
 
-  for (const auto scene_module : scene_modules_) {
-    if (lane_id_set.count(scene_module->getModuleId()) == 0) {
-      unregisterModule(scene_module);
-    }
-  }
+  return [lane_id_set](const std::shared_ptr<SceneModuleInterface>& scene_module) {
+    return lane_id_set.count(scene_module->getModuleId()) == 0;
+  };
 }

@@ -43,13 +43,12 @@ void CrosswalkModuleManager::launchNewModules(const autoware_planning_msgs::Path
   }
 }
 
-void CrosswalkModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> CrosswalkModuleManager::getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId& path) {
   const auto crosswalk_id_set =
       getCrosswalkIdSetOnPath(path, planner_data_->lanelet_map, planner_data_->overall_graphs);
 
-  for (const auto scene_module : scene_modules_) {
-    if (crosswalk_id_set.count(scene_module->getModuleId()) == 0) {
-      unregisterModule(scene_module);
-    }
-  }
+  return [crosswalk_id_set](const std::shared_ptr<SceneModuleInterface>& scene_module) {
+    return crosswalk_id_set.count(scene_module->getModuleId()) == 0;
+  };
 }

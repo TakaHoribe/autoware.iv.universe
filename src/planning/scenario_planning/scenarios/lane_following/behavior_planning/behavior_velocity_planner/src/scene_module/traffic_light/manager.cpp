@@ -54,12 +54,11 @@ void TrafficLightModuleManager::launchNewModules(const autoware_planning_msgs::P
   }
 }
 
-void TrafficLightModuleManager::deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> TrafficLightModuleManager::getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId& path) {
   const auto stop_line_id_set = getStopLineIdSetOnPath(path, planner_data_->lanelet_map);
 
-  for (const auto scene_module : scene_modules_) {
-    if (stop_line_id_set.count(scene_module->getModuleId()) == 0) {
-      unregisterModule(scene_module);
-    }
-  }
+  return [stop_line_id_set](const std::shared_ptr<SceneModuleInterface>& scene_module) {
+    return stop_line_id_set.count(scene_module->getModuleId()) == 0;
+  };
 }
