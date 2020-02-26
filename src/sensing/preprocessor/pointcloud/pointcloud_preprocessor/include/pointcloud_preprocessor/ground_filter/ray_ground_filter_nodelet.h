@@ -26,11 +26,11 @@ namespace pointcloud_preprocessor
   class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter
   {
 
-    typedef pcl::PointXYZI PointType_;
+    typedef pcl::PointXYZ PointType_;
 
-    struct PointXYZIRTColor
+    struct PointXYZRTColor
     {
-      pcl::PointXYZI point;
+      pcl::PointXYZ point;
 
       size_t ring;        //ring number if available
 
@@ -46,7 +46,7 @@ namespace pointcloud_preprocessor
 
       size_t original_index; //index of this point in the source pointcloud
     };
-    typedef std::vector <PointXYZIRTColor> PointCloudXYZIRTColor;
+    typedef std::vector <PointXYZRTColor> PointCloudXYZRTColor;
 
   protected:
     boost::shared_ptr <dynamic_reconfigure::Server<pointcloud_preprocessor::RayGroundFilterConfig>> srv_;
@@ -108,9 +108,9 @@ namespace pointcloud_preprocessor
      * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
      */
     void ConvertXYZIToRTZColor(const pcl::PointCloud<PointType_>::Ptr in_cloud,
-                               PointCloudXYZIRTColor &out_organized_points,
+                               PointCloudXYZRTColor &out_organized_points,
                                std::vector <pcl::PointIndices> &out_radial_divided_indices,
-                               std::vector <PointCloudXYZIRTColor> &out_radial_ordered_clouds);
+                               std::vector <PointCloudXYZRTColor> &out_radial_ordered_clouds);
 
 
     /*!
@@ -119,7 +119,7 @@ namespace pointcloud_preprocessor
      * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
      * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
      */
-    void ClassifyPointCloud(std::vector <PointCloudXYZIRTColor> &in_radial_ordered_clouds,
+    void ClassifyPointCloud(std::vector <PointCloudXYZRTColor> &in_radial_ordered_clouds,
                             pcl::PointIndices &out_ground_indices,
                             pcl::PointIndices &out_no_ground_indices);
 
