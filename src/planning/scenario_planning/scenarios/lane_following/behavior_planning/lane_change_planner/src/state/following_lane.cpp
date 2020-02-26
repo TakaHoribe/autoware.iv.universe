@@ -141,7 +141,7 @@ bool FollowingLaneState::isLaneBlocked() const
   constexpr double static_obj_velocity_thresh = 0.1;
   const double lane_changeable_distance_left = RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
   const double lane_changeable_distance_right = RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::RIGHT);
-  const double lane_changeable_distance = std::min(lane_changeable_distance_left, lane_changeable_distance_right);
+  const double lane_changeable_distance = std::max(lane_changeable_distance_left, lane_changeable_distance_right);
   const double check_distance = std::min(max_check_distance, lane_changeable_distance);
   const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
 
