@@ -17,19 +17,19 @@
 #ifndef LANE_CHANGE_PLANNER_UTILITIES_H
 #define LANE_CHANGE_PLANNER_UTILITIES_H
 
-#include <ros/ros.h>
-#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
+#include <ros/ros.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_planning_msgs/PathWithLaneId.h>
 
 #include <lanelet2_core/geometry/Lanelet.h>
 
-#include <vector>
 #include <limits>
+#include <vector>
 
 namespace lane_change_planner
 {
@@ -69,7 +69,8 @@ double getDistanceBetweenPredictedPaths(const autoware_perception_msgs::Predicte
                                         const double end_time, const double resolution);
 
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
-                                            const lanelet::ConstLanelets& lanelets);
+                                            const lanelet::ConstLanelets& lanelets, const double start_arc_length = 0,
+                                            const double end_arc_length = std::numeric_limits<double>::max());
 
 const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lanelet::ConstLanelet& goal_lanelet);
 

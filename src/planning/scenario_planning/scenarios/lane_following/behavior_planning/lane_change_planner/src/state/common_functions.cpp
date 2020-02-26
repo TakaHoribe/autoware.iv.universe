@@ -1,5 +1,6 @@
 #include <lane_change_planner/state/common_functions.h>
 #include <lane_change_planner/utilities.h>
+#include <lanelet2_extension/utility/utilities.h>
 
 namespace lane_change_planner
 {
@@ -17,8 +18,12 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
   {
     return true;
   }
+
+  const auto arc = lanelet::utils::getArcCoordinates(current_lanes, current_pose);
+  constexpr double check_distance = 100.0;
   const auto target_lane_object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
-  const auto current_lane_object_indices = util::filterObjectsByLanelets(*dynamic_objects, current_lanes);
+  const auto current_lane_object_indices =
+      util::filterObjectsByLanelets(*dynamic_objects, current_lanes, arc.length, arc.length + check_distance);
 
   const double min_thresh = ros_parameters.min_stop_distance;
   const double stop_time = ros_parameters.stop_time;

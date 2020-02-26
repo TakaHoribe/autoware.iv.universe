@@ -16,10 +16,10 @@
 
 #include <lane_change_planner/utilities.h>
 #include <lanelet2_extension/utility/message_conversion.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/query.h>
-#include <opencv2/opencv.hpp>
+#include <lanelet2_extension/utility/utilities.h>
 #include <tf2/utils.h>
+#include <opencv2/opencv.hpp>
 
 namespace
 {
@@ -354,7 +354,8 @@ double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point&
   return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2) + std::pow(p1.z - p2.z, 2));
 }
 
-double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const PredictedPath& ego_path, const double start_time, const double end_time, const double resolution)
+double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const PredictedPath& ego_path,
+                                        const double start_time, const double end_time, const double resolution)
 {
   ros::Duration t_delta(resolution);
   // ros::Duration prediction_duration(duration);
@@ -375,9 +376,9 @@ double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const 
       continue;
     }
     FrenetCoordinate3d frenet_coordinate;
-    if(convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
+    if (convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
     {
-      if(frenet_coordinate.distance > vehicle_width)
+      if (frenet_coordinate.distance > vehicle_width)
       {
         continue;
       }
@@ -392,20 +393,21 @@ double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const 
 }
 
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
-                                            const lanelet::ConstLanelets& target_lanelets)
+                                            const lanelet::ConstLanelets& target_lanelets,
+                                            const double start_arc_length, const double end_arc_length)
 {
+  const auto polygon = lanelet::utils::getPolygonFromArcLength(target_lanelets, start_arc_length, end_arc_length);
+  const auto polygon2d = lanelet::utils::to2D(polygon).basicPolygon();
   std::vector<size_t> indices;
   for (size_t i = 0; i < objects.objects.size(); i++)
   {
     const auto& obj_position = objects.objects.at(i).state.pose_covariance.pose.position;
     lanelet::BasicPoint2d obj_position2d(obj_position.x, obj_position.y);
-    for (const auto& llt : target_lanelets)
+
+    double distance = boost::geometry::distance(polygon2d, obj_position2d);
+    if (distance < std::numeric_limits<double>::epsilon())
     {
-      double distance = boost::geometry::distance(llt.polygon2d().basicPolygon(), obj_position2d);
-      if (distance < std::numeric_limits<double>::epsilon())
-      {
-        indices.push_back(i);
-      }
+      indices.push_back(i);
     }
   }
   return indices;
@@ -446,7 +448,7 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
 {
   try
   {
-    if(input.points.empty())
+    if (input.points.empty())
     {
       return false;
     }
@@ -577,7 +579,7 @@ PathWithLaneId refinePath(const double search_radius_range, const double search_
   filtered_path = removeOverlappingPoints(input);
 
   // always set zero velocity at the end of path for safety
-  if(!filtered_path.points.empty())
+  if (!filtered_path.points.empty())
   {
     filtered_path.points.back().point.twist.linear.x = 0.0;
   }
