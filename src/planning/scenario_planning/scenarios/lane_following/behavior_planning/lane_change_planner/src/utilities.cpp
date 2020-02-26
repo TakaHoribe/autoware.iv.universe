@@ -355,7 +355,8 @@ double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point&
 }
 
 double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const PredictedPath& ego_path,
-                                        const double start_time, const double end_time, const double resolution)
+                                        const double start_time, const double end_time, const double resolution,
+                                        const bool use_vehicle_width, const double vehicle_width)
 {
   ros::Duration t_delta(resolution);
   // ros::Duration prediction_duration(duration);
@@ -363,7 +364,6 @@ double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const 
   ros::Time ros_start_time = ros::Time::now() + ros::Duration(start_time);
   ros::Time ros_end_time = ros::Time::now() + ros::Duration(end_time);
   const auto ego_path_point_array = convertToGeometryPointArray(ego_path);
-  const auto vehicle_width = 2.5;
   for (auto t = ros_start_time; t < ros_end_time; t += t_delta)
   {
     geometry_msgs::Pose object_pose, ego_pose;
@@ -375,12 +375,15 @@ double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const 
     {
       continue;
     }
-    FrenetCoordinate3d frenet_coordinate;
-    if (convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
+    if (use_vehicle_width)
     {
-      if (frenet_coordinate.distance > vehicle_width)
+      FrenetCoordinate3d frenet_coordinate;
+      if (convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
       {
-        continue;
+        if (frenet_coordinate.distance > vehicle_width)
+        {
+          continue;
+        }
       }
     }
     double distance = getDistance3d(object_pose.position, ego_pose.position);
@@ -396,9 +399,13 @@ std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::Dyna
                                             const lanelet::ConstLanelets& target_lanelets,
                                             const double start_arc_length, const double end_arc_length)
 {
+  std::vector<size_t> indices;
+  if (target_lanelets.empty())
+  {
+    return indices;
+  }
   const auto polygon = lanelet::utils::getPolygonFromArcLength(target_lanelets, start_arc_length, end_arc_length);
   const auto polygon2d = lanelet::utils::to2D(polygon).basicPolygon();
-  std::vector<size_t> indices;
   for (size_t i = 0; i < objects.objects.size(); i++)
   {
     const auto& obj_position = objects.objects.at(i).state.pose_covariance.pose.position;

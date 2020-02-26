@@ -66,7 +66,8 @@ bool lerpByTimeStamp(const autoware_perception_msgs::PredictedPath& path, const 
 double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2);
 double getDistanceBetweenPredictedPaths(const autoware_perception_msgs::PredictedPath& path1,
                                         const autoware_perception_msgs::PredictedPath& path2, const double start_time,
-                                        const double end_time, const double resolution);
+                                        const double end_time, const double resolution,
+                                        const bool use_vehicle_width, const double vehicle_width = 0.0);
 
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
                                             const lanelet::ConstLanelets& lanelets, const double start_arc_length = 0,

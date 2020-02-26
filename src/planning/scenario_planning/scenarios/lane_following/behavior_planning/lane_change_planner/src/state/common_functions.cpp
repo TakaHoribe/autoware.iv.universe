@@ -14,6 +14,14 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
                           const geometry_msgs::Pose& current_pose, const geometry_msgs::Twist& current_twist,
                           const LaneChangerParameters& ros_parameters, const bool use_buffer)
 {
+  if (path.points.empty())
+  {
+    return false;
+  }
+  if (current_lanes.empty())
+  {
+    return false;
+  }
   if (dynamic_objects == nullptr)
   {
     return true;
@@ -27,14 +35,26 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
 
   const double min_thresh = ros_parameters.min_stop_distance;
   const double stop_time = ros_parameters.stop_time;
-  const double buffer = ros_parameters.hysteresis_buffer_distance;
+  constexpr double vehicle_width = 2.0;
+  double buffer;
+  double lateral_buffer;
+  if (use_buffer)
+  {
+    buffer = ros_parameters.hysteresis_buffer_distance;
+    lateral_buffer = 1.0;
+  }
+  else
+  {
+    buffer = 0.0;
+    lateral_buffer = 1.0;
+  }
+
   const double time_resolution = ros_parameters.prediction_time_resolution;
   const double prediction_duration = ros_parameters.prediction_duration;
   const double current_lane_check_start_time = 0.0;
   const double current_lane_check_end_time =
       ros_parameters.lane_change_prepare_duration + 0.75 * ros_parameters.lane_changing_duration;
-  const double target_lane_check_start_time =
-      ros_parameters.lane_change_prepare_duration + 0.25 * ros_parameters.lane_changing_duration;
+  const double target_lane_check_start_time = 0.0;
   const double target_lane_check_end_time =
       ros_parameters.lane_change_prepare_duration + ros_parameters.lane_changing_duration;
 
@@ -45,9 +65,9 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
     const auto& obj = dynamic_objects->objects.at(i);
     for (const auto& obj_path : obj.state.predicted_paths)
     {
-      double distance =
-          util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, current_lane_check_start_time,
-                                                 current_lane_check_end_time, time_resolution);
+      double distance = util::getDistanceBetweenPredictedPaths(
+          obj_path, vehicle_predicted_path, current_lane_check_start_time, current_lane_check_end_time, time_resolution,
+          true, vehicle_width+lateral_buffer);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
@@ -63,8 +83,9 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
     const auto& obj = dynamic_objects->objects.at(i);
     for (const auto& obj_path : obj.state.predicted_paths)
     {
-      double distance = util::getDistanceBetweenPredictedPaths(
-          obj_path, vehicle_predicted_path, target_lane_check_start_time, target_lane_check_end_time, time_resolution);
+      double distance =
+          util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, target_lane_check_start_time,
+                                                 target_lane_check_end_time, time_resolution, false, 0.0);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
