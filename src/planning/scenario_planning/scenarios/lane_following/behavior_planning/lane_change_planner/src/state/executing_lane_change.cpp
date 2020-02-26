@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include <lane_change_planner/state/executing_lane_change.h>
 #include <lane_change_planner/data_manager.h>
 #include <lane_change_planner/route_handler.h>
+#include <lane_change_planner/state/common_functions.h>
+#include <lane_change_planner/state/executing_lane_change.h>
 #include <lane_change_planner/utilities.h>
 
 namespace lane_change_planner
@@ -101,36 +102,9 @@ bool ExecutingLaneChangeState::isStillOnOriginalLane() const
 
 bool ExecutingLaneChangeState::isTargetLaneStillClear() const
 {
-  const double min_thresh = ros_parameters_.min_stop_distance;
-  const double stop_time = ros_parameters_.stop_time;
-  const double time_resolution = ros_parameters_.prediction_time_resolution;
-  const double prediction_duration = ros_parameters_.prediction_duration;
-
-  if (target_lanes_.empty())
-  {
-    return false;
-  }
-  auto object_indices = util::filterObjectsByLanelets(*dynamic_objects_, target_lanes_);
-  const auto& vehicle_predicted_path =
-      util::convertToPredictedPath(status_.lane_change_path, current_twist_->twist, current_pose_.pose);
-
-  for (const auto& i : object_indices)
-  {
-    const auto& obj = dynamic_objects_->objects.at(i);
-    for (const auto& obj_path : obj.state.predicted_paths)
-    {
-      double distance = util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, time_resolution,
-                                                               prediction_duration);
-      double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
-      thresh = std::max(thresh, min_thresh);
-
-      if (distance < thresh)
-      {
-        return false;
-      }
-    }
-  }
-  return true;
+  return state_machine::common_functions::isLaneChangePathSafe(status_.lane_change_path, original_lanes_, target_lanes_,
+                                                               dynamic_objects_, current_pose_.pose,
+                                                               current_twist_->twist, ros_parameters_, false);
 }
 
 bool ExecutingLaneChangeState::hasFinishedLaneChange() const

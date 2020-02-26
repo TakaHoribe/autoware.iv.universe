@@ -182,6 +182,18 @@ std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PathWithLane
   return converted_path;
 }
 
+std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PredictedPath& path)
+{
+  std::vector<geometry_msgs::Point> converted_path;
+
+  converted_path.reserve(path.path.size());
+  for (const auto& pose_with_cov_stamped : path.path)
+  {
+    converted_path.push_back(pose_with_cov_stamped.pose.pose.position);
+  }
+  return converted_path;
+}
+
 geometry_msgs::PoseArray convertToGeometryPoseArray(const PathWithLaneId& path)
 {
   geometry_msgs::PoseArray converted_array;
@@ -210,7 +222,7 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   convertToFrenetCoordinate3d(geometry_points, vehicle_pose.position, &vehicle_pose_frenet);
   ros::Time start_time = ros::Time::now();
   double vehicle_speed = std::abs(vehicle_twist.linear.x);
-  const double min_speed = 0.01;
+  constexpr double min_speed = 1.0;
   if (vehicle_speed < min_speed)
   {
     vehicle_speed = min_speed;
@@ -342,27 +354,35 @@ double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point&
   return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2) + std::pow(p1.z - p2.z, 2));
 }
 
-double getDistanceBetweenPredictedPaths(const PredictedPath& path1, const PredictedPath& path2, const double resolution,
-                                        const double duration)
+double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const PredictedPath& ego_path, const double start_time, const double end_time, const double resolution)
 {
   ros::Duration t_delta(resolution);
-  ros::Duration prediction_duration(duration);
+  // ros::Duration prediction_duration(duration);
   double min_distance = std::numeric_limits<double>::max();
-  ros::Time start_time = ros::Time::now();
-  ros::Time end_time = ros::Time::now() + prediction_duration;
-
-  for (auto t = start_time; t < end_time; t += t_delta)
+  ros::Time ros_start_time = ros::Time::now() + ros::Duration(start_time);
+  ros::Time ros_end_time = ros::Time::now() + ros::Duration(end_time);
+  const auto ego_path_point_array = convertToGeometryPointArray(ego_path);
+  const auto vehicle_width = 2.5;
+  for (auto t = ros_start_time; t < ros_end_time; t += t_delta)
   {
-    geometry_msgs::Pose p1, p2;
-    if (!lerpByTimeStamp(path1, t, &p1))
+    geometry_msgs::Pose object_pose, ego_pose;
+    if (!lerpByTimeStamp(object_path, t, &object_pose))
     {
       continue;
     }
-    if (!lerpByTimeStamp(path2, t, &p2))
+    if (!lerpByTimeStamp(ego_path, t, &ego_pose))
     {
       continue;
     }
-    double distance = getDistance3d(p1.position, p2.position);
+    FrenetCoordinate3d frenet_coordinate;
+    if(convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
+    {
+      if(frenet_coordinate.distance > vehicle_width)
+      {
+        continue;
+      }
+    }
+    double distance = getDistance3d(object_pose.position, ego_pose.position);
     if (distance < min_distance)
     {
       min_distance = distance;
