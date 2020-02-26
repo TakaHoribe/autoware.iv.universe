@@ -24,9 +24,10 @@ class IntersectionModuleManager : public SceneModuleManagerInterface {
   IntersectionModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
   const char* getModuleName() override { return "intersection"; }
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
 
  private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+
   std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
       const autoware_planning_msgs::PathWithLaneId& path) override;
 };

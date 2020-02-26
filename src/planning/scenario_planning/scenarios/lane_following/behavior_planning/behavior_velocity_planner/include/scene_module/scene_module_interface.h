@@ -38,20 +38,6 @@ class SceneModuleManagerInterface {
   virtual ~SceneModuleManagerInterface() = default;
 
   virtual const char* getModuleName() = 0;
-  virtual void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) = 0;
-
-  void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
-    const auto isModuleExpired = getModuleExpiredFunction(path);
-
-    // Copy container to avoid iterator corruption due to scene_modules_.erase() in unregisterModule()
-    const auto copied_scene_modules = scene_modules_;
-
-    for (const auto& scene_module : copied_scene_modules) {
-      if (isModuleExpired(scene_module)) {
-        unregisterModule(scene_module);
-      }
-    }
-  }
 
   void updateSceneModuleInstances(const std::shared_ptr<const PlannerData>& planner_data,
                                   const autoware_planning_msgs::PathWithLaneId& path) {
@@ -77,8 +63,23 @@ class SceneModuleManagerInterface {
   }
 
  protected:
+  virtual void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) = 0;
+
   virtual std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
       const autoware_planning_msgs::PathWithLaneId& path) = 0;
+
+  void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+    const auto isModuleExpired = getModuleExpiredFunction(path);
+
+    // Copy container to avoid iterator corruption due to scene_modules_.erase() in unregisterModule()
+    const auto copied_scene_modules = scene_modules_;
+
+    for (const auto& scene_module : copied_scene_modules) {
+      if (isModuleExpired(scene_module)) {
+        unregisterModule(scene_module);
+      }
+    }
+  }
 
   bool isModuleRegistered(const int64_t module_id) { return registered_module_id_set_.count(module_id) != 0; }
 
