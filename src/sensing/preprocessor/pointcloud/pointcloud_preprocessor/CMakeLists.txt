@@ -354,6 +354,27 @@ target_link_libraries(crop_box_filter_node
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(crop_box_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
+# Concatenate data
+add_library(
+  concatenate_data
+  src/concatenate_data/concatenate_data_nodelet.cpp
+  )
+target_link_libraries(concatenate_data
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(concatenate_data ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+add_executable(
+  concatenate_data_node
+  src/concatenate_data/concatenate_data_node.cpp)
+target_link_libraries(concatenate_data_node
+                      concatenate_data
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(concatenate_data_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
 #############
 ## Install ##
 #############
