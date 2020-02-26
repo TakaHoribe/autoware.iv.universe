@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include <lane_change_planner/state/following_lane.h>
 #include <lane_change_planner/data_manager.h>
 #include <lane_change_planner/route_handler.h>
+#include <lane_change_planner/state/following_lane.h>
 #include <lane_change_planner/utilities.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
 
 namespace lane_change_planner
 {
@@ -65,7 +65,6 @@ void FollowingLaneState::update()
   }
 
   lanelet::ConstLanelet current_lane;
-  lanelet::ConstLanelets lane_change_lanes;
   const double backward_path_length = ros_parameters_.backward_path_length;
   const double forward_path_length = ros_parameters_.forward_path_length;
   // update lanes
@@ -80,11 +79,14 @@ void FollowingLaneState::update()
     lanelet::ConstLanelet lane_change_lane;
     if (RouteHandler::getInstance().getLaneChangeTarget(current_lane, &lane_change_lane))
     {
-      lane_change_lanes = RouteHandler::getInstance().getLaneletSequence(lane_change_lane, current_pose_.pose,
-                                                                         backward_path_length, forward_path_length);
+      lane_change_lanes_ = RouteHandler::getInstance().getLaneletSequence(lane_change_lane, current_pose_.pose,
+                                                                          backward_path_length, forward_path_length);
+    }
+    else
+    {
+      lane_change_lanes_.clear();
     }
   }
-
   // update lane_follow_path
   {
     const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
@@ -93,14 +95,14 @@ void FollowingLaneState::update()
     status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(
         current_lanes_, current_pose_.pose, backward_path_length, forward_path_length, minimum_lane_change_length);
 
-    if (!lane_change_lanes.empty())
+    if (!lane_change_lanes_.empty())
     {
       status_.lane_change_path = RouteHandler::getInstance().getLaneChangePath(
-          current_lanes_, lane_change_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
+          current_lanes_, lane_change_lanes_, current_pose_.pose, current_twist_->twist, backward_path_length,
           forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
     }
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
-    status_.lane_change_lane_ids = util::getIds(lane_change_lanes);
+    status_.lane_change_lane_ids = util::getIds(lane_change_lanes_);
   }
 
   // update drivable area
@@ -115,7 +117,7 @@ void FollowingLaneState::update()
 
 State FollowingLaneState::getNextState() const
 {
-  if (isLaneBlocked())
+  if (isLaneBlocked(current_lanes_))
   {
     return State::BLOCKED_BY_OBSTACLE;
   }
@@ -134,20 +136,23 @@ State FollowingLaneState::getNextState() const
   return State::FOLLOWING_LANE;
 }
 
-bool FollowingLaneState::isLaneBlocked() const
+bool FollowingLaneState::isLaneBlocked(const lanelet::ConstLanelets& lanes) const
 {
-  const auto arc = lanelet::utils::getArcCoordinates(current_lanes_, current_pose_.pose);
+  const auto arc = lanelet::utils::getArcCoordinates(lanes, current_pose_.pose);
   constexpr double max_check_distance = 30;
   constexpr double static_obj_velocity_thresh = 0.1;
-  const double lane_changeable_distance_left = RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
-  const double lane_changeable_distance_right = RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::RIGHT);
+  const double lane_changeable_distance_left =
+      RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
+  const double lane_changeable_distance_right =
+      RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::RIGHT);
   const double lane_changeable_distance = std::max(lane_changeable_distance_left, lane_changeable_distance_right);
   const double check_distance = std::min(max_check_distance, lane_changeable_distance);
-  const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
+  const auto polygon = lanelet::utils::getPolygonFromArcLength(lanes, arc.length, arc.length + check_distance);
 
-  if(polygon.size() < 3)
+  if (polygon.size() < 3)
   {
-    ROS_WARN_STREAM("could not get polygon from lanelet with arc lengths: " << arc.length << " to " << arc.length + check_distance);
+    ROS_WARN_STREAM("could not get polygon from lanelet with arc lengths: " << arc.length << " to "
+                                                                            << arc.length + check_distance);
     return false;
   }
 
@@ -195,6 +200,10 @@ bool FollowingLaneState::isLaneChangeable() const
     return false;
   }
   if (!isLaneChangePathSafe())
+  {
+    return false;
+  }
+  if (isLaneBlocked(lane_change_lanes_))
   {
     return false;
   }
