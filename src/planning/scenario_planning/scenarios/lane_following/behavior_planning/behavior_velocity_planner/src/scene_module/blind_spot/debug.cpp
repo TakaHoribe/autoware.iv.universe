@@ -18,8 +18,6 @@ visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
   marker.scale = createMarkerScale(0.1, 0.0, 0.0);
 
   for (size_t i = 0; i < detection_areas.size(); ++i) {
-    visualization_msgs::Marker marker;
-
     marker.ns = ns + "_" + std::to_string(i);
     marker.id = i;
 
