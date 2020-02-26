@@ -16,6 +16,7 @@
     <script type="text/javascript" src="js/velocity_limit.js"></script>
     <script type="text/javascript" src="js/jetson.js"></script>
     <script type="text/javascript" src="js/go_home.js"></script>
+    <script type="text/javascript" src="js/localization_diagnostic.js"></script>
     <script type="text/javascript" src="js/lane_change_approval.js"></script>
     <style>
         .ui-menu {
@@ -84,6 +85,15 @@
             <form action="javascript:GoHomePublisher.send();javascript:AutowareEngagePublisher.send();javascript:VehicleEngagePublisher.send();" id="ui">
                 <input type="submit" value="go home" id="btn" /><br />
             </form>
+            <h3>Localization Diagnostic: <span id="localization_diagnostic_info"> - </span></h3>
+            <div>
+                <span>Stamp:</span>
+                <span id="localization_diagnostic_stamp"> - </span>
+            </div>
+            <div>
+                <span>Status:</span>
+                <span id="localization_diagnostic_status"> - </span>
+            </div>
             <h3>Lane Change Approval : <span id="lane_change_approval_info"> - </span></h3>
             <form action="javascript:LaneChangeApprovalPublisher.send();" id="ui">
                 <input type="submit" value="Approve" id="btn" /><br />
