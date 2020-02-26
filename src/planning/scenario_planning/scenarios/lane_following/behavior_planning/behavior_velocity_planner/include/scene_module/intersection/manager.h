@@ -21,6 +21,8 @@
 
 class IntersectionModuleManager : public SceneModuleManagerInterface {
  public:
+  IntersectionModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+
   const char* getModuleName() override { return "intersection"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;

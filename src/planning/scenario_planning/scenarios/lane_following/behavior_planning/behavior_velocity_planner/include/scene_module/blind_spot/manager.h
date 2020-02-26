@@ -26,6 +26,8 @@
 
 class BlindSpotModuleManager : public SceneModuleManagerInterface {
  public:
+  BlindSpotModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+
   const char* getModuleName() override { return "blind_spot"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;

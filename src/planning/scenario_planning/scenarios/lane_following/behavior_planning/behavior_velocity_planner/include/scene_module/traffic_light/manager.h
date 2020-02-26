@@ -23,6 +23,8 @@
 
 class TrafficLightModuleManager : public SceneModuleManagerInterface {
  public:
+  TrafficLightModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+
   const char* getModuleName() override { return "traffic_light"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;

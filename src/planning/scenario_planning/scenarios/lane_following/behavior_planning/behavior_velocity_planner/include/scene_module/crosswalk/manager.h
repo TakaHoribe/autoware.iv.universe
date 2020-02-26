@@ -33,6 +33,8 @@
 
 class CrosswalkModuleManager : public SceneModuleManagerInterface {
  public:
+  CrosswalkModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+
   const char* getModuleName() override { return "crosswalk"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;

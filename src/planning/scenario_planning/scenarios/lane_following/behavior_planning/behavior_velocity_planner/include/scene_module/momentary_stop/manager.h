@@ -24,6 +24,8 @@
 
 class MomentaryStopModuleManager : public SceneModuleManagerInterface {
  public:
+  MomentaryStopModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+
   const char* getModuleName() override { return "momentary_stop"; }
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
   void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) override;

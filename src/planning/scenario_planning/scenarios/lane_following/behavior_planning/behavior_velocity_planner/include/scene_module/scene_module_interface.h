@@ -30,7 +30,11 @@ class SceneModuleInterface {
 
 class SceneModuleManagerInterface {
  public:
-  SceneModuleManagerInterface() = default;
+  SceneModuleManagerInterface(const char* module_name) {
+    const auto ns = std::string("output/debug/") + module_name;
+    pub_debug_ = private_nh_.advertise<visualization_msgs::MarkerArray>(ns, 20);
+  }
+
   virtual ~SceneModuleManagerInterface() = default;
 
   virtual const char* getModuleName() = 0;
@@ -46,10 +50,6 @@ class SceneModuleManagerInterface {
   }
 
   void modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
-    static const auto ns = std::string("output/debug/") + getModuleName();
-    static ros::NodeHandle private_nh_("~");
-    static ros::Publisher pub_debug_ = private_nh_.advertise<visualization_msgs::MarkerArray>(ns, 20);
-
     visualization_msgs::MarkerArray debug_marker_array;
 
     for (const auto& scene_module : scene_modules_) {
@@ -83,4 +83,8 @@ class SceneModuleManagerInterface {
   std::set<int64_t> registered_module_id_set_;
 
   std::shared_ptr<const PlannerData> planner_data_;
+
+  // Debug
+  ros::NodeHandle private_nh_{"~"};
+  ros::Publisher pub_debug_;
 };
