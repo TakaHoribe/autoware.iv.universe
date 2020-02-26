@@ -60,6 +60,7 @@ void LaneChanger::init()
   pnh_.param("drivable_area_width", parameters.drivable_area_width, 100.0);
   pnh_.param("drivable_area_height", parameters.drivable_area_height, 50.0);
   pnh_.param("enable_abort_lane_change", parameters.enable_abort_lane_change, true);
+  pnh_.param("vehicle_width", parameters.vehicle_width, 2.8);
   SingletonDataManager::getInstance().setLaneChangerParameters(parameters);
 
   // route_handler

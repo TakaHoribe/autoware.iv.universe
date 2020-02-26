@@ -18,10 +18,6 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
   {
     return false;
   }
-  if (current_lanes.empty())
-  {
-    return false;
-  }
   if (dynamic_objects == nullptr)
   {
     return true;
@@ -35,7 +31,7 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
 
   const double min_thresh = ros_parameters.min_stop_distance;
   const double stop_time = ros_parameters.stop_time;
-  constexpr double vehicle_width = 2.0;
+  const double vehicle_width = ros_parameters.vehicle_width;
   double buffer;
   double lateral_buffer;
   if (use_buffer)

@@ -703,21 +703,37 @@ double RouteHandler::getLaneChangeableDistance(const geometry_msgs::Pose& curren
                                                const LaneChangeDirection& direction)
 {
   lanelet::ConstLanelet current_lane;
-  if(!getClosestLaneletWithinRoute(current_pose, &current_lane))
+  if (!getClosestLaneletWithinRoute(current_pose, &current_lane))
   {
     return 0;
   }
-  const auto current_lanes = getLaneletSequence(current_lane);
+
+  lanelet::ConstLanelet target_lane;
+  if (direction == LaneChangeDirection::RIGHT)
+  {
+    if (!getRightLaneletWithinRoute(current_lane, &target_lane))
+    {
+      return 0.0;
+    }
+  }
+  if (direction == LaneChangeDirection::LEFT)
+  {
+    if (!getLeftLaneletWithinRoute(current_lane, &target_lane))
+    {
+      return 0.0;
+    }
+  }
 
   double accumulated_distance = 0;
   const auto current_position = lanelet::utils::conversion::toLaneletPoint(current_pose.position);
   const auto arc_coordinate = lanelet::geometry::toArcCoordinates(lanelet::utils::to2D(current_lane.centerline()),
                                                                   lanelet::utils::to2D(current_position).basicPoint());
-
   accumulated_distance = lanelet::utils::getLaneletLength3d(current_lane) - arc_coordinate.length;
-  for (const auto& lane : current_lanes)
+
+  const auto following_lanes = getLaneletSequenceAfter(current_lane, 100);
+
+  for (const auto& lane : following_lanes)
   {
-    lanelet::ConstLanelet target_lane;
     if (direction == LaneChangeDirection::RIGHT)
     {
       if (!getRightLaneletWithinRoute(lane, &target_lane))
@@ -732,7 +748,7 @@ double RouteHandler::getLaneChangeableDistance(const geometry_msgs::Pose& curren
         break;
       }
     }
-    accumulated_distance += lanelet::utils::getLaneletLength3d(target_lane);
+    accumulated_distance += lanelet::utils::getLaneletLength3d(lane);
   }
   return accumulated_distance;
 }

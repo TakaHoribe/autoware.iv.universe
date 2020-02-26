@@ -106,7 +106,9 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const
   {
     true;
   }
-  return state_machine::common_functions::isLaneChangePathSafe(status_.lane_change_path, original_lanes_, target_lanes_,
+  // do not check current lanes
+  lanelet::ConstLanelets empty_lanes;
+  return state_machine::common_functions::isLaneChangePathSafe(status_.lane_change_path, empty_lanes, target_lanes_,
                                                                dynamic_objects_, current_pose_.pose,
                                                                current_twist_->twist, ros_parameters_, false);
 }

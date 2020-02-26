@@ -141,7 +141,7 @@ State FollowingLaneState::getNextState() const
 bool FollowingLaneState::isLaneBlocked(const lanelet::ConstLanelets& lanes) const
 {
   const auto arc = lanelet::utils::getArcCoordinates(lanes, current_pose_.pose);
-  constexpr double max_check_distance = 30;
+  constexpr double max_check_distance = 100;
   constexpr double static_obj_velocity_thresh = 0.1;
   const double lane_changeable_distance_left =
       RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
