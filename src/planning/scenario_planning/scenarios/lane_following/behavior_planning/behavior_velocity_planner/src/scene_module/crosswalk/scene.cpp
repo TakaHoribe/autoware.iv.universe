@@ -73,7 +73,7 @@ bool CrosswalkModule::checkStopArea(
     }
   }
   if (path_collision_points.size() != 2) {
-    ROS_ERROR_THROTTLE(1, "Must be 2. Size is %d", (int)path_collision_points.size());
+    // ROS_ERROR_THROTTLE(1, "Must be 2. Size is %d", (int)path_collision_points.size());
     return false;
   }
 
