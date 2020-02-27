@@ -14,6 +14,7 @@ TrafficLightModule::TrafficLightModule(const int64_t module_id, const lanelet::T
 
 bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
   debug_data_ = {};
+  debug_data_.base_link2front = planner_data_->base_link2front;
 
   const auto input_path = *path;
 
