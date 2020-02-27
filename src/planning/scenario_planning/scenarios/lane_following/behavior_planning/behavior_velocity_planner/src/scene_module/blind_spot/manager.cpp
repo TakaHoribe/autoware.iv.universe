@@ -1,8 +1,5 @@
-#include <scene_module/intersection/manager.h>
+#include <scene_module/blind_spot/manager.h>
 
-#include <lanelet2_core/primitives/BasicRegulatoryElements.h>
-
-#include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
 
 namespace {
@@ -32,7 +29,7 @@ std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneI
 
 }  // namespace
 
-void IntersectionModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
+void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
   for (const auto& ll : getLaneletsOnPath(path, planner_data_->lanelet_map)) {
     const auto lane_id = ll.id();
     const auto module_id = lane_id;
@@ -41,26 +38,17 @@ void IntersectionModuleManager::launchNewModules(const autoware_planning_msgs::P
       continue;
     }
 
-    // Is intersection?
+    // Is turning lane?
     const std::string turn_direction = ll.attributeOr("turn_direction", "else");
-    const auto is_intersection = turn_direction == "right" || turn_direction == "left" || turn_direction == "straight";
-    if (!is_intersection) {
+    if (turn_direction != "left" && turn_direction != "right") {
       continue;
     }
 
-    // Has traffic light and straight?
-    const auto traffic_lights = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
-    const auto has_traffic_light = !traffic_lights.empty();
-    const auto is_straight = turn_direction == "straight";
-    if (has_traffic_light && is_straight) {
-      continue;
-    }
-
-    registerModule(std::make_shared<IntersectionModule>(module_id, lane_id));
+    registerModule(std::make_shared<BlindSpotModule>(module_id, lane_id, turn_direction));
   }
 }
 
-std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> IntersectionModuleManager::getModuleExpiredFunction(
+std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> BlindSpotModuleManager::getModuleExpiredFunction(
     const autoware_planning_msgs::PathWithLaneId& path) {
   const auto lane_id_set = getLaneIdSetOnPath(path);
 

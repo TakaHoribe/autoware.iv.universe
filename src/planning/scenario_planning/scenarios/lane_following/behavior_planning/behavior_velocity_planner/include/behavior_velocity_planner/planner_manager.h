@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
@@ -27,21 +32,15 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-#include <scene_module/scene_module_interface.hpp>
-
-#include <memory>
-#include <string>
-
-namespace behavior_planning {
+#include <scene_module/scene_module_interface.h>
 
 class BehaviorVelocityPlannerManager {
  public:
   void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
 
-  bool callback(const autoware_planning_msgs::PathWithLaneId& input_path_msg,
-                autoware_planning_msgs::PathWithLaneId& output_path_msg);
+  autoware_planning_msgs::PathWithLaneId planPathVelocity(const std::shared_ptr<const PlannerData>& planner_data,
+                                                          const autoware_planning_msgs::PathWithLaneId& input_path_msg);
 
  private:
-  std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_managers_ptr_;
+  std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_manager_ptrs_;
 };
-}  // namespace behavior_planning

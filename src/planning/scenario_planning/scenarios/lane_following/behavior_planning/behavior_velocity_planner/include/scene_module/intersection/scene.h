@@ -15,38 +15,85 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/scene_module_interface.hpp>
-
-namespace behavior_planning {
-
-class IntersectionModuleManager; // To be refactored
+#include <scene_module/scene_module_interface.h>
 
 class IntersectionModule : public SceneModuleInterface {
  public:
-  IntersectionModule(const int lane_id, IntersectionModuleManager* intersection_module_manager);
+  enum class State {
+    STOP = 0,
+    GO,
+  };
+
+  /**
+   * @brief Manage stop-go states with safety margin time.
+   */
+  class StateMachine {
+   public:
+    StateMachine() {
+      state_ = State::GO;
+      margin_time_ = 0.0;
+    }
+
+    /**
+     * @brief set request state command with margin time
+     */
+    void setStateWithMarginTime(State state);
+
+    /**
+     * @brief set request state command directly
+     */
+    void setState(State state);
+
+    /**
+     * @brief set margin time
+     */
+    void setMarginTime(const double t);
+
+    /**
+     * @brief get current state
+     */
+    State getState();
+
+   private:
+    State state_;                            //! current state
+    double margin_time_;                     //! margin time when transit to Go from Stop
+    std::shared_ptr<ros::Time> start_time_;  //! timer start time when received Go state when current state is Stop
+  };
+
+  struct DebugData {
+    autoware_planning_msgs::PathWithLaneId path_raw;
+
+    geometry_msgs::Pose geofence_pose;
+    geometry_msgs::Pose stop_point_pose;
+    geometry_msgs::Pose judge_point_pose;
+    autoware_planning_msgs::PathWithLaneId path_with_judgeline;
+    std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
+    autoware_planning_msgs::PathWithLaneId path_right_edge;
+    autoware_planning_msgs::PathWithLaneId path_left_edge;
+  };
+
+ public:
+  IntersectionModule(const int64_t module_id, const int64_t lane_id);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
    * and object predicted path
    */
-  bool run(const autoware_planning_msgs::PathWithLaneId& input,
-           autoware_planning_msgs::PathWithLaneId& output) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 
-  /**
-   * @brief kill instance if there is no assigned_lane_id in input path
-   */
-  bool endOfLife(const autoware_planning_msgs::PathWithLaneId& input) override;
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
  private:
-  const int assigned_lane_id_;            //< @brief object lane id (unique for this instance)
-  int stop_line_idx_;                     //< @brief stop-line index
-  int judge_line_idx_;                    //< @brief stop-judgement-line index
-  double judge_line_dist_;                //< @brief distance from stop-line to stop-judgement line
-  double approaching_speed_to_stopline_;  //< @brief speed when approaching stop-line (should be slow)
-  double path_expand_width_;              //< @brief path width to calculate the edge line for both side
-  IntersectionModuleManager* intersection_module_manager_;  //< @brief manager pointer
-  bool show_debug_info_;
-  double baselink_to_front_length_;
+  int64_t lane_id_;
+
+  int stop_line_idx_;   //! stop-line index
+  int judge_line_idx_;  //! stop-judgement-line index
+
+  // Parameter
+  double judge_line_dist_ = 1.5;                        //! distance from stop-line to stop-judgement line
+  double approaching_speed_to_stopline_ = 100.0 / 3.6;  //! speed when approaching stop-line (should be slow)
+  double path_expand_width_ = 2.0;                      //! path width to calculate the edge line for both side
+  bool show_debug_info_ = false;
 
   /**
    * @brief set velocity from idx to the end point
@@ -72,7 +119,7 @@ class IntersectionModule : public SceneModuleInterface {
    */
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
                       const std::vector<lanelet::ConstLanelet>& objective_lanelets,
-                      const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> objects_ptr,
+                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
                       const double path_width);
 
   /**
@@ -91,47 +138,8 @@ class IntersectionModule : public SceneModuleInterface {
   geometry_msgs::Pose getAheadPose(const size_t start_idx, const double ahead_dist,
                                    const autoware_planning_msgs::PathWithLaneId& path) const;
 
-  enum class State {
-    STOP = 0,
-    GO,
-  };
+  StateMachine state_machine_;  //! for state
 
-  /**
-   * @brief Manage stop-go states with safety margin time.
-   */
-  class StateMachine {
-   public:
-    StateMachine() {
-      state_ = IntersectionModule::State::GO;
-      margin_time_ = 0.0;
-    }
-
-    /**
-     * @brief set request state command with margin time
-     */
-    void setStateWithMarginTime(IntersectionModule::State state);
-
-    /**
-     * @brief set request state command directly
-     */
-    void setState(IntersectionModule::State state);
-
-    /**
-     * @brief set margin time
-     */
-    void setMarginTime(const double t);
-
-    /**
-     * @brief get current state
-     */
-    IntersectionModule::State getState();
-
-   private:
-    State state_;         //< @brief current state
-    double margin_time_;  //< @brief margin time when transit to Go from Stop
-    std::shared_ptr<ros::Time>
-        start_time_;  //< @brief timer start time when received Go state when current state is Stop
-  } state_machine_;   //< @brief for state management
+  // Debug
+  DebugData debug_data_;
 };
-
-}  // namespace behavior_planning
