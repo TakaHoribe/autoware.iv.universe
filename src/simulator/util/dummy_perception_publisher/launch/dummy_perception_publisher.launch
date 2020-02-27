@@ -3,7 +3,7 @@
 <launch>
   <!-- dummy detection and sensor data -->
   <group ns="simulation">
-    <arg name="real" default="false" />
+    <arg name="real" default="true" />
     <group if="$(arg real)">
       <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
         <remap from="~output/dynamic_object" to="/perception/detection/labeled_clusters" />
