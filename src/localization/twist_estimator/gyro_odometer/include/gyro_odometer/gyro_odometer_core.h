@@ -25,11 +25,11 @@
 #include <sensor_msgs/Imu.h>
 
 
-class GyroOdom {
+class GyroOdometer {
 
 public:
-  GyroOdom(ros::NodeHandle nh, ros::NodeHandle private_nh);
-  ~GyroOdom();
+  GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh);
+  ~GyroOdometer();
 
 private:
   void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg_ptr);

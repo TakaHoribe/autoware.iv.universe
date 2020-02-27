@@ -11,7 +11,7 @@
 
   <!-- pose_initializer -->
   <include file="$(find pose_initializer)/launch/pose_initializer.launch">
-    <arg name="ndt_align_server_name" default="/localization/pose_generator/ndt_align_srv" />
+    <arg name="ndt_align_server_name" default="/localization/pose_estimator/ndt_align_srv" />
   </include>
 
   <node pkg="pointcloud_preprocessor" type="crop_box_filter_node" name="crop_box_filter_mesurement_range" output="log">

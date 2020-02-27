@@ -529,7 +529,7 @@ Visualization Manager:
               Shaft Length: 0.6000000238418579
               Shaft Radius: 0.30000001192092896
               Shape: Arrow
-              Topic: /localization/pose_generator/initial_pose_with_covariance
+              Topic: /localization/pose_estimator/initial_pose_with_covariance
               Unreliable: false
               Value: true
             - Alpha: 1
@@ -559,7 +559,7 @@ Visualization Manager:
               Shaft Length: 0.6000000238418579
               Shaft Radius: 0.30000001192092896
               Shape: Arrow
-              Topic: /localization/pose_generator/ndt_pose_with_covariance
+              Topic: /localization/pose_estimator/ndt_pose_with_covariance
               Unreliable: false
               Value: true
             - Buffer Size: 200
@@ -570,7 +570,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/pose_generator/ndt_pose
+              Topic: /localization/pose_estimator/ndt_pose
               Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: true
@@ -627,7 +627,7 @@ Visualization Manager:
               Size (Pixels): 10
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /localization/pose_generator/points_aligned
+              Topic: /localization/pose_estimator/points_aligned
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
@@ -637,7 +637,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTExeTime[ms]
               Show Value: true
-              Topic: /localization/pose_generator/exe_time_ms
+              Topic: /localization/pose_estimator/exe_time_ms
               Value: false
               auto color change: true
               auto scale: false
@@ -662,7 +662,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTTransProb [score]
               Show Value: true
-              Topic: /localization/pose_generator/transform_probability
+              Topic: /localization/pose_estimator/transform_probability
               Value: false
               auto color change: true
               auto scale: false
@@ -687,7 +687,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTIteration [num]
               Show Value: true
-              Topic: /localization/pose_generator/iteration_num
+              Topic: /localization/pose_estimator/iteration_num
               Value: false
               auto color change: true
               auto scale: false
@@ -712,7 +712,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTDistanceInitial2Alinged [m]
               Show Value: true
-              Topic: /localization/pose_generator/initial_to_result_distance
+              Topic: /localization/pose_estimator/initial_to_result_distance
               Value: false
               auto color change: true
               auto scale: false
@@ -734,7 +734,7 @@ Visualization Manager:
               width: 100
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /localization/pose_generator/monte_colro_initial_pose_marker
+              Marker Topic: /localization/pose_estimator/monte_colro_initial_pose_marker
               Name: MonteColroInitialPose
               Namespaces:
                 {}
@@ -752,7 +752,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/fusion_localizer/ekf_pose
+              Topic: /localization/fuser/ekf_pose
               Value: true
           Enabled: true
           Name: EKF

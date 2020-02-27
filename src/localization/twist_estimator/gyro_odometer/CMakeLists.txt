@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gyro_odom)
+project(gyro_odometer)
 
 add_compile_options(-std=c++14)
 
@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
         )
 
 #add dynamic reconfigure api
-#generate_dynamic_reconfigure_options(config/gyro_odom.cfg)
+#generate_dynamic_reconfigure_options(config/gyro_odometer.cfg)
 
 ###################################
 ## catkin specific configuration ##
@@ -30,19 +30,19 @@ catkin_package(
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 
-add_executable(gyro_odom
-        src/gyro_odom_node.cpp
-        src/gyro_odom_core.cpp
+add_executable(gyro_odometer
+        src/gyro_odometer_node.cpp
+        src/gyro_odometer_core.cpp
 )
 
-add_dependencies(gyro_odom ${${PROJECT_NAME}_EXPORTED_TARGETS}
+add_dependencies(gyro_odometer ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(gyro_odom ${catkin_LIBRARIES})
+target_link_libraries(gyro_odometer ${catkin_LIBRARIES})
 
 install(TARGETS
-            gyro_odom
+            gyro_odometer
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
