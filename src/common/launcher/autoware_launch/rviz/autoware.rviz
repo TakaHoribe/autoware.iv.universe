@@ -4,14 +4,17 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Sensing1/LiDAR1/ConcatenatePointCloud1/Autocompute Value Bounds1
+        - /Sensing1/GNSS1/PoseWithCovariance1/Covariance1/Position1
         - /Localization1/NDT1/PoseHistory1/Line1
+        - /Localization1/NDT1/Initial1
         - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1
         - /Localization1/EKF1/PoseHistory1/Line1
         - /Planning1/ScenarioPlanning1/LaneFollowing1/BehaviorPlanning1/Intersection1/Status1
         - /Control1/Debug/MPC1/Namespaces1
-      Splitter Ratio: 0.5688311457633972
-    Tree Height: 397
+      Splitter Ratio: 0.557669460773468
+    Tree Height: 444
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -34,6 +37,10 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: PointCloudMap
+  - Class: autoware_localization_rviz_plugin/InitialPoseButtonPanel
+    Name: InitialPoseButtonPanel
+  - Class: autoware_localization_rviz_plugin/InitialPoseButtonPanel
+    Name: InitialPoseButtonPanel
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -276,32 +283,32 @@ Visualization Manager:
         - Alpha: 0.20000000298023224
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 21.507631301879883
-            Min Value: -8.577447891235352
+            Max Value: 28.71826171875
+            Min Value: -7.4224700927734375
             Value: true
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: AxisColor
+          Color Transformer: Intensity
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 237
-          Min Color: 0; 0; 0
+          Min Color: 211; 215; 207
           Min Intensity: 0
           Name: PointCloudMap
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 2
+          Size (Pixels): 1
           Size (m): 0.05000000074505806
           Style: Points
           Topic: /pointcloud_map
           Unreliable: false
           Use Fixed Frame: true
-          Use rainbow: true
+          Use rainbow: false
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
@@ -336,42 +343,34 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Alpha: 1
-              Autocompute Intensity Bounds: false
+              Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 10
-                Min Value: -10
-                Value: true
+                Max Value: 30
+                Min Value: -2
+                Value: false
               Axis: Z
-              Channel Name: z
+              Channel Name: intensity
               Class: rviz/PointCloud2
               Color: 255; 255; 255
-              Color Transformer: Intensity
+              Color Transformer: AxisColor
               Decay Time: 0
               Enabled: true
               Invert Rainbow: false
               Max Color: 255; 255; 255
-              Max Intensity: 15
+              Max Intensity: 4096
               Min Color: 0; 0; 0
-              Min Intensity: -5
-              Name: PointCloud
+              Min Intensity: 0
+              Name: ConcatenatePointCloud
               Position Transformer: XYZ
               Queue Size: 10
               Selectable: true
               Size (Pixels): 2
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /sensing/lidar/pointcloud
+              Topic: /sensing/lidar/concatenated/pointcloud
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
-            - Alpha: 1
-              Class: rviz/Polygon
-              Color: 25; 255; 0
-              Enabled: true
-              Name: SelfCrop
-              Topic: /sensor/lidar/main/crop_box_filter_self/crop_box_polygon
-              Unreliable: false
               Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: false
@@ -408,11 +407,95 @@ Visualization Manager:
               Color: 25; 255; 0
               Enabled: false
               Name: MesurementRange
-              Topic: /sensing/preprocess/pointcloud_preprocessor/crop_box_filter_mesurement_range/crop_box_polygon
+              Topic: /sensing/lidar/crop_box_filter/crop_box_polygon
               Unreliable: false
               Value: false
+            - Class: rviz/Group
+              Displays:
+                - Alpha: 1
+                  Autocompute Intensity Bounds: false
+                  Autocompute Value Bounds:
+                    Max Value: 10
+                    Min Value: -10
+                    Value: true
+                  Axis: Z
+                  Channel Name: z
+                  Class: rviz/PointCloud2
+                  Color: 255; 255; 255
+                  Color Transformer: Intensity
+                  Decay Time: 0
+                  Enabled: true
+                  Invert Rainbow: false
+                  Max Color: 255; 255; 255
+                  Max Intensity: 15
+                  Min Color: 0; 0; 0
+                  Min Intensity: -5
+                  Name: PointCloud
+                  Position Transformer: XYZ
+                  Queue Size: 10
+                  Selectable: true
+                  Size (Pixels): 2
+                  Size (m): 0.009999999776482582
+                  Style: Points
+                  Topic: /sensing/lidar/top/pointcloud_raw_ex
+                  Unreliable: false
+                  Use Fixed Frame: true
+                  Use rainbow: true
+                  Value: true
+                - Alpha: 1
+                  Class: rviz/Polygon
+                  Color: 25; 255; 0
+                  Enabled: true
+                  Name: SelfCrop
+                  Topic: /sensing/lidar/top/velodyne_nodelet_manager_crop_box_filter_self/crop_box_polygon
+                  Unreliable: false
+                  Value: true
+                - Alpha: 1
+                  Class: rviz/Polygon
+                  Color: 25; 255; 0
+                  Enabled: true
+                  Name: CropMirror
+                  Topic: /sensing/lidar/top/velodyne_nodelet_manager_crop_box_filter_mirror/crop_box_polygon
+                  Unreliable: false
+                  Value: true
+              Enabled: false
+              Name: Top
           Enabled: true
           Name: LiDAR
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Axes Length: 1
+              Axes Radius: 0.10000000149011612
+              Class: rviz/PoseWithCovariance
+              Color: 233; 185; 110
+              Covariance:
+                Orientation:
+                  Alpha: 0.5
+                  Color: 255; 255; 127
+                  Color Style: Unique
+                  Frame: Local
+                  Offset: 1
+                  Scale: 1
+                  Value: false
+                Position:
+                  Alpha: 0.20000000298023224
+                  Color: 204; 51; 204
+                  Scale: 1
+                  Value: true
+                Value: true
+              Enabled: true
+              Head Length: 0.699999988079071
+              Head Radius: 1.2000000476837158
+              Name: PoseWithCovariance
+              Shaft Length: 1
+              Shaft Radius: 0.5
+              Shape: Arrow
+              Topic: /sensing/gnss/pose_with_covariance
+              Unreliable: false
+              Value: true
+          Enabled: true
+          Name: GNSS
       Enabled: true
       Name: Sensing
     - Class: rviz/Group
@@ -446,7 +529,7 @@ Visualization Manager:
               Shaft Length: 0.6000000238418579
               Shaft Radius: 0.30000001192092896
               Shape: Arrow
-              Topic: /localization/pose_generator/initial_pose_with_covariance
+              Topic: /localization/pose_estimator/initial_pose_with_covariance
               Unreliable: false
               Value: true
             - Alpha: 1
@@ -476,7 +559,7 @@ Visualization Manager:
               Shaft Length: 0.6000000238418579
               Shaft Radius: 0.30000001192092896
               Shape: Arrow
-              Topic: /localization/pose_generator/ndt_pose_with_covariance
+              Topic: /localization/pose_estimator/ndt_pose_with_covariance
               Unreliable: false
               Value: true
             - Buffer Size: 200
@@ -487,7 +570,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/pose_generator/ndt_pose
+              Topic: /localization/pose_estimator/ndt_pose
               Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: true
@@ -501,7 +584,7 @@ Visualization Manager:
               Color: 0; 255; 255
               Color Transformer: FlatColor
               Decay Time: 0
-              Enabled: true
+              Enabled: false
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Max Intensity: 4096
@@ -514,11 +597,11 @@ Visualization Manager:
               Size (Pixels): 10
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /localization/util/downsample
+              Topic: /localization/util/downsample/pointcloud
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
+              Value: false
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -544,7 +627,7 @@ Visualization Manager:
               Size (Pixels): 10
               Size (m): 0.009999999776482582
               Style: Points
-              Topic: /localization/pose_generator/points_aligned
+              Topic: /localization/pose_estimator/points_aligned
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
@@ -554,7 +637,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTExeTime[ms]
               Show Value: true
-              Topic: /localization/pose_generator/exe_time_ms
+              Topic: /localization/pose_estimator/exe_time_ms
               Value: false
               auto color change: true
               auto scale: false
@@ -579,7 +662,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTTransProb [score]
               Show Value: true
-              Topic: /localization/pose_generator/transform_probability
+              Topic: /localization/pose_estimator/transform_probability
               Value: false
               auto color change: true
               auto scale: false
@@ -604,7 +687,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTIteration [num]
               Show Value: true
-              Topic: /localization/pose_generator/iteration_num
+              Topic: /localization/pose_estimator/iteration_num
               Value: false
               auto color change: true
               auto scale: false
@@ -629,7 +712,7 @@ Visualization Manager:
               Enabled: false
               Name: NDTDistanceInitial2Alinged [m]
               Show Value: true
-              Topic: /localization/pose_generator/initial_to_result_distance
+              Topic: /localization/pose_estimator/initial_to_result_distance
               Value: false
               auto color change: true
               auto scale: false
@@ -651,7 +734,7 @@ Visualization Manager:
               width: 100
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /localization/pose_generator/monte_colro_initial_pose_marker
+              Marker Topic: /localization/pose_estimator/monte_colro_initial_pose_marker
               Name: MonteColroInitialPose
               Namespaces:
                 {}
@@ -669,7 +752,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/fusion_localizer/ekf_pose
+              Topic: /localization/fuser/ekf_pose
               Value: true
           Enabled: true
           Name: EKF
@@ -708,11 +791,7 @@ Visualization Manager:
               Marker Topic: /perception/prediction/objects/visualization
               Name: DynamicObjects
               Namespaces:
-                label: true
-                path: true
-                path confidence: true
-                shape: true
-                twist: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -752,12 +831,7 @@ Visualization Manager:
               Marker Topic: /planning/mission_planning/route_marker
               Name: RouteArea
               Namespaces:
-                end_lanelets: true
-                goal_lanelets: true
-                left_lane_bound: true
-                normal_lanelets: true
-                right_lane_bound: true
-                route_lanelets: true
+                {}
               Queue Size: 100
               Value: true
             - Alpha: 1
@@ -834,9 +908,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
                       Name: PathWithLaneId
                       Namespaces:
-                        lane_id: true
-                        line: true
-                        points: true
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -844,15 +916,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
                       Name: Crosswalk
                       Namespaces:
-                        collision line: true
-                        collision point: true
-                        crosswalk polygon line: false
-                        crosswalk polygon point: false
-                        factor text: true
-                        slow polygon line: true
-                        stop geofence: true
-                        stop point: true
-                        stop polygon line: true
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -860,24 +924,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
                       Name: Intersection
                       Namespaces:
-                        factor text: true
-                        intersection_detection_lanelets_0: false
-                        intersection_detection_lanelets_1: false
-                        intersection_detection_lanelets_2: false
-                        intersection_detection_lanelets_3: false
-                        intersection_detection_lanelets_4: false
-                        intersection_detection_lanelets_5: false
-                        intersection_detection_lanelets_6: false
-                        intersection_detection_lanelets_7: false
-                        judge_point_pose: false
-                        judge_point_pose_line: true
-                        output_path: false
-                        path_left_edge: false
-                        path_raw: false
-                        path_right_edge: false
-                        stop geofence: true
-                        stop_point_pose: false
-                        stop_point_pose_line: false
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -885,17 +932,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
                       Name: Blind Spot
                       Namespaces:
-                        blind_spot_detection_area_0: false
-                        factor text: true
-                        judge_point_pose: false
-                        judge_point_pose_line: true
-                        path_left_edge: false
-                        path_raw: false
-                        path_right_edge: false
-                        path_with_judgeline: false
-                        stop geofence: true
-                        stop_point_pose: false
-                        stop_point_pose_line: false
+                        {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -942,12 +979,7 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_stop_planner/output/debug/marker
                       Name: ObstaclePointCloudStop
                       Namespaces:
-                        collision polygons: true
-                        detection polygons: true
-                        factor text: true
-                        stop geofence: true
-                        stop obstacle point: true
-                        stop obstacle text: true
+                        {}
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -1068,7 +1100,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -2.6700024604797363
+      Angle: -3.150007486343384
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -1078,21 +1110,23 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 9.445390701293945
+      Scale: 12.303139686584473
       Target Frame: viewer
       Value: TopDownOrtho (rviz)
-      X: -24.418554306030273
-      Y: -26.509654998779297
+      X: 58.575416564941406
+      Y: -15.569745063781738
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1565
+  Height: 2049
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000025200000563fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001ca000000c900fffffffb0000000a00560069006500770073010000020d000000ee000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000301000000c40000005c00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d00610067006501000003cb000001d50000001600ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000afd0000005afc0100000002fb0000000800540069006d0065010000000000000afd000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000008a50000056300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  InitialPoseButtonPanel:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000033c000006fffc020000000dfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e0000022a0000018200fffffffb0000000a0056006900650077007301000002a4000001b90000013200fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000469000000fc000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d0065007200610100000682000000eb0000000000000000fb0000000a0049006d0061006700650100000571000001120000002600fffffffb0000002c0049006e0069007400690061006c0050006f007300650042007500740074006f006e00500061006e0065006c010000068f000000de000000de00fffffffb0000002c0049006e0069007400690061006c0050006f007300650042007500740074006f006e00500061006e0065006c000000068f000000de000000de00ffffff000000010000015f000006fffc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000e7a0000005afc0100000002fb0000000800540069006d0065010000000000000e7a0000057100fffffffb0000000800540069006d0065010000000000000450000000000000000000000b32000006ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1101,6 +1135,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 2813
-  X: 67
-  Y: 27
+  Width: 3706
+  X: 134
+  Y: 55

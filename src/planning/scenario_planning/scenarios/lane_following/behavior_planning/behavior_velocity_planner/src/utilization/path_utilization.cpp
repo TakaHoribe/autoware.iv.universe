@@ -1,4 +1,4 @@
-#include "utilization/path_utilization.hpp"
+#include "utilization/path_utilization.h"
 
 #include <memory>
 
@@ -8,9 +8,9 @@
 
 #include "utilization/interpolation/cubic_spline.hpp"
 
-namespace behavior_planning {
-void interpolatePath(const autoware_planning_msgs::Path& path, const double length,
-                     autoware_planning_msgs::Path& interpolated_path) {
+autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path& path, const double length) {
+  autoware_planning_msgs::Path interpolated_path;
+
   std::vector<double> x;
   std::vector<double> y;
   std::vector<double> z;
@@ -75,9 +75,13 @@ void interpolatePath(const autoware_planning_msgs::Path& path, const double leng
     interpolated_path.points.push_back(path_point);
   }
   if (spline_ptr->s.back() <= s_t) interpolated_path.points.push_back(path.points.back());
+
+  return interpolated_path;
 }
 
-void filterLitterPathPoint(const autoware_planning_msgs::Path& path, autoware_planning_msgs::Path& filtered_path) {
+autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs::Path& path) {
+  autoware_planning_msgs::Path filtered_path;
+
   const double epsilon = 0.01;
   size_t latest_id = 0;
   for (size_t i = 0; i < path.points.size(); ++i) {
@@ -95,14 +99,15 @@ void filterLitterPathPoint(const autoware_planning_msgs::Path& path, autoware_pl
           std::min(filtered_path.points.back().twist.linear.x, path.points.at(i).twist.linear.x);
     }
   }
+
+  return filtered_path;
 }
-void filterStopPathPoint(const autoware_planning_msgs::Path& path, autoware_planning_msgs::Path& filtered_path) {
-  filtered_path = path;
+autoware_planning_msgs::Path filterStopPathPoint(const autoware_planning_msgs::Path& path) {
+  autoware_planning_msgs::Path filtered_path = path;
   bool found_stop = false;
   for (size_t i = 0; i < filtered_path.points.size(); ++i) {
     if (std::fabs(filtered_path.points.at(i).twist.linear.x) < 0.01) found_stop = true;
     if (found_stop) filtered_path.points.at(i).twist.linear.x = 0.0;
   }
+  return filtered_path;
 }
-
-}  // namespace behavior_planning

@@ -32,6 +32,8 @@ struct LaneChangerParameters
   double drivable_area_resolution;
   double drivable_area_width;
   double drivable_area_height;
+  double vehicle_width;
+  bool enable_abort_lane_change;
 };
 
 #endif

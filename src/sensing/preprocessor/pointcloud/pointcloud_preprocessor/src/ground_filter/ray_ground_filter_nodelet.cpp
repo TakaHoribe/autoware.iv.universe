@@ -76,9 +76,9 @@ namespace pointcloud_preprocessor
   }
 
   void RayGroundFilterNodelet::ConvertXYZIToRTZColor(const pcl::PointCloud<PointType_>::Ptr in_cloud,
-                                                     PointCloudXYZIRTColor &out_organized_points,
+                                                     PointCloudXYZRTColor &out_organized_points,
                                                      std::vector <pcl::PointIndices> &out_radial_divided_indices,
-                                                     std::vector <PointCloudXYZIRTColor> &out_radial_ordered_clouds)
+                                                     std::vector <PointCloudXYZRTColor> &out_radial_ordered_clouds)
   {
     out_organized_points.resize(in_cloud->points.size());
     out_radial_divided_indices.clear();
@@ -87,7 +87,7 @@ namespace pointcloud_preprocessor
 
     for (size_t i = 0; i < in_cloud->points.size(); i++)
     {
-      PointXYZIRTColor new_point;
+      PointXYZRTColor new_point;
       auto radius = (float) sqrt(
         in_cloud->points[i].x * in_cloud->points[i].x
         + in_cloud->points[i].y * in_cloud->points[i].y
@@ -131,14 +131,14 @@ namespace pointcloud_preprocessor
     for (size_t i = 0; i < radial_dividers_num_; i++)
     {
       std::sort(out_radial_ordered_clouds[i].begin(), out_radial_ordered_clouds[i].end(),
-                [](const PointXYZIRTColor &a, const PointXYZIRTColor &b)
+                [](const PointXYZRTColor &a, const PointXYZRTColor &b)
                 {
                   return a.radius < b.radius;
                 });
     }
   }
 
-  void RayGroundFilterNodelet::ClassifyPointCloud(std::vector <PointCloudXYZIRTColor> &in_radial_ordered_clouds,
+  void RayGroundFilterNodelet::ClassifyPointCloud(std::vector <PointCloudXYZRTColor> &in_radial_ordered_clouds,
                                                   pcl::PointIndices &out_ground_indices,
                                                   pcl::PointIndices &out_no_ground_indices)
   {
@@ -268,9 +268,9 @@ namespace pointcloud_preprocessor
     pcl::PointCloud<PointType_>::Ptr current_sensor_cloud_ptr(new pcl::PointCloud <PointType_>);
     pcl::fromROSMsg(*input_transed_ptr, *current_sensor_cloud_ptr);
 
-    PointCloudXYZIRTColor organized_points;
+    PointCloudXYZRTColor organized_points;
     std::vector <pcl::PointIndices> radial_division_indices;
-    std::vector <PointCloudXYZIRTColor> radial_ordered_clouds;
+    std::vector <PointCloudXYZRTColor> radial_ordered_clouds;
 
     radial_dividers_num_ = ceil(360 / radial_divider_angle_);
 

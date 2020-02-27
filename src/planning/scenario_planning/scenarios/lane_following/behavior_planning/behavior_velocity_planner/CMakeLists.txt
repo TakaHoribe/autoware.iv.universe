@@ -10,13 +10,13 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_traffic_light_msgs
   geometry_msgs
   lanelet2_extension
+  pcl_ros
   roscpp
   sensor_msgs
   tf2
+  tf2_eigen
   tf2_geometry_msgs
   tf2_ros
-  tf2_eigen
-  pcl_ros
   visualization_msgs
 )
 
@@ -35,12 +35,12 @@ catkin_package(
     autoware_traffic_light_msgs
     geometry_msgs
     lanelet2_extension
+    pcl_ros
     sensor_msgs
     tf2
+    tf2_eigen
     tf2_geometry_msgs
     tf2_ros
-    tf2_eigen
-    pcl_ros
     visualization_msgs
 )
 
@@ -53,16 +53,15 @@ include_directories(
 
 # Common
 add_library(scene_module_lib
-  src/api.cpp
-  src/data_manager.cpp
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp
 )
 
 # Scene Module: Momentary Stop
 add_library(scene_module_momentary_stop
-  src/scene_module/momentary_stop/momentary_stop.cpp
-  src/scene_module/momentary_stop/debug_marker.cpp
+  src/scene_module/momentary_stop/manager.cpp
+  src/scene_module/momentary_stop/scene.cpp
+  src/scene_module/momentary_stop/debug.cpp
 )
 
 target_link_libraries(scene_module_momentary_stop
@@ -71,7 +70,9 @@ target_link_libraries(scene_module_momentary_stop
 
 # Scene Module: Crosswalk
 add_library(scene_module_crosswalk
-  src/scene_module/crosswalk/crosswalk.cpp
+  src/scene_module/crosswalk/manager.cpp
+  src/scene_module/crosswalk/scene.cpp
+  src/scene_module/crosswalk/debug.cpp
 )
 
 target_link_libraries(scene_module_crosswalk
@@ -91,9 +92,9 @@ target_link_libraries(scene_module_intersection
 
 # Scene Module: Traffic Light
 add_library(scene_module_traffic_light
-  src/scene_module/traffic_light/traffic_light.cpp
-  src/scene_module/traffic_light/debug_marker.cpp
-
+  src/scene_module/traffic_light/manager.cpp
+  src/scene_module/traffic_light/scene.cpp
+  src/scene_module/traffic_light/debug.cpp
 )
 
 target_link_libraries(scene_module_intersection
@@ -102,7 +103,9 @@ target_link_libraries(scene_module_intersection
 
 # Scene Module: Blind Spot
 add_library(scene_module_blind_spot
-  src/scene_module/blind_spot/blind_spot.cpp
+  src/scene_module/blind_spot/manager.cpp
+  src/scene_module/blind_spot/scene.cpp
+  src/scene_module/blind_spot/debug.cpp
 )
 
 target_link_libraries(scene_module_intersection

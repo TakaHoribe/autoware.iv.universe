@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
-#include <lane_change_planner/state_machine.h>
-#include <lane_change_planner/state/following_lane.h>
 #include <lane_change_planner/state/aborting_lane_change.h>
-#include <lane_change_planner/state/forcing_lane_change.h>
-#include <lane_change_planner/state/executing_lane_change.h>
 #include <lane_change_planner/state/blocked_by_obstacle.h>
+#include <lane_change_planner/state/executing_lane_change.h>
+#include <lane_change_planner/state/following_lane.h>
+#include <lane_change_planner/state/forcing_lane_change.h>
+#include <lane_change_planner/state_machine.h>
+#include <ros/ros.h>
 
 #include <visualization_msgs/Marker.h>
 

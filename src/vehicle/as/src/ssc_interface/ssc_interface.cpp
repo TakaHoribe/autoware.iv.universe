@@ -43,8 +43,8 @@ SSCInterface::SSCInterface()
 
   // subscribers from autoware
   vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromVehicleCmd, this);
-  shift_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromShiftCmd, this);
-  turn_signal_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &SSCInterface::callbackFromTurnSignalCmd, this);
+  shift_cmd_sub_ = nh_.subscribe("/control/shift_cmd", 1, &SSCInterface::callbackFromShiftCmd, this);
+  turn_signal_cmd_sub_ = nh_.subscribe("/control/turn_signal_cmd", 1, &SSCInterface::callbackFromTurnSignalCmd, this);
   engage_sub_ = nh_.subscribe("vehicle/engage", 1, &SSCInterface::callbackFromEngage, this);
 
   // subscribers from SSC

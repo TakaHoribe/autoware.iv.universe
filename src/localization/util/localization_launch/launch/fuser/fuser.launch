@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find ekf_localizer)/launch/ekf_localizer.launch">
+    <arg name="enable_yaw_bias_estimation" default="False"/>
+    <arg name="tf_rate" default="50.0"/>
+    <arg name="twist_rate" default="25.0"/>
+    <arg name="input_initial_pose_name" default="/initialpose3d"/>
+    <arg name="input_pose_name" default="/localization/pose_estimator/ndt_pose"/>
+    <arg name="input_twist_name" default="/localization/twist_estimator/gyro_twist"/>
+
+    <arg name="twist_stddev_wz" default="0.003 "/>
+
+    <arg name="proc_stddev_vx_c" default="10.0"/>
+    <arg name="proc_stddev_wz_c" default="5.0"/>
+  </include>
+</launch>

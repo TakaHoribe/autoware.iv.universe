@@ -36,13 +36,14 @@ private:
   bool lane_change_approved_;
   bool force_lane_change_;
   lanelet::ConstLanelets current_lanes_;
+  lanelet::ConstLanelets lane_change_lanes_;
 
   // State transition conditions
   bool isVehicleInPreferredLane() const;
   bool isTooCloseToDeadEnd() const;
   bool laneChangeForcedByOperator() const;
   bool isLaneChangeable() const;
-  bool isLaneBlocked() const;
+  bool isLaneBlocked(const lanelet::ConstLanelets& lanes) const;
   // minor conditions
   bool hasEnoughDistance() const;
   bool isLaneChangePathSafe() const;

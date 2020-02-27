@@ -28,6 +28,7 @@
     <param name="drivable_area_resolution" value="0.1"/>
     <param name="drivable_area_width" value="100.0"/>
     <param name="drivable_area_height" value="50.0"/>
+    <param name="enable_abort_lane_change" value="true"/>
   </node>
 
   <node pkg="rostopic" type="rostopic" name="auto_approve_lane_change" args='pub /lane_change_approval std_msgs/Bool "data: true" -r 10'/>
@@ -47,9 +48,9 @@
   <node pkg="behavior_velocity_planner" type="behavior_velocity_planner_node" name="behavior_velocity_planner" output="screen">
     <remap from="~input/path_with_lane_id" to="path_with_lane_id"/>
     <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
-    <remap from="~input/vehicle/velocity" to="/vehicle/status/twist"/>
-    <remap from="~input/perception" to="/perception/prediction/objects"/>
-    <remap from="~input/pointcloud" to="/sensing/lidar/no_ground/pointcloud"/>
+    <remap from="~input/vehicle_velocity" to="/vehicle/status/twist"/>
+    <remap from="~input/dynamic_objects" to="/perception/prediction/objects"/>
+    <remap from="~input/no_ground_pointcloud" to="/sensing/lidar/no_ground/pointcloud"/>
     <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states"/>
     <remap from="~output/path" to="path"/>
 
