@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "gyro_odom/gyro_odom_core.h"
+#include "gyro_odometer/gyro_odometer_core.h"
 
 #include <cmath>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-GyroOdom::GyroOdom(ros::NodeHandle nh, ros::NodeHandle private_nh)
+GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh)
   : nh_(nh)
   , private_nh_(private_nh)
 {
-  vehicle_twist_sub_ = nh_.subscribe("vehicle/twist", 100, &GyroOdom::callbackTwist, this);
-  imu_sub_ = nh_.subscribe("imu", 100, &GyroOdom::callbackImu, this);
+  vehicle_twist_sub_ = nh_.subscribe("vehicle/twist", 100, &GyroOdometer::callbackTwist, this);
+  imu_sub_ = nh_.subscribe("imu", 100, &GyroOdometer::callbackImu, this);
 
   twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
   // linear_x_pub_ = nh_.advertise<std_msgs::Float32>("linear_x", 10);
   // angular_z_pub_ = nh_.advertise<std_msgs::Float32>("angular_z", 10);
 }
 
-GyroOdom::~GyroOdom()
+GyroOdometer::~GyroOdometer()
 {
 }
 
@@ -62,12 +62,12 @@ geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped &pose)
   return getRPY(pose.pose);
 }
 
-void GyroOdom::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg_ptr)
+void GyroOdometer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg_ptr)
 {
   twist_msg_ptr_ = twist_msg_ptr;
 }
 
-void GyroOdom::callbackImu(const sensor_msgs::Imu::ConstPtr &imu_msg_ptr)
+void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr &imu_msg_ptr)
 {
   if(twist_msg_ptr_ == nullptr) {
     return;

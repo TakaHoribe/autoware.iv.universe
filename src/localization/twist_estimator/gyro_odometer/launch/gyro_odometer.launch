@@ -5,7 +5,7 @@
 
   <arg name="output_twist_topic" default="gyro_twist" doc="" />
 
-  <node pkg="gyro_odom" type="gyro_odom" name="gyro_odom" output="log">
+  <node pkg="gyro_odometer" type="gyro_odometer" name="gyro_odometer" output="log">
     <remap from="vehicle/twist" to="$(arg input_vehicle_twist_topic)" />
     <remap from="imu" to="$(arg input_imu_topic)" />
 
