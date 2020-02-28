@@ -1,8 +1,10 @@
 #pragma once
 
 #include <deque>
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <ros/ros.h>
 
@@ -18,106 +20,9 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 
-struct TopicConfig {
-  explicit TopicConfig(XmlRpc::XmlRpcValue& value)
-      : module(static_cast<std::string>(value["module"])),
-        name(static_cast<std::string>(value["name"])),
-        timeout(static_cast<double>(value["timeout"])),
-        warn_rate(static_cast<double>(value["warn_rate"])) {}
-
-  const std::string module;
-  const std::string name;
-  const double timeout;
-  const double warn_rate;
-};
-
-struct ParamConfig {
-  explicit ParamConfig(XmlRpc::XmlRpcValue& value)
-      : module(static_cast<std::string>(value["module"])), name(static_cast<std::string>(value["name"])) {}
-
-  const std::string module;
-  const std::string name;
-};
-
-struct TfConfig {
-  explicit TfConfig(XmlRpc::XmlRpcValue& value)
-      : module(static_cast<std::string>(value["module"])),
-        from(static_cast<std::string>(value["from"])),
-        to(static_cast<std::string>(value["to"])),
-        timeout(static_cast<double>(value["timeout"])) {}
-
-  const std::string module;
-  const std::string from;
-  const std::string to;
-  const double timeout;
-};
-
-struct TopicStats {
-  ros::Time checked_time;
-  std::vector<TopicConfig> non_received_list;
-  std::vector<std::pair<TopicConfig, ros::Time>> timeout_list;  // pair<TfConfig, last_received>
-  std::vector<std::pair<TopicConfig, double>> slow_rate_list;   // pair<TfConfig, rate>
-};
-
-struct ParamStats {
-  ros::Time checked_time;
-  std::vector<ParamConfig> non_set_list;
-};
-
-struct TfStats {
-  ros::Time checked_time;
-  std::vector<TfConfig> non_received_list;
-  std::vector<std::pair<TfConfig, ros::Time>> timeout_list;  // pair<TfConfig, last_received>
-};
-
-enum class AutowareState : int8_t {
-  Error = -1,
-  InitializingVehicle = 0,
-  WaitingForRoute,
-  Planning,
-  WaitingForEngage,
-  Driving,
-  ArrivedGoal,
-  FailedToArriveGoal,
-};
-
-inline AutowareState fromMsg(const autoware_system_msgs::AutowareState& msg) {
-  if (msg.state == autoware_system_msgs::AutowareState::Error) return AutowareState::Error;
-  if (msg.state == autoware_system_msgs::AutowareState::InitializingVehicle) return AutowareState::InitializingVehicle;
-  if (msg.state == autoware_system_msgs::AutowareState::WaitingForRoute) return AutowareState::WaitingForRoute;
-  if (msg.state == autoware_system_msgs::AutowareState::Planning) return AutowareState::Planning;
-  if (msg.state == autoware_system_msgs::AutowareState::WaitingForEngage) return AutowareState::WaitingForEngage;
-  if (msg.state == autoware_system_msgs::AutowareState::Driving) return AutowareState::Driving;
-  if (msg.state == autoware_system_msgs::AutowareState::ArrivedGoal) return AutowareState::ArrivedGoal;
-  if (msg.state == autoware_system_msgs::AutowareState::FailedToArriveGoal) return AutowareState::FailedToArriveGoal;
-  return AutowareState::Error;
-}
-
-inline autoware_system_msgs::AutowareState toMsg(const AutowareState& state) {
-  autoware_system_msgs::AutowareState msg;
-
-  msg.state = [&state]() {
-    if (state == AutowareState::Error) return autoware_system_msgs::AutowareState::Error;
-    if (state == AutowareState::InitializingVehicle) return autoware_system_msgs::AutowareState::InitializingVehicle;
-    if (state == AutowareState::WaitingForRoute) return autoware_system_msgs::AutowareState::WaitingForRoute;
-    if (state == AutowareState::Planning) return autoware_system_msgs::AutowareState::Planning;
-    if (state == AutowareState::WaitingForEngage) return autoware_system_msgs::AutowareState::WaitingForEngage;
-    if (state == AutowareState::Driving) return autoware_system_msgs::AutowareState::Driving;
-    if (state == AutowareState::ArrivedGoal) return autoware_system_msgs::AutowareState::ArrivedGoal;
-    if (state == AutowareState::FailedToArriveGoal) return autoware_system_msgs::AutowareState::FailedToArriveGoal;
-    return autoware_system_msgs::AutowareState::Error;
-  }();
-
-  return msg;
-}
-
-struct ModuleName {
-  static constexpr const char* Sensing = "sensing";
-  static constexpr const char* Localization = "localization";
-  static constexpr const char* Perception = "perception";
-  static constexpr const char* Planning = "planning";
-  static constexpr const char* Control = "control";
-};
+#include "autoware_state.h"
+#include "config.h"
+#include "state_machine.h"
 
 class AutowareStateMonitorNode {
  public:
@@ -162,12 +67,6 @@ class AutowareStateMonitorNode {
   void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
   void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
-  std_msgs::Bool::ConstPtr autoware_engage_;
-  std_msgs::Bool::ConstPtr vehicle_engage_;
-  autoware_planning_msgs::Route::ConstPtr route_;
-  geometry_msgs::TwistStamped::ConstPtr twist_;
-  std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer_;
-
   // Topic Buffer
   void onTopic(const topic_tools::ShapeShifter::ConstPtr& msg, const std::string& topic_name);
   void registerTopicCallback(const std::string& topic_name);
@@ -188,25 +87,10 @@ class AutowareStateMonitorNode {
   ParamStats getParamStats() const;
   TfStats getTfStats() const;
 
-  TopicStats topic_stats_;
-  ParamStats param_stats_;
-  TfStats tf_stats_;
+  // State Machine
+  StateMachine state_machine_;
+  StateInput state_input_;
 
   // Debug
   void displayErrors() const;
-
-  // TODO: Create StateMachine class
-  // State Transition
-  AutowareState autoware_state_ = AutowareState::InitializingVehicle;
-
-  bool isModuleInitialized(const char* module_name) const;
-  bool isVehicleInitialized() const;
-  bool isRouteReceived() const;
-  bool isPlanningCompleted() const;
-  bool isEngaged() const;
-  bool isOverrided() const;
-  bool hasArrivedGoal() const;
-  bool hasFailedToArriveGoal() const;
-
-  AutowareState judgeAutowareState() const;
 };

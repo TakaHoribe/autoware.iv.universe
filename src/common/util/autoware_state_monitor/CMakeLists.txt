@@ -35,7 +35,7 @@ include_directories(
 add_executable(autoware_state_monitor
   src/autoware_state_monitor_node/main.cpp
   src/autoware_state_monitor_node/autoware_state_monitor_node.cpp
-  src/autoware_state_monitor_node/state_transition.cpp
+  src/autoware_state_monitor_node/state_machine.cpp
 )
 
 target_link_libraries(autoware_state_monitor

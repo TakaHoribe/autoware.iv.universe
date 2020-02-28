@@ -90,12 +90,16 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 
 }  // namespace
 
-void AutowareStateMonitorNode::onAutowareEngage(const std_msgs::Bool::ConstPtr& msg) { autoware_engage_ = msg; }
+void AutowareStateMonitorNode::onAutowareEngage(const std_msgs::Bool::ConstPtr& msg) {
+  state_input_.autoware_engage = msg;
+}
 
-void AutowareStateMonitorNode::onVehicleEngage(const std_msgs::Bool::ConstPtr& msg) { vehicle_engage_ = msg; }
+void AutowareStateMonitorNode::onVehicleEngage(const std_msgs::Bool::ConstPtr& msg) {
+  state_input_.vehicle_engage = msg;
+}
 
 void AutowareStateMonitorNode::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
-  route_ = msg;
+  state_input_.route = msg;
 
   if (disengage_on_route_) {
     // TODO: set disengage
@@ -103,37 +107,37 @@ void AutowareStateMonitorNode::onRoute(const autoware_planning_msgs::Route::Cons
 }
 
 void AutowareStateMonitorNode::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
-  twist_ = msg;
+  state_input_.twist = msg;
 
-  twist_buffer_.push_back(msg);
+  state_input_.twist_buffer.push_back(msg);
 
   // Delete old data in buffer
   while (true) {
-    const auto time_diff = msg->header.stamp - twist_buffer_.front()->header.stamp;
+    const auto time_diff = msg->header.stamp - state_input_.twist_buffer.front()->header.stamp;
 
     if (time_diff.toSec() < th_stopped_time_sec_) {
       break;
     }
 
-    twist_buffer_.pop_front();
+    state_input_.twist_buffer.pop_front();
   }
 }
 
 void AutowareStateMonitorNode::onTimer(const ros::TimerEvent& event) {
-  topic_stats_ = getTopicStats();
-  param_stats_ = getParamStats();
-  tf_stats_ = getTfStats();
+  state_input_.topic_stats = getTopicStats();
+  state_input_.param_stats = getParamStats();
+  state_input_.tf_stats = getTfStats();
 
-  const auto prev_autoware_state = autoware_state_;
-  autoware_state_ = judgeAutowareState();
+  const auto prev_autoware_state = state_machine_.getCurrentState();
+  const auto autoware_state = state_machine_.getNextState(state_input_);
 
-  if (autoware_state_ != prev_autoware_state) {
-    ROS_INFO("state changed: %s -> %s", toMsg(prev_autoware_state).state.c_str(), toMsg(autoware_state_).state.c_str());
+  if (autoware_state != prev_autoware_state) {
+    ROS_INFO("state changed: %s -> %s", toMsg(prev_autoware_state).state.c_str(), toMsg(autoware_state).state.c_str());
   }
 
   displayErrors();
 
-  pub_autoware_state_.publish(toMsg(autoware_state_));
+  pub_autoware_state_.publish(toMsg(autoware_state));
 }
 
 void AutowareStateMonitorNode::onTopic(const topic_tools::ShapeShifter::ConstPtr& msg, const std::string& topic_name) {
@@ -254,16 +258,16 @@ TfStats AutowareStateMonitorNode::getTfStats() const {
 }
 
 void AutowareStateMonitorNode::displayErrors() const {
-  for (const auto& topic_config_pair : topic_stats_.timeout_list) {
+  for (const auto& topic_config_pair : state_input_.topic_stats.timeout_list) {
     const auto& topic_config = topic_config_pair.first;
     const auto& last_received_time = topic_config_pair.second;
 
     ROS_ERROR("topic `%s` is timeout: timeout = %f, checked_time = %f, last_received_time = %f",
-              topic_config.name.c_str(), topic_config.timeout, topic_stats_.checked_time.toSec(),
+              topic_config.name.c_str(), topic_config.timeout, state_input_.topic_stats.checked_time.toSec(),
               last_received_time.toSec());
   }
 
-  for (const auto& topic_config_pair : topic_stats_.slow_rate_list) {
+  for (const auto& topic_config_pair : state_input_.topic_stats.slow_rate_list) {
     const auto& topic_config = topic_config_pair.first;
     const auto& topic_rate = topic_config_pair.second;
 
@@ -271,13 +275,13 @@ void AutowareStateMonitorNode::displayErrors() const {
              topic_config.warn_rate, topic_rate);
   }
 
-  for (const auto& tf_config_pair : tf_stats_.timeout_list) {
+  for (const auto& tf_config_pair : state_input_.tf_stats.timeout_list) {
     const auto& tf_config = tf_config_pair.first;
     const auto& last_received_time = tf_config_pair.second;
 
     ROS_ERROR("tf from `%s` to `%s` is timeout: timeout = %f, checked_time = %f, last_received_time = %f",
-              tf_config.from.c_str(), tf_config.to.c_str(), tf_config.timeout, tf_stats_.checked_time.toSec(),
-              last_received_time.toSec());
+              tf_config.from.c_str(), tf_config.to.c_str(), tf_config.timeout,
+              state_input_.tf_stats.checked_time.toSec(), last_received_time.toSec());
   }
 }
 

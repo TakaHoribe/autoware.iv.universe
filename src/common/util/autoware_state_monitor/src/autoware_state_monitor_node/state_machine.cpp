@@ -1,10 +1,18 @@
-#include <autoware_state_monitor/autoware_state_monitor_node.h>
+#include <autoware_state_monitor/state_machine.h>
 
-bool AutowareStateMonitorNode::isModuleInitialized(const char* module_name) const {
+struct ModuleName {
+  static constexpr const char* Sensing = "sensing";
+  static constexpr const char* Localization = "localization";
+  static constexpr const char* Perception = "perception";
+  static constexpr const char* Planning = "planning";
+  static constexpr const char* Control = "control";
+};
+
+bool StateMachine::isModuleInitialized(const char* module_name) const {
   // Non received topic
   {
     std::vector<TopicConfig> non_received_list;
-    for (const auto& topic_config : topic_stats_.non_received_list) {
+    for (const auto& topic_config : state_input_.topic_stats.non_received_list) {
       if (topic_config.module != module_name) {
         continue;
       }
@@ -21,7 +29,7 @@ bool AutowareStateMonitorNode::isModuleInitialized(const char* module_name) cons
   // Non set param
   {
     std::vector<ParamConfig> non_set_list;
-    for (const auto& param_config : param_stats_.non_set_list) {
+    for (const auto& param_config : state_input_.param_stats.non_set_list) {
       if (param_config.module != module_name) {
         continue;
       }
@@ -38,7 +46,7 @@ bool AutowareStateMonitorNode::isModuleInitialized(const char* module_name) cons
   // Non received TF
   {
     std::vector<TfConfig> non_received_list;
-    for (const auto& tf_config : tf_stats_.non_received_list) {
+    for (const auto& tf_config : state_input_.tf_stats.non_received_list) {
       if (tf_config.module != module_name) {
         continue;
       }
@@ -55,7 +63,7 @@ bool AutowareStateMonitorNode::isModuleInitialized(const char* module_name) cons
   return true;
 }
 
-bool AutowareStateMonitorNode::isVehicleInitialized() const {
+bool StateMachine::isVehicleInitialized() const {
   ROS_DEBUG("isVehicleInitialized");
 
   // Sensing
@@ -79,13 +87,13 @@ bool AutowareStateMonitorNode::isVehicleInitialized() const {
   return true;
 }
 
-bool AutowareStateMonitorNode::isRouteReceived() const {
+bool StateMachine::isRouteReceived() const {
   ROS_DEBUG("isRouteReceived");
 
-  return route_ != nullptr;
+  return state_input_.route != nullptr;
 }
 
-bool AutowareStateMonitorNode::isPlanningCompleted() const {
+bool StateMachine::isPlanningCompleted() const {
   ROS_DEBUG("isPlanningCompleted");
 
   if (!isModuleInitialized(ModuleName::Planning)) {
@@ -99,49 +107,54 @@ bool AutowareStateMonitorNode::isPlanningCompleted() const {
   return true;
 }
 
-bool AutowareStateMonitorNode::isEngaged() const {
+bool StateMachine::isEngaged() const {
   ROS_DEBUG("isEngaged");
 
   // Disengage on launch?
 
-  if (!autoware_engage_) {
+  if (!state_input_.autoware_engage) {
     return false;
   }
 
-  if (autoware_engage_->data != 1) {
+  if (state_input_.autoware_engage->data != 1) {
     return false;
   }
 
-  if (!vehicle_engage_) {
+  if (!state_input_.vehicle_engage) {
     return false;
   }
 
-  if (vehicle_engage_->data != 1) {
+  if (state_input_.vehicle_engage->data != 1) {
     return false;
   }
 
   return true;
 }
 
-bool AutowareStateMonitorNode::isOverrided() const {
+bool StateMachine::isOverrided() const {
   ROS_DEBUG("isOverrided");
 
   return !isEngaged();
 }
 
-bool AutowareStateMonitorNode::hasArrivedGoal() const {
+bool StateMachine::hasArrivedGoal() const {
   ROS_DEBUG("hasArrivedGoal: not implemented");
 
   return false;
 }
 
-bool AutowareStateMonitorNode::hasFailedToArriveGoal() const {
+bool StateMachine::hasFailedToArriveGoal() const {
   ROS_DEBUG("hasArrivedGoal: not implemented");
 
   return false;
 }
 
-AutowareState AutowareStateMonitorNode::judgeAutowareState() const {
+AutowareState StateMachine::getNextState(const StateInput& state_input) {
+  state_input_ = state_input;
+  return judgeAutowareState();
+}
+
+AutowareState StateMachine::judgeAutowareState() const {
   switch (autoware_state_) {
     case (AutowareState::InitializingVehicle): {
       if (!isVehicleInitialized()) {
