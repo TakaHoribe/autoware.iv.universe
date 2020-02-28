@@ -36,7 +36,7 @@ public:
   void setLonJerkLim(double v) { lon_jerk_lim_ = v; };
   void setLatAccLim(double v) { lat_acc_lim_ = v; };
   void setLatJerkLim(double v) { lat_jerk_lim_ = v; };
-  void setPrevVehicleCmd(autoware_control_msgs::ControlCommand &v) { prev_cmd_ = v; };
+  void setPrevCmd(autoware_control_msgs::ControlCommand &v) { prev_cmd_ = v; };
 
   void limitLongitudinalWithVel(autoware_control_msgs::ControlCommand &input);
   void limitLongitudinalWithAcc(const double dt, autoware_control_msgs::ControlCommand &input);
