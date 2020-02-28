@@ -218,20 +218,17 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
     }
   }
 
-  const auto isConnectedTo = [&routing_graph_ptr](const auto& from_lanelet, const auto& to_lanelet) {
-    const auto following_lanelets = routing_graph_ptr->following(from_lanelet);
-    return lanelet::utils::contains(following_lanelets, to_lanelet);
-  };
-
   // get same-group lanelets of assigned lanelet
   std::vector<lanelet::ConstLanelet> same_group_lanelets;
   for (const auto& previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
-    if (!isConnectedTo(previous_lanelet, assigned_lanelet)) {
-      continue;
-    }
+    same_group_lanelets.push_back(previous_lanelet);
 
-    same_group_lanelets = routing_graph_ptr->following(previous_lanelet);
-    break;
+    for (const auto& following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
+      if (lanelet::utils::contains(same_group_lanelets, following_lanelet)) {
+        continue;
+      }
+      same_group_lanelets.push_back(following_lanelet);
+    }
   }
 
   // Filter candidates
