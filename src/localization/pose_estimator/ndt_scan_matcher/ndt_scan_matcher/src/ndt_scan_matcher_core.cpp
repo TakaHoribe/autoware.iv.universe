@@ -302,7 +302,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
 
   // check
   if (initial_pose_msg_ptr_array_.empty()) {
-    ROS_WARN_STREAM_THROTTLE(1, "No Pose! F***********************************K");
+    ROS_WARN_STREAM_THROTTLE(1, "No Pose!");
     return;
   }
   // searchNNPose using timestamp
@@ -320,7 +320,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
 
 
   if (ndt_ptr_->getInputTarget() == nullptr) {
-    ROS_WARN_STREAM_THROTTLE(1, "No MAP! F***********************************K");
+    ROS_WARN_STREAM_THROTTLE(1, "No MAP!");
     return;
   }
   // align
@@ -364,7 +364,6 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
     is_converged = false;
     ++skipping_publish_num;
     std::cout << "Not Converged" << std::endl;
-    std::cout << "F**********************************************************************************************K" << std::endl;
   }
   else {
     skipping_publish_num = 0;
@@ -474,7 +473,7 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
 geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> &ndt_ptr, const geometry_msgs::PoseWithCovarianceStamped &initial_pose_with_cov)
 {
   if (ndt_ptr->getInputTarget() == nullptr || ndt_ptr->getInputSource() == nullptr) {
-    ROS_WARN("F***********************************K");
+    ROS_WARN("No Map or Sensor PointCloud");
     return geometry_msgs::PoseWithCovarianceStamped();
   }
 

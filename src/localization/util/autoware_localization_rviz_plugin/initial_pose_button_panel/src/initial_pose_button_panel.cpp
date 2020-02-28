@@ -123,7 +123,7 @@ void InitialPoseButtonPanel::pushInitialzeButton()
     else
     {
       status_label_->setStyleSheet("QLabel { background-color : red;}");
-      status_label_->setText("F**************************K");
+      status_label_->setText("Faild!");
     }
     // unlock button
     initialize_button_->setEnabled(true);
