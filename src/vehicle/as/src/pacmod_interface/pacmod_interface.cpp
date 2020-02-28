@@ -42,6 +42,9 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("max_throttle", max_throttle_, 0.2);
   private_nh_.param<double>("max_brake", max_brake_, 0.8);
 
+  private_nh_.param<double>("vgr_coef_a_", vgr_coef_a_, 15.713);
+  private_nh_.param<double>("vgr_coef_b_", vgr_coef_b_, 0.053);
+  private_nh_.param<double>("vgr_coef_c_", vgr_coef_c_, 0.042);
 
   /* parameters for limitter */
   private_nh_.param<double>("max_steering_wheel", max_steering_wheel_, 2.7 * M_PI);
@@ -120,7 +123,6 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
                                         const pacmod_msgs::SystemRptIntConstPtr &shift_rpt,
                                         const pacmod_msgs::GlobalRptConstPtr &global_rpt) {
   is_pacmod_rpt_received_ = true;
-
   steer_wheel_rpt_ptr_ = std::make_shared<pacmod_msgs::SystemRptFloat>(*steer_wheel_rpt);
   wheel_speed_rpt_ptr_ = std::make_shared<pacmod_msgs::WheelSpeedRpt>(*wheel_speed_rpt);
   accel_rpt_ptr_ = std::make_shared<pacmod_msgs::SystemRptFloat>(*accel_rpt);
