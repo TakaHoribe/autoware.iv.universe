@@ -40,9 +40,8 @@
 #include <random>
 
 #include <autoware_planning_msgs/Trajectory.h>
-#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
-#include <autoware_vehicle_msgs/VehicleStatusStamped.h>
-#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
+#include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
 #include <autoware_vehicle_msgs/ControlMode.h>
 #include <autoware_vehicle_msgs/Steering.h>
@@ -77,7 +76,6 @@ private:
   ros::Publisher pub_shift_;
 
   ros::Subscriber sub_vehicle_cmd_;   //!< @brief topic subscriber for vehicle_cmd
-  ros::Subscriber sub_shift_cmd_;      //!<@brief topic subscriber for vehicle_shift
   ros::Subscriber sub_trajectory_;    //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;   //!< @brief topic subscriber for initialpose topic
   ros::Timer timer_simulation_;       //!< @brief timer for simulation
@@ -90,9 +88,8 @@ private:
   /* received & published topics */
   geometry_msgs::Pose current_pose_;                                                      //!< @brief current vehicle position ang angle with pose message class
   geometry_msgs::Twist current_twist_;                                                    //!< @brief current vehicle velocity with twist message class
-  std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> current_vehicle_cmd_ptr_; //!< @brief latest received vehicle_cmd
+  std::shared_ptr<autoware_vehicle_msgs::VehicleCommand> current_vehicle_cmd_ptr_; //!< @brief latest received vehicle_cmd
   std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;            //!< @brief latest received trajectory
-  double drive_shift;                                                                     //!< @brief latest received shift(drive:1, reverse:-1)
   double closest_pos_z_;                                                                  //!< @brief z position on closest trajectory
 
   /* frame_id */
@@ -137,17 +134,12 @@ private:
   /**
    * @brief set current_vehicle_cmd_ptr_ with received message
    */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr &msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr &msg);
 
   /**
    * @brief set current_trajectory_ptr_ with received message
    */
   void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr &msg);
-
-  /**
-   * @brief set current_shift with received message
-   */
-  void callbackShift(const autoware_vehicle_msgs::Shift &msg);
 
   /**
    * @brief set initial pose for simulation with received message

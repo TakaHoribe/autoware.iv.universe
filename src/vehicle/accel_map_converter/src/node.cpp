@@ -44,14 +44,14 @@ void AccelMapConverter::callbackVelocity(const geometry_msgs::TwistStampedConstP
 }
 
 void AccelMapConverter::callbackVehicleCmd(
-    const autoware_vehicle_msgs::VehicleCommandStampedConstPtr vehicle_cmd_ptr) {
+    const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr) {
   if (!current_velocity_ptr_ || !acc_map_initialized_) {
     return;
   }
 
   double desired_throttle = 0.0;
   double desired_brake = 0.0;
-  calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->command.control.acceleration, &desired_throttle,
+  calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle,
                     &desired_brake);
 
   autoware_vehicle_msgs::Pedal output;

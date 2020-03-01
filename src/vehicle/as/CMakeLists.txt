@@ -39,21 +39,21 @@ add_executable(ssc_interface
   src/ssc_interface/ssc_interface_node.cpp
   src/ssc_interface/ssc_interface.cpp
 )
+target_link_libraries(ssc_interface ${catkin_LIBRARIES})
+add_dependencies(ssc_interface ${catkin_EXPORTED_TARGETS})
 
 add_executable(pacmod_interface
   src/pacmod_interface/pacmod_interface.cpp
   src/pacmod_interface/pacmod_interface_node.cpp
 )
-
-add_executable(pacmod_sim_interface src/pacmod_sim_interface/pacmod_sim_interface.cpp)
-
-target_link_libraries(ssc_interface ${catkin_LIBRARIES})
 target_link_libraries(pacmod_interface ${catkin_LIBRARIES})
-target_link_libraries(pacmod_sim_interface ${catkin_LIBRARIES})
-
-add_dependencies(ssc_interface ${catkin_EXPORTED_TARGETS})
 add_dependencies(pacmod_interface ${catkin_EXPORTED_TARGETS})
-add_dependencies(pacmod_sim_interface ${catkin_EXPORTED_TARGETS})
+
+
+# add_executable(pacmod_sim_interface src/pacmod_sim_interface/pacmod_sim_interface.cpp)
+# target_link_libraries(pacmod_sim_interface ${catkin_LIBRARIES})
+# add_dependencies(pacmod_sim_interface ${catkin_EXPORTED_TARGETS})
+
 
 install(TARGETS ssc_interface
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

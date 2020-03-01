@@ -31,8 +31,7 @@
 #include "vehicle_cmd_gate/vehicle_cmd_gate.h"
 
 VehicleCmdGate::VehicleCmdGate() : nh_(""), pnh_("~"), is_engaged_(false) {
-  vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommandStamped>("output/vehicle_cmd", 1, true);
-  shift_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::Shift>("output/shift_cmd", 1, true);
+  vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommand>("output/vehicle_cmd", 1, true);
   control_cmd_sub_ = pnh_.subscribe("input/control_cmd", 1, &VehicleCmdGate::ctrlCmdCallback, this);
   engage_sub_ = pnh_.subscribe("input/engage", 1, &VehicleCmdGate::engageCallback, this);
 
@@ -66,38 +65,32 @@ double VehicleCmdGate::getDt() {
 }
 
 void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped &input_msg) {
-  autoware_vehicle_msgs::VehicleCommandStamped cmd;
+  autoware_vehicle_msgs::VehicleCommand cmd;
   cmd.header = input_msg.header;
 
   if (!is_engaged_) {
-    cmd.command.control.steering_angle = prev_vehicle_cmd_.command.control.steering_angle;
-    cmd.command.control.steering_angle_velocity = prev_vehicle_cmd_.command.control.steering_angle_velocity;
-    cmd.command.control.velocity = 0.0;
-    cmd.command.control.acceleration = -1.5;
+    cmd.control.steering_angle = prev_vehicle_cmd_.control.steering_angle;
+    cmd.control.steering_angle_velocity = prev_vehicle_cmd_.control.steering_angle_velocity;
+    cmd.control.velocity = 0.0;
+    cmd.control.acceleration = -1.5;
   } else {
-    cmd.command.control = input_msg.control;
+    cmd.control = input_msg.control;
   }
 
   double dt = getDt();
 
   /* limit filtering */
-  filter.limitLongitudinalWithVel(cmd.command.control);
-  filter.limitLongitudinalWithAcc(dt, cmd.command.control);
-  filter.limitLongitudinalWithJerk(dt, cmd.command.control);
-  filter.limitLateralWithLatAcc(dt, cmd.command.control);
-  filter.limitLateralWithLatJerk(dt, cmd.command.control);
+  filter.limitLongitudinalWithVel(cmd.control);
+  filter.limitLongitudinalWithAcc(dt, cmd.control);
+  filter.limitLongitudinalWithJerk(dt, cmd.control);
+  filter.limitLateralWithLatAcc(dt, cmd.control);
+  filter.limitLateralWithLatJerk(dt, cmd.control);
+
+  cmd.shift.data = cmd.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
 
   /* publish vehicle cmd */
   vehicle_cmd_pub_.publish(cmd);
 
   prev_vehicle_cmd_ = cmd;
-  filter.setPrevCmd(cmd.command.control);
-
-  /* publish shift command */
-  autoware_vehicle_msgs::Shift shift_msg;
-  shift_msg.header.frame_id = "base_link";
-  shift_msg.header.stamp = ros::Time::now();
-  shift_msg.data = cmd.command.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE
-                                                                       : autoware_vehicle_msgs::Shift::REVERSE;
-  shift_cmd_pub_.publish(shift_msg);
+  filter.setPrevCmd(cmd.control);
 }

@@ -42,10 +42,11 @@
 #include <pacmod_msgs/SystemRptFloat.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/ShiftStamped.h>
+#include <autoware_vehicle_msgs/ControlMode.h>
+#include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
-#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
-#include <autoware_vehicle_msgs/VehicleStatusStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
 
 static const std::string BASE_FRAME_ID = "base_link";
 
@@ -69,7 +70,6 @@ class SSCInterface {
 
   // subscribers
   ros::Subscriber vehicle_cmd_sub_;
-  ros::Subscriber shift_cmd_sub_;
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_sub_;
   ros::Subscriber module_states_sub_;
@@ -87,7 +87,7 @@ class SSCInterface {
   ros::Publisher speed_mode_pub_;
   ros::Publisher turn_signal_pub_;
   ros::Publisher gear_pub_;
-  ros::Publisher vehicle_status_pub_;
+  ros::Publisher current_shift_pub_;
   ros::Publisher control_mode_pub_;
   ros::Publisher current_twist_pub_;
   ros::Publisher current_steer_pub_;
@@ -124,15 +124,13 @@ class SSCInterface {
   bool turn_signal_cmd_initialized_;
   double adaptive_gear_ratio_;
   ros::Time command_time_;
-  autoware_vehicle_msgs::VehicleCommandStamped vehicle_cmd_;
-  autoware_vehicle_msgs::Shift shift_cmd_;
+  autoware_vehicle_msgs::VehicleCommand vehicle_cmd_;
   autoware_vehicle_msgs::TurnSignal turn_signal_cmd_;
   automotive_navigation_msgs::ModuleState module_states_;
   ros::Rate* rate_;
 
   // callbacks
-  void callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr& msg);
-  void callbackFromShiftCmd(const autoware_vehicle_msgs::ShiftConstPtr& msg);
+  void callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr& msg);
   void callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr& msg);
   void callbackFromEngage(const std_msgs::BoolConstPtr& msg);
   void callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr& msg);

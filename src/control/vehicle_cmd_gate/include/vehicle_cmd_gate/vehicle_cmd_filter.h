@@ -21,7 +21,6 @@
 #include <std_msgs/Bool.h>
 
 #include "autoware_control_msgs/ControlCommandStamped.h"
-#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
 
 class VehicleCmdFilter
 {

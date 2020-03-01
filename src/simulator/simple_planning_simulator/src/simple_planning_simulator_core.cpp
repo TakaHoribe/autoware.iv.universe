@@ -20,7 +20,7 @@
 #define DEBUG_INFO(...) { ROS_INFO(__VA_ARGS__); }
 
 // clang-format on
-Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), drive_shift(1.0), is_initialized_(false)
+Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false)
 {
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
@@ -36,9 +36,8 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), drive_shi
   pub_steer_ = nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
   pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
   pub_turn_signal_ = nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
-  pub_shift_ = nh_.advertise<autoware_vehicle_msgs::Shift>("/vehicle/status/shift", 1);
+  pub_shift_ = nh_.advertise<autoware_vehicle_msgs::ShiftStamped>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
-  sub_shift_cmd_ = pnh_.subscribe("/vehicle/shift_cmd", 1, &Simulator::callbackShift, this);
   timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
 
 
@@ -157,17 +156,6 @@ void Simulator::callbackTrajectory(const autoware_planning_msgs::TrajectoryConst
 {
   current_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 }
-
-void Simulator::callbackShift(const autoware_vehicle_msgs::Shift &msg)
-{
-  if(msg.data == autoware_vehicle_msgs::Shift::DRIVE){
-    drive_shift = 1.0;//true;
-  }else if(msg.data == autoware_vehicle_msgs::Shift::REVERSE){
-    drive_shift = -1.0;//false;
-  }else{
-    drive_shift = -1.0;//false;//do not consider shift command other than drive/reverse
-  }
-}
 void Simulator::callbackInitialPoseWithCov(const geometry_msgs::PoseWithCovarianceStampedConstPtr &msg)
 {
   geometry_msgs::Twist initial_twist; // initialized with zero for all components
@@ -253,27 +241,32 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent &e)
   pub_velocity_.publish(velocity_msg);
 
   autoware_vehicle_msgs::TurnSignal turn_signal_msg;
+  turn_signal_msg.header.frame_id = simulation_frame_id_;
+  turn_signal_msg.header.stamp = ros::Time::now();
   turn_signal_msg.data = autoware_vehicle_msgs::TurnSignal::NONE;
   pub_turn_signal_.publish(turn_signal_msg);
 
-  autoware_vehicle_msgs::Shift shift_msg;
-  shift_msg.data = current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  autoware_vehicle_msgs::ShiftStamped shift_msg;
+  shift_msg.header.frame_id = simulation_frame_id_;
+  shift_msg.header.stamp = ros::Time::now();
+  shift_msg.shift.data = current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
   pub_shift_.publish(shift_msg);
 }
 
-void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr &msg)
+void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr &msg)
 {
-  current_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommandStamped>(*msg);
+  current_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
 
   if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER || vehicle_model_type_ == VehicleModelType::DELAY_STEER)
   {
     Eigen::VectorXd input(2);
-    input << msg->command.control.velocity, msg->command.control.steering_angle;
+    input << msg->control.velocity, msg->control.steering_angle;
     vehicle_model_ptr_->setInput(input);
   }else if (vehicle_model_type_ == VehicleModelType::DELAY_STEER_ACC)
   {
     Eigen::VectorXd input(3);
-    input << msg->command.control.acceleration, msg->command.control.steering_angle, drive_shift;
+    double drive_shift = (msg->shift.data == autoware_vehicle_msgs::Shift::DRIVE) ? 1.0 : -1.0;
+    input << msg->control.acceleration, msg->control.steering_angle, drive_shift;
     vehicle_model_ptr_->setInput(input);
   }
   else

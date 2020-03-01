@@ -25,7 +25,7 @@
 #include <geometry_msgs/TwistStamped.h>
 
 #include <autoware_vehicle_msgs/Pedal.h>
-#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
 #include <autoware_vehicle_msgs/Shift.h>
 
 #include <accel_map_converter/accel_map.h>
@@ -51,7 +51,7 @@ class AccelMapConverter {
   double max_throttle_;
   double max_brake_;
 
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStampedConstPtr vehicle_cmd_ptr);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr);
   void callbackVelocity(const geometry_msgs::TwistStampedConstPtr msg);
   void calculateAccelMap(const double current_velocity, const double desired_acc, double* desired_throttle,
                          double* desired_brake);

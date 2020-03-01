@@ -23,8 +23,7 @@
 #include <std_msgs/Bool.h>
 
 #include "autoware_control_msgs/ControlCommandStamped.h"
-#include "autoware_vehicle_msgs/Shift.h"
-#include "autoware_vehicle_msgs/VehicleCommandStamped.h"
+#include "autoware_vehicle_msgs/VehicleCommand.h"
 #include "vehicle_cmd_gate/vehicle_cmd_filter.h"
 
 class VehicleCmdGate {
@@ -48,7 +47,7 @@ class VehicleCmdGate {
 
   std::shared_ptr<ros::Time> prev_time_;
 
-  autoware_vehicle_msgs::VehicleCommandStamped prev_vehicle_cmd_;
+  autoware_vehicle_msgs::VehicleCommand prev_vehicle_cmd_;
   bool is_engaged_;
 
   VehicleCmdFilter filter;

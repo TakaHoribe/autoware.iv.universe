@@ -1,2 +1,0 @@
-Header header
-autoware_vehicle_msgs/VehicleCommand command
