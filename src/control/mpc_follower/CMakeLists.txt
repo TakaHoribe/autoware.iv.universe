@@ -17,7 +17,11 @@ find_package(
   autoware_control_msgs
   autoware_vehicle_msgs
   osqp_interface
+  dynamic_reconfigure
 )
+
+generate_dynamic_reconfigure_options(cfg/MPCFollower.cfg)
+
 
 catkin_package(
   INCLUDE_DIRS include
@@ -57,7 +61,7 @@ set(
 )
 
 add_executable(mpc_follower src/mpc_follower_node.cpp src/mpc_follower_core.cpp ${MPC_FOLLOWER_SRC})
-add_dependencies(mpc_follower ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(mpc_follower ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} mpc_follower_gencfg)
 target_link_libraries(mpc_follower ${catkin_LIBRARIES})
 
 install(
