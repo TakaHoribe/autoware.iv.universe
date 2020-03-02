@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(path_planner)
+project(obstacle_avoidance_planner)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
@@ -60,8 +60,6 @@ add_dependencies(eb_path_planner_node
 target_include_directories(eb_path_planner_node 
   PUBLIC
     ${Opencv_INCLUDE_DIRS}
-  # PRIVATE
-  #   ${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp/include
 )
 
 target_link_libraries(eb_path_planner_node
@@ -69,16 +67,4 @@ target_link_libraries(eb_path_planner_node
   ${OpenCV_LIBRARIES}
   path_base_planner
   emosqpstatic
-)
-
-add_executable(path2trajectory_converter_node 
-src/path2trajectory_converter/horibe_interpolate.cpp
-src/path2trajectory_converter/node.cpp
-src/path2trajectory_converter/main.cpp)
-
-add_dependencies(path2trajectory_converter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(path2trajectory_converter_node
-  ${catkin_LIBRARIES}
-  path_base_planner
 )
