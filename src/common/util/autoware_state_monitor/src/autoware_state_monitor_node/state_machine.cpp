@@ -158,7 +158,7 @@ AutowareState StateMachine::judgeAutowareState() const {
   switch (autoware_state_) {
     case (AutowareState::InitializingVehicle): {
       if (!isVehicleInitialized()) {
-        return AutowareState::InitializingVehicle;
+        break;
       }
 
       return AutowareState::WaitingForRoute;
@@ -168,7 +168,7 @@ AutowareState StateMachine::judgeAutowareState() const {
       // TODO: canExecuteAutonomousDriving, inGeoFence, etc...?
 
       if (!isRouteReceived()) {
-        return AutowareState::WaitingForRoute;
+        break;
       }
 
       return AutowareState::Planning;
@@ -176,7 +176,7 @@ AutowareState StateMachine::judgeAutowareState() const {
 
     case (AutowareState::Planning): {
       if (!isPlanningCompleted()) {
-        return AutowareState::Planning;
+        break;
       }
 
       return AutowareState::WaitingForEngage;
@@ -184,7 +184,7 @@ AutowareState StateMachine::judgeAutowareState() const {
 
     case (AutowareState::WaitingForEngage): {
       if (!isEngaged()) {
-        return AutowareState::WaitingForEngage;
+        break;
       }
 
       return AutowareState::Driving;
@@ -203,7 +203,7 @@ AutowareState StateMachine::judgeAutowareState() const {
         return AutowareState::FailedToArriveGoal;
       }
 
-      return AutowareState::Driving;
+      break;
     }
 
     case (AutowareState::ArrivedGoal): {
@@ -213,7 +213,7 @@ AutowareState StateMachine::judgeAutowareState() const {
 
       // Move to WaitingForEngage after a while?
 
-      return AutowareState::ArrivedGoal;
+      break;
     }
 
     case (AutowareState::FailedToArriveGoal): {
@@ -223,12 +223,12 @@ AutowareState StateMachine::judgeAutowareState() const {
 
       // Move to Error after a while?
 
-      return AutowareState::FailedToArriveGoal;
+      break;
     }
 
     case (AutowareState::Error): {
       // TODO: error handling
-      return AutowareState::Error;
+      break;
     }
 
     default: {
@@ -238,4 +238,7 @@ AutowareState StateMachine::judgeAutowareState() const {
       return AutowareState::Error;
     }
   }
+
+  // continue previous state when break
+  return autoware_state_;
 }
