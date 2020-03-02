@@ -43,20 +43,10 @@ std::vector<Config> getConfigs(const ros::NodeHandle& nh, const std::string& con
 double calcTopicRate(const std::deque<ros::Time>& topic_received_time_buffer) {
   assert(topic_received_time_buffer.size() >= 2);
 
-  const auto num_segments = topic_received_time_buffer.size() - 1;
+  const auto& buf = topic_received_time_buffer;
+  const auto time_diff = buf.back() - buf.front();
 
-  std::vector<double> topic_durations;
-  for (size_t i = 0; i < num_segments; ++i) {
-    const auto& t1 = topic_received_time_buffer.at(i);
-    const auto& t2 = topic_received_time_buffer.at(i + 1);
-
-    topic_durations.push_back((t2 - t1).toSec());
-  }
-
-  const auto average_duration =
-      std::accumulate(std::begin(topic_durations), std::end(topic_durations), 0.0) / num_segments;
-
-  return 1 / average_duration;
+  return static_cast<double>(buf.size() - 1) / time_diff.toSec();
 }
 
 geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_buffer) {
