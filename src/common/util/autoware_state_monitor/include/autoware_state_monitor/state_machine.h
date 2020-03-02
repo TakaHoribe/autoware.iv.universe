@@ -17,6 +17,9 @@ struct StateInput {
   ParamStats param_stats;
   TfStats tf_stats;
 
+  geometry_msgs::PoseStamped::ConstPtr current_pose;
+  geometry_msgs::Pose::ConstPtr goal_pose;
+
   std_msgs::Bool::ConstPtr autoware_engage;
   std_msgs::Bool::ConstPtr vehicle_engage;
   autoware_planning_msgs::Route::ConstPtr route;
@@ -24,14 +27,30 @@ struct StateInput {
   std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer;
 };
 
+struct StateParam {
+  double th_arrived_distance_m;
+  double th_stopped_time_sec;
+  double th_stopped_velocity_mps;
+};
+
+struct Times {
+  ros::Time arrived_goal;
+};
+
 class StateMachine {
  public:
+  explicit StateMachine(const StateParam& state_param) : state_param_(state_param) {}
+
   AutowareState getCurrentState() const { return autoware_state_; }
-  AutowareState getNextState(const StateInput& state_input);
+  AutowareState updateState(const StateInput& state_input);
 
  private:
   AutowareState autoware_state_ = AutowareState::InitializingVehicle;
   StateInput state_input_;
+  const StateParam state_param_;
+
+  mutable Times times_;
+  mutable autoware_planning_msgs::Route::ConstPtr executing_route_;
 
   AutowareState judgeAutowareState() const;
 

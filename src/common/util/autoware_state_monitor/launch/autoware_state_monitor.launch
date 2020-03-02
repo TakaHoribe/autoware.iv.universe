@@ -19,7 +19,6 @@
     <rosparam command="load" file="$(arg config_file)" />
 
     <param name="update_rate" value="10.0" />
-    <param name="th_max_message_delay_sec" value="0.5" />
     <param name="th_arrived_distance_m" value="1.0" />
     <param name="th_stopped_time_sec" value="1.0" />
     <param name="th_stopped_velocity_mps" value="0.01" />

@@ -1,5 +1,44 @@
 #include <autoware_state_monitor/state_machine.h>
 
+namespace {
+
+double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+  return std::hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  return calcDistance2d(p1.position, p2.position);
+}
+
+bool isNearGoal(const geometry_msgs::Pose& current_pose, const geometry_msgs::Pose& goal_pose, const double th_dist) {
+  return calcDistance2d(current_pose, goal_pose) < th_dist;
+}
+
+bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
+               const double th_stopped_velocity_mps) {
+  for (const auto& twist : twist_buffer) {
+    if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class T>
+std::vector<T> filterConfigByModuleName(const std::vector<T>& configs, const char* module_name) {
+  std::vector<T> filtered;
+
+  for (const auto& config : configs) {
+    if (config.module == module_name) {
+      filtered.push_back(config);
+    }
+  }
+
+  return filtered;
+}
+
+}  // namespace
+
 struct ModuleName {
   static constexpr const char* Sensing = "sensing";
   static constexpr const char* Localization = "localization";
@@ -9,93 +48,50 @@ struct ModuleName {
 };
 
 bool StateMachine::isModuleInitialized(const char* module_name) const {
-  // Non received topic
-  {
-    std::vector<TopicConfig> non_received_list;
-    for (const auto& topic_config : state_input_.topic_stats.non_received_list) {
-      if (topic_config.module != module_name) {
-        continue;
-      }
+  const auto non_received_topics = filterConfigByModuleName(state_input_.topic_stats.non_received_list, module_name);
+  const auto non_set_params = filterConfigByModuleName(state_input_.param_stats.non_set_list, module_name);
+  const auto non_received_tfs = filterConfigByModuleName(state_input_.tf_stats.non_received_list, module_name);
 
-      ROS_WARN("topic `%s` is not received yet", topic_config.name.c_str());
-      non_received_list.push_back(topic_config);
-    }
-
-    if (!non_received_list.empty()) {
-      return false;
-    }
+  if (non_received_topics.empty() && non_set_params.empty() && non_received_tfs.empty()) {
+    return true;
   }
 
-  // Non set param
-  {
-    std::vector<ParamConfig> non_set_list;
-    for (const auto& param_config : state_input_.param_stats.non_set_list) {
-      if (param_config.module != module_name) {
-        continue;
-      }
-
-      ROS_WARN("param `%s` is not set", param_config.name.c_str());
-      non_set_list.push_back(param_config);
-    }
-
-    if (!non_set_list.empty()) {
-      return false;
-    }
+  for (const auto& topic_config : non_received_topics) {
+    ROS_WARN("topic `%s` is not received yet", topic_config.name.c_str());
   }
 
-  // Non received TF
-  {
-    std::vector<TfConfig> non_received_list;
-    for (const auto& tf_config : state_input_.tf_stats.non_received_list) {
-      if (tf_config.module != module_name) {
-        continue;
-      }
-
-      ROS_WARN("tf from `%s` to `%s` is not received yet", tf_config.from.c_str(), tf_config.to.c_str());
-      non_received_list.push_back(tf_config);
-    }
-
-    if (!non_received_list.empty()) {
-      return false;
-    }
+  for (const auto& param_config : non_set_params) {
+    ROS_WARN("param `%s` is not set", param_config.name.c_str());
   }
 
-  return true;
+  for (const auto& tf_config : non_received_tfs) {
+    ROS_WARN("tf from `%s` to `%s` is not received yet", tf_config.from.c_str(), tf_config.to.c_str());
+  }
+
+  ROS_INFO("module `%s` is not initialized", module_name);
+
+  return false;
 }
 
 bool StateMachine::isVehicleInitialized() const {
-  ROS_DEBUG("isVehicleInitialized");
-
-  // Sensing
   if (!isModuleInitialized(ModuleName::Sensing)) {
-    ROS_INFO("Sensing module is not initialized");
     return false;
   }
 
-  // Localization
   if (!isModuleInitialized(ModuleName::Localization)) {
-    ROS_INFO("Localization module is not initialized");
     return false;
   }
 
-  // Perception
   if (!isModuleInitialized(ModuleName::Perception)) {
-    ROS_INFO("Perception module is not initialized");
     return false;
   }
 
   return true;
 }
 
-bool StateMachine::isRouteReceived() const {
-  ROS_DEBUG("isRouteReceived");
-
-  return state_input_.route != nullptr;
-}
+bool StateMachine::isRouteReceived() const { return state_input_.route != nullptr; }
 
 bool StateMachine::isPlanningCompleted() const {
-  ROS_DEBUG("isPlanningCompleted");
-
   if (!isModuleInitialized(ModuleName::Planning)) {
     return false;
   }
@@ -108,10 +104,7 @@ bool StateMachine::isPlanningCompleted() const {
 }
 
 bool StateMachine::isEngaged() const {
-  ROS_DEBUG("isEngaged");
-
-  // Disengage on launch?
-
+  // TODO: Output engage status from controller_interface instead of topic
   if (!state_input_.autoware_engage) {
     return false;
   }
@@ -131,27 +124,29 @@ bool StateMachine::isEngaged() const {
   return true;
 }
 
-bool StateMachine::isOverrided() const {
-  ROS_DEBUG("isOverrided");
-
-  return !isEngaged();
-}
+bool StateMachine::isOverrided() const { return !isEngaged(); }
 
 bool StateMachine::hasArrivedGoal() const {
-  ROS_DEBUG("hasArrivedGoal: not implemented");
+  const auto is_near_goal =
+      isNearGoal(state_input_.current_pose->pose, *state_input_.goal_pose, state_param_.th_arrived_distance_m);
+  const auto is_stopped = isStopped(state_input_.twist_buffer, state_param_.th_stopped_velocity_mps);
+
+  if (is_near_goal && is_stopped) {
+    return true;
+  }
 
   return false;
 }
 
 bool StateMachine::hasFailedToArriveGoal() const {
-  ROS_DEBUG("hasArrivedGoal: not implemented");
-
+  // not implemented
   return false;
 }
 
-AutowareState StateMachine::getNextState(const StateInput& state_input) {
+AutowareState StateMachine::updateState(const StateInput& state_input) {
   state_input_ = state_input;
-  return judgeAutowareState();
+  autoware_state_ = judgeAutowareState();
+  return autoware_state_;
 }
 
 AutowareState StateMachine::judgeAutowareState() const {
@@ -170,6 +165,12 @@ AutowareState StateMachine::judgeAutowareState() const {
       if (!isRouteReceived()) {
         break;
       }
+
+      if (state_input_.route == executing_route_) {
+        break;
+      }
+
+      executing_route_ = state_input_.route;
 
       return AutowareState::Planning;
     }
@@ -196,6 +197,7 @@ AutowareState StateMachine::judgeAutowareState() const {
       }
 
       if (hasArrivedGoal()) {
+        times_.arrived_goal = ros::Time::now();
         return AutowareState::ArrivedGoal;
       }
 
@@ -211,7 +213,11 @@ AutowareState StateMachine::judgeAutowareState() const {
         return AutowareState::WaitingForEngage;
       }
 
-      // Move to WaitingForEngage after a while?
+      constexpr double wait_time_after_arrived_goal = 2;
+      const auto time_from_arrived_goal = ros::Time::now() - times_.arrived_goal;
+      if (time_from_arrived_goal.toSec() > wait_time_after_arrived_goal) {
+        return AutowareState::WaitingForRoute;
+      }
 
       break;
     }
@@ -221,13 +227,16 @@ AutowareState StateMachine::judgeAutowareState() const {
         return AutowareState::WaitingForEngage;
       }
 
-      // Move to Error after a while?
+      constexpr double wait_time_after_failed = 2;
+      const auto time_from_failed = ros::Time::now() - times_.arrived_goal;
+      if (time_from_failed.toSec() > wait_time_after_failed) {
+        return AutowareState::Error;
+      }
 
       break;
     }
 
     case (AutowareState::Error): {
-      // TODO: error handling
       break;
     }
 

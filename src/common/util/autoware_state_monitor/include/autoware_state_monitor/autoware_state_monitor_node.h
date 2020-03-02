@@ -35,10 +35,6 @@ class AutowareStateMonitorNode {
 
   // Parameter
   double update_rate_;
-  double th_max_message_delay_sec_;
-  double th_arrived_distance_m_;
-  double th_stopped_time_sec_;
-  double th_stopped_velocity_mps_;
   bool disengage_on_route_;
   bool disengage_on_complete_;
   bool disengage_on_error_;
@@ -88,8 +84,9 @@ class AutowareStateMonitorNode {
   TfStats getTfStats() const;
 
   // State Machine
-  StateMachine state_machine_;
+  std::shared_ptr<StateMachine> state_machine_;
   StateInput state_input_;
+  StateParam state_param_;
 
   // Debug
   void displayErrors() const;

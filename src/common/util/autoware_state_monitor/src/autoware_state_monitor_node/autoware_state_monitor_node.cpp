@@ -53,9 +53,9 @@ geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_bu
   geometry_msgs::TransformStamped tf_current_pose;
 
   try {
-    tf_current_pose = tf_buffer.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(1.0));
+    tf_current_pose = tf_buffer.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR("%s", ex.what());
+    ROS_ERROR_THROTTLE(1.0, "%s", ex.what());
     return nullptr;
   }
 
@@ -67,25 +67,6 @@ geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_bu
   p->pose.position.z = tf_current_pose.transform.translation.z;
 
   return geometry_msgs::PoseStamped::ConstPtr(p);
-}
-
-bool isNearGoal(const geometry_msgs::Pose& goal_pose, const geometry_msgs::Pose& current_pose, const double th_dist) {
-  const auto& p1 = current_pose.position;
-  const auto& p2 = goal_pose.position;
-
-  const auto dist = std::hypot(p1.x - p2.x, p1.y - p2.y);
-
-  return dist < th_dist;
-}
-
-bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
-               const double th_stopped_velocity_mps) {
-  for (const auto& twist : twist_buffer) {
-    if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
-      return false;
-    }
-  }
-  return true;
 }
 
 }  // namespace
@@ -101,6 +82,13 @@ void AutowareStateMonitorNode::onVehicleEngage(const std_msgs::Bool::ConstPtr& m
 void AutowareStateMonitorNode::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
   state_input_.route = msg;
 
+  // Get goal pose
+  {
+    geometry_msgs::Pose::Ptr p(new geometry_msgs::Pose());
+    *p = msg->goal_pose;
+    state_input_.goal_pose = geometry_msgs::Pose::ConstPtr(p);
+  }
+
   if (disengage_on_route_) {
     // TODO: set disengage
   }
@@ -115,7 +103,7 @@ void AutowareStateMonitorNode::onTwist(const geometry_msgs::TwistStamped::ConstP
   while (true) {
     const auto time_diff = msg->header.stamp - state_input_.twist_buffer.front()->header.stamp;
 
-    if (time_diff.toSec() < th_stopped_time_sec_) {
+    if (time_diff.toSec() < state_param_.th_stopped_time_sec) {
       break;
     }
 
@@ -124,12 +112,14 @@ void AutowareStateMonitorNode::onTwist(const geometry_msgs::TwistStamped::ConstP
 }
 
 void AutowareStateMonitorNode::onTimer(const ros::TimerEvent& event) {
+  state_input_.current_pose = getCurrentPose(tf_buffer_);
+
   state_input_.topic_stats = getTopicStats();
   state_input_.param_stats = getParamStats();
   state_input_.tf_stats = getTfStats();
 
-  const auto prev_autoware_state = state_machine_.getCurrentState();
-  const auto autoware_state = state_machine_.getNextState(state_input_);
+  const auto prev_autoware_state = state_machine_->getCurrentState();
+  const auto autoware_state = state_machine_->updateState(state_input_);
 
   if (autoware_state != prev_autoware_state) {
     ROS_INFO("state changed: %s -> %s", toMsg(prev_autoware_state).state.c_str(), toMsg(autoware_state).state.c_str());
@@ -138,6 +128,11 @@ void AutowareStateMonitorNode::onTimer(const ros::TimerEvent& event) {
   displayErrors();
 
   pub_autoware_state_.publish(toMsg(autoware_state));
+
+  if (autoware_state == AutowareState::Error) {
+    ROS_INFO("reset state machine due to an error");
+    state_machine_ = std::make_shared<StateMachine>(state_param_);
+  }
 }
 
 void AutowareStateMonitorNode::onTopic(const topic_tools::ShapeShifter::ConstPtr& msg, const std::string& topic_name) {
@@ -288,13 +283,17 @@ void AutowareStateMonitorNode::displayErrors() const {
 AutowareStateMonitorNode::AutowareStateMonitorNode() {
   // Parameter
   private_nh_.param("update_rate", update_rate_, 10.0);
-  private_nh_.param("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
-  private_nh_.param("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
-  private_nh_.param("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
-  private_nh_.param("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
   private_nh_.param("disengage_on_route", disengage_on_route_, false);
   private_nh_.param("disengage_on_complete", disengage_on_complete_, false);
   private_nh_.param("disengage_on_error", disengage_on_error_, false);
+
+  // Parameter for StateMachine
+  private_nh_.param("th_arrived_distance_m", state_param_.th_arrived_distance_m, 1.0);
+  private_nh_.param("th_stopped_time_sec", state_param_.th_stopped_time_sec, 1.0);
+  private_nh_.param("th_stopped_velocity_mps", state_param_.th_stopped_velocity_mps, 0.01);
+
+  // State Machine
+  state_machine_ = std::make_shared<StateMachine>(state_param_);
 
   // Config
   topic_configs_ = getConfigs<TopicConfig>(private_nh_, "topic_configs");
