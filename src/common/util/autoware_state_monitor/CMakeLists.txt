@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
 )
 
+find_package(fmt REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS
     include
@@ -39,6 +41,7 @@ add_executable(autoware_state_monitor
 )
 
 target_link_libraries(autoware_state_monitor
+  fmt
   ${catkin_LIBRARIES}
 )
 

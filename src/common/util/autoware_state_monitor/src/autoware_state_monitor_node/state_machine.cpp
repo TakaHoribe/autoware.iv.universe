@@ -1,5 +1,7 @@
 #include <autoware_state_monitor/state_machine.h>
 
+#include <autoware_state_monitor/rosconsole_wrapper.h>
+
 namespace {
 
 double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
@@ -57,18 +59,22 @@ bool StateMachine::isModuleInitialized(const char* module_name) const {
   }
 
   for (const auto& topic_config : non_received_topics) {
-    ROS_WARN("topic `%s` is not received yet", topic_config.name.c_str());
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name,
+                     fmt::format("topic `{}` is not received yet", topic_config.name));
   }
 
   for (const auto& param_config : non_set_params) {
-    ROS_WARN("param `%s` is not set", param_config.name.c_str());
+    logThrottleNamed(ros::console::levels::Warn, 1.0, param_config.name,
+                     fmt::format("param `{}` is not set", param_config.name));
   }
 
   for (const auto& tf_config : non_received_tfs) {
-    ROS_WARN("tf from `%s` to `%s` is not received yet", tf_config.from.c_str(), tf_config.to.c_str());
+    logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to),
+                     fmt::format("tf from `{}` to `{}` is not received yet", tf_config.from, tf_config.to));
   }
 
-  ROS_INFO("module `%s` is not initialized", module_name);
+  logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("module-{}", module_name),
+                   fmt::format("module `{}` is not initialized", module_name));
 
   return false;
 }

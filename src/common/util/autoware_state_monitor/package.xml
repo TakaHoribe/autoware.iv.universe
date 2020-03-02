@@ -10,6 +10,7 @@
 
   <depend>autoware_planning_msgs</depend>
   <depend>autoware_system_msgs</depend>
+  <depend>fmt</depend>
   <depend>roscpp</depend>
   <depend>topic_tools</depend>
   <depend>tf2</depend>

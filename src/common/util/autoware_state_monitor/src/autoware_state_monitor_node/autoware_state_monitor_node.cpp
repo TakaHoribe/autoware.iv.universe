@@ -10,6 +10,8 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+#include <autoware_state_monitor/rosconsole_wrapper.h>
+
 namespace {
 
 bool isBlacklistName(const std::vector<std::string>& regex_blacklist_names, const std::string& name) {
@@ -253,30 +255,39 @@ TfStats AutowareStateMonitorNode::getTfStats() const {
 }
 
 void AutowareStateMonitorNode::displayErrors() const {
-  for (const auto& topic_config_pair : state_input_.topic_stats.timeout_list) {
+  const auto& topic_stats = state_input_.topic_stats;
+  const auto& tf_stats = state_input_.tf_stats;
+
+  for (const auto& topic_config_pair : topic_stats.timeout_list) {
     const auto& topic_config = topic_config_pair.first;
     const auto& last_received_time = topic_config_pair.second;
 
-    ROS_ERROR("topic `%s` is timeout: timeout = %f, checked_time = %f, last_received_time = %f",
-              topic_config.name.c_str(), topic_config.timeout, state_input_.topic_stats.checked_time.toSec(),
-              last_received_time.toSec());
+    logThrottleNamed(
+        ros::console::levels::Error, 1.0, topic_config.name,
+        fmt::format("topic `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
+                    topic_config.name, topic_config.timeout, topic_stats.checked_time.toSec(),
+                    last_received_time.toSec()));
   }
 
-  for (const auto& topic_config_pair : state_input_.topic_stats.slow_rate_list) {
+  for (const auto& topic_config_pair : topic_stats.slow_rate_list) {
     const auto& topic_config = topic_config_pair.first;
     const auto& topic_rate = topic_config_pair.second;
 
-    ROS_WARN("topic `%s` is slow rate: warn_rate = %f, acctual_rate = %f", topic_config.name.c_str(),
-             topic_config.warn_rate, topic_rate);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name,
+                     fmt::format("topic `{}` is slow rate: warn_rate = {}, acctual_rate = {}", topic_config.name,
+                                 topic_config.warn_rate, topic_rate));
   }
 
-  for (const auto& tf_config_pair : state_input_.tf_stats.timeout_list) {
+  for (const auto& tf_config_pair : tf_stats.timeout_list) {
     const auto& tf_config = tf_config_pair.first;
     const auto& last_received_time = tf_config_pair.second;
 
-    ROS_ERROR("tf from `%s` to `%s` is timeout: timeout = %f, checked_time = %f, last_received_time = %f",
-              tf_config.from.c_str(), tf_config.to.c_str(), tf_config.timeout,
-              state_input_.tf_stats.checked_time.toSec(), last_received_time.toSec());
+    logThrottleNamed(
+        ros::console::levels::Error, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to),
+        fmt::format(
+            "tf from `{}` to `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
+            tf_config.from, tf_config.to, tf_config.timeout, tf_stats.checked_time.toSec(),
+            last_received_time.toSec()));
   }
 }
 
