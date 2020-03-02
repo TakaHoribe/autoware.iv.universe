@@ -48,11 +48,11 @@ void IntersectionModuleManager::launchNewModules(const autoware_planning_msgs::P
       continue;
     }
 
-    // Has traffic light and straight?
+    // Has traffic light, but not turn_right?
     const auto traffic_lights = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
     const auto has_traffic_light = !traffic_lights.empty();
-    const auto is_straight = turn_direction == "straight";
-    if (has_traffic_light && is_straight) {
+    const auto is_right = turn_direction == "right";
+    if (has_traffic_light && !is_right) {
       continue;
     }
 

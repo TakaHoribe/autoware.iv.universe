@@ -1,4 +1,3 @@
-std_msgs/Header header
 uint8 NONE=0
 uint8 PARKING=1
 uint8 REVERSE=2

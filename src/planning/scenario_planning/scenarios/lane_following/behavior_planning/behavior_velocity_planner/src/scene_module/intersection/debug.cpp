@@ -8,7 +8,7 @@ namespace {
 using State = IntersectionModule::State;
 
 visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(const std::vector<lanelet::ConstLanelet>& lanelets,
-                                                              const std::string& ns) {
+                                                              const std::string& ns, const int64_t lane_id) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
@@ -19,8 +19,8 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(const std::vector<
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
 
-    marker.ns = ns + "_" + std::to_string(i);
-    marker.id = i;
+    marker.ns = ns;
+    marker.id = lane_id * 10000 + i;  // to be unique
     marker.lifetime = ros::Duration(0.3);
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
@@ -42,8 +42,8 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(const std::vector<
 }
 
 visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_msgs::PathWithLaneId& path,
-                                                      const std::string& ns, const double r, const double g,
-                                                      const double b) {
+                                                      const std::string& ns, const int64_t lane_id, const double r,
+                                                      const double g, const double b) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
@@ -53,7 +53,7 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
   marker.ns = ns;
 
   for (int i = 0; i < path.points.size(); ++i) {
-    marker.id = i;
+    marker.id = lane_id * 10000 + i;  // to be unique
     marker.lifetime = ros::Duration(0.3);
     marker.type = visualization_msgs::Marker::ARROW;
     marker.action = visualization_msgs::Marker::ADD;
@@ -66,7 +66,7 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
   return msg;
 }
 
-visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
+visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_geofence{};
@@ -102,31 +102,17 @@ visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::P
 }
 
 visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose& pose, const State& state,
-                                                      const std::string& ns, const double r, const double g,
-                                                      const double b) {
+                                                      const std::string& ns, const int64_t id, const double r,
+                                                      const double g, const double b) {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
-
-  visualization_msgs::Marker marker{};
-  marker.header.frame_id = "map";
-  marker.header.stamp = current_time;
-  marker.ns = ns;
-
-  marker.id = 0;
-  marker.lifetime = ros::Duration(0.3);
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose = pose;
-  marker.scale = createMarkerScale(0.5, 0.3, 0.3);
-  marker.color = createMarkerColor(r, g, b, 0.999);
-  msg.markers.push_back(marker);
 
   if (state == State::STOP) {
     visualization_msgs::Marker marker_line{};
     marker_line.header.frame_id = "map";
     marker_line.header.stamp = current_time;
     marker_line.ns = ns + "_line";
-    marker_line.id = 1;
+    marker_line.id = id;
     marker_line.lifetime = ros::Duration(0.3);
     marker_line.type = visualization_msgs::Marker::LINE_STRIP;
     marker_line.action = visualization_msgs::Marker::ADD;
@@ -162,28 +148,35 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
 
   const auto state = state_machine_.getState();
 
-  appendMarkerArray(createPathMarkerArray(debug_data_.path_raw, "path_raw", 0.0, 1.0, 1.0), &debug_marker_array);
-
-  appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
-
-  appendMarkerArray(createPoseMarkerArray(debug_data_.stop_point_pose, state, "stop_point_pose", 1.0, 0.0, 0.0),
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_raw, "path_raw", lane_id_, 0.0, 1.0, 1.0),
                     &debug_marker_array);
 
-  appendMarkerArray(createPoseMarkerArray(debug_data_.judge_point_pose, state, "judge_point_pose", 1.0, 1.0, 0.5),
-                    &debug_marker_array);
-
-  appendMarkerArray(createPathMarkerArray(debug_data_.path_with_judgeline, "path_with_judgeline", 0.0, 0.5, 1.0),
-                    &debug_marker_array);
 
   appendMarkerArray(
-      createLaneletsAreaMarkerArray(debug_data_.intersection_detection_lanelets, "intersection_detection_lanelets"),
+      createPoseMarkerArray(debug_data_.stop_point_pose, state, "stop_point_pose", lane_id_, 1.0, 0.0, 0.0),
       &debug_marker_array);
 
-  appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", 0.5, 0.0, 0.5),
+  appendMarkerArray(
+      createPoseMarkerArray(debug_data_.judge_point_pose, state, "judge_point_pose", lane_id_, 1.0, 1.0, 0.5),
+      &debug_marker_array);
+
+  appendMarkerArray(
+      createPathMarkerArray(debug_data_.path_with_judgeline, "path_with_judgeline", lane_id_, 0.0, 0.5, 1.0),
+      &debug_marker_array);
+
+  appendMarkerArray(createLaneletsAreaMarkerArray(debug_data_.intersection_detection_lanelets,
+                                                  "intersection_detection_lanelets", lane_id_),
                     &debug_marker_array);
 
-  appendMarkerArray(createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", 0.0, 0.5, 0.5),
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", lane_id_, 0.5, 0.0, 0.5),
                     &debug_marker_array);
 
+  appendMarkerArray(createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", lane_id_, 0.0, 0.5, 0.5),
+                    &debug_marker_array);
+
+  if (state == IntersectionModule::State::STOP) {
+    appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
+  }
+  
   return debug_marker_array;
 }

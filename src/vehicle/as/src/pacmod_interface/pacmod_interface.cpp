@@ -35,30 +35,18 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
   private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
   private_nh_.param<bool>("enable_steering_rate_control", enable_steering_rate_control_, false);
-  private_nh_.param<double>("vgr_coef_a", vgr_coef_a_, 15.713);  // variable gear ratio coeffs
-  private_nh_.param<double>("vgr_coef_b", vgr_coef_b_, 0.053);   // variable gear ratio coeffs
-  private_nh_.param<double>("vgr_coef_c", vgr_coef_c_, 0.042);   // variable gear ratio coeffs
 
-  /* parameters for accel/brake map */
-  std::string csv_path_accel_map, csv_path_brake_map;
-  private_nh_.param<std::string>("csv_path_accel_map", csv_path_accel_map, std::string("empty"));
-  private_nh_.param<std::string>("csv_path_brake_map", csv_path_brake_map, std::string("empty"));
-  acc_map_initialized_ = true;
-  if (!accel_map_.readAccelMapFromCSV(csv_path_accel_map)) {
-    ROS_ERROR("Cannot read accelmap. csv path = %s. stop calculation.", csv_path_accel_map.c_str());
-    acc_map_initialized_ = false;
-  }
-  if (!brake_map_.readBrakeMapFromCSV(csv_path_brake_map)) {
-    ROS_ERROR("Cannot read brakemap. csv path = %s. stop calculation.", csv_path_brake_map.c_str());
-    acc_map_initialized_ = false;
-  }
 
   /* parameters for emergency stop */
-  private_nh_.param<double>("acc_emergency", acc_emergency_, -2.0);
-
-  /* parameters for limitter */
+  private_nh_.param<double>("emergency_brake", emergency_brake_, 0.7);
   private_nh_.param<double>("max_throttle", max_throttle_, 0.2);
   private_nh_.param<double>("max_brake", max_brake_, 0.8);
+
+  private_nh_.param<double>("vgr_coef_a_", vgr_coef_a_, 15.713);
+  private_nh_.param<double>("vgr_coef_b_", vgr_coef_b_, 0.053);
+  private_nh_.param<double>("vgr_coef_c_", vgr_coef_c_, 0.042);
+
+  /* parameters for limitter */
   private_nh_.param<double>("max_steering_wheel", max_steering_wheel_, 2.7 * M_PI);
 
   rate_ = new ros::Rate(loop_rate_);
@@ -66,19 +54,19 @@ PacmodInterface::PacmodInterface()
   /* subscribers */
   // From autoware
   vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
+  pedal_cmd_sub_ = nh_.subscribe("/vehicle/pedal_cmd", 1, &PacmodInterface::callbackPedalCmd, this);
   turn_signal_cmd_sub_ = nh_.subscribe("/vehicle/turn_signal_cmd", 1, &PacmodInterface::callbackTurnSignalCmd, this);
-  shift_cmd_sub_ = nh_.subscribe("/vehicle/shift_cmd", 1, &PacmodInterface::callbackShiftCmd, this);
   engage_cmd_sub_ = nh_.subscribe("/vehicle/engage", 1, &PacmodInterface::callbackEngage, this);
 
   // From pacmod
   steer_wheel_rpt_sub_ =
-      new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "pacmod/parsed_tx/steer_rpt", 1);
+      new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "/pacmod/parsed_tx/steer_rpt", 1);
   wheel_speed_rpt_sub_ =
-      new message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>(nh_, "pacmod/parsed_tx/wheel_speed_rpt", 1);
-  accel_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "pacmod/parsed_tx/accel_rpt", 1);
-  brake_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "pacmod/parsed_tx/brake_rpt", 1);
-  shift_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptInt>(nh_, "pacmod/parsed_tx/shift_rpt", 1);
-  global_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::GlobalRpt>(nh_, "pacmod/parsed_tx/global_rpt", 1);
+      new message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>(nh_, "/pacmod/parsed_tx/wheel_speed_rpt", 1);
+  accel_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "/pacmod/parsed_tx/accel_rpt", 1);
+  brake_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(nh_, "/pacmod/parsed_tx/brake_rpt", 1);
+  shift_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptInt>(nh_, "/pacmod/parsed_tx/shift_rpt", 1);
+  global_rpt_sub_ = new message_filters::Subscriber<pacmod_msgs::GlobalRpt>(nh_, "/pacmod/parsed_tx/global_rpt", 1);
   pacmod_feedbacks_sync_ = new message_filters::Synchronizer<PacmodFeedbacksSyncPolicy>(
       PacmodFeedbacksSyncPolicy(10), *steer_wheel_rpt_sub_, *wheel_speed_rpt_sub_, *accel_rpt_sub_, *brake_rpt_sub_,
       *shift_rpt_sub_, *global_rpt_sub_);
@@ -96,17 +84,12 @@ PacmodInterface::PacmodInterface()
   // To Autoware
   vehicle_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 1);
   steering_status_pub_ = nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
-  shift_status_pub_ = nh_.advertise<autoware_vehicle_msgs::Shift>("/vehicle/status/shift", 1);
+  shift_status_pub_ = nh_.advertise<autoware_vehicle_msgs::ShiftStamped>("/vehicle/status/shift", 1);
 }
 
 PacmodInterface::~PacmodInterface() {}
 
 void PacmodInterface::run() {
-  if (!acc_map_initialized_) {
-    ROS_ERROR("Accel/brake map initialization error. stop calculation.");
-    return;
-  }
-
   while (ros::ok()) {
     ros::spinOnce();
     publishCommands();
@@ -114,12 +97,13 @@ void PacmodInterface::run() {
   }
 }
 
-void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStamped::ConstPtr &msg) {
-  command_received_time_ = ros::Time::now();
-  vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommandStamped>(*msg);
+void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr &msg) {
+  vehicle_command_received_time_ = ros::Time::now();
+  vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
 }
-void PacmodInterface::callbackShiftCmd(const autoware_vehicle_msgs::Shift::ConstPtr &msg) {
-  shift_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::Shift>(*msg);
+void PacmodInterface::callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr &msg) {
+  pedal_command_received_time_ = ros::Time::now();
+  pedal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::Pedal>(*msg);
 }
 void PacmodInterface::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr &msg) {
   turn_signal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::TurnSignal>(*msg);
@@ -135,7 +119,6 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
                                         const pacmod_msgs::SystemRptIntConstPtr &shift_rpt,
                                         const pacmod_msgs::GlobalRptConstPtr &global_rpt) {
   is_pacmod_rpt_received_ = true;
-
   steer_wheel_rpt_ptr_ = std::make_shared<pacmod_msgs::SystemRptFloat>(*steer_wheel_rpt);
   wheel_speed_rpt_ptr_ = std::make_shared<pacmod_msgs::WheelSpeedRpt>(*wheel_speed_rpt);
   accel_rpt_ptr_ = std::make_shared<pacmod_msgs::SystemRptFloat>(*accel_rpt);
@@ -168,9 +151,9 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
   vehicle_twist_pub_.publish(twist);
 
   /* publish current shift */
-  autoware_vehicle_msgs::Shift shift_msg;
+  autoware_vehicle_msgs::ShiftStamped shift_msg;
   shift_msg.header = header;
-  shift_msg.data = toAutowareShiftCmd(*shift_rpt_ptr_);
+  shift_msg.shift.data = toAutowareShiftCmd(*shift_rpt_ptr_);
   shift_status_pub_.publish(shift_msg);
 
   /* publish current steernig angle */
@@ -182,37 +165,37 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
 
 void PacmodInterface::publishCommands() {
   /* guard */
-  if (vehicle_cmd_ptr_ == nullptr || !is_pacmod_rpt_received_) {
+  if (!vehicle_cmd_ptr_ || !pedal_cmd_ptr_ || !is_pacmod_rpt_received_) {
+    ROS_INFO_DELAYED_THROTTLE(1.0, "[pacmod interface] vehicle_cmd = %d, pedal_cmd = %d, pacmod_msgs = %d",
+                              vehicle_cmd_ptr_ != nullptr, pedal_cmd_ptr_ != nullptr, is_pacmod_rpt_received_);
     return;
   }
 
   const ros::Time current_time = ros::Time::now();
 
-  double desired_acc = vehicle_cmd_ptr_->command.control.acceleration;
+  double desired_throttle = pedal_cmd_ptr_->throttle;
+  double desired_brake = pedal_cmd_ptr_->brake;
 
   /* check emergency and timeout */
-  const bool emergency = (vehicle_cmd_ptr_->command.emergency == 1);
-  const double delta_time_ms = (ros::Time::now() - command_received_time_).toSec() * 1000.0;
-  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (delta_time_ms > command_timeout_ms_) : false;
+  const bool emergency = (vehicle_cmd_ptr_->emergency == 1);
+  const double vehicle_cmd_delta_time_ms = (ros::Time::now() - vehicle_command_received_time_).toSec() * 1000.0;
+  const double pedal_cmd_delta_time_ms = (ros::Time::now() - pedal_command_received_time_).toSec() * 1000.0;
+  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (vehicle_cmd_delta_time_ms > command_timeout_ms_) ||
+                                                            (pedal_cmd_delta_time_ms > command_timeout_ms_)
+                                                      : false;
   if (emergency || timeouted) {
     ROS_ERROR("[pacmod interface] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
-    desired_acc = acc_emergency_;  // use emergency acceleration
+    desired_throttle = 0.0;
+    desired_brake = emergency_brake_;
   }
 
   const double current_velocity = calculateVehicleVelocity(*wheel_speed_rpt_ptr_, *shift_rpt_ptr_);
   const double curr_steer_wheel = steer_wheel_rpt_ptr_->output;
 
-  /* calculate throttle and brake command from accel map */
-  double desired_throttle = 0.0;
-  double desired_brake = 0.0;
-  calculateAccelMap(current_velocity, desired_acc, desired_throttle, desired_brake);
-  ROS_INFO_COND(show_debug_info_, "[Pacmod Interface] current_velocity = %f, curr_steer_wheel = %f, desired_acc = %f",
-                current_velocity, curr_steer_wheel, desired_acc);
-
   /* calculate desired steering wheel */
   double adaptive_gear_ratio = calculateVariableGearRatio(current_velocity, curr_steer_wheel);
   double desired_steer_wheel =
-      (vehicle_cmd_ptr_->command.control.steering_angle + steering_offset_) * adaptive_gear_ratio;
+      (vehicle_cmd_ptr_->control.steering_angle + steering_offset_) * adaptive_gear_ratio;
   desired_steer_wheel = std::min(std::max(desired_steer_wheel, -max_steering_wheel_), max_steering_wheel_);
 
   /* check clear flag */
@@ -229,14 +212,14 @@ void PacmodInterface::publishCommands() {
   /* check shift change */
   const double brake_for_shift_trans = 0.7;
   uint16_t desired_shift = shift_rpt_ptr_->output;
-  if (shift_cmd_ptr_ != nullptr && std::fabs(current_velocity) < 0.1) {  // velocity is low -> the shift can be changed
-    if (toPacmodShiftCmd(*shift_cmd_ptr_) != shift_rpt_ptr_->output)  {  // need shift change.
+  if (std::fabs(current_velocity) < 0.1) {  // velocity is low -> the shift can be changed
+    if (toPacmodShiftCmd(vehicle_cmd_ptr_->shift) != shift_rpt_ptr_->output)  {  // need shift change.
       desired_throttle = 0.0;
       desired_brake = brake_for_shift_trans;  // set brake to change the shift
-      desired_shift = toPacmodShiftCmd(*shift_cmd_ptr_);
+      desired_shift = toPacmodShiftCmd(vehicle_cmd_ptr_->shift);
       ROS_INFO_COND(show_debug_info_,
                     "[Pacmod Interface] Doing shift change. current = %d, desired = %d. set brake_cmd to %f",
-                    shift_rpt_ptr_->output, toPacmodShiftCmd(*shift_cmd_ptr_), desired_brake);
+                    shift_rpt_ptr_->output, toPacmodShiftCmd(vehicle_cmd_ptr_->shift), desired_brake);
     }
   }
 
@@ -248,7 +231,7 @@ void PacmodInterface::publishCommands() {
   accel_cmd.ignore_overrides = false;
   accel_cmd.clear_override = clear_override;
   accel_cmd.clear_faults = false;
-  accel_cmd.command = desired_throttle;
+  accel_cmd.command = std::min(desired_throttle, max_throttle_);
   accel_cmd_pub_.publish(accel_cmd);
 
   /* publish brake cmd */
@@ -259,7 +242,7 @@ void PacmodInterface::publishCommands() {
   brake_cmd.ignore_overrides = false;
   brake_cmd.clear_override = clear_override;
   brake_cmd.clear_faults = false;
-  brake_cmd.command = desired_brake;
+  brake_cmd.command = std::min(desired_brake, max_brake_);
   brake_cmd_pub_.publish(brake_cmd);
 
   /* publish steering cmd */
@@ -269,7 +252,7 @@ void PacmodInterface::publishCommands() {
   double desired_rotation_rate;  // [rad/s]
   if (enable_steering_rate_control_) {
     const double rate_min = 0.5;
-    desired_rotation_rate = 3.0 * vehicle_cmd_ptr_->command.control.steering_angle * adaptive_gear_ratio;
+    desired_rotation_rate = 3.0 * vehicle_cmd_ptr_->control.steering_angle * adaptive_gear_ratio;
     desired_rotation_rate = std::min(std::max(std::fabs(desired_rotation_rate), steer_rate_min), steer_rate_max);
   } else {
     desired_rotation_rate = steer_rate_max;
@@ -315,19 +298,6 @@ double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRp
   double sign = (shift_rpt.output == pacmod_msgs::SystemRptInt::SHIFT_REVERSE) ? -1 : 1;
   double vel = (wheel_speed_rpt.rear_left_wheel_speed + wheel_speed_rpt.rear_right_wheel_speed) * 0.5 * tire_radius_;
   return sign * vel;
-}
-
-bool PacmodInterface::calculateAccelMap(const double current_velocity, const double &desired_acc,
-                                        double &desired_throttle, double &desired_brake) {
-  // throttle mode
-  if (!accel_map_.getThrottle(desired_acc, std::abs(current_velocity), desired_throttle)) {
-    // brake mode
-    desired_throttle = 0.0;
-    brake_map_.getBrake(desired_acc, std::abs(current_velocity), desired_brake);
-  }
-  desired_throttle = std::min(std::max(desired_throttle, 0.0), max_throttle_);
-  desired_brake = std::min(std::max(desired_brake, 0.0), max_brake_);
-  return true;
 }
 
 double PacmodInterface::calculateVariableGearRatio(const double vel, const double steer_wheel) {

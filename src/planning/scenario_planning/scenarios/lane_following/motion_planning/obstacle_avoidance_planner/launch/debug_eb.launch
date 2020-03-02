@@ -6,11 +6,14 @@
       <!-- motion planning module -->
       <group ns="motion_planning">
         <arg name="input_path_topic" default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
+        <remap from="~input/path" to="$(arg input_path_topic)" />
+        <remap from="~output/path" to="obstacle_avoidance_planner/trajectory" />
         <arg name="is_debug_clearance_map_mode" default="false" />
         <arg name="is_debug_drivable_area_mode" default="false" />
         <arg name="is_publishing_clearance_map_as_occupancy_grid" default="true" />
+        <arg name="enable_avoidance" default="true" />
         <arg name="forward_fixing_distance" default="20" />
-        <arg name="backward_fixing_distance" default="15" />
+        <arg name="backward_fixing_distance" default="10" />
         <arg name="detecting_objects_radius_from_ego" default="50" />
         <arg name="detecting_objects_radius_around_path_point" default="2.5" />
         <arg name="number_of_backward_path_points_for_detecting_objects" default="5" />
@@ -22,13 +25,12 @@
         <arg name="exploring_goal_clearance_from_obstacle" default="3.9" />
         <arg name="min_distance_threshold_when_switching_avoindance_to_path_following" default="0.1" />
         <arg name="min_cos_similarity_when_switching_avoindance_to_path_following" default="0.95" />
-        <node pkg="path_planner" type="eb_path_planner_node" 
-          name="eb_path_planner_node" output="screen">
-          <remap from="~input/path" to="$(arg input_path_topic)" />
-          <remap from="~output/path" to="path_planner/trajectory" />
+        <node pkg="obstacle_avoidance_planner" type="eb_path_planner_node" 
+          name="obstacle_avoidance_planner" output="log">
           <param name="is_debug_clearance_map_mode" value="$(arg is_debug_clearance_map_mode)"/>
           <param name="is_debug_drivable_area_mode" value="$(arg is_debug_drivable_area_mode)"/>
           <param name="is_publishing_clearance_map_as_occupancy_grid" value="$(arg is_publishing_clearance_map_as_occupancy_grid)"/>
+          <param name="enable_avoidance" value="$(arg enable_avoidance)"/>
           <param name="forward_fixing_distance" value="$(arg forward_fixing_distance)"/>
           <param name="backward_fixing_distance" value="$(arg backward_fixing_distance)"/>
           <param name="detecting_objects_radius_from_ego" value="$(arg detecting_objects_radius_from_ego)"/>

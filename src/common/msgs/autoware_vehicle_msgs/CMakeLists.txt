@@ -14,10 +14,9 @@ add_message_files(
         DIRECTORY msg
         FILES
             VehicleCommand.msg
-            VehicleCommandStamped.msg
-            VehicleStatus.msg
-            VehicleStatusStamped.msg
+            Pedal.msg
             Shift.msg
+            ShiftStamped.msg
             ControlMode.msg
             TurnSignal.msg
             Steering.msg

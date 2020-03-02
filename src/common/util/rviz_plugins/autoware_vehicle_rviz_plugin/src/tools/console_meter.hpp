@@ -21,7 +21,7 @@
 #include <deque>
 #include <memory>
 
-#include "autoware_vehicle_msgs/VehicleStatusStamped.h"
+#include "geometry_msgs/TwistStamped.h"
 
 #include "jsk_overlay_utils.hpp"
 #endif

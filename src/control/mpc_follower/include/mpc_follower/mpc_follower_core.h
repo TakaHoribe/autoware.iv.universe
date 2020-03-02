@@ -43,6 +43,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <mpc_follower/MPCFollowerConfig.h>
+
 #include <osqp_interface/osqp_interface.h>
 
 #include <autoware_control_msgs/ControlCommandStamped.h>
@@ -79,7 +82,7 @@ class MPCFollower {
   ros::NodeHandle nh_;               //!< @brief ros node handle
   ros::NodeHandle pnh_;              //!< @brief private ros node handle
   ros::Publisher pub_ctrl_cmd_;      //!< @brief topic publisher for control command
-  ros::Publisher pub_twist_cmd_;     //!< @brief topic publisher for twist command
+  ros::Publisher pub_debug_steer_cmd_;      //!< @brief topic publisher for control command
   ros::Subscriber sub_ref_path_;     //!< @brief topic subscriber for reference waypoints
   ros::Subscriber sub_steering_;     //!< @brief subscriber for currrent steering
   ros::Subscriber sub_current_vel_;  //!< @brief subscriber for currrent velocity
@@ -107,25 +110,24 @@ class MPCFollower {
   bool enable_path_smoothing_;      //< @brief flag for path smoothing
   bool enable_yaw_recalculation_;   //< @brief flag for recalculation of yaw angle after resampling
   int path_filter_moving_ave_num_;  //< @brief param of moving average filter for path smoothing
-  int path_smoothing_times_;        //< @brief number of times of applying path smoothing filter
   int curvature_smoothing_num_;     //< @brief point-to-point index distance used in curvature calculation
   double traj_resample_dist_;       //< @brief path resampling interval [m]
 
   struct MPCParam {
-    int prediction_horizon;                          //< @brief prediction horizon step
-    double prediction_dt;                            //< @brief prediction horizon sampleing time
-    double weight_lat_error;                         //< @brief lateral error weight in matrix Q
-    double weight_heading_error;                     //< @brief heading error weight in matrix Q
-    double weight_heading_error_squared_vel_coeff;   //< @brief heading error * velocity weight in matrix Q
-    double weight_steering_input;                    //< @brief steering error weight in matrix R
-    double weight_steering_input_squared_vel_coeff;  //< @brief steering error * velocity weight in matrix R
-    double weight_lat_jerk;                          //< @brief lateral jerk weight in matrix R
-    double weight_steer_rate;                        //< @brief steering rate weight in matrix R
-    double weight_steer_acc;                         //< @brief steering angle acceleration weight in matrix R
-    double weight_terminal_lat_error;                //< @brief terminal lateral error weight in matrix Q
-    double weight_terminal_heading_error;            //< @brief terminal heading error weight in matrix Q
-    double zero_ff_steer_deg;                        //< @brief threshold that feed-forward angle becomes zero
-    double input_delay;                  //< @brief delay time for steering input to be compensated
+    int prediction_horizon;                    //< @brief prediction horizon step
+    double prediction_dt;                      //< @brief prediction horizon sampleing time
+    double weight_lat_error;                   //< @brief lateral error weight in matrix Q
+    double weight_heading_error;               //< @brief heading error weight in matrix Q
+    double weight_heading_error_squared_vel;   //< @brief heading error * velocity weight in matrix Q
+    double weight_steering_input;              //< @brief steering error weight in matrix R
+    double weight_steering_input_squared_vel;  //< @brief steering error * velocity weight in matrix R
+    double weight_lat_jerk;                    //< @brief lateral jerk weight in matrix R
+    double weight_steer_rate;                  //< @brief steering rate weight in matrix R
+    double weight_steer_acc;                   //< @brief steering angle acceleration weight in matrix R
+    double weight_terminal_lat_error;          //< @brief terminal lateral error weight in matrix Q
+    double weight_terminal_heading_error;      //< @brief terminal heading error weight in matrix Q
+    double zero_ff_steer_deg;                  //< @brief threshold that feed-forward angle becomes zero
+    double input_delay;                        //< @brief delay time for steering input to be compensated
   };
   MPCParam mpc_param_;  // for mpc design parameter
 
@@ -138,6 +140,7 @@ class MPCFollower {
     Eigen::MatrixXd R1ex;
     Eigen::MatrixXd R2ex;
     Eigen::MatrixXd Urefex;
+    Eigen::MatrixXd Yrefex;
   };
 
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;                //!< @brief current measured pose
@@ -239,6 +242,23 @@ class MPCFollower {
   void addSteerWeightR(Eigen::MatrixXd* R) const;
   void addSteerWeightF(Eigen::MatrixXd* f) const;
 
+  /* dynamic reconfigure */
+  dynamic_reconfigure::Server<mpc_follower::MPCFollowerConfig> dyncon_server_;
+  void dynamicRecofCallback(mpc_follower::MPCFollowerConfig& config, uint32_t level) {
+    mpc_param_.prediction_horizon = config.mpc_prediction_horizon;
+    mpc_param_.prediction_dt = config.mpc_prediction_dt;
+    mpc_param_.weight_lat_error = config.mpc_weight_lat_error;
+    mpc_param_.weight_heading_error = config.mpc_weight_heading_error;
+    mpc_param_.weight_heading_error_squared_vel = config.mpc_weight_heading_error_squared_vel;
+    mpc_param_.weight_steering_input = config.mpc_weight_steering_input;
+    mpc_param_.weight_steering_input_squared_vel = config.mpc_weight_steering_input_squared_vel;
+    mpc_param_.weight_lat_jerk = config.mpc_weight_lat_jerk;
+    mpc_param_.weight_steer_rate = config.mpc_weight_steer_rate;
+    mpc_param_.weight_steer_acc = config.mpc_weight_steer_acc;
+    mpc_param_.weight_terminal_lat_error = config.mpc_weight_terminal_lat_error;
+    mpc_param_.weight_terminal_heading_error = config.mpc_weight_terminal_heading_error;
+    mpc_param_.zero_ff_steer_deg = config.mpc_zero_ff_steer_deg;
+  }
 
   /* ---------- debug ---------- */
   bool show_debug_info_;  //!< @brief flag to display debug info

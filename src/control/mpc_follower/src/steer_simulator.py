@@ -3,7 +3,7 @@
 
 import rospy
 import math
-from autoware_vehicle_msgs.msg import VehicleCommandStamped
+from autoware_vehicle_msgs.msg import VehicleCommand
 from autoware_vehicle_msgs.msg import Steering
 
 # delay_compensation_time = 0.2 #TODO: ->rosparam (subscribe?)
@@ -21,20 +21,20 @@ class SimulateSteer():
         self.command_array = []
 
         self.subcmd = rospy.Subscriber(
-            "/control/vehicle_cmd", VehicleCommandStamped, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True)
+            "/control/vehicle_cmd", VehicleCommand, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True)
 
         self.substatus = rospy.Subscriber(
-            "/vehicle/status/steering", Steering, self.CallBackVehicleStatus, queue_size=1, tcp_nodelay=True)
+            "/vehicle/status/steering", Steering, self.CallBackSteering, queue_size=1, tcp_nodelay=True)
 
         self.pubstatus = rospy.Publisher(
             "/debug/mpc_predicted_steering", Steering, queue_size=1)
 
     def CallBackVehicleCmd(self, cmdmsg):
-        steercmd = cmdmsg.command.control.steering_angle
+        steercmd = cmdmsg.control.steering_angle
         self.StackCurrentSteer(steercmd, rospy.Time.now().to_sec())
         self.CalcCurrentSteer()
 
-    def CallBackVehicleStatus(self, statusmsg):
+    def CallBackSteering(self, statusmsg):
         steer = statusmsg.data
         if self.current_time is None:
             self.current_steer = steer

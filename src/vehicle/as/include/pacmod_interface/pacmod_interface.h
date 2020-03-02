@@ -38,13 +38,12 @@
 #include <pacmod_msgs/SystemRptInt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/ShiftStamped.h>
+#include <autoware_vehicle_msgs/Pedal.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
-#include <autoware_vehicle_msgs/VehicleCommandStamped.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
 
-#include <accel_map_converter/accel_map.h>
-#include <accel_map_converter/brake_map.h>
 
 class PacmodInterface {
  public:
@@ -66,8 +65,8 @@ class PacmodInterface {
   /* subscribers */
   // From Autoware
   ros::Subscriber vehicle_cmd_sub_;
+  ros::Subscriber pedal_cmd_sub_;
   ros::Subscriber turn_signal_cmd_sub_;
-  ros::Subscriber shift_cmd_sub_;
   ros::Subscriber engage_cmd_sub_;
 
   // From Pacmod
@@ -108,15 +107,15 @@ class PacmodInterface {
   double vgr_coef_b_;       // variable gear ratio coeffs
   double vgr_coef_c_;       // variable gear ratio coeffs
 
-  double acc_emergency_;       // acceleration when emergency [m/s^2]
+  double emergency_brake_;     // brake command when emergency [m/s^2]
   double max_throttle_;        // max throttle [0~1]
   double max_brake_;           // max throttle [0~1]
   double max_steering_wheel_;  // max steering wheel angle [rad]
   bool enable_steering_rate_control_; // use steering angle speed for command [rad/s]
 
   /* input values */
-  std::shared_ptr<autoware_vehicle_msgs::VehicleCommandStamped> vehicle_cmd_ptr_;
-  std::shared_ptr<autoware_vehicle_msgs::Shift> shift_cmd_ptr_;
+  std::shared_ptr<autoware_vehicle_msgs::VehicleCommand> vehicle_cmd_ptr_;
+  std::shared_ptr<autoware_vehicle_msgs::Pedal> pedal_cmd_ptr_;
   std::shared_ptr<autoware_vehicle_msgs::TurnSignal> turn_signal_cmd_ptr_;
 
   std::shared_ptr<pacmod_msgs::SystemRptFloat> steer_wheel_rpt_ptr_;  // [rad]
@@ -127,15 +126,13 @@ class PacmodInterface {
   std::shared_ptr<pacmod_msgs::GlobalRpt> global_rpt_ptr_;      // [m/s]
   bool engage_cmd_;
   bool prev_engage_cmd_;
-  ros::Time command_received_time_;
+  ros::Time vehicle_command_received_time_;
+  ros::Time pedal_command_received_time_;
 
-  AccelMap accel_map_;
-  BrakeMap brake_map_;
-  bool acc_map_initialized_;
 
   /* callbacks */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandStamped::ConstPtr &msg);
-  void callbackShiftCmd(const autoware_vehicle_msgs::Shift::ConstPtr &msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr &msg);
+  void callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr &msg);
   void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr &msg);
   void callbackEngage(const std_msgs::BoolConstPtr &msg);
   void callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr &steer_wheel_rpt,
@@ -149,8 +146,6 @@ class PacmodInterface {
   void publishCommands();
   double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt,
                                   const pacmod_msgs::SystemRptInt &shift_rpt);
-  bool calculateAccelMap(const double curr_wheel_speed, const double &desired_acc, double &desired_throttle,
-                         double &desired_brake);
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
   uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift);
   int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shift);

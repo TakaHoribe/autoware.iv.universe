@@ -15,7 +15,7 @@ import roslib
 import tf
 import signal
 from autoware_msgs.msg import VehicleCmd
-from autoware_vehicle_msgs.msg import Steering, VehicleCommandStamped, Shift
+from autoware_vehicle_msgs.msg import Steering, VehicleCommand, Shift
 from geometry_msgs.msg import TwistStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, PointCloud2
@@ -66,10 +66,7 @@ class LgsvlConnectPublisher:
         # for Problem3: publish cmd for LG-simulator
         self.pubcmd = rospy.Publisher("/vehicle_cmd", VehicleCmd, queue_size=1)
         self.subcmd = rospy.Subscriber(
-            "/control/vehicle_cmd", VehicleCommandStamped, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True
-        )
-        self.subshift = rospy.Subscriber(
-            "/vehicle/shift_cmd", Shift, self.CallBackShift, queue_size=1, tcp_nodelay=True
+            "/control/vehicle_cmd", VehicleCommand, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True
         )
 
         # for Problem4: publish /vehicle/status/steering
@@ -126,9 +123,6 @@ class LgsvlConnectPublisher:
         pclmsg.header.stamp = rospy.Time.now()
         self.pubpcl.publish(pclmsg)
 
-    def CallBackShift(self, shiftmsg):
-        self.shift = shiftmsg.data
-
     def CallBackVehicleCmd(
         self, vcmdmsg
     ):  # Problem3: The output msg type of autoware is different from the input msg type of LG-simulator
@@ -136,31 +130,31 @@ class LgsvlConnectPublisher:
         cmdmsg.header.stamp = rospy.Time.now()
         cmdmsg.header.frame_id = "base_link"
         cmdmsg.twist_cmd.header.stamp = rospy.Time.now()
-        # cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.velocity#Velocity. Fine.
-        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.command.control.acceleration * self.accel_command_offset_rate + (
+        # cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.control.velocity#Velocity. Fine.
+        cmdmsg.twist_cmd.twist.linear.x = vcmdmsg.control.acceleration * self.accel_command_offset_rate + (
             self.v / self.v_offset_rate
         )
 
         steer = self.cramp_steering(
-            vcmdmsg.command.control.steering_angle
+            vcmdmsg.control.steering_angle
         )  # prevent from sudden change of steering in LG-simulator
 
         # Angular Velocity
         if self.v != 0:
-            # cmdmsg.twist_cmd.twist.angular.z = math.tan(vcmdmsg.command.control.steering_angle)
+            # cmdmsg.twist_cmd.twist.angular.z = math.tan(vcmdmsg.control.steering_angle)
             cmdmsg.twist_cmd.twist.angular.z = steer * (self.steer_command_offset_rate * 2.0) / self.w_offset_rate
         else:
             cmdmsg.twist_cmd.twist.angular.z = 0.0
 
-        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.command.control.velocity  # Velocity(no use)
+        cmdmsg.ctrl_cmd.linear_velocity = vcmdmsg.control.velocity  # Velocity(no use)
         cmdmsg.ctrl_cmd.linear_acceleration = (
-            vcmdmsg.command.control.acceleration * self.accel_command_offset_rate
+            vcmdmsg.control.acceleration * self.accel_command_offset_rate
         )  # accel
         cmdmsg.ctrl_cmd.steering_angle = -steer * self.steer_command_offset_rate  # steer
-        cmdmsg.emergency = vcmdmsg.command.emergency
+        cmdmsg.emergency = vcmdmsg.emergency
 
         if self.throttle_brake_mode:
-            if self.shift == REVERSE:
+            if vcmdmsg.shift == REVERSE:
                 cmdmsg.gear = 63  # reverse
             else:
                 cmdmsg.gear = 64  # drive

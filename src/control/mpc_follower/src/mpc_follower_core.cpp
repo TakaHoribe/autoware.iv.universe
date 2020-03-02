@@ -25,29 +25,12 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
   pnh_.param<bool>("enable_path_smoothing", enable_path_smoothing_, true);
   pnh_.param<bool>("enable_yaw_recalculation", enable_yaw_recalculation_, false);
   pnh_.param<int>("path_filter_moving_ave_num", path_filter_moving_ave_num_, 35);
-  pnh_.param<int>("path_smoothing_times", path_smoothing_times_, 1);
   pnh_.param<int>("curvature_smoothing_num", curvature_smoothing_num_, 35);
   pnh_.param<double>("traj_resample_dist", traj_resample_dist_, 0.1);  // [m]
   pnh_.param<double>("admisible_position_error", admisible_position_error_, 5.0);
   pnh_.param<double>("admisible_yaw_error", admisible_yaw_error_, M_PI_2);
 
   /* mpc parameters */
-  pnh_.param<int>("mpc_prediction_horizon", mpc_param_.prediction_horizon, 70);
-  pnh_.param<double>("mpc_prediction_dt", mpc_param_.prediction_dt, 0.1);
-  pnh_.param<double>("mpc_weight_lat_error", mpc_param_.weight_lat_error, 1.0);
-  pnh_.param<double>("mpc_weight_heading_error", mpc_param_.weight_heading_error, 0.0);
-  pnh_.param<double>("mpc_weight_heading_error_squared_vel_coeff", mpc_param_.weight_heading_error_squared_vel_coeff,
-                     0.3);
-  pnh_.param<double>("mpc_weight_steering_input", mpc_param_.weight_steering_input, 1.0);
-  pnh_.param<double>("mpc_weight_steering_input_squared_vel_coeff", mpc_param_.weight_steering_input_squared_vel_coeff,
-                     0.25);
-  pnh_.param<double>("mpc_weight_lat_jerk", mpc_param_.weight_lat_jerk, 0.0);
-  pnh_.param<double>("mpc_weight_steer_rate", mpc_param_.weight_steer_rate, 0.0);
-  pnh_.param<double>("mpc_weight_steer_acc", mpc_param_.weight_steer_acc, 0.0);
-  pnh_.param<double>("mpc_weight_terminal_lat_error", mpc_param_.weight_terminal_lat_error, 1.0);
-  pnh_.param<double>("mpc_weight_terminal_heading_error", mpc_param_.weight_terminal_heading_error, 0.1);
-  pnh_.param<double>("mpc_zero_ff_steer_deg", mpc_param_.zero_ff_steer_deg, 2.0);
-
   double steer_lim_deg, steer_rate_lim_degs;
   pnh_.param<double>("steer_lim_deg", steer_lim_deg, 35.0);
   pnh_.param<double>("steer_rate_lim_degs", steer_rate_lim_degs, 150.0);
@@ -121,7 +104,7 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
 
   /* set up ros system */
   timer_control_ = nh_.createTimer(ros::Duration(ctrl_period_), &MPCFollower::timerCallback, this);
-  pub_twist_cmd_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/twist_raw", 1);
+  pub_debug_steer_cmd_ = pnh_.advertise<autoware_vehicle_msgs::Steering>("debug/steering_cmd", 1);
   pub_ctrl_cmd_ = pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
   sub_ref_path_ = pnh_.subscribe("input/reference_trajectory", 1, &MPCFollower::callbackTrajectory, this);
   sub_current_vel_ = pnh_.subscribe("input/current_velocity", 1, &MPCFollower::callbackCurrentVelocity, this);
@@ -142,6 +125,11 @@ MPCFollower::MPCFollower() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
   pub_debug_marker_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 10);
   pub_debug_mpc_calc_time_ = pnh_.advertise<std_msgs::Float32>("debug/mpc_calc_time", 1);
   pub_debug_values_ = pnh_.advertise<std_msgs::Float32MultiArray>("debug/debug_values", 1);
+
+  /* dynamic reconfigure */
+  dynamic_reconfigure::Server<mpc_follower::MPCFollowerConfig>::CallbackType dyncon_f =
+      boost::bind(&MPCFollower::dynamicRecofCallback, this, _1, _2);
+  dyncon_server_.setCallback(dyncon_f);
 }
 
 MPCFollower::~MPCFollower() {
@@ -275,7 +263,7 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand* ctrl_cmd) 
   {
     double curr_v = current_velocity_ptr_->twist.linear.x;
     double nearest_k = 0.0;
-    LinearInterpolate::interpolate(ref_traj_.relative_time, ref_traj_.k, mpc_start_time, nearest_k);
+    LinearInterpolate::interpolate(ref_traj_.relative_time, ref_traj_.k, nearest_time, nearest_k);
 
     MPCTrajectory tmp_traj = ref_traj_;
     MPCUtils::calcTrajectoryCurvature(1, &tmp_traj);
@@ -484,8 +472,8 @@ MPCFollower::MPCMatrix MPCFollower::generateMPCMatrix(const MPCTrajectory& refer
       Q_adaptive(0, 0) = mpc_param_.weight_terminal_lat_error;
       Q_adaptive(1, 1) = mpc_param_.weight_terminal_heading_error;
     }
-    Q_adaptive(1, 1) += ref_vx_squared * mpc_param_.weight_heading_error_squared_vel_coeff;
-    R_adaptive(0, 0) += ref_vx_squared * mpc_param_.weight_steering_input_squared_vel_coeff;
+    Q_adaptive(1, 1) += ref_vx_squared * mpc_param_.weight_heading_error_squared_vel;
+    R_adaptive(0, 0) += ref_vx_squared * mpc_param_.weight_steering_input_squared_vel;
 
     /* update mpc matrix */
     int idx_x_i = i * DIM_X;
@@ -571,6 +559,13 @@ bool MPCFollower::executeOptimization(const MPCMatrix& m, const Eigen::VectorXd&
     return false;
   }
 
+  if (m.Aex.array().isInf().any() || m.Bex.array().isInf().any() || m.Cex.array().isInf().any() ||
+      m.Wex.array().isInf().any() || m.Qex.array().isInf().any() || m.R1ex.array().isInf().any() ||
+      m.R2ex.array().isInf().any() || m.Urefex.array().isInf().any()) {
+    ROS_WARN_DELAYED_THROTTLE(1.0, "[MPC] model matrix includes Inf, stop MPC.");
+    return false;
+  }
+
   const int DIM_U_N = mpc_param_.prediction_horizon * vehicle_model_ptr_->getDimU();
 
   // cost function: 1/2 * Uex' * H * Uex + f' * Uex,  H = B' * C' * Q * C * B + R
@@ -583,7 +578,6 @@ bool MPCFollower::executeOptimization(const MPCMatrix& m, const Eigen::VectorXd&
   H.triangularView<Eigen::Lower>() = H.transpose();
   Eigen::MatrixXd f = (m.Cex * (m.Aex * x0 + m.Wex)).transpose() * QCB - m.Urefex.transpose() * m.R1ex;
   addSteerWeightF(&f);
-
 
   Eigen::MatrixXd A = Eigen::MatrixXd::Identity(DIM_U_N, DIM_U_N);
   for (int i = 1; i < DIM_U_N; i++) {
@@ -795,4 +789,9 @@ void MPCFollower::publishCtrlCmd(const autoware_control_msgs::ControlCommand& ct
   pub_ctrl_cmd_.publish(cmd);
 
   steer_cmd_prev_ = ctrl_cmd.steering_angle;
+
+  autoware_vehicle_msgs::Steering s;
+  s.data = ctrl_cmd.steering_angle;
+  s.header = cmd.header;
+  pub_debug_steer_cmd_.publish(s);
 }
