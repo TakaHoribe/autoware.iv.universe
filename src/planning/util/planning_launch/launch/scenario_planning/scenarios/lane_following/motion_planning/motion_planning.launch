@@ -3,15 +3,15 @@
     default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
   <group>
     <remap from="~input/path" to="$(arg input_path_topic)" />
-    <remap from="~output/path" to="path_planner/trajectory" />
-    <include file="$(find path_planner)/launch/path_planner.launch">
+    <remap from="~output/path" to="obstacle_avoidance_planner/trajectory" />
+    <include file="$(find obstacle_avoidance_planner)/launch/obstacle_avoidance_planner.launch">
     </include>
   </group>
 
   <!-- stop velocity planning with obstacle pointcloud info -->
 
   <group>
-    <remap from="~input/trajectory" to="path_planner/trajectory" />
+    <remap from="~input/trajectory" to="obstacle_avoidance_planner/trajectory" />
     <remap from="~input/pointcloud" to="/sensing/lidar/no_ground/pointcloud" />
     <remap from="~output/trajectory" to="trajectory" />
     <include file="$(find obstacle_stop_planner)/launch/obstacle_stop_planner.launch">
