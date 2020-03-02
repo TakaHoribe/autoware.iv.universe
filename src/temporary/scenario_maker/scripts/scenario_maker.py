@@ -137,7 +137,7 @@ class ScenarioMaker:
 
         self.pub_checkpoint = rospy.Publisher("/checkpoint", PoseStamped, queue_size=1)
 
-        self.pub_engage = rospy.Publisher("/autoware/engage", Bool, queue_size=1)
+        self.pub_engage = rospy.Publisher("/autoware/engage", Bool, queue_size=1, latch=True)
 
         """
         self.pub_pedestrianpose = rospy.Publisher("/initial_pedestrian_pose", PoseStamped, queue_size=1)
