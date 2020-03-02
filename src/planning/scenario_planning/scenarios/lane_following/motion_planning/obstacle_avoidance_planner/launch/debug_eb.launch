@@ -26,7 +26,7 @@
         <arg name="min_distance_threshold_when_switching_avoindance_to_path_following" default="0.1" />
         <arg name="min_cos_similarity_when_switching_avoindance_to_path_following" default="0.95" />
         <node pkg="obstacle_avoidance_planner" type="eb_path_planner_node" 
-          name="obstacle_avoidance_planner" output="log">
+          name="obstacle_avoidance_planner" output="screen">
           <param name="is_debug_clearance_map_mode" value="$(arg is_debug_clearance_map_mode)"/>
           <param name="is_debug_drivable_area_mode" value="$(arg is_debug_drivable_area_mode)"/>
           <param name="is_publishing_clearance_map_as_occupancy_grid" value="$(arg is_publishing_clearance_map_as_occupancy_grid)"/>

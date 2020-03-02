@@ -47,7 +47,7 @@ add_dependencies(path_base_planner
 
 add_executable(eb_path_planner_node
   src/eb_path_planner/util.cpp
-  src/eb_path_planner/horibe_interpolate.cpp
+  src/eb_path_planner/spline_interpolate.cpp
   src/eb_path_planner/eb_path_smoother.cpp
   src/eb_path_planner/modify_reference_path.cpp
   src/eb_path_planner/node.cpp
