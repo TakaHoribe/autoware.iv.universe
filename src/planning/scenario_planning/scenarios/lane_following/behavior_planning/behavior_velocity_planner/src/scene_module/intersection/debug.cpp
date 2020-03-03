@@ -151,7 +151,6 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
   appendMarkerArray(createPathMarkerArray(debug_data_.path_raw, "path_raw", lane_id_, 0.0, 1.0, 1.0),
                     &debug_marker_array);
 
-
   appendMarkerArray(
       createPoseMarkerArray(debug_data_.stop_point_pose, state, "stop_point_pose", lane_id_, 1.0, 0.0, 0.0),
       &debug_marker_array);
@@ -177,6 +176,6 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
   if (state == IntersectionModule::State::STOP) {
     appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
   }
-  
+
   return debug_marker_array;
 }

@@ -33,19 +33,18 @@
 #include <geometry_msgs/TwistStamped.h>
 
 #include <rviz/display_context.h>
-#include <rviz/properties/string_property.h>
 #include <rviz/properties/float_property.h>
+#include <rviz/properties/string_property.h>
 
 #include <mission_checkpoint/mission_checkpoint.hpp>
 
-namespace rviz
-{
-MissionCheckpointTool::MissionCheckpointTool()
-{
+namespace rviz {
+MissionCheckpointTool::MissionCheckpointTool() {
   shortcut_key_ = 'c';
 
-  pose_topic_property_ = new StringProperty("Pose Topic", "mission_checkpoint", "The topic on which to publish checkpoint.",
-                                            getPropertyContainer(), SLOT(updateTopic()), this);
+  pose_topic_property_ =
+      new StringProperty("Pose Topic", "mission_checkpoint", "The topic on which to publish checkpoint.",
+                         getPropertyContainer(), SLOT(updateTopic()), this);
   std_dev_x_ =
       new FloatProperty("X std deviation", 0.5, "X standard deviation for checkpoint pose [m]", getPropertyContainer());
   std_dev_y_ =
@@ -59,20 +58,17 @@ MissionCheckpointTool::MissionCheckpointTool()
   position_z_->setMin(0);
 }
 
-void MissionCheckpointTool::onInitialize()
-{
+void MissionCheckpointTool::onInitialize() {
   PoseTool::onInitialize();
   setName("2D Checkpoint Pose");
   updateTopic();
 }
 
-void MissionCheckpointTool::updateTopic()
-{
+void MissionCheckpointTool::updateTopic() {
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic_property_->getStdString(), 1);
 }
 
-void MissionCheckpointTool::onPoseSet(double x, double y, double theta)
-{
+void MissionCheckpointTool::onPoseSet(double x, double y, double theta) {
   const ros::Time current_time = ros::Time::now();
   // pose
   std::string fixed_frame = context_->getFixedFrame().toStdString();

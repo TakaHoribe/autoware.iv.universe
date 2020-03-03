@@ -1,7 +1,7 @@
 #include "obstacle_stop_planner/debug_marker.hpp"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 // namespace {
-  // convertPose2Transform
+// convertPose2Transform
 // }
 namespace motion_planning {
 ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode(const double base_link2front)

@@ -20,7 +20,7 @@ Butterworth2dFilter::Butterworth2dFilter(double dt, double f_cutoff_hz) { initia
 
 Butterworth2dFilter::~Butterworth2dFilter() {}
 
-void Butterworth2dFilter::initialize(const double &dt, const double &f_cutoff_hz) {
+void Butterworth2dFilter::initialize(const double& dt, const double& f_cutoff_hz) {
   y1_ = 0.0;
   y2_ = 0.0;
   u2_ = 0.0;
@@ -37,7 +37,7 @@ void Butterworth2dFilter::initialize(const double &dt, const double &f_cutoff_hz
   b2_ = b0_;
 }
 
-double Butterworth2dFilter::filter(const double &u0) {
+double Butterworth2dFilter::filter(const double& u0) {
   double y0 = (b2_ * u2_ + b1_ * u1_ + b0_ * u0 - a2_ * y2_ - a1_ * y1_) / a0_;
   y2_ = y1_;
   y1_ = y0;
@@ -46,7 +46,7 @@ double Butterworth2dFilter::filter(const double &u0) {
   return y0;
 }
 
-void Butterworth2dFilter::filt_vector(const std::vector<double> &t, std::vector<double> &u) {
+void Butterworth2dFilter::filt_vector(const std::vector<double>& t, std::vector<double>& u) {
   double y1 = u.at(0);
   double y2 = u.at(0);
   double u2 = u.at(0);
@@ -65,7 +65,7 @@ void Butterworth2dFilter::filt_vector(const std::vector<double> &t, std::vector<
 }
 
 // filtering forward and backward direction
-void Butterworth2dFilter::filtfilt_vector(const std::vector<double> &t, std::vector<double> &u) {
+void Butterworth2dFilter::filtfilt_vector(const std::vector<double>& t, std::vector<double>& u) {
   std::vector<double> u_rev(u);
 
   // forward filtering
@@ -82,7 +82,7 @@ void Butterworth2dFilter::filtfilt_vector(const std::vector<double> &t, std::vec
   }
 }
 
-void Butterworth2dFilter::getCoefficients(std::vector<double> &coeffs) {
+void Butterworth2dFilter::getCoefficients(std::vector<double>& coeffs) {
   coeffs.clear();
   coeffs.push_back(a0_);
   coeffs.push_back(a1_);
@@ -93,7 +93,7 @@ void Butterworth2dFilter::getCoefficients(std::vector<double> &coeffs) {
   return;
 }
 
-bool MoveAverageFilter::filt_vector(const int num, std::vector<double> &u) {
+bool MoveAverageFilter::filt_vector(const int num, std::vector<double>& u) {
   if ((int)u.size() < num) {
     // std::cout << "[MovingAverageFilter] vector size is lower than moving average number" << std::endl;
     return false;

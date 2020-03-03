@@ -57,7 +57,7 @@ double calcDist2d(const geometry_msgs::Pose& p0, const geometry_msgs::Pose& p1);
 double calcDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1);
 double calcDist3d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1);
 double calcSquaredDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1);
-double calcLateralError(const geometry_msgs::Pose &ego_pose, const geometry_msgs::Pose &ref_pose);
+double calcLateralError(const geometry_msgs::Pose& ego_pose, const geometry_msgs::Pose& ref_pose);
 
 bool convertToMPCTrajectory(const autoware_planning_msgs::Trajectory& input, MPCTrajectory* output);
 void calcMPCTrajectoryArclength(const MPCTrajectory& trajectory, std::vector<double>* arclength);

@@ -18,30 +18,29 @@
 
 #pragma once
 
-#include "ros/ros.h"
 #include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
+#include "ros/ros.h"
 #include "shape_estimation/vector_map.hpp"
-#include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_listener.h"
 
-class MapCorrectorNode
-{
-  private: // ros
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
-    ros::Subscriber sub_;
-    VectorMap vector_map_;
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
-    bool use_rad_filter_;
-    double rad_threshold_;
+class MapCorrectorNode {
+ private:  // ros
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  ros::Subscriber sub_;
+  VectorMap vector_map_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  bool use_rad_filter_;
+  double rad_threshold_;
 
-  public:
-    MapCorrectorNode();
+ public:
+  MapCorrectorNode();
 
-    ~MapCorrectorNode(){};
+  ~MapCorrectorNode(){};
 
-    bool correct(autoware_perception_msgs::DynamicObjectWithFeatureArray &input_msg);
+  bool correct(autoware_perception_msgs::DynamicObjectWithFeatureArray& input_msg);
 };

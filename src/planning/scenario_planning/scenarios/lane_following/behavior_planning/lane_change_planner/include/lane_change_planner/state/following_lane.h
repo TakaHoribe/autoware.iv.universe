@@ -17,19 +17,17 @@
 #ifndef LANE_CHANGE_PLANNER_STATE_FOLLOWING_LANE_H
 #define LANE_CHANGE_PLANNER_STATE_FOLLOWING_LANE_H
 
-#include <lane_change_planner/state/state_base_class.h>
+#include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <lane_change_planner/state/state_base_class.h>
 #include <lanelet2_core/primitives/Primitive.h>
 
 #include <memory>
 
-namespace lane_change_planner
-{
-class FollowingLaneState : public StateBase
-{
-private:
+namespace lane_change_planner {
+class FollowingLaneState : public StateBase {
+ private:
   geometry_msgs::PoseStamped current_pose_;
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
@@ -49,7 +47,7 @@ private:
   bool isLaneChangePathSafe() const;
   bool isLaneChangeApproved() const;
 
-public:
+ public:
   FollowingLaneState() = default;
 
   // override virtual functions

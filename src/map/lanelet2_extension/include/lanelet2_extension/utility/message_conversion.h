@@ -28,12 +28,9 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-namespace lanelet
-{
-namespace utils
-{
-namespace conversion
-{
+namespace lanelet {
+namespace utils {
+namespace conversion {
 /**
  * [toBinMsg convervets lanelet2 map to ROS message. Similar implementation to
  * lanelet::io_handlers::BinHandler::write()]

@@ -20,24 +20,20 @@
 #include <autoware_planning_msgs/Trajectory.h>
 #include "velocity_controller_mathutils.h"
 
-class DelayCompensator
-{
-public:
+class DelayCompensator {
+ public:
   DelayCompensator();
   ~DelayCompensator();
 
-  static double getAccelerationAfterTimeDelay(
-      const autoware_planning_msgs::Trajectory& trajectory, int32_t closest_waypoint_index,
-      double delay_time, double current_velocity)
-  {
+  static double getAccelerationAfterTimeDelay(const autoware_planning_msgs::Trajectory& trajectory,
+                                              int32_t closest_waypoint_index, double delay_time,
+                                              double current_velocity) {
     const double delay_distance = current_velocity * delay_time;
 
     double sum_distance = 0.0;
-    for (unsigned int i = closest_waypoint_index; i < trajectory.points.size() - 1; ++i)
-    {
+    for (unsigned int i = closest_waypoint_index; i < trajectory.points.size() - 1; ++i) {
       sum_distance += vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
-      if (sum_distance > delay_distance)
-      {
+      if (sum_distance > delay_distance) {
         return trajectory.points.at(i).accel.linear.x;
       }
     }

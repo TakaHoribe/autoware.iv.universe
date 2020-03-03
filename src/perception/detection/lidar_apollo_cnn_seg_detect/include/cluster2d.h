@@ -33,14 +33,14 @@
 #ifndef CLUSTER2D_H
 #define CLUSTER2D_H
 
-#include <vector>
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
+#include <vector>
 
 #include "caffe/caffe.hpp"
 
-#include "util.h"
 #include "disjoint_set.h"
+#include "util.h"
 
 #include <autoware_perception_msgs/DynamicObjectWithFeature.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
@@ -50,8 +50,7 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-enum ObjectType
-{
+enum ObjectType {
   UNKNOWN = 0,
   UNKNOWN_MOVABLE = 1,
   UNKNOWN_UNMOVABLE = 2,
@@ -61,19 +60,9 @@ enum ObjectType
   MAX_OBJECT_TYPE = 6,
 };
 
-enum MetaType
-{
-  META_UNKNOWN,
-  META_SMALLMOT,
-  META_BIGMOT,
-  META_NONMOT,
-  META_PEDESTRIAN,
-  MAX_META_TYPE
-};
+enum MetaType { META_UNKNOWN, META_SMALLMOT, META_BIGMOT, META_NONMOT, META_PEDESTRIAN, MAX_META_TYPE };
 
-
-struct Obstacle
-{
+struct Obstacle {
   std::vector<int> grids;
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr;
   float score;
@@ -81,16 +70,13 @@ struct Obstacle
   MetaType meta_type;
   std::vector<float> meta_type_probs;
 
-  Obstacle() : score(0.0), height(-5.0), meta_type(META_UNKNOWN)
-  {
+  Obstacle() : score(0.0), height(-5.0), meta_type(META_UNKNOWN) {
     cloud_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
     meta_type_probs.assign(MAX_META_TYPE, 0.0);
   }
 
-  std::string GetTypeString() const
-  {
-    switch (meta_type)
-    {
+  std::string GetTypeString() const {
+    switch (meta_type) {
       case META_UNKNOWN:
         return "unknown";
       case META_SMALLMOT:
@@ -107,36 +93,29 @@ struct Obstacle
   }
 };
 
-class Cluster2D
-{
-public:
+class Cluster2D {
+ public:
   Cluster2D() = default;
 
   ~Cluster2D() = default;
 
   bool init(int rows, int cols, float range);
 
-  void cluster(const caffe::Blob<float> &category_pt_blob,
-               const caffe::Blob<float> &instance_pt_blob,
-               const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
-               const pcl::PointIndices &valid_indices,
+  void cluster(const caffe::Blob<float>& category_pt_blob, const caffe::Blob<float>& instance_pt_blob,
+               const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr, const pcl::PointIndices& valid_indices,
                float objectness_thresh, bool use_all_grids_for_clustering);
 
-  void filter(const caffe::Blob<float> &confidence_pt_blob,
-              const caffe::Blob<float> &height_pt_blob);
+  void filter(const caffe::Blob<float>& confidence_pt_blob, const caffe::Blob<float>& height_pt_blob);
 
-  void classify(const caffe::Blob<float> &classify_pt_blob);
+  void classify(const caffe::Blob<float>& classify_pt_blob);
 
-  void getObjects(const float confidence_thresh,
-                  const float height_thresh,
-                  const int min_pts_num,
-                  autoware_perception_msgs::DynamicObjectWithFeatureArray &objects,
-                  const std_msgs::Header &in_header);
+  void getObjects(const float confidence_thresh, const float height_thresh, const int min_pts_num,
+                  autoware_perception_msgs::DynamicObjectWithFeatureArray& objects, const std_msgs::Header& in_header);
 
-  autoware_perception_msgs::DynamicObjectWithFeature obstacleToObject(const Obstacle &in_obstacle,
-                                                 const std_msgs::Header &in_header);
+  autoware_perception_msgs::DynamicObjectWithFeature obstacleToObject(const Obstacle& in_obstacle,
+                                                                      const std_msgs::Header& in_header);
 
-private:
+ private:
   int rows_;
   int cols_;
   int grids_;
@@ -149,12 +128,11 @@ private:
   std::vector<int> id_img_;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pc_ptr_;
-  const std::vector<int> *valid_indices_in_pc_ = nullptr;
+  const std::vector<int>* valid_indices_in_pc_ = nullptr;
 
-  struct Node
-  {
-    Node *center_node;
-    Node *parent;
+  struct Node {
+    Node* center_node;
+    Node* parent;
     char node_rank;
     char traversed;
     bool is_center;
@@ -162,8 +140,7 @@ private:
     int point_num;
     int obstacle_id;
 
-    Node()
-    {
+    Node() {
       center_node = nullptr;
       parent = nullptr;
       node_rank = 0;
@@ -175,29 +152,17 @@ private:
     }
   };
 
-  inline bool IsValidRowCol(int row, int col) const
-  {
-    return IsValidRow(row) && IsValidCol(col);
-  }
+  inline bool IsValidRowCol(int row, int col) const { return IsValidRow(row) && IsValidCol(col); }
 
-  inline bool IsValidRow(int row) const
-  {
-    return row >= 0 && row < rows_;
-  }
+  inline bool IsValidRow(int row) const { return row >= 0 && row < rows_; }
 
-  inline bool IsValidCol(int col) const
-  {
-    return col >= 0 && col < cols_;
-  }
+  inline bool IsValidCol(int col) const { return col >= 0 && col < cols_; }
 
-  inline int RowCol2Grid(int row, int col) const
-  {
-    return row * cols_ + col;
-  }
+  inline int RowCol2Grid(int row, int col) const { return row * cols_ + col; }
 
-  void traverse(Node *x);
+  void traverse(Node* x);
 
   ObjectType getObjectType(const MetaType meta_type_id);
 };
 
-#endif //CLUSTER_2D_H
+#endif  // CLUSTER_2D_H

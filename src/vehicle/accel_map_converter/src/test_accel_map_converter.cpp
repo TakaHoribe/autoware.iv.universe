@@ -1,16 +1,16 @@
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
 #include "accel_map_converter/accel_map.h"
 #include "accel_map_converter/brake_map.h"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   std::cout << "start test!" << std::endl;
 
   std::cout << "create accel_map object!" << std::endl;
   AccelMap accel_map;
-  accel_map.readAccelMapFromCSV("/home/horibe/workspace/t4b-autoware/src/vehicle/accel_map_converter/data/test/accel_map.csv");
+  accel_map.readAccelMapFromCSV(
+      "/home/horibe/workspace/t4b-autoware/src/vehicle/accel_map_converter/data/test/accel_map.csv");
 
   std::cout << "finish reading accel_map from csv" << std::endl;
   std::cout << "--------------------------------------------------------------------------------" << std::endl;
@@ -34,7 +34,8 @@ int main(int argc, char** argv)
 
   std::cout << "create brake_map object!" << std::endl;
   BrakeMap brake_map;
-  brake_map.readBrakeMapFromCSV("/home/horibe/workspace/t4b-autoware/src/vehicle/accel_map_converter/data/test/brake_map.csv");
+  brake_map.readBrakeMapFromCSV(
+      "/home/horibe/workspace/t4b-autoware/src/vehicle/accel_map_converter/data/test/brake_map.csv");
   std::cout << "finish reading brake_map from csv" << std::endl;
   std::cout << "--------------------------------------------------------------------------------" << std::endl;
   bool is_brake;

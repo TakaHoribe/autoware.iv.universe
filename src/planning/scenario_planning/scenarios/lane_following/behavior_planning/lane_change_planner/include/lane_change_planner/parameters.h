@@ -17,8 +17,7 @@
 #ifndef LANE_CHANGE_PLANNER_PARAMETERS_H
 #define LANE_CHANGE_PLANNER_PARAMETERS_H
 
-struct LaneChangerParameters
-{
+struct LaneChangerParameters {
   double min_stop_distance;
   double stop_time;
   double hysteresis_buffer_distance;

@@ -17,7 +17,7 @@
  */
 
 #pragma once
-#include "model/tracker_base.hpp"
 #include "model/bicycle_tracker.hpp"
 #include "model/pedestrian_tracker.hpp"
+#include "model/tracker_base.hpp"
 #include "model/vehicle_tracker.hpp"

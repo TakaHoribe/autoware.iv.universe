@@ -17,9 +17,9 @@
 #include "mpc_follower/qp_solver/qp_solver_unconstr_fast.h"
 
 QPSolverEigenLeastSquareLLT::QPSolverEigenLeastSquareLLT() {}
-bool QPSolverEigenLeastSquareLLT::solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec,
-                                        const Eigen::MatrixXd &A, const Eigen::VectorXd &lb, const Eigen::VectorXd &ub,
-                                        const Eigen::VectorXd &lbA, const Eigen::VectorXd &ubA, Eigen::VectorXd &U) {
+bool QPSolverEigenLeastSquareLLT::solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec,
+                                        const Eigen::MatrixXd& A, const Eigen::VectorXd& lb, const Eigen::VectorXd& ub,
+                                        const Eigen::VectorXd& lbA, const Eigen::VectorXd& ubA, Eigen::VectorXd& U) {
   if (std::fabs(Hmat.determinant()) < 1.0E-9) return false;
 
   U = -Hmat.llt().solve(fvec);

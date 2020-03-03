@@ -64,7 +64,7 @@ double VehicleCmdGate::getDt() {
   return dt;
 }
 
-void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped &input_msg) {
+void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped& input_msg) {
   autoware_vehicle_msgs::VehicleCommand cmd;
   cmd.header = input_msg.header;
 
@@ -86,7 +86,8 @@ void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommand
   filter.limitLateralWithLatAcc(dt, cmd.control);
   filter.limitLateralWithLatJerk(dt, cmd.control);
 
-  cmd.shift.data = cmd.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  cmd.shift.data =
+      cmd.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
 
   /* publish vehicle cmd */
   vehicle_cmd_pub_.publish(cmd);

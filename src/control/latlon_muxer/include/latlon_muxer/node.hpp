@@ -19,8 +19,8 @@
 
 #include <memory>
 
-#include <ros/ros.h>
 #include <autoware_control_msgs/ControlCommandStamped.h>
+#include <ros/ros.h>
 
 class LatLonMuxer {
  public:

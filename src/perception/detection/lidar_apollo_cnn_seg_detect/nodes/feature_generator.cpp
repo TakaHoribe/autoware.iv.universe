@@ -16,8 +16,7 @@
 
 #include "feature_generator.h"
 
-bool FeatureGenerator::init(caffe::Blob<float>* out_blob)
-{
+bool FeatureGenerator::init(caffe::Blob<float>* out_blob) {
   out_blob_ = out_blob;
 
   // raw feature parameters
@@ -26,8 +25,7 @@ bool FeatureGenerator::init(caffe::Blob<float>* out_blob)
   height_ = 512;
   min_height_ = -5.0;
   max_height_ = 5.0;
-  CHECK_EQ(width_, height_)
-      << "Current implementation version requires input_width == input_height.";
+  CHECK_EQ(width_, height_) << "Current implementation version requires input_width == input_height.";
 
   // set output blob and log lookup table
   out_blob_->Reshape(1, 8, height_, width_);
@@ -63,10 +61,8 @@ bool FeatureGenerator::init(caffe::Blob<float>* out_blob)
       float center_x = Pixel2Pc(row, height_, range_);
       float center_y = Pixel2Pc(col, width_, range_);
       constexpr double K_CV_PI = 3.1415926535897932384626433832795;
-      direction_data[idx] =
-          static_cast<float>(std::atan2(center_y, center_x) / (2.0 * K_CV_PI));
-      distance_data[idx] =
-          static_cast<float>(std::hypot(center_x, center_y) / 60.0 - 0.5);
+      direction_data[idx] = static_cast<float>(std::atan2(center_y, center_x) / (2.0 * K_CV_PI));
+      distance_data[idx] = static_cast<float>(std::hypot(center_x, center_y) / 60.0 - 0.5);
     }
   }
   caffe::caffe_copy(siz, direction_data.data(), direction_data_);
@@ -75,16 +71,14 @@ bool FeatureGenerator::init(caffe::Blob<float>* out_blob)
   return true;
 }
 
-float FeatureGenerator::logCount(int count)
-{
+float FeatureGenerator::logCount(int count) {
   if (count < static_cast<int>(log_table_.size())) {
     return log_table_[count];
   }
   return std::log(static_cast<float>(1 + count));
 }
 
-void FeatureGenerator::generate(
-    const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr) {
+void FeatureGenerator::generate(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr) {
   const auto& points = pc_ptr->points;
 
   // DO NOT remove this line!!!
@@ -101,10 +95,8 @@ void FeatureGenerator::generate(
   caffe::caffe_set(siz, float(0), nonempty_data_);
 
   map_idx_.resize(points.size());
-  float inv_res_x =
-      0.5 * static_cast<float>(width_) / static_cast<float>(range_);
-  float inv_res_y =
-      0.5 * static_cast<float>(height_) / static_cast<float>(range_);
+  float inv_res_x = 0.5 * static_cast<float>(width_) / static_cast<float>(range_);
+  float inv_res_y = 0.5 * static_cast<float>(height_) / static_cast<float>(range_);
 
   for (size_t i = 0; i < points.size(); ++i) {
     if (points[i].z <= min_height_ || points[i].z >= max_height_) {

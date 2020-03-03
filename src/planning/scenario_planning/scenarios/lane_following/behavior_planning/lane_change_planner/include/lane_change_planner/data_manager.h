@@ -18,18 +18,18 @@
 #define LANE_CHANGE_PLANNER_DATA_MANAGER_H
 
 // ROS
-#include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Bool.h>
+#include <tf2_ros/transform_listener.h>
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
-#include <autoware_planning_msgs/Route.h>
-#include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_planning_msgs/PathWithLaneId.h>
+#include <autoware_planning_msgs/Route.h>
 #include <lane_change_planner/lane_changer.h>
 #include <lane_change_planner/parameters.h>
 
@@ -41,51 +41,40 @@
 // other
 #include <memory>
 
-namespace lane_change_planner
-{
-class SelfPoseLinstener
-{
-public:
+namespace lane_change_planner {
+class SelfPoseLinstener {
+ public:
   SelfPoseLinstener();
   bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
 
-private:
+ private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 };
 
-struct BoolStamped
-{
-  BoolStamped(bool data)
-  {
-    data = data;
-  }
-  BoolStamped()
-  {
-    data = false;
-  }
+struct BoolStamped {
+  BoolStamped(bool data) { data = data; }
+  BoolStamped() { data = false; }
   bool data;
   ros::Time stamp;
 };
 
-class SingletonDataManager
-{
-private:
+class SingletonDataManager {
+ private:
   explicit SingletonDataManager();
   ~SingletonDataManager() = default;
 
-public:
+ public:
   SingletonDataManager(const SingletonDataManager&) = delete;
   SingletonDataManager& operator=(const SingletonDataManager&) = delete;
   SingletonDataManager(SingletonDataManager&&) = delete;
   SingletonDataManager& operator=(SingletonDataManager&&) = delete;
-  static SingletonDataManager& getInstance()
-  {
+  static SingletonDataManager& getInstance() {
     static SingletonDataManager instance;
     return instance;
   }
 
-private:
+ private:
   /*
    * Cache
    */
@@ -116,7 +105,7 @@ private:
 
   friend class LaneChanger;
 
-public:
+ public:
   bool getDynamicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects);
   bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& pointcloud);
   bool getCurrentSelfPose(geometry_msgs::PoseStamped& pose);

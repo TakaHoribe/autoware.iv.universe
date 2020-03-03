@@ -32,39 +32,34 @@
 #include "dummy_perception_publisher/Object.h"
 
 #include "rviz/display_context.h"
-#include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"
+#include "rviz/properties/string_property.h"
 
 #include <unique_id/unique_id.h>
 
 #include "delete_all_objects.hpp"
 
-namespace rviz
-{
+namespace rviz {
 
-DeleteAllObjectsTool::DeleteAllObjectsTool()
-{
+DeleteAllObjectsTool::DeleteAllObjectsTool() {
   shortcut_key_ = 'd';
 
-  topic_property_ = new StringProperty( "Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
-                                        "The topic on which to publish dummy object info.",
-                                        getPropertyContainer(), SLOT( updateTopic() ), this );
+  topic_property_ = new StringProperty("Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
+                                       "The topic on which to publish dummy object info.", getPropertyContainer(),
+                                       SLOT(updateTopic()), this);
 }
 
-void DeleteAllObjectsTool::onInitialize()
-{
+void DeleteAllObjectsTool::onInitialize() {
   PoseTool::onInitialize();
-  setName( "Delete All Objects" );
+  setName("Delete All Objects");
   updateTopic();
 }
 
-void DeleteAllObjectsTool::updateTopic()
-{
-  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>( topic_property_->getStdString(), 1 );
+void DeleteAllObjectsTool::updateTopic() {
+  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>(topic_property_->getStdString(), 1);
 }
 
-void DeleteAllObjectsTool::onPoseSet(double x, double y, double theta)
-{
+void DeleteAllObjectsTool::onPoseSet(double x, double y, double theta) {
   const ros::Time current_time = ros::Time::now();
   dummy_perception_publisher::Object output_msg;
   std::string fixed_frame = context_->getFixedFrame().toStdString();
@@ -73,13 +68,13 @@ void DeleteAllObjectsTool::onPoseSet(double x, double y, double theta)
   output_msg.header.frame_id = fixed_frame;
   output_msg.header.stamp = current_time;
 
-  //action
+  // action
   output_msg.action = dummy_perception_publisher::Object::DELETEALL;
 
   dummy_object_info_pub_.publish(output_msg);
 }
 
-} // end namespace rviz
+}  // end namespace rviz
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS( rviz::DeleteAllObjectsTool, rviz::Tool )
+PLUGINLIB_EXPORT_CLASS(rviz::DeleteAllObjectsTool, rviz::Tool)

@@ -19,9 +19,7 @@
 
 #include "no_filter.hpp"
 
-bool NoFilter::filter(const autoware_perception_msgs::Shape &shape,
-                      const geometry_msgs::Pose &pose,
-                      const bool &orientaion)
-{
-    return true;
+bool NoFilter::filter(const autoware_perception_msgs::Shape& shape, const geometry_msgs::Pose& pose,
+                      const bool& orientaion) {
+  return true;
 }

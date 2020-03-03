@@ -17,15 +17,14 @@
 #ifndef LANE_CHANGE_PLANNER_STATE_MACHINE_H
 #define LANE_CHANGE_PLANNER_STATE_MACHINE_H
 
-#include <ros/ros.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_planning_msgs/Route.h>
-#include <lanelet2_core/primitives/Lanelet.h>
 #include <lane_change_planner/state/state_base_class.h>
+#include <lanelet2_core/primitives/Lanelet.h>
+#include <ros/ros.h>
 #include <memory>
 
-namespace lane_change_planner
-{
+namespace lane_change_planner {
 // enum State{
 //   WAITING_LANE_CHANGE,
 //   EXECUTING_LANE_CHANGE,
@@ -33,9 +32,8 @@ namespace lane_change_planner
 //   FORCING_LANE_CHANGE,
 // };
 
-class StateMachine
-{
-public:
+class StateMachine {
+ public:
   StateMachine();
   void init();
   void init(const autoware_planning_msgs::Route& route);
@@ -43,7 +41,7 @@ public:
   autoware_planning_msgs::PathWithLaneId getPath() const;
   Status getStatus() const;
 
-private:
+ private:
   autoware_planning_msgs::PathWithLaneId path_;
   std::unique_ptr<StateBase> state_obj_ptr_;
   ros::NodeHandle pnh_;

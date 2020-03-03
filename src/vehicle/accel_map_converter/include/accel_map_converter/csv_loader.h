@@ -17,21 +17,20 @@
 #ifndef ACCEL_MAP_CONVERTER_CSV_LOADER_H
 #define ACCEL_MAP_CONVERTER_CSV_LOADER_H
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
 
-class CSVLoader
-{
-public:
+class CSVLoader {
+ public:
   CSVLoader(std::string csv_path);
   ~CSVLoader();
 
   bool readCSV(std::vector<std::vector<std::string>>& result, const char delim = ',');
 
-private:
+ private:
   std::string csv_path_;
 };
 

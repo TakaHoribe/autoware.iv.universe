@@ -16,8 +16,8 @@
 
 #include "mpc_follower/mpc_trajectory.h"
 
-void MPCTrajectory::push_back(const double &xp, const double &yp, const double &zp, const double &yawp,
-                              const double &vxp, const double &kp, const double &tp) {
+void MPCTrajectory::push_back(const double& xp, const double& yp, const double& zp, const double& yawp,
+                              const double& vxp, const double& kp, const double& tp) {
   x.push_back(xp);
   y.push_back(yp);
   z.push_back(zp);

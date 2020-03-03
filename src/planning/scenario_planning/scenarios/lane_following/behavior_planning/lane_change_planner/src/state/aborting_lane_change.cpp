@@ -16,37 +16,21 @@
 
 #include <lane_change_planner/state/aborting_lane_change.h>
 
-namespace lane_change_planner
-{
-State AbortingLaneChangeState::getCurrentState() const
-{
-  return State::ABORTING_LANE_CHANGE;
-}
+namespace lane_change_planner {
+State AbortingLaneChangeState::getCurrentState() const { return State::ABORTING_LANE_CHANGE; }
 
-void AbortingLaneChangeState::entry(const Status& status)
-{
-}
+void AbortingLaneChangeState::entry(const Status& status) {}
 
-autoware_planning_msgs::PathWithLaneId AbortingLaneChangeState::getPath() const
-{
-  return status_.lane_follow_path;
-}
+autoware_planning_msgs::PathWithLaneId AbortingLaneChangeState::getPath() const { return status_.lane_follow_path; }
 
-void AbortingLaneChangeState::update()
-{
-}
+void AbortingLaneChangeState::update() {}
 
-State AbortingLaneChangeState::getNextState() const
-{
-  if (hasReturnedToOriginalLane())
-  {
+State AbortingLaneChangeState::getNextState() const {
+  if (hasReturnedToOriginalLane()) {
     return State::FOLLOWING_LANE;
   }
   return State::ABORTING_LANE_CHANGE;
 }
 
-bool AbortingLaneChangeState::hasReturnedToOriginalLane() const
-{
-  return true;
-}
-}
+bool AbortingLaneChangeState::hasReturnedToOriginalLane() const { return true; }
+}  // namespace lane_change_planner

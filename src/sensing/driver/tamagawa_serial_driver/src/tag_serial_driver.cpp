@@ -30,16 +30,16 @@
  * Ver 1.00 2019/4/4
  */
 
+#include <fcntl.h>
+#include <math.h>
+#include <signal.h>
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <string>
 #include "ros/ros.h"
 #include "sensor_msgs/Imu.h"
 #include "std_msgs/Int32.h"
-#include <string>
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <math.h>
-#include <stdio.h>
-#include <signal.h>
 
 #include <sys/ioctl.h>
 
@@ -56,9 +56,8 @@ int raw_data;
 
 sensor_msgs::Imu imu_msg;
 
-int serial_setup(const char* device)
-{
-  int fd=open(device,O_RDWR);
+int serial_setup(const char* device) {
+  int fd = open(device, O_RDWR);
   // fcntl(fd, F_SETFL, 0);
   // tcgetattr(fd, &conf_tio);
 
@@ -71,11 +70,11 @@ int serial_setup(const char* device)
   // conf_tio.c_cflag = CLOCAL | CREAD | CSIZE | CS8;
   // conf_tio.c_oflag = ONLCR | OCRNL;
 
-    conf_tio.c_cflag += CREAD;               // 受信有効
-    conf_tio.c_cflag += CLOCAL;              // ローカルライン（モデム制御なし）
-    conf_tio.c_cflag += CS8;                 // データビット:8bit
-    conf_tio.c_cflag += 0;                   // ストップビット:1bit
-    conf_tio.c_cflag += 0;
+  conf_tio.c_cflag += CREAD;   // 受信有効
+  conf_tio.c_cflag += CLOCAL;  // ローカルライン（モデム制御なし）
+  conf_tio.c_cflag += CS8;     // データビット:8bit
+  conf_tio.c_cflag += 0;       // ストップビット:1bit
+  conf_tio.c_cflag += 0;
 
   cfsetispeed(&conf_tio, BAUDRATE);
   cfsetospeed(&conf_tio, BAUDRATE);
@@ -85,30 +84,26 @@ int serial_setup(const char* device)
   return fd;
 }
 
-void receive_ver_req(const std_msgs::Int32::ConstPtr& msg)
-{
+void receive_ver_req(const std_msgs::Int32::ConstPtr& msg) {
   char ver_req[] = "$TSC,VER*29\x0d\x0a";
   int ver_req_data = write(fd, ver_req, sizeof(ver_req));
   ROS_INFO("Send Version Request:%s", ver_req);
 }
 
-void receive_offset_cancel_req(const std_msgs::Int32::ConstPtr& msg)
-{
+void receive_offset_cancel_req(const std_msgs::Int32::ConstPtr& msg) {
   char offset_cancel_req[32];
   sprintf(offset_cancel_req, "$TSC,OFC,%d\x0d\x0a", msg->data);
   int offset_cancel_req_data = write(fd, offset_cancel_req, sizeof(offset_cancel_req));
   ROS_INFO("Send Offset Cancel Request:%s", offset_cancel_req);
 }
 
-void receive_heading_reset_req(const std_msgs::Int32::ConstPtr& msg)
-{
+void receive_heading_reset_req(const std_msgs::Int32::ConstPtr& msg) {
   char heading_reset_req[] = "$TSC,HRST*29\x0d\x0a";
   int heading_reset_req_data = write(fd, heading_reset_req, sizeof(heading_reset_req));
   ROS_INFO("Send Heading reset Request:%s", heading_reset_req);
 }
 
-void shutdown_cmd(int sig)
-{
+void shutdown_cmd(int sig) {
   tcsetattr(fd, TCSANOW, &old_conf_tio);  // Revert to previous settings
   close(fd);
   ROS_INFO("Port closed");
@@ -220,7 +215,8 @@ void shutdown_cmd(int sig)
 
 //     //       if (strcmp(imu_type.c_str(), "noGPS") == 0)
 //     //       {
-//     //         counter = ((rbuf[11] << 24) & 0xFF000000) | ((rbuf[12] << 16) & 0x00FF0000) | ((rbuf[13] << 8) & 0x0000FF00) |
+//     //         counter = ((rbuf[11] << 24) & 0xFF000000) | ((rbuf[12] << 16) & 0x00FF0000) | ((rbuf[13] << 8) &
+//     0x0000FF00) |
 //     //                   (rbuf[14] & 0x000000FF);
 //     //         raw_data = ((((rbuf[17] << 8) & 0xFFFFFF00) | (rbuf[18] & 0x000000FF)));
 //     //         imu_msg.angular_velocity.x =
@@ -281,8 +277,7 @@ void shutdown_cmd(int sig)
 #include <boost/asio.hpp>
 using namespace boost::asio;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "tag_serial_driver", ros::init_options::NoSigintHandler);
   ros::NodeHandle n;
   ros::Publisher pub = n.advertise<sensor_msgs::Imu>("imu/data_raw", 1000);
@@ -297,17 +292,17 @@ int main(int argc, char** argv)
   std::string port = "/dev/ttyUSB0";
   nh.getParam("port", port);
 
-	io_service io;
-	serial_port serial_port( io, port.c_str() );
-	serial_port.set_option(serial_port_base::baud_rate(115200));
-	serial_port.set_option(serial_port_base::character_size(8));
-	serial_port.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
-	serial_port.set_option(serial_port_base::parity(serial_port_base::parity::none));
-	serial_port.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
+  io_service io;
+  serial_port serial_port(io, port.c_str());
+  serial_port.set_option(serial_port_base::baud_rate(115200));
+  serial_port.set_option(serial_port_base::character_size(8));
+  serial_port.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
+  serial_port.set_option(serial_port_base::parity(serial_port_base::parity::none));
+  serial_port.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
 
   std::string wbuf = "$TSC,BIN,30\x0d\x0a";
-	std::size_t length;
-	serial_port.write_some( buffer( wbuf ) );
+  std::size_t length;
+  serial_port.write_some(buffer(wbuf));
 
   ros::Rate loop_rate(30);
 
@@ -316,8 +311,7 @@ int main(int argc, char** argv)
   imu_msg.orientation.z = 0.0;
   imu_msg.orientation.w = 1.0;
 
-  while (ros::ok())
-  {
+  while (ros::ok()) {
     ros::spinOnce();
     // loop_rate.sleep();
 
@@ -327,39 +321,32 @@ int main(int argc, char** argv)
 
     length = rbuf.size();
     size_t len = response.size();
-    //std::cout << rbuf  << "    " << length <<  " " << len << std::endl;
+    // std::cout << rbuf  << "    " << length <<  " " << len << std::endl;
 
-    if (length > 0)
-    {
-        if (rbuf[5] == 'B' && rbuf[6] == 'I' && rbuf[7] == 'N' && rbuf[8] == ',' && length == 58)
-        {
-          imu_msg.header.frame_id = imu_frame_id;
-          imu_msg.header.stamp = ros::Time::now();
+    if (length > 0) {
+      if (rbuf[5] == 'B' && rbuf[6] == 'I' && rbuf[7] == 'N' && rbuf[8] == ',' && length == 58) {
+        imu_msg.header.frame_id = imu_frame_id;
+        imu_msg.header.stamp = ros::Time::now();
 
-          counter = ((rbuf[11] << 8) & 0x0000FF00) | (rbuf[12] & 0x000000FF);
-          raw_data = ((((rbuf[15] << 8) & 0xFFFFFF00) | (rbuf[16] & 0x000000FF)));
-          imu_msg.angular_velocity.x =
-              raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
-          raw_data = ((((rbuf[17] << 8) & 0xFFFFFF00) | (rbuf[18] & 0x000000FF)));
-          imu_msg.angular_velocity.y =
-              raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
-          raw_data = ((((rbuf[19] << 8) & 0xFFFFFF00) | (rbuf[20] & 0x000000FF)));
-          imu_msg.angular_velocity.z =
-              raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
-          raw_data = ((((rbuf[21] << 8) & 0xFFFFFF00) | (rbuf[22] & 0x000000FF)));
-          imu_msg.linear_acceleration.x = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
-          raw_data = ((((rbuf[23] << 8) & 0xFFFFFF00) | (rbuf[24] & 0x000000FF)));
-          imu_msg.linear_acceleration.y = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
-          raw_data = ((((rbuf[25] << 8) & 0xFFFFFF00) | (rbuf[26] & 0x000000FF)));
-          imu_msg.linear_acceleration.z = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
+        counter = ((rbuf[11] << 8) & 0x0000FF00) | (rbuf[12] & 0x000000FF);
+        raw_data = ((((rbuf[15] << 8) & 0xFFFFFF00) | (rbuf[16] & 0x000000FF)));
+        imu_msg.angular_velocity.x = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        raw_data = ((((rbuf[17] << 8) & 0xFFFFFF00) | (rbuf[18] & 0x000000FF)));
+        imu_msg.angular_velocity.y = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        raw_data = ((((rbuf[19] << 8) & 0xFFFFFF00) | (rbuf[20] & 0x000000FF)));
+        imu_msg.angular_velocity.z = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        raw_data = ((((rbuf[21] << 8) & 0xFFFFFF00) | (rbuf[22] & 0x000000FF)));
+        imu_msg.linear_acceleration.x = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
+        raw_data = ((((rbuf[23] << 8) & 0xFFFFFF00) | (rbuf[24] & 0x000000FF)));
+        imu_msg.linear_acceleration.y = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
+        raw_data = ((((rbuf[25] << 8) & 0xFFFFFF00) | (rbuf[26] & 0x000000FF)));
+        imu_msg.linear_acceleration.z = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
 
-          pub.publish(imu_msg);
+        pub.publish(imu_msg);
 
-        }
-        else if (rbuf[5] == 'V' && rbuf[6] == 'E' && rbuf[7] == 'R' && rbuf[8] == ',')
-        {
-          // ROS_INFO("%s", rbuf.c_str());
-        }
+      } else if (rbuf[5] == 'V' && rbuf[6] == 'E' && rbuf[7] == 'R' && rbuf[8] == ',') {
+        // ROS_INFO("%s", rbuf.c_str());
+      }
     }
   }
 

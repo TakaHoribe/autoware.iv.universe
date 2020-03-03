@@ -17,18 +17,16 @@
  */
 
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <list>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
+#include <list>
+#include <unordered_map>
+#include <vector>
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-class DataAssociation
-{
-private:
-  double getDistance(const geometry_msgs::Point &point0,
-                     const geometry_msgs::Point &point1);
+class DataAssociation {
+ private:
+  double getDistance(const geometry_msgs::Point& point0, const geometry_msgs::Point& point1);
   geometry_msgs::Point getCentroid(const sensor_msgs::PointCloud2& pointcloud);
   Eigen::MatrixXi can_assgin_matrix_;
   Eigen::MatrixXd max_dist_matrix_;
@@ -36,12 +34,11 @@ private:
   Eigen::MatrixXd min_area_matrix_;
   const double score_threshold_;
 
-public:
+ public:
   DataAssociation();
-  bool assign(const Eigen::MatrixXd &src,
-              std::unordered_map<int, int> &direct_assignment,
-              std::unordered_map<int, int> &reverse_assignment);
-  Eigen::MatrixXd calcScoreMatrix(const autoware_perception_msgs::DynamicObjectWithFeatureArray &cluster0,
-                                  const autoware_perception_msgs::DynamicObjectWithFeatureArray &cluster1);
+  bool assign(const Eigen::MatrixXd& src, std::unordered_map<int, int>& direct_assignment,
+              std::unordered_map<int, int>& reverse_assignment);
+  Eigen::MatrixXd calcScoreMatrix(const autoware_perception_msgs::DynamicObjectWithFeatureArray& cluster0,
+                                  const autoware_perception_msgs::DynamicObjectWithFeatureArray& cluster1);
   virtual ~DataAssociation(){};
 };

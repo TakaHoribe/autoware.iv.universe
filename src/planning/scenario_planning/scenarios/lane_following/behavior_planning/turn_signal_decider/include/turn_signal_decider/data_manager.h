@@ -2,22 +2,20 @@
 
 #include <ros/ros.h>
 
-#include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <tf2_ros/transform_listener.h>
 
-#include <autoware_vehicle_msgs/TurnSignal.h>
-#include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <autoware_planning_msgs/PathWithLaneId.h>
+#include <autoware_vehicle_msgs/TurnSignal.h>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-namespace turn_signal_decider
-{
-class DataManager
-{
-private:
+namespace turn_signal_decider {
+class DataManager {
+ private:
   // subscribe validation boolean
   bool is_map_ready_;
   bool is_path_ready_;
@@ -39,7 +37,7 @@ private:
   bool isPathValid() const;
   bool isPoseValid() const;
 
-public:
+ public:
   DataManager();
 
   // callbacks

@@ -1,6 +1,7 @@
 #pragma once
-#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Pose.h>
+#include <pcl/point_types.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -8,7 +9,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <pcl/point_types.h>
 #include <string>
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>

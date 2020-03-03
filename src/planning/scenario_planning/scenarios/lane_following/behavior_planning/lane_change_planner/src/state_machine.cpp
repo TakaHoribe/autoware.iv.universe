@@ -24,39 +24,30 @@
 
 #include <visualization_msgs/Marker.h>
 
-namespace lane_change_planner
-{
-StateMachine::StateMachine() : pnh_("~")
-{
+namespace lane_change_planner {
+StateMachine::StateMachine() : pnh_("~") {
   path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
   // init();
 }
 
-void StateMachine::init()
-{
+void StateMachine::init() {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
   Status empty_status;
   state_obj_ptr_->entry(empty_status);
   path_.points.clear();
 }
-void StateMachine::init(const autoware_planning_msgs::Route& route)
-{
-  init();
-}
+void StateMachine::init(const autoware_planning_msgs::Route& route) { init(); }
 
-void StateMachine::updateState()
-{
+void StateMachine::updateState() {
   state_obj_ptr_->update();
   State current_state = state_obj_ptr_->getCurrentState();
   State next_state = state_obj_ptr_->getNextState();
 
   // Transit to next state
-  if (next_state != current_state)
-  {
+  if (next_state != current_state) {
     ROS_INFO_STREAM("changing state: " << current_state << " => " << next_state);
     const auto previous_status = state_obj_ptr_->getStatus();
-    switch (next_state)
-    {
+    switch (next_state) {
       case State::FOLLOWING_LANE:
         state_obj_ptr_ = std::make_unique<FollowingLaneState>();
         break;
@@ -78,14 +69,8 @@ void StateMachine::updateState()
   }
 }
 
-autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const
-{
-  return state_obj_ptr_->getPath();
-}
+autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const { return state_obj_ptr_->getPath(); }
 
-Status StateMachine::getStatus() const
-{
-  return state_obj_ptr_->getStatus();
-}
+Status StateMachine::getStatus() const { return state_obj_ptr_->getStatus(); }
 
 }  // namespace lane_change_planner

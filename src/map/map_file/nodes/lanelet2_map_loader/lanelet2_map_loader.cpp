@@ -19,40 +19,36 @@
 
 #include <ros/ros.h>
 
-#include <lanelet2_projection/UTM.h>
-#include <lanelet2_io/Io.h>
 #include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_io/Io.h>
+#include <lanelet2_projection/UTM.h>
 
-#include <lanelet2_extension/utility/message_conversion.h>
-#include <lanelet2_extension/projection/mgrs_projector.h>
 #include <lanelet2_extension/io/autoware_osm_parser.h>
+#include <lanelet2_extension/projection/mgrs_projector.h>
+#include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/utilities.h>
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 
 #include <string>
 
-void printUsage()
-{
+void printUsage() {
   ROS_ERROR_STREAM("Usage:");
   ROS_ERROR_STREAM("rosrun map_file lanelet2_map_loader [.OSM]");
   ROS_ERROR_STREAM("rosrun map_file lanelet2_map_loader download [X] [Y]: WARNING not implemented");
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "lanelet_map_loader");
   ros::NodeHandle rosnode;
 
-  if (argc < 2)
-  {
+  if (argc < 2) {
     printUsage();
     return EXIT_FAILURE;
   }
 
   std::string mode(argv[1]);
-  if (mode == "download" && argc < 4)
-  {
+  if (mode == "download" && argc < 4) {
     printUsage();
     return EXIT_FAILURE;
   }
@@ -64,12 +60,10 @@ int main(int argc, char** argv)
   lanelet::projection::MGRSProjector projector;
   lanelet::LaneletMapPtr map = lanelet::load(lanelet2_filename, projector, &errors);
 
-  for(const auto &error: errors)
-  {
+  for (const auto& error : errors) {
     ROS_ERROR_STREAM(error);
   }
-  if(!errors.empty())
-  {
+  if (!errors.empty()) {
     return EXIT_FAILURE;
   }
 

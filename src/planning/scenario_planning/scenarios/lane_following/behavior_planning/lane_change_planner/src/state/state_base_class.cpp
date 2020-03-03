@@ -1,11 +1,8 @@
 #include <lane_change_planner/state/state_base_class.h>
 
-namespace lane_change_planner
-{
-std::ostream& operator<<(std::ostream& ostream, const State& state)
-{
-  switch (state)
-  {
+namespace lane_change_planner {
+std::ostream& operator<<(std::ostream& ostream, const State& state) {
+  switch (state) {
     case State::NO_STATE:
       ostream << std::string("NO_STATE");
       break;
@@ -31,8 +28,5 @@ std::ostream& operator<<(std::ostream& ostream, const State& state)
   return ostream;
 }
 
-Status StateBase::getStatus() const
-{
-  return status_;
-}
+Status StateBase::getStatus() const { return status_; }
 }  // namespace lane_change_planner

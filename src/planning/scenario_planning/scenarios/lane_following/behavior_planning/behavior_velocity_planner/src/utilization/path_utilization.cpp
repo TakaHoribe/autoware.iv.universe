@@ -47,11 +47,9 @@ autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path&
       path_point.pose.position.y = state[1];
       path_point.pose.position.z = state[2];
       path_point.twist.linear.x = state[3];
-      try{
+      try {
         path_point.type = path.points.at(checkpoint_idx).type;
-      }
-      catch(std::out_of_range &ex)
-      {
+      } catch (std::out_of_range& ex) {
         ROS_ERROR_STREAM("failed to find correct checkpoint to refere point type " << ex.what());
       }
       const double yaw = spline_ptr->calc_yaw(s_t);

@@ -21,17 +21,12 @@
 #include <tf2/utils.h>
 #include <opencv2/opencv.hpp>
 
-namespace
-{
-ros::Duration safeSubtraction(const ros::Time& t1, const ros::Time& t2)
-{
+namespace {
+ros::Duration safeSubtraction(const ros::Time& t1, const ros::Time& t2) {
   ros::Duration duration;
-  try
-  {
+  try {
     duration = t1 - t2;
-  }
-  catch (std::runtime_error)
-  {
+  } catch (std::runtime_error) {
     if (t1 > t2)
       duration = ros::DURATION_MIN;
     else
@@ -39,37 +34,27 @@ ros::Duration safeSubtraction(const ros::Time& t1, const ros::Time& t2)
   }
   return duration;
 }
-ros::Time safeAddition(const ros::Time& t1, const double seconds)
-{
+ros::Time safeAddition(const ros::Time& t1, const double seconds) {
   ros::Time sum;
-  try
-  {
+  try {
     sum = t1 + ros::Duration(seconds);
-  }
-  catch (std::runtime_error& err)
-  {
-    if (seconds > 0)
-      sum = ros::TIME_MAX;
-    if (seconds < 0)
-      sum = ros::TIME_MIN;
+  } catch (std::runtime_error& err) {
+    if (seconds > 0) sum = ros::TIME_MAX;
+    if (seconds < 0) sum = ros::TIME_MIN;
   }
   return sum;
 }
 
 cv::Point toCVPoint(const geometry_msgs::Point& geom_point, const double width_m, const double height_m,
-                    const double resolution)
-{
+                    const double resolution) {
   return cv::Point(static_cast<int>((height_m - geom_point.y) / resolution),
                    static_cast<int>((width_m - geom_point.x) / resolution));
 }
 
-void imageToOccupancyGrid(const cv::Mat& cv_image, nav_msgs::OccupancyGrid* occupancy_grid)
-{
+void imageToOccupancyGrid(const cv::Mat& cv_image, nav_msgs::OccupancyGrid* occupancy_grid) {
   occupancy_grid->data.reserve(cv_image.rows * cv_image.cols);
-  for (int x = cv_image.cols - 1; x >= 0; x--)
-  {
-    for (int y = cv_image.rows - 1; y >= 0; y--)
-    {
+  for (int x = cv_image.cols - 1; x >= 0; x--) {
+    for (int y = cv_image.rows - 1; y >= 0; y--) {
       const unsigned char intensity = cv_image.at<unsigned char>(y, x);
       occupancy_grid->data.push_back(intensity);
     }
@@ -78,29 +63,23 @@ void imageToOccupancyGrid(const cv::Mat& cv_image, nav_msgs::OccupancyGrid* occu
 
 }  // namespace
 
-namespace lane_change_planner
-{
-namespace util
-{
+namespace lane_change_planner {
+namespace util {
 using autoware_perception_msgs::PredictedPath;
 using autoware_planning_msgs::PathWithLaneId;
 
-double l2Norm(const geometry_msgs::Vector3 vector)
-{
+double l2Norm(const geometry_msgs::Vector3 vector) {
   return std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2) + std::pow(vector.z, 2));
 }
 
-Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt)
-{
+Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt) {
   return Eigen::Vector3d(geom_pt.x, geom_pt.y, geom_pt.z);
 }
 
 // returns false when search point is off the linestring
 bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linestring,
-                                 const geometry_msgs::Point search_point_geom, FrenetCoordinate3d* frenet_coordinate)
-{
-  if (linestring.empty())
-  {
+                                 const geometry_msgs::Point search_point_geom, FrenetCoordinate3d* frenet_coordinate) {
+  if (linestring.empty()) {
     return false;
   }
 
@@ -113,14 +92,12 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
   {
     double accumulated_length = 0;
 
-    for (std::size_t i = 0; i < linestring.size(); i++)
-    {
+    for (std::size_t i = 0; i < linestring.size(); i++) {
       const auto geom_pt = linestring.at(i);
       const auto current_pt = convertToEigenPt(geom_pt);
       const auto current2search_pt = (search_pt - current_pt);
       // update accumulated length
-      if (i != 0)
-      {
+      if (i != 0) {
         const auto p1 = convertToEigenPt(linestring.at(i - 1));
         const auto p2 = current_pt;
         accumulated_length += (p2 - p1).norm();
@@ -128,8 +105,7 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
       // update frenet coordinate
 
       const double tmp_distance = current2search_pt.norm();
-      if (tmp_distance < min_distance)
-      {
+      if (tmp_distance < min_distance) {
         found = true;
         min_distance = tmp_distance;
         frenet_coordinate->distance = tmp_distance;
@@ -142,8 +118,7 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
   {
     auto prev_geom_pt = linestring.front();
     double accumulated_length = 0;
-    for (const auto& geom_pt : linestring)
-    {
+    for (const auto& geom_pt : linestring) {
       const auto start_pt = convertToEigenPt(prev_geom_pt);
       const auto end_pt = convertToEigenPt(geom_pt);
 
@@ -153,11 +128,9 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
       const auto start2search_pt = (search_pt - start_pt);
 
       double tmp_length = direction.dot(start2search_pt);
-      if (tmp_length >= 0 && tmp_length <= line_segment_length)
-      {
+      if (tmp_length >= 0 && tmp_length <= line_segment_length) {
         double tmp_distance = direction.cross(start2search_pt).norm();
-        if (tmp_distance < min_distance)
-        {
+        if (tmp_distance < min_distance) {
           found = true;
           min_distance = tmp_distance;
           frenet_coordinate->distance = tmp_distance;
@@ -171,49 +144,41 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
   return found;
 }
 
-std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PathWithLaneId& path)
-{
+std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PathWithLaneId& path) {
   std::vector<geometry_msgs::Point> converted_path;
   converted_path.reserve(path.points.size());
-  for (const auto& point_with_id : path.points)
-  {
+  for (const auto& point_with_id : path.points) {
     converted_path.push_back(point_with_id.point.pose.position);
   }
   return converted_path;
 }
 
-std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PredictedPath& path)
-{
+std::vector<geometry_msgs::Point> convertToGeometryPointArray(const PredictedPath& path) {
   std::vector<geometry_msgs::Point> converted_path;
 
   converted_path.reserve(path.path.size());
-  for (const auto& pose_with_cov_stamped : path.path)
-  {
+  for (const auto& pose_with_cov_stamped : path.path) {
     converted_path.push_back(pose_with_cov_stamped.pose.pose.position);
   }
   return converted_path;
 }
 
-geometry_msgs::PoseArray convertToGeometryPoseArray(const PathWithLaneId& path)
-{
+geometry_msgs::PoseArray convertToGeometryPoseArray(const PathWithLaneId& path) {
   geometry_msgs::PoseArray converted_array;
   converted_array.header = path.header;
 
   converted_array.poses.reserve(path.points.size());
-  for (const auto& point_with_id : path.points)
-  {
+  for (const auto& point_with_id : path.points) {
     converted_array.poses.push_back(point_with_id.point.pose);
   }
   return converted_array;
 }
 
 PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_msgs::Twist& vehicle_twist,
-                                     const geometry_msgs::Pose& vehicle_pose)
-{
+                                     const geometry_msgs::Pose& vehicle_pose) {
   PredictedPath predicted_path;
   predicted_path.path.reserve(path.points.size());
-  if (path.points.empty())
-  {
+  if (path.points.empty()) {
     return predicted_path;
   }
 
@@ -223,21 +188,18 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   ros::Time start_time = ros::Time::now();
   double vehicle_speed = std::abs(vehicle_twist.linear.x);
   constexpr double min_speed = 1.0;
-  if (vehicle_speed < min_speed)
-  {
+  if (vehicle_speed < min_speed) {
     vehicle_speed = min_speed;
-    ROS_DEBUG_STREAM_THROTTLE(1, "cannot convert PathWithLaneId with zero velocity, using minimum value "
-                                     << min_speed << " [m/s] instead");
+    ROS_DEBUG_STREAM_THROTTLE(
+        1, "cannot convert PathWithLaneId with zero velocity, using minimum value " << min_speed << " [m/s] instead");
   }
   double accumulated_distance = 0;
 
   auto prev_pt = path.points.front();
-  for (size_t i = 0; i < path.points.size(); i++)
-  {
+  for (size_t i = 0; i < path.points.size(); i++) {
     auto pt = path.points.at(i);
     FrenetCoordinate3d pt_frenet;
-    if (!convertToFrenetCoordinate3d(geometry_points, pt.point.pose.position, &pt_frenet))
-    {
+    if (!convertToFrenetCoordinate3d(geometry_points, pt.point.pose.position, &pt_frenet)) {
       continue;
     }
     double frenet_distance = pt_frenet.length - vehicle_pose_frenet.length;
@@ -254,8 +216,7 @@ PredictedPath convertToPredictedPath(const PathWithLaneId& path, const geometry_
   return predicted_path;
 }
 
-PredictedPath resamplePredictedPath(const PredictedPath& input_path, const double resolution, const double duration)
-{
+PredictedPath resamplePredictedPath(const PredictedPath& input_path, const double resolution, const double duration) {
   PredictedPath resampled_path;
 
   ros::Duration t_delta(resolution);
@@ -265,11 +226,9 @@ PredictedPath resamplePredictedPath(const PredictedPath& input_path, const doubl
   ros::Time start_time = ros::Time::now();
   ros::Time end_time = ros::Time::now() + prediction_duration;
 
-  for (auto t = start_time; t < end_time; t += t_delta)
-  {
+  for (auto t = start_time; t < end_time; t += t_delta) {
     geometry_msgs::Pose pose;
-    if (!lerpByTimeStamp(input_path, t, &pose))
-    {
+    if (!lerpByTimeStamp(input_path, t, &pose)) {
       continue;
     }
     geometry_msgs::PoseWithCovarianceStamped predicted_pose;
@@ -282,8 +241,7 @@ PredictedPath resamplePredictedPath(const PredictedPath& input_path, const doubl
   return resampled_path;
 }
 
-geometry_msgs::Pose lerpByPose(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2, const double t)
-{
+geometry_msgs::Pose lerpByPose(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2, const double t) {
   tf2::Transform tf_transform1, tf_transform2;
   tf2::fromMsg(p1, tf_transform1);
   tf2::fromMsg(p2, tf_transform2);
@@ -296,20 +254,16 @@ geometry_msgs::Pose lerpByPose(const geometry_msgs::Pose& p1, const geometry_msg
   return pose;
 }
 
-bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msgs::Pose* lerped_pt)
-{
-  if (lerped_pt == nullptr)
-  {
+bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msgs::Pose* lerped_pt) {
+  if (lerped_pt == nullptr) {
     ROS_WARN_STREAM_THROTTLE(1, "failed to lerp by time due to nullptr pt");
     return false;
   }
-  if (path.path.empty())
-  {
+  if (path.path.empty()) {
     ROS_WARN_STREAM_THROTTLE(1, "Empty path. Failed to interpolate path by time!");
     return false;
   }
-  if (t < path.path.front().header.stamp)
-  {
+  if (t < path.path.front().header.stamp) {
     ROS_DEBUG_STREAM("failed to interpolate path by time!"
                      << std::endl
                      << "path start time: " << path.path.front().header.stamp << std::endl
@@ -319,8 +273,7 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
     return false;
   }
 
-  if (t > path.path.back().header.stamp)
-  {
+  if (t > path.path.back().header.stamp) {
     ROS_DEBUG_STREAM("failed to interpolate path by time!"
                      << std::endl
                      << "path start time: " << path.path.front().header.stamp << std::endl
@@ -331,12 +284,10 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
     return false;
   }
 
-  for (size_t i = 1; i < path.path.size(); i++)
-  {
+  for (size_t i = 1; i < path.path.size(); i++) {
     const auto& pt = path.path.at(i);
     const auto& prev_pt = path.path.at(i - 1);
-    if (t < pt.header.stamp)
-    {
+    if (t < pt.header.stamp) {
       const ros::Duration duration = safeSubtraction(pt.header.stamp, prev_pt.header.stamp);
       const auto off_set = t - prev_pt.header.stamp;
       const auto ratio = off_set.toSec() / duration.toSec();
@@ -349,46 +300,37 @@ bool lerpByTimeStamp(const PredictedPath& path, const ros::Time& t, geometry_msg
   return false;
 }
 
-double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2)
-{
+double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
   return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2) + std::pow(p1.z - p2.z, 2));
 }
 
 double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const PredictedPath& ego_path,
                                         const double start_time, const double end_time, const double resolution,
-                                        const bool use_vehicle_width, const double vehicle_width)
-{
+                                        const bool use_vehicle_width, const double vehicle_width) {
   ros::Duration t_delta(resolution);
   // ros::Duration prediction_duration(duration);
   double min_distance = std::numeric_limits<double>::max();
   ros::Time ros_start_time = ros::Time::now() + ros::Duration(start_time);
   ros::Time ros_end_time = ros::Time::now() + ros::Duration(end_time);
   const auto ego_path_point_array = convertToGeometryPointArray(ego_path);
-  for (auto t = ros_start_time; t < ros_end_time; t += t_delta)
-  {
+  for (auto t = ros_start_time; t < ros_end_time; t += t_delta) {
     geometry_msgs::Pose object_pose, ego_pose;
-    if (!lerpByTimeStamp(object_path, t, &object_pose))
-    {
+    if (!lerpByTimeStamp(object_path, t, &object_pose)) {
       continue;
     }
-    if (!lerpByTimeStamp(ego_path, t, &ego_pose))
-    {
+    if (!lerpByTimeStamp(ego_path, t, &ego_pose)) {
       continue;
     }
-    if (use_vehicle_width)
-    {
+    if (use_vehicle_width) {
       FrenetCoordinate3d frenet_coordinate;
-      if (convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate))
-      {
-        if (frenet_coordinate.distance > vehicle_width)
-        {
+      if (convertToFrenetCoordinate3d(ego_path_point_array, object_pose.position, &frenet_coordinate)) {
+        if (frenet_coordinate.distance > vehicle_width) {
           continue;
         }
       }
     }
     double distance = getDistance3d(object_pose.position, ego_pose.position);
-    if (distance < min_distance)
-    {
+    if (distance < min_distance) {
       min_distance = distance;
     }
   }
@@ -397,46 +339,36 @@ double getDistanceBetweenPredictedPaths(const PredictedPath& object_path, const 
 
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
                                             const lanelet::ConstLanelets& target_lanelets,
-                                            const double start_arc_length, const double end_arc_length)
-{
+                                            const double start_arc_length, const double end_arc_length) {
   std::vector<size_t> indices;
-  if (target_lanelets.empty())
-  {
+  if (target_lanelets.empty()) {
     return indices;
   }
   const auto polygon = lanelet::utils::getPolygonFromArcLength(target_lanelets, start_arc_length, end_arc_length);
   const auto polygon2d = lanelet::utils::to2D(polygon).basicPolygon();
-  for (size_t i = 0; i < objects.objects.size(); i++)
-  {
+  for (size_t i = 0; i < objects.objects.size(); i++) {
     const auto& obj_position = objects.objects.at(i).state.pose_covariance.pose.position;
     lanelet::BasicPoint2d obj_position2d(obj_position.x, obj_position.y);
 
     double distance = boost::geometry::distance(polygon2d, obj_position2d);
-    if (distance < std::numeric_limits<double>::epsilon())
-    {
+    if (distance < std::numeric_limits<double>::epsilon()) {
       indices.push_back(i);
     }
   }
   return indices;
 }
 
-PathWithLaneId removeOverlappingPoints(const PathWithLaneId& input_path)
-{
+PathWithLaneId removeOverlappingPoints(const PathWithLaneId& input_path) {
   PathWithLaneId filtered_path;
-  for (const auto& pt : input_path.points)
-  {
-    if (filtered_path.points.empty())
-    {
+  for (const auto& pt : input_path.points) {
+    if (filtered_path.points.empty()) {
       filtered_path.points.push_back(pt);
       continue;
     }
     if (getDistance3d(filtered_path.points.back().point.pose.position, pt.point.pose.position) <
-        std::numeric_limits<double>::epsilon())
-    {
+        std::numeric_limits<double>::epsilon()) {
       filtered_path.points.back().lane_ids.push_back(pt.lane_ids.front());
-    }
-    else
-    {
+    } else {
       filtered_path.points.push_back(pt);
     }
   }
@@ -445,18 +377,14 @@ PathWithLaneId removeOverlappingPoints(const PathWithLaneId& input_path)
 }
 
 template <typename T>
-bool exists(std::vector<T> vec, T element)
-{
+bool exists(std::vector<T> vec, T element) {
   return std::find(vec.begin(), vec.end(), element) != vec.end();
 }
 
 bool setGoal(const double search_radius_range, const double search_rad_range, const PathWithLaneId& input,
-             const geometry_msgs::Pose& goal, const int64_t goal_lane_id, PathWithLaneId* output_ptr)
-{
-  try
-  {
-    if (input.points.empty())
-    {
+             const geometry_msgs::Pose& goal, const int64_t goal_lane_id, PathWithLaneId* output_ptr) {
+  try {
+    if (input.points.empty()) {
       return false;
     }
     size_t min_dist_index;
@@ -464,41 +392,35 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     double goal_z;
     {
       bool found = false;
-      for (size_t i = 0; i < input.points.size(); ++i)
-      {
+      for (size_t i = 0; i < input.points.size(); ++i) {
         const double x = input.points.at(i).point.pose.position.x - goal.position.x;
         const double y = input.points.at(i).point.pose.position.y - goal.position.y;
         const double z = input.points.at(i).point.pose.position.z - goal.position.z;
         const double dist = sqrt(x * x + y * y);
-        if (dist < search_radius_range && dist < min_dist && exists(input.points.at(i).lane_ids, goal_lane_id))
-        {
+        if (dist < search_radius_range && dist < min_dist && exists(input.points.at(i).lane_ids, goal_lane_id)) {
           min_dist_index = i;
           min_dist = dist;
           found = true;
         }
       }
-      if (!found)
-      {
+      if (!found) {
         return false;
       }
     }
 
     size_t min_dist_out_of_range_index;
     {
-      for (size_t i = min_dist_index; 0 <= i; --i)
-      {
+      for (size_t i = min_dist_index; 0 <= i; --i) {
         const double x = input.points.at(i).point.pose.position.x - goal.position.x;
         const double y = input.points.at(i).point.pose.position.y - goal.position.y;
         const double z = input.points.at(i).point.pose.position.z - goal.position.z;
         goal_z = input.points.at(i).point.pose.position.z;
         const double dist = sqrt(x * x + y * y);
         min_dist_out_of_range_index = i;
-        if (search_radius_range < dist)
-        {
+        if (search_radius_range < dist) {
           break;
         }
-        if (i == 0)
-        {
+        if (i == 0) {
           break;
         }
       }
@@ -521,8 +443,7 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
     pre_refined_goal.point.twist.linear.x = input.points.at(min_dist_out_of_range_index).point.twist.linear.x;
     pre_refined_goal.lane_ids = input.points.back().lane_ids;
 
-    for (size_t i = 0; i <= min_dist_out_of_range_index; ++i)
-    {
+    for (size_t i = 0; i <= min_dist_out_of_range_index; ++i) {
       output_ptr->points.push_back(input.points.at(i));
     }
     output_ptr->points.push_back(pre_refined_goal);
@@ -530,29 +451,24 @@ bool setGoal(const double search_radius_range, const double search_rad_range, co
 
     output_ptr->drivable_area = input.drivable_area;
     return true;
-  }
-  catch (std::out_of_range& ex)
-  {
+  } catch (std::out_of_range& ex) {
     ROS_ERROR_STREAM("failed to set goal" << ex.what() << std::endl);
     return false;
   }
 }
 
-const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lanelet::ConstLanelet& goal_lanelet)
-{
+const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lanelet::ConstLanelet& goal_lanelet) {
   // return goal;
   const auto lanelet_point = lanelet::utils::conversion::toLaneletPoint(goal.position);
   const double distance = boost::geometry::distance(goal_lanelet.polygon2d().basicPolygon(),
                                                     lanelet::utils::to2D(lanelet_point).basicPoint());
-  if (distance < std::numeric_limits<double>::epsilon())
-  {
+  if (distance < std::numeric_limits<double>::epsilon()) {
     return goal;
   }
 
   const auto segment =
       lanelet::utils::getClosestSegment(lanelet::utils::to2D(lanelet_point), goal_lanelet.centerline());
-  if (segment.empty())
-  {
+  if (segment.empty()) {
     return goal;
   }
 
@@ -580,31 +496,25 @@ const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lane
 }
 
 PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range, const PathWithLaneId& input,
-                          const geometry_msgs::Pose& goal, const int64_t goal_lane_id)
-{
+                          const geometry_msgs::Pose& goal, const int64_t goal_lane_id) {
   PathWithLaneId filtered_path, path_with_goal;
   filtered_path = removeOverlappingPoints(input);
 
   // always set zero velocity at the end of path for safety
-  if (!filtered_path.points.empty())
-  {
+  if (!filtered_path.points.empty()) {
     filtered_path.points.back().point.twist.linear.x = 0.0;
   }
 
-  if (setGoal(search_radius_range, search_rad_range, filtered_path, goal, goal_lane_id, &path_with_goal))
-  {
+  if (setGoal(search_radius_range, search_rad_range, filtered_path, goal, goal_lane_id, &path_with_goal)) {
     return path_with_goal;
-  }
-  else
-  {
+  } else {
     return filtered_path;
   }
 }
 
 nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets& lanes,
                                                    const geometry_msgs::PoseStamped& current_pose, const double width,
-                                                   const double height, const double resolution)
-{
+                                                   const double height, const double resolution) {
   nav_msgs::OccupancyGrid occupancy_grid;
   geometry_msgs::PoseStamped grid_origin;
 
@@ -650,23 +560,19 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
 
     // convert lane polygons into cv type
     cv::Mat cv_image(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1, cv::Scalar(occupied_space));
-    for (std::size_t i = 0; i < lanes.size(); i++)
-    {
+    for (std::size_t i = 0; i < lanes.size(); i++) {
       const auto lane = lanes.at(i);
 
       // skip if it overlaps with past lane
       bool overlaps_with_past_lane = false;
-      for (std::size_t j = 0; j < i; j++)
-      {
+      for (std::size_t j = 0; j < i; j++) {
         const auto past_lane = lanes.at(j);
-        if (boost::geometry::overlaps(lane.polygon2d().basicPolygon(), past_lane.polygon2d().basicPolygon()))
-        {
+        if (boost::geometry::overlaps(lane.polygon2d().basicPolygon(), past_lane.polygon2d().basicPolygon())) {
           overlaps_with_past_lane = true;
           break;
         }
       }
-      if (overlaps_with_past_lane)
-      {
+      if (overlaps_with_past_lane) {
         continue;
       }
 
@@ -676,8 +582,7 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
       cv::Mat cv_image_single_lane(occupancy_grid.info.width, occupancy_grid.info.height, CV_8UC1,
                                    cv::Scalar(occupied_space));
       std::vector<cv::Point> cv_polygon;
-      for (const auto& llt_pt : lane.polygon3d())
-      {
+      for (const auto& llt_pt : lane.polygon3d()) {
         geometry_msgs::Point geom_pt = lanelet::utils::conversion::toGeomMsgPt(llt_pt);
         geometry_msgs::Point transformed_geom_pt;
         tf2::doTransform(geom_pt, transformed_geom_pt, geom_tf_map2grid);
@@ -698,33 +603,27 @@ nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets&
   return occupancy_grid;
 }
 
-double getDistanceToEndOfLane(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets)
-{
+double getDistanceToEndOfLane(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets) {
   const auto& arc_coordinates = lanelet::utils::getArcCoordinates(lanelets, current_pose);
   const double lanelet_length = lanelet::utils::getLaneletLength3d(lanelets);
   return lanelet_length - arc_coordinates.length;
 }
 
-double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets)
-{
+double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, const lanelet::ConstLanelets& lanelets) {
   const auto& arc_coordinates = lanelet::utils::getArcCoordinates(lanelets, current_pose);
 
   lanelet::ConstLanelet current_lanelet;
-  if (!lanelet::utils::query::getClosestLanelet(lanelets, current_pose, &current_lanelet))
-  {
+  if (!lanelet::utils::query::getClosestLanelet(lanelets, current_pose, &current_lanelet)) {
     return std::numeric_limits<double>::max();
   }
 
   double distance = 0;
   bool is_after_current_lanelet = false;
-  for (const auto& llt : lanelets)
-  {
-    if (llt == current_lanelet)
-    {
+  for (const auto& llt : lanelets) {
+    if (llt == current_lanelet) {
       is_after_current_lanelet = true;
     }
-    if (is_after_current_lanelet && llt.hasAttribute("turn_direction"))
-    {
+    if (is_after_current_lanelet && llt.hasAttribute("turn_direction")) {
       return distance - arc_coordinates.length;
     }
     distance += lanelet::utils::getLaneletLength3d(llt);
@@ -733,11 +632,9 @@ double getDistanceToNextIntersection(const geometry_msgs::Pose& current_pose, co
   return std::numeric_limits<double>::max();
 }  // namespace util
 
-std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets)
-{
+std::vector<uint64_t> getIds(const lanelet::ConstLanelets& lanelets) {
   std::vector<uint64_t> ids;
-  for (const auto& llt : lanelets)
-  {
+  for (const auto& llt : lanelets) {
     ids.push_back(llt.id());
   }
   return ids;

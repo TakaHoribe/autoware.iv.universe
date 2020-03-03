@@ -1,10 +1,8 @@
-#include "ros/ros.h"
-#include "microstrain_mips/SetSoftIronMatrix.h"
 #include <cstdlib>
+#include "microstrain_mips/SetSoftIronMatrix.h"
+#include "ros/ros.h"
 
-
-int main(int argc, char **argv){
-
+int main(int argc, char** argv) {
   ros::init(argc, argv, "set_soft_iron_matrix_client");
 
   ros::NodeHandle n;
@@ -21,16 +19,11 @@ int main(int argc, char **argv){
   srv.request.soft_iron_3.y = atoll(argv[8]);
   srv.request.soft_iron_3.z = atoll(argv[9]);
 
-
-  if (client.call(srv))
-  {
-      if (srv.response.success)
-      {
-        ROS_INFO("success");
-      }
-  }
-  else
-  {
+  if (client.call(srv)) {
+    if (srv.response.success) {
+      ROS_INFO("success");
+    }
+  } else {
     ROS_INFO("Failed to call service");
   }
   return 0;

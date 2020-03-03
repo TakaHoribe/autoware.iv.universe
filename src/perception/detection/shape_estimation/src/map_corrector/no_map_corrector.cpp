@@ -22,11 +22,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool NoMapCorrector::correct(const VectorMap &vector_map,
-                             const geometry_msgs::TransformStamped &transform_stamped,
-                             autoware_perception_msgs::Shape &shape_output,
-                             geometry_msgs::Pose &pose_output,
-                             bool &orientaion_output)
-{
-    return true;
+bool NoMapCorrector::correct(const VectorMap& vector_map, const geometry_msgs::TransformStamped& transform_stamped,
+                             autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                             bool& orientaion_output) {
+  return true;
 }

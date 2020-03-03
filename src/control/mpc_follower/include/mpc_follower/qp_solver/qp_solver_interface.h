@@ -41,7 +41,7 @@ class QPSolverInterface {
    * @param [out] U optimal variable vector
    * @return bool to check the problem is solved
    */
-  virtual bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
-                     const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
-                     const Eigen::VectorXd &ubA, Eigen::VectorXd &U) = 0;
+  virtual bool solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
+                     const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
+                     const Eigen::VectorXd& ubA, Eigen::VectorXd& U) = 0;
 };

@@ -1,28 +1,25 @@
 #pragma once
 #include <ros/ros.h>
 
-#include "message_filters/subscriber.h"
-#include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "sensor_msgs/Image.h"
+#include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include "autoware_traffic_light_msgs/TrafficLightRoiArray.h"
-#include <image_transport/image_transport.h>
+#include "message_filters/subscriber.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/synchronizer.h"
+#include "sensor_msgs/Image.h"
 
 #include <memory>
 
-namespace traffic_light
-{
-class TrafficLightRoiVisualizer
-{
-
-public:
+namespace traffic_light {
+class TrafficLightRoiVisualizer {
+ public:
   TrafficLightRoiVisualizer();
   virtual ~TrafficLightRoiVisualizer();
 
-private:
-  void imageRoiCallback(const sensor_msgs::ImageConstPtr &input_image_msg,
-                        const autoware_traffic_light_msgs::TrafficLightRoiArray::ConstPtr &input_tl_roi_msg);
+ private:
+  void imageRoiCallback(const sensor_msgs::ImageConstPtr& input_image_msg,
+                        const autoware_traffic_light_msgs::TrafficLightRoiArray::ConstPtr& input_tl_roi_msg);
 
   ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport image_transport_;
@@ -36,4 +33,4 @@ private:
   Sync sync_;
 };
 
-} // namespace traffic_light
+}  // namespace traffic_light

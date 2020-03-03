@@ -8,23 +8,19 @@
 // #include "tf2_ros/transform_listener.h"
 // #include "tf2_ros/message_filter.h"
 // #include "message_filters/subscriber.h"
-#include "sensor_msgs/PointCloud2.h"
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/point_types.h>
+#include "sensor_msgs/PointCloud2.h"
 
-
-namespace euclidean_cluster
-{
-class VoxelGridBasedEuclideanClusterNodelet : public nodelet::Nodelet
-{
-
-public:
+namespace euclidean_cluster {
+class VoxelGridBasedEuclideanClusterNodelet : public nodelet::Nodelet {
+ public:
   VoxelGridBasedEuclideanClusterNodelet();
 
-private:
+ private:
   virtual void onInit();
 
-  void pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr &input_msg);
+  void pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& input_msg);
 
   ros::NodeHandle nh_, private_nh_;
   ros::Subscriber pointcloud_sub_;
@@ -40,7 +36,6 @@ private:
   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_;
   float voxel_leaf_size_;
   int min_points_number_per_voxel_;
-
 };
 
-} // namespace euclidean_cluster
+}  // namespace euclidean_cluster

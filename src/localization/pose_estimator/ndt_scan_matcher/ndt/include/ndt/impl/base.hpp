@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
- #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
- #define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformBase<PointSource, PointTarget>::NormalDistributionsTransformBase() {}

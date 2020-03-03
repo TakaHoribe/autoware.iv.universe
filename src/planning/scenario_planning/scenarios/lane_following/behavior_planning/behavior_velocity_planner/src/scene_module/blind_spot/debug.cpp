@@ -8,8 +8,8 @@ namespace {
 using State = BlindSpotModule::State;
 
 visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, const State& state,
-    const std::string& ns, const int64_t id) {
+    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, const State& state, const std::string& ns,
+    const int64_t id) {
   visualization_msgs::MarkerArray msg;
 
   auto marker = createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::LINE_STRIP,

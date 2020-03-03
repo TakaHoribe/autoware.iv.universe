@@ -17,19 +17,18 @@
 #ifndef ACCEL_MAP_CONVERTER_ACCEL_MAP_H
 #define ACCEL_MAP_CONVERTER_ACCEL_MAP_H
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include <ros/ros.h>
 
 #include "accel_map_converter/csv_loader.h"
 #include "accel_map_converter/interpolate.h"
 
-class AccelMap
-{
-public:
+class AccelMap {
+ public:
   AccelMap();
   ~AccelMap();
 
@@ -37,7 +36,7 @@ public:
   bool getThrottle(double acc, double vel, double& throttle);
   void showAccelMapInfo();
 
-private:
+ private:
   std::string vehicle_name_;
   std::vector<double> vel_index_;
   std::vector<double> throttle_index_;

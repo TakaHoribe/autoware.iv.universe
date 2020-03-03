@@ -84,4 +84,3 @@ bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::Ma
 
   return true;
 }
-

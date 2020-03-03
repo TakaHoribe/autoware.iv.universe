@@ -44,72 +44,54 @@
 #include <pcl/registration/ndt.h>
 #include <unsupported/Eigen/NonLinearOptimization>
 
-namespace pcl
-{
-  template<typename PointSource, typename PointTarget>
-  class NormalDistributionsTransformModified : public NormalDistributionsTransform<PointSource, PointTarget>
-  {
-    protected:
-      typedef typename Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
+namespace pcl {
+template <typename PointSource, typename PointTarget>
+class NormalDistributionsTransformModified : public NormalDistributionsTransform<PointSource, PointTarget> {
+ protected:
+  typedef typename Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
 
-    public:
-      virtual void
-      computeTransformation (PointCloudSource &output, const Eigen::Matrix4f &guess) override;
+ public:
+  virtual void computeTransformation(PointCloudSource& output, const Eigen::Matrix4f& guess) override;
 
-      inline const Eigen::Matrix<double, 6, 6>
-      getHessian() const
-      {
-          return hessian_;
-      }
+  inline const Eigen::Matrix<double, 6, 6> getHessian() const { return hessian_; }
 
-      inline const std::vector<Eigen::Matrix4f>
-      getFinalTransformationArray() const
-      {
-          return transformation_array_;
-      }
+  inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const { return transformation_array_; }
 
-    protected:
+ protected:
+  virtual double computeStepLengthMT(const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix<double, 6, 1>& step_dir,
+                                     double step_init, double step_max, double step_min, double& score,
+                                     Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
+                                     PointCloudSource& trans_cloud);
 
-      virtual double
-      computeStepLengthMT (const Eigen::Matrix<double, 6, 1> &x,
-                     Eigen::Matrix<double, 6, 1> &step_dir,
-                     double step_init,
-                     double step_max, double step_min,
-                     double &score,
-                     Eigen::Matrix<double, 6, 1> &score_gradient,
-                     Eigen::Matrix<double, 6, 6> &hessian,
-                     PointCloudSource &trans_cloud);
+  using Registration<PointSource, PointTarget>::input_;
+  using Registration<PointSource, PointTarget>::target_;
+  using Registration<PointSource, PointTarget>::nr_iterations_;
+  using Registration<PointSource, PointTarget>::max_iterations_;
+  using Registration<PointSource, PointTarget>::previous_transformation_;
+  using Registration<PointSource, PointTarget>::final_transformation_;
+  using Registration<PointSource, PointTarget>::transformation_;
+  using Registration<PointSource, PointTarget>::transformation_epsilon_;
+  using Registration<PointSource, PointTarget>::converged_;
+  using Registration<PointSource, PointTarget>::update_visualizer_;
 
+  using NormalDistributionsTransform<PointSource, PointTarget>::outlier_ratio_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::resolution_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::step_size_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d1_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d2_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::point_gradient_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::point_hessian_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::trans_probability_;
 
-      using Registration<PointSource, PointTarget>::input_;
-      using Registration<PointSource, PointTarget>::target_;
-      using Registration<PointSource, PointTarget>::nr_iterations_;
-      using Registration<PointSource, PointTarget>::max_iterations_;
-      using Registration<PointSource, PointTarget>::previous_transformation_;
-      using Registration<PointSource, PointTarget>::final_transformation_;
-      using Registration<PointSource, PointTarget>::transformation_;
-      using Registration<PointSource, PointTarget>::transformation_epsilon_;
-      using Registration<PointSource, PointTarget>::converged_;
-      using Registration<PointSource, PointTarget>::update_visualizer_;
+  Eigen::Matrix<double, 6, 6> hessian_;
+  std::vector<Eigen::Matrix4f> transformation_array_;
 
-      using NormalDistributionsTransform<PointSource, PointTarget>::outlier_ratio_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::resolution_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::step_size_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d1_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d2_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::point_gradient_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::point_hessian_;
-      using NormalDistributionsTransform<PointSource, PointTarget>::trans_probability_;
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
 
-      Eigen::Matrix<double, 6, 6> hessian_;
-      std::vector<Eigen::Matrix4f> transformation_array_;
-
-    public:
-      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  };
-
-}
+}  // namespace pcl
 
 #include "ndt_pcl_modified/impl/ndt.hpp"
 
-#endif // PCL_REGISTRATION_NDT_MODIFIED_H_
+#endif  // PCL_REGISTRATION_NDT_MODIFIED_H_

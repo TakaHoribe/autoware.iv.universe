@@ -20,8 +20,7 @@
 // headers in local files
 #include "lidar_point_pillars/point_pillars_ros.h"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "lidar_point_pillars");
   PointPillarsROS app;
   app.createROSPubSub();

@@ -23,18 +23,15 @@
 
 #include "util.h"
 
-
-
-class  FeatureGenerator
-{
-public:
-  FeatureGenerator(){}
-  ~FeatureGenerator(){}
+class FeatureGenerator {
+ public:
+  FeatureGenerator() {}
+  ~FeatureGenerator() {}
 
   bool init(caffe::Blob<float>* out_blob);
-  void generate(
-      const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr);
-private:
+  void generate(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr);
+
+ private:
   int width_ = 0;
   int height_ = 0;
   int range_ = 0;
@@ -61,7 +58,6 @@ private:
   std::vector<int> map_idx_;
 
   float logCount(int count);
-
 };
 
-#endif //FEATURE_GENERATOR_H
+#endif  // FEATURE_GENERATOR_H

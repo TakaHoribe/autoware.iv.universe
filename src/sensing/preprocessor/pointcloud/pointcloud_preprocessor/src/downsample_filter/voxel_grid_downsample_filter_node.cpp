@@ -28,11 +28,10 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ros/ros.h>
 #include <nodelet/loader.h>
+#include <ros/ros.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "voxel_grid_downsample_filter_node");
   ros::NodeHandle private_nh("~");
 

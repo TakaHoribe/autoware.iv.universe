@@ -7,12 +7,9 @@
 #include <lanelet2_core/primitives/Primitive.h>
 #include <memory>
 
-namespace lane_change_planner
-{
-namespace state_machine
-{
-namespace common_functions
-{
+namespace lane_change_planner {
+namespace state_machine {
+namespace common_functions {
 bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
                           const lanelet::ConstLanelets& current_lanes, const lanelet::ConstLanelets& target_lanes,
                           const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& dynamic_objects,

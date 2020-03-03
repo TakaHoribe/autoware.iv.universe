@@ -28,29 +28,26 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pluginlib/class_list_macros.h>
 #include "pointcloud_preprocessor/downsample_filter/voxel_grid_downsample_filter_nodelet.h"
+#include <pluginlib/class_list_macros.h>
 
-
-#include <pcl/segmentation/segment_differences.h>
-#include <pcl/search/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/segmentation/segment_differences.h>
 
-namespace pointcloud_preprocessor
-{
-bool VoxelGridDownsampleFilterNodelet::child_init(ros::NodeHandle &nh, bool &has_service)
-{
+namespace pointcloud_preprocessor {
+bool VoxelGridDownsampleFilterNodelet::child_init(ros::NodeHandle& nh, bool& has_service) {
   // Enable the dynamic reconfigure service
   has_service = true;
   srv_ = boost::make_shared<dynamic_reconfigure::Server<pointcloud_preprocessor::VoxelGridDownsampleFilterConfig> >(nh);
-  dynamic_reconfigure::Server<pointcloud_preprocessor::VoxelGridDownsampleFilterConfig>::CallbackType f = boost::bind(&VoxelGridDownsampleFilterNodelet::config_callback, this, _1, _2);
+  dynamic_reconfigure::Server<pointcloud_preprocessor::VoxelGridDownsampleFilterConfig>::CallbackType f =
+      boost::bind(&VoxelGridDownsampleFilterNodelet::config_callback, this, _1, _2);
   srv_->setCallback(f);
   return (true);
 }
 
-void VoxelGridDownsampleFilterNodelet::filter(const PointCloud2::ConstPtr &input, const IndicesPtr &indices,
-                                     PointCloud2 &output)
-{
+void VoxelGridDownsampleFilterNodelet::filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices,
+                                              PointCloud2& output) {
   boost::mutex::scoped_lock lock(mutex_);
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_input(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_output(new pcl::PointCloud<pcl::PointXYZ>);
@@ -66,49 +63,42 @@ void VoxelGridDownsampleFilterNodelet::filter(const PointCloud2::ConstPtr &input
   output.header = input->header;
 }
 
-void VoxelGridDownsampleFilterNodelet::subscribe()
-{
-  Filter::subscribe();
-}
+void VoxelGridDownsampleFilterNodelet::subscribe() { Filter::subscribe(); }
 
-void VoxelGridDownsampleFilterNodelet::unsubscribe()
-{
-  Filter::unsubscribe();
-}
+void VoxelGridDownsampleFilterNodelet::unsubscribe() { Filter::unsubscribe(); }
 
-void VoxelGridDownsampleFilterNodelet::config_callback(pointcloud_preprocessor::VoxelGridDownsampleFilterConfig &config, uint32_t level)
-{
+void VoxelGridDownsampleFilterNodelet::config_callback(pointcloud_preprocessor::VoxelGridDownsampleFilterConfig& config,
+                                                       uint32_t level) {
   boost::mutex::scoped_lock lock(mutex_);
 
-  if (voxel_size_x_ != config.voxel_size_x)
-  {
+  if (voxel_size_x_ != config.voxel_size_x) {
     voxel_size_x_ = config.voxel_size_x;
-    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(), config.voxel_size_x);
+    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(),
+                  config.voxel_size_x);
   }
-  if (voxel_size_y_ != config.voxel_size_y)
-  {
+  if (voxel_size_y_ != config.voxel_size_y) {
     voxel_size_y_ = config.voxel_size_y;
-    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(), config.voxel_size_y);
+    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(),
+                  config.voxel_size_y);
   }
-  if (voxel_size_z_ != config.voxel_size_z)
-  {
+  if (voxel_size_z_ != config.voxel_size_z) {
     voxel_size_z_ = config.voxel_size_z;
-    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(), config.voxel_size_z);
+    NODELET_DEBUG("[%s::config_callback] Setting new distance threshold to: %f.", getName().c_str(),
+                  config.voxel_size_z);
   }
-  // ---[ These really shouldn't be here, and as soon as dynamic_reconfigure improves, we'll remove them and inherit from Filter
-  if (tf_input_frame_ != config.input_frame)
-  {
+  // ---[ These really shouldn't be here, and as soon as dynamic_reconfigure improves, we'll remove them and inherit
+  // from Filter
+  if (tf_input_frame_ != config.input_frame) {
     tf_input_frame_ = config.input_frame;
-    NODELET_DEBUG ("[config_callback] Setting the input TF frame to: %s.", tf_input_frame_.c_str ());
+    NODELET_DEBUG("[config_callback] Setting the input TF frame to: %s.", tf_input_frame_.c_str());
   }
-  if (tf_output_frame_ != config.output_frame)
-  {
+  if (tf_output_frame_ != config.output_frame) {
     tf_output_frame_ = config.output_frame;
     NODELET_DEBUG("[config_callback] Setting the output TF frame to: %s.", tf_output_frame_.c_str());
   }
   // ]---
 }
 
-} // namespace pointcloud_preprocessor
+}  // namespace pointcloud_preprocessor
 
 PLUGINLIB_EXPORT_CLASS(pointcloud_preprocessor::VoxelGridDownsampleFilterNodelet, nodelet::Nodelet);

@@ -27,16 +27,14 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
-//Include Files
+// Include Files
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "mip.h"
 #include <stdio.h>
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -63,28 +61,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
+u16 mip_init(u8* mip_buffer, u16 buffer_size, u8 descriptor_set) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
-u16 mip_init(u8 *mip_buffer, u16 buffer_size, u8 descriptor_set)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
+  // Null check mip buffer
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //Null check mip buffer
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // The buffer must contain at least enough bytes for the header and checksum
+  if (buffer_size < MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE) return MIP_MEMORY_ERROR;
 
- //The buffer must contain at least enough bytes for the header and checksum
- if(buffer_size < MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE)
-  return MIP_MEMORY_ERROR;
+  // Initialize the header
+  header_ptr->sync1 = MIP_SYNC_BYTE1;
+  header_ptr->sync2 = MIP_SYNC_BYTE2;
+  header_ptr->descriptor_set = descriptor_set;
+  header_ptr->payload_size = 0;
 
- //Initialize the header
- header_ptr->sync1          = MIP_SYNC_BYTE1;
- header_ptr->sync2          = MIP_SYNC_BYTE2;
- header_ptr->descriptor_set = descriptor_set;
- header_ptr->payload_size   = 0;
-
- return MIP_OK;
+  return MIP_OK;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -109,23 +102,19 @@ u16 mip_init(u8 *mip_buffer, u16 buffer_size, u8 descriptor_set)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_is_initialized(u8 *mip_buffer,  u8 descriptor_set)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
+u16 mip_is_initialized(u8* mip_buffer, u8 descriptor_set) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Null check mip buffer
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Null check mip buffer
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //MIP packet is initialized if sync bytes are correct and the class matches.
- if((header_ptr->sync1          == MIP_SYNC_BYTE1) &&
-    (header_ptr->sync2          == MIP_SYNC_BYTE2) &&
-    (header_ptr->descriptor_set == descriptor_set))
-   return MIP_OK;
+  // MIP packet is initialized if sync bytes are correct and the class matches.
+  if ((header_ptr->sync1 == MIP_SYNC_BYTE1) && (header_ptr->sync2 == MIP_SYNC_BYTE2) &&
+      (header_ptr->descriptor_set == descriptor_set))
+    return MIP_OK;
 
- return MIP_ERROR;
+  return MIP_ERROR;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -155,47 +144,42 @@ u16 mip_is_initialized(u8 *mip_buffer,  u8 descriptor_set)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_add_field(u8 *mip_buffer, u16 buffer_size, void *field_data, u16 data_size, u16 data_descriptor)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
- mip_field_header *field_header_ptr;
- u8               *field_data_ptr;
- u16              new_packet_size;
+u16 mip_add_field(u8* mip_buffer, u16 buffer_size, void* field_data, u16 data_size, u16 data_descriptor) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
+  mip_field_header* field_header_ptr;
+  u8* field_data_ptr;
+  u16 new_packet_size;
 
- //Null check info
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Null check info
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //Null check field_data
- if((field_data == 0) && (data_size > 0))
-   return MIP_ERROR;
+  // Null check field_data
+  if ((field_data == 0) && (data_size > 0)) return MIP_ERROR;
 
- new_packet_size = sizeof(mip_header) + header_ptr->payload_size + data_size + sizeof(mip_field_header) + MIP_CHECKSUM_SIZE;
+  new_packet_size =
+      sizeof(mip_header) + header_ptr->payload_size + data_size + sizeof(mip_field_header) + MIP_CHECKSUM_SIZE;
 
- //Check if there is enough room left to store the field
- if((new_packet_size > MIP_MAX_PACKET_SIZE) || (new_packet_size > buffer_size))
-  return MIP_MEMORY_ERROR;
+  // Check if there is enough room left to store the field
+  if ((new_packet_size > MIP_MAX_PACKET_SIZE) || (new_packet_size > buffer_size)) return MIP_MEMORY_ERROR;
 
- //Jump to the end of the packet
- field_header_ptr = (mip_field_header*)(mip_buffer + sizeof(mip_header) + header_ptr->payload_size);
+  // Jump to the end of the packet
+  field_header_ptr = (mip_field_header*)(mip_buffer + sizeof(mip_header) + header_ptr->payload_size);
 
- //Fill-in the field header
- field_header_ptr->size       = data_size + sizeof(mip_field_header);
- field_header_ptr->descriptor = (u8)data_descriptor;
+  // Fill-in the field header
+  field_header_ptr->size = data_size + sizeof(mip_field_header);
+  field_header_ptr->descriptor = (u8)data_descriptor;
 
- //Add the field data
- if(field_data != 0)
- {
-  field_data_ptr = ((u8*)field_header_ptr + sizeof(mip_field_header));
-  memcpy(field_data_ptr, field_data, data_size);
- }
+  // Add the field data
+  if (field_data != 0) {
+    field_data_ptr = ((u8*)field_header_ptr + sizeof(mip_field_header));
+    memcpy(field_data_ptr, field_data, data_size);
+  }
 
- //Update the header
- header_ptr->payload_size += data_size + sizeof(mip_field_header);
+  // Update the header
+  header_ptr->payload_size += data_size + sizeof(mip_field_header);
 
- return MIP_OK;
+  return MIP_OK;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -223,39 +207,34 @@ u16 mip_add_field(u8 *mip_buffer, u16 buffer_size, void *field_data, u16 data_si
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_add_formatted_field(u8 *mip_buffer, u16 buffer_size, void *field)
-{
- mip_header       *header_ptr       = (mip_header*)mip_buffer;
- mip_field_header *field_header_ptr = (mip_field_header *)field;
- u8               *field_location;
- u16              new_packet_size;
+u16 mip_add_formatted_field(u8* mip_buffer, u16 buffer_size, void* field) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
+  mip_field_header* field_header_ptr = (mip_field_header*)field;
+  u8* field_location;
+  u16 new_packet_size;
 
- //Null check info
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Null check info
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //Null check field
- if(field == 0)
-   return MIP_ERROR;
+  // Null check field
+  if (field == 0) return MIP_ERROR;
 
- new_packet_size = sizeof(mip_header) + header_ptr->payload_size + field_header_ptr->size + MIP_CHECKSUM_SIZE;
+  new_packet_size = sizeof(mip_header) + header_ptr->payload_size + field_header_ptr->size + MIP_CHECKSUM_SIZE;
 
- //Check if there is enough room left to store the field
- if((new_packet_size > MIP_MAX_PACKET_SIZE) || (new_packet_size > buffer_size))
-  return MIP_MEMORY_ERROR;
+  // Check if there is enough room left to store the field
+  if ((new_packet_size > MIP_MAX_PACKET_SIZE) || (new_packet_size > buffer_size)) return MIP_MEMORY_ERROR;
 
- //Jump to the end of the packet
- field_location = mip_buffer + sizeof(mip_header) + header_ptr->payload_size;
+  // Jump to the end of the packet
+  field_location = mip_buffer + sizeof(mip_header) + header_ptr->payload_size;
 
- //Add the field
- memcpy(field_location, field, field_header_ptr->size);
+  // Add the field
+  memcpy(field_location, field, field_header_ptr->size);
 
- //Update the header
- header_ptr->payload_size += field_header_ptr->size;
+  // Update the header
+  header_ptr->payload_size += field_header_ptr->size;
 
- return MIP_OK;
+  return MIP_OK;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -278,31 +257,27 @@ u16 mip_add_formatted_field(u8 *mip_buffer, u16 buffer_size, void *field)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_finalize(u8 *mip_buffer)
-{
- u16 checksum, checksum_offset;
- mip_header *header_ptr = (mip_header*)mip_buffer;
+u16 mip_finalize(u8* mip_buffer) {
+  u16 checksum, checksum_offset;
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Null check info
- if(mip_buffer == 0)
-   return 0;
+  // Null check info
+  if (mip_buffer == 0) return 0;
 
- //Calculate the checksum offset
- checksum_offset = header_ptr->payload_size + MIP_HEADER_SIZE;
+  // Calculate the checksum offset
+  checksum_offset = header_ptr->payload_size + MIP_HEADER_SIZE;
 
- //Check that the offset is valid
- if(checksum_offset > MIP_MAX_PACKET_SIZE - MIP_CHECKSUM_SIZE)
-  return 0;
+  // Check that the offset is valid
+  if (checksum_offset > MIP_MAX_PACKET_SIZE - MIP_CHECKSUM_SIZE) return 0;
 
- checksum = mip_calculate_checksum(mip_buffer);
+  checksum = mip_calculate_checksum(mip_buffer);
 
- //Put the checksum in the packet
- mip_buffer[checksum_offset]     = (checksum >> 8) & 0xFF;
- mip_buffer[checksum_offset + 1] = checksum & 0xFF;
+  // Put the checksum in the packet
+  mip_buffer[checksum_offset] = (checksum >> 8) & 0xFF;
+  mip_buffer[checksum_offset + 1] = checksum & 0xFF;
 
- return header_ptr->payload_size + MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE;
+  return header_ptr->payload_size + MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -327,23 +302,20 @@ u16 mip_finalize(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_is_mip_packet(u8 *mip_buffer)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
+u16 mip_is_mip_packet(u8* mip_buffer) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Null check info
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Null check info
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //If the header contains valid parameters, return OK
- if((header_ptr->sync1 == MIP_SYNC_BYTE1) && (header_ptr->sync2 == MIP_SYNC_BYTE2) &&
-    (header_ptr->payload_size <= MIP_MAX_PAYLOAD_SIZE))
-   return MIP_OK;
+  // If the header contains valid parameters, return OK
+  if ((header_ptr->sync1 == MIP_SYNC_BYTE1) && (header_ptr->sync2 == MIP_SYNC_BYTE2) &&
+      (header_ptr->payload_size <= MIP_MAX_PAYLOAD_SIZE))
+    return MIP_OK;
 
- //Not a MIP packet header
- return MIP_INVALID_PACKET;
+  // Not a MIP packet header
+  return MIP_INVALID_PACKET;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -367,18 +339,15 @@ u16 mip_is_mip_packet(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_get_packet_size(u8 *mip_buffer)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
+u16 mip_get_packet_size(u8* mip_buffer) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Check the validity of the packet
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return 0;
+  // Check the validity of the packet
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return 0;
 
- //Return the packet size
- return header_ptr->payload_size + MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE;
+  // Return the packet size
+  return header_ptr->payload_size + MIP_HEADER_SIZE + MIP_CHECKSUM_SIZE;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -405,19 +374,16 @@ u16 mip_get_packet_size(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_get_first_field(u8 *mip_buffer, mip_field_header **field_header, u8 **field_data, u16 *field_offset)
-{
- //Null check field_offset
- if(field_offset == 0)
-  return MIP_ERROR;
+u16 mip_get_first_field(u8* mip_buffer, mip_field_header** field_header, u8** field_data, u16* field_offset) {
+  // Null check field_offset
+  if (field_offset == 0) return MIP_ERROR;
 
- //Start at the first field
- *field_offset = 0;
+  // Start at the first field
+  *field_offset = 0;
 
- //The "next field" function is used to calculate the offset
- return mip_get_next_field(mip_buffer, field_header, field_data, field_offset);
+  // The "next field" function is used to calculate the offset
+  return mip_get_next_field(mip_buffer, field_header, field_data, field_offset);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -447,38 +413,32 @@ u16 mip_get_first_field(u8 *mip_buffer, mip_field_header **field_header, u8 **fi
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_get_next_field(u8 *mip_buffer, mip_field_header **field_header, u8 **field_data, u16 *field_offset)
-{
- mip_header *header_ptr = (mip_header *)mip_buffer;
- u8 *field_ptr;
+u16 mip_get_next_field(u8* mip_buffer, mip_field_header** field_header, u8** field_data, u16* field_offset) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
+  u8* field_ptr;
 
- //Null check info
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Null check info
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //Check that the header is valid
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return MIP_INVALID_PACKET;
+  // Check that the header is valid
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return MIP_INVALID_PACKET;
 
- //Check that the field exists
- if(*field_offset >= header_ptr->payload_size)
-   return MIP_FIELD_NOT_AVAILABLE;
+  // Check that the field exists
+  if (*field_offset >= header_ptr->payload_size) return MIP_FIELD_NOT_AVAILABLE;
 
- //Assign the pointers
- field_ptr     =  mip_get_payload_ptr(mip_buffer) + *field_offset;
- *field_header = (mip_field_header*)field_ptr;
- *field_data   =  field_ptr + sizeof(mip_field_header);
+  // Assign the pointers
+  field_ptr = mip_get_payload_ptr(mip_buffer) + *field_offset;
+  *field_header = (mip_field_header*)field_ptr;
+  *field_data = field_ptr + sizeof(mip_field_header);
 
- //0 size fields are unallowed!
- if((*field_header)->size == 0)
-  return MIP_ERROR;
+  // 0 size fields are unallowed!
+  if ((*field_header)->size == 0) return MIP_ERROR;
 
- //Update field_offset
- *field_offset += (*field_header)->size;
+  // Update field_offset
+  *field_offset += (*field_header)->size;
 
- return MIP_OK;
+  return MIP_OK;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -502,21 +462,17 @@ u16 mip_get_next_field(u8 *mip_buffer, mip_field_header **field_header, u8 **fie
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u8 mip_get_packet_descriptor_set(u8 *mip_buffer)
-{
- mip_header *header_ptr = (mip_header *)mip_buffer;
+u8 mip_get_packet_descriptor_set(u8* mip_buffer) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Null check info
- if(mip_buffer == 0)
-   return 0;
+  // Null check info
+  if (mip_buffer == 0) return 0;
 
- //Check that the header is valid
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return 0;
+  // Check that the header is valid
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return 0;
 
- return header_ptr->descriptor_set;
+  return header_ptr->descriptor_set;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -540,21 +496,17 @@ u8 mip_get_packet_descriptor_set(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u8 mip_get_payload_size(u8 *mip_buffer)
-{
- mip_header *header_ptr = (mip_header *)mip_buffer;
+u8 mip_get_payload_size(u8* mip_buffer) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
- //Null check info
- if(mip_buffer == 0)
-   return 0;
+  // Null check info
+  if (mip_buffer == 0) return 0;
 
- //Check that the header is valid
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return 0;
+  // Check that the header is valid
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return 0;
 
- return header_ptr->payload_size;
+  return header_ptr->payload_size;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -578,19 +530,15 @@ u8 mip_get_payload_size(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u8 *mip_get_payload_ptr(u8 *mip_buffer)
-{
- //Null check info
- if(mip_buffer == 0)
-   return 0;
+u8* mip_get_payload_ptr(u8* mip_buffer) {
+  // Null check info
+  if (mip_buffer == 0) return 0;
 
- //Check that the header is valid
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return 0;
+  // Check that the header is valid
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return 0;
 
- return mip_buffer + sizeof(mip_header);
+  return mip_buffer + sizeof(mip_header);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -615,35 +563,30 @@ u8 *mip_get_payload_ptr(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_is_checksum_valid(u8 *mip_buffer)
-{
- u16 packet_checksum, expected_checksum, checksum_offset = 0;
- mip_header *header_ptr = (mip_header *)mip_buffer;
+u16 mip_is_checksum_valid(u8* mip_buffer) {
+  u16 packet_checksum, expected_checksum, checksum_offset = 0;
+  mip_header* header_ptr = (mip_header*)mip_buffer;
 
+  // Null check info
+  if (mip_buffer == 0) return MIP_ERROR;
 
- //Null check info
- if(mip_buffer == 0)
-   return MIP_ERROR;
+  // Check that the header is valid
+  if (mip_is_mip_packet(mip_buffer) != MIP_OK) return MIP_INVALID_PACKET;
 
- //Check that the header is valid
- if(mip_is_mip_packet(mip_buffer) != MIP_OK)
-   return MIP_INVALID_PACKET;
+  checksum_offset = header_ptr->payload_size + sizeof(mip_header);
 
- checksum_offset = header_ptr->payload_size + sizeof(mip_header);
+  // Form the packet checksum
+  packet_checksum = ((u16)mip_buffer[checksum_offset] << 8) + (u16)mip_buffer[checksum_offset + 1];
 
- //Form the packet checksum
- packet_checksum = ((u16)mip_buffer[checksum_offset]<<8) + (u16)mip_buffer[checksum_offset + 1];
+  // Calculate the expected checksum
+  expected_checksum = mip_calculate_checksum(mip_buffer);
 
- //Calculate the expected checksum
- expected_checksum = mip_calculate_checksum(mip_buffer);
-
- //Evaluate checksums
- if(packet_checksum == expected_checksum)
-  return MIP_OK;
- else
-  return MIP_CHECKSUM_ERROR;
+  // Evaluate checksums
+  if (packet_checksum == expected_checksum)
+    return MIP_OK;
+  else
+    return MIP_CHECKSUM_ERROR;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -667,33 +610,28 @@ u16 mip_is_checksum_valid(u8 *mip_buffer)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_calculate_checksum(u8 *mip_buffer)
-{
- mip_header *header_ptr = (mip_header*)mip_buffer;
- u16 i, checksum, checksum_range_size;
- u8 checksum_byte1 = 0, checksum_byte2 = 0;
+u16 mip_calculate_checksum(u8* mip_buffer) {
+  mip_header* header_ptr = (mip_header*)mip_buffer;
+  u16 i, checksum, checksum_range_size;
+  u8 checksum_byte1 = 0, checksum_byte2 = 0;
 
+  // Null check info
+  if (mip_buffer == 0) return 0;
 
- //Null check info
- if(mip_buffer == 0)
-  return 0;
+  // Calculate the size of the checksum data range
+  checksum_range_size = header_ptr->payload_size + MIP_HEADER_SIZE;
 
- //Calculate the size of the checksum data range
- checksum_range_size = header_ptr->payload_size + MIP_HEADER_SIZE;
+  // Check that the size is valid
+  if (checksum_range_size > MIP_MAX_PACKET_SIZE - MIP_CHECKSUM_SIZE) return 0;
 
- //Check that the size is valid
- if(checksum_range_size > MIP_MAX_PACKET_SIZE - MIP_CHECKSUM_SIZE)
-  return 0;
+  // Calculate the fletcher checksum
+  for (i = 0; i < checksum_range_size; i++) {
+    checksum_byte1 += mip_buffer[i];
+    checksum_byte2 += checksum_byte1;
+  }
 
- //Calculate the fletcher checksum
- for(i=0; i<checksum_range_size; i++)
- {
-  checksum_byte1 += mip_buffer[i];
-  checksum_byte2 += checksum_byte1;
- }
+  // Form the packet checksum
+  checksum = ((u16)checksum_byte1 << 8) + (u16)checksum_byte2;
 
- //Form the packet checksum
- checksum = ((u16)checksum_byte1<<8) + (u16)checksum_byte2;
-
- return checksum;
+  return checksum;
 }

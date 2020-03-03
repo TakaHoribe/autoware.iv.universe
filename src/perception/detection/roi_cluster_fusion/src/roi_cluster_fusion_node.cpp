@@ -1,8 +1,7 @@
-#include <ros/ros.h>
 #include <nodelet/loader.h>
+#include <ros/ros.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "roi_cluster_fusion_node");
   ros::NodeHandle private_nh("~");
 

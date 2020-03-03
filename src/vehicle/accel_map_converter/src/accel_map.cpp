@@ -16,47 +16,36 @@
 
 #include "accel_map_converter/accel_map.h"
 
-AccelMap::AccelMap()
-{
-}
+AccelMap::AccelMap() {}
 
-AccelMap::~AccelMap()
-{
-}
+AccelMap::~AccelMap() {}
 
-bool AccelMap::readAccelMapFromCSV(std::string csv_path)
-{
+bool AccelMap::readAccelMapFromCSV(std::string csv_path) {
   CSVLoader csv(csv_path);
   std::vector<std::vector<std::string>> table;
 
-  if (!csv.readCSV(table))
-  {
+  if (!csv.readCSV(table)) {
     ROS_ERROR("[Accel Map] Cannot open %s", csv_path.c_str());
     return false;
   }
 
-  if (table[0].size() < 2)
-  {
+  if (table[0].size() < 2) {
     ROS_ERROR("[Accel Map] Cannot read %s. CSV file should have at least 2 column", csv_path.c_str());
     return false;
   }
   vehicle_name_ = table[0][0];
-  for (unsigned int i = 1; i < table[0].size(); i++)
-  {
+  for (unsigned int i = 1; i < table[0].size(); i++) {
     vel_index_.push_back(std::stod(table[0][i]) * 1000 / 60 / 60);  // km/h => m/s
   }
 
-  for (unsigned int i = 1; i < table.size(); i++)
-  {
-    if (table[0].size() != table[i].size())
-    {
+  for (unsigned int i = 1; i < table.size(); i++) {
+    if (table[0].size() != table[i].size()) {
       ROS_ERROR("[Accel Map] Cannot read %s. Each row should have a same number of columns", csv_path.c_str());
       return false;
     }
     throttle_index_.push_back(std::stod(table[i][0]));
     std::vector<double> accs;
-    for (unsigned int j = 1; j < table[i].size(); j++)
-    {
+    for (unsigned int j = 1; j < table[i].size(); j++) {
       accs.push_back(std::stod(table[i][j]));
     }
     accel_map_.push_back(accs);
@@ -65,14 +54,12 @@ bool AccelMap::readAccelMapFromCSV(std::string csv_path)
   return true;
 }
 
-bool AccelMap::getThrottle(double acc, double vel, double& throttle)
-{
+bool AccelMap::getThrottle(double acc, double vel, double& throttle) {
   LinearInterpolate linear_interp;
   std::vector<double> accs_interpolated;
 
   // (throttle, vel, acc) map => (throttle, acc) map by fixing vel
-  for (std::vector<double> accs : accel_map_)
-  {
+  for (std::vector<double> accs : accel_map_) {
     double acc_interpolated;
     linear_interp.interpolate(vel_index_, accs, vel, acc_interpolated);
     accs_interpolated.push_back(acc_interpolated);
@@ -81,12 +68,9 @@ bool AccelMap::getThrottle(double acc, double vel, double& throttle)
   // calculate throttle
   // When the desired acceleration is smaller than the throttle area, return false => brake sequence
   // When the desired acceleration is greater than the throttle area, return max throttle
-  if (acc < accs_interpolated.front())
-  {
+  if (acc < accs_interpolated.front()) {
     return false;
-  }
-  else if (accs_interpolated.back() < acc)
-  {
+  } else if (accs_interpolated.back() < acc) {
     throttle = throttle_index_.back();
     return true;
   }
@@ -95,31 +79,26 @@ bool AccelMap::getThrottle(double acc, double vel, double& throttle)
   return true;
 }
 
-void AccelMap::showAccelMapInfo()
-{
+void AccelMap::showAccelMapInfo() {
   std::cout << "Accel Map Information" << std::endl;
 
   std::cout << "Vehicle name: " << vehicle_name_ << std::endl;
 
   std::cout << "Velocity indexes: ";
-  for (double v : vel_index_)
-  {
+  for (double v : vel_index_) {
     std::cout << v << " ";
   }
   std::cout << std::endl;
 
   std::cout << "Throttle indexes: ";
-  for (double t : throttle_index_)
-  {
+  for (double t : throttle_index_) {
     std::cout << t << " ";
   }
   std::cout << std::endl;
 
   std::cout << "Acceleration Map:" << std::endl;
-  for (std::vector<double> accs : accel_map_)
-  {
-    for (double acc : accs)
-    {
+  for (std::vector<double> accs : accel_map_) {
+    for (double acc : accs) {
       std::cout << acc << " ";
     }
     std::cout << std::endl;

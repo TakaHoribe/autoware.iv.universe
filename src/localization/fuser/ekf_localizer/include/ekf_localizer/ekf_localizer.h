@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
+#include <chrono>
 #include <iostream>
 #include <vector>
-#include <chrono>
 
-#include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <geometry_msgs/TransformStamped.h>
+#include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <tf2/utils.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <tf2_ros/transform_listener.h>
+#include <tf2/utils.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 #include "kalman_filter/kalman_filter.hpp"
 #include "kalman_filter/time_delay_kalman_filter.hpp"
 
-class EKFLocalizer
-{
-public:
+class EKFLocalizer {
+ public:
   EKFLocalizer();
   ~EKFLocalizer();
 
-private:
+ private:
   ros::NodeHandle nh_;                   //!< @brief ros public node handler
   ros::NodeHandle pnh_;                  //!< @brief  ros private node handler
   ros::Publisher pub_pose_;              //!< @brief ekf estimated pose publisher
@@ -84,8 +83,8 @@ private:
   double pose_stddev_x_;    //!< @brief  standard deviation for pose position x [m]
   double pose_stddev_y_;    //!< @brief  standard deviation for pose position y [m]
   double pose_stddev_yaw_;  //!< @brief  standard deviation for pose position yaw [rad]
-  bool use_pose_with_covariance_;  //!< @brief  use covariance in pose_with_covarianve message
-  bool use_twist_with_covariance_; //!< @brief  use covariance in twist_with_covarianve message
+  bool use_pose_with_covariance_;   //!< @brief  use covariance in pose_with_covarianve message
+  bool use_twist_with_covariance_;  //!< @brief  use covariance in twist_with_covarianve message
 
   /* twist */
   double twist_additional_delay_;  //!< @brief  compensated delay time = (twist.header.stamp - now) + additional_delay
@@ -101,8 +100,7 @@ private:
   double proc_cov_vx_d_;        //!< @brief  discrete process noise in d_vx=0
   double proc_cov_wz_d_;        //!< @brief  discrete process noise in d_wz=0
 
-  enum IDX
-  {
+  enum IDX {
     X = 0,
     Y = 1,
     YAW = 2,

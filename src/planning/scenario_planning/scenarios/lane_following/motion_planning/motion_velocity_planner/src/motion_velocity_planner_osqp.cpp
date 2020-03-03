@@ -24,9 +24,9 @@
 
 // clang-format on
 MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
-  pnh_.param<double>("max_velocity", planning_param_.max_velocity, 20.0);           // 72.0 kmph
-  pnh_.param<double>("max_accel", planning_param_.max_accel, 2.0);                  // 0.11G
-  pnh_.param<double>("min_decel", planning_param_.min_decel, -3.0);                 // -0.2G
+  pnh_.param<double>("max_velocity", planning_param_.max_velocity, 20.0);  // 72.0 kmph
+  pnh_.param<double>("max_accel", planning_param_.max_accel, 2.0);         // 0.11G
+  pnh_.param<double>("min_decel", planning_param_.min_decel, -3.0);        // -0.2G
 
   pnh_.param<double>("max_lateral_accel", planning_param_.max_lateral_accel, 0.2);  //
   pnh_.param<double>("decel_distance_before_curve", planning_param_.decel_distance_before_curve, 3.5);
@@ -422,7 +422,7 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) {  // bi
-    q[i] = -1.0;  // |vmax^2 - b| -> minimize (-bi)
+    q[i] = -1.0;                          // |vmax^2 - b| -> minimize (-bi)
   }
 
   for (unsigned int i = N; i < 2 * N - 1; ++i) {  // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
@@ -578,7 +578,7 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
     return false;
   }
 
-  const double curvature_calc_dist = 3.0;         // [m] calc curvature with 3m away points
+  const double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
   output = input;  // initialize

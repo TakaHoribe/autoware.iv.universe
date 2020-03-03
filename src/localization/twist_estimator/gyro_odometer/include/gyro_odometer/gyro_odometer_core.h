@@ -24,16 +24,14 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/Imu.h>
 
-
 class GyroOdometer {
-
-public:
+ public:
   GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~GyroOdometer();
 
-private:
-  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg_ptr);
-  void callbackImu(const sensor_msgs::Imu::ConstPtr &imu_msg_ptr);
+ private:
+  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr);
+  void callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

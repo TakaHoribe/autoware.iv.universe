@@ -23,18 +23,16 @@
 
 // Autoware
 #include <autoware_planning_msgs/Route.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 // others
 #include <string>
 #include <vector>
 
-namespace mission_planner
-{
-class MissionPlanner
-{
-protected:
+namespace mission_planner {
+class MissionPlanner {
+ protected:
   MissionPlanner();
 
   geometry_msgs::PoseStamped goal_pose_;
@@ -53,7 +51,7 @@ protected:
   virtual void visualizeRoute(const autoware_planning_msgs::Route& route) const = 0;
   virtual void publishRoute(const autoware_planning_msgs::Route& route) const;
 
-private:
+ private:
   ros::Publisher route_publisher_;
   ros::Subscriber goal_subscriber_;
   ros::Subscriber checkpoint_subscriber_;

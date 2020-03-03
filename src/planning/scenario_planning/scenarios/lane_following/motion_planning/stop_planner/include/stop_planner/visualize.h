@@ -19,18 +19,16 @@
 // ROS includes
 #include <geometry_msgs/PoseStamped.h>
 #include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // User defined includes
 #include "autoware_planning_msgs/Trajectory.h"
 #include "stop_planner/planning_utils.h"
 
-
 // C++ includes
 #include <chrono>
 #include <memory>
-
 
 using PolygonX = std::vector<geometry_msgs::Point>;
 
@@ -39,9 +37,10 @@ std_msgs::ColorRGBA setColorWhite();
 std_msgs::ColorRGBA setColorGray();
 std_msgs::ColorRGBA setColorYellow();
 
-visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t kind, int32_t id = 0);
-std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose, double height, double width, double count);
+visualization_msgs::Marker displayWall(const geometry_msgs::Pose& pose, int8_t kind, int32_t id = 0);
+std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose& pose, double height, double width,
+                                                double count);
 
-visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind);
-visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind);
-visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &polygons, int8_t kind);
+visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose& pose, int8_t kind);
+visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose& pose, int8_t kind);
+visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX& polygons, int8_t kind);

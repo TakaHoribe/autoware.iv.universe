@@ -19,35 +19,29 @@
 
 #include "truck_filter.hpp"
 
-bool TruckFilter::filter(const autoware_perception_msgs::Shape &shape,
-                         const geometry_msgs::Pose &pose,
-                         const bool &orientaion)
-{
-    double x = shape.dimensions.x;
-    double y = shape.dimensions.y;
-    double s = x * y;
-    constexpr double min_width = 1.5;
-    constexpr double max_width = 2.9;
-    constexpr double min_length = 4.0;
-    constexpr double max_length = 7.9;
+bool TruckFilter::filter(const autoware_perception_msgs::Shape& shape, const geometry_msgs::Pose& pose,
+                         const bool& orientaion) {
+  double x = shape.dimensions.x;
+  double y = shape.dimensions.y;
+  double s = x * y;
+  constexpr double min_width = 1.5;
+  constexpr double max_width = 2.9;
+  constexpr double min_length = 4.0;
+  constexpr double max_length = 7.9;
 
-    if (x < min_width && y < min_width)
-    {
-        return false;
-    }
-    if (max_width < x && max_width < y)
-    {
-        return false;
-    }
+  if (x < min_width && y < min_width) {
+    return false;
+  }
+  if (max_width < x && max_width < y) {
+    return false;
+  }
 
-    if (max_length < x || max_length < y)
-    {
-        return false;
-    }
+  if (max_length < x || max_length < y) {
+    return false;
+  }
 
-    if (s < 0.5 && max_length * max_width < s)
-    {
-        return false;
-    }
-    return true;
+  if (s < 0.5 && max_length * max_width < s) {
+    return false;
+  }
+  return true;
 }

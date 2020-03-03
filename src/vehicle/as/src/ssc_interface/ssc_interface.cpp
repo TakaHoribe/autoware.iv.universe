@@ -17,11 +17,7 @@
 #include "ssc_interface/ssc_interface.h"
 
 SSCInterface::SSCInterface()
-    : nh_(),
-      private_nh_("~"),
-      engage_(false),
-      command_initialized_(false),
-      turn_signal_cmd_initialized_(false) {
+    : nh_(), private_nh_("~"), engage_(false), command_initialized_(false), turn_signal_cmd_initialized_(false) {
   // setup parameters
   private_nh_.param<bool>("use_rear_wheel_speed", use_rear_wheel_speed_, true);
   private_nh_.param<bool>("use_adaptive_gear_ratio", use_adaptive_gear_ratio_, true);
@@ -188,10 +184,9 @@ void SSCInterface::publishCommand() {
   double desired_speed = vehicle_cmd_.control.velocity;
 
   // Curvature for SSC steer_model
-  double desired_steering_angle =
-      !use_adaptive_gear_ratio_
-          ? vehicle_cmd_.control.steering_angle + steering_offset_
-          : (vehicle_cmd_.control.steering_angle + steering_offset_) * ssc_gear_ratio_ / adaptive_gear_ratio_;
+  double desired_steering_angle = !use_adaptive_gear_ratio_ ? vehicle_cmd_.control.steering_angle + steering_offset_
+                                                            : (vehicle_cmd_.control.steering_angle + steering_offset_) *
+                                                                  ssc_gear_ratio_ / adaptive_gear_ratio_;
   double desired_curvature = std::tan(desired_steering_angle) / wheel_base_;
 
   // Gear (TODO: Use vehicle_cmd.gear)

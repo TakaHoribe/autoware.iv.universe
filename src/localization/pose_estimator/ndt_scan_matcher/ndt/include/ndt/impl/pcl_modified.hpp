@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
- #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_MODIFIED_HPP
- #define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_MODIFIED_HPP
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_MODIFIED_HPP
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_MODIFIED_HPP
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformPCLModified<PointSource, PointTarget>::NormalDistributionsTransformPCLModified()
-  : ndt_ptr_(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>)
-{
-}
+    : ndt_ptr_(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>) {}
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) {
+void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::align(pcl::PointCloud<PointSource>& output,
+                                                                              const Eigen::Matrix4f& guess) {
   ndt_ptr_->align(output, guess);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) {
+void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputTarget(
+    const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> &scan_ptr) {
+void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputSource(
+    const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) {
   ndt_ptr_->setInputSource(scan_ptr);
 }
 
@@ -94,12 +95,14 @@ double NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getFit
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointTarget>> NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputTarget() const {
+boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputTarget() const {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointSource>> NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputSource() const {
+boost::shared_ptr<const pcl::PointCloud<PointSource>>
+NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputSource() const {
   return ndt_ptr_->getInputSource();
 }
 
@@ -109,18 +112,20 @@ Eigen::Matrix4f NormalDistributionsTransformPCLModified<PointSource, PointTarget
 }
 
 template <class PointSource, class PointTarget>
-std::vector<Eigen::Matrix4f> NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getFinalTransformationArray() const {
+std::vector<Eigen::Matrix4f>
+NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getFinalTransformationArray() const {
   return ndt_ptr_->getFinalTransformationArray();
 }
 
 template <class PointSource, class PointTarget>
 Eigen::Matrix<double, 6, 6> NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getHessian() const {
-    return ndt_ptr_->getHessian();
+  return ndt_ptr_->getHessian();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>> NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getSearchMethodTarget() const {
-    return ndt_ptr_->getSearchMethodTarget();
+boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getSearchMethodTarget() const {
+  return ndt_ptr_->getSearchMethodTarget();
 }
 
 #endif

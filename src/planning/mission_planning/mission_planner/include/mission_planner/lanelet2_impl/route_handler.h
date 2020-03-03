@@ -18,8 +18,8 @@
 #define MISSION_PLANNER_LANELET_IMPL_ROUTE_HANDLER_H
 
 // Autoware
-#include <mission_planner/lanelet2_impl/utility_functions.h>
 #include <lanelet2_extension/utility/query.h>
+#include <mission_planner/lanelet2_impl/utility_functions.h>
 
 // lnanelet
 #include <lanelet2_routing/Route.h>
@@ -27,11 +27,9 @@
 
 #include <vector>
 
-namespace mission_planner
-{
-class RouteHandler
-{
-private:
+namespace mission_planner {
+class RouteHandler {
+ private:
   lanelet::LaneletMapConstPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::ConstLanelets route_lanelets_;
@@ -44,7 +42,7 @@ private:
   bool isBijectiveConnection(const lanelet::ConstLanelets& lanelet_section1,
                              const lanelet::ConstLanelets& lanelet_section2) const;
 
-public:
+ public:
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;
   RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,

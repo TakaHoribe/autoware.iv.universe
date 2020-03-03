@@ -31,17 +31,12 @@
 #include <limits>
 #include <vector>
 
-namespace lane_change_planner
-{
-namespace util
-{
-struct FrenetCoordinate3d
-{
+namespace lane_change_planner {
+namespace util {
+struct FrenetCoordinate3d {
   double length;
   double distance;
-  FrenetCoordinate3d() : length(0), distance(0)
-  {
-  }
+  FrenetCoordinate3d() : length(0), distance(0) {}
 };
 
 double l2Norm(const geometry_msgs::Vector3 vector);
@@ -66,8 +61,8 @@ bool lerpByTimeStamp(const autoware_perception_msgs::PredictedPath& path, const 
 double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2);
 double getDistanceBetweenPredictedPaths(const autoware_perception_msgs::PredictedPath& path1,
                                         const autoware_perception_msgs::PredictedPath& path2, const double start_time,
-                                        const double end_time, const double resolution,
-                                        const bool use_vehicle_width, const double vehicle_width = 0.0);
+                                        const double end_time, const double resolution, const bool use_vehicle_width,
+                                        const double vehicle_width = 0.0);
 
 std::vector<size_t> filterObjectsByLanelets(const autoware_perception_msgs::DynamicObjectArray& objects,
                                             const lanelet::ConstLanelets& lanelets, const double start_arc_length = 0,
@@ -78,8 +73,8 @@ const geometry_msgs::Pose refineGoal(const geometry_msgs::Pose& goal, const lane
 autoware_planning_msgs::PathWithLaneId refinePath(const double search_radius_range, const double search_rad_range,
                                                   const autoware_planning_msgs::PathWithLaneId& input,
                                                   const geometry_msgs::Pose& goal, const int64_t goal_lane_id);
-autoware_planning_msgs::PathWithLaneId
-removeOverlappingPoints(const autoware_planning_msgs::PathWithLaneId& input_path);
+autoware_planning_msgs::PathWithLaneId removeOverlappingPoints(
+    const autoware_planning_msgs::PathWithLaneId& input_path);
 
 nav_msgs::OccupancyGrid convertLanesToDrivableArea(const lanelet::ConstLanelets& lanes,
                                                    const geometry_msgs::PoseStamped& current_pose, const double width,

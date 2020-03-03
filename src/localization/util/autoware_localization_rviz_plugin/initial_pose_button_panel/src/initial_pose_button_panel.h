@@ -32,8 +32,8 @@
 
 #include <QLabel>
 #include <QLineEdit>
-#include <QSettings>
 #include <QPushButton>
+#include <QSettings>
 #ifndef Q_MOC_RUN
 #include <ros/ros.h>
 #include <rviz/panel.h>
@@ -43,20 +43,18 @@
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 
-namespace autoware_localization_rviz_plugin
-{
-class InitialPoseButtonPanel : public rviz::Panel
-{
+namespace autoware_localization_rviz_plugin {
+class InitialPoseButtonPanel : public rviz::Panel {
   Q_OBJECT
-public:
+ public:
   InitialPoseButtonPanel(QWidget* parent = 0);
   void callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 
-public Q_SLOTS:
+ public Q_SLOTS:
   void editTopic();
   void pushInitialzeButton();
 
-protected:
+ protected:
   ros::NodeHandle nh_;
   ros::Subscriber pose_cov_sub_;
 
@@ -70,8 +68,6 @@ protected:
   rviz::RosTopicProperty* property_topic_;
 
   geometry_msgs::PoseWithCovarianceStamped pose_cov_msg_;
-
 };
 
 }  // end namespace autoware_localization_rviz_plugin
-

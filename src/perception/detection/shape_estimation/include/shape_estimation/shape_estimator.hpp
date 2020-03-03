@@ -18,28 +18,29 @@
 
 #pragma once
 
-#include <string>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <string>
 #include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 
-class ShapeEstimator
-{
-private:
-  bool estimateShape(const int type, const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                     autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output);
-  bool applyFilter(const int type,
-                   const autoware_perception_msgs::Shape &shape_output, const geometry_msgs::Pose &pose_output, const bool &orientaion_output);
-  bool applyCorrector(const int type,
-                      autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output);
+class ShapeEstimator {
+ private:
+  bool estimateShape(const int type, const pcl::PointCloud<pcl::PointXYZ>& cluster,
+                     autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                     bool& orientaion_output);
+  bool applyFilter(const int type, const autoware_perception_msgs::Shape& shape_output,
+                   const geometry_msgs::Pose& pose_output, const bool& orientaion_output);
+  bool applyCorrector(const int type, autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                      bool& orientaion_output);
 
-public:
+ public:
   ShapeEstimator();
 
   ~ShapeEstimator(){};
 
-  bool getShapeAndPose(const int type, const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                       autoware_perception_msgs::Shape &shape_output, geometry_msgs::Pose &pose_output, bool &orientaion_output);
+  bool getShapeAndPose(const int type, const pcl::PointCloud<pcl::PointXYZ>& cluster,
+                       autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                       bool& orientaion_output);
 };

@@ -72,8 +72,8 @@ class DynamicsBicycleModel : public VehicleModelInterface {
    * @param [in] cf front cornering power
    * @param [in] cr rear cornering power
    */
-  DynamicsBicycleModel(double &wheelbase, double &mass_fl, double &mass_fr, double &mass_rl, double &mass_rr,
-                       double &cf, double &cr);
+  DynamicsBicycleModel(double& wheelbase, double& mass_fl, double& mass_fr, double& mass_rl, double& mass_rr,
+                       double& cf, double& cr);
 
   /**
    * @brief destructor
@@ -88,14 +88,14 @@ class DynamicsBicycleModel : public VehicleModelInterface {
    * @param [in] Wd coefficient matrix
    * @param [in] dt Discretization time
    */
-  void calculateDiscreteMatrix(Eigen::MatrixXd &Ad, Eigen::MatrixXd &Bd, Eigen::MatrixXd &Wd, Eigen::MatrixXd &Cd,
-                               const double &dt) override;
+  void calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Wd, Eigen::MatrixXd& Cd,
+                               const double& dt) override;
 
   /**
    * @brief calculate reference input
    * @param [out] reference input
    */
-  void calculateReferenceInput(Eigen::MatrixXd &Uref) override;
+  void calculateReferenceInput(Eigen::MatrixXd& Uref) override;
 
  private:
   double wheelbase_;  //!< @brief wheelbase length [m]

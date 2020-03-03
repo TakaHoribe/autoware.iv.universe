@@ -42,8 +42,8 @@
 #include <pacmod_msgs/SystemRptFloat.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/ControlMode.h>
+#include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
 #include <autoware_vehicle_msgs/VehicleCommand.h>

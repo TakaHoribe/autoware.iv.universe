@@ -22,14 +22,10 @@ std_msgs::ColorRGBA toRainbow(double ratio);
 visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
                                            const std::string& ns, const double radius);
 
-namespace lane_change_planner
-{
-LaneChanger::LaneChanger() : pnh_("~")
-{
-}
+namespace lane_change_planner {
+LaneChanger::LaneChanger() : pnh_("~") {}
 
-void LaneChanger::init()
-{
+void LaneChanger::init() {
   // data_manager
   points_subscriber_ = pnh_.subscribe("input/points", 1, &SingletonDataManager::pointcloudCallback,
                                       &SingletonDataManager::getInstance());
@@ -76,8 +72,7 @@ void LaneChanger::init()
 
   // wait until mandatory data is ready
   {
-    while (!RouteHandler::getInstance().isHandlerReady() && ros::ok())
-    {
+    while (!RouteHandler::getInstance().isHandlerReady() && ros::ok()) {
       ROS_WARN_THROTTLE(5, "waiting for route to be ready");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
@@ -85,14 +80,12 @@ void LaneChanger::init()
 
     geometry_msgs::PoseStamped tmp_current_pose;
     std::shared_ptr<geometry_msgs::TwistStamped const> tmp_current_twist;
-    while (!SingletonDataManager::getInstance().getCurrentSelfPose(tmp_current_pose) && ros::ok())
-    {
+    while (!SingletonDataManager::getInstance().getCurrentSelfPose(tmp_current_pose) && ros::ok()) {
       ROS_WARN_THROTTLE(5, "waiting for vehicle pose");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
     }
-    while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(tmp_current_twist) && ros::ok())
-    {
+    while (!SingletonDataManager::getInstance().getCurrentSelfVelocity(tmp_current_twist) && ros::ok()) {
       ROS_WARN_THROTTLE(5, "waiting for vehicle velocity");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
@@ -103,8 +96,7 @@ void LaneChanger::init()
   timer_ = pnh_.createTimer(ros::Duration(0.1), &LaneChanger::run, this);
 }
 
-void LaneChanger::run(const ros::TimerEvent& event)
-{
+void LaneChanger::run(const ros::TimerEvent& event) {
   state_machine_.updateState();
   const auto path = state_machine_.getPath();
 
@@ -114,12 +106,9 @@ void LaneChanger::run(const ros::TimerEvent& event)
   geometry_msgs::Pose refined_goal;
   {
     lanelet::ConstLanelet goal_lanelet;
-    if (RouteHandler::getInstance().getGoalLanelet(&goal_lanelet))
-    {
+    if (RouteHandler::getInstance().getGoalLanelet(&goal_lanelet)) {
       refined_goal = util::refineGoal(goal, goal_lanelet);
-    }
-    else
-    {
+    } else {
       refined_goal = goal;
     }
   }
@@ -128,8 +117,7 @@ void LaneChanger::run(const ros::TimerEvent& event)
   refined_path.header.frame_id = "map";
   refined_path.header.stamp = ros::Time::now();
 
-  if (!path.points.empty())
-  {
+  if (!path.points.empty()) {
     path_publisher_.publish(refined_path);
   }
 
@@ -137,34 +125,28 @@ void LaneChanger::run(const ros::TimerEvent& event)
   publishDrivableArea(refined_path);
 }
 
-void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path)
-{
+void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path) {
   drivable_area_publisher_.publish(path.drivable_area);
 }
 
-void LaneChanger::publishDebugMarkers()
-{
+void LaneChanger::publishDebugMarkers() {
   geometry_msgs::PoseStamped current_pose;
   std::shared_ptr<geometry_msgs::TwistStamped const> current_twist;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects;
   LaneChangerParameters ros_parameters;
-  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose))
-  {
+  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose)) {
     ROS_ERROR("failed to get current pose");
     return;
   }
-  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist))
-  {
+  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist)) {
     ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
     return;
   }
-  if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects))
-  {
+  if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects)) {
     ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
     return;
   }
-  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters))
-  {
+  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters)) {
     ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
     return;
   }
@@ -177,8 +159,7 @@ void LaneChanger::publishDebugMarkers()
   visualization_msgs::MarkerArray debug_markers;
   // get ego vehicle path marker
   const auto& status = state_machine_.getStatus();
-  if (!status.lane_change_path.points.empty())
-  {
+  if (!status.lane_change_path.points.empty()) {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_change_path, current_twist->twist, current_pose.pose);
     const auto& resampled_path =
@@ -190,8 +171,7 @@ void LaneChanger::publishDebugMarkers()
     debug_markers.markers.push_back(marker);
   }
 
-  if (!status.lane_follow_path.points.empty())
-  {
+  if (!status.lane_follow_path.points.empty()) {
     const auto& vehicle_predicted_path =
         util::convertToPredictedPath(status.lane_follow_path, current_twist->twist, current_pose.pose);
     const auto& resampled_path =
@@ -207,11 +187,9 @@ void LaneChanger::publishDebugMarkers()
   {
     const auto& target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose.pose);
     auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
-    for (const auto& i : object_indices)
-    {
+    for (const auto& i : object_indices) {
       const auto& obj = dynamic_objects->objects.at(i);
-      for (const auto& obj_path : obj.state.predicted_paths)
-      {
+      for (const auto& obj_path : obj.state.predicted_paths) {
         const auto& resampled_path = util::resamplePredictedPath(obj_path, time_resolution, prediction_duration);
         double radius = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
         radius = std::max(radius, min_radius);
@@ -225,8 +203,7 @@ void LaneChanger::publishDebugMarkers()
 
 }  // namespace lane_change_planner
 
-std_msgs::ColorRGBA toRainbow(double ratio)
-{
+std_msgs::ColorRGBA toRainbow(double ratio) {
   // we want to normalize ratio so that it fits in to 6 regions
   // where each region is 256 units long
   int normalized = int(ratio * 256 * 6);
@@ -235,8 +212,7 @@ std_msgs::ColorRGBA toRainbow(double ratio)
   int x = normalized % 256;
 
   int red = 0, grn = 0, blu = 0;
-  switch (normalized / 256)
-  {
+  switch (normalized / 256) {
     case 0:
       red = 255;
       grn = x;
@@ -278,8 +254,7 @@ std_msgs::ColorRGBA toRainbow(double ratio)
 }
 
 visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
-                                           const std::string& ns, const double radius)
-{
+                                           const std::string& ns, const double radius) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
@@ -308,8 +283,7 @@ visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::Predi
   marker.lifetime = ros::Duration(1);
   marker.frame_locked = true;
 
-  for (std::size_t i = 0; i < path.path.size(); i++)
-  {
+  for (std::size_t i = 0; i < path.path.size(); i++) {
     marker.points.push_back(path.path.at(i).pose.pose.position);
     marker.colors.push_back(toRainbow(static_cast<double>(i) / path.path.size()));
   }

@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
+#include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <cmath>
-#include <gtest/gtest.h>
 #include <iostream>
 
 #include "simple_planning_simulator/simple_planning_simulator_core.hpp"
 
-class TestSuite : public ::testing::Test
-{
-public:
-  TestSuite() : nh_(""), pnh_("~")
-  {
+class TestSuite : public ::testing::Test {
+ public:
+  TestSuite() : nh_(""), pnh_("~") {
     pub_vehicle_cmd_ = nh_.advertise<autoware_msgs::VehicleCmd>("/vehicle_cmd", 1);
     pub_lane_ = nh_.advertise<autoware_msgs::Lane>("/base_waypoints", 1);
     pub_closest_ = nh_.advertise<std_msgs::Int32>("/closest_waypoint", 1);
@@ -34,9 +32,7 @@ public:
     spin_duration_ = 0.05;
     spin_loopnum_ = 10;
   }
-  ~TestSuite()
-  {
-  }
+  ~TestSuite() {}
 
   ros::NodeHandle nh_, pnh_;
   ros::Subscriber sub_pose_, sub_twist_;
@@ -46,36 +42,26 @@ public:
   double spin_duration_;
   int spin_loopnum_;
 
-  void callbackPose(const geometry_msgs::PoseStamped& pose)
-  {
-    curr_pose_ = pose;
-  }
-  void callbackTwist(const geometry_msgs::TwistStamped& twist)
-  {
-    curr_twist_ = twist;
-  }
+  void callbackPose(const geometry_msgs::PoseStamped& pose) { curr_pose_ = pose; }
+  void callbackTwist(const geometry_msgs::TwistStamped& twist) { curr_twist_ = twist; }
 
-  void resetPose()
-  {
+  void resetPose() {
     geometry_msgs::PoseStamped pose;
     curr_pose_ = pose;
   }
-  void resetTwist()
-  {
+  void resetTwist() {
     geometry_msgs::TwistStamped twist;
     curr_twist_ = twist;
   }
 
-  void publishWaypoints()
-  {
+  void publishWaypoints() {
     double x = 0.0;
     double y = 0.0;
     double yaw = 0.0;
     double wp_dt = 1.0;
     autoware_msgs::Lane lane;
     autoware_msgs::Waypoint wp;
-    for (int i = 0; i < 50; ++i)
-    {
+    for (int i = 0; i < 50; ++i) {
       wp.pose.pose.position.x = x;
       wp.pose.pose.position.y = y;
       wp.pose.pose.orientation = amathutils::getQuaternionFromYaw(yaw);
@@ -98,10 +84,8 @@ public:
     ros::Duration(spin_duration_).sleep();
   }
 
-  void publishVehicleCmd(double vx, double wz, double steer, double duration)
-  {
-    for (int i = 0; i < std::round(duration / spin_duration_); ++i)
-    {
+  void publishVehicleCmd(double vx, double wz, double steer, double duration) {
+    for (int i = 0; i < std::round(duration / spin_duration_); ++i) {
       ros::Time current_time = ros::Time::now();
       autoware_msgs::VehicleCmd cmd;
       cmd.twist_cmd.header.stamp = current_time;
@@ -115,8 +99,7 @@ public:
     }
   }
 
-  void testGoForwardStraight()
-  {
+  void testGoForwardStraight() {
     resetPose();
     resetTwist();
     Simulator simple_planning_simulator;
@@ -133,8 +116,7 @@ public:
     ASSERT_GT(curr_pose_.pose.position.x, 1.0) << "going forward";
   }
 
-  void testGoBackStraight()
-  {
+  void testGoBackStraight() {
     resetPose();
     resetTwist();
     Simulator simple_planning_simulator;
@@ -151,8 +133,7 @@ public:
     ASSERT_LT(curr_pose_.pose.position.x, -1.0) << "going back";
   }
 
-  void testGoRightForward()
-  {
+  void testGoRightForward() {
     resetPose();
     resetTwist();
     Simulator simple_planning_simulator;
@@ -169,8 +150,7 @@ public:
     ASSERT_GT(curr_pose_.pose.position.y, 0.1) << "going right";
   }
 
-  void testGoLeftForward()
-  {
+  void testGoLeftForward() {
     resetPose();
     resetTwist();
     Simulator simple_planning_simulator;
@@ -187,25 +167,21 @@ public:
     ASSERT_LT(curr_pose_.pose.position.y, -0.1) << "going left";
   }
 
-  void spinWhile(double time_sec)
-  {
-    for (int i = 0; i < std::round(time_sec / spin_duration_); ++i)
-    {
+  void spinWhile(double time_sec) {
+    for (int i = 0; i < std::round(time_sec / spin_duration_); ++i) {
       ros::spinOnce();
       ros::Duration(spin_duration_).sleep();
     }
   }
 };
 
-TEST_F(TestSuite, TestSimulator)
-{
+TEST_F(TestSuite, TestSimulator) {
   /* == TestGoStraight == */
   {
     pnh_.setParam("initialize_source", "ORIGIN");
-    std::string vehicle_mode_type_array[] = { "IDEAL_TWIST", "IDEAL_STEER", "DELAY_TWIST", "DELAY_STEER",
-                                              "CONST_ACCEL_TWIST" };
-    for (const auto vehicle_model_type : vehicle_mode_type_array)
-    {
+    std::string vehicle_mode_type_array[] = {"IDEAL_TWIST", "IDEAL_STEER", "DELAY_TWIST", "DELAY_STEER",
+                                             "CONST_ACCEL_TWIST"};
+    for (const auto vehicle_model_type : vehicle_mode_type_array) {
       // ROS_ERROR("%s, %s", vehicle_model_type.c_str(), qp_solver_type.c_str());
       pnh_.setParam("vehicle_model_type", vehicle_model_type);
       testGoForwardStraight();
@@ -259,8 +235,7 @@ TEST_F(TestSuite, TestSimulator)
   }
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode_Sim");
   return RUN_ALL_TESTS();

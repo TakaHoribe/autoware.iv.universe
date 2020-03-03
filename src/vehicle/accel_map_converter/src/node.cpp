@@ -19,7 +19,7 @@
 AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~") {
   pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::Pedal>("/vehicle/pedal_cmd", 1);
   sub_cmd_ = nh_.subscribe("/control/vehicle_cmd", 1, &AccelMapConverter::callbackVehicleCmd, this);
-  sub_velocity_  = nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
+  sub_velocity_ = nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
 
   pnh_.param<double>("max_throttle", max_throttle_, 0.2);
   pnh_.param<double>("max_brake", max_brake_, 0.8);
@@ -43,16 +43,14 @@ void AccelMapConverter::callbackVelocity(const geometry_msgs::TwistStampedConstP
   current_velocity_ptr_ = std::make_shared<double>(msg->twist.linear.x);
 }
 
-void AccelMapConverter::callbackVehicleCmd(
-    const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr) {
+void AccelMapConverter::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr) {
   if (!current_velocity_ptr_ || !acc_map_initialized_) {
     return;
   }
 
   double desired_throttle = 0.0;
   double desired_brake = 0.0;
-  calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle,
-                    &desired_brake);
+  calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle, &desired_brake);
 
   autoware_vehicle_msgs::Pedal output;
   output.header = vehicle_cmd_ptr->header;

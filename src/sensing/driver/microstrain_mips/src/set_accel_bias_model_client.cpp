@@ -1,10 +1,8 @@
-#include "ros/ros.h"
-#include "microstrain_mips/SetAccelBiasModel.h"
 #include <cstdlib>
+#include "microstrain_mips/SetAccelBiasModel.h"
+#include "ros/ros.h"
 
-
-int main(int argc, char **argv){
-
+int main(int argc, char** argv) {
   ros::init(argc, argv, "set_accel_bias_model_client");
 
   ros::NodeHandle n;
@@ -18,15 +16,11 @@ int main(int argc, char **argv){
   srv.request.beta_vector.y = atoll(argv[2]);
   srv.request.beta_vector.z = atoll(argv[3]);
 
-  if (client.call(srv))
-  {
-      if (srv.response.success)
-      {
-        ROS_INFO("success");
-      }
-  }
-  else
-  {
+  if (client.call(srv)) {
+    if (srv.response.success) {
+      ROS_INFO("success");
+    }
+  } else {
     ROS_INFO("Failed to call service");
   }
   return 0;

@@ -18,9 +18,7 @@
 #include <ros/ros.h>
 #include "stop_planner/stop_planner_core.hpp"
 
-
-int main(int argc, char **argv)
-{ 
+int main(int argc, char** argv) {
   ros::init(argc, argv, "stop_planner");
   StopPlanner node;
 

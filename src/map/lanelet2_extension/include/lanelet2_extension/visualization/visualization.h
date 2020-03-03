@@ -31,10 +31,8 @@
 #include <string>
 #include <vector>
 
-namespace lanelet
-{
-namespace visualization
-{
+namespace lanelet {
+namespace visualization {
 /**
  * [lanelet2Triangle converts lanelet into vector of triangles. Used for
  * triangulation]
@@ -155,9 +153,9 @@ visualization_msgs::MarkerArray trafficLightsAsTriangleMarkerArray(
  * @param  c            [color of the marker]
  * @param  duration     [lifetime of the marker]
  */
-visualization_msgs::MarkerArray
-detectionAreasAsMarkerArray(const std::vector<lanelet::DetectionAreaConstPtr>& da_reg_elems,
-                            const std_msgs::ColorRGBA c, const ros::Duration duration = ros::Duration());
+visualization_msgs::MarkerArray detectionAreasAsMarkerArray(
+    const std::vector<lanelet::DetectionAreaConstPtr>& da_reg_elems, const std_msgs::ColorRGBA c,
+    const ros::Duration duration = ros::Duration());
 
 visualization_msgs::MarkerArray parkingLotsAsMarkerArray(const lanelet::ConstPolygons3d& parking_lots,
                                                          const std_msgs::ColorRGBA& c);

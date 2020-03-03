@@ -16,9 +16,14 @@
 
 #include "velocity_controller.h"
 
-VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_smooth_stop_(false),
-                                           is_emergency_stop_(false), prev_acc_cmd_(0.0), num_debug_values_(21)
-{
+VelocityController::VelocityController()
+    : nh_(""),
+      pnh_("~"),
+      tf_listener_(tf_buffer_),
+      is_smooth_stop_(false),
+      is_emergency_stop_(false),
+      prev_acc_cmd_(0.0),
+      num_debug_values_(21) {
   // parameters
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
 
@@ -35,45 +40,47 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   pnh_.param("closest_waypoint_angle_threshold", closest_angle_thr_, double(M_PI_4));
 
   // parameters for stop state
-  pnh_.param("stop_state_vel", stop_state_vel_, double(0.0));                               // [m/s]
-  pnh_.param("stop_state_acc", stop_state_acc_, double(-2.0));                              // [m/s^2]
-  pnh_.param("stop_state_entry_ego_speed", stop_state_entry_ego_speed_, double(0.2));       // [m/s]
-  pnh_.param("stop_state_entry_target_speed", stop_state_entry_target_speed_, double(0.1)); // [m/s]
+  pnh_.param("stop_state_vel", stop_state_vel_, double(0.0));                                // [m/s]
+  pnh_.param("stop_state_acc", stop_state_acc_, double(-2.0));                               // [m/s^2]
+  pnh_.param("stop_state_entry_ego_speed", stop_state_entry_ego_speed_, double(0.2));        // [m/s]
+  pnh_.param("stop_state_entry_target_speed", stop_state_entry_target_speed_, double(0.1));  // [m/s]
 
   // parameters for delay compensation
-  pnh_.param("delay_compensation_time", delay_compensation_time_, double(0.17)); // [sec]
+  pnh_.param("delay_compensation_time", delay_compensation_time_, double(0.17));  // [sec]
 
   // parameters for emergency stop by this controller
-  pnh_.param("emergency_stop_acc", emergency_stop_acc_, double(-2.0));   // [m/s^2]
-  pnh_.param("emergency_stop_jerk", emergency_stop_jerk_, double(-1.5)); // [m/s^3]
-  pnh_.param("emergency_overshoot_dist", emergency_overshoot_dist_, double(1.5)); // [m]
+  pnh_.param("emergency_stop_acc", emergency_stop_acc_, double(-2.0));             // [m/s^2]
+  pnh_.param("emergency_stop_jerk", emergency_stop_jerk_, double(-1.5));           // [m/s^3]
+  pnh_.param("emergency_overshoot_dist", emergency_overshoot_dist_, double(1.5));  // [m]
 
   // parameters for smooth stop
-  pnh_.param("smooth_stop/exit_ego_speed", smooth_stop_param_.exit_ego_speed, double(2.0));                         // [m/s]
-  pnh_.param("smooth_stop/exit_target_speed", smooth_stop_param_.exit_target_speed, double(2.0));                   // [m/s]
-  pnh_.param("smooth_stop/entry_ego_speed", smooth_stop_param_.entry_ego_speed, double(1.0));                       // [m/s]
-  pnh_.param("smooth_stop/entry_target_speed", smooth_stop_param_.entry_target_speed, double(1.0));                 // [m/s]
-  pnh_.param("smooth_stop/weak_brake_time", smooth_stop_param_.weak_brake_time, double(3.0));                       // [sec]
-  pnh_.param("smooth_stop/weak_brake_acc", smooth_stop_param_.weak_brake_acc, double(-0.4));                        // [m/s^2]
-  pnh_.param("smooth_stop/increasing_brake_time", smooth_stop_param_.increasing_brake_time, double(3.0));           // [sec]
-  pnh_.param("smooth_stop/increasing_brake_gradient", smooth_stop_param_.increasing_brake_gradient, double(-0.05)); // [m/s^3]
-  pnh_.param("smooth_stop/stop_brake_time", smooth_stop_param_.stop_brake_time, double(2.0));                       // [sec]
-  pnh_.param("smooth_stop/stop_brake_acc", smooth_stop_param_.stop_brake_acc, double(-1.7));                        // [m/s^2]
-  pnh_.param("smooth_stop/stop_dist_", smooth_stop_param_.stop_dist_, double(3.0));                                 // [m/s^2]
+  pnh_.param("smooth_stop/exit_ego_speed", smooth_stop_param_.exit_ego_speed, double(2.0));                // [m/s]
+  pnh_.param("smooth_stop/exit_target_speed", smooth_stop_param_.exit_target_speed, double(2.0));          // [m/s]
+  pnh_.param("smooth_stop/entry_ego_speed", smooth_stop_param_.entry_ego_speed, double(1.0));              // [m/s]
+  pnh_.param("smooth_stop/entry_target_speed", smooth_stop_param_.entry_target_speed, double(1.0));        // [m/s]
+  pnh_.param("smooth_stop/weak_brake_time", smooth_stop_param_.weak_brake_time, double(3.0));              // [sec]
+  pnh_.param("smooth_stop/weak_brake_acc", smooth_stop_param_.weak_brake_acc, double(-0.4));               // [m/s^2]
+  pnh_.param("smooth_stop/increasing_brake_time", smooth_stop_param_.increasing_brake_time, double(3.0));  // [sec]
+  pnh_.param("smooth_stop/increasing_brake_gradient", smooth_stop_param_.increasing_brake_gradient,
+             double(-0.05));                                                                   // [m/s^3]
+  pnh_.param("smooth_stop/stop_brake_time", smooth_stop_param_.stop_brake_time, double(2.0));  // [sec]
+  pnh_.param("smooth_stop/stop_brake_acc", smooth_stop_param_.stop_brake_acc, double(-1.7));   // [m/s^2]
+  pnh_.param("smooth_stop/stop_dist_", smooth_stop_param_.stop_dist_, double(3.0));            // [m/s^2]
 
   // parameters for acceleration limit
-  pnh_.param("max_acc", max_acc_, double(2.0));  // [m/s^2]
-  pnh_.param("min_acc", min_acc_, double(-5.0)); // [m/s^2]
+  pnh_.param("max_acc", max_acc_, double(2.0));   // [m/s^2]
+  pnh_.param("min_acc", min_acc_, double(-5.0));  // [m/s^2]
 
   // parameters for jerk limit
-  pnh_.param("max_jerk", max_jerk_, double(2.0));  // [m/s^3]
-  pnh_.param("min_jerk", min_jerk_, double(-5.0)); // [m/s^3]
+  pnh_.param("max_jerk", max_jerk_, double(2.0));   // [m/s^3]
+  pnh_.param("min_jerk", min_jerk_, double(-5.0));  // [m/s^3]
 
   // parameters for slope compensation
-  pnh_.param("max_pitch_rad", max_pitch_rad_, double(0.1));  // [rad]
-  pnh_.param("min_pitch_rad", min_pitch_rad_, double(-0.1)); // [rad]
+  pnh_.param("max_pitch_rad", max_pitch_rad_, double(0.1));   // [rad]
+  pnh_.param("min_pitch_rad", min_pitch_rad_, double(-0.1));  // [rad]
 
-  pnh_.param("pid_controller/current_vel_threshold_pid_integration", current_vel_threshold_pid_integrate_, double(0.5)); // [m/s]
+  pnh_.param("pid_controller/current_vel_threshold_pid_integration", current_vel_threshold_pid_integrate_,
+             double(0.5));  // [m/s]
 
   // subscriber, publisher and timer
   sub_current_vel_ = pnh_.subscribe("current_velocity", 1, &VelocityController::callbackCurrentVelocity, this);
@@ -91,14 +98,14 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
 
   // initialize PID limits
   double max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d;
-  pnh_.param("pid_controller/max_out", max_pid, double(0.0));    // [m/s^2]
-  pnh_.param("pid_controller/min_out", min_pid, double(0.0));    // [m/s^2]
-  pnh_.param("pid_controller/max_p_effort", max_p, double(0.0)); // [m/s^2]
-  pnh_.param("pid_controller/min_p_effort", min_p, double(0.0)); // [m/s^2]
-  pnh_.param("pid_controller/max_i_effort", max_i, double(0.0)); // [m/s^2]
-  pnh_.param("pid_controller/min_i_effort", min_i, double(0.0)); // [m/s^2]
-  pnh_.param("pid_controller/max_d_effort", max_d, double(0.0)); // [m/s^2]
-  pnh_.param("pid_controller/min_d_effort", min_d, double(0.0)); // [m/s^2]
+  pnh_.param("pid_controller/max_out", max_pid, double(0.0));     // [m/s^2]
+  pnh_.param("pid_controller/min_out", min_pid, double(0.0));     // [m/s^2]
+  pnh_.param("pid_controller/max_p_effort", max_p, double(0.0));  // [m/s^2]
+  pnh_.param("pid_controller/min_p_effort", min_p, double(0.0));  // [m/s^2]
+  pnh_.param("pid_controller/max_i_effort", max_i, double(0.0));  // [m/s^2]
+  pnh_.param("pid_controller/min_i_effort", min_i, double(0.0));  // [m/s^2]
+  pnh_.param("pid_controller/max_d_effort", max_d, double(0.0));  // [m/s^2]
+  pnh_.param("pid_controller/min_d_effort", min_d, double(0.0));  // [m/s^2]
   pid_vel_.setLimits(max_pid, min_pid, max_p, min_p, max_i, min_i, max_d, min_d);
 
   // set lowpass filter
@@ -114,38 +121,28 @@ VelocityController::VelocityController() : nh_(""), pnh_("~"), tf_listener_(tf_b
   debug_values_.data.resize(num_debug_values_, 0.0);
 
   /* wait to get vehicle position */
-  while (ros::ok())
-  {
-    if (!updateCurrentPose(5.0))
-    {
+  while (ros::ok()) {
+    if (!updateCurrentPose(5.0)) {
       ROS_INFO("waiting map to base_link at initialize.");
-    }
-    else
-    {
+    } else {
       break;
     }
   }
 }
 
-void VelocityController::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg)
-{
+void VelocityController::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   current_vel_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
 }
 
-void VelocityController::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr &msg)
-{
+void VelocityController::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr& msg) {
   trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 }
 
-bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped &ps)
-{
+bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped& ps) {
   geometry_msgs::TransformStamped transform;
-  try
-  {
+  try {
     transform = tf_buffer_.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(timeout_sec));
-  }
-  catch (tf2::TransformException &ex)
-  {
+  } catch (tf2::TransformException& ex) {
     ROS_WARN_DELAYED_THROTTLE(3.0, "cannot get map to base_link transform. %s", ex.what());
     return false;
   }
@@ -157,26 +154,23 @@ bool VelocityController::getCurretPoseFromTF(const double timeout_sec, geometry_
   return true;
 }
 
-bool VelocityController::updateCurrentPose(const double timeout_sec)
-{
+bool VelocityController::updateCurrentPose(const double timeout_sec) {
   geometry_msgs::PoseStamped ps;
-  if (!getCurretPoseFromTF(timeout_sec, ps))
-  {
+  if (!getCurretPoseFromTF(timeout_sec, ps)) {
     return false;
   }
   current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(ps);
   return true;
 }
 
-void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
-{
+void VelocityController::callbackTimerControl(const ros::TimerEvent& event) {
   const bool is_pose_updated = updateCurrentPose(0.0);
 
   /* gurad */
-  if (!is_pose_updated || !current_pose_ptr_ || !current_vel_ptr_ || !trajectory_ptr_)
-  {
-    ROS_INFO_COND(show_debug_info_, "Waiting topics, Publish stop command. pose_update: %d, pose: %d, vel: %d, trajectory: %d",
-                  is_pose_updated, current_pose_ptr_ != nullptr, current_vel_ptr_ != nullptr, trajectory_ptr_ != nullptr);
+  if (!is_pose_updated || !current_pose_ptr_ || !current_vel_ptr_ || !trajectory_ptr_) {
+    ROS_INFO_COND(
+        show_debug_info_, "Waiting topics, Publish stop command. pose_update: %d, pose: %d, vel: %d, trajectory: %d",
+        is_pose_updated, current_pose_ptr_ != nullptr, current_vel_ptr_ != nullptr, trajectory_ptr_ != nullptr);
     controller_mode_ = ControlMode::INIT;
     publishCtrlCmd(stop_state_vel_, stop_state_acc_);
     return;
@@ -192,27 +186,27 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent &event)
   resetHandling(controller_mode_);
 }
 
-
-CtrlCmd VelocityController::calcCtrlCmd()
-{
+CtrlCmd VelocityController::calcCtrlCmd() {
   /* initialize parameters */
   const double dt = getDt();
 
   /* -- find a closest waypoint index --
    *
    * If the closest is not found (when the threshold is exceeded), it is treated as an emergency stop.
-   * 
+   *
    * Outout velocity : "0" with maximum acceleration constraint
    * Output acceleration : "emergency_stop_acc_" with maximum jerk constraint
-   * 
+   *
    */
   int closest_idx;
-  if (!vcutils::calcClosestWithThr(*trajectory_ptr_, current_pose_ptr_->pose, closest_angle_thr_, closest_dist_thr_, closest_idx))
-  {
-    ROS_ERROR_DELAYED_THROTTLE(5.0, "calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
-                               closest_dist_thr_, closest_angle_thr_);
+  if (!vcutils::calcClosestWithThr(*trajectory_ptr_, current_pose_ptr_->pose, closest_angle_thr_, closest_dist_thr_,
+                                   closest_idx)) {
+    ROS_ERROR_DELAYED_THROTTLE(
+        5.0, "calcClosestWithThr: closest not found. Emergency Stop! (dist_thr = %3.3f [m], angle_thr = %3.3f [rad])",
+        closest_dist_thr_, closest_angle_thr_);
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
-    double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
+    double acc_cmd =
+        applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::ERROR;
     ROS_INFO_COND(show_debug_info_, "[closest error]. vel: %3.3f, acc: %3.3f", vel_cmd, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
@@ -220,18 +214,18 @@ CtrlCmd VelocityController::calcCtrlCmd()
 
   double current_vel = current_vel_ptr_->twist.linear.x;
   double target_vel = calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx);
-  double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(*trajectory_ptr_, closest_idx, delay_compensation_time_,
-                                                                      current_vel);
+  double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(*trajectory_ptr_, closest_idx,
+                                                                      delay_compensation_time_, current_vel);
 
   /* shift check */
   const Shift shift = getCurrentShift(target_vel);
-  if (shift != prev_shift_)
-    pid_vel_.reset();
+  if (shift != prev_shift_) pid_vel_.reset();
   prev_shift_ = shift;
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
   const double stop_dist = calcStopDistance(*trajectory_ptr_, closest_idx);
-  // ROS_INFO_COND(show_debug_info_, "current_vel = %3.3f, target_vel = %3.3f, target_acc = %3.3f, pitch_filtered = %3.3f, is_smooth_stop_ = %d, stop_dist = %3.3f",
+  // ROS_INFO_COND(show_debug_info_, "current_vel = %3.3f, target_vel = %3.3f, target_acc = %3.3f, pitch_filtered =
+  // %3.3f, is_smooth_stop_ = %d, stop_dist = %3.3f",
   //               current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_, stop_dist);
   writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx);
 
@@ -242,11 +236,10 @@ CtrlCmd VelocityController::calcCtrlCmd()
    *
    * Outout velocity : "stop_state_vel_" (assumed to be zero, depending on the vehicle interface)
    * Output acceleration : "stop_state_acc_" with max_jerk limit. (depending on the vehicle interface)
-   * 
+   *
    */
-  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ &&
-      std::fabs(target_vel) < stop_state_entry_target_speed_ && !is_smooth_stop_)
-  {
+  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ && std::fabs(target_vel) < stop_state_entry_target_speed_ &&
+      !is_smooth_stop_) {
     double acc_cmd = calcFilteredAcc(stop_state_acc_, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::STOPPED;
     ROS_INFO_COND(show_debug_info_, "[Stopped]. vel: %3.3f, acc: %3.3f", stop_state_vel_, acc_cmd);
@@ -261,13 +254,13 @@ CtrlCmd VelocityController::calcCtrlCmd()
    *
    * Outout velocity : "0" with maximum acceleration constraint
    * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
-   * 
+   *
    */
   is_emergency_stop_ = checkEmergency(closest_idx, target_vel);
-  if (is_emergency_stop_)
-  {
+  if (is_emergency_stop_) {
     double vel_cmd = applyRateFilter(0.0, prev_vel_cmd_, dt, std::fabs(emergency_stop_acc_), emergency_stop_acc_);
-    double acc_cmd = applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
+    double acc_cmd =
+        applyRateFilter(emergency_stop_acc_, prev_acc_cmd_, dt, std::fabs(emergency_stop_jerk_), emergency_stop_jerk_);
     controller_mode_ = ControlMode::EMERGENCY_STOP;
     ROS_ERROR_COND(show_debug_info_, "[Emergency stop] vel: %3.3f, acc: %3.3f", 0.0, acc_cmd);
     return CtrlCmd{vel_cmd, acc_cmd};
@@ -280,13 +273,11 @@ CtrlCmd VelocityController::calcCtrlCmd()
    *
    * Outout velocity : "target_vel" from the reference trajectory
    * Output acceleration : "emergency_stop_acc_" with max_jerk limit.
-   * 
-   */  
+   *
+   */
   is_smooth_stop_ = checkSmoothStop(closest_idx, target_vel);
-  if (is_smooth_stop_)
-  {
-    if (!start_time_smooth_stop_)
-    {
+  if (is_smooth_stop_) {
+    if (!start_time_smooth_stop_) {
       start_time_smooth_stop_ = std::make_shared<ros::Time>(ros::Time::now());
     }
     double smooth_stop_acc_cmd = calcSmoothStopAcc();
@@ -298,57 +289,47 @@ CtrlCmd VelocityController::calcCtrlCmd()
 
   /* ===== FEEDBACK CONTROL =====
    *
-   * Execute PID feedback control. 
+   * Execute PID feedback control.
    *
    * Outout velocity : "target_vel" from the reference trajectory
    * Output acceleration : calculated by PID controller with max_acceleration & max_jerk limit.
-   * 
-   */ 
+   *
+   */
   double feedback_acc_cmd = applyVelocityFeedback(target_acc, target_vel, dt, current_vel);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
-  ROS_INFO_COND(show_debug_info_, "[feedback control]  vel: %3.3f, acc: %3.3f, dt: %3.3f, vcurr: %3.3f, vref: %3.3f feedback_acc_cmd: %3.3f, shift: %d",
+  ROS_INFO_COND(show_debug_info_,
+                "[feedback control]  vel: %3.3f, acc: %3.3f, dt: %3.3f, vcurr: %3.3f, vref: %3.3f feedback_acc_cmd: "
+                "%3.3f, shift: %d",
                 target_vel, acc_cmd, dt, current_vel, target_vel, feedback_acc_cmd, shift);
   return CtrlCmd{target_vel, acc_cmd};
 }
 
-void VelocityController::resetHandling(const ControlMode control_mode)
-{
-  if (control_mode == ControlMode::EMERGENCY_STOP)
-  {
+void VelocityController::resetHandling(const ControlMode control_mode) {
+  if (control_mode == ControlMode::EMERGENCY_STOP) {
     pid_vel_.reset();
     lpf_vel_error_.reset();
     resetSmoothStop();
-    if (std::fabs(current_vel_ptr_->twist.linear.x) < stop_state_entry_ego_speed_)
-    {
+    if (std::fabs(current_vel_ptr_->twist.linear.x) < stop_state_entry_ego_speed_) {
       is_emergency_stop_ = false;
     }
-  }
-  else if (control_mode == ControlMode::ERROR)
-  {
+  } else if (control_mode == ControlMode::ERROR) {
     pid_vel_.reset();
     resetSmoothStop();
-  }
-  else if (control_mode == ControlMode::STOPPED)
-  {
+  } else if (control_mode == ControlMode::STOPPED) {
     pid_vel_.reset();
     lpf_vel_error_.reset();
     resetSmoothStop();
     resetEmergencyStop();
-  }
-  else if (control_mode == ControlMode::SMOOTH_STOP)
-  {
+  } else if (control_mode == ControlMode::SMOOTH_STOP) {
     pid_vel_.reset();
     lpf_vel_error_.reset();
-  }
-  else if (control_mode == ControlMode::PID_CONTROL)
-  {
+  } else if (control_mode == ControlMode::PID_CONTROL) {
     resetSmoothStop();
   }
 }
 
-void VelocityController::publishCtrlCmd(const double vel, const double acc)
-{
+void VelocityController::publishCtrlCmd(const double vel, const double acc) {
   prev_acc_cmd_ = acc;
   prev_vel_cmd_ = vel;
 
@@ -367,10 +348,8 @@ void VelocityController::publishCtrlCmd(const double vel, const double acc)
   debug_values_.data.resize(num_debug_values_, 0.0);
 }
 
-bool VelocityController::checkSmoothStop(const int closest, const double target_vel)
-{
-  if (!enable_smooth_stop_)
-  {
+bool VelocityController::checkSmoothStop(const int closest, const double target_vel) {
+  if (!enable_smooth_stop_) {
     return false;
   }
 
@@ -380,41 +359,35 @@ bool VelocityController::checkSmoothStop(const int closest, const double target_
   }
 
   const double stop_dist = calcStopDistance(*trajectory_ptr_, closest);
-  if (std::fabs(stop_dist) < smooth_stop_param_.stop_dist_)
-  {
-    return true; // stop point is found around ego position.
+  if (std::fabs(stop_dist) < smooth_stop_param_.stop_dist_) {
+    return true;  // stop point is found around ego position.
   }
   return false;
 }
 
-bool VelocityController::checkEmergency(int closest, double target_vel)
-{
+bool VelocityController::checkEmergency(int closest, double target_vel) {
   // already in emergency.
-  if (is_emergency_stop_)
-  {
+  if (is_emergency_stop_) {
     return true;
   }
 
   // velocity is getting high when smoth stopping.
-  if (is_smooth_stop_ && (std::fabs(current_vel_ptr_->twist.linear.x) > smooth_stop_param_.exit_ego_speed))
-  {
+  if (is_smooth_stop_ && (std::fabs(current_vel_ptr_->twist.linear.x) > smooth_stop_param_.exit_ego_speed)) {
     return true;
   }
 
   // overshoot stop line.
-  if (enable_overshoot_emergency_)
-  {
+  if (enable_overshoot_emergency_) {
     double stop_dist = calcStopDistance(*trajectory_ptr_, closest);
-    if (stop_dist < -emergency_overshoot_dist_)
-    {
+    if (stop_dist < -emergency_overshoot_dist_) {
       return true;
     }
   }
   return false;
 }
 
-double VelocityController::calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift)
-{
+double VelocityController::calcFilteredAcc(const double raw_acc, const double pitch, const double dt,
+                                           const Shift shift) {
   double acc_max_filtered = applyLimitFilter(raw_acc, max_acc_, min_acc_);
   debug_values_.data.at(9) = acc_max_filtered;
 
@@ -426,17 +399,12 @@ double VelocityController::calcFilteredAcc(const double raw_acc, const double pi
   return acc_slope_filtered;
 }
 
-
-double VelocityController::getDt()
-{
+double VelocityController::getDt() {
   double dt;
-  if (!prev_control_time_)
-  {
+  if (!prev_control_time_) {
     dt = 1.0 / control_rate_;
     prev_control_time_ = std::make_shared<ros::Time>(ros::Time::now());
-  }
-  else
-  {
+  } else {
     dt = (ros::Time::now() - *prev_control_time_).toSec();
     *prev_control_time_ = ros::Time::now();
   }
@@ -445,14 +413,12 @@ double VelocityController::getDt()
   return std::max(std::min(dt, max_dt), min_dt);
 }
 
-enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel)
-{
+enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel) {
   const double ep = 1.0e-5;
   return target_vel > ep ? Shift::Forward : (target_vel < -ep ? Shift::Reverse : prev_shift_);
 }
 
-double VelocityController::getPitch(const geometry_msgs::Quaternion &quaternion) const
-{
+double VelocityController::getPitch(const geometry_msgs::Quaternion& quaternion) const {
   Eigen::Quaterniond q(quaternion.w, quaternion.x, quaternion.y, quaternion.z);
   Eigen::Vector3d v = q.toRotationMatrix() * Eigen::Vector3d::UnitX();
   double den = std::max(std::sqrt(v.x() * v.x() + v.y() * v.y()), 1.0E-8 /* avoid 0 divide */);
@@ -460,29 +426,22 @@ double VelocityController::getPitch(const geometry_msgs::Quaternion &quaternion)
   return pitch;
 }
 
-double VelocityController::calcSmoothStopAcc()
-{
+double VelocityController::calcSmoothStopAcc() {
   const double elapsed_time = (ros::Time::now() - *start_time_smooth_stop_).toSec();
 
   double acc_cmd;
-  if (elapsed_time < smooth_stop_param_.weak_brake_time)
-  {
+  if (elapsed_time < smooth_stop_param_.weak_brake_time) {
     acc_cmd = smooth_stop_param_.weak_brake_acc;
     ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] weak breaking! acc = %f", acc_cmd);
-  }
-  else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time))
-  {
+  } else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time)) {
     const double dt = elapsed_time - smooth_stop_param_.weak_brake_time;
     acc_cmd = smooth_stop_param_.weak_brake_acc + smooth_stop_param_.increasing_brake_gradient * dt;
     ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] break increasing! acc = %f", acc_cmd);
-  }
-  else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time + smooth_stop_param_.stop_brake_time))
-  {
+  } else if (elapsed_time < (smooth_stop_param_.weak_brake_time + smooth_stop_param_.increasing_brake_time +
+                             smooth_stop_param_.stop_brake_time)) {
     acc_cmd = smooth_stop_param_.stop_brake_acc;
     ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] stop breaking! acc = %f", acc_cmd);
-  }
-  else
-  {
+  } else {
     acc_cmd = smooth_stop_param_.stop_brake_acc;
     ROS_INFO_COND(show_debug_info_, "[VC Smooth Stop] finish smooth stopping! acc = %f", acc_cmd);
     resetSmoothStop();
@@ -491,20 +450,16 @@ double VelocityController::calcSmoothStopAcc()
   return acc_cmd;
 }
 
-double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajectory &trajectory, const int origin)
-{
+double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajectory& trajectory, const int origin) {
   const double zero_velocity = 0.01;
   const double origin_velocity = trajectory.points.at(origin).twist.linear.x;
   double stop_dist = 0.0;
 
   // search forward
-  if (std::fabs(origin_velocity) > zero_velocity)
-  {
-    for (int i = origin + 1; i < (int)trajectory.points.size() - 1; ++i)
-    {
+  if (std::fabs(origin_velocity) > zero_velocity) {
+    for (int i = origin + 1; i < (int)trajectory.points.size() - 1; ++i) {
       stop_dist += vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i - 1).pose);
-      if (std::fabs(trajectory.points.at(i).twist.linear.x) < zero_velocity)
-      {
+      if (std::fabs(trajectory.points.at(i).twist.linear.x) < zero_velocity) {
         break;
       }
     }
@@ -512,10 +467,8 @@ double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajec
   }
 
   // search backward
-  for (int i = origin - 1; 0 < i; --i)
-  {
-    if (std::fabs(trajectory.points.at(i).twist.linear.x) > zero_velocity)
-    {
+  for (int i = origin - 1; 0 < i; --i) {
+    if (std::fabs(trajectory.points.at(i).twist.linear.x) > zero_velocity) {
       break;
     }
     stop_dist -= vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
@@ -523,37 +476,31 @@ double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajec
   return stop_dist;
 }
 
-double VelocityController::calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory &traj,
-                                                          const geometry_msgs::PoseStamped &curr_pose, const double curr_vel, const int closest)
-{
+double VelocityController::calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory& traj,
+                                                          const geometry_msgs::PoseStamped& curr_pose,
+                                                          const double curr_vel, const int closest) {
   const double closest_vel = traj.points.at(closest).twist.linear.x;
 
-  if (traj.points.size() < 2)
-  {
+  if (traj.points.size() < 2) {
     return closest_vel;
   }
 
-  /* If the current position is at the edge of the reference trajectory, enable the edge velocity. Else, calc secondary closest index for interpolation */
+  /* If the current position is at the edge of the reference trajectory, enable the edge velocity. Else, calc secondary
+   * closest index for interpolation */
   int closest_second;
-  geometry_msgs::Point rel_pos = vcutils::transformToRelativeCoordinate2D(curr_pose.pose.position, traj.points.at(closest).pose);
-  if (closest == 0)
-  {
-    if (rel_pos.x * curr_vel <= 0.0)
-    {
+  geometry_msgs::Point rel_pos =
+      vcutils::transformToRelativeCoordinate2D(curr_pose.pose.position, traj.points.at(closest).pose);
+  if (closest == 0) {
+    if (rel_pos.x * curr_vel <= 0.0) {
       return closest_vel;
     }
     closest_second = 1;
-  }
-  else if (closest == (int)traj.points.size() - 1)
-  {
-    if (rel_pos.x * curr_vel >= 0.0)
-    {
+  } else if (closest == (int)traj.points.size() - 1) {
+    if (rel_pos.x * curr_vel >= 0.0) {
       return closest_vel;
     }
     closest_second = traj.points.size() - 2;
-  }
-  else
-  {
+  } else {
     const double dist1 = vcutils::calcDistSquared2D(traj.points.at(closest).pose, traj.points.at(closest - 1).pose);
     const double dist2 = vcutils::calcDistSquared2D(traj.points.at(closest).pose, traj.points.at(closest + 1).pose);
     closest_second = dist1 < dist2 ? closest - 1 : closest + 1;
@@ -569,27 +516,21 @@ double VelocityController::calcInterpolatedTargetVelocity(const autoware_plannin
   return vel_interp;
 }
 
-double VelocityController::applyLimitFilter(const double input_val, const double max_val,
-                                            const double min_val)
-{
+double VelocityController::applyLimitFilter(const double input_val, const double max_val, const double min_val) {
   const double limitted_val = std::min(std::max(input_val, min_val), max_val);
   return limitted_val;
 }
 
-double VelocityController::applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val,
-                                           const double min_val)
-{
+double VelocityController::applyRateFilter(const double input_val, const double prev_val, const double dt,
+                                           const double max_val, const double min_val) {
   const double diff_raw = (input_val - prev_val) / dt;
   const double diff = std::min(std::max(diff_raw, min_val), max_val);
   const double filtered_val = prev_val + (diff * dt);
   return filtered_val;
 }
 
-double VelocityController::applySlopeCompensation(const double input_acc, const double pitch,
-                                                  const Shift shift)
-{
-  if (!enable_slope_compensation_)
-  {
+double VelocityController::applySlopeCompensation(const double input_acc, const double pitch, const Shift shift) {
+  if (!enable_slope_compensation_) {
     return input_acc;
   }
   const double gravity = 9.80665;
@@ -599,9 +540,8 @@ double VelocityController::applySlopeCompensation(const double input_acc, const 
   return compensated_acc;
 }
 
-double VelocityController::applyVelocityFeedback(const double target_acc, const double target_vel,
-                                                 const double dt, const double current_vel)
-{
+double VelocityController::applyVelocityFeedback(const double target_acc, const double target_vel, const double dt,
+                                                 const double current_vel) {
   const bool enable_integration = std::fabs(current_vel) < current_vel_threshold_pid_integrate_ ? false : true;
   const double error_vel_filtered = lpf_vel_error_.filter(std::fabs(target_vel) - std::fabs(current_vel));
 
@@ -611,27 +551,23 @@ double VelocityController::applyVelocityFeedback(const double target_acc, const 
 
   debug_values_.data.at(8) = feedbacked_acc;
   debug_values_.data.at(14) = error_vel_filtered;
-  debug_values_.data.at(18) = pid_contributions.at(0); // P
-  debug_values_.data.at(19) = pid_contributions.at(1); // I
-  debug_values_.data.at(20) = pid_contributions.at(2); // D
+  debug_values_.data.at(18) = pid_contributions.at(0);  // P
+  debug_values_.data.at(19) = pid_contributions.at(1);  // I
+  debug_values_.data.at(20) = pid_contributions.at(2);  // D
 
   return feedbacked_acc;
 }
 
-void VelocityController::resetSmoothStop()
-{
+void VelocityController::resetSmoothStop() {
   is_smooth_stop_ = false;
   start_time_smooth_stop_ = nullptr;
 }
 
-void VelocityController::resetEmergencyStop()
-{
-  is_emergency_stop_ = false;
-}
+void VelocityController::resetEmergencyStop() { is_emergency_stop_ = false; }
 
-void VelocityController::writeDebugValues(const double dt, const double current_vel, const double target_vel, const double target_acc,
-                                          const Shift shift, const double pitch, const int32_t closest)
-{
+void VelocityController::writeDebugValues(const double dt, const double current_vel, const double target_vel,
+                                          const double target_acc, const Shift shift, const double pitch,
+                                          const int32_t closest) {
   const double rad2deg = 180.0 / 3.141592;
   const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
   debug_values_.data.at(0) = dt;

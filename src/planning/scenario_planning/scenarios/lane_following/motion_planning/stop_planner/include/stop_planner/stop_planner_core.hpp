@@ -61,8 +61,8 @@ class StopPlanner {
 
   ObstaclePcdVelocityPlanner obstacle_pcd_velocity_planner_;
 
-  void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr &msg);
-  void callbackPointCloud(const sensor_msgs::PointCloud2::ConstPtr &msg);
+  void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg);
+  void callbackPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
   bool updateCurrentPose(const double timeout);
 };
 

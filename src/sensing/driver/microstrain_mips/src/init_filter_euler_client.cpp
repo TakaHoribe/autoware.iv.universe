@@ -1,10 +1,8 @@
-#include "ros/ros.h"
-#include "microstrain_mips/SetBias.h"
 #include <cstdlib>
+#include "microstrain_mips/SetBias.h"
+#include "ros/ros.h"
 
-
-int main(int argc, char **argv){
-
+int main(int argc, char** argv) {
   ros::init(argc, argv, "set_bias_client");
 
   ros::NodeHandle n;
@@ -16,16 +14,11 @@ int main(int argc, char **argv){
   srv.request.bias_data_vector_1.y = atoll(argv[3]);
   srv.request.bias_data_vector_1.z = atoll(argv[4]);
 
-
-  if (client.call(srv))
-  {
-      if (srv.response.success)
-      {
-        ROS_INFO("success");
-      }
-  }
-  else
-  {
+  if (client.call(srv)) {
+    if (srv.response.success) {
+      ROS_INFO("success");
+    }
+  } else {
     ROS_INFO("Failed to call service");
   }
   return 0;

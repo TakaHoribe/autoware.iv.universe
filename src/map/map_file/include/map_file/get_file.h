@@ -17,30 +17,29 @@
 #ifndef _GET_FILE_H_
 #define _GET_FILE_H_
 
+#include <netinet/in.h>
 #include <cstdint>
 #include <string>
-#include <netinet/in.h>
 
-#define HTTP_HOSTNAME     "133.6.148.90"
-#define HTTP_PORT         (80)
-#define HTTP_USER         ""
-#define HTTP_PASSWORD     ""
+#define HTTP_HOSTNAME "133.6.148.90"
+#define HTTP_PORT (80)
+#define HTTP_USER ""
+#define HTTP_PASSWORD ""
 
 class GetFile {
-private:
-	std::string host_name_;
-	int port_;
-	std::string user_;
-	std::string password_;
-	int sock;
-	struct sockaddr_in server;
+ private:
+  std::string host_name_;
+  int port_;
+  std::string user_;
+  std::string password_;
+  int sock;
+  struct sockaddr_in server;
 
-public:
-	GetFile();
-	explicit GetFile(const std::string& host_name, int port, const std::string& user, const std::string& password);
+ public:
+  GetFile();
+  explicit GetFile(const std::string& host_name, int port, const std::string& user, const std::string& password);
 
-	int GetHTTPFile(const std::string& value);
+  int GetHTTPFile(const std::string& value);
 };
-
 
 #endif /* _GET_FILE_H_ */

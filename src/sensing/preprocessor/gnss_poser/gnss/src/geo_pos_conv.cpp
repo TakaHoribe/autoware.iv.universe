@@ -16,170 +16,112 @@
 
 #include <gnss/geo_pos_conv.hpp>
 
-geo_pos_conv::geo_pos_conv()
-    : m_x(0)
-    , m_y(0)
-    , m_z(0)
-    , m_lat(0)
-    , m_lon(0)
-    , m_h(0)
-    , m_PLato(0)
-    , m_PLo(0)
-{
-}
+geo_pos_conv::geo_pos_conv() : m_x(0), m_y(0), m_z(0), m_lat(0), m_lon(0), m_h(0), m_PLato(0), m_PLo(0) {}
 
-double geo_pos_conv::x() const
-{
-  return m_x;
-}
+double geo_pos_conv::x() const { return m_x; }
 
-double geo_pos_conv::y() const
-{
-  return m_y;
-}
+double geo_pos_conv::y() const { return m_y; }
 
-double geo_pos_conv::z() const
-{
-  return m_z;
-}
+double geo_pos_conv::z() const { return m_z; }
 
-void geo_pos_conv::set_plane(double lat, double lon)
-{
+void geo_pos_conv::set_plane(double lat, double lon) {
   m_PLato = lat;
   m_PLo = lon;
 }
 
-void geo_pos_conv::set_plane(int num)
-{
-  int lon_deg, lon_min, lat_deg, lat_min; // longitude and latitude of origin of each plane in Japan
-  if (num == 1)
-  {
+void geo_pos_conv::set_plane(int num) {
+  int lon_deg, lon_min, lat_deg, lat_min;  // longitude and latitude of origin of each plane in Japan
+  if (num == 1) {
     lon_deg = 33;
     lon_min = 0;
     lat_deg = 129;
     lat_min = 30;
-  }
-  else if (num == 2)
-  {
+  } else if (num == 2) {
     lon_deg = 33;
     lon_min = 0;
     lat_deg = 131;
     lat_min = 0;
-  }
-  else if (num == 3)
-  {
+  } else if (num == 3) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 132;
     lat_min = 10;
-  }
-  else if (num == 4)
-  {
+  } else if (num == 4) {
     lon_deg = 33;
     lon_min = 0;
     lat_deg = 133;
     lat_min = 30;
-  }
-  else if (num == 5)
-  {
+  } else if (num == 5) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 134;
     lat_min = 20;
-  }
-  else if (num == 6)
-  {
+  } else if (num == 6) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 136;
     lat_min = 0;
-  }
-  else if (num == 7)
-  {
+  } else if (num == 7) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 137;
     lat_min = 10;
-  }
-  else if (num == 8)
-  {
+  } else if (num == 8) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 138;
     lat_min = 30;
-  }
-  else if (num == 9)
-  {
+  } else if (num == 9) {
     lon_deg = 36;
     lon_min = 0;
     lat_deg = 139;
     lat_min = 50;
-  }
-  else if (num == 10)
-  {
+  } else if (num == 10) {
     lon_deg = 40;
     lon_min = 0;
     lat_deg = 140;
     lat_min = 50;
-  }
-  else if (num == 11)
-  {
+  } else if (num == 11) {
     lon_deg = 44;
     lon_min = 0;
     lat_deg = 140;
     lat_min = 15;
-  }
-  else if (num == 12)
-  {
+  } else if (num == 12) {
     lon_deg = 44;
     lon_min = 0;
     lat_deg = 142;
     lat_min = 15;
-  }
-  else if (num == 13)
-  {
+  } else if (num == 13) {
     lon_deg = 44;
     lon_min = 0;
     lat_deg = 144;
     lat_min = 15;
-  }
-  else if (num == 14)
-  {
+  } else if (num == 14) {
     lon_deg = 26;
     lon_min = 0;
     lat_deg = 142;
     lat_min = 0;
-  }
-  else if (num == 15)
-  {
+  } else if (num == 15) {
     lon_deg = 26;
     lon_min = 0;
     lat_deg = 127;
     lat_min = 30;
-  }
-  else if (num == 16)
-  {
+  } else if (num == 16) {
     lon_deg = 26;
     lon_min = 0;
     lat_deg = 124;
     lat_min = 0;
-  }
-  else if (num == 17)
-  {
+  } else if (num == 17) {
     lon_deg = 26;
     lon_min = 0;
     lat_deg = 131;
     lat_min = 0;
-  }
-  else if (num == 18)
-  {
+  } else if (num == 18) {
     lon_deg = 20;
     lon_min = 0;
     lat_deg = 136;
     lat_min = 0;
-  }
-  else if (num == 19)
-  {
+  } else if (num == 19) {
     lon_deg = 26;
     lon_min = 0;
     lat_deg = 154;
@@ -191,16 +133,14 @@ void geo_pos_conv::set_plane(int num)
   m_PLato = M_PI * ((double)lon_deg + (double)lon_min / 60.0) / 180;
 }
 
-void geo_pos_conv::set_xyz(double cx, double cy, double cz)
-{
+void geo_pos_conv::set_xyz(double cx, double cy, double cz) {
   m_x = cx;
   m_y = cy;
   m_z = cz;
   conv_xyz2llh();
 }
 
-void geo_pos_conv::set_llh_nmea_degrees(double latd, double lond, double h)
-{
+void geo_pos_conv::set_llh_nmea_degrees(double latd, double lond, double h) {
   double lat, lad, lod, lon;
   // 1234.56 -> 12'34.56 -> 12+ 34.56/60
 
@@ -217,8 +157,7 @@ void geo_pos_conv::set_llh_nmea_degrees(double latd, double lond, double h)
   conv_llh2xyz();
 }
 
-void geo_pos_conv::llh_to_xyz(double lat, double lon, double ele)
-{
+void geo_pos_conv::llh_to_xyz(double lat, double lon, double ele) {
   m_lat = lat * M_PI / 180;
   m_lon = lon * M_PI / 180;
   m_h = ele;
@@ -226,8 +165,7 @@ void geo_pos_conv::llh_to_xyz(double lat, double lon, double ele)
   conv_llh2xyz();
 }
 
-void geo_pos_conv::conv_llh2xyz(void)
-{
+void geo_pos_conv::conv_llh2xyz(void) {
   double PS;   //
   double PSo;  //
   double PDL;  //
@@ -326,7 +264,6 @@ void geo_pos_conv::conv_llh2xyz(void)
   m_z = m_h;
 }
 
-void geo_pos_conv::conv_xyz2llh(void)
-{
+void geo_pos_conv::conv_xyz2llh(void) {
   // n/a
 }

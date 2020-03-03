@@ -21,5 +21,5 @@ VehicleModelInterface::VehicleModelInterface(int dim_x, int dim_u, int dim_y)
 int VehicleModelInterface::getDimX() { return dim_x_; }
 int VehicleModelInterface::getDimU() { return dim_u_; }
 int VehicleModelInterface::getDimY() { return dim_y_; }
-void VehicleModelInterface::setVelocity(const double &velocity) { velocity_ = velocity; }
-void VehicleModelInterface::setCurvature(const double &curvature) { curvature_ = curvature; }
+void VehicleModelInterface::setVelocity(const double& velocity) { velocity_ = velocity; }
+void VehicleModelInterface::setCurvature(const double& curvature) { curvature_ = curvature; }

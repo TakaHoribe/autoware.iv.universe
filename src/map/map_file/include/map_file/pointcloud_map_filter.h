@@ -56,13 +56,13 @@
 #include <regex>
 
 class pointcloud_map_filter {
-public:
+ public:
   pointcloud_map_filter(ros::NodeHandle nh, ros::NodeHandle pnh);
   ~pointcloud_map_filter();
   void init();
   void run();
 
-private:
+ private:
   pcl::PassThrough<pcl::PointXYZ> pass_;
   ros::Subscriber map_sub_;
   ros::Subscriber pose_sub_;
@@ -79,4 +79,4 @@ private:
   volatile bool map_recieved_;
 };
 
-#endif // POINTS_MAP_FILTER_H_INCLUDED
+#endif  // POINTS_MAP_FILTER_H_INCLUDED

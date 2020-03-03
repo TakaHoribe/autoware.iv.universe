@@ -19,17 +19,15 @@
 
 #include <lane_change_planner/state/state_base_class.h>
 
+#include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <autoware_perception_msgs/DynamicObjectArray.h>
 
 #include <lanelet2_core/primitives/Lanelet.h>
 
-namespace lane_change_planner
-{
-class ForcingLaneChangeState : public StateBase
-{
-private:
+namespace lane_change_planner {
+class ForcingLaneChangeState : public StateBase {
+ private:
   // State transition conditions
   bool hasFinishedLaneChange() const;
   geometry_msgs::PoseStamped current_pose_;
@@ -39,7 +37,7 @@ private:
   lanelet::ConstLanelets original_lanes_;
   lanelet::ConstLanelets target_lanes_;
 
-public:
+ public:
   ForcingLaneChangeState() = default;
   // override virtual functions
   void entry(const Status& status) override;

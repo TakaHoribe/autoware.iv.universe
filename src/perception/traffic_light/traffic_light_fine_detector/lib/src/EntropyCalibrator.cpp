@@ -1,16 +1,14 @@
 #include "EntropyCalibrator.h"
-#include <fstream>
-#include <iterator>
-#include <cassert>
 #include <string.h>
 #include <algorithm>
+#include <cassert>
+#include <fstream>
+#include <iterator>
 
-namespace nvinfer1
-{
+namespace nvinfer1 {
 Int8EntropyCalibrator::Int8EntropyCalibrator(int BatchSize, const std::vector<std::vector<float>>& data,
                                              const std::string& CalibDataName, bool readCache)
-  : mCalibDataName(CalibDataName), mBatchSize(BatchSize), mReadCache(readCache)
-{
+    : mCalibDataName(CalibDataName), mBatchSize(BatchSize), mReadCache(readCache) {
   mDatas.reserve(data.size());
   mDatas = data;
   mInputCount = BatchSize * data[0].size();
@@ -19,17 +17,13 @@ Int8EntropyCalibrator::Int8EntropyCalibrator(int BatchSize, const std::vector<st
   CUDA_CHECK(cudaMalloc(&mDeviceInput, mInputCount * sizeof(float)));
 }
 
-Int8EntropyCalibrator::~Int8EntropyCalibrator()
-{
+Int8EntropyCalibrator::~Int8EntropyCalibrator() {
   CUDA_CHECK(cudaFree(mDeviceInput));
-  if (mCurBatchData)
-    delete[] mCurBatchData;
+  if (mCurBatchData) delete[] mCurBatchData;
 }
 
-bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int nbBindings)
-{
-  if (mCurBatchIdx + mBatchSize > int(mDatas.size()))
-    return false;
+bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int nbBindings) {
+  if (mCurBatchIdx + mBatchSize > int(mDatas.size())) return false;
 
   float* ptr = mCurBatchData;
   size_t imgSize = mInputCount / mBatchSize;
@@ -50,8 +44,7 @@ bool Int8EntropyCalibrator::getBatch(void* bindings[], const char* names[], int 
   return true;
 }
 
-const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length)
-{
+const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length) {
   mCalibrationCache.clear();
   std::ifstream input(mCalibDataName + ".calib", std::ios::binary);
   input >> std::noskipws;
@@ -62,9 +55,8 @@ const void* Int8EntropyCalibrator::readCalibrationCache(size_t& length)
   return length ? &mCalibrationCache[0] : nullptr;
 }
 
-void Int8EntropyCalibrator::writeCalibrationCache(const void* cache, size_t length)
-{
+void Int8EntropyCalibrator::writeCalibrationCache(const void* cache, size_t length) {
   std::ofstream output(mCalibDataName + ".calib", std::ios::binary);
   output.write(reinterpret_cast<const char*>(cache), length);
 }
-}
+}  // namespace nvinfer1

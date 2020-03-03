@@ -29,21 +29,20 @@
 
 #pragma once
 
+#include <OgreBillboardSet.h>
+#include <OgreManualObject.h>
+#include <OgreSceneManager.h>
+#include <OgreSceneNode.h>
+#include <rviz/display_context.h>
+#include "rviz/display.h"
 #include "rviz/properties/color_property.h"
+#include "rviz/properties/enum_property.h"
 #include "rviz/properties/float_property.h"
 #include "rviz/properties/int_property.h"
-#include "rviz/properties/vector_property.h"
-#include "rviz/properties/enum_property.h"
 #include "rviz/properties/tf_frame_property.h"
-#include "rviz/display.h"
-#include <rviz/display_context.h>
-#include <OgreSceneNode.h>
-#include <OgreSceneManager.h>
-#include <OgreManualObject.h>
-#include <OgreBillboardSet.h>
+#include "rviz/properties/vector_property.h"
 
-namespace rviz
-{
+namespace rviz {
 
 /**
  * \class PolarGridDisplay
@@ -51,12 +50,9 @@ namespace rviz
  *
  * For more information see Grid
  */
-class PolarGridDisplay : public Display
-{
-Q_OBJECT
-public:
-
-
+class PolarGridDisplay : public Display {
+  Q_OBJECT
+ public:
   PolarGridDisplay();
   virtual ~PolarGridDisplay();
 
@@ -65,12 +61,12 @@ public:
   virtual void update(float dt, float ros_dt);
   void reset() override;
 
-private Q_SLOTS:
+ private Q_SLOTS:
   void updatePlane();
 
-private:
-  Ogre::ManualObject *rings_manual_object_;
-  Ogre::ManualObject *wave_manual_object_;
+ private:
+  Ogre::ManualObject* rings_manual_object_;
+  Ogre::ManualObject* wave_manual_object_;
   float wave_range_;
 
   TfFrameProperty* frame_property_;
@@ -85,5 +81,4 @@ private:
   FloatProperty* min_wave_alpha_property_;
 };
 
-} // namespace rviz
-
+}  // namespace rviz

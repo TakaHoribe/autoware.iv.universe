@@ -26,19 +26,18 @@
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 
-#include <iostream>
-#include <queue>
 #include <deque>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
+#include <iostream>
+#include <queue>
 
 /**
  * @class simple_planning_simulator time delay twist model
  * @brief calculate time delay twist dynamics
  */
-class SimModelTimeDelayTwist : public SimModelInterface
-{
-public:
+class SimModelTimeDelayTwist : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -52,26 +51,24 @@ public:
    * @param [in] wz_time_constant time constant for 1D model of angular-velocity dynamics
    */
   SimModelTimeDelayTwist(double vx_lim, double angvel_lim, double vx_rate_lim, double wz_rate_lim, double dt,
-                           double vx_delay, double vx_time_constant, double wz_delay, double wz_time_constant);
+                         double vx_delay, double vx_time_constant, double wz_delay, double wz_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelayTwist() = default;
 
-private:
+ private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
-  enum IDX
-  {
+  enum IDX {
     X = 0,
     Y,
     YAW,
     VX,
     WZ,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     VX_DES = 0,
     WZ_DES,
   };
@@ -138,9 +135,8 @@ private:
   Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
 };
 
-class SimModelTimeDelaySteer : public SimModelInterface
-{
-public:
+class SimModelTimeDelaySteer : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -155,27 +151,25 @@ public:
    * @param [in] steer_time_constant time constant for 1D model of steering dynamics
    */
   SimModelTimeDelaySteer(double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim, double wheelbase,
-                           double dt, double vx_delay, double vx_time_constant, double steer_delay,
-                           double steer_time_constant);
+                         double dt, double vx_delay, double vx_time_constant, double steer_delay,
+                         double steer_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelaySteer() = default;
 
-private:
+ private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
-  enum IDX
-  {
+  enum IDX {
     X = 0,
     Y,
     YAW,
     VX,
     STEER,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     VX_DES = 0,
     STEER_DES,
   };
@@ -243,10 +237,8 @@ private:
   Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
 };
 
-
-class SimModelTimeDelaySteerAccel : public SimModelInterface
-{
-public:
+class SimModelTimeDelaySteerAccel : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -260,20 +252,19 @@ public:
    * @param [in] steer_delay time delay for steering command [s]
    * @param [in] steer_time_constant time constant for 1D model of steering dynamics
    */
-  SimModelTimeDelaySteerAccel(double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim, double wheelbase,
-                           double dt, double acc_delay, double acc_time_constant, double steer_delay,
-                           double steer_time_constant);
+  SimModelTimeDelaySteerAccel(double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim,
+                              double wheelbase, double dt, double acc_delay, double acc_time_constant,
+                              double steer_delay, double steer_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelaySteerAccel() = default;
 
-private:
+ private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
-  enum IDX
-  {
+  enum IDX {
     X = 0,
     Y,
     YAW,
@@ -281,8 +272,7 @@ private:
     STEER,
     ACCX,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     ACCX_DES = 0,
     STEER_DES,
     DRIVE_SHIFT,
@@ -294,10 +284,10 @@ private:
   const double steer_rate_lim_;  //!< @brief steering angular velocity limit [rad/s]
   const double wheelbase_;       //!< @brief vehicle wheelbase length [m]
 
-  std::deque<double> acc_input_queue_;     //!< @brief buffer for accel command
+  std::deque<double> acc_input_queue_;    //!< @brief buffer for accel command
   std::deque<double> steer_input_queue_;  //!< @brief buffer for steering command
-  const double acc_delay_;                 //!< @brief time delay for accel command [s]
-  const double acc_time_constant_;         //!< @brief time constant for 1D model of accel dynamics
+  const double acc_delay_;                //!< @brief time delay for accel command [s]
+  const double acc_time_constant_;        //!< @brief time constant for 1D model of accel dynamics
   const double steer_delay_;              //!< @brief time delay for steering command [s]
   const double steer_time_constant_;      //!< @brief time constant for 1D model of steering dynamics
 

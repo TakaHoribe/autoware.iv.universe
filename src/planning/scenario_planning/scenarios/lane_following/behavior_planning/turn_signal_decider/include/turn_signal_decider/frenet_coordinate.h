@@ -1,18 +1,14 @@
 #pragma once
 
-#include <vector>
-#include <geometry_msgs/Point.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <geometry_msgs/Point.h>
+#include <vector>
 
-namespace turn_signal_decider
-{
-struct FrenetCoordinate3d
-{
+namespace turn_signal_decider {
+struct FrenetCoordinate3d {
   double length;
   double distance;
-  FrenetCoordinate3d() : length(0), distance(0)
-  {
-  }
+  FrenetCoordinate3d() : length(0), distance(0) {}
 };
 
 bool convertToFrenetCoordinate3d(const autoware_planning_msgs::PathWithLaneId& path,

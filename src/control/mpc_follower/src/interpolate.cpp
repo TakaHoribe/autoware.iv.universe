@@ -20,9 +20,9 @@
  * linear interpolation
  */
 
-bool LinearInterpolate::interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                                    const std::vector<double> &return_index, std::vector<double> &return_value) {
-  auto isIncrease = [](const std::vector<double> &x) {
+bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                                    const std::vector<double>& return_index, std::vector<double>& return_value) {
+  auto isIncrease = [](const std::vector<double>& x) {
     for (int i = 0; i < (int)x.size() - 1; ++i) {
       if (x[i] > x[i + 1]) return false;
     }
@@ -81,8 +81,8 @@ bool LinearInterpolate::interpolate(const std::vector<double> &base_index, const
   return true;
 }
 
-bool LinearInterpolate::interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                                    const double &return_index, double &return_value) {
+bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                                    const double& return_index, double& return_value) {
   std::vector<double> return_index_v;
   return_index_v.push_back(return_index);
 
@@ -98,9 +98,9 @@ bool LinearInterpolate::interpolate(const std::vector<double> &base_index, const
  */
 
 SplineInterpolate::SplineInterpolate() {}
-SplineInterpolate::SplineInterpolate(const std::vector<double> &x) { generateSpline(x); }
+SplineInterpolate::SplineInterpolate(const std::vector<double>& x) { generateSpline(x); }
 SplineInterpolate::~SplineInterpolate() {}
-void SplineInterpolate::generateSpline(const std::vector<double> &x) {
+void SplineInterpolate::generateSpline(const std::vector<double>& x) {
   int N = x.size();
 
   a_.clear();
@@ -136,7 +136,7 @@ void SplineInterpolate::generateSpline(const std::vector<double> &x) {
   initialized_ = true;
 };
 
-double SplineInterpolate::getValue(const double &s) {
+double SplineInterpolate::getValue(const double& s) {
   if (!initialized_) return 0.0;
 
   int j = std::max(std::min(int(std::floor(s)), (int)a_.size() - 1), 0);
@@ -144,7 +144,7 @@ double SplineInterpolate::getValue(const double &s) {
   return a_[j] + (b_[j] + (c_[j] + d_[j] * ds) * ds) * ds;
 }
 
-void SplineInterpolate::getValueVector(const std::vector<double> &s_v, std::vector<double> &value_v) {
+void SplineInterpolate::getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v) {
   if (!initialized_) return;
   value_v.clear();
   for (int i = 0; i < (int)s_v.size(); ++i) {
@@ -152,9 +152,9 @@ void SplineInterpolate::getValueVector(const std::vector<double> &s_v, std::vect
   }
 }
 
-bool SplineInterpolate::interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                                    const std::vector<double> &return_index, std::vector<double> &return_value) {
-  auto isIncrease = [](const std::vector<double> &x) {
+bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                                    const std::vector<double>& return_index, std::vector<double>& return_value) {
+  auto isIncrease = [](const std::vector<double>& x) {
     for (int i = 0; i < (int)x.size() - 1; ++i) {
       if (x[i] > x[i + 1]) return false;
     }

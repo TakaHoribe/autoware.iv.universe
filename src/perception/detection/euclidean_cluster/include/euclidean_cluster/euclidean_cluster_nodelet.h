@@ -10,18 +10,15 @@
 // #include "message_filters/subscriber.h"
 #include "sensor_msgs/PointCloud2.h"
 
-namespace euclidean_cluster
-{
-class EuclideanClusterNodelet : public nodelet::Nodelet
-{
-
-public:
+namespace euclidean_cluster {
+class EuclideanClusterNodelet : public nodelet::Nodelet {
+ public:
   EuclideanClusterNodelet();
 
-private:
+ private:
   virtual void onInit();
 
-  void pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr &input_msg);
+  void pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& input_msg);
 
   ros::NodeHandle nh_, private_nh_;
   ros::Subscriber pointcloud_sub_;
@@ -36,4 +33,4 @@ private:
   float tolerance_;
 };
 
-} // namespace euclidean_cluster
+}  // namespace euclidean_cluster

@@ -17,8 +17,7 @@
 
 #include <caffe/caffe.hpp>
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "lidar_apollo_cnn_seg_detect");
   CNNSegmentation node;
   node.run();

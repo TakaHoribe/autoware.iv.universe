@@ -138,7 +138,6 @@ MPCFollower::~MPCFollower() {
 }
 
 void MPCFollower::timerCallback(const ros::TimerEvent& te) {
-
   updateCurrentPose();
 
   if (!checkData()) {
@@ -236,7 +235,6 @@ bool MPCFollower::calculateMPC(autoware_control_msgs::ControlCommand* ctrl_cmd) 
   input_buffer_.pop_front();
   raw_steer_cmd_pprev_ = raw_steer_cmd_prev_;
   raw_steer_cmd_prev_ = Uex(0);
-
 
   /* ---------- DEBUG ---------- */
 

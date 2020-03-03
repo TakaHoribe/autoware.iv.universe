@@ -15,8 +15,8 @@
  */
 #include <mission_planner/mission_planner_base.h>
 
-#include <visualization_msgs/MarkerArray.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <lanelet2_routing/Route.h>
 
@@ -24,10 +24,8 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
-namespace mission_planner
-{
-MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_)
-{
+namespace mission_planner {
+MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_) {
   pnh_.param<std::string>("map_frame", map_frame_, "map");
   pnh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
 
@@ -38,8 +36,7 @@ MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_)
   marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/route_marker", 1, true);
 }
 
-bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose)
-{
+bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose) {
   geometry_msgs::PoseStamped base_link_origin;
   base_link_origin.header.frame_id = base_link_frame_;
   base_link_origin.pose.position.x = 0;
@@ -55,33 +52,26 @@ bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_p
 }
 
 bool MissionPlanner::transformPose(const geometry_msgs::PoseStamped& input_pose,
-                                   geometry_msgs::PoseStamped* output_pose, const std::string target_frame)
-{
+                                   geometry_msgs::PoseStamped* output_pose, const std::string target_frame) {
   geometry_msgs::TransformStamped transform;
-  try
-  {
+  try {
     transform = tf_buffer_.lookupTransform(target_frame, input_pose.header.frame_id, ros::Time(0));
     tf2::doTransform(input_pose, *output_pose, transform);
     return true;
-  }
-  catch (tf2::TransformException& ex)
-  {
+  } catch (tf2::TransformException& ex) {
     ROS_WARN("%s", ex.what());
     return false;
   }
 }
 
-void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg_ptr)
-{
+void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg_ptr) {
   // set start pose
-  if (!getEgoVehiclePose(&start_pose_))
-  {
+  if (!getEgoVehiclePose(&start_pose_)) {
     ROS_ERROR("Failed to get ego vehicle pose in map frame. Aborting mission planning");
     return;
   }
   // set goal pose
-  if (!transformPose(*goal_msg_ptr, &goal_pose_, map_frame_))
-  {
+  if (!transformPose(*goal_msg_ptr, &goal_pose_, map_frame_)) {
     ROS_ERROR("Failed to get goal pose in map frame. Aborting mission planning");
     return;
   }
@@ -91,8 +81,7 @@ void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& 
   checkpoints_.push_back(start_pose_);
   checkpoints_.push_back(goal_pose_);
 
-  if (!isRoutingGraphReady())
-  {
+  if (!isRoutingGraphReady()) {
     ROS_ERROR("RoutingGraph is not ready. Aborting mission planning");
     return;
   }
@@ -101,17 +90,14 @@ void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& 
   publishRoute(route);
 }  // namespace mission_planner
 
-void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr& checkpoint_msg_ptr)
-{
-  if (checkpoints_.size() < 2)
-  {
+void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr& checkpoint_msg_ptr) {
+  if (checkpoints_.size() < 2) {
     ROS_ERROR("You must set start and goal before setting checkpoints. Aborting mission planning");
     return;
   }
 
   geometry_msgs::PoseStamped transformed_checkpoint;
-  if (!transformPose(*checkpoint_msg_ptr, &transformed_checkpoint, map_frame_))
-  {
+  if (!transformPose(*checkpoint_msg_ptr, &transformed_checkpoint, map_frame_)) {
     ROS_ERROR("Failed to get checkpoint pose in map frame. Aborting mission planning");
     return;
   }
@@ -123,16 +109,12 @@ void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr
   publishRoute(route);
 }
 
-void MissionPlanner::publishRoute(const autoware_planning_msgs::Route& route) const
-{
-  if (!route.route_sections.empty())
-  {
+void MissionPlanner::publishRoute(const autoware_planning_msgs::Route& route) const {
+  if (!route.route_sections.empty()) {
     ROS_INFO("Route successfuly planned. Publishing...");
     route_publisher_.publish(route);
     visualizeRoute(route);
-  }
-  else
-  {
+  } else {
     ROS_ERROR("Calculated route is empty!");
   }
 }
