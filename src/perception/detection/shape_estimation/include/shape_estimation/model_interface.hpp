@@ -18,23 +18,19 @@
 
 #pragma once
 
-#include <string>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <string>
 #include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 
-
-class ShapeEstimationModelInterface
-{
-public:
+class ShapeEstimationModelInterface {
+ public:
   ShapeEstimationModelInterface(){};
 
   virtual ~ShapeEstimationModelInterface(){};
 
-  virtual bool estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                        autoware_perception_msgs::Shape &shape_output,
-                        geometry_msgs::Pose &pose_output,
-                        bool &orientaion_output) = 0;
+  virtual bool estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, autoware_perception_msgs::Shape& shape_output,
+                        geometry_msgs::Pose& pose_output, bool& orientaion_output) = 0;
 };

@@ -17,36 +17,29 @@
  * v1.0 Yukihiro Saito
  */
 
-#include <ros/ros.h>
 #include <gtest/gtest.h>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <ros/ros.h>
 #include "autoware_perception_msgs/DetectedObject.h"
 #include "lidar_shape_estimation/shape_estimator.hpp"
 
-class ShapeEstimationTestSuite : public ::testing::Test
-{
-public:
-  ShapeEstimationTestSuite()
-  {
-  }
+class ShapeEstimationTestSuite : public ::testing::Test {
+ public:
+  ShapeEstimationTestSuite() {}
 
-  ~ShapeEstimationTestSuite()
-  {
-  }
+  ~ShapeEstimationTestSuite() {}
 };
 
-class ShapeEstimationTestClass
-{
-public:
+class ShapeEstimationTestClass {
+ public:
   ShapeEstimationTestClass(){};
 
   ShapeEstimator shape_estimator;
 };
 
-TEST(TestSuite, CheckOnePoint)
-{
+TEST(TestSuite, CheckOnePoint) {
   ShapeEstimationTestClass test_shape_estimation;
 
   pcl::PointCloud<pcl::PointXYZ> pointcloud;
@@ -73,8 +66,7 @@ TEST(TestSuite, CheckOnePoint)
                          << "false";  // minimum point is 2
 }
 
-TEST(TestSuite, CheckTwoPoint)
-{
+TEST(TestSuite, CheckTwoPoint) {
   ShapeEstimationTestClass test_shape_estimation;
 
   pcl::PointCloud<pcl::PointXYZ> pointcloud;
@@ -103,8 +95,7 @@ TEST(TestSuite, CheckTwoPoint)
                         << "true";  // minimum point is 2
 }
 
-TEST(TestSuite, CheckEmptyPoint)
-{
+TEST(TestSuite, CheckEmptyPoint) {
   ShapeEstimationTestClass test_shape_estimation;
 
   pcl::PointCloud<pcl::PointXYZ> pointcloud;
@@ -128,8 +119,7 @@ TEST(TestSuite, CheckEmptyPoint)
                          << "false";
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "ShapeEstimationTestNode");
   return RUN_ALL_TESTS();

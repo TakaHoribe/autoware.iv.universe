@@ -28,26 +28,27 @@
 
 #include <dynamic_reconfigure/server.h>
 
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 
 class PoseInitializer {
-
-public:
+ public:
   PoseInitializer(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~PoseInitializer();
 
-private:
+ private:
+  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr& pointcloud2_msg_ptr);
+  bool serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request& req,
+                      autoware_localization_srvs::PoseWithCovarianceStamped::Response& res);
+  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_cov_msg_ptr);
+  void callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_cov_msg_ptr);
 
-  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
-  bool serviceInitial(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
-  void callbackGNSSPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_cov_msg_ptr);
-
-  bool getHeight(const geometry_msgs::PoseWithCovarianceStamped &input_pose_msg, const geometry_msgs::PoseWithCovarianceStamped::Ptr &output_pose_msg_ptr);
-  bool callAlignService(const geometry_msgs::PoseWithCovarianceStamped &msg, const geometry_msgs::PoseWithCovarianceStamped::Ptr &output_pose_msg_ptr);
+  bool getHeight(const geometry_msgs::PoseWithCovarianceStamped& input_pose_msg,
+                 const geometry_msgs::PoseWithCovarianceStamped::Ptr& output_pose_msg_ptr);
+  bool callAlignService(const geometry_msgs::PoseWithCovarianceStamped& msg,
+                        const geometry_msgs::PoseWithCovarianceStamped::Ptr& output_pose_msg_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -67,5 +68,4 @@ private:
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr map_ptr_;
   std::string map_frame_;
-
 };

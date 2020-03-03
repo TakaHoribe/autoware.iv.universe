@@ -28,31 +28,28 @@
  */
 
 #include <stdio.h>
-#include <string>
-#include <sstream>
-#include <vector>
 #include <algorithm>
+#include <sstream>
+#include <string>
 #include <thread>
+#include <vector>
 
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QMap>
 #include <QPainter>
 #include <QPushButton>
 #include <QSignalMapper>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QMap>
-#include <QFileDialog>
-#include <QStandardPaths>
 
 #include "initial_pose_button_panel.h"
 
-namespace autoware_localization_rviz_plugin
-{
+namespace autoware_localization_rviz_plugin {
 
-InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(parent)
-{
-
+InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(parent) {
   topic_label_ = new QLabel("PoseWithCovarianceStamped ");
   topic_label_->setAlignment(Qt::AlignCenter);
 
@@ -66,7 +63,6 @@ InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(pa
   status_label_ = new QLabel("Not Initialze");
   status_label_->setAlignment(Qt::AlignCenter);
   status_label_->setStyleSheet("QLabel { background-color : gray;}");
-
 
   QSizePolicy* q_size_policy = new QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   initialize_button_->setSizePolicy(*q_size_policy);
@@ -84,44 +80,37 @@ InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(pa
 
   pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
 
-  client_ = nh_.serviceClient<autoware_localization_srvs::PoseWithCovarianceStamped>("/localization/util/pose_initializer_srv");
+  client_ = nh_.serviceClient<autoware_localization_srvs::PoseWithCovarianceStamped>(
+      "/localization/util/pose_initializer_srv");
 }
 
-void InitialPoseButtonPanel::callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
-{
+void InitialPoseButtonPanel::callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
   pose_cov_msg_ = *msg;
   initialize_button_->setText("Pose Initializer   Let's GO!");
   initialize_button_->setEnabled(true);
 }
 
-void InitialPoseButtonPanel::editTopic()
-{
+void InitialPoseButtonPanel::editTopic() {
   pose_cov_sub_.shutdown();
   pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
   initialize_button_->setText("Wait for subscribe topic");
   initialize_button_->setEnabled(false);
 }
 
-void InitialPoseButtonPanel::pushInitialzeButton()
-{
+void InitialPoseButtonPanel::pushInitialzeButton() {
   // lock button
   initialize_button_->setEnabled(false);
 
   status_label_->setStyleSheet("QLabel { background-color : dodgerblue;}");
   status_label_->setText("FOOOOOOOOOOOOOOOOOOOOOOOO");
 
-
-
-  std::thread thread([this]{
+  std::thread thread([this] {
     autoware_localization_srvs::PoseWithCovarianceStamped srv;
     srv.request.pose_with_cov = pose_cov_msg_;
-    if(client_.call(srv))
-    {
+    if (client_.call(srv)) {
       status_label_->setStyleSheet("QLabel { background-color : lightgreen;}");
       status_label_->setText("OK!!!");
-    }
-    else
-    {
+    } else {
       status_label_->setStyleSheet("QLabel { background-color : red;}");
       status_label_->setText("Faild!");
     }
@@ -131,7 +120,6 @@ void InitialPoseButtonPanel::pushInitialzeButton()
 
   thread.detach();
 }
-
 
 }  // end namespace autoware_localization_rviz_plugin
 

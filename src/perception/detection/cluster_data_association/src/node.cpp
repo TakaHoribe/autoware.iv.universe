@@ -30,7 +30,7 @@ void ClusterDataAssociationNode::clusterCallback(
     const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_cluster0_msg,
     const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_cluster1_msg) {
   // Guard
-    if (associated_cluster_pub_.getNumSubscribers() < 1) return;
+  if (associated_cluster_pub_.getNumSubscribers() < 1) return;
 
   // build output msg
   autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;

@@ -16,37 +16,27 @@
 
 #include "accel_map_converter/csv_loader.h"
 
-CSVLoader::CSVLoader(std::string csv_path)
-{
-  csv_path_ = csv_path;
-}
+CSVLoader::CSVLoader(std::string csv_path) { csv_path_ = csv_path; }
 
-CSVLoader::~CSVLoader()
-{
-}
+CSVLoader::~CSVLoader() {}
 
-bool CSVLoader::readCSV(std::vector<std::vector<std::string>>& result, const char delim)
-{
+bool CSVLoader::readCSV(std::vector<std::vector<std::string>>& result, const char delim) {
   std::ifstream ifs(csv_path_);
-  if (!ifs.is_open())
-  {
+  if (!ifs.is_open()) {
     return false;
   }
 
   std::string buf;
-  while (std::getline(ifs, buf))
-  {
+  while (std::getline(ifs, buf)) {
     std::vector<std::string> tokens;
 
     std::istringstream iss(buf);
     std::string token;
-    while (std::getline(iss, token, delim))
-    {
+    while (std::getline(iss, token, delim)) {
       tokens.push_back(token);
     }
 
-    if (tokens.size() != 0)
-    {
+    if (tokens.size() != 0) {
       result.push_back(tokens);
     }
   }

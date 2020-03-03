@@ -44,7 +44,7 @@ class CrosswalkModule : public SceneModuleInterface {
   };
 
  public:
-   CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk);
+  CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet& crosswalk);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
 

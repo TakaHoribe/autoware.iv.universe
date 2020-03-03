@@ -37,7 +37,7 @@
 
 #include <map_file/pointcloud_map_filter.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   ros::init(argc, argv, "pointcloud_map_filter");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");

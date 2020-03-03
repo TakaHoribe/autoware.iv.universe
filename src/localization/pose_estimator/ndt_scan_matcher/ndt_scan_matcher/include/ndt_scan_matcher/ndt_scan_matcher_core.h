@@ -17,36 +17,36 @@
 #pragma once
 
 #include <array>
-#include <memory>
-#include <string>
 #include <deque>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include <ros/ros.h>
 
 #include <tf2/transform_datatypes.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <dynamic_reconfigure/server.h>
 
-#include <std_msgs/Float32.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Float32.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <diagnostic_msgs/DiagnosticArray.h>
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 // #include <pcl/registration/ndt.h>
 // #include "pcl_registration/ndt.h"
+#include "ndt/omp.h"
 #include "ndt/pcl_generic.h"
 #include "ndt/pcl_modified.h"
-#include "ndt/omp.h"
 
 class NDTScanMatcher {
   using PointSource = pcl::PointXYZ;
@@ -54,52 +54,49 @@ class NDTScanMatcher {
 
   // TODO move file
   struct OMPParams {
-    OMPParams() : search_method(pclomp::NeighborSearchMethod::KDTREE), num_threads(1) {};
+    OMPParams() : search_method(pclomp::NeighborSearchMethod::KDTREE), num_threads(1){};
     pclomp::NeighborSearchMethod search_method;
     int num_threads;
   };
 
-  struct Particle
-  {
-    Particle(const geometry_msgs::Pose& a_initial_pose, const geometry_msgs::Pose& a_result_pose, const double a_score, const int a_iteration)
-      : initial_pose(a_initial_pose)
-      , result_pose(a_result_pose)
-      , score(a_score)
-      , iteration(a_iteration)
-      {};
+  struct Particle {
+    Particle(const geometry_msgs::Pose& a_initial_pose, const geometry_msgs::Pose& a_result_pose, const double a_score,
+             const int a_iteration)
+        : initial_pose(a_initial_pose), result_pose(a_result_pose), score(a_score), iteration(a_iteration){};
     geometry_msgs::Pose initial_pose;
     geometry_msgs::Pose result_pose;
     double score;
     int iteration;
   };
 
-  enum class NDTImplementType {
-     PCL_GENERIC = 0
-   , PCL_MODIFIED = 1
-   , OMP = 2
-  };
+  enum class NDTImplementType { PCL_GENERIC = 0, PCL_MODIFIED = 1, OMP = 2 };
 
-public:
+ public:
   NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~NDTScanMatcher();
 
-private:
+ private:
+  bool serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request& req,
+                       autoware_localization_srvs::PoseWithCovarianceStamped::Response& res);
 
-  bool serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request &req, autoware_localization_srvs::PoseWithCovarianceStamped::Response &res);
+  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr& pointcloud2_msg_ptr);
+  void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr& pointcloud2_msg_ptr);
+  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_conv_msg_ptr);
 
-  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
-  void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr &pointcloud2_msg_ptr);
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_conv_msg_ptr);
-
-  geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> &ndt_ptr, const geometry_msgs::PoseWithCovarianceStamped &initial_pose_with_cov);
+  geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(
+      const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>>& ndt_ptr,
+      const geometry_msgs::PoseWithCovarianceStamped& initial_pose_with_cov);
 
   void updateTransforms();
 
-  void publishTF(const std::string &frame_id, const std::string &child_frame_id, const geometry_msgs::PoseStamped &pose_msg);
-  bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr, const ros::Time &time_stamp);
-  bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
+  void publishTF(const std::string& frame_id, const std::string& child_frame_id,
+                 const geometry_msgs::PoseStamped& pose_msg);
+  bool getTransform(const std::string& target_frame, const std::string& source_frame,
+                    const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr, const ros::Time& time_stamp);
+  bool getTransform(const std::string& target_frame, const std::string& source_frame,
+                    const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr);
 
-  void publishMarkerForDebug(const Particle &particle_array, const size_t i);
+  void publishMarkerForDebug(const Particle& particle_array, const size_t i);
 
   void timerDiagnostic();
 
@@ -145,5 +142,5 @@ private:
   OMPParams omp_params_;
 
   std::thread diagnostic_thread_;
-  std::map <std::string, std::string> key_value_stdmap_;
+  std::map<std::string, std::string> key_value_stdmap_;
 };

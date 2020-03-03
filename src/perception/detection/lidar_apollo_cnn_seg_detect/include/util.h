@@ -35,10 +35,7 @@
 
 #include <string>
 
-
-inline int F2I(float val, float ori, float scale) {
-  return static_cast<int>(std::floor((ori - val) * scale));
-}
+inline int F2I(float val, float ori, float scale) { return static_cast<int>(std::floor((ori - val) * scale)); }
 
 inline int Pc2Pixel(float in_pc, float in_range, float out_size) {
   float inv_res = 0.5 * out_size / in_range;

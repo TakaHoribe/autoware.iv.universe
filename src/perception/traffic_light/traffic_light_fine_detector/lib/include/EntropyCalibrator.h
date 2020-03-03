@@ -1,5 +1,5 @@
-#ifndef _ENTROY_CALIBRATOR_H
-#define _ENTROY_CALIBRATOR_H
+#ifndef _ENTROPY_CALIBRATOR_H
+#define _ENTROPY_CALIBRATOR_H
 
 #include <cudnn.h>
 #include <string>
@@ -7,20 +7,15 @@
 #include "NvInfer.h"
 #include "Utils.h"
 
-namespace nvinfer1
-{
-class Int8EntropyCalibrator : public IInt8EntropyCalibrator
-{
-public:
-  Int8EntropyCalibrator(int BatchSize, const std::vector<std::vector<float>>& data,
-                        const std::string& CalibDataName = "", bool readCache = true);
+namespace nvinfer1 {
+class Int8EntropyCalibrator : public IInt8EntropyCalibrator2 {
+ public:
+  Int8EntropyCalibrator(int BatchSize, const std::vector<std::vector<float>>& data, const std::string& CalibDataName,
+                        bool readCache);
 
   virtual ~Int8EntropyCalibrator();
 
-  int getBatchSize() const override
-  {
-    return mBatchSize;
-  }
+  int getBatchSize() const override { return mBatchSize; }
 
   bool getBatch(void* bindings[], const char* names[], int nbBindings) override;
 
@@ -28,21 +23,21 @@ public:
 
   void writeCalibrationCache(const void* cache, size_t length) override;
 
-private:
+ private:
   std::string mCalibDataName;
   std::vector<std::vector<float>> mDatas;
   int mBatchSize;
 
   int mCurBatchIdx;
-  float* mCurBatchData{ nullptr };
+  float* mCurBatchData{nullptr};
 
   size_t mInputCount;
   bool mReadCache;
-  void* mDeviceInput{ nullptr };
+  void* mDeviceInput{nullptr};
 
   std::vector<char> mCalibrationCache;
 };
 
-}  // namespace
+}  // namespace nvinfer1
 
-#endif  //_ENTROY_CALIBRATOR_H
+#endif  //_ENTROPY_CALIBRATOR_H

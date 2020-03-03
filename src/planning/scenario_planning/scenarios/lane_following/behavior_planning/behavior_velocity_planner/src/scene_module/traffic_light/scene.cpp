@@ -56,7 +56,8 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
                              judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
           tf2::Quaternion quat;
           quat.setRPY(0, 0, yaw);
-          tf2::Transform tf_map2judge_pose(quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
+          tf2::Transform tf_map2judge_pose(quat,
+                                           tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
           tf2::Transform tf_map2self_pose;
           tf2::Transform tf_judge_pose2self_pose;
           tf2::fromMsg(self_pose.pose, tf_map2self_pose);

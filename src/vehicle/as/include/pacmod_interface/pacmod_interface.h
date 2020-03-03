@@ -20,8 +20,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <string>
 #include <memory>
+#include <string>
 
 #include <geometry_msgs/TwistStamped.h>
 #include <message_filters/subscriber.h>
@@ -38,12 +38,11 @@
 #include <pacmod_msgs/SystemRptInt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Pedal.h>
+#include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
 #include <autoware_vehicle_msgs/VehicleCommand.h>
-
 
 class PacmodInterface {
  public:
@@ -70,13 +69,13 @@ class PacmodInterface {
   ros::Subscriber engage_cmd_sub_;
 
   // From Pacmod
-  message_filters::Subscriber<pacmod_msgs::SystemRptFloat> *steer_wheel_rpt_sub_;
-  message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt> *wheel_speed_rpt_sub_;
-  message_filters::Subscriber<pacmod_msgs::SystemRptFloat> *accel_rpt_sub_;
-  message_filters::Subscriber<pacmod_msgs::SystemRptFloat> *brake_rpt_sub_;
-  message_filters::Subscriber<pacmod_msgs::SystemRptInt> *shift_rpt_sub_;
-  message_filters::Subscriber<pacmod_msgs::GlobalRpt> *global_rpt_sub_;
-  message_filters::Synchronizer<PacmodFeedbacksSyncPolicy> *pacmod_feedbacks_sync_;
+  message_filters::Subscriber<pacmod_msgs::SystemRptFloat>* steer_wheel_rpt_sub_;
+  message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>* wheel_speed_rpt_sub_;
+  message_filters::Subscriber<pacmod_msgs::SystemRptFloat>* accel_rpt_sub_;
+  message_filters::Subscriber<pacmod_msgs::SystemRptFloat>* brake_rpt_sub_;
+  message_filters::Subscriber<pacmod_msgs::SystemRptInt>* shift_rpt_sub_;
+  message_filters::Subscriber<pacmod_msgs::GlobalRpt>* global_rpt_sub_;
+  message_filters::Synchronizer<PacmodFeedbacksSyncPolicy>* pacmod_feedbacks_sync_;
 
   /* publishers */
   // To Pacmod
@@ -92,7 +91,7 @@ class PacmodInterface {
   ros::Publisher shift_status_pub_;
 
   /* ros param */
-  ros::Rate *rate_;
+  ros::Rate* rate_;
   std::string base_frame_id_;
   int command_timeout_ms_;  // vehicle_cmd timeout [ms]
   bool is_pacmod_rpt_received_;
@@ -107,11 +106,11 @@ class PacmodInterface {
   double vgr_coef_b_;       // variable gear ratio coeffs
   double vgr_coef_c_;       // variable gear ratio coeffs
 
-  double emergency_brake_;     // brake command when emergency [m/s^2]
-  double max_throttle_;        // max throttle [0~1]
-  double max_brake_;           // max throttle [0~1]
-  double max_steering_wheel_;  // max steering wheel angle [rad]
-  bool enable_steering_rate_control_; // use steering angle speed for command [rad/s]
+  double emergency_brake_;             // brake command when emergency [m/s^2]
+  double max_throttle_;                // max throttle [0~1]
+  double max_brake_;                   // max throttle [0~1]
+  double max_steering_wheel_;          // max steering wheel angle [rad]
+  bool enable_steering_rate_control_;  // use steering angle speed for command [rad/s]
 
   /* input values */
   std::shared_ptr<autoware_vehicle_msgs::VehicleCommand> vehicle_cmd_ptr_;
@@ -129,27 +128,26 @@ class PacmodInterface {
   ros::Time vehicle_command_received_time_;
   ros::Time pedal_command_received_time_;
 
-
   /* callbacks */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr &msg);
-  void callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr &msg);
-  void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr &msg);
-  void callbackEngage(const std_msgs::BoolConstPtr &msg);
-  void callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr &steer_wheel_rpt,
-                         const pacmod_msgs::WheelSpeedRptConstPtr &wheel_speed_rpt,
-                         const pacmod_msgs::SystemRptFloatConstPtr &accel_rpt,
-                         const pacmod_msgs::SystemRptFloatConstPtr &brake_rpt,
-                         const pacmod_msgs::SystemRptIntConstPtr &shift_rpt,
-                         const pacmod_msgs::GlobalRptConstPtr &global_rpt);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr& msg);
+  void callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr& msg);
+  void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr& msg);
+  void callbackEngage(const std_msgs::BoolConstPtr& msg);
+  void callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr& steer_wheel_rpt,
+                         const pacmod_msgs::WheelSpeedRptConstPtr& wheel_speed_rpt,
+                         const pacmod_msgs::SystemRptFloatConstPtr& accel_rpt,
+                         const pacmod_msgs::SystemRptFloatConstPtr& brake_rpt,
+                         const pacmod_msgs::SystemRptIntConstPtr& shift_rpt,
+                         const pacmod_msgs::GlobalRptConstPtr& global_rpt);
 
   /*  functions */
   void publishCommands();
-  double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt,
-                                  const pacmod_msgs::SystemRptInt &shift_rpt);
+  double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt& wheel_speed_rpt,
+                                  const pacmod_msgs::SystemRptInt& shift_rpt);
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
-  uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift);
-  int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shift);
-  uint16_t toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn);
+  uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift& shift);
+  int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt& shift);
+  uint16_t toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal& turn);
 };
 
 #endif

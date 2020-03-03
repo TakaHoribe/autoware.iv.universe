@@ -80,8 +80,7 @@ bool assignGeometry(OGRFeature* ogr_feature, T* feature) {
   return false;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool assignField(OGRFeature* ogr_feature, T* feature) {
   using member = traits::member_n<T, N>;
 
@@ -105,8 +104,7 @@ bool assignField(OGRFeature* ogr_feature, T* feature) {
   return true;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool assignField(OGRFeature* ogr_feature, T* feature) {
   return false;
 }
@@ -164,16 +162,14 @@ T fromOgrFeature(OGRFeature* ogr_feature) {
   return feature;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addMemberName(std::stringstream* ss) {
   using member = traits::member_n<T, N>;
   *ss << ", " << member::name;
   return true;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addMemberName(std::stringstream* ss) {
   return false;
 }

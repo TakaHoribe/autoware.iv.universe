@@ -32,27 +32,29 @@
 #include "dummy_perception_publisher/Object.h"
 
 #include "rviz/display_context.h"
-#include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"
+#include "rviz/properties/string_property.h"
 
 #include <unique_id/unique_id.h>
 
 #include "pedestrian_pose.hpp"
 
-namespace rviz
-{
+namespace rviz {
 
-PedestrianInitialPoseTool::PedestrianInitialPoseTool()
-{
+PedestrianInitialPoseTool::PedestrianInitialPoseTool() {
   shortcut_key_ = 'l';
 
-  topic_property_ = new StringProperty( "Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
-                                        "The topic on which to publish dummy object info.",
-                                        getPropertyContainer(), SLOT( updateTopic() ), this );
-  std_dev_x_ = new FloatProperty("X std deviation", 0.03, "X standard deviation for initial pose [m]", getPropertyContainer());
-  std_dev_y_ = new FloatProperty("Y std deviation", 0.03, "Y standard deviation for initial pose [m]", getPropertyContainer());
-  std_dev_z_ = new FloatProperty("Z std deviation", 0.03, "Z standard deviation for initial pose [m]", getPropertyContainer());
-  std_dev_theta_ = new FloatProperty("Theta std deviation", 5.0 * M_PI / 180.0, "Theta standard deviation for initial pose [rad]", getPropertyContainer());
+  topic_property_ = new StringProperty("Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
+                                       "The topic on which to publish dummy object info.", getPropertyContainer(),
+                                       SLOT(updateTopic()), this);
+  std_dev_x_ =
+      new FloatProperty("X std deviation", 0.03, "X standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_y_ =
+      new FloatProperty("Y std deviation", 0.03, "Y standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_z_ =
+      new FloatProperty("Z std deviation", 0.03, "Z standard deviation for initial pose [m]", getPropertyContainer());
+  std_dev_theta_ = new FloatProperty("Theta std deviation", 5.0 * M_PI / 180.0,
+                                     "Theta standard deviation for initial pose [rad]", getPropertyContainer());
   position_z_ = new FloatProperty("Z position", 0.0, "Z position for initial pose [m]", getPropertyContainer());
   velocity_ = new FloatProperty("Velocity", 0.0, "velocity [m/s]", getPropertyContainer());
   std_dev_x_->setMin(0);
@@ -62,20 +64,17 @@ PedestrianInitialPoseTool::PedestrianInitialPoseTool()
   position_z_->setMin(0);
 }
 
-void PedestrianInitialPoseTool::onInitialize()
-{
+void PedestrianInitialPoseTool::onInitialize() {
   PoseTool::onInitialize();
-  setName( "2D Dummy Pedestrian" );
+  setName("2D Dummy Pedestrian");
   updateTopic();
 }
 
-void PedestrianInitialPoseTool::updateTopic()
-{
-  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>( topic_property_->getStdString(), 1 );
+void PedestrianInitialPoseTool::updateTopic() {
+  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>(topic_property_->getStdString(), 1);
 }
 
-void PedestrianInitialPoseTool::onPoseSet(double x, double y, double theta)
-{
+void PedestrianInitialPoseTool::onPoseSet(double x, double y, double theta) {
   const ros::Time current_time = ros::Time::now();
   dummy_perception_publisher::Object output_msg;
   std::string fixed_frame = context_->getFixedFrame().toStdString();
@@ -124,7 +123,7 @@ void PedestrianInitialPoseTool::onPoseSet(double x, double y, double theta)
   dummy_object_info_pub_.publish(output_msg);
 }
 
-} // end namespace rviz
+}  // end namespace rviz
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS( rviz::PedestrianInitialPoseTool, rviz::Tool )
+PLUGINLIB_EXPORT_CLASS(rviz::PedestrianInitialPoseTool, rviz::Tool)

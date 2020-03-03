@@ -26,17 +26,16 @@
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 
-#include <iostream>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
+#include <iostream>
 
 /**
  * @class simple_planning_simulator constant acceleration twist model
  * @brief calculate velocity & angular-velocity with constant acceleration
  */
-class SimModelConstantAccelTwist : public SimModelInterface
-{
-public:
+class SimModelConstantAccelTwist : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -51,17 +50,15 @@ public:
    */
   ~SimModelConstantAccelTwist() = default;
 
-private:
-  enum IDX
-  {
+ private:
+  enum IDX {
     X = 0,
     Y,
     YAW,
     VX,
     WZ,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     VX_DES = 0,
     WZ_DES,
   };

@@ -164,8 +164,7 @@ class CostmapGenerator {
 
   /// \brief calculate cost from DynamicObjectArray
   /// \param[in] in_objects: subscribed DynamicObjectArray
-  grid_map::Matrix generateObjectsCostmap(
-      const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
+  grid_map::Matrix generateObjectsCostmap(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
 
   /// \brief calculate cost from lanelet2 map
   grid_map::Matrix generateWayAreaCostmap();

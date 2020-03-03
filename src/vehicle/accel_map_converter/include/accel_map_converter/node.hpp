@@ -20,13 +20,13 @@
 #include <memory>
 #include <string>
 
+#include <geometry_msgs/TwistStamped.h>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
-#include <geometry_msgs/TwistStamped.h>
 
 #include <autoware_vehicle_msgs/Pedal.h>
-#include <autoware_vehicle_msgs/VehicleCommand.h>
 #include <autoware_vehicle_msgs/Shift.h>
+#include <autoware_vehicle_msgs/VehicleCommand.h>
 
 #include <accel_map_converter/accel_map.h>
 #include <accel_map_converter/brake_map.h>

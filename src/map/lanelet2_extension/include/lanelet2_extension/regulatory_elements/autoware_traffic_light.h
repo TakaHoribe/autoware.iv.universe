@@ -23,27 +23,22 @@
 #include <lanelet2_core/primitives/Lanelet.h>
 #include <vector>
 
-namespace lanelet
-{
-namespace autoware
-{
-struct AutowareRoleNameString
-{
+namespace lanelet {
+namespace autoware {
+struct AutowareRoleNameString {
   static constexpr const char LightBulbs[] = "light_bulbs";
 };
 
-class AutowareTrafficLight : public lanelet::TrafficLight
-{
-public:
+class AutowareTrafficLight : public lanelet::TrafficLight {
+ public:
   using Ptr = std::shared_ptr<AutowareTrafficLight>;
   static constexpr char RuleName[] = "traffic_light";
 
   //! Directly construct a stop line from its required rule parameters.
   //! Might modify the input data in oder to get correct tags.
   static Ptr make(Id id, const AttributeMap& attributes, const LineStringsOrPolygons3d& trafficLights,
-                  const Optional<LineString3d>& stopLine = {}, const LineStrings3d& lightBulbs = {})
-  {
-    return Ptr{ new AutowareTrafficLight(id, attributes, trafficLights, stopLine, lightBulbs) };
+                  const Optional<LineString3d>& stopLine = {}, const LineStrings3d& lightBulbs = {}) {
+    return Ptr{new AutowareTrafficLight(id, attributes, trafficLights, stopLine, lightBulbs)};
   }
 
   /**
@@ -71,7 +66,7 @@ public:
    */
   bool removeLightBulbs(const LineStringOrPolygon3d& primitive);
 
-private:
+ private:
   // the following lines are required so that lanelet2 can create this object
   // when loading a map with this regulatory element
   friend class lanelet::RegisterRegulatoryElement<AutowareTrafficLight>;

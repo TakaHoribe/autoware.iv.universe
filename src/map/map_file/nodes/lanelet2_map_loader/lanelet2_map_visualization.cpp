@@ -21,35 +21,32 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <lanelet2_projection/UTM.h>
-#include <lanelet2_core/LaneletMap.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_projection/UTM.h>
 
+#include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
-#include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
 
 #include <vector>
 
 static bool g_viz_lanelets_centerline = true;
 static ros::Publisher g_map_pub;
 
-void insertMarkerArray(visualization_msgs::MarkerArray* a1, const visualization_msgs::MarkerArray& a2)
-{
+void insertMarkerArray(visualization_msgs::MarkerArray* a1, const visualization_msgs::MarkerArray& a2) {
   a1->markers.insert(a1->markers.end(), a2.markers.begin(), a2.markers.end());
 }
 
-void setColor(std_msgs::ColorRGBA* cl, double r, double g, double b, double a)
-{
+void setColor(std_msgs::ColorRGBA* cl, double r, double g, double b, double a) {
   cl->r = r;
   cl->g = g;
   cl->b = b;
   cl->a = a;
 }
 
-void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
-{
+void binMapCallback(autoware_lanelet2_msgs::MapBin msg) {
   lanelet::LaneletMapPtr viz_lanelet_map(new lanelet::LaneletMap);
 
   lanelet::utils::conversion::fromBinMsg(msg, viz_lanelet_map);
@@ -100,8 +97,7 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg)
   g_map_pub.publish(map_marker_array);
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "lanelet_map_visualizer");
   ros::NodeHandle rosnode;
   ros::Subscriber bin_map_sub;

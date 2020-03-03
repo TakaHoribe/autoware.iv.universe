@@ -38,11 +38,9 @@
 
 #include <memory>
 
-namespace lane_change_planner
-{
-class LaneChanger
-{
-private:
+namespace lane_change_planner {
+class LaneChanger {
+ private:
   ros::Timer timer_;
 
   ros::Publisher path_publisher_;
@@ -69,7 +67,7 @@ private:
   void publishDebugMarkers();
   void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path);
 
-public:
+ public:
   LaneChanger();
   void init();
 };

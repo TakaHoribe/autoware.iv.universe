@@ -14,17 +14,16 @@
  * limitations under the License.
  *
  * Authors: Yukihiro Saito
- * 
+ *
  */
 
 #include <ros/ros.h>
 #include <traffic_light_map_based_detector/node.hpp>
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "traffic_light_map_based_detector");
   traffic_light::MapBasedDetector node;
-  
+
   ros::spin();
 
   return 0;

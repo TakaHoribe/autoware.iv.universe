@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
- #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_HPP
- #define NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_HPP
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_HPP
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_OMP_HPP
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::NormalDistributionsTransformOMP()
-  : ndt_ptr_(new pclomp::NormalDistributionsTransform<PointSource, PointTarget>)
-{
-}
+    : ndt_ptr_(new pclomp::NormalDistributionsTransform<PointSource, PointTarget>) {}
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformOMP<PointSource, PointTarget>::align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) {
+void NormalDistributionsTransformOMP<PointSource, PointTarget>::align(pcl::PointCloud<PointSource>& output,
+                                                                      const Eigen::Matrix4f& guess) {
   ndt_ptr_->align(output, guess);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) {
+void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputTarget(
+    const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> &scan_ptr) {
+void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputSource(
+    const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) {
   ndt_ptr_->setInputSource(scan_ptr);
 }
 
@@ -94,12 +95,14 @@ double NormalDistributionsTransformOMP<PointSource, PointTarget>::getFitnessScor
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointTarget>> NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputTarget() const {
+boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputTarget() const {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointSource>> NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputSource() const {
+boost::shared_ptr<const pcl::PointCloud<PointSource>>
+NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputSource() const {
   return ndt_ptr_->getInputSource();
 }
 
@@ -109,19 +112,21 @@ Eigen::Matrix4f NormalDistributionsTransformOMP<PointSource, PointTarget>::getFi
 }
 
 template <class PointSource, class PointTarget>
-std::vector<Eigen::Matrix4f> NormalDistributionsTransformOMP<PointSource, PointTarget>::getFinalTransformationArray() const {
+std::vector<Eigen::Matrix4f> NormalDistributionsTransformOMP<PointSource, PointTarget>::getFinalTransformationArray()
+    const {
   return ndt_ptr_->getFinalTransformationArray();
 }
 
 template <class PointSource, class PointTarget>
 Eigen::Matrix<double, 6, 6> NormalDistributionsTransformOMP<PointSource, PointTarget>::getHessian() const {
-    // return ndt_ptr_->getHessian();
-    return Eigen::Matrix<double, 6, 6>();
+  // return ndt_ptr_->getHessian();
+  return Eigen::Matrix<double, 6, 6>();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>> NormalDistributionsTransformOMP<PointSource, PointTarget>::getSearchMethodTarget() const {
-    return ndt_ptr_->getSearchMethodTarget();
+boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+NormalDistributionsTransformOMP<PointSource, PointTarget>::getSearchMethodTarget() const {
+  return ndt_ptr_->getSearchMethodTarget();
 }
 
 template <class PointSource, class PointTarget>
@@ -130,7 +135,8 @@ void NormalDistributionsTransformOMP<PointSource, PointTarget>::setNumThreads(in
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformOMP<PointSource, PointTarget>::setNeighborhoodSearchMethod(pclomp::NeighborSearchMethod method) {
+void NormalDistributionsTransformOMP<PointSource, PointTarget>::setNeighborhoodSearchMethod(
+    pclomp::NeighborSearchMethod method) {
   ndt_ptr_->setNeighborhoodSearchMethod(method);
 }
 
@@ -140,7 +146,8 @@ int NormalDistributionsTransformOMP<PointSource, PointTarget>::getNumThreads() c
 }
 
 template <class PointSource, class PointTarget>
-pclomp::NeighborSearchMethod NormalDistributionsTransformOMP<PointSource, PointTarget>::getNeighborhoodSearchMethod() const {
+pclomp::NeighborSearchMethod NormalDistributionsTransformOMP<PointSource, PointTarget>::getNeighborhoodSearchMethod()
+    const {
   return ndt_ptr_->getNeighborhoodSearchMethod();
 }
 

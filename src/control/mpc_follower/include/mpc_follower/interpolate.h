@@ -23,10 +23,10 @@ class LinearInterpolate {
  public:
   LinearInterpolate() {}
   ~LinearInterpolate() {}
-  static bool interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                          const std::vector<double> &return_index, std::vector<double> &return_value);
-  static bool interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                          const double &return_index, double &return_value);
+  static bool interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                          const std::vector<double>& return_index, std::vector<double>& return_value);
+  static bool interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                          const double& return_index, double& return_value);
 };
 
 class SplineInterpolate {
@@ -38,11 +38,11 @@ class SplineInterpolate {
 
  public:
   SplineInterpolate();
-  SplineInterpolate(const std::vector<double> &x);
+  SplineInterpolate(const std::vector<double>& x);
   ~SplineInterpolate();
-  void generateSpline(const std::vector<double> &x);
-  double getValue(const double &s);
-  bool interpolate(const std::vector<double> &base_index, const std::vector<double> &base_value,
-                   const std::vector<double> &return_index, std::vector<double> &return_value);
-  void getValueVector(const std::vector<double> &s_v, std::vector<double> &value_v);
+  void generateSpline(const std::vector<double>& x);
+  double getValue(const double& s);
+  bool interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
+                   const std::vector<double>& return_index, std::vector<double>& return_value);
+  void getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v);
 };

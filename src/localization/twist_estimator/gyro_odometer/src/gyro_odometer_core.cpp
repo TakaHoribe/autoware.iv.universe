@@ -20,10 +20,7 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh)
-  : nh_(nh)
-  , private_nh_(private_nh)
-{
+GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_(nh), private_nh_(private_nh) {
   vehicle_twist_sub_ = nh_.subscribe("vehicle/twist", 100, &GyroOdometer::callbackTwist, this);
   imu_sub_ = nh_.subscribe("imu", 100, &GyroOdometer::callbackImu, this);
 
@@ -32,13 +29,9 @@ GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh)
   // angular_z_pub_ = nh_.advertise<std_msgs::Float32>("angular_z", 10);
 }
 
-GyroOdometer::~GyroOdometer()
-{
-}
+GyroOdometer::~GyroOdometer() {}
 
-
-double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
-{
+double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
   double diff_rad = lhs_rad - rhs_rad;
   if (diff_rad > M_PI) {
     diff_rad = diff_rad - 2 * M_PI;
@@ -49,27 +42,21 @@ double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 }
 
 // x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose &pose)
-{
+geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose& pose) {
   geometry_msgs::Vector3 rpy;
   tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
   return rpy;
 }
 
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped &pose)
-{
-  return getRPY(pose.pose);
-}
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped& pose) { return getRPY(pose.pose); }
 
-void GyroOdometer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr &twist_msg_ptr)
-{
+void GyroOdometer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr) {
   twist_msg_ptr_ = twist_msg_ptr;
 }
 
-void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr &imu_msg_ptr)
-{
-  if(twist_msg_ptr_ == nullptr) {
+void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr) {
+  if (twist_msg_ptr_ == nullptr) {
     return;
   }
 
@@ -77,7 +64,7 @@ void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr &imu_msg_ptr)
   twist.header.stamp = imu_msg_ptr->header.stamp;
   twist.header.frame_id = "base_link";
   twist.twist.linear = twist_msg_ptr_->twist.linear;
-  twist.twist.angular.z = -imu_msg_ptr->angular_velocity.z;  //TODO
+  twist.twist.angular.z = -imu_msg_ptr->angular_velocity.z;  // TODO
 
   twist_pub_.publish(twist);
 }

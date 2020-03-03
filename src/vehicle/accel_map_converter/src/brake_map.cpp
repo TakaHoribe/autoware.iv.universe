@@ -16,48 +16,37 @@
 
 #include "accel_map_converter/brake_map.h"
 
-BrakeMap::BrakeMap()
-{
-}
+BrakeMap::BrakeMap() {}
 
-BrakeMap::~BrakeMap()
-{
-}
+BrakeMap::~BrakeMap() {}
 
-bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
-{
+bool BrakeMap::readBrakeMapFromCSV(std::string csv_path) {
   CSVLoader csv(csv_path);
   std::vector<std::vector<std::string>> table;
 
-  if (!csv.readCSV(table))
-  {
+  if (!csv.readCSV(table)) {
     ROS_ERROR("[Brake Map] Cannot open %s", csv_path.c_str());
     return false;
   }
 
-  if (table[0].size() < 2)
-  {
+  if (table[0].size() < 2) {
     ROS_ERROR("[Brake Map] Cannot read %s. CSV file should have at least 2 column", csv_path.c_str());
     return false;
   }
 
   vehicle_name_ = table[0][0];
-  for (unsigned int i = 1; i < table[0].size(); i++)
-  {
+  for (unsigned int i = 1; i < table[0].size(); i++) {
     vel_index_.push_back(std::stod(table[0][i]) * 1000 / 60 / 60);  // km/h => m/s
   }
 
-  for (unsigned int i = 1; i < table.size(); i++)
-  {
-    if (table[0].size() != table[i].size())
-    {
+  for (unsigned int i = 1; i < table.size(); i++) {
+    if (table[0].size() != table[i].size()) {
       ROS_ERROR("[Brake Map] Cannot read %s. Each row should have a same number of columns", csv_path.c_str());
       return false;
     }
     brake_index_.push_back(std::stod(table[i][0]));
     std::vector<double> accs;
-    for (unsigned int j = 1; j < table[i].size(); j++)
-    {
+    for (unsigned int j = 1; j < table[i].size(); j++) {
       accs.push_back(std::stod(table[i][j]));
     }
     brake_map_.push_back(accs);
@@ -69,14 +58,12 @@ bool BrakeMap::readBrakeMapFromCSV(std::string csv_path)
   return true;
 }
 
-bool BrakeMap::getBrake(double acc, double vel, double& brake)
-{
+bool BrakeMap::getBrake(double acc, double vel, double& brake) {
   LinearInterpolate linear_interp;
   std::vector<double> accs_interpolated;
 
   // (throttle, vel, acc) map => (throttle, acc) map by fixing vel
-  for (std::vector<double> accs : brake_map_)
-  {
+  for (std::vector<double> accs : brake_map_) {
     double acc_interpolated;
     linear_interp.interpolate(vel_index_, accs, vel, acc_interpolated);
     accs_interpolated.push_back(acc_interpolated);
@@ -85,14 +72,13 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake)
   // calculate brake
   // When the desired acceleration is smaller than the brake area, return max brake on the map
   // When the desired acceleration is greater than the brake area, return min brake on the map
-  if (acc < accs_interpolated.back())
-  {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "[Brake Map] Exceeding the acc range. Desired acc: %f < min acc on map: %f. return max value.", acc, accs_interpolated.back());
+  if (acc < accs_interpolated.back()) {
+    ROS_WARN_DELAYED_THROTTLE(
+        1.0, "[Brake Map] Exceeding the acc range. Desired acc: %f < min acc on map: %f. return max value.", acc,
+        accs_interpolated.back());
     brake = brake_index_.back();
     return true;
-  }
-  else if (accs_interpolated.front() < acc)
-  {
+  } else if (accs_interpolated.front() < acc) {
     brake = brake_index_.front();
     return true;
   }
@@ -103,6 +89,4 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake)
   return true;
 }
 
-void BrakeMap::showBrakeMapInfo()
-{
-}
+void BrakeMap::showBrakeMapInfo() {}

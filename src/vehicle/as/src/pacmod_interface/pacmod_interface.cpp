@@ -36,7 +36,6 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
   private_nh_.param<bool>("enable_steering_rate_control", enable_steering_rate_control_, false);
 
-
   /* parameters for emergency stop */
   private_nh_.param<double>("emergency_brake", emergency_brake_, 0.7);
   private_nh_.param<double>("max_throttle", max_throttle_, 0.2);
@@ -97,27 +96,27 @@ void PacmodInterface::run() {
   }
 }
 
-void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr &msg) {
+void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr& msg) {
   vehicle_command_received_time_ = ros::Time::now();
   vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
 }
-void PacmodInterface::callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr &msg) {
+void PacmodInterface::callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr& msg) {
   pedal_command_received_time_ = ros::Time::now();
   pedal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::Pedal>(*msg);
 }
-void PacmodInterface::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr &msg) {
+void PacmodInterface::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr& msg) {
   turn_signal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::TurnSignal>(*msg);
 }
-void PacmodInterface::callbackEngage(const std_msgs::BoolConstPtr &msg) {
+void PacmodInterface::callbackEngage(const std_msgs::BoolConstPtr& msg) {
   engage_cmd_ = msg->data;
   is_clear_override_needed_ = true;
 }
-void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr &steer_wheel_rpt,
-                                        const pacmod_msgs::WheelSpeedRptConstPtr &wheel_speed_rpt,
-                                        const pacmod_msgs::SystemRptFloatConstPtr &accel_rpt,
-                                        const pacmod_msgs::SystemRptFloatConstPtr &brake_rpt,
-                                        const pacmod_msgs::SystemRptIntConstPtr &shift_rpt,
-                                        const pacmod_msgs::GlobalRptConstPtr &global_rpt) {
+void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr& steer_wheel_rpt,
+                                        const pacmod_msgs::WheelSpeedRptConstPtr& wheel_speed_rpt,
+                                        const pacmod_msgs::SystemRptFloatConstPtr& accel_rpt,
+                                        const pacmod_msgs::SystemRptFloatConstPtr& brake_rpt,
+                                        const pacmod_msgs::SystemRptIntConstPtr& shift_rpt,
+                                        const pacmod_msgs::GlobalRptConstPtr& global_rpt) {
   is_pacmod_rpt_received_ = true;
   steer_wheel_rpt_ptr_ = std::make_shared<pacmod_msgs::SystemRptFloat>(*steer_wheel_rpt);
   wheel_speed_rpt_ptr_ = std::make_shared<pacmod_msgs::WheelSpeedRpt>(*wheel_speed_rpt);
@@ -141,7 +140,6 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
   std_msgs::Header header;
   header.frame_id = base_frame_id_;
   header.stamp = ros::Time::now();
-
 
   /* publish vehicle status twist */
   geometry_msgs::TwistStamped twist;
@@ -194,8 +192,7 @@ void PacmodInterface::publishCommands() {
 
   /* calculate desired steering wheel */
   double adaptive_gear_ratio = calculateVariableGearRatio(current_velocity, curr_steer_wheel);
-  double desired_steer_wheel =
-      (vehicle_cmd_ptr_->control.steering_angle + steering_offset_) * adaptive_gear_ratio;
+  double desired_steer_wheel = (vehicle_cmd_ptr_->control.steering_angle + steering_offset_) * adaptive_gear_ratio;
   desired_steer_wheel = std::min(std::max(desired_steer_wheel, -max_steering_wheel_), max_steering_wheel_);
 
   /* check clear flag */
@@ -213,7 +210,7 @@ void PacmodInterface::publishCommands() {
   const double brake_for_shift_trans = 0.7;
   uint16_t desired_shift = shift_rpt_ptr_->output;
   if (std::fabs(current_velocity) < 0.1) {  // velocity is low -> the shift can be changed
-    if (toPacmodShiftCmd(vehicle_cmd_ptr_->shift) != shift_rpt_ptr_->output)  {  // need shift change.
+    if (toPacmodShiftCmd(vehicle_cmd_ptr_->shift) != shift_rpt_ptr_->output) {  // need shift change.
       desired_throttle = 0.0;
       desired_brake = brake_for_shift_trans;  // set brake to change the shift
       desired_shift = toPacmodShiftCmd(vehicle_cmd_ptr_->shift);
@@ -278,8 +275,7 @@ void PacmodInterface::publishCommands() {
   shift_cmd.command = desired_shift;
   shift_cmd_pub_.publish(shift_cmd);
 
-  if (turn_signal_cmd_ptr_)
-  {
+  if (turn_signal_cmd_ptr_) {
     /* publish shift cmd */
     pacmod_msgs::SystemCmdInt turn_cmd;
     turn_cmd.header.frame_id = base_frame_id_;
@@ -293,8 +289,8 @@ void PacmodInterface::publishCommands() {
   }
 }
 
-double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt &wheel_speed_rpt,
-                                                 const pacmod_msgs::SystemRptInt &shift_rpt) {
+double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt& wheel_speed_rpt,
+                                                 const pacmod_msgs::SystemRptInt& shift_rpt) {
   double sign = (shift_rpt.output == pacmod_msgs::SystemRptInt::SHIFT_REVERSE) ? -1 : 1;
   double vel = (wheel_speed_rpt.rear_left_wheel_speed + wheel_speed_rpt.rear_right_wheel_speed) * 0.5 * tire_radius_;
   return sign * vel;
@@ -304,7 +300,7 @@ double PacmodInterface::calculateVariableGearRatio(const double vel, const doubl
   return std::max(1e-5, vgr_coef_a_ + vgr_coef_b_ * vel * vel - vgr_coef_c_ * steer_wheel);
 }
 
-uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &shift) {
+uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_vehicle_msgs::Shift& shift) {
   if (shift.data == autoware_vehicle_msgs::Shift::PARKING) {
     return pacmod_msgs::SystemCmdInt::SHIFT_PARK;
   }
@@ -323,7 +319,7 @@ uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_vehicle_msgs::Shift &s
     return pacmod_msgs::SystemCmdInt::SHIFT_NONE;
   }
 }
-int32_t PacmodInterface::toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shift) {
+int32_t PacmodInterface::toAutowareShiftCmd(const pacmod_msgs::SystemRptInt& shift) {
   if (shift.output == pacmod_msgs::SystemRptInt::SHIFT_PARK) {
     return autoware_vehicle_msgs::Shift::PARKING;
   }
@@ -343,7 +339,7 @@ int32_t PacmodInterface::toAutowareShiftCmd(const pacmod_msgs::SystemRptInt &shi
   }
 }
 
-uint16_t PacmodInterface::toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal &turn) {
+uint16_t PacmodInterface::toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal& turn) {
   if (turn.data == autoware_vehicle_msgs::TurnSignal::LEFT) {
     return pacmod_msgs::SystemCmdInt::TURN_LEFT;
   } else if (turn.data == autoware_vehicle_msgs::TurnSignal::RIGHT) {

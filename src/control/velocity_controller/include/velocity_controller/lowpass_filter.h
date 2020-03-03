@@ -28,30 +28,24 @@
  * @class 1D low-pass filter
  * @brief filtering values
  */
-class Lpf1d
-{
-private:
-  double x_;  //!< @brief current filtered value
+class Lpf1d {
+ private:
+  double x_;     //!< @brief current filtered value
   double gain_;  //!< @brief gain value of 1d filter
 
-public:
+ public:
   Lpf1d(double gain) : gain_(gain){};
   Lpf1d(){};
   ~Lpf1d() = default;
 
-  void init(double gain)
-  {
+  void init(double gain) {
     gain_ = gain;
     x_ = 0.0;
   }
 
-  void reset()
-  {
-    x_ = 0.0;
-  }
+  void reset() { x_ = 0.0; }
 
-  double filter(double u)
-  {
+  double filter(double u) {
     double ret = gain_ * x_ + (1.0 - gain_) * u;
     x_ = ret;
     return ret;

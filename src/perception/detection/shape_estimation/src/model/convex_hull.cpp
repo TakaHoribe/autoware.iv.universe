@@ -18,27 +18,24 @@
  */
 
 #include "convex_hull.hpp"
+#include <geometry_msgs/Point32.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <geometry_msgs/Point32.h>
 #include "autoware_perception_msgs/Shape.h"
 
-bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
-                               autoware_perception_msgs::Shape &shape_output,
-                               geometry_msgs::Pose &pose_output,
-                               bool &orientation_output)
-{
+bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
+                               autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                               bool& orientation_output) {
   // calc centroid point for convex hull height(z)
   pcl::PointXYZ centroid;
   centroid.x = 0;
   centroid.y = 0;
   centroid.z = 0;
-  for (const auto &pcl_point : cluster)
-  {
+  for (const auto& pcl_point : cluster) {
     centroid.x += pcl_point.x;
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;
@@ -50,18 +47,14 @@ bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   // calc min and max z for convex hull height(z)
   double min_z = 0;
   double max_z = 0;
-  for (size_t i = 0; i < cluster.size(); ++i)
-  {
-    if (cluster.at(i).z < min_z || i == 0)
-      min_z = cluster.at(i).z;
-    if (max_z < cluster.at(i).z || i == 0)
-      max_z = cluster.at(i).z;
+  for (size_t i = 0; i < cluster.size(); ++i) {
+    if (cluster.at(i).z < min_z || i == 0) min_z = cluster.at(i).z;
+    if (max_z < cluster.at(i).z || i == 0) max_z = cluster.at(i).z;
   }
 
   std::vector<cv::Point> v_pointcloud;
   std::vector<cv::Point> v_polygon_points;
-  for (size_t i = 0; i < cluster.size(); ++i)
-  {
+  for (size_t i = 0; i < cluster.size(); ++i) {
     v_pointcloud.push_back(cv::Point((cluster.at(i).x - centroid.x) * 1000.0, (cluster.at(i).y - centroid.y) * 1000.0));
   }
   cv::convexHull(v_pointcloud, v_polygon_points);
@@ -69,16 +62,14 @@ bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ> &cluster,
   pcl::PointXYZ polygon_centroid;
   polygon_centroid.x = 0;
   polygon_centroid.y = 0;
-  for (size_t i = 0; i < v_polygon_points.size(); ++i)
-  {
+  for (size_t i = 0; i < v_polygon_points.size(); ++i) {
     polygon_centroid.x += (double)v_polygon_points.at(i).x / 1000.0;
     polygon_centroid.y += (double)v_polygon_points.at(i).y / 1000.0;
   }
   polygon_centroid.x = polygon_centroid.x / (double)v_polygon_points.size();
   polygon_centroid.y = polygon_centroid.y / (double)v_polygon_points.size();
 
-  for (size_t i = 0; i < v_polygon_points.size(); ++i)
-  {
+  for (size_t i = 0; i < v_polygon_points.size(); ++i) {
     geometry_msgs::Point32 point;
     point.x = (double)v_polygon_points.at(i).x / 1000.0 - polygon_centroid.x;
     point.y = (double)v_polygon_points.at(i).y / 1000.0 - polygon_centroid.y;

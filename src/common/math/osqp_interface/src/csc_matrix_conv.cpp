@@ -1,10 +1,8 @@
 #include "osqp_interface/csc_matrix_conv.h"
 
-namespace osqp
-{
+namespace osqp {
 
-  CSC_Matrix calCSCMatrix(const Eigen::MatrixXd &mat)
-{
+CSC_Matrix calCSCMatrix(const Eigen::MatrixXd& mat) {
   int elem = mat.nonZeros();
   int rows = mat.rows();
   int cols = mat.cols();
@@ -22,15 +20,13 @@ namespace osqp
 
   col_idxs.push_back(0);
 
-  for (int j = 0; j < cols; j++) // col iteration
+  for (int j = 0; j < cols; j++)  // col iteration
   {
-
-    for (int i = 0; i <rows; i++) // row iteration
+    for (int i = 0; i < rows; i++)  // row iteration
     {
       // Get values of nonzero elements
       val = mat(i, j);
-      if (std::fabs(val) < 1e-9)
-      {
+      if (std::fabs(val) < 1e-9) {
         continue;
       }
       elem_count += 1;
@@ -46,17 +42,14 @@ namespace osqp
   CSC_Matrix csc_matrix = {vals, row_idxs, col_idxs};
 
   return csc_matrix;
-
 }
 
-CSC_Matrix calCSCMatrixTrapesoidal(const Eigen::MatrixXd &mat)
-{
+CSC_Matrix calCSCMatrixTrapesoidal(const Eigen::MatrixXd& mat) {
   int elem = mat.nonZeros();
   int rows = mat.rows();
   int cols = mat.cols();
 
-  if (rows != cols)
-  {
+  if (rows != cols) {
     throw std::invalid_argument("Matrix must be square (n, n)");
   }
 
@@ -74,15 +67,13 @@ CSC_Matrix calCSCMatrixTrapesoidal(const Eigen::MatrixXd &mat)
 
   col_idxs.push_back(0);
 
-  for (int j = 0; j < cols; j++) // col iteration
+  for (int j = 0; j < cols; j++)  // col iteration
   {
-
-    for (int i = 0; i <= trap_last_idx; i++) // row iteration
+    for (int i = 0; i <= trap_last_idx; i++)  // row iteration
     {
       // Get values of nonzero elements
       val = mat(i, j);
-      if (std::fabs(val) < 1e-9)
-      {
+      if (std::fabs(val) < 1e-9) {
         continue;
       }
       elem_count += 1;
@@ -101,28 +92,24 @@ CSC_Matrix calCSCMatrixTrapesoidal(const Eigen::MatrixXd &mat)
   return csc_matrix;
 }
 
-void printCSCMatrix(CSC_Matrix &csc_mat)
-{
+void printCSCMatrix(CSC_Matrix& csc_mat) {
   std::cout << "[";
-  for (std::vector<c_float>::const_iterator it = csc_mat.vals.begin(); it != csc_mat.vals.end(); it++)
-  {
+  for (std::vector<c_float>::const_iterator it = csc_mat.vals.begin(); it != csc_mat.vals.end(); it++) {
     std::cout << *it << ", ";
   }
   std::cout << "]" << std::endl;
 
   std::cout << "[";
-  for (std::vector<c_int>::const_iterator it = csc_mat.row_idxs.begin(); it != csc_mat.row_idxs.end(); it++)
-  {
+  for (std::vector<c_int>::const_iterator it = csc_mat.row_idxs.begin(); it != csc_mat.row_idxs.end(); it++) {
     std::cout << *it << ", ";
   }
   std::cout << "]" << std::endl;
 
   std::cout << "[";
-  for (std::vector<c_int>::const_iterator it = csc_mat.col_idxs.begin(); it != csc_mat.col_idxs.end(); it++)
-  {
+  for (std::vector<c_int>::const_iterator it = csc_mat.col_idxs.begin(); it != csc_mat.col_idxs.end(); it++) {
     std::cout << *it << ", ";
   }
   std::cout << "]" << std::endl;
 }
 
-} // namespace osqp
+}  // namespace osqp

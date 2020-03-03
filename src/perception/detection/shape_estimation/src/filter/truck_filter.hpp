@@ -21,15 +21,12 @@
 
 #include "shape_estimation/filter_interface.hpp"
 
-class TruckFilter : public ShapeEstimationFilterInterface
-{
-
-public:
+class TruckFilter : public ShapeEstimationFilterInterface {
+ public:
   TruckFilter(){};
 
   ~TruckFilter(){};
 
-  bool filter(const autoware_perception_msgs::Shape &shape,
-              const geometry_msgs::Pose &pose,
-              const bool &orientaion) override;
+  bool filter(const autoware_perception_msgs::Shape& shape, const geometry_msgs::Pose& pose,
+              const bool& orientaion) override;
 };

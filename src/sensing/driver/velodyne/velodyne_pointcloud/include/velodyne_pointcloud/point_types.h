@@ -19,44 +19,34 @@
 
 #include <pcl/point_types.h>
 
-namespace velodyne_pointcloud
-{
-  struct PointXYZIR
-  {
-    PCL_ADD_POINT4D;
-    float intensity;
-    uint16_t ring;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  } EIGEN_ALIGN16;
+namespace velodyne_pointcloud {
+struct PointXYZIR {
+  PCL_ADD_POINT4D;
+  float intensity;
+  uint16_t ring;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
 
-  struct PointXYZIRADT
-  {
-    PCL_ADD_POINT4D;
-    float intensity;
-    uint16_t ring;
-    float azimuth;
-    float distance;
-    double time_stamp;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  } EIGEN_ALIGN16;
+struct PointXYZIRADT {
+  PCL_ADD_POINT4D;
+  float intensity;
+  uint16_t ring;
+  float azimuth;
+  float distance;
+  double time_stamp;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
 
-};
+};  // namespace velodyne_pointcloud
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_pointcloud::PointXYZIR,
-                                  (float, x, x)
-                                  (float, y, y)
-                                  (float, z, z)
-                                  (float, intensity, intensity)
-                                  (uint16_t, ring, ring))
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring,
+                                                                                                       ring))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_pointcloud::PointXYZIRADT,
-                                  (float, x, x)
-                                  (float, y, y)
-                                  (float, z, z)
-                                  (float, intensity, intensity)
-                                  (uint16_t, ring, ring)
-                                  (float, azimuth, azimuth)
-                                  (float, distance, distance)
-                                  (double, time_stamp, time_stamp))
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
+                                      uint16_t, ring, ring)(float, azimuth, azimuth)(float, distance,
+                                                                                     distance)(double, time_stamp,
+                                                                                               time_stamp))
 
 #endif

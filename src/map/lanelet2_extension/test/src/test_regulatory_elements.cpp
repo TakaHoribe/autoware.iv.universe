@@ -31,29 +31,21 @@ using lanelet::Point3d;
 using lanelet::Points3d;
 using lanelet::utils::getId;
 
-namespace
-{
+namespace {
 template <typename T>
-std::vector<T> convertToVector(T item)
-{
-  std::vector<T> vector = { item };
+std::vector<T> convertToVector(T item) {
+  std::vector<T> vector = {item};
   return vector;
 }
 }  // namespace
 
-class TestSuite : public ::testing::Test
-{
-public:
-  TestSuite()
-  {
-  }
-  ~TestSuite()
-  {
-  }
+class TestSuite : public ::testing::Test {
+ public:
+  TestSuite() {}
+  ~TestSuite() {}
 };
 
-TEST(TestSuite, FactoryConstructsTrafficLight)
-{
+TEST(TestSuite, FactoryConstructsTrafficLight) {
   Point3d p1, p2, p3, p4, p5, p6, p7;
   LineStringOrPolygon3d traffic_light_base;
   LineString3d traffic_light_bulbs, stop_line;
@@ -68,9 +60,9 @@ TEST(TestSuite, FactoryConstructsTrafficLight)
   p6 = Point3d(getId(), 0., 0., 0.);
   p7 = Point3d(getId(), 1., 0., 0.);
 
-  Points3d base = { p1, p2 };
-  Points3d bulbs = { p3, p4, p5 };
-  Points3d stop = { p6, p7 };
+  Points3d base = {p1, p2};
+  Points3d bulbs = {p3, p4, p5};
+  Points3d stop = {p6, p7};
 
   traffic_light_base = LineString3d(getId(), base);
   traffic_light_bulbs = LineString3d(getId(), bulbs);
@@ -86,8 +78,7 @@ TEST(TestSuite, FactoryConstructsTrafficLight)
   EXPECT_TRUE(!!std::dynamic_pointer_cast<lanelet::TrafficLight>(factoryTl));
 }
 
-TEST(TestSuite, TrafficLightWorksAsExpected)
-{  // NOLINT
+TEST(TestSuite, TrafficLightWorksAsExpected) {  // NOLINT
   Point3d p1, p2, p3, p4, p5, p6, p7;
   LineStringOrPolygon3d traffic_light_base, traffic_light_base2;
   LineString3d traffic_light_bulbs, traffic_light_bulbs2, stop_line;
@@ -102,14 +93,14 @@ TEST(TestSuite, TrafficLightWorksAsExpected)
   p6 = Point3d(getId(), 0., 0., 0.);
   p7 = Point3d(getId(), 1., 0., 0.);
 
-  Points3d base = { p1, p2 };
-  Points3d bulbs = { p3, p4, p5 };
-  Points3d stop = { p6, p7 };
+  Points3d base = {p1, p2};
+  Points3d bulbs = {p3, p4, p5};
+  Points3d stop = {p6, p7};
 
-  traffic_light_base = { LineString3d(getId(), base) };
-  traffic_light_base2 = { LineString3d(getId(), base) };
-  traffic_light_bulbs = { LineString3d(getId(), bulbs) };
-  traffic_light_bulbs2 = { LineString3d(getId(), bulbs) };
+  traffic_light_base = {LineString3d(getId(), base)};
+  traffic_light_base2 = {LineString3d(getId(), base)};
+  traffic_light_bulbs = {LineString3d(getId(), bulbs)};
+  traffic_light_bulbs2 = {LineString3d(getId(), bulbs)};
   stop_line = LineString3d(getId(), stop);
 
   auto tl = lanelet::autoware::AutowareTrafficLight::make(getId(), lanelet::AttributeMap(),
@@ -125,8 +116,7 @@ TEST(TestSuite, TrafficLightWorksAsExpected)
   EXPECT_EQ(1ul, tl->lightBulbs().size());
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

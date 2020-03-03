@@ -38,16 +38,14 @@ bool addGeometryString(const T& feature, std::stringstream* ss) {
   return false;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addFieldString(const T& feature, std::stringstream* ss) {
   using member = traits::member_n<T, N>;
   *ss << member::name << ": " << feature.*member::reference << std::endl;
   return true;
 }
 
-template <class T, size_t N,
-          std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
+template <class T, size_t N, std::enable_if_t<!traits::has_member_n<T, N>::value, std::nullptr_t> = nullptr>
 bool addFieldString(const T& feature, std::stringstream* ss) {
   return false;
 }

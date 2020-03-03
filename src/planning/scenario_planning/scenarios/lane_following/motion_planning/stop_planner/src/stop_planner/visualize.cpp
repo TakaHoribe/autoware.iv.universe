@@ -18,9 +18,8 @@
 #include "stop_planner/visualize.h"
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose, double height, double width,
-                                                double count)
-{
+std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose& pose, double height, double width,
+                                                double count) {
   ROS_DEBUG_STREAM(__func__);
   std::vector<geometry_msgs::Point> points;
 
@@ -29,8 +28,7 @@ std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose,
   p_top.z += height;
   points.push_back(p_top);
 
-  for (int32_t i = 1; i < ((int32_t)(count / 2) + 1); i++)
-  {
+  for (int32_t i = 1; i < ((int32_t)(count / 2) + 1); i++) {
     geometry_msgs::Point p_bottom_l;
     p_bottom_l.y += width / count * i;
     geometry_msgs::Point trans_pbl = planning_utils::transformToAbsoluteCoordinate2D(p_bottom_l, pose);
@@ -53,8 +51,7 @@ std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose,
     trans_ptr.z += height;
     points.push_back(trans_ptr);
 
-    if (i == (count / 2))
-    {
+    if (i == (count / 2)) {
       points.push_back(trans_pbl);
       points.push_back(trans_pbr);
       points.push_back(trans_ptl);
@@ -64,10 +61,8 @@ std::vector<geometry_msgs::Point> createLattice(const geometry_msgs::Pose &pose,
   return points;
 }
 
-
 // display the next waypoint by markers.
-visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t kind, int32_t id)
-{
+visualization_msgs::Marker displayWall(const geometry_msgs::Pose& pose, int8_t kind, int32_t id) {
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
@@ -75,27 +70,21 @@ visualization_msgs::Marker displayWall(const geometry_msgs::Pose &pose, int8_t k
   marker.id = id;
   marker.ns = "stop_factor_wall";
   marker.type = visualization_msgs::Marker::LINE_LIST;
-  if (kind == 0)
-  {
+  if (kind == 0) {
     marker.action = visualization_msgs::Marker::DELETE;
-  }
-  else
-  {
+  } else {
     marker.action = visualization_msgs::Marker::ADD;
     marker.points = createLattice(pose, 2.0, 8.0, 6);
-
   }
   marker.lifetime = ros::Duration(0.5);
   marker.scale.x = 0.1;
   marker.frame_locked = true;
   marker.color = *setColorDependsOnObstacleKind(kind);
-  
+
   return marker;
 }
 
-
-visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose &pose, int8_t kind)
-{
+visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs::Pose& pose, int8_t kind) {
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
@@ -104,12 +93,9 @@ visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs
   marker.id = 0;
   marker.lifetime = ros::Duration(0.5);
   marker.type = visualization_msgs::Marker::CUBE;
-  if (kind == 0 /* no obstacle */)
-  {
+  if (kind == 0 /* no obstacle */) {
     marker.action = visualization_msgs::Marker::DELETE;
-  }
-  else
-  {
+  } else {
     marker.action = visualization_msgs::Marker::ADD;
   }
   marker.scale.x = 0.3;
@@ -119,12 +105,11 @@ visualization_msgs::Marker displayObstaclePerpendicularPoint(const geometry_msgs
   marker.pose = pose;
   marker.pose.position.z += marker.scale.z / 2;
   marker.color = setColorWhite();
-  
+
   return marker;
 }
 
-visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose, int8_t kind)
-{
+visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose& pose, int8_t kind) {
   ROS_DEBUG_STREAM(__func__);
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
@@ -133,12 +118,9 @@ visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose,
   marker.id = 0;
   marker.lifetime = ros::Duration(0.5);
   marker.type = visualization_msgs::Marker::SPHERE;
-  if (kind == 0 /* no obstacle */)
-  {
+  if (kind == 0 /* no obstacle */) {
     marker.action = visualization_msgs::Marker::DELETE;
-  }
-  else
-  {
+  } else {
     marker.action = visualization_msgs::Marker::ADD;
   }
   marker.scale.x = 0.3;
@@ -151,8 +133,7 @@ visualization_msgs::Marker displayObstaclePoint(const geometry_msgs::Pose &pose,
   return marker;
 }
 
-visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly, int8_t kind)
-{
+visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX& poly, int8_t kind) {
   ROS_DEBUG_STREAM(__func__);
 
   visualization_msgs::MarkerArray ma;
@@ -177,7 +158,6 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   m_point.frame_locked = true;
   m_point.lifetime = ros::Duration(0.5);
 
-
   if (!poly.empty())  // visualize active polygons
   {
     m_poly.action = visualization_msgs::Marker::ADD;
@@ -187,17 +167,14 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
     m_point.color = *setColorDependsOnObstacleKind(kind);
 
     // push back elements
-    for (const auto &e : poly)
-    {
+    for (const auto& e : poly) {
       m_poly.points.push_back(e);
       m_point.points.push_back(e);
     }
 
     // insert left first element again to connect
     m_poly.points.push_back(poly.front());
-  }
-  else
-  {
+  } else {
     m_poly.action = visualization_msgs::Marker::DELETE;
     m_point.action = visualization_msgs::Marker::DELETE;
   }
@@ -208,8 +185,7 @@ visualization_msgs::MarkerArray displayActiveDetectionArea(const PolygonX &poly,
   return ma;
 }
 
-std_msgs::ColorRGBA setColorWhite()
-{
+std_msgs::ColorRGBA setColorWhite() {
   std_msgs::ColorRGBA color;
   color.r = 1.0;
   color.g = 1.0;
@@ -219,8 +195,7 @@ std_msgs::ColorRGBA setColorWhite()
   return color;
 }
 
-std_msgs::ColorRGBA setColorGray()
-{
+std_msgs::ColorRGBA setColorGray() {
   std_msgs::ColorRGBA color;
   color.r = 0.5;
   color.g = 0.5;
@@ -230,8 +205,7 @@ std_msgs::ColorRGBA setColorGray()
   return color;
 }
 
-std_msgs::ColorRGBA setColorYellow()
-{
+std_msgs::ColorRGBA setColorYellow() {
   std_msgs::ColorRGBA color;
   color.r = 1.0;
   color.g = 1.0;
@@ -241,50 +215,35 @@ std_msgs::ColorRGBA setColorYellow()
   return color;
 }
 
-
-std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind)
-{
+std::unique_ptr<std_msgs::ColorRGBA> setColorDependsOnObstacleKind(int8_t kind) {
   std::unique_ptr<std_msgs::ColorRGBA> color(new std_msgs::ColorRGBA);
 
   color->a = 0.999;
-  if (kind == 0)
-  {
+  if (kind == 0) {
     color->r = 0.0;
     color->g = 1.0;
     color->b = 1.0;
-  }
-  else if (kind == 1)
-  {
+  } else if (kind == 1) {
     color->r = 1.0;
     color->g = 0.0;
     color->b = 0.0;
-  }
-  else if (kind == 2)
-  {
+  } else if (kind == 2) {
     color->r = 0.0;
     color->g = 0.0;
     color->b = 1.0;
-  }
-  else if (kind == 3)
-  {
+  } else if (kind == 3) {
     color->r = 1.0;
     color->g = 1.0;
     color->b = 0.0;
-  }
-  else if (kind == 4)
-  {
+  } else if (kind == 4) {
     color->r = 0.0;
     color->g = 1.0;
     color->b = 1.0;
-  }
-  else if (kind == 5)
-  {
+  } else if (kind == 5) {
     color->r = 0.0;
     color->g = 1.0;
     color->b = 0.0;
-  }
-  else
-  {
+  } else {
     color->r = 1.0;
     color->g = 1.0;
     color->b = 1.0;

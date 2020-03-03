@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
- #ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
- #define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
+#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
+#define NORMAL_DISTRIBUTIONS_TRANSFORM_PCL_GENERIC_HPP
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::NormalDistributionsTransformPCLGeneric()
-  : ndt_ptr_(new pcl::NormalDistributionsTransform<PointSource, PointTarget>)
-{
-}
+    : ndt_ptr_(new pcl::NormalDistributionsTransform<PointSource, PointTarget>) {}
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) {
+void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::align(pcl::PointCloud<PointSource>& output,
+                                                                             const Eigen::Matrix4f& guess) {
   ndt_ptr_->align(output, guess);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) {
+void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::setInputTarget(
+    const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
-void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> &scan_ptr) {
+void NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::setInputSource(
+    const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) {
   ndt_ptr_->setInputSource(scan_ptr);
 }
 
@@ -94,12 +95,14 @@ double NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getFitn
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointTarget>> NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getInputTarget() const {
+boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getInputTarget() const {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr< const pcl::PointCloud<PointSource>> NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getInputSource() const {
+boost::shared_ptr<const pcl::PointCloud<PointSource>>
+NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getInputSource() const {
   return ndt_ptr_->getInputSource();
 }
 
@@ -109,19 +112,21 @@ Eigen::Matrix4f NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>
 }
 
 template <class PointSource, class PointTarget>
-std::vector<Eigen::Matrix4f> NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getFinalTransformationArray() const {
+std::vector<Eigen::Matrix4f>
+NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getFinalTransformationArray() const {
   return std::vector<Eigen::Matrix4f>();
 }
 
 template <class PointSource, class PointTarget>
 Eigen::Matrix<double, 6, 6> NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getHessian() const {
-    // return ndt_ptr_->getHessian();
-    return Eigen::Matrix<double, 6, 6>();
+  // return ndt_ptr_->getHessian();
+  return Eigen::Matrix<double, 6, 6>();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>> NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getSearchMethodTarget() const {
-    return ndt_ptr_->getSearchMethodTarget();
+boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>::getSearchMethodTarget() const {
+  return ndt_ptr_->getSearchMethodTarget();
 }
 
 #endif

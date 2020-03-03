@@ -18,42 +18,20 @@
 #include "simple_planning_simulator/vehicle_model/sim_model_constant_acceleration.hpp"
 
 SimModelConstantAccelTwist::SimModelConstantAccelTwist(double vx_lim, double wz_lim, double vx_rate, double wz_rate)
-  : SimModelInterface(5 /* dim x */, 2 /* dim u */)
-  , vx_lim_(vx_lim)
-  , wz_lim_(wz_lim)
-  , vx_rate_(vx_rate)
-  , wz_rate_(wz_rate){};
+    : SimModelInterface(5 /* dim x */, 2 /* dim u */),
+      vx_lim_(vx_lim),
+      wz_lim_(wz_lim),
+      vx_rate_(vx_rate),
+      wz_rate_(wz_rate){};
 
-double SimModelConstantAccelTwist::getX()
-{
-  return state_(IDX::X);
-};
-double SimModelConstantAccelTwist::getY()
-{
-  return state_(IDX::Y);
-};
-double SimModelConstantAccelTwist::getYaw()
-{
-  return state_(IDX::YAW);
-};
-double SimModelConstantAccelTwist::getVx()
-{
-  return state_(IDX::VX);
-};
-double SimModelConstantAccelTwist::getWz()
-{
-  return state_(IDX::WZ);
-};
-double SimModelConstantAccelTwist::getSteer()
-{
-  return 0.0;
-};
-void SimModelConstantAccelTwist::update(const double& dt)
-{
-  updateRungeKutta(dt, input_);
-}
-Eigen::VectorXd SimModelConstantAccelTwist::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input)
-{
+double SimModelConstantAccelTwist::getX() { return state_(IDX::X); };
+double SimModelConstantAccelTwist::getY() { return state_(IDX::Y); };
+double SimModelConstantAccelTwist::getYaw() { return state_(IDX::YAW); };
+double SimModelConstantAccelTwist::getVx() { return state_(IDX::VX); };
+double SimModelConstantAccelTwist::getWz() { return state_(IDX::WZ); };
+double SimModelConstantAccelTwist::getSteer() { return 0.0; };
+void SimModelConstantAccelTwist::update(const double& dt) { updateRungeKutta(dt, input_); }
+Eigen::VectorXd SimModelConstantAccelTwist::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) {
   const double vel = state(IDX::VX);
   const double angvel = state(IDX::WZ);
   const double yaw = state(IDX::YAW);
@@ -61,21 +39,15 @@ Eigen::VectorXd SimModelConstantAccelTwist::calcModel(const Eigen::VectorXd& sta
   const double wz_des = std::max(std::min(input(IDX_U::WZ_DES), wz_lim_), -wz_lim_);
   double vx_rate = 0.0;
   double wz_rate = 0.0;
-  if (vx_des > vel)
-  {
+  if (vx_des > vel) {
     vx_rate = vx_rate_;
-  }
-  else if (vx_des < vel)
-  {
+  } else if (vx_des < vel) {
     vx_rate = -vx_rate_;
   }
 
-  if (wz_des > angvel)
-  {
+  if (wz_des > angvel) {
     wz_rate = wz_rate_;
-  }
-  else if (wz_des < angvel)
-  {
+  } else if (wz_des < angvel) {
     wz_rate = -wz_rate_;
   }
 

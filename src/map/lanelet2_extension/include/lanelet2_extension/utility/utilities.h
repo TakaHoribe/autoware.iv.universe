@@ -27,10 +27,8 @@
 
 #include <map>
 
-namespace lanelet
-{
-namespace utils
-{
+namespace lanelet {
+namespace utils {
 lanelet::LineString3d generateFineCenterline(const lanelet::ConstLanelet& lanelet_obj, const double resolution = 5.0);
 
 /**
@@ -56,7 +54,7 @@ lanelet::ConstLineString3d getClosestSegment(const lanelet::BasicPoint2d& search
                                              const lanelet::ConstLineString3d& linestring);
 
 lanelet::CompoundPolygon3d getPolygonFromArcLength(const lanelet::ConstLanelets& lanelets, const double s1,
-                                                const double s2);
+                                                   const double s2);
 double getLaneletAngle(const lanelet::ConstLanelet& lanelet, const geometry_msgs::Point& search_point);
 
 }  // namespace utils

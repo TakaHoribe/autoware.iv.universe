@@ -14,59 +14,49 @@
  * limitations under the License.
  */
 
-
 #ifndef MAP_BASED_PREDICTION_ROS_H
 #define MAP_BASED_PREDICTION_ROS_H
 
 #include <unordered_map>
 
-namespace tf2_ros
-{
-  class Buffer;
-  class TransformListener;
+namespace tf2_ros {
+class Buffer;
+class TransformListener;
+}  // namespace tf2_ros
+
+namespace lanelet {
+class Lanelet;
+class LaneletMap;
+using LaneletMapPtr = std::shared_ptr<LaneletMap>;
+namespace routing {
+class RoutingGraph;
+}
+namespace traffic_rules {
+class TrafficRules;
+}
+}  // namespace lanelet
+
+namespace geometry_msgs {
+ROS_DECLARE_MESSAGE(Pose);
 }
 
-namespace lanelet
-{
-  class Lanelet;
-  class LaneletMap;
-  using LaneletMapPtr = std::shared_ptr<LaneletMap>;
-  namespace routing
-  {
-    class RoutingGraph;
-  }
-  namespace traffic_rules
-  {
-    class TrafficRules;
-  }
+namespace autoware_lanelet2_msgs {
+ROS_DECLARE_MESSAGE(MapBin);
 }
 
-namespace geometry_msgs
-{
-  ROS_DECLARE_MESSAGE(Pose); 
-}
+namespace autoware_perception_msgs {
+ROS_DECLARE_MESSAGE(DynamicObjectArray);
+ROS_DECLARE_MESSAGE(DynamicObject);
+}  // namespace autoware_perception_msgs
 
-namespace autoware_lanelet2_msgs
-{
-  ROS_DECLARE_MESSAGE(MapBin); 
-}
-
-namespace autoware_perception_msgs
-{
-  ROS_DECLARE_MESSAGE(DynamicObjectArray); 
-  ROS_DECLARE_MESSAGE(DynamicObject); 
-}
-
-namespace uuid_msgs
-{
-  ROS_DECLARE_MESSAGE(UniqueID); 
+namespace uuid_msgs {
+ROS_DECLARE_MESSAGE(UniqueID);
 }
 
 class MapBasedPrediction;
 
-class MapBasedPredictionROS
-{
-private:
+class MapBasedPredictionROS {
+ private:
   bool has_subscribed_map_;
   double prediction_time_horizon_;
   double prediction_sampling_delta_time_;
@@ -79,7 +69,7 @@ private:
   ros::Subscriber sub_map_;
   ros::Publisher pub_objects_;
   ros::Publisher pub_markers_;
-  
+
   std::unordered_map<std::string, std::vector<int>> uuid2laneids_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_ptr_;
@@ -89,20 +79,18 @@ private:
   std::shared_ptr<lanelet::routing::RoutingGraph> routing_graph_ptr_;
   std::shared_ptr<lanelet::traffic_rules::TrafficRules> traffic_rules_ptr_;
   std::shared_ptr<MapBasedPrediction> map_based_prediction_;
-  
-  bool getSelfPose(geometry_msgs::Pose &self_pose, const std_msgs::Header &header);
-  bool getSelfPoseInMap(geometry_msgs::Pose &self_pose);
+
+  bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
+  bool getSelfPoseInMap(geometry_msgs::Pose& self_pose);
 
   void objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects);
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
-  
-  bool getClosestLanelets(
-    const autoware_perception_msgs::DynamicObject& object,
-    const lanelet::LaneletMapPtr& lanelet_map_ptr,
-    std::vector<lanelet::Lanelet>& closest_lanelets,
-    std::string uuid_string);
 
-public:
+  bool getClosestLanelets(const autoware_perception_msgs::DynamicObject& object,
+                          const lanelet::LaneletMapPtr& lanelet_map_ptr,
+                          std::vector<lanelet::Lanelet>& closest_lanelets, std::string uuid_string);
+
+ public:
   MapBasedPredictionROS();
 
   void createROSPubSub();

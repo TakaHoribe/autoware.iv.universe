@@ -1,10 +1,8 @@
-#include "ros/ros.h"
-#include "microstrain_mips/SetMagDipAdaptiveVals.h"
 #include <cstdlib>
+#include "microstrain_mips/SetMagDipAdaptiveVals.h"
+#include "ros/ros.h"
 
-
-int main(int argc, char **argv){
-
+int main(int argc, char** argv) {
   ros::init(argc, argv, "set_mag_dip_adaptive_vals_client");
 
   ros::NodeHandle n;
@@ -17,17 +15,11 @@ int main(int argc, char **argv){
   srv.request.high_limit = atoll(argv[4]);
   srv.request.high_limit_1sigma = atoll(argv[5]);
 
-
-
-  if (client.call(srv))
-  {
-      if (srv.response.success)
-      {
-        ROS_INFO("success");
-      }
-  }
-  else
-  {
+  if (client.call(srv)) {
+    if (srv.response.success) {
+      ROS_INFO("success");
+    }
+  } else {
     ROS_INFO("Failed to call service");
   }
   return 0;

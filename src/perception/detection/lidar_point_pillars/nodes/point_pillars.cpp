@@ -95,8 +95,7 @@ PointPillars::PointPillars(const bool reproduce_result_mode, const float score_t
 }
 // clang-format on
 
-PointPillars::~PointPillars()
-{
+PointPillars::~PointPillars() {
   delete[] anchors_px_;
   delete[] anchors_py_;
   delete[] anchors_pz_;
@@ -177,8 +176,7 @@ PointPillars::~PointPillars()
   rpn_engine_->destroy();
 }
 
-void PointPillars::deviceMemoryMalloc()
-{
+void PointPillars::deviceMemoryMalloc() {
   // clang-format off
   GPU_CHECK(cudaMalloc((void**)&dev_pillar_x_in_coors_,GRID_Y_SIZE_ * GRID_X_SIZE_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float)));
   GPU_CHECK(cudaMalloc((void**)&dev_pillar_y_in_coors_,GRID_Y_SIZE_ * GRID_X_SIZE_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float)));
@@ -249,8 +247,7 @@ void PointPillars::deviceMemoryMalloc()
   GPU_CHECK(cudaMalloc((void**)&dev_filter_count_, sizeof(int)));
 }
 
-void PointPillars::initAnchors()
-{
+void PointPillars::initAnchors() {
   // allocate memory for anchors
   anchors_px_ = new float[NUM_ANCHOR_];
   anchors_py_ = new float[NUM_ANCHOR_];
@@ -274,11 +271,9 @@ void PointPillars::initAnchors()
 }
 
 void PointPillars::generateAnchors(float* anchors_px_, float* anchors_py_, float* anchors_pz_, float* anchors_dx_,
-                                   float* anchors_dy_, float* anchors_dz_, float* anchors_ro_)
-{
+                                   float* anchors_dy_, float* anchors_dz_, float* anchors_ro_) {
   // zero clear
-  for (size_t i = 0; i < NUM_ANCHOR_; i++)
-  {
+  for (size_t i = 0; i < NUM_ANCHOR_; i++) {
     anchors_px_[i] = 0;
     anchors_py_[i] = 0;
     anchors_pz_[i] = 0;
@@ -297,26 +292,21 @@ void PointPillars::generateAnchors(float* anchors_px_, float* anchors_py_, float
   float x_offset = MIN_X_RANGE_ + PILLAR_X_SIZE_;
   float y_offset = MIN_Y_RANGE_ + PILLAR_Y_SIZE_;
 
-  float anchor_x_count[NUM_ANCHOR_X_INDS_] = { 0 };
-  for (size_t i = 0; i < NUM_ANCHOR_X_INDS_; i++)
-  {
+  float anchor_x_count[NUM_ANCHOR_X_INDS_] = {0};
+  for (size_t i = 0; i < NUM_ANCHOR_X_INDS_; i++) {
     anchor_x_count[i] = float(i) * x_stride + x_offset;
   }
-  float anchor_y_count[NUM_ANCHOR_Y_INDS_] = { 0 };
-  for (size_t i = 0; i < NUM_ANCHOR_Y_INDS_; i++)
-  {
+  float anchor_y_count[NUM_ANCHOR_Y_INDS_] = {0};
+  for (size_t i = 0; i < NUM_ANCHOR_Y_INDS_; i++) {
     anchor_y_count[i] = float(i) * y_stride + y_offset;
   }
 
-  float anchor_r_count[NUM_ANCHOR_R_INDS_] = { 0, M_PI / 2 };
+  float anchor_r_count[NUM_ANCHOR_R_INDS_] = {0, M_PI / 2};
 
   // np.meshgrid
-  for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++)
-  {
-    for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++)
-    {
-      for (size_t r = 0; r < NUM_ANCHOR_R_INDS_; r++)
-      {
+  for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++) {
+    for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++) {
+      for (size_t r = 0; r < NUM_ANCHOR_R_INDS_; r++) {
         int ind = y * NUM_ANCHOR_X_INDS_ * NUM_ANCHOR_R_INDS_ + x * NUM_ANCHOR_R_INDS_ + r;
         anchors_px_[ind] = anchor_x_count[x];
         anchors_py_[ind] = anchor_y_count[y];
@@ -330,8 +320,7 @@ void PointPillars::generateAnchors(float* anchors_px_, float* anchors_py_, float
   }
 }
 
-void PointPillars::putAnchorsInDeviceMemory()
-{
+void PointPillars::putAnchorsInDeviceMemory() {
   // clang-format off
   GPU_CHECK(cudaMemcpy(dev_box_anchors_min_x_, box_anchors_min_x_, NUM_ANCHOR_ * sizeof(float), cudaMemcpyHostToDevice));
   GPU_CHECK(cudaMemcpy(dev_box_anchors_min_y_, box_anchors_min_y_, NUM_ANCHOR_ * sizeof(float), cudaMemcpyHostToDevice));
@@ -350,15 +339,12 @@ void PointPillars::putAnchorsInDeviceMemory()
 
 void PointPillars::convertAnchors2BoxAnchors(float* anchors_px, float* anchors_py, float* anchors_dx, float* anchors_dy,
                                              float* box_anchors_min_x_, float* box_anchors_min_y_,
-                                             float* box_anchors_max_x_, float* box_anchors_max_y_)
-{
+                                             float* box_anchors_max_x_, float* box_anchors_max_y_) {
   // flipping box's dimension
-  float flipped_anchors_dx[NUM_ANCHOR_] = { 0 };
-  float flipped_anchors_dy[NUM_ANCHOR_] = { 0 };
-  for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++)
-  {
-    for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++)
-    {
+  float flipped_anchors_dx[NUM_ANCHOR_] = {0};
+  float flipped_anchors_dy[NUM_ANCHOR_] = {0};
+  for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++) {
+    for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++) {
       int base_ind = x * NUM_ANCHOR_Y_INDS_ * NUM_ANCHOR_R_INDS_ + y * NUM_ANCHOR_R_INDS_;
       flipped_anchors_dx[base_ind + 0] = ANCHOR_DX_SIZE_;
       flipped_anchors_dy[base_ind + 0] = ANCHOR_DY_SIZE_;
@@ -366,12 +352,9 @@ void PointPillars::convertAnchors2BoxAnchors(float* anchors_px, float* anchors_p
       flipped_anchors_dy[base_ind + 1] = ANCHOR_DX_SIZE_;
     }
   }
-  for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++)
-  {
-    for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++)
-    {
-      for (size_t r = 0; r < NUM_ANCHOR_R_INDS_; r++)
-      {
+  for (size_t x = 0; x < NUM_ANCHOR_X_INDS_; x++) {
+    for (size_t y = 0; y < NUM_ANCHOR_Y_INDS_; y++) {
+      for (size_t r = 0; r < NUM_ANCHOR_R_INDS_; r++) {
         int ind = x * NUM_ANCHOR_Y_INDS_ * NUM_ANCHOR_R_INDS_ + y * NUM_ANCHOR_R_INDS_ + r;
         box_anchors_min_x_[ind] = anchors_px[ind] - flipped_anchors_dx[ind] / 2.0f;
         box_anchors_min_y_[ind] = anchors_py[ind] - flipped_anchors_dy[ind] / 2.0f;
@@ -382,40 +365,38 @@ void PointPillars::convertAnchors2BoxAnchors(float* anchors_px, float* anchors_p
   }
 }
 
-void PointPillars::initTRT()
-{
+void PointPillars::initTRT() {
   // create a TensorRT model from the onnx model and serialize it to a stream
-  nvinfer1::IHostMemory* pfe_trt_model_stream{ nullptr };
-  nvinfer1::IHostMemory* rpn_trt_model_stream{ nullptr };
+  nvinfer1::IHostMemory* pfe_trt_model_stream{nullptr};
+  nvinfer1::IHostMemory* rpn_trt_model_stream{nullptr};
   onnxToTRTModel(pfe_onnx_file_, pfe_trt_model_stream);
   onnxToTRTModel(rpn_onnx_file_, rpn_trt_model_stream);
-  if (pfe_trt_model_stream == nullptr || rpn_trt_model_stream == nullptr)
-  {//use std:cerr instead of ROS_ERROR because want to keep this fille ros-agnostics
-    std::cerr<< "Failed to load ONNX file " << std::endl;
+  if (pfe_trt_model_stream == nullptr ||
+      rpn_trt_model_stream ==
+          nullptr) {  // use std:cerr instead of ROS_ERROR because want to keep this fille ros-agnostics
+    std::cerr << "Failed to load ONNX file " << std::endl;
   }
 
   // deserialize the engine
   pfe_runtime_ = nvinfer1::createInferRuntime(g_logger_);
   rpn_runtime_ = nvinfer1::createInferRuntime(g_logger_);
-  if (pfe_runtime_ == nullptr || rpn_runtime_ == nullptr)
-  {
-    std::cerr<<"Failed to create TensorRT Runtime object."<<std::endl;
+  if (pfe_runtime_ == nullptr || rpn_runtime_ == nullptr) {
+    std::cerr << "Failed to create TensorRT Runtime object." << std::endl;
   }
   pfe_engine_ =
       pfe_runtime_->deserializeCudaEngine(pfe_trt_model_stream->data(), pfe_trt_model_stream->size(), nullptr);
   rpn_engine_ =
       rpn_runtime_->deserializeCudaEngine(rpn_trt_model_stream->data(), rpn_trt_model_stream->size(), nullptr);
-  if (pfe_engine_ == nullptr || rpn_engine_ == nullptr)
-  {
+  if (pfe_engine_ == nullptr || rpn_engine_ == nullptr) {
     std::cerr << "Failed to create TensorRT Engine." << std::endl;
   }
   pfe_trt_model_stream->destroy();
   rpn_trt_model_stream->destroy();
   pfe_context_ = pfe_engine_->createExecutionContext();
   rpn_context_ = rpn_engine_->createExecutionContext();
-  if (pfe_context_ == nullptr || rpn_context_ == nullptr)
-  {
-    std::cerr << "Failed to create TensorRT Execution Context." << std::endl;;
+  if (pfe_context_ == nullptr || rpn_context_ == nullptr) {
+    std::cerr << "Failed to create TensorRT Execution Context." << std::endl;
+    ;
   }
 }
 
@@ -430,8 +411,7 @@ void PointPillars::onnxToTRTModel(const std::string& model_file,             // 
 
   auto parser = nvonnxparser::createParser(*network, g_logger_);
 
-  if (!parser->parseFromFile(model_file.c_str(), verbosity))
-  {
+  if (!parser->parseFromFile(model_file.c_str(), verbosity)) {
     std::string msg("failed to parse onnx file");
     g_logger_.log(nvinfer1::ILogger::Severity::kERROR, msg.c_str());
     exit(EXIT_FAILURE);
@@ -452,11 +432,10 @@ void PointPillars::onnxToTRTModel(const std::string& model_file,             // 
   builder->destroy();
 }
 
-void PointPillars::preprocessCPU(const float* in_points_array, const int in_num_points)
-{
-  int x_coors[MAX_NUM_PILLARS_] = { 0 };
-  int y_coors[MAX_NUM_PILLARS_] = { 0 };
-  float num_points_per_pillar[MAX_NUM_PILLARS_] = { 0 };
+void PointPillars::preprocessCPU(const float* in_points_array, const int in_num_points) {
+  int x_coors[MAX_NUM_PILLARS_] = {0};
+  int y_coors[MAX_NUM_PILLARS_] = {0};
+  float num_points_per_pillar[MAX_NUM_PILLARS_] = {0};
   float* pillar_x = new float[MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_];
   float* pillar_y = new float[MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_];
   float* pillar_z = new float[MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_];
@@ -507,8 +486,7 @@ void PointPillars::preprocessCPU(const float* in_points_array, const int in_num_
   delete[] sparse_pillar_map;
 }
 
-void PointPillars::preprocessGPU(const float* in_points_array, const int in_num_points)
-{
+void PointPillars::preprocessGPU(const float* in_points_array, const int in_num_points) {
   float* dev_points;
   // clang-format off
   GPU_CHECK(cudaMalloc((void**)&dev_points, in_num_points * NUM_BOX_CORNERS_ * sizeof(float)));
@@ -534,20 +512,16 @@ void PointPillars::preprocessGPU(const float* in_points_array, const int in_num_
   GPU_CHECK(cudaFree(dev_points));
 }
 
-void PointPillars::preprocess(const float* in_points_array, const int in_num_points)
-{
-  if (reproduce_result_mode_)
-  {
+void PointPillars::preprocess(const float* in_points_array, const int in_num_points) {
+  if (reproduce_result_mode_) {
     preprocessCPU(in_points_array, in_num_points);
-  }
-  else
-  {
+  } else {
     preprocessGPU(in_points_array, in_num_points);
   }
 }
 
-void PointPillars::doInference(const float* in_points_array, const int in_num_points, std::vector<float>& out_detections)
-{
+void PointPillars::doInference(const float* in_points_array, const int in_num_points,
+                               std::vector<float>& out_detections) {
   preprocess(in_points_array, in_num_points);
 
   anchor_mask_cuda_ptr_->doAnchorMaskCuda(dev_sparse_pillar_map_, dev_cumsum_along_x_, dev_cumsum_along_y_,

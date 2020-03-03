@@ -24,11 +24,11 @@
 #pragma once
 #include <unistd.h>
 #include <chrono>
-#include <string>
-#include <memory>
 #include <deque>
 #include <iostream>
 #include <limits>
+#include <memory>
+#include <string>
 #include <vector>
 
 #include <geometry_msgs/Pose.h>
@@ -56,11 +56,11 @@
 #include "mpc_follower/lowpass_filter.h"
 #include "mpc_follower/mpc_trajectory.h"
 #include "mpc_follower/mpc_utils.h"
+#include "mpc_follower/qp_solver/qp_solver_osqp.h"
 #include "mpc_follower/qp_solver/qp_solver_unconstr_fast.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_dynamics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.h"
-#include "mpc_follower/qp_solver/qp_solver_osqp.h"
 
 /**
  * @class MPC-based waypoints follower class
@@ -79,20 +79,20 @@ class MPCFollower {
   ~MPCFollower();
 
  private:
-  ros::NodeHandle nh_;               //!< @brief ros node handle
-  ros::NodeHandle pnh_;              //!< @brief private ros node handle
-  ros::Publisher pub_ctrl_cmd_;      //!< @brief topic publisher for control command
-  ros::Publisher pub_debug_steer_cmd_;      //!< @brief topic publisher for control command
-  ros::Subscriber sub_ref_path_;     //!< @brief topic subscriber for reference waypoints
-  ros::Subscriber sub_steering_;     //!< @brief subscriber for currrent steering
-  ros::Subscriber sub_current_vel_;  //!< @brief subscriber for currrent velocity
-  ros::Timer timer_control_;         //!< @brief timer for control command computation
+  ros::NodeHandle nh_;                  //!< @brief ros node handle
+  ros::NodeHandle pnh_;                 //!< @brief private ros node handle
+  ros::Publisher pub_ctrl_cmd_;         //!< @brief topic publisher for control command
+  ros::Publisher pub_debug_steer_cmd_;  //!< @brief topic publisher for control command
+  ros::Subscriber sub_ref_path_;        //!< @brief topic subscriber for reference waypoints
+  ros::Subscriber sub_steering_;        //!< @brief subscriber for currrent steering
+  ros::Subscriber sub_current_vel_;     //!< @brief subscriber for currrent velocity
+  ros::Timer timer_control_;            //!< @brief timer for control command computation
 
   MPCTrajectory ref_traj_;                 //!< @brief reference trajectory to be followed
   Butterworth2dFilter lpf_steering_cmd_;   //!< @brief lowpass filter for steering command
   Butterworth2dFilter lpf_lateral_error_;  //!< @brief lowpass filter for lateral error to calculate derivatie
   Butterworth2dFilter lpf_yaw_error_;      //!< @brief lowpass filter for heading error to calculate derivatie
-  std::string vehicle_model_type_;                            //!< @brief vehicle model type for MPC
+  std::string vehicle_model_type_;         //!< @brief vehicle model type for MPC
   std::shared_ptr<VehicleModelInterface> vehicle_model_ptr_;  //!< @brief vehicle model for MPC
   std::shared_ptr<QPSolverInterface> qpsolver_ptr_;           //!< @brief qp solver for MPC
   std::deque<double> input_buffer_;  //!< @brief control input (mpc_output) buffer for delay time conpemsation
@@ -148,11 +148,11 @@ class MPCFollower {
   std::shared_ptr<double> current_steer_ptr_;                                   //!< @brief current measured steering
   std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;  //!< @brief referece trajectory
 
-  double raw_steer_cmd_prev_;  //< @brief steering command calculated by mpc in previous period
+  double raw_steer_cmd_prev_;   //< @brief steering command calculated by mpc in previous period
   double raw_steer_cmd_pprev_;  //< @brief steering command calculated by mpc in two times previous period
-  double steer_cmd_prev_;      //< @brief steering command calculated by mpc and some filters in previous period
-  double lateral_error_prev_;  //< @brief previous lateral error for derivative
-  double yaw_error_prev_;      //< @brief previous lateral error for derivative
+  double steer_cmd_prev_;       //< @brief steering command calculated by mpc and some filters in previous period
+  double lateral_error_prev_;   //< @brief previous lateral error for derivative
+  double yaw_error_prev_;       //< @brief previous lateral error for derivative
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;  //!< @brief tf listener
@@ -160,12 +160,12 @@ class MPCFollower {
   /**
    * @brief compute and publish control command for path follow with a constant control period
    */
-  void timerCallback(const ros::TimerEvent &);
+  void timerCallback(const ros::TimerEvent&);
 
   /**
    * @brief set current_trajectory_ with receved message
    */
-  void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr &);
+  void callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr&);
 
   /**
    * @brief update current_pose from tf
@@ -186,58 +186,58 @@ class MPCFollower {
   /**
    * @brief set curent_steer with receved message
    */
-  void callbackSteering(const autoware_vehicle_msgs::Steering &msg);
+  void callbackSteering(const autoware_vehicle_msgs::Steering& msg);
 
   /**
    * @brief set current_velocity with receved message
    */
-  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr &msg);
+  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
   /**
    * @brief publish control command as autoware_msgs/ControlCommand type
    * @param [in] cmd published control command
    */
-  void publishCtrlCmd(const autoware_control_msgs::ControlCommand &cmd);
+  void publishCtrlCmd(const autoware_control_msgs::ControlCommand& cmd);
 
   /**
    * @brief calculate control command by MPC algorithm
    * @param [out] cmd calculated control command with mpc algorithm
    */
-  bool calculateMPC(autoware_control_msgs::ControlCommand *cmd);
+  bool calculateMPC(autoware_control_msgs::ControlCommand* cmd);
 
   /**
    * @brief set initial condition for mpc
    * @param [in] lat_err lateral error
    * @param [in] yaw_err yaw error
    */
-  Eigen::VectorXd getInitialState(const double &lat_err, const double &yaw_err, const double &steer);
+  Eigen::VectorXd getInitialState(const double& lat_err, const double& yaw_err, const double& steer);
 
   /**
    * @brief update status for delay compensation
    * @param [in] start_time start time for update
    * @param [out] x updated state at delayed_time
    */
-  bool updateStateForDelayCompensation(const double &start_time, Eigen::VectorXd *x);
+  bool updateStateForDelayCompensation(const double& start_time, Eigen::VectorXd* x);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
    * @param [in] reference_trajectory used for linearization around reference trajectory
    */
-  MPCMatrix generateMPCMatrix(const MPCTrajectory &reference_trajectory);
+  MPCMatrix generateMPCMatrix(const MPCTrajectory& reference_trajectory);
 
   /**
    * @brief generate MPC matrix with trajectory and vehicle model
    * @param [out] Uex optimized input vector
    */
-  bool executeOptimization(const MPCMatrix &mpc_matrix, const Eigen::VectorXd &x0, Eigen::VectorXd *Uex);
+  bool executeOptimization(const MPCMatrix& mpc_matrix, const Eigen::VectorXd& x0, Eigen::VectorXd* Uex);
 
   /**
    * @brief get stop command
    */
   autoware_control_msgs::ControlCommand getStopControlCommand() const;
 
-  bool resampleMPCTrajectoryByTime(double start_time, const MPCTrajectory &input, MPCTrajectory *output) const;
-  MPCTrajectory calcActualVelocity(const int closest, const MPCTrajectory &trajectory);
+  bool resampleMPCTrajectoryByTime(double start_time, const MPCTrajectory& input, MPCTrajectory* output) const;
+  MPCTrajectory calcActualVelocity(const int closest, const MPCTrajectory& trajectory);
   double getPredictionTime() const;
   void addSteerWeightR(Eigen::MatrixXd* R) const;
   void addSteerWeightF(Eigen::MatrixXd* f) const;
@@ -263,8 +263,8 @@ class MPCFollower {
   /* ---------- debug ---------- */
   bool show_debug_info_;  //!< @brief flag to display debug info
   ros::Publisher pub_debug_marker_;
-  ros::Publisher pub_debug_values_;         //!< @brief publisher for debug info
-  ros::Publisher pub_debug_mpc_calc_time_;  //!< @brief publisher for debug info
+  ros::Publisher pub_debug_values_;             //!< @brief publisher for debug info
+  ros::Publisher pub_debug_mpc_calc_time_;      //!< @brief publisher for debug info
   ros::Subscriber sub_estimate_twist_;          //!< @brief subscriber for /estimate_twist for debug
   geometry_msgs::TwistStamped estimate_twist_;  //!< @brief received /estimate_twist for debug
 };

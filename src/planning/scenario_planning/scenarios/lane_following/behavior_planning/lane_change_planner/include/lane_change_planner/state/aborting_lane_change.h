@@ -19,15 +19,13 @@
 
 #include <lane_change_planner/state/state_base_class.h>
 
-namespace lane_change_planner
-{
-class AbortingLaneChangeState : public StateBase
-{
-private:
+namespace lane_change_planner {
+class AbortingLaneChangeState : public StateBase {
+ private:
   // State transition conditions
   bool hasReturnedToOriginalLane() const;
 
-public:
+ public:
   AbortingLaneChangeState() = default;
 
   // override virtual functions

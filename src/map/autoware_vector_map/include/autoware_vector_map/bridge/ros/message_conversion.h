@@ -12,8 +12,7 @@
 namespace autoware_vector_map {
 namespace bridge {
 
-inline std::vector<uint8_t> msg2bin(
-    const autoware_vector_map_msgs::BinaryGpkgMap::ConstPtr& bin_gpkg) {
+inline std::vector<uint8_t> msg2bin(const autoware_vector_map_msgs::BinaryGpkgMap::ConstPtr& bin_gpkg) {
   std::vector<uint8_t> bin_data;
   bin_data.resize(bin_gpkg->data.size());
 
@@ -23,8 +22,7 @@ inline std::vector<uint8_t> msg2bin(
 }
 
 inline autoware_vector_map_msgs::BinaryGpkgMap bin2msg(const std::vector<uint8_t>& bin_data,
-                                                       const char* frame_id = "map",
-                                                       const char* format_version = "",
+                                                       const char* frame_id = "map", const char* format_version = "",
                                                        const char* map_version = "") {
   autoware_vector_map_msgs::BinaryGpkgMap bin_gpkg{};
 

@@ -22,9 +22,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool NoCorrector::correct(autoware_perception_msgs::Shape &shape_output,
-                          geometry_msgs::Pose &pose_output,
-                          bool &orientaion_output)
-{
-    return true;
+bool NoCorrector::correct(autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
+                          bool& orientaion_output) {
+  return true;
 }

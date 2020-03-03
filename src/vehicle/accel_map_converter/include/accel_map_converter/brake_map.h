@@ -17,19 +17,18 @@
 #ifndef ACCEL_MAP_CONVERTER_BRAKE_MAP_H
 #define ACCEL_MAP_CONVERTER_BRAKE_MAP_H
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include <ros/ros.h>
 
 #include "accel_map_converter/csv_loader.h"
 #include "accel_map_converter/interpolate.h"
 
-class BrakeMap
-{
-public:
+class BrakeMap {
+ public:
   BrakeMap();
   ~BrakeMap();
 
@@ -37,7 +36,7 @@ public:
   bool getBrake(double acc, double vel, double& brake);
   void showBrakeMapInfo();
 
-private:
+ private:
   std::string vehicle_name_;
   std::vector<double> vel_index_;
   std::vector<double> brake_index_;

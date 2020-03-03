@@ -27,11 +27,9 @@ using lanelet::Point3d;
 using lanelet::utils::getId;
 using lanelet::utils::conversion::toGeomMsgPt;
 
-class TestSuite : public ::testing::Test
-{
-public:
-  TestSuite() : single_lanelet_map_ptr(new lanelet::LaneletMap())
-  {
+class TestSuite : public ::testing::Test {
+ public:
+  TestSuite() : single_lanelet_map_ptr(new lanelet::LaneletMap()) {
     Point3d p1, p2, p3, p4, p5, p6, p7;
     LineString3d traffic_light_base, traffic_light_bulbs, stop_line;
 
@@ -41,23 +39,20 @@ public:
     p3 = Point3d(getId(), 1., 0., 0.);
     p4 = Point3d(getId(), 1., 1., 0.);
 
-    LineString3d ls_left(getId(), { p1, p2 });   // NOLINT
-    LineString3d ls_right(getId(), { p3, p4 });  // NOLINT
+    LineString3d ls_left(getId(), {p1, p2});   // NOLINT
+    LineString3d ls_right(getId(), {p3, p4});  // NOLINT
 
     Lanelet lanelet(getId(), ls_left, ls_right);
 
     single_lanelet_map_ptr->add(lanelet);
   }
-  ~TestSuite()
-  {
-  }
+  ~TestSuite() {}
   lanelet::LaneletMapPtr single_lanelet_map_ptr;
 
-private:
+ private:
 };
 
-TEST_F(TestSuite, BinMsgConversion)
-{
+TEST_F(TestSuite, BinMsgConversion) {
   autoware_lanelet2_msgs::MapBin bin_msg;
   lanelet::LaneletMapPtr regenerated_map(new lanelet::LaneletMap);
 
@@ -73,8 +68,7 @@ TEST_F(TestSuite, BinMsgConversion)
   ASSERT_EQ(original_lanelet.front().id(), regenerated_lanelet.front().id()) << "regerated map has different id";
 }
 
-TEST_F(TestSuite, ToGeomMsgPt)
-{
+TEST_F(TestSuite, ToGeomMsgPt) {
   Point3d lanelet_pt(getId(), -0.1, 0.2, 3.0);
 
   geometry_msgs::Point32 geom_pt32;
@@ -132,8 +126,7 @@ TEST_F(TestSuite, ToGeomMsgPt)
   ASSERT_DOUBLE_EQ(0.0, geom_pt.z) << " converted value is different from original lanelet::Point2d";
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

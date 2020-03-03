@@ -18,7 +18,7 @@
 
 #include "pose2twist/pose2twist_core.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "pose2twist");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");

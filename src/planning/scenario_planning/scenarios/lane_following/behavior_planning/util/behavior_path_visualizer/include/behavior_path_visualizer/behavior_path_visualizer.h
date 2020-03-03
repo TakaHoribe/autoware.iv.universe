@@ -17,22 +17,20 @@
 #ifndef BEHAVIOR_PATH_VISUALIZER_BEHAVIOR_PATH_VISUALIZER_H
 #define BEHAVIOR_PATH_VISUALIZER_BEHAVIOR_PATH_VISUALIZER_H
 
-#include <ros/ros.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 
-class BehaviorPathVisualizer
-{
-private:
+class BehaviorPathVisualizer {
+ private:
   ros::NodeHandle pnh_;
   ros::Subscriber path_subscriber_;
   ros::Publisher marker_publisher_;
 
+  void pathCallback(const autoware_planning_msgs::PathWithLaneId& path) const;
+  visualization_msgs::MarkerArray convertPathToMarker(const autoware_planning_msgs::PathWithLaneId& path) const;
 
-void pathCallback(const autoware_planning_msgs::PathWithLaneId& path) const;
-visualization_msgs::MarkerArray convertPathToMarker(const autoware_planning_msgs::PathWithLaneId& path) const;
-
-public:
+ public:
   BehaviorPathVisualizer();
 };
 

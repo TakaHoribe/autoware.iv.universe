@@ -121,7 +121,7 @@ struct PointXYZIRT {
   double timestamp;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
-} EIGEN_ALIGN16;  // enforce SSE padding for correct memory alignment
+} EIGEN_ALIGN16;                   // enforce SSE padding for correct memory alignment
 
 struct PointXYZIT {
   float x;
@@ -131,14 +131,14 @@ struct PointXYZIT {
   double timestamp;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
-} EIGEN_ALIGN16;  // enforce SSE padding for correct memory alignment
+} EIGEN_ALIGN16;                   // enforce SSE padding for correct memory alignment
 
 struct RawPointXYZIT {
   PCL_ADD_POINT4D
   uint8_t intensity;
   double timestamp;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
-} EIGEN_ALIGN16;  // enforce SSE padding for correct memory alignment
+} EIGEN_ALIGN16;                   // enforce SSE padding for correct memory alignment
 
 struct PointXYZIRTd {
   double x;
@@ -149,7 +149,7 @@ struct PointXYZIRTd {
   double timestamp;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
-} EIGEN_ALIGN16;  // enforce SSE padding for correct memory alignment
+} EIGEN_ALIGN16;                   // enforce SSE padding for correct memory alignment
 
 struct PointXYZITd {
   double x;
@@ -159,7 +159,7 @@ struct PointXYZITd {
   double timestamp;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
-} EIGEN_ALIGN16;  // enforce SSE padding for correct memory alignment
+} EIGEN_ALIGN16;                   // enforce SSE padding for correct memory alignment
 
 }  // namespace apollo
 

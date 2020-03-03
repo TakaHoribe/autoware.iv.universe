@@ -23,8 +23,8 @@
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
-#include <mission_planner/mission_planner_base.h>
 #include <mission_planner/lanelet2_impl/route_handler.h>
+#include <mission_planner/mission_planner_base.h>
 
 // lanelet
 #include <lanelet2_core/LaneletMap.h>
@@ -36,14 +36,12 @@
 
 using RouteSections = std::vector<autoware_planning_msgs::RouteSection>;
 
-namespace mission_planner
-{
-class MissionPlannerLanelet2 : public MissionPlanner
-{
-public:
+namespace mission_planner {
+class MissionPlannerLanelet2 : public MissionPlanner {
+ public:
   MissionPlannerLanelet2();
 
-private:
+ private:
   bool is_graph_ready_;
 
   lanelet::LaneletMapPtr lanelet_map_ptr_;

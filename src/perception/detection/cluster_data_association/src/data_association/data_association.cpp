@@ -18,9 +18,9 @@
  */
 
 #include "cluster_data_association/data_association.hpp"
+#include <sensor_msgs/point_cloud2_iterator.h>
 #include "cluster_data_association/utils/utils.hpp"
 #include "successive_shortest_path/successive_shortest_path.h"
-#include <sensor_msgs/point_cloud2_iterator.h>
 
 DataAssociation::DataAssociation() : score_threshold_(0.1) {
   can_assgin_matrix_ = Eigen::MatrixXi::Identity(20, 20);
@@ -68,21 +68,23 @@ DataAssociation::DataAssociation() : score_threshold_(0.1) {
   // max_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::CAR) = 2.2 * 5.5;
   // max_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::TRUCK) = 2.5 * 7.9;
   // max_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::BUS) = 2.7 * 12.0;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::UNKNOWN) = 2.5 * 7.9;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::CAR) = 2.2 * 5.5;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::TRUCK) = 2.5 * 7.9;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::BUS) = 2.7 * 12.0;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::UNKNOWN) = 2.7 * 12.0;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::CAR) = 2.2 * 5.5;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::TRUCK) = 2.5 * 7.9;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::BUS) = 2.7 * 12.0;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::UNKNOWN) = 2.5;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::BICYCLE) = 2.5;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::MOTORBIKE) = 3.0;
+  // max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::UNKNOWN) = 2.5
+  // * 7.9; max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::CAR) = 2.2
+  // * 5.5; max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::TRUCK) = 2.5
+  // * 7.9; max_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::BUS) = 2.7
+  // * 12.0; max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::UNKNOWN)
+  // = 2.7 * 12.0; max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::CAR)
+  // = 2.2 * 5.5; max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::TRUCK)
+  // = 2.5 * 7.9; max_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::BUS)
+  // = 2.7 * 12.0; max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE,
+  // autoware_perception_msgs::Semantic::UNKNOWN) = 2.5; max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE,
+  // autoware_perception_msgs::Semantic::BICYCLE) = 2.5; max_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE,
+  // autoware_perception_msgs::Semantic::MOTORBIKE) = 3.0;
   // max_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::UNKNOWN) = 3.0;
   // max_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::BICYCLE) = 2.5;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::MOTORBIKE) = 3.0;
-  // max_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN, autoware_perception_msgs::Semantic::UNKNOWN) = 2.0;
+  // max_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::MOTORBIKE)
+  // = 3.0; max_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN,
+  // autoware_perception_msgs::Semantic::UNKNOWN) = 2.0;
   // max_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN, autoware_perception_msgs::Semantic::PEDESTRIAN) =
   //     2.0;
   // max_area_matrix_(autoware_perception_msgs::Semantic::ANIMAL, autoware_perception_msgs::Semantic::UNKNOWN) = 2.0;
@@ -91,23 +93,26 @@ DataAssociation::DataAssociation() : score_threshold_(0.1) {
   // min_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::CAR) = 1.2 * 3.0;
   // min_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::TRUCK) = 1.5 * 4.0;
   // min_area_matrix_(autoware_perception_msgs::Semantic::CAR, autoware_perception_msgs::Semantic::BUS) = 2.0 * 5.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::UNKNOWN) = 1.5 * 4.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::CAR) = 1.2 * 3.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::TRUCK) = 1.5 * 4.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::BUS) = 2.0 * 5.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::UNKNOWN) = 2.0 * 5.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::CAR) = 1.2 * 3.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::TRUCK) = 1.5 * 4.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::BUS) = 2.0 * 5.0;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::UNKNOWN) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::BICYCLE) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::MOTORBIKE) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::UNKNOWN) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::BICYCLE) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::MOTORBIKE) =
+  // min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::UNKNOWN) = 1.5
+  // * 4.0; min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::CAR) = 1.2
+  // * 3.0; min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::TRUCK) = 1.5
+  // * 4.0; min_area_matrix_(autoware_perception_msgs::Semantic::TRUCK, autoware_perception_msgs::Semantic::BUS) = 2.0
+  // * 5.0; min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::UNKNOWN) = 2.0
+  // * 5.0; min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::CAR) = 1.2
+  // * 3.0; min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::TRUCK) = 1.5
+  // * 4.0; min_area_matrix_(autoware_perception_msgs::Semantic::BUS, autoware_perception_msgs::Semantic::BUS) = 2.0
+  // * 5.0; min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::UNKNOWN) =
+  // 0.001; min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::BICYCLE) =
+  // 0.001; min_area_matrix_(autoware_perception_msgs::Semantic::BICYCLE, autoware_perception_msgs::Semantic::MOTORBIKE)
+  // = 0.001; min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE,
+  // autoware_perception_msgs::Semantic::UNKNOWN) = 0.001;
+  // min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE, autoware_perception_msgs::Semantic::BICYCLE) =
+  // 0.001; min_area_matrix_(autoware_perception_msgs::Semantic::MOTORBIKE,
+  // autoware_perception_msgs::Semantic::MOTORBIKE) =
   //     0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN, autoware_perception_msgs::Semantic::UNKNOWN) = 0.001;
-  // min_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN, autoware_perception_msgs::Semantic::PEDESTRIAN) =
+  // min_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN, autoware_perception_msgs::Semantic::UNKNOWN) =
+  // 0.001; min_area_matrix_(autoware_perception_msgs::Semantic::PEDESTRIAN,
+  // autoware_perception_msgs::Semantic::PEDESTRIAN) =
   //     0.001;
   // min_area_matrix_(autoware_perception_msgs::Semantic::ANIMAL, autoware_perception_msgs::Semantic::UNKNOWN) = 0.5;
 }
@@ -147,8 +152,8 @@ Eigen::MatrixXd DataAssociation::calcScoreMatrix(
     const autoware_perception_msgs::DynamicObjectWithFeatureArray& cluster1) {
   Eigen::MatrixXd score_matrix =
       Eigen::MatrixXd::Zero(cluster1.feature_objects.size(), cluster0.feature_objects.size());
-    for (size_t cluster1_idx = 0; cluster1_idx < cluster1.feature_objects.size(); ++cluster1_idx) {
-  for (size_t cluster0_idx = 0; cluster0_idx < cluster0.feature_objects.size(); ++cluster0_idx) {
+  for (size_t cluster1_idx = 0; cluster1_idx < cluster1.feature_objects.size(); ++cluster1_idx) {
+    for (size_t cluster0_idx = 0; cluster0_idx < cluster0.feature_objects.size(); ++cluster0_idx) {
       double score = 0.0;
       if (can_assgin_matrix_(cluster1.feature_objects.at(cluster1_idx).object.semantic.type,
                              cluster0.feature_objects.at(cluster0_idx).object.semantic.type)) {

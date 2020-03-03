@@ -177,7 +177,8 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
    * insert stop point
    */
   if (is_collision) {
-    for (int i = decimate_trajectory_index_map.at(decimate_trajectory_collision_index); i < (int)output_msg.points.size(); ++i) {
+    for (int i = decimate_trajectory_index_map.at(decimate_trajectory_collision_index);
+         i < (int)output_msg.points.size(); ++i) {
       Eigen::Vector2d trajectory_vec;
       {
         const double yaw = getYawFromGeometryMsgsQuaternion(output_msg.points.at(i).pose.orientation);
@@ -279,7 +280,7 @@ bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::T
 bool ObstacleStopPlannerNode::decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory,
                                                  const double step_length,
                                                  autoware_planning_msgs::Trajectory& output_trajectory,
-                                                   std::map<size_t /* decimate */, size_t /* origin */>& index_map) {
+                                                 std::map<size_t /* decimate */, size_t /* origin */>& index_map) {
   output_trajectory.header = input_trajectory.header;
   double trajectory_length_sum = 0.0;
   double next_length = 0.0;

@@ -45,7 +45,7 @@ class ObstaclePcdVelocityPlanner {
   /*
    * set zero velocity behind from closest pcd in detection area.
    */
-  bool plan(autoware_planning_msgs::Trajectory &output);
+  bool plan(autoware_planning_msgs::Trajectory& output);
 
   /*
    * set zero velocity behind from closest pcd in detection area.
@@ -53,9 +53,9 @@ class ObstaclePcdVelocityPlanner {
   visualization_msgs::MarkerArray visualize();
 
   // setter
-  void setCurrentTrajectory(const autoware_planning_msgs::Trajectory &traj) { in_trajectory_ = traj; }
-  void setPointCloud(const sensor_msgs::PointCloud2 &pc) { in_point_cloud_ = pc; }
-  void setCurrentPose(const geometry_msgs::Pose &curr_pose) { current_pose_ = curr_pose; }
+  void setCurrentTrajectory(const autoware_planning_msgs::Trajectory& traj) { in_trajectory_ = traj; }
+  void setPointCloud(const sensor_msgs::PointCloud2& pc) { in_point_cloud_ = pc; }
+  void setCurrentPose(const geometry_msgs::Pose& curr_pose) { current_pose_ = curr_pose; }
   void setStopDistance(double stop_dist) { planning_param_.stop_distance = stop_dist; }
   void setPointsThreshold(int32_t thr) { planning_param_.points_thr = thr; }
   void setDetectionAreaWidth(double daw) { planning_param_.detection_area_width = daw; }
@@ -71,7 +71,7 @@ class ObstaclePcdVelocityPlanner {
     planning_param_.endpoint_extend_length_rev = easr;
   }
   // getter
-  void getExtructedPcd(sensor_msgs::PointCloud2 &pcd) { pcd = pcd_around_traj_; };
+  void getExtructedPcd(sensor_msgs::PointCloud2& pcd) { pcd = pcd_around_traj_; };
 
  private:
   bool is_obstacle_detected_;
@@ -114,32 +114,32 @@ class ObstaclePcdVelocityPlanner {
   geometry_msgs::Pose stop_pose_baselink_;
   geometry_msgs::Pose stop_pose_front_;
 
-  bool extendTrajectoryEndPoint(const autoware_planning_msgs::Trajectory &input,
-                                autoware_planning_msgs::Trajectory &output);
-  bool resampleTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory, const double resample_interval_dist,
-                          autoware_planning_msgs::Trajectory &out);
-  bool calcStopPoseOnTrajectory(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                const pcl::PointCloud<pcl::PointXYZ> &in_pcd, geometry_msgs::Pose &stop_pose,
-                                bool &is_obstacle_detected);
-  bool planStopVelocity(const autoware_planning_msgs::Trajectory &in_trajectory, const geometry_msgs::Pose &stop_pose,
-                        autoware_planning_msgs::Trajectory &out);
-  bool extractPcdAroundTrajectory2D(const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
-                                    const autoware_planning_msgs::Trajectory &in_trajectory, double radius,
-                                    /*out=*/pcl::PointCloud<pcl::PointXYZ> &out_pcd);
-  Direction calcTrajectoryDirection(const autoware_planning_msgs::Trajectory &trajectory, double dist_thr = 0.05);
-  bool calcDetectionWidthWithVehicleShape(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                          std::vector<double> &left_widths, std::vector<double> &right_widths);
-  void calcVehicleEdgePoints(const geometry_msgs::Pose &curr_pose, const VehicleParam &param,
-                             std::vector<geometry_msgs::Point> &edge_points);
-  PolygonX createPolygonFromTrajectory(const autoware_planning_msgs::Trajectory &lane,
-                                       const std::vector<double> &left_width, const std::vector<double> &right_width,
+  bool extendTrajectoryEndPoint(const autoware_planning_msgs::Trajectory& input,
+                                autoware_planning_msgs::Trajectory& output);
+  bool resampleTrajectory(const autoware_planning_msgs::Trajectory& in_trajectory, const double resample_interval_dist,
+                          autoware_planning_msgs::Trajectory& out);
+  bool calcStopPoseOnTrajectory(const autoware_planning_msgs::Trajectory& in_trajectory,
+                                const pcl::PointCloud<pcl::PointXYZ>& in_pcd, geometry_msgs::Pose& stop_pose,
+                                bool& is_obstacle_detected);
+  bool planStopVelocity(const autoware_planning_msgs::Trajectory& in_trajectory, const geometry_msgs::Pose& stop_pose,
+                        autoware_planning_msgs::Trajectory& out);
+  bool extractPcdAroundTrajectory2D(const pcl::PointCloud<pcl::PointXYZ>& in_pcd,
+                                    const autoware_planning_msgs::Trajectory& in_trajectory, double radius,
+                                    /*out=*/pcl::PointCloud<pcl::PointXYZ>& out_pcd);
+  Direction calcTrajectoryDirection(const autoware_planning_msgs::Trajectory& trajectory, double dist_thr = 0.05);
+  bool calcDetectionWidthWithVehicleShape(const autoware_planning_msgs::Trajectory& in_trajectory,
+                                          std::vector<double>& left_widths, std::vector<double>& right_widths);
+  void calcVehicleEdgePoints(const geometry_msgs::Pose& curr_pose, const VehicleParam& param,
+                             std::vector<geometry_msgs::Point>& edge_points);
+  PolygonX createPolygonFromTrajectory(const autoware_planning_msgs::Trajectory& lane,
+                                       const std::vector<double>& left_width, const std::vector<double>& right_width,
                                        int32_t start_idx, int32_t end_idx);
-  bool calcClosestPointInPolygon(const autoware_planning_msgs::Trajectory &in_trajectory,
-                                 const pcl::PointCloud<pcl::PointXYZ> &in_pcd, const int32_t idx_s, const int32_t idx_e,
-                                 int32_t &closest_idx, geometry_msgs::Pose &closest_pose);
-  bool calcClosestPoseProjectedOnTrajectory(const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
-                                            const autoware_planning_msgs::Trajectory &in_traj, const int origin_idx,
-                                            geometry_msgs::Pose &out_pose);
-  bool extructPointsInPolygon(const PolygonX &poly, const pcl::PointCloud<pcl::PointXYZ> &in_pcd,
-                              const int32_t points_thr, pcl::PointCloud<pcl::PointXYZ> &out_pcd);
+  bool calcClosestPointInPolygon(const autoware_planning_msgs::Trajectory& in_trajectory,
+                                 const pcl::PointCloud<pcl::PointXYZ>& in_pcd, const int32_t idx_s, const int32_t idx_e,
+                                 int32_t& closest_idx, geometry_msgs::Pose& closest_pose);
+  bool calcClosestPoseProjectedOnTrajectory(const pcl::PointCloud<pcl::PointXYZ>& in_pcd,
+                                            const autoware_planning_msgs::Trajectory& in_traj, const int origin_idx,
+                                            geometry_msgs::Pose& out_pose);
+  bool extructPointsInPolygon(const PolygonX& poly, const pcl::PointCloud<pcl::PointXYZ>& in_pcd,
+                              const int32_t points_thr, pcl::PointCloud<pcl::PointXYZ>& out_pcd);
 };

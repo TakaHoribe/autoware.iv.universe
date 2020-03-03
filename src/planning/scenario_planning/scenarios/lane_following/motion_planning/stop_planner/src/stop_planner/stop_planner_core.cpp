@@ -54,11 +54,11 @@ StopPlanner::StopPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
 
 StopPlanner::~StopPlanner() {}
 
-void StopPlanner::callbackPointCloud(const sensor_msgs::PointCloud2::ConstPtr &msg) {
+void StopPlanner::callbackPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   in_obstacle_pcd_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(*msg);
 }
 
-void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr &msg) {
+void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg) {
   in_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 
   if (!updateCurrentPose(0.0)) {
@@ -85,7 +85,7 @@ void StopPlanner::callbackTrajectory(const autoware_planning_msgs::Trajectory::C
   try {
     transform_stamped = tf_buffer_.lookupTransform(/*target*/ "map", /*src*/ in_obstacle_pcd_ptr_->header.frame_id,
                                                    ros::Time(0), ros::Duration(1.0));
-  } catch (tf2::TransformException &ex) {
+  } catch (tf2::TransformException& ex) {
     ROS_WARN("%s", ex.what());
     ROS_WARN("target = %s, in_obstacle_pcd_ptr_->header.frame_id = %s\n", "map",
              in_obstacle_pcd_ptr_->header.frame_id.c_str());
@@ -125,7 +125,7 @@ bool StopPlanner::updateCurrentPose(const double timeout) {
   geometry_msgs::TransformStamped transform;
   try {
     transform = tf_buffer_.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(timeout));
-  } catch (tf2::TransformException &ex) {
+  } catch (tf2::TransformException& ex) {
     ROS_INFO_DELAYED_THROTTLE(3.0, "[StopPlanner] cannot get map to base_link transform. %s", ex.what());
     return false;
   }

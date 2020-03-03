@@ -15,41 +15,35 @@
  */
 
 /**
-* @file test_point_pillars.cpp
-* @brief unit test file
-* @author Kosuke Murakami
-* @date 2019/02/26
-*/
+ * @file test_point_pillars.cpp
+ * @brief unit test file
+ * @author Kosuke Murakami
+ * @date 2019/02/26
+ */
 
 // headers in ROS
-#include <ros/ros.h>
 #include <ros/package.h>
+#include <ros/ros.h>
 
 // headers in gtest
 #include <gtest/gtest.h>
 
-//headers in PCL
+// headers in PCL
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-//headers in local files
+// headers in local files
 #include "lidar_point_pillars/point_pillars_ros.h"
 #include "lidar_point_pillars/preprocess_points.h"
 
-class TestSuite : public ::testing::Test
-{
-public:
-  TestSuite()
-  {
-  }
-  ~TestSuite()
-  {
-  }
+class TestSuite : public ::testing::Test {
+ public:
+  TestSuite() {}
+  ~TestSuite() {}
 };
 
-class TestClass
-{
-public:
+class TestClass {
+ public:
   TestClass(const int MAX_NUM_PILLARS, const int MAX_NUM_POINTS_PER_PILLAR, const int GRID_X_SIZE,
             const int GRID_Y_SIZE, const int GRID_Z_SIZE, const float PILLAR_X_SIZE, const float PILLAR_Y_SIZE,
             const float PILLAR_Z_SIZE, const float MIN_X_RANGE, const float MIN_Y_RANGE, const float MIN_Z_RANGE,
@@ -75,13 +69,13 @@ public:
                   float* num_points_per_pillar, float* pillar_x, float* pillar_y, float* pillar_z, float* pillar_i,
                   float* x_coors_for_sub_shaped, float* y_coors_for_sub_shaped, float* pillar_feature_mask,
                   float* sparse_pillar_map, int* host_pillar_count);
-  void generateAnchors(float* anchors_px, float* anchors_py, float* anchors_pz, float* anchors_dx,
-                       float* anchors_dy, float* anchors_dz, float* anchors_ro);
+  void generateAnchors(float* anchors_px, float* anchors_py, float* anchors_pz, float* anchors_dx, float* anchors_dy,
+                       float* anchors_dz, float* anchors_ro);
   void convertAnchors2BoxAnchors(float* anchors_px, float* anchors_py, float* anchors_dx, float* anchors_dy,
-                                 float* box_anchors_min_x, float* box_anchors_min_y,
-                                 float* box_anchors_max_x, float* box_anchors_max_y);
+                                 float* box_anchors_min_x, float* box_anchors_min_y, float* box_anchors_max_x,
+                                 float* box_anchors_max_y);
 
-private:
+ private:
   std::unique_ptr<PreprocessPoints> preprocess_points_ptr_;
   std::unique_ptr<PointPillars> point_pillars_ptr_;
 };
@@ -90,26 +84,25 @@ TestClass::TestClass(const int MAX_NUM_PILLARS, const int MAX_NUM_POINTS_PER_PIL
                      const int GRID_Y_SIZE, const int GRID_Z_SIZE, const float PILLAR_X_SIZE, const float PILLAR_Y_SIZE,
                      const float PILLAR_Z_SIZE, const float MIN_X_RANGE, const float MIN_Y_RANGE,
                      const float MIN_Z_RANGE, const int NUM_INDS_FOR_SCAN, const int NUM_BOX_CORNERS)
-  : MAX_NUM_PILLARS_(MAX_NUM_PILLARS)
-  , MAX_NUM_POINTS_PER_PILLAR_(MAX_NUM_POINTS_PER_PILLAR)
-  , GRID_X_SIZE_(GRID_X_SIZE)
-  , GRID_Y_SIZE_(GRID_Y_SIZE)
-  , GRID_Z_SIZE_(GRID_Z_SIZE)
-  , PILLAR_X_SIZE_(PILLAR_X_SIZE)
-  , PILLAR_Y_SIZE_(PILLAR_Y_SIZE)
-  , PILLAR_Z_SIZE_(PILLAR_Z_SIZE)
-  , MIN_X_RANGE_(MIN_X_RANGE)
-  , MIN_Y_RANGE_(MIN_Y_RANGE)
-  , MIN_Z_RANGE_(MIN_Z_RANGE)
-  , NUM_INDS_FOR_SCAN_(NUM_INDS_FOR_SCAN)
-  , NUM_BOX_CORNERS_(NUM_BOX_CORNERS)
-{
+    : MAX_NUM_PILLARS_(MAX_NUM_PILLARS),
+      MAX_NUM_POINTS_PER_PILLAR_(MAX_NUM_POINTS_PER_PILLAR),
+      GRID_X_SIZE_(GRID_X_SIZE),
+      GRID_Y_SIZE_(GRID_Y_SIZE),
+      GRID_Z_SIZE_(GRID_Z_SIZE),
+      PILLAR_X_SIZE_(PILLAR_X_SIZE),
+      PILLAR_Y_SIZE_(PILLAR_Y_SIZE),
+      PILLAR_Z_SIZE_(PILLAR_Z_SIZE),
+      MIN_X_RANGE_(MIN_X_RANGE),
+      MIN_Y_RANGE_(MIN_Y_RANGE),
+      MIN_Z_RANGE_(MIN_Z_RANGE),
+      NUM_INDS_FOR_SCAN_(NUM_INDS_FOR_SCAN),
+      NUM_BOX_CORNERS_(NUM_BOX_CORNERS) {
   preprocess_points_ptr_.reset(new PreprocessPoints(
       MAX_NUM_PILLARS_, MAX_NUM_POINTS_PER_PILLAR_, GRID_X_SIZE_, GRID_Y_SIZE_, GRID_Z_SIZE_, PILLAR_X_SIZE_,
       PILLAR_Y_SIZE_, PILLAR_Z_SIZE_, MIN_X_RANGE_, MIN_Y_RANGE_, MIN_Z_RANGE_, NUM_INDS_FOR_SCAN_, NUM_BOX_CORNERS_));
 
-  bool baselink_support=true;
-  bool reproduce_result_mode=false;
+  bool baselink_support = true;
+  bool reproduce_result_mode = false;
   float score_threshold = 0.5;
   float nms_overlap_threshold = 0.5;
   std::string package_path = ros::package::getPath("lidar_point_pillars");
@@ -117,24 +110,21 @@ TestClass::TestClass(const int MAX_NUM_PILLARS, const int MAX_NUM_POINTS_PER_PIL
   std::string pfe_onnx_file = onnx_path;
   std::string rpn_onnx_file = onnx_path;
 
-  point_pillars_ptr_.reset(new PointPillars(reproduce_result_mode, score_threshold, nms_overlap_threshold,
-                                            pfe_onnx_file, rpn_onnx_file));
+  point_pillars_ptr_.reset(
+      new PointPillars(reproduce_result_mode, score_threshold, nms_overlap_threshold, pfe_onnx_file, rpn_onnx_file));
 };
 
 void TestClass::preprocess(const float* in_points_array, int in_num_points, int* x_coors, int* y_coors,
                            float* num_points_per_pillar, float* pillar_x, float* pillar_y, float* pillar_z,
                            float* pillar_i, float* x_coors_for_sub_shaped, float* y_coors_for_sub_shaped,
-                           float* pillar_feature_mask, float* sparse_pillar_map, int* host_pillar_count)
-{
+                           float* pillar_feature_mask, float* sparse_pillar_map, int* host_pillar_count) {
   preprocess_points_ptr_->preprocess(in_points_array, in_num_points, x_coors, y_coors, num_points_per_pillar, pillar_x,
                                      pillar_y, pillar_z, pillar_i, x_coors_for_sub_shaped, y_coors_for_sub_shaped,
                                      pillar_feature_mask, sparse_pillar_map, host_pillar_count);
 }
 
-void TestClass::pclToArray(const pcl::PointCloud<pcl::PointXYZI>::Ptr& in_pcl_pc_ptr, float* out_points_array)
-{
-  for (size_t i = 0; i < in_pcl_pc_ptr->size(); i++)
-  {
+void TestClass::pclToArray(const pcl::PointCloud<pcl::PointXYZI>::Ptr& in_pcl_pc_ptr, float* out_points_array) {
+  for (size_t i = 0; i < in_pcl_pc_ptr->size(); i++) {
     pcl::PointXYZI point = in_pcl_pc_ptr->at(i);
     out_points_array[i * 4 + 0] = point.x;
     out_points_array[i * 4 + 1] = point.y;
@@ -143,8 +133,7 @@ void TestClass::pclToArray(const pcl::PointCloud<pcl::PointXYZI>::Ptr& in_pcl_pc
   }
 }
 
-void TestClass::makePointsForTest(pcl::PointCloud<pcl::PointXYZI>::Ptr in_pcl_pc_ptr)
-{
+void TestClass::makePointsForTest(pcl::PointCloud<pcl::PointXYZI>::Ptr in_pcl_pc_ptr) {
   pcl::PointXYZI point;
   point.x = 12.9892;
   point.y = -9.98058;
@@ -189,23 +178,20 @@ void TestClass::makePointsForTest(pcl::PointCloud<pcl::PointXYZI>::Ptr in_pcl_pc
 }
 
 void TestClass::generateAnchors(float* anchors_px, float* anchors_py, float* anchors_pz, float* anchors_dx,
-                                float* anchors_dy, float* anchors_dz, float* anchors_ro)
-{
-  return point_pillars_ptr_->generateAnchors(anchors_px, anchors_py, anchors_pz, anchors_dx,
-                                             anchors_dy, anchors_dz, anchors_ro);
+                                float* anchors_dy, float* anchors_dz, float* anchors_ro) {
+  return point_pillars_ptr_->generateAnchors(anchors_px, anchors_py, anchors_pz, anchors_dx, anchors_dy, anchors_dz,
+                                             anchors_ro);
 }
 
 void TestClass::convertAnchors2BoxAnchors(float* anchors_px, float* anchors_py, float* anchors_dx, float* anchors_dy,
-                                          float* box_anchors_min_x, float* box_anchors_min_y,
-                                          float* box_anchors_max_x, float* box_anchors_max_y)
-{
+                                          float* box_anchors_min_x, float* box_anchors_min_y, float* box_anchors_max_x,
+                                          float* box_anchors_max_y) {
   return point_pillars_ptr_->convertAnchors2BoxAnchors(anchors_px, anchors_py, anchors_dx, anchors_dy,
-                                                       box_anchors_min_x, box_anchors_min_y,
-                                                       box_anchors_max_x, box_anchors_max_y);
+                                                       box_anchors_min_x, box_anchors_min_y, box_anchors_max_x,
+                                                       box_anchors_max_y);
 }
 
-TEST(TestSuite, CheckPreprocessPointsCPU)
-{
+TEST(TestSuite, CheckPreprocessPointsCPU) {
   const int MAX_NUM_PILLARS = 12000;
   const int MAX_NUM_POINTS_PER_PILLAR = 100;
   const int GRID_X_SIZE = 432;
@@ -219,18 +205,8 @@ TEST(TestSuite, CheckPreprocessPointsCPU)
   const float MIN_Z_RANGE = -3.0;
   const int NUM_INDS_FOR_SCAN = 512;
   const int NUM_BOX_CORNERS = 4;
-  TestClass test_obj(MAX_NUM_PILLARS,
-                     MAX_NUM_POINTS_PER_PILLAR,
-                     GRID_X_SIZE,
-                     GRID_Y_SIZE,
-                     GRID_Z_SIZE,
-                     PILLAR_X_SIZE,
-                     PILLAR_Y_SIZE,
-                     PILLAR_Z_SIZE,
-                     MIN_X_RANGE,
-                     MIN_Y_RANGE,
-                     MIN_Z_RANGE,
-                     NUM_INDS_FOR_SCAN,
+  TestClass test_obj(MAX_NUM_PILLARS, MAX_NUM_POINTS_PER_PILLAR, GRID_X_SIZE, GRID_Y_SIZE, GRID_Z_SIZE, PILLAR_X_SIZE,
+                     PILLAR_Y_SIZE, PILLAR_Z_SIZE, MIN_X_RANGE, MIN_Y_RANGE, MIN_Z_RANGE, NUM_INDS_FOR_SCAN,
                      NUM_BOX_CORNERS);
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pc_ptr(new pcl::PointCloud<pcl::PointXYZI>);
@@ -239,9 +215,9 @@ TEST(TestSuite, CheckPreprocessPointsCPU)
   float* points_array = new float[pcl_pc_ptr->size() * 4];
   test_obj.pclToArray(pcl_pc_ptr, points_array);
 
-  int x_coors[test_obj.MAX_NUM_PILLARS_] = { 0 };
-  int y_coors[test_obj.MAX_NUM_PILLARS_] = { 0 };
-  float num_points_per_pillar[test_obj.MAX_NUM_PILLARS_] = { 0 };
+  int x_coors[test_obj.MAX_NUM_PILLARS_] = {0};
+  int y_coors[test_obj.MAX_NUM_PILLARS_] = {0};
+  float num_points_per_pillar[test_obj.MAX_NUM_PILLARS_] = {0};
   float* pillar_x = new float[test_obj.MAX_NUM_PILLARS_ * test_obj.MAX_NUM_POINTS_PER_PILLAR_];
   float* pillar_y = new float[test_obj.MAX_NUM_PILLARS_ * test_obj.MAX_NUM_POINTS_PER_PILLAR_];
   float* pillar_z = new float[test_obj.MAX_NUM_PILLARS_ * test_obj.MAX_NUM_POINTS_PER_PILLAR_];
@@ -253,7 +229,7 @@ TEST(TestSuite, CheckPreprocessPointsCPU)
 
   float* sparse_pillar_map = new float[512 * 512];
 
-  int host_pillar_count[1] = { 0 };
+  int host_pillar_count[1] = {0};
   test_obj.preprocess(points_array, pcl_pc_ptr->size(), x_coors, y_coors, num_points_per_pillar, pillar_x, pillar_y,
                       pillar_z, pillar_i, x_coors_for_sub_shaped, y_coors_for_sub_shaped, pillar_feature_mask,
                       sparse_pillar_map, host_pillar_count);
@@ -274,8 +250,7 @@ TEST(TestSuite, CheckPreprocessPointsCPU)
   delete[] sparse_pillar_map;
 }
 
-TEST(TestSuite, CheckGenerateAnchors)
-{
+TEST(TestSuite, CheckGenerateAnchors) {
   const int MAX_NUM_PILLARS = 12000;
   const int MAX_NUM_POINTS_PER_PILLAR = 100;
   const int GRID_X_SIZE = 432;
@@ -289,21 +264,11 @@ TEST(TestSuite, CheckGenerateAnchors)
   const float MIN_Z_RANGE = -3.0;
   const int NUM_INDS_FOR_SCAN = 512;
   const int NUM_BOX_CORNERS = 4;
-  TestClass test_obj(MAX_NUM_PILLARS,
-                     MAX_NUM_POINTS_PER_PILLAR,
-                     GRID_X_SIZE,
-                     GRID_Y_SIZE,
-                     GRID_Z_SIZE,
-                     PILLAR_X_SIZE,
-                     PILLAR_Y_SIZE,
-                     PILLAR_Z_SIZE,
-                     MIN_X_RANGE,
-                     MIN_Y_RANGE,
-                     MIN_Z_RANGE,
-                     NUM_INDS_FOR_SCAN,
+  TestClass test_obj(MAX_NUM_PILLARS, MAX_NUM_POINTS_PER_PILLAR, GRID_X_SIZE, GRID_Y_SIZE, GRID_Z_SIZE, PILLAR_X_SIZE,
+                     PILLAR_Y_SIZE, PILLAR_Z_SIZE, MIN_X_RANGE, MIN_Y_RANGE, MIN_Z_RANGE, NUM_INDS_FOR_SCAN,
                      NUM_BOX_CORNERS);
 
-  const int NUM_ANCHOR = 432*0.5*496*0.5*2;
+  const int NUM_ANCHOR = 432 * 0.5 * 496 * 0.5 * 2;
   float* anchors_px = new float[NUM_ANCHOR];
   float* anchors_py = new float[NUM_ANCHOR];
   float* anchors_pz = new float[NUM_ANCHOR];
@@ -330,8 +295,7 @@ TEST(TestSuite, CheckGenerateAnchors)
   delete[] anchors_ro;
 }
 
-TEST(TestSuite, CheckGenerateBoxAnchors)
-{
+TEST(TestSuite, CheckGenerateBoxAnchors) {
   const int MAX_NUM_PILLARS = 12000;
   const int MAX_NUM_POINTS_PER_PILLAR = 100;
   const int GRID_X_SIZE = 432;
@@ -345,21 +309,11 @@ TEST(TestSuite, CheckGenerateBoxAnchors)
   const float MIN_Z_RANGE = -3.0;
   const int NUM_INDS_FOR_SCAN = 512;
   const int NUM_BOX_CORNERS = 4;
-  TestClass test_obj(MAX_NUM_PILLARS,
-                     MAX_NUM_POINTS_PER_PILLAR,
-                     GRID_X_SIZE,
-                     GRID_Y_SIZE,
-                     GRID_Z_SIZE,
-                     PILLAR_X_SIZE,
-                     PILLAR_Y_SIZE,
-                     PILLAR_Z_SIZE,
-                     MIN_X_RANGE,
-                     MIN_Y_RANGE,
-                     MIN_Z_RANGE,
-                     NUM_INDS_FOR_SCAN,
+  TestClass test_obj(MAX_NUM_PILLARS, MAX_NUM_POINTS_PER_PILLAR, GRID_X_SIZE, GRID_Y_SIZE, GRID_Z_SIZE, PILLAR_X_SIZE,
+                     PILLAR_Y_SIZE, PILLAR_Z_SIZE, MIN_X_RANGE, MIN_Y_RANGE, MIN_Z_RANGE, NUM_INDS_FOR_SCAN,
                      NUM_BOX_CORNERS);
 
-  const int NUM_ANCHOR = 432*0.5*496*0.5*2;
+  const int NUM_ANCHOR = 432 * 0.5 * 496 * 0.5 * 2;
 
   float* anchors_px = new float[NUM_ANCHOR];
   float* anchors_py = new float[NUM_ANCHOR];
@@ -373,15 +327,13 @@ TEST(TestSuite, CheckGenerateBoxAnchors)
   float* box_anchors_max_x = new float[NUM_ANCHOR];
   float* box_anchors_max_y = new float[NUM_ANCHOR];
   test_obj.generateAnchors(anchors_px, anchors_py, anchors_pz, anchors_dx, anchors_dy, anchors_dz, anchors_ro);
-  test_obj.convertAnchors2BoxAnchors(anchors_px, anchors_py, anchors_dx, anchors_dy,
-                                    box_anchors_min_x, box_anchors_min_y,
-                                    box_anchors_max_x, box_anchors_max_y);
+  test_obj.convertAnchors2BoxAnchors(anchors_px, anchors_py, anchors_dx, anchors_dy, box_anchors_min_x,
+                                     box_anchors_min_y, box_anchors_max_x, box_anchors_max_y);
 
-  EXPECT_NEAR(53.25,  box_anchors_min_x[345], 0.001);
+  EXPECT_NEAR(53.25, box_anchors_min_x[345], 0.001);
   EXPECT_NEAR(-41.47, box_anchors_min_y[22], 0.001);
-  EXPECT_NEAR(38.4,   box_anchors_max_x[1098], 0.001);
-  EXPECT_NEAR(-38.4,  box_anchors_max_y[675], 0.001);
-
+  EXPECT_NEAR(38.4, box_anchors_max_x[1098], 0.001);
+  EXPECT_NEAR(-38.4, box_anchors_max_y[675], 0.001);
 
   delete[] anchors_px;
   delete[] anchors_py;
@@ -396,8 +348,7 @@ TEST(TestSuite, CheckGenerateBoxAnchors)
   delete[] box_anchors_max_y;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

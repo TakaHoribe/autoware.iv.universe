@@ -44,8 +44,7 @@ bool isActive(const autoware_planning_msgs::Scenario::ConstPtr& scenario) {
   }
 
   const auto& s = scenario->activating_scenarios;
-  if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) !=
-      std::end(s)) {
+  if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) != std::end(s)) {
     return true;
   }
 
@@ -90,10 +89,8 @@ CostmapGenerator::CostmapGenerator() : nh_(""), private_nh_("~"), tf_listener_(t
 
   // Subscribers
   sub_objects_ = private_nh_.subscribe("input/objects", 1, &CostmapGenerator::onObjects, this);
-  sub_points_ =
-      private_nh_.subscribe("input/points_no_ground", 1, &CostmapGenerator::onPoints, this);
-  sub_lanelet_bin_map_ =
-      private_nh_.subscribe("input/lanelet_map_bin", 1, &CostmapGenerator::onLaneletMapBin, this);
+  sub_points_ = private_nh_.subscribe("input/points_no_ground", 1, &CostmapGenerator::onPoints, this);
+  sub_lanelet_bin_map_ = private_nh_.subscribe("input/lanelet_map_bin", 1, &CostmapGenerator::onLaneletMapBin, this);
   sub_scenario_ = private_nh_.subscribe("input/scenario", 1, &CostmapGenerator::onScenario, this);
 
   // Publishers
@@ -117,9 +114,8 @@ CostmapGenerator::CostmapGenerator() : nh_(""), private_nh_("~"), tf_listener_(t
   }
 }
 
-void CostmapGenerator::loadRoadAreasFromLaneletMap(
-    const lanelet::LaneletMapPtr lanelet_map,
-    std::vector<std::vector<geometry_msgs::Point>>* area_points) {
+void CostmapGenerator::loadRoadAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
+                                                   std::vector<std::vector<geometry_msgs::Point>>* area_points) {
   // use all lanelets in map of subtype road to give way area
   lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(lanelet_map);
   lanelet::ConstLanelets road_lanelets = lanelet::utils::query::roadLanelets(all_lanelets);
@@ -132,9 +128,8 @@ void CostmapGenerator::loadRoadAreasFromLaneletMap(
   }
 }
 
-void CostmapGenerator::loadParkingAreasFromLaneletMap(
-    const lanelet::LaneletMapPtr lanelet_map,
-    std::vector<std::vector<geometry_msgs::Point>>* area_points) {
+void CostmapGenerator::loadParkingAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
+                                                      std::vector<std::vector<geometry_msgs::Point>>* area_points) {
   // Parking lots
   lanelet::ConstPolygons3d all_parking_lots = lanelet::utils::query::getAllParkingLots(lanelet_map);
   for (const auto& ll_poly : all_parking_lots) {
@@ -144,8 +139,7 @@ void CostmapGenerator::loadParkingAreasFromLaneletMap(
   }
 
   // Parking spaces
-  lanelet::ConstLineStrings3d all_parking_spaces =
-      lanelet::utils::query::getAllParkingSpaces(lanelet_map);
+  lanelet::ConstLineStrings3d all_parking_spaces = lanelet::utils::query::getAllParkingSpaces(lanelet_map);
   for (const auto& parking_space : all_parking_spaces) {
     lanelet::ConstPolygon3d ll_poly;
     lanelet::utils::lineStringWithWidthToPolygon(parking_space, &ll_poly);
@@ -166,16 +160,11 @@ void CostmapGenerator::onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg
   }
 }
 
-void CostmapGenerator::onObjects(
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg) {
-  objects_ = msg;
-}
+void CostmapGenerator::onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg) { objects_ = msg; }
 
 void CostmapGenerator::onPoints(const sensor_msgs::PointCloud2::ConstPtr& msg) { points_ = msg; }
 
-void CostmapGenerator::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) {
-  scenario_ = msg;
-}
+void CostmapGenerator::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) { scenario_ = msg; }
 
 void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
   if (!isActive(scenario_)) {
@@ -185,8 +174,7 @@ void CostmapGenerator::onTimer(const ros::TimerEvent& event) {
   // Get current pose
   geometry_msgs::TransformStamped tf;
   try {
-    tf = tf_buffer_.lookupTransform(costmap_frame_, vehicle_frame_, ros::Time(0),
-                                    ros::Duration(1.0));
+    tf = tf_buffer_.lookupTransform(costmap_frame_, vehicle_frame_, ros::Time(0), ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
     ROS_ERROR("%s", ex.what());
     return;
@@ -228,17 +216,15 @@ void CostmapGenerator::initGridmap() {
   costmap_.add(LayerName::combined, grid_min_value_);
 }
 
-grid_map::Matrix CostmapGenerator::generatePointsCostmap(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_points) {
-  grid_map::Matrix points_costmap = points2costmap_.makeCostmapFromPoints(
-      maximum_lidar_height_thres_, minimum_lidar_height_thres_, grid_min_value_, grid_max_value_,
-      costmap_, LayerName::points, in_points);
+grid_map::Matrix CostmapGenerator::generatePointsCostmap(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_points) {
+  grid_map::Matrix points_costmap =
+      points2costmap_.makeCostmapFromPoints(maximum_lidar_height_thres_, minimum_lidar_height_thres_, grid_min_value_,
+                                            grid_max_value_, costmap_, LayerName::points, in_points);
   return points_costmap;
 }
 
 autoware_perception_msgs::DynamicObjectArray::ConstPtr transformObjects(
-    const tf2_ros::Buffer& tf_buffer,
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects,
+    const tf2_ros::Buffer& tf_buffer, const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects,
     const std::string& target_frame_id, const std::string& src_frame_id) {
   auto objects = new autoware_perception_msgs::DynamicObjectArray();
   *objects = *in_objects;
@@ -246,8 +232,7 @@ autoware_perception_msgs::DynamicObjectArray::ConstPtr transformObjects(
 
   geometry_msgs::TransformStamped objects2costmap;
   try {
-    objects2costmap =
-        tf_buffer.lookupTransform(target_frame_id, src_frame_id, ros::Time(0), ros::Duration(1.0));
+    objects2costmap = tf_buffer.lookupTransform(target_frame_id, src_frame_id, ros::Time(0), ros::Duration(1.0));
   } catch (tf2::TransformException ex) {
     ROS_ERROR("%s", ex.what());
   }
@@ -263,8 +248,7 @@ autoware_perception_msgs::DynamicObjectArray::ConstPtr transformObjects(
 grid_map::Matrix CostmapGenerator::generateObjectsCostmap(
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects) {
   const auto object_frame = in_objects->header.frame_id;
-  const auto transformed_objects =
-      transformObjects(tf_buffer_, in_objects, costmap_frame_, object_frame);
+  const auto transformed_objects = transformObjects(tf_buffer_, in_objects, costmap_frame_, object_frame);
 
   grid_map::Matrix objects_costmap = objects2costmap_.makeCostmapFromObjects(
       costmap_, expand_polygon_size_, size_of_expansion_kernel_, transformed_objects);
@@ -275,9 +259,8 @@ grid_map::Matrix CostmapGenerator::generateObjectsCostmap(
 grid_map::Matrix CostmapGenerator::generateWayAreaCostmap() {
   grid_map::GridMap lanelet2_costmap = costmap_;
   if (!area_points_.empty()) {
-    object_map::FillPolygonAreas(lanelet2_costmap, area_points_, LayerName::wayarea,
-                                 grid_max_value_, grid_min_value_, grid_min_value_, grid_max_value_,
-                                 costmap_frame_, map_frame_, tf_buffer_);
+    object_map::FillPolygonAreas(lanelet2_costmap, area_points_, LayerName::wayarea, grid_max_value_, grid_min_value_,
+                                 grid_min_value_, grid_max_value_, costmap_frame_, map_frame_, tf_buffer_);
   }
   return lanelet2_costmap[LayerName::wayarea];
 }
@@ -308,8 +291,8 @@ void CostmapGenerator::publishCostmap(const grid_map::GridMap& costmap) {
 
   // Publish OccupancyGrid
   nav_msgs::OccupancyGrid out_occupancy_grid;
-  grid_map::GridMapRosConverter::toOccupancyGrid(costmap, LayerName::combined, grid_min_value_,
-                                                 grid_max_value_, out_occupancy_grid);
+  grid_map::GridMapRosConverter::toOccupancyGrid(costmap, LayerName::combined, grid_min_value_, grid_max_value_,
+                                                 out_occupancy_grid);
   out_occupancy_grid.header = header;
   pub_occupancy_grid_.publish(out_occupancy_grid);
 

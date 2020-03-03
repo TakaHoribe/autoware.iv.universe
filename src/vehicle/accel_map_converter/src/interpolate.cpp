@@ -21,29 +21,25 @@
  */
 
 bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
-                                    const std::vector<double>& return_index, std::vector<double>& return_value)
-{
+                                    const std::vector<double>& return_index, std::vector<double>& return_value) {
   auto isIncrease = [](const std::vector<double>& x) {
-    for (int i = 0; i < (int)x.size() - 1; ++i)
-    {
-      if (x[i] > x[i + 1])
-        return false;
+    for (int i = 0; i < (int)x.size() - 1; ++i) {
+      if (x[i] > x[i + 1]) return false;
     }
     return true;
   };
 
-  if (base_index.size() == 0 || base_value.size() == 0 || return_index.size() == 0)
-  {
-    printf("[interpolate] some vector size is zero: base_index.size() = %lu, base_value.size() = %lu, "
-           "return_index.size() = %lu\n",
-           base_index.size(), base_value.size(), return_index.size());
+  if (base_index.size() == 0 || base_value.size() == 0 || return_index.size() == 0) {
+    printf(
+        "[interpolate] some vector size is zero: base_index.size() = %lu, base_value.size() = %lu, "
+        "return_index.size() = %lu\n",
+        base_index.size(), base_value.size(), return_index.size());
     return false;
   }
 
   // check if inputs are valid
   if (!isIncrease(base_index) || !isIncrease(return_index) || return_index.front() < base_index.front() ||
-      base_index.back() < return_index.back() || base_index.size() != base_value.size())
-  {
+      base_index.back() < return_index.back() || base_index.size() != base_value.size()) {
     std::cerr << "[isIncrease] bad index, return false" << std::endl;
     bool b1 = !isIncrease(base_index);
     bool b2 = !isIncrease(return_index);
@@ -59,17 +55,13 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
 
   // calculate linear interpolation
   int i = 0;
-  for (const auto idx : return_index)
-  {
-    if (base_index[i] == idx)
-    {
+  for (const auto idx : return_index) {
+    if (base_index[i] == idx) {
       return_value.push_back(base_value[i]);
       continue;
     }
-    while (base_index[i] < idx)
-      ++i;
-    if (i <= 0 || (int)base_index.size() - 1 < i)
-    {
+    while (base_index[i] < idx) ++i;
+    if (i <= 0 || (int)base_index.size() - 1 < i) {
       std::cerr << "? something wrong. skip this idx." << std::endl;
       continue;
     }
@@ -77,8 +69,7 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
     const double dist_base_idx = base_index[i] - base_index[i - 1];
     const double dist_to_forward = base_index[i] - idx;
     const double dist_to_backward = idx - base_index[i - 1];
-    if (dist_to_forward < 0.0 || dist_to_backward < 0.0)
-    {
+    if (dist_to_forward < 0.0 || dist_to_backward < 0.0) {
       std::cerr << "?? something wrong. skip this idx. base_index[i - 1] = " << base_index[i - 1] << ", idx = " << idx
                 << ", base_index[i] = " << base_index[i] << std::endl;
       continue;
@@ -91,19 +82,15 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
 }
 
 bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
-                                    const double& return_index, double& return_value)
-{
+                                    const double& return_index, double& return_value) {
   auto isIncrease = [](const std::vector<double>& x) {
-    for (int i = 0; i < (int)x.size() - 1; ++i)
-    {
-      if (x[i] > x[i + 1])
-        return false;
+    for (int i = 0; i < (int)x.size() - 1; ++i) {
+      if (x[i] > x[i + 1]) return false;
     }
     return true;
   };
 
-  if (base_index.size() == 0 || base_value.size() == 0)
-  {
+  if (base_index.size() == 0 || base_value.size() == 0) {
     printf("[interpolate] some vector size is zero: base_index.size() = %lu, base_value.size() = %lu",
            base_index.size(), base_value.size());
     return false;
@@ -111,8 +98,7 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
 
   // check if inputs are valid
   if (!isIncrease(base_index) || return_index < base_index.front() || base_index.back() < return_index ||
-      base_index.size() != base_value.size())
-  {
+      base_index.size() != base_value.size()) {
     std::cerr << "[isIncrease] bad index, return false" << std::endl;
     bool b1 = !isIncrease(base_index);
     bool b3 = return_index < base_index.front();
@@ -122,14 +108,12 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
     printf("base_index = [%f, %f]\n", base_index.front(), base_index.back());
     printf("base_index.size() = %lu, base_value.size() = %lu\n", base_index.size(), base_value.size());
     printf("base_index: [");
-    for (int i = 0; i < base_index.size(); ++i)
-    {
+    for (int i = 0; i < base_index.size(); ++i) {
       printf("%f, ", base_index.at(i));
     }
     printf("]\n");
     printf("base_value: [");
-    for (int i = 0; i < base_value.size(); ++i)
-    {
+    for (int i = 0; i < base_value.size(); ++i) {
       printf("%f, ", base_value.at(i));
     }
     printf("]\n");
@@ -139,17 +123,14 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
 
   // calculate linear interpolation
   int i = 0;
-  if (base_index[i] == return_index)
-  {
+  if (base_index[i] == return_index) {
     return_value = base_value[i];
     return true;
   }
-  while (base_index[i] < return_index)
-  {
+  while (base_index[i] < return_index) {
     ++i;
   }
-  if (i <= 0 || (int)base_index.size() - 1 < i)
-  {
+  if (i <= 0 || (int)base_index.size() - 1 < i) {
     std::cerr << "? something wrong. skip this return_index." << std::endl;
     return false;
   }
@@ -157,8 +138,7 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
   const double dist_base_return_index = base_index[i] - base_index[i - 1];
   const double dist_to_forward = base_index[i] - return_index;
   const double dist_to_backward = return_index - base_index[i - 1];
-  if (dist_to_forward < 0.0 || dist_to_backward < 0.0)
-  {
+  if (dist_to_forward < 0.0 || dist_to_backward < 0.0) {
     std::cerr << "?? something wrong. skip this return_index. base_index[i - 1] = " << base_index[i - 1]
               << ", return_index = " << return_index << ", base_index[i] = " << base_index[i] << std::endl;
     return false;
@@ -176,13 +156,9 @@ bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const
  */
 
 SplineInterpolate::SplineInterpolate(){};
-SplineInterpolate::SplineInterpolate(const std::vector<double>& x)
-{
-  generateSpline(x);
-};
+SplineInterpolate::SplineInterpolate(const std::vector<double>& x) { generateSpline(x); };
 SplineInterpolate::~SplineInterpolate(){};
-void SplineInterpolate::generateSpline(const std::vector<double>& x)
-{
+void SplineInterpolate::generateSpline(const std::vector<double>& x) {
   int N = x.size();
 
   a_.clear();
@@ -193,26 +169,22 @@ void SplineInterpolate::generateSpline(const std::vector<double>& x)
   a_ = x;
 
   c_.push_back(0.0);
-  for (int i = 1; i < N - 1; i++)
-    c_.push_back(3.0 * (a_[i - 1] - 2.0 * a_[i] + a_[i + 1]));
+  for (int i = 1; i < N - 1; i++) c_.push_back(3.0 * (a_[i - 1] - 2.0 * a_[i] + a_[i + 1]));
   c_.push_back(0.0);
 
   std::vector<double> w_;
   w_.push_back(0.0);
 
   double tmp;
-  for (int i = 1; i < N - 1; i++)
-  {
+  for (int i = 1; i < N - 1; i++) {
     tmp = 1.0 / (4.0 - w_[i - 1]);
     c_[i] = (c_[i] - c_[i - 1]) * tmp;
     w_.push_back(tmp);
   }
 
-  for (int i = N - 2; i > 0; i--)
-    c_[i] = c_[i] - c_[i + 1] * w_[i];
+  for (int i = N - 2; i > 0; i--) c_[i] = c_[i] - c_[i + 1] * w_[i];
 
-  for (int i = 0; i < N - 1; i++)
-  {
+  for (int i = 0; i < N - 1; i++) {
     d_.push_back((c_[i + 1] - c_[i]) / 3.0);
     b_.push_back(a_[i + 1] - a_[i] - c_[i] - d_[i]);
   }
@@ -222,35 +194,27 @@ void SplineInterpolate::generateSpline(const std::vector<double>& x)
   initialized_ = true;
 };
 
-double SplineInterpolate::getValue(const double& s)
-{
-  if (!initialized_)
-    return 0.0;
+double SplineInterpolate::getValue(const double& s) {
+  if (!initialized_) return 0.0;
 
   int j = std::max(std::min(int(std::floor(s)), (int)a_.size() - 1), 0);
   const double ds = s - j;
   return a_[j] + (b_[j] + (c_[j] + d_[j] * ds) * ds) * ds;
 }
 
-void SplineInterpolate::getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v)
-{
-  if (!initialized_)
-    return;
+void SplineInterpolate::getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v) {
+  if (!initialized_) return;
   value_v.clear();
-  for (int i = 0; i < (int)s_v.size(); ++i)
-  {
+  for (int i = 0; i < (int)s_v.size(); ++i) {
     value_v.push_back(getValue(s_v[i]));
   }
 }
 
 bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
-                                    const std::vector<double>& return_index, std::vector<double>& return_value)
-{
+                                    const std::vector<double>& return_index, std::vector<double>& return_value) {
   auto isIncrease = [](const std::vector<double>& x) {
-    for (int i = 0; i < (int)x.size() - 1; ++i)
-    {
-      if (x[i] > x[i + 1])
-        return false;
+    for (int i = 0; i < (int)x.size() - 1; ++i) {
+      if (x[i] > x[i + 1]) return false;
     }
     return true;
   };
@@ -266,8 +230,7 @@ bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const
 
   // check if inputs are valid
   if (!isIncrease(base_index) || !isIncrease(return_index) || return_index.front() < base_index.front() ||
-      base_index.back() < return_index.back() || base_index.size() != base_value.size())
-  {
+      base_index.back() < return_index.back() || base_index.size() != base_value.size()) {
     std::cerr << "[isIncrease] bad index, return false" << std::endl;
     bool b1 = !isIncrease(base_index);
     bool b2 = !isIncrease(return_index);
@@ -285,17 +248,13 @@ bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const
 
   // calculate normalized index
   int i = 0;
-  for (const auto idx : return_index)
-  {
-    if (base_index[i] == idx)
-    {
+  for (const auto idx : return_index) {
+    if (base_index[i] == idx) {
       normalized_idx.push_back(i);
       continue;
     }
-    while (base_index[i] < idx)
-      ++i;
-    if (i <= 0 || (int)base_index.size() - 1 < i)
-    {
+    while (base_index[i] < idx) ++i;
+    if (i <= 0 || (int)base_index.size() - 1 < i) {
       std::cerr << "? something wrong. skip this idx." << std::endl;
       continue;
     }
@@ -303,8 +262,7 @@ bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const
     const double dist_base_idx = base_index[i] - base_index[i - 1];
     const double dist_to_forward = base_index[i] - idx;
     const double dist_to_backward = idx - base_index[i - 1];
-    if (dist_to_forward <= 0.0 || dist_to_backward <= 0.0)
-    {
+    if (dist_to_forward <= 0.0 || dist_to_backward <= 0.0) {
       std::cerr << "?? something wrong. skip this idx." << std::endl;
       continue;
     }
@@ -317,8 +275,7 @@ bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const
   generateSpline(base_value);
 
   // interpolate by spline  with normalized index
-  for (int i = 0; i < (int)normalized_idx.size(); ++i)
-  {
+  for (int i = 0; i < (int)normalized_idx.size(); ++i) {
     return_value.push_back(getValue(normalized_idx[i]));
   }
   return true;

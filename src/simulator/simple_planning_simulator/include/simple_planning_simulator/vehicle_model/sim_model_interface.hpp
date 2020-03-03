@@ -31,15 +31,14 @@
  * @class simple_planning_simulator vehicle model class
  * @brief calculate vehicle dynamics
  */
-class SimModelInterface
-{
-protected:
+class SimModelInterface {
+ protected:
   const int dim_x_;        //!< @brief dimension of state x
   const int dim_u_;        //!< @brief dimension of input u
   Eigen::VectorXd state_;  //!< @brief vehicle state vector
   Eigen::VectorXd input_;  //!< @brief vehicle input vector
 
-public:
+ public:
   /**
    * @brief constructor
    * @param [in] dim_x dimension of state x

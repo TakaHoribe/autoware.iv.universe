@@ -28,61 +28,51 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pluginlib/class_list_macros.h>
 #include "pointcloud_preprocessor/passthrough_filter/passthrough_filter_nodelet.h"
+#include <pluginlib/class_list_macros.h>
 
-
-#include <pcl/segmentation/segment_differences.h>
-#include <pcl/search/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/segmentation/segment_differences.h>
 
-namespace pointcloud_preprocessor
-{
-bool PassThroughFilterNodelet::child_init(ros::NodeHandle &nh, bool &has_service)
-{
+namespace pointcloud_preprocessor {
+bool PassThroughFilterNodelet::child_init(ros::NodeHandle& nh, bool& has_service) {
   // Enable the dynamic reconfigure service
   has_service = true;
   srv_ = boost::make_shared<dynamic_reconfigure::Server<pointcloud_preprocessor::PassThroughFilterConfig> >(nh);
-  dynamic_reconfigure::Server<pointcloud_preprocessor::PassThroughFilterConfig>::CallbackType f = boost::bind(&PassThroughFilterNodelet::config_callback, this, _1, _2);
+  dynamic_reconfigure::Server<pointcloud_preprocessor::PassThroughFilterConfig>::CallbackType f =
+      boost::bind(&PassThroughFilterNodelet::config_callback, this, _1, _2);
   srv_->setCallback(f);
   return (true);
 }
 
-void PassThroughFilterNodelet::filter(const PointCloud2::ConstPtr &input, const IndicesPtr &indices,
-                                     PointCloud2 &output)
-{
+void PassThroughFilterNodelet::filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices,
+                                      PointCloud2& output) {
   boost::mutex::scoped_lock lock(mutex_);
   output = *input;
 }
 
-void PassThroughFilterNodelet::subscribe()
-{
-  Filter::subscribe();
-}
+void PassThroughFilterNodelet::subscribe() { Filter::subscribe(); }
 
-void PassThroughFilterNodelet::unsubscribe()
-{
-  Filter::unsubscribe();
-}
+void PassThroughFilterNodelet::unsubscribe() { Filter::unsubscribe(); }
 
-void PassThroughFilterNodelet::config_callback(pointcloud_preprocessor::PassThroughFilterConfig &config, uint32_t level)
-{
+void PassThroughFilterNodelet::config_callback(pointcloud_preprocessor::PassThroughFilterConfig& config,
+                                               uint32_t level) {
   boost::mutex::scoped_lock lock(mutex_);
 
-  // ---[ These really shouldn't be here, and as soon as dynamic_reconfigure improves, we'll remove them and inherit from Filter
-  if (tf_input_frame_ != config.input_frame)
-  {
+  // ---[ These really shouldn't be here, and as soon as dynamic_reconfigure improves, we'll remove them and inherit
+  // from Filter
+  if (tf_input_frame_ != config.input_frame) {
     tf_input_frame_ = config.input_frame;
-    NODELET_DEBUG ("[config_callback] Setting the input TF frame to: %s.", tf_input_frame_.c_str ());
+    NODELET_DEBUG("[config_callback] Setting the input TF frame to: %s.", tf_input_frame_.c_str());
   }
-  if (tf_output_frame_ != config.output_frame)
-  {
+  if (tf_output_frame_ != config.output_frame) {
     tf_output_frame_ = config.output_frame;
     NODELET_DEBUG("[config_callback] Setting the output TF frame to: %s.", tf_output_frame_.c_str());
   }
   // ]---
 }
 
-} // namespace pointcloud_preprocessor
+}  // namespace pointcloud_preprocessor
 
 PLUGINLIB_EXPORT_CLASS(pointcloud_preprocessor::PassThroughFilterNodelet, nodelet::Nodelet);

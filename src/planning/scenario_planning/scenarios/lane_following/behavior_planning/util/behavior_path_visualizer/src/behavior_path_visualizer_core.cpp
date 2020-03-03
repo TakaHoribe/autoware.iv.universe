@@ -16,24 +16,21 @@
 
 #include <behavior_path_visualizer/behavior_path_visualizer.h>
 
-BehaviorPathVisualizer::BehaviorPathVisualizer() : pnh_("~")
-{
+BehaviorPathVisualizer::BehaviorPathVisualizer() : pnh_("~") {
   path_subscriber_ = pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorPathVisualizer::pathCallback, this);
   marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/path_with_lane_id_marker", 1);
 }
 
-void BehaviorPathVisualizer::pathCallback(const autoware_planning_msgs::PathWithLaneId& path) const
-{
-  if (marker_publisher_.getNumSubscribers() < 1)
-  {
+void BehaviorPathVisualizer::pathCallback(const autoware_planning_msgs::PathWithLaneId& path) const {
+  if (marker_publisher_.getNumSubscribers() < 1) {
     return;
   }
 
   marker_publisher_.publish(convertPathToMarker(path));
 }
 
-visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(const autoware_planning_msgs::PathWithLaneId& path) const
-{
+visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(
+    const autoware_planning_msgs::PathWithLaneId& path) const {
   visualization_msgs::MarkerArray output_msg;
   {
     visualization_msgs::Marker marker;
@@ -49,8 +46,7 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
-    for (size_t i = 0; i < path.points.size(); ++i)
-    {
+    for (size_t i = 0; i < path.points.size(); ++i) {
       marker.points.push_back(path.points.at(i).point.pose.position);
     }
     output_msg.markers.push_back(marker);
@@ -70,16 +66,14 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
-    for (size_t i = 0; i < path.points.size(); ++i)
-    {
+    for (size_t i = 0; i < path.points.size(); ++i) {
       marker.points.push_back(path.points.at(i).point.pose.position);
     }
     output_msg.markers.push_back(marker);
   }
 
   {
-    for (size_t i = 0; i < path.points.size(); ++i)
-    {
+    for (size_t i = 0; i < path.points.size(); ++i) {
       visualization_msgs::Marker marker;
       marker.header = path.header;
       marker.ns = "lane_id";
@@ -89,10 +83,8 @@ visualization_msgs::MarkerArray BehaviorPathVisualizer::convertPathToMarker(cons
       marker.action = visualization_msgs::Marker::ADD;
       marker.pose = path.points.at(i).point.pose;
       std::string text;
-      if (path.points.at(i).lane_ids.empty())
-        continue;
-      for (size_t j = 0; j < path.points.at(i).lane_ids.size(); ++j)
-      {
+      if (path.points.at(i).lane_ids.empty()) continue;
+      for (size_t j = 0; j < path.points.at(i).lane_ids.size(); ++j) {
         text = text + std::string(std::to_string(path.points.at(i).lane_ids.at(j))) + std::string(",");
       }
       text.pop_back();

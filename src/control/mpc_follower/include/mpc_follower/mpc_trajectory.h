@@ -35,8 +35,8 @@ class MPCTrajectory {
   /**
    * @brief push_back for all values
    */
-  void push_back(const double &xp, const double &yp, const double &zp, const double &yawp, const double &vxp,
-                 const double &kp, const double &tp);
+  void push_back(const double& xp, const double& yp, const double& zp, const double& yawp, const double& vxp,
+                 const double& kp, const double& tp);
   /**
    * @brief clear for all values
    */

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
 #include <behavior_path_visualizer/behavior_path_visualizer.h>
+#include <ros/ros.h>
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   ros::init(argc, argv, "behavior_path_visualizer");
 
   BehaviorPathVisualizer visualizer;

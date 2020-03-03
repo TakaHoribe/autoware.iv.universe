@@ -16,61 +16,50 @@
 
 #include "velocity_controller_mathutils.h"
 
-namespace vcutils
-{
+namespace vcutils {
 
-double calcDistance2D(const geometry_msgs::Pose &p1, const geometry_msgs::Pose &p2)
-{
-    const double dx = p1.position.x - p2.position.x;
-    const double dy = p1.position.y - p2.position.y;
-    return std::sqrt(dx * dx + dy * dy);
+double calcDistance2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  const double dx = p1.position.x - p2.position.x;
+  const double dy = p1.position.y - p2.position.y;
+  return std::sqrt(dx * dx + dy * dy);
 };
 
-double calcDistSquared2D(const geometry_msgs::Pose &p1, const geometry_msgs::Pose &p2)
-{
-    const double dx = p1.position.x - p2.position.x;
-    const double dy = p1.position.y - p2.position.y;
-    return dx * dx + dy * dy;
+double calcDistSquared2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+  const double dx = p1.position.x - p2.position.x;
+  const double dy = p1.position.y - p2.position.y;
+  return dx * dx + dy * dy;
 };
 
-double normalizeEulerAngle(double euler)
-{
+double normalizeEulerAngle(double euler) {
   double res = euler;
-  while (res > M_PI)
-  {
+  while (res > M_PI) {
     res -= (2 * M_PI);
   }
-  while (res < -M_PI)
-  {
+  while (res < -M_PI) {
     res += 2 * M_PI;
   }
 
   return res;
 };
 
-bool calcClosestWithThr(const autoware_planning_msgs::Trajectory &trajectory, const geometry_msgs::Pose &pose,
-                        const double angle_thr, const double dist_thr, int32_t &closest_idx){
-
+bool calcClosestWithThr(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose,
+                        const double angle_thr, const double dist_thr, int32_t& closest_idx) {
   double dist_squared_min = std::numeric_limits<double>::max();
   closest_idx = -1;
 
-  for (int32_t i = 0; i < (int32_t)trajectory.points.size(); ++i)
-  {
+  for (int32_t i = 0; i < (int32_t)trajectory.points.size(); ++i) {
     const double ds = calcDistSquared2D(trajectory.points.at(i).pose, pose);
     // printf("i = %d, ds = %f\n", i, ds);
-    if (ds > dist_thr * dist_thr)
-      continue;
+    if (ds > dist_thr * dist_thr) continue;
 
     double yaw_pose = tf2::getYaw(pose.orientation);
     double yaw_ref = tf2::getYaw(trajectory.points.at(i).pose.orientation);
     double yaw_diff = normalizeEulerAngle(yaw_pose - yaw_ref);
     // printf("i = %d, yaw_pose = %f, yaw_ref = %f, yaw_diff = %f\n", i, yaw_pose, yaw_ref, yaw_diff);
 
-    if (std::fabs(yaw_diff) > angle_thr)
-      continue;
+    if (std::fabs(yaw_diff) > angle_thr) continue;
 
-    if (ds < dist_squared_min)
-    {
+    if (ds < dist_squared_min) {
       dist_squared_min = ds;
       closest_idx = i;
     }
@@ -79,8 +68,8 @@ bool calcClosestWithThr(const autoware_planning_msgs::Trajectory &trajectory, co
   return (closest_idx >= 0) ? true : false;
 };
 
-geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point &point, const geometry_msgs::Pose &origin)
-{
+geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point& point,
+                                                     const geometry_msgs::Pose& origin) {
   // translation
   geometry_msgs::Point trans_p;
   trans_p.x = point.x - origin.position.x;
@@ -97,4 +86,4 @@ geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point 
   return res;
 }
 
-} // namespace mathutils
+}  // namespace vcutils

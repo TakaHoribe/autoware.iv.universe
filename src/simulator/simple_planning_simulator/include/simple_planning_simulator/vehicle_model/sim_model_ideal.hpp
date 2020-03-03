@@ -16,7 +16,8 @@
 
 /**
  * @file sim_model_ideal.hpp
- * @brief simple planning simulator ideal velocity model (no dynamics for desired velocity & anguler-velocity or steering)
+ * @brief simple planning simulator ideal velocity model (no dynamics for desired velocity & anguler-velocity or
+ * steering)
  * @author Takamasa Horibe
  * @date 2019.08.17
  */
@@ -26,17 +27,16 @@
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 
-#include <iostream>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
+#include <iostream>
 
 /**
  * @class simple_planning_simulator ideal twist model
  * @brief calculate ideal twist dynamics
  */
-class SimModelIdealTwist : public SimModelInterface
-{
-public:
+class SimModelIdealTwist : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    */
@@ -47,15 +47,13 @@ public:
    */
   ~SimModelIdealTwist() = default;
 
-private:
-  enum IDX
-  {
+ private:
+  enum IDX {
     X = 0,
     Y,
     YAW,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     VX_DES = 0,
     WZ_DES,
   };
@@ -108,9 +106,8 @@ private:
  * @class simple_planning_simulator ideal steering model
  * @brief calculate ideal steering dynamics
  */
-class SimModelIdealSteer : public SimModelInterface
-{
-public:
+class SimModelIdealSteer : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] wheelbase vehicle wheelbase length [m]
@@ -122,15 +119,13 @@ public:
    */
   ~SimModelIdealSteer() = default;
 
-private:
-  enum IDX
-  {
+ private:
+  enum IDX {
     X = 0,
     Y,
     YAW,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     VX_DES = 0,
     STEER_DES,
   };
@@ -185,9 +180,8 @@ private:
  * @class wf_simulator ideal acceleration and steering model
  * @brief calculate ideal steering dynamics
  */
-class SimModelIdealAccel : public SimModelInterface
-{
-public:
+class SimModelIdealAccel : public SimModelInterface {
+ public:
   /**
    * @brief constructor
    * @param [in] wheelbase vehicle wheelbase length [m]
@@ -199,16 +193,14 @@ public:
    */
   ~SimModelIdealAccel() = default;
 
-private:
-  enum IDX
-  {
+ private:
+  enum IDX {
     X = 0,
     Y,
     YAW,
     VX,
   };
-  enum IDX_U
-  {
+  enum IDX_U {
     AX_DES = 0,
     STEER_DES,
   };

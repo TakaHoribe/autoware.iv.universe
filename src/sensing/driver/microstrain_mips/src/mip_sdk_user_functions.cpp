@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-//! @file    mip_sdk_user_functions.c 
+//! @file    mip_sdk_user_functions.c
 //! @author  Nathan Miller
 //! @version 1.1
 //
@@ -9,40 +9,38 @@
 // External dependencies:
 //
 //  mip.h
-// 
-//!@copyright 2014 Lord Microstrain Sensing Systems. 
+//
+//!@copyright 2014 Lord Microstrain Sensing Systems.
 //
 //!@section CHANGES
-//! 
+//!
 //
 //!@section LICENSE
 //!
-//! THE PRESENT SOFTWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING 
-//! CUSTOMERS WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER 
+//! THE PRESENT SOFTWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING
+//! CUSTOMERS WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER
 //! FOR THEM TO SAVE TIME. AS A RESULT, LORD MICROSTRAIN SENSING SYSTEMS
-//! SHALL NOT BE HELD LIABLE FOR ANY DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES 
-//! WITH RESPECT TO ANY CLAIMS ARISING FROM THE CONTENT OF SUCH SOFTWARE AND/OR 
-//! THE USE MADE BY CUSTOMERS OF THE CODING INFORMATION CONTAINED HEREIN IN CONNECTION 
+//! SHALL NOT BE HELD LIABLE FOR ANY DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES
+//! WITH RESPECT TO ANY CLAIMS ARISING FROM THE CONTENT OF SUCH SOFTWARE AND/OR
+//! THE USE MADE BY CUSTOMERS OF THE CODING INFORMATION CONTAINED HEREIN IN CONNECTION
 //! WITH THEIR PRODUCTS.
 //
 /////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//Include Files
+// Include Files
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #include "mip_sdk_user_functions.h"
 // Headers for ROS seria
-#include <string>
-#include <iostream>
 #include <cstdio>
+#include <iostream>
+#include <string>
 #include "serial/serial.h"
 
 //#include <windows.h>
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -50,7 +48,7 @@
 //! u16 mip_sdk_port_open(void *port_handle, int port_num, int baudrate)
 //
 //! @section DESCRIPTION
-//! Target-Specific communications port open. 
+//! Target-Specific communications port open.
 //
 //! @section DETAILS
 //!
@@ -62,19 +60,17 @@
 //! @retval MIP_USER_FUNCTION_OK     The open was successful.\n
 //
 //! @section NOTES
-//! 
+//!
 //! The user should copy the \c mip_sdk_user_functions.c file to their project directory and\n
 //! edit it as needed to support their target operating system.
 //!
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_sdk_port_open(void **port_handle, int port_num, int baudrate)
-{
- //User must replace this code
- return MIP_USER_FUNCTION_ERROR; 
+u16 mip_sdk_port_open(void** port_handle, int port_num, int baudrate) {
+  // User must replace this code
+  return MIP_USER_FUNCTION_ERROR;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -82,7 +78,7 @@ u16 mip_sdk_port_open(void **port_handle, int port_num, int baudrate)
 //! u16 mip_sdk_port_close(void *port_handle)
 //
 //! @section DESCRIPTION
-//! Target-Specific port close function 
+//! Target-Specific port close function
 //
 //! @section DETAILS
 //!
@@ -92,19 +88,17 @@ u16 mip_sdk_port_open(void **port_handle, int port_num, int baudrate)
 //! @retval MIP_USER_FUNCTION_OK     The close was successful.\n
 //
 //! @section NOTES
-//! 
+//!
 //! The user should copy the \c mip_sdk_user_functions.c file to their project directory and\n
 //! edit it as needed to support their target operating system.
 //!
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_sdk_port_close(void *port_handle)
-{
- //User must replace this code
- return MIP_USER_FUNCTION_ERROR; 
+u16 mip_sdk_port_close(void* port_handle) {
+  // User must replace this code
+  return MIP_USER_FUNCTION_ERROR;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -112,7 +106,7 @@ u16 mip_sdk_port_close(void *port_handle)
 //! u16 mip_sdk_port_write(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_written, u32 timeout_ms)
 //
 //! @section DESCRIPTION
-//! Target-Specific Port Write Function. 
+//! Target-Specific Port Write Function.
 //
 //! @section DETAILS
 //!
@@ -126,19 +120,17 @@ u16 mip_sdk_port_close(void *port_handle)
 //! @retval MIP_USER_FUNCTION_OK     The write was successful.\n
 //
 //! @section NOTES
-//! 
+//!
 //! The user should copy the \c mip_sdk_user_functions.c file to their project directory and\n
 //! edit it as needed to support their target operating system.
 //!
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_sdk_port_write(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_written, u32 timeout_ms)
-{
- //User must replace this code
- return MIP_USER_FUNCTION_ERROR;
+u16 mip_sdk_port_write(void* port_handle, u8* buffer, u32 num_bytes, u32* bytes_written, u32 timeout_ms) {
+  // User must replace this code
+  return MIP_USER_FUNCTION_ERROR;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -146,7 +138,7 @@ u16 mip_sdk_port_write(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_
 //! u16 mip_sdk_port_read(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_read, u32 timeout_ms)
 //
 //! @section DESCRIPTION
-//! Target-Specific Port Write Function. 
+//! Target-Specific Port Write Function.
 //
 //! @section DETAILS
 //!
@@ -160,19 +152,17 @@ u16 mip_sdk_port_write(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_
 //! @retval MIP_USER_FUNCTION_OK     The read was successful.\n
 //
 //! @section NOTES
-//! 
+//!
 //! The user should copy the \c mip_sdk_user_functions.c file to their project directory and\n
 //! edit it as needed to support their target operating system.
 //!
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u16 mip_sdk_port_read(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_read, u32 timeout_ms)
-{
- //User must replace this code
- return MIP_USER_FUNCTION_ERROR;
+u16 mip_sdk_port_read(void* port_handle, u8* buffer, u32 num_bytes, u32* bytes_read, u32 timeout_ms) {
+  // User must replace this code
+  return MIP_USER_FUNCTION_ERROR;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -190,19 +180,17 @@ u16 mip_sdk_port_read(void *port_handle, u8 *buffer, u32 num_bytes, u32 *bytes_r
 //!           0, if there is an error.
 //
 //! @section NOTES
-//! 
+//!
 //! The user should copy the \c mip_sdk_user_functions.c file to their project directory and\n
 //! edit it as needed to support their target operating system.
 //!
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u32 mip_sdk_port_read_count(void *port_handle)
-{
- //User must replace this code
- return 0;
+u32 mip_sdk_port_read_count(void* port_handle) {
+  // User must replace this code
+  return 0;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -219,7 +207,7 @@ u32 mip_sdk_port_read_count(void *port_handle)
 //! @returns  Current time in milliseconds.
 //
 //! @section NOTES
-//! 
+//!
 //!   1) This value should no roll-over in short periods of time (e.g. minutes)\n
 //!   2) Most systems have a millisecond counter that rolls-over every 32 bits\n
 //!      (e.g. 49.71 days roll-over period, with 1 millisecond LSB)\n
@@ -231,8 +219,7 @@ u32 mip_sdk_port_read_count(void *port_handle)
 //
 /////////////////////////////////////////////////////////////////////////////
 
-u32 mip_sdk_get_time_ms()
-{
- //User must replace this code
- return 0; 
+u32 mip_sdk_get_time_ms() {
+  // User must replace this code
+  return 0;
 }

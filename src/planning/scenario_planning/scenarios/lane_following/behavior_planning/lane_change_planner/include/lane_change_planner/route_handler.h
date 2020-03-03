@@ -19,43 +19,36 @@
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
-#include <lanelet2_extension/utility/query.h>
-#include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
+#include <autoware_planning_msgs/Route.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <lanelet2_extension/utility/query.h>
 // lanelet
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingCost.h>
 
 #include <vector>
 
-namespace lane_change_planner
-{
+namespace lane_change_planner {
 
-enum class LaneChangeDirection{
-  NONE,
-  LEFT,
-  RIGHT
-};
+enum class LaneChangeDirection { NONE, LEFT, RIGHT };
 
-class RouteHandler
-{
-private:
+class RouteHandler {
+ private:
   explicit RouteHandler();
   ~RouteHandler() = default;
 
-public:
+ public:
   RouteHandler(const RouteHandler&) = delete;
   RouteHandler& operator=(const RouteHandler&) = delete;
   RouteHandler(RouteHandler&&) = delete;
   RouteHandler& operator=(RouteHandler&&) = delete;
-  static RouteHandler& getInstance()
-  {
+  static RouteHandler& getInstance() {
     static RouteHandler instance;
     return instance;
   }
 
-private:
+ private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
@@ -77,7 +70,7 @@ private:
 
   friend class LaneChanger;
 
-public:
+ public:
   RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::routing::Route& route);
   bool isHandlerReady();

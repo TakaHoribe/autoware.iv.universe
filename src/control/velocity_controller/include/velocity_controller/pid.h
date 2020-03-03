@@ -20,9 +20,8 @@
 #include <algorithm>
 #include <vector>
 
-class PIDController
-{
-public:
+class PIDController {
+ public:
   PIDController();
   ~PIDController() = default;
 
@@ -32,7 +31,7 @@ public:
                  double max_ret_d, double min_ret_d);
   void reset();
 
-private:
+ private:
   // parameters
   double kp_;
   double ki_;

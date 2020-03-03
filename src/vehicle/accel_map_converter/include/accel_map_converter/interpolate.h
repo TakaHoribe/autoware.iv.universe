@@ -17,13 +17,12 @@
 #ifndef ACCEL_MAP_CONVERTER_INTERPOLATE_H
 #define ACCEL_MAP_CONVERTER_INTERPOLATE_H
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <vector>
 
-class LinearInterpolate
-{
-public:
+class LinearInterpolate {
+ public:
   LinearInterpolate(){};
   ~LinearInterpolate(){};
   static bool interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
@@ -32,15 +31,14 @@ public:
                           const double& return_index, double& return_value);
 };
 
-class SplineInterpolate
-{
+class SplineInterpolate {
   bool initialized_;
   std::vector<double> a_;  //!< @brief temporal vector for calculation
   std::vector<double> b_;  //!< @brief temporal vector for calculation
   std::vector<double> c_;  //!< @brief temporal vector for calculation
   std::vector<double> d_;  //!< @brief temporal vector for calculation
 
-public:
+ public:
   SplineInterpolate();
   SplineInterpolate(const std::vector<double>& x);
   ~SplineInterpolate();

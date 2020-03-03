@@ -70,8 +70,7 @@ void example(const char* vector_map_path) {
     using Relationship = LaneConnection;
     const auto lane = *gpkg_interface.getFeatureById<Lane>(1);
 
-    const auto features =
-        gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id);
+    const auto features = gpkg_interface.getRelatedFeaturesById<Relationship, RelationSide::Left>(lane.id);
     for (const auto& feature : features) {
       std::cout << util::toDebugString(feature) << std::endl;
     }
@@ -107,6 +106,4 @@ void example(const char* vector_map_path) {
 }
 }  // namespace autoware_vector_map
 
-int main(int argc, char* argv[]) {
-  autoware_vector_map::example(helper::getExampleFilePath().c_str());
-}
+int main(int argc, char* argv[]) { autoware_vector_map::example(helper::getExampleFilePath().c_str()); }

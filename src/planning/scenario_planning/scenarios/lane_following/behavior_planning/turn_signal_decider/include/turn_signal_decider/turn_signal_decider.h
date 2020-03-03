@@ -6,17 +6,14 @@
 #include <turn_signal_decider/data_manager.h>
 #include <turn_signal_decider/frenet_coordinate.h>
 
-namespace turn_signal_decider
-{
-struct TurnSignalParameters
-{
+namespace turn_signal_decider {
+struct TurnSignalParameters {
   double lane_change_search_distance;  // TODO: change this to time based threshold
   double intersection_search_distance;
 };
 
-class TurnSignalDecider
-{
-private:
+class TurnSignalDecider {
+ private:
   // ROS variables
   ros::NodeHandle pnh_;
   ros::Subscriber path_subscriber_;
@@ -42,7 +39,7 @@ private:
   lanelet::routing::RelationType getRelation(const lanelet::ConstLanelet& prev_lane,
                                              const lanelet::ConstLanelet& next_lane) const;
 
-public:
+ public:
   TurnSignalDecider();
 };
 }  // namespace turn_signal_decider

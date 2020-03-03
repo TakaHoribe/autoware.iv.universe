@@ -2,24 +2,18 @@
 #include <lane_change_planner/utilities.h>
 #include <lanelet2_extension/utility/utilities.h>
 
-namespace lane_change_planner
-{
-namespace state_machine
-{
-namespace common_functions
-{
+namespace lane_change_planner {
+namespace state_machine {
+namespace common_functions {
 bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
                           const lanelet::ConstLanelets& current_lanes, const lanelet::ConstLanelets& target_lanes,
                           const std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& dynamic_objects,
                           const geometry_msgs::Pose& current_pose, const geometry_msgs::Twist& current_twist,
-                          const LaneChangerParameters& ros_parameters, const bool use_buffer)
-{
-  if (path.points.empty())
-  {
+                          const LaneChangerParameters& ros_parameters, const bool use_buffer) {
+  if (path.points.empty()) {
     return false;
   }
-  if (dynamic_objects == nullptr)
-  {
+  if (dynamic_objects == nullptr) {
     return true;
   }
 
@@ -34,13 +28,10 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
   const double vehicle_width = ros_parameters.vehicle_width;
   double buffer;
   double lateral_buffer;
-  if (use_buffer)
-  {
+  if (use_buffer) {
     buffer = ros_parameters.hysteresis_buffer_distance;
     lateral_buffer = 1.0;
-  }
-  else
-  {
+  } else {
     buffer = 0.0;
     lateral_buffer = 1.0;
   }
@@ -56,37 +47,31 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
 
   const auto& vehicle_predicted_path = util::convertToPredictedPath(path, current_twist, current_pose);
 
-  for (const auto& i : current_lane_object_indices)
-  {
+  for (const auto& i : current_lane_object_indices) {
     const auto& obj = dynamic_objects->objects.at(i);
-    for (const auto& obj_path : obj.state.predicted_paths)
-    {
+    for (const auto& obj_path : obj.state.predicted_paths) {
       double distance = util::getDistanceBetweenPredictedPaths(
           obj_path, vehicle_predicted_path, current_lane_check_start_time, current_lane_check_end_time, time_resolution,
-          true, vehicle_width+lateral_buffer);
+          true, vehicle_width + lateral_buffer);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
-      if (distance < thresh)
-      {
+      if (distance < thresh) {
         return false;
       }
     }
   }
 
-  for (const auto& i : target_lane_object_indices)
-  {
+  for (const auto& i : target_lane_object_indices) {
     const auto& obj = dynamic_objects->objects.at(i);
-    for (const auto& obj_path : obj.state.predicted_paths)
-    {
+    for (const auto& obj_path : obj.state.predicted_paths) {
       double distance =
           util::getDistanceBetweenPredictedPaths(obj_path, vehicle_predicted_path, target_lane_check_start_time,
                                                  target_lane_check_end_time, time_resolution, false, 0.0);
       double thresh = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
       thresh = std::max(thresh, min_thresh);
       thresh += buffer;
-      if (distance < thresh)
-      {
+      if (distance < thresh) {
         return false;
       }
     }

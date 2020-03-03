@@ -2,9 +2,8 @@
 
 #if EMBEDDED != 1
 
-
 // Set values lower than threshold SCALING_REG to 1
-void limit_scaling(c_float *D, c_int n) {
+void limit_scaling(c_float* D, c_int n) {
   c_int i;
 
   for (i = 0; i < n; i++) {
@@ -25,9 +24,7 @@ void limit_scaling(c_float *D, c_int n) {
  * @param E        Norm of columns related to constraints
  * @param n        Dimension of KKT matrix
  */
-void compute_inf_norm_cols_KKT(const csc *P, const csc *A,
-                               c_float *D, c_float *D_temp_A,
-                               c_float *E, c_int n) {
+void compute_inf_norm_cols_KKT(const csc* P, const csc* A, c_float* D, c_float* D_temp_A, c_float* E, c_int n) {
   // First half
   //  [ P ]
   //  [ A ]
@@ -41,7 +38,7 @@ void compute_inf_norm_cols_KKT(const csc *P, const csc *A,
   mat_inf_norm_rows(A, E);
 }
 
-c_int scale_data(OSQPWorkspace *work) {
+c_int scale_data(OSQPWorkspace* work) {
   // Scale KKT matrix
   //
   //    [ P   A']
@@ -53,21 +50,20 @@ c_int scale_data(OSQPWorkspace *work) {
   //      [    E ]
   //
 
-  c_int   i;          // Iterations index
-  c_int   n, m;       // Number of constraints and variables
-  c_float c_temp;     // Cost function scaling
-  c_float inf_norm_q; // Infinity norm of q
+  c_int i;             // Iterations index
+  c_int n, m;          // Number of constraints and variables
+  c_float c_temp;      // Cost function scaling
+  c_float inf_norm_q;  // Infinity norm of q
 
   n = work->data->n;
   m = work->data->m;
 
   // Initialize scaling to 1
   work->scaling->c = 1.0;
-  vec_set_scalar(work->scaling->D,    1., work->data->n);
+  vec_set_scalar(work->scaling->D, 1., work->data->n);
   vec_set_scalar(work->scaling->Dinv, 1., work->data->n);
-  vec_set_scalar(work->scaling->E,    1., work->data->m);
+  vec_set_scalar(work->scaling->E, 1., work->data->m);
   vec_set_scalar(work->scaling->Einv, 1., work->data->m);
-
 
   for (i = 0; i < work->settings->scaling; i++) {
     //
@@ -75,9 +71,7 @@ c_int scale_data(OSQPWorkspace *work) {
     //
 
     // Compute norm of KKT columns
-    compute_inf_norm_cols_KKT(work->data->P, work->data->A,
-                              work->D_temp, work->D_temp_A,
-                              work->E_temp, n);
+    compute_inf_norm_cols_KKT(work->data->P, work->data->A, work->D_temp, work->D_temp_A, work->E_temp, n);
 
     // Set to 1 values with 0 norms (avoid crazy scaling)
     limit_scaling(work->D_temp, n);
@@ -101,11 +95,11 @@ c_int scale_data(OSQPWorkspace *work) {
     mat_postmult_diag(work->data->A, work->D_temp);
 
     // q <- Dq
-    vec_ew_prod(work->D_temp,     work->data->q, work->data->q,    n);
+    vec_ew_prod(work->D_temp, work->data->q, work->data->q, n);
 
     // Update equilibration matrices D and E
-    vec_ew_prod(work->scaling->D, work->D_temp,  work->scaling->D, n);
-    vec_ew_prod(work->scaling->E, work->E_temp,  work->scaling->E, m);
+    vec_ew_prod(work->scaling->D, work->D_temp, work->scaling->D, n);
+    vec_ew_prod(work->scaling->E, work->E_temp, work->scaling->E, m);
 
     //
     // Cost normalization step
@@ -141,12 +135,10 @@ c_int scale_data(OSQPWorkspace *work) {
     work->scaling->c *= c_temp;
   }
 
-
   // Store cinv, Dinv, Einv
   work->scaling->cinv = 1. / work->scaling->c;
   vec_ew_recipr(work->scaling->D, work->scaling->Dinv, work->data->n);
   vec_ew_recipr(work->scaling->E, work->scaling->Einv, work->data->m);
-
 
   // Scale problem vectors l, u
   vec_ew_prod(work->scaling->E, work->data->l, work->data->l, work->data->m);
@@ -155,9 +147,9 @@ c_int scale_data(OSQPWorkspace *work) {
   return 0;
 }
 
-#endif // EMBEDDED
+#endif  // EMBEDDED
 
-c_int unscale_data(OSQPWorkspace *work) {
+c_int unscale_data(OSQPWorkspace* work) {
   // Unscale cost
   mat_mult_scalar(work->data->P, work->scaling->cinv);
   mat_premult_diag(work->data->P, work->scaling->Dinv);
@@ -174,18 +166,12 @@ c_int unscale_data(OSQPWorkspace *work) {
   return 0;
 }
 
-c_int unscale_solution(OSQPWorkspace *work) {
+c_int unscale_solution(OSQPWorkspace* work) {
   // primal
-  vec_ew_prod(work->scaling->D,
-              work->solution->x,
-              work->solution->x,
-              work->data->n);
+  vec_ew_prod(work->scaling->D, work->solution->x, work->solution->x, work->data->n);
 
   // dual
-  vec_ew_prod(work->scaling->E,
-              work->solution->y,
-              work->solution->y,
-              work->data->m);
+  vec_ew_prod(work->scaling->E, work->solution->y, work->solution->y, work->data->m);
   vec_mult_scalar(work->solution->y, work->scaling->cinv, work->data->m);
 
   return 0;

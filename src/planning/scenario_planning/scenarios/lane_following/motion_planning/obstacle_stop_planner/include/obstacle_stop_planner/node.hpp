@@ -16,6 +16,10 @@
 #pragma once
 
 #include <autoware_planning_msgs/Trajectory.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_listener.h>
@@ -23,10 +27,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 #include "obstacle_stop_planner/debug_marker.hpp"
 
 namespace motion_planning {
@@ -64,7 +64,7 @@ class ObstacleStopPlannerNode {
                           autoware_planning_msgs::Trajectory& output_trajectory);
   bool decimateTrajectory(const autoware_planning_msgs::Trajectory& input_trajectory, const double step_length,
                           autoware_planning_msgs::Trajectory& output_trajectory,
-                         std::map<size_t /* decimate */, size_t /* origin */>& index_map);
+                          std::map<size_t /* decimate */, size_t /* origin */>& index_map);
   bool trimTrajectoryFromSelfPose(const autoware_planning_msgs::Trajectory& input_trajectory,
                                   const geometry_msgs::Pose self_pose,
                                   autoware_planning_msgs::Trajectory& output_trajectory);
@@ -77,10 +77,9 @@ class ObstacleStopPlannerNode {
   void createOneStepPolygon(const geometry_msgs::Pose base_stap_pose, const geometry_msgs::Pose next_step_pose,
                             std::vector<cv::Point2d>& polygon);
   bool getSelfPose(const std_msgs::Header& header, const tf2_ros::Buffer& tf_buffer, geometry_msgs::Pose& self_pose);
-  bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
-                                                       const Eigen::Vector2d& line_point2,
-                                                       const Eigen::Vector2d& base_point, const double backward_length,
-                                                       Eigen::Vector2d& output_point);
+  bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
+                                     const Eigen::Vector2d& base_point, const double backward_length,
+                                     Eigen::Vector2d& output_point);
   void getNearestPoint(const pcl::PointCloud<pcl::PointXYZ>& pointcloud, const geometry_msgs::Pose& base_pose,
                        pcl::PointXYZ& nearest_collision_point);
 };

@@ -23,29 +23,25 @@
 #include <lanelet2_core/primitives/Lanelet.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <lanelet2_extension/regulatory_elements/autoware_traffic_light.h>
 #include <lanelet2_extension/regulatory_elements/detection_area.h>
 
-#include <vector>
 #include <string>
+#include <vector>
 
-namespace lanelet
-{
+namespace lanelet {
 using TrafficSignConstPtr = std::shared_ptr<const lanelet::TrafficSign>;
 using TrafficLightConstPtr = std::shared_ptr<const lanelet::TrafficLight>;
 using AutowareTrafficLightConstPtr = std::shared_ptr<const lanelet::autoware::AutowareTrafficLight>;
 using DetectionAreaConstPtr = std::shared_ptr<const lanelet::autoware::DetectionArea>;
 }  // namespace lanelet
 
-namespace lanelet
-{
-namespace utils
-{
-namespace query
-{
+namespace lanelet {
+namespace utils {
+namespace query {
 /**
  * [laneletLayer converts laneletLayer into lanelet vector]
  * @param  ll_Map [input lanelet map]

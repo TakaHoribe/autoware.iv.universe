@@ -253,8 +253,8 @@ void DummyPerceptionPublisherNode::createObjectPointcloud(const double length, c
         if (min_z <= z && z <= max_z + epsilon) {
           pcl::PointXYZ point;
           point.x = horizontal_candidate_pointcloud.at(pointcloud_index).x + x_random(random_generator_);
-          point.y = horizontal_candidate_pointcloud.at(pointcloud_index).y+ y_random(random_generator_);
-          point.z = z +z_random(random_generator_);
+          point.y = horizontal_candidate_pointcloud.at(pointcloud_index).y + y_random(random_generator_);
+          point.z = z + z_random(random_generator_);
           pointcloud_ptr->push_back(point);
         }
       }

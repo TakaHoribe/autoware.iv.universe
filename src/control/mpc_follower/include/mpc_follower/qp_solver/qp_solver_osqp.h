@@ -23,12 +23,12 @@
 
 #pragma once
 
+#include <osqp_interface/osqp_interface.h>
 #include <cmath>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/LU>
 #include "mpc_follower/qp_solver/qp_solver_interface.h"
-#include <osqp_interface/osqp_interface.h>
 
 class QPSolverOSQP : public QPSolverInterface {
  public:
@@ -54,9 +54,9 @@ class QPSolverOSQP : public QPSolverInterface {
    * @param [out] U optimal variable vector
    * @return bool to check the problem is solved
    */
-  bool solve(const Eigen::MatrixXd &Hmat, const Eigen::MatrixXd &fvec, const Eigen::MatrixXd &A,
-             const Eigen::VectorXd &lb, const Eigen::VectorXd &ub, const Eigen::VectorXd &lbA,
-             const Eigen::VectorXd &ubA, Eigen::VectorXd &U) override;
+  bool solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
+             const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
+             const Eigen::VectorXd& ubA, Eigen::VectorXd& U) override;
 
  private:
   osqp::OSQPInterface osqpsolver;

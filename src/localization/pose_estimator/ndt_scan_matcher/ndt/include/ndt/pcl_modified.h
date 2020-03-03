@@ -26,39 +26,38 @@
 #include "ndt_pcl_modified/ndt.h"
 
 template <class PointSource, class PointTarget>
-class NormalDistributionsTransformPCLModified : public NormalDistributionsTransformBase<PointSource, PointTarget>
-{
-  public:
-    NormalDistributionsTransformPCLModified();
-    ~NormalDistributionsTransformPCLModified() = default;
+class NormalDistributionsTransformPCLModified : public NormalDistributionsTransformBase<PointSource, PointTarget> {
+ public:
+  NormalDistributionsTransformPCLModified();
+  ~NormalDistributionsTransformPCLModified() = default;
 
-    void align(pcl::PointCloud<PointSource> &output, const Eigen::Matrix4f& guess) override;
-    void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> &map_ptr) override;
-    void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> &scan_ptr) override;
+  void align(pcl::PointCloud<PointSource>& output, const Eigen::Matrix4f& guess) override;
+  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) override;
+  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) override;
 
-    void setMaximumIterations(int max_iter) override;
-    void setResolution(float res) override;
-    void setStepSize(double step_size) override;
-    void setTransformationEpsilon(double trans_eps) override;
+  void setMaximumIterations(int max_iter) override;
+  void setResolution(float res) override;
+  void setStepSize(double step_size) override;
+  void setTransformationEpsilon(double trans_eps) override;
 
-    int getMaximumIterations() override;
-    int getFinalNumIteration() const override;
-    float getResolution() const override;
-    double getStepSize() const override;
-    double getTransformationEpsilon() override;
-    double getTransformationProbability() const override;
-    double getFitnessScore() override;
-    boost::shared_ptr< const pcl::PointCloud<PointTarget>> getInputTarget() const override;
-    boost::shared_ptr< const pcl::PointCloud<PointSource>> getInputSource() const override;
-    Eigen::Matrix4f getFinalTransformation() const override;
-    std::vector<Eigen::Matrix4f> getFinalTransformationArray() const override;
+  int getMaximumIterations() override;
+  int getFinalNumIteration() const override;
+  float getResolution() const override;
+  double getStepSize() const override;
+  double getTransformationEpsilon() override;
+  double getTransformationProbability() const override;
+  double getFitnessScore() override;
+  boost::shared_ptr<const pcl::PointCloud<PointTarget>> getInputTarget() const override;
+  boost::shared_ptr<const pcl::PointCloud<PointSource>> getInputSource() const override;
+  Eigen::Matrix4f getFinalTransformation() const override;
+  std::vector<Eigen::Matrix4f> getFinalTransformationArray() const override;
 
-    Eigen::Matrix<double, 6, 6> getHessian() const override;
+  Eigen::Matrix<double, 6, 6> getHessian() const override;
 
-    boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const override;
+  boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const override;
 
-  private:
-    boost::shared_ptr<pcl::NormalDistributionsTransformModified<PointSource, PointTarget>> ndt_ptr_;
+ private:
+  boost::shared_ptr<pcl::NormalDistributionsTransformModified<PointSource, PointTarget>> ndt_ptr_;
 };
 
 #include "ndt/impl/pcl_modified.hpp"

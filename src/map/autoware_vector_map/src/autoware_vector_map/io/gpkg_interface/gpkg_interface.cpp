@@ -17,8 +17,7 @@ GpkgInterface::GpkgInterface(const char* gpkg_path) {
     throw std::runtime_error(msg);
   }
 
-  dataset_.reset(
-      static_cast<GDALDataset*>(GDALOpenEx(gpkg_path, GDAL_OF_VECTOR, nullptr, nullptr, nullptr)));
+  dataset_.reset(static_cast<GDALDataset*>(GDALOpenEx(gpkg_path, GDAL_OF_VECTOR, nullptr, nullptr, nullptr)));
   if (!dataset_) {
     throw std::runtime_error("failed to initialize dataset");
   }
@@ -29,8 +28,7 @@ GpkgInterface::GpkgInterface(const std::vector<uint8_t>& bin_data) {
 
   constexpr const char* vsi_file_name = "/vsimem/memory.gpkg";
 
-  const auto ptr = VSIFileFromMemBuffer(vsi_file_name, const_cast<GByte*>(bin_data.data()),
-                                        bin_data.size(), false);
+  const auto ptr = VSIFileFromMemBuffer(vsi_file_name, const_cast<GByte*>(bin_data.data()), bin_data.size(), false);
   if (!ptr) {
     throw std::runtime_error("failed to create VSI file");
   }

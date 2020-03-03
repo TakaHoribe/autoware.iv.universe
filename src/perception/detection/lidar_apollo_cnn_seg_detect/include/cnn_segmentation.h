@@ -16,8 +16,8 @@
 #ifndef CNN_SEGMENTATION_H
 #define CNN_SEGMENTATION_H
 
-#include <numeric>
 #include <chrono>
+#include <numeric>
 
 #include <ros/ros.h>
 
@@ -36,27 +36,22 @@
 
 #define __APP_NAME__ "lidar_apollo_cnn_seg_detect"
 
-struct CellStat
-{
-  CellStat() : point_num(0), valid_point_num(0)
-  {
-  }
+struct CellStat {
+  CellStat() : point_num(0), valid_point_num(0) {}
 
   int point_num;
   int valid_point_num;
 };
 
-class CNNSegmentation
-{
-public:
+class CNNSegmentation {
+ public:
   CNNSegmentation();
 
   void run();
 
   void test_run();
 
-private:
-
+ private:
   double range_, score_threshold_;
   int width_;
   int height_;
@@ -99,17 +94,15 @@ private:
 
   bool init();
 
-  bool segment(const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
-               const pcl::PointIndices &valid_idx,
-               autoware_perception_msgs::DynamicObjectWithFeatureArray &objects);
+  bool segment(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr, const pcl::PointIndices& valid_idx,
+               autoware_perception_msgs::DynamicObjectWithFeatureArray& objects);
 
-  void pointsCallback(const sensor_msgs::PointCloud2 &msg);
+  void pointsCallback(const sensor_msgs::PointCloud2& msg);
 
-  void pubColoredPoints(const autoware_perception_msgs::DynamicObjectWithFeatureArray &objects);
-  
-  // void convertDetected2Dynamic(const autoware_perception_msgs::DetectedObjectArray &objects, 
+  void pubColoredPoints(const autoware_perception_msgs::DynamicObjectWithFeatureArray& objects);
+
+  // void convertDetected2Dynamic(const autoware_perception_msgs::DetectedObjectArray &objects,
   //                                    autoware_perception_msgs::DynamicObjectWithFeatureArray &d_objects);
-
 };
 
-#endif //CNN_SEGMENTATION_H
+#endif  // CNN_SEGMENTATION_H

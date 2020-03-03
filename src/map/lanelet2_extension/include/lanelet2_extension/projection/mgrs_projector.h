@@ -19,21 +19,18 @@
 #ifndef LANELET2_EXTENSION_PROJECTION_MGRS_PROJECTOR_H
 #define LANELET2_EXTENSION_PROJECTION_MGRS_PROJECTOR_H
 
-#include <GeographicLib/MGRS.hpp>
-#include <GeographicLib/UTMUPS.hpp>
 #include <lanelet2_io/Exceptions.h>
 #include <lanelet2_io/Projection.h>
+#include <GeographicLib/MGRS.hpp>
+#include <GeographicLib/UTMUPS.hpp>
 
 #include <string>
 
-namespace lanelet
-{
-namespace projection
-{
-class MGRSProjector : public Projector
-{
-public:
-  explicit MGRSProjector(Origin origin = Origin({ 0.0, 0.0 }));  // NOLINT
+namespace lanelet {
+namespace projection {
+class MGRSProjector : public Projector {
+ public:
+  explicit MGRSProjector(Origin origin = Origin({0.0, 0.0}));  // NOLINT
 
   /**
    * [MGRSProjector::forward projects gps lat/lon to MGRS 100km grid]
@@ -88,21 +85,15 @@ public:
    * [getProjectedMGRSGrid returns mgrs]
    * @return [description]
    */
-  std::string getProjectedMGRSGrid() const
-  {
-    return projected_grid_;
-  };
+  std::string getProjectedMGRSGrid() const { return projected_grid_; };
 
   /**
    * [isMGRSCodeSet checks if mgrs code is set for reverse projection]
    * @return [true if mgrs_code member is set]
    */
-  bool isMGRSCodeSet() const
-  {
-    return !mgrs_code_.empty();
-  };
+  bool isMGRSCodeSet() const { return !mgrs_code_.empty(); };
 
-private:
+ private:
   /**
    * mgrs grid code used for reverse function
    */

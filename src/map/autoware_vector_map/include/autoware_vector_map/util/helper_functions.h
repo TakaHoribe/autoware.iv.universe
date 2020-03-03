@@ -23,8 +23,7 @@ std::vector<Output> map(const T_container& c, const Predicate& f) {
   return r;
 }
 
-template <class T_container, class Predicate, class Input = typename T_container::value_type,
-          class Output = Input>
+template <class T_container, class Predicate, class Input = typename T_container::value_type, class Output = Input>
 std::vector<Output> filter(const T_container& c, const Predicate& f) {
   std::vector<Output> r;
   r.reserve(c.size());
@@ -46,9 +45,9 @@ std::vector<Output> unique(const T_container& c) {
   return r;
 }
 
-template <class T_container, class T = typename T_container::value_type, class Predicate,
-          std::enable_if_t<std::is_convertible<Predicate, std::function<bool(const T&)>>::value,
-                           std::nullptr_t> = nullptr>
+template <
+    class T_container, class T = typename T_container::value_type, class Predicate,
+    std::enable_if_t<std::is_convertible<Predicate, std::function<bool(const T&)>>::value, std::nullptr_t> = nullptr>
 bool contains(const T_container& c, const Predicate f) {
   for (const auto& v : c) {
     if (f(v)) {

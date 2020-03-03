@@ -16,33 +16,28 @@
 
 #include "pid.h"
 
-PIDController::PIDController()
-{
+PIDController::PIDController() {
   error_integral_ = 0;
   prev_error_ = 0;
   is_first_time_ = true;
 }
 
-double PIDController::calculate(double error, double dt, bool enable_integration, std::vector<double>& pid_contributions)
-{
+double PIDController::calculate(double error, double dt, bool enable_integration,
+                                std::vector<double>& pid_contributions) {
   double ret_p = kp_ * error;
   ret_p = std::min(std::max(ret_p, min_ret_p_), max_ret_p_);
 
-  if (enable_integration)
-  {
+  if (enable_integration) {
     error_integral_ += error * dt;
     error_integral_ = std::min(std::max(error_integral_, min_ret_i_ / ki_), max_ret_i_ / ki_);
   }
   double ret_i = ki_ * error_integral_;
 
   double error_differential;
-  if (is_first_time_)
-  {
+  if (is_first_time_) {
     error_differential = 0;
     is_first_time_ = false;
-  }
-  else
-  {
+  } else {
     error_differential = (error - prev_error_) / dt;
   }
   double ret_d = kd_ * error_differential;
@@ -60,16 +55,14 @@ double PIDController::calculate(double error, double dt, bool enable_integration
   return ret;
 }
 
-void PIDController::setGains(double kp, double ki, double kd)
-{
+void PIDController::setGains(double kp, double ki, double kd) {
   kp_ = kp;
   ki_ = ki;
   kd_ = kd;
 }
 
 void PIDController::setLimits(double max_ret, double min_ret, double max_ret_p, double min_ret_p, double max_ret_i,
-                              double min_ret_i, double max_ret_d, double min_ret_d)
-{
+                              double min_ret_i, double max_ret_d, double min_ret_d) {
   max_ret_ = max_ret;
   min_ret_ = min_ret;
   max_ret_p_ = max_ret_p;
@@ -80,8 +73,7 @@ void PIDController::setLimits(double max_ret, double min_ret, double max_ret_p, 
   min_ret_i_ = min_ret_i;
 }
 
-void PIDController::reset()
-{
+void PIDController::reset() {
   error_integral_ = 0;
   prev_error_ = 0;
   is_first_time_ = true;
