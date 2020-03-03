@@ -5,8 +5,8 @@
   <description>This package implements an shape estimation</description>
 
   <maintainer email="yukihiro.saito@tier4.jp">Yukihiro Saito</maintainer>
+  <license>Apache2</license>
 
-  <license>Apache</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

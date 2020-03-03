@@ -10,6 +10,10 @@
 
     <license>BSD</license>
 
+    <maintainer email="yukihiro.saito@tier4.jp">Yukihiro Saito</maintainer>
+    <author email="yukihiro.saito@tier4.jp">Yukihiro Saito</author>
+    <license>Apache2</license>
+
     <url type="website">http://ros.org/wiki/perception_pcl</url>
     <url type="bugtracker">https://github.com/ros-perception/perception_pcl/issues</url>
     <url type="repository">https://github.com/ros-perception/perception_pcl</url>

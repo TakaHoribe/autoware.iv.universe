@@ -4,9 +4,8 @@
   <version>0.0.0</version>
   <description>The dynamic_object_visualization package</description>
 
-  <maintainer email="yukihiro@todo.todo">yukihiro</maintainer>
-
-  <license>TODO</license>
+  <maintainer email="yukihiro.saito@tier4.jp">Yukihiro Saito</maintainer>
+  <license>Apache2</license>
 
 
   <buildtool_depend>catkin</buildtool_depend>

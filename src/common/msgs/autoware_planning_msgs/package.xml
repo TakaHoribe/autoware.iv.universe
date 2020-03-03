@@ -3,8 +3,9 @@
   <name>autoware_planning_msgs</name>
   <version>1.11.0</version>
   <description>The autoware_planning_msgs package</description>
-  <maintainer email="yukky.saito@gmail.com">Yukihiro Saito</maintainer>
-  <license>Apache 2</license>
+  <maintainer email="yukihiro.saito@tier4.jp">Yukihiro Saito</maintainer>
+  <license>Apache2</license>
+
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>std_msgs</build_depend>

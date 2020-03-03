@@ -4,9 +4,8 @@
   <name>autoware_planning_rviz_plugin</name>
   <version>0.0.0</version>
   <description>The autoware_planning_rviz_plugin package</description>
-  <license>Apache 2.0</license>
-
-  <maintainer email="yukky.saito@gmail.com">yukihiro</maintainer>
+  <maintainer email="yukihiro.saito@tier4.jp">Yukihiro Saito</maintainer>
+  <license>Apache2</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
