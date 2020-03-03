@@ -26,7 +26,7 @@
 
   <!-- Perception -->
   <include file="$(find perception_launch)/launch/perception.launch">
-    <arg name="mode" default="camera_lidar_fusion"/>
+    <arg name="mode" default="lidar"/>
     <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
@@ -36,10 +36,6 @@
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch">
   </include>
-
-  <!-- Vehicle Interface-->
-  <include file="$(find as)/launch/lexus_interface.launch" />
-
 
   <!-- Rviz -->
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find autoware_launch)/rviz/autoware.rviz" />
