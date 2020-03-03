@@ -36,7 +36,7 @@ class TrajectoryVisualizer():
         # self.plot_done4 = True
         # self.plot_done5 = True
 
-        self.substatus1 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/path_planner/trajectory", Trajectory, self.CallBackTraj, queue_size=1, tcp_nodelay=True)
+        self.substatus1 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_avoidance_planner/trajectory", Trajectory, self.CallBackTraj, queue_size=1, tcp_nodelay=True)
         self.substatus2 = rospy.Subscriber("/debug_traj", Trajectory, self.CallBackDebugTraj, queue_size=1, tcp_nodelay=True)
         self.substatus2 = rospy.Subscriber("/debug_fixed_traj", Trajectory, self.CallBackDebugFixedTraj, queue_size=1, tcp_nodelay=True)
         # self.substatus3 = rospy.Subscriber("/planning/scenario_planning/scenarios/lane_following/motion_planning/motion_velocity_planner_osqp/debug/trajectory_raw", Trajectory, self.CallBackTrajRaw, queue_size=1, tcp_nodelay=True)
@@ -215,27 +215,27 @@ class TrajectoryVisualizer():
         # ax3.set_xlabel("arclength [m]")
         # ax3.set_ylabel("yaw")
         
-        ax1 = plt.subplot(7,1,1)#row, col, index(<raw*col)
-        x = self.CalcArcLength(self.in_trajectory)
-        y = self.CalcX(self.in_trajectory)
-        if len(x) == len(y):
-            ax1.plot(x, y, label="0: raw",  marker="*")
+        # ax1 = plt.subplot(3,1,1)#row, col, index(<raw*col)
+        # x = self.CalcArcLength(self.in_trajectory)
+        # y = self.CalcX(self.in_trajectory)
+        # if len(x) == len(y):
+        #     ax1.plot(x, y, label="0: raw",  marker="*")
 
 
-        ax1.set_title("trajectorys ")
-        ax1.legend()
-        ax1.set_ylabel("x")
+        # ax1.set_title("trajectorys ")
+        # ax1.legend()
+        # ax1.set_ylabel("x")
 
-        ax2 = plt.subplot(7,1,2)
-        x = self.CalcArcLength(self.in_trajectory)
-        y = self.CalcY(self.in_trajectory)
-        if len(x) == len(y):
-            ax2.plot(x, y, label="final",  marker="*")
-        ax2.set_ylabel("Y ")
+        # ax2 = plt.subplot(3,1,2)
+        # x = self.CalcArcLength(self.in_trajectory)
+        # y = self.CalcY(self.in_trajectory)
+        # if len(x) == len(y):
+        #     ax2.plot(x, y, label="final",  marker="*")
+        # ax2.set_ylabel("Y ")
 
 
 
-        ax3 = plt.subplot(7,1,3)
+        ax3 = plt.subplot(1,1,1)
         x = self.CalcArcLength(self.in_trajectory)
         y = self.CalcYaw(self.in_trajectory)
         if len(x) == len(y):
@@ -243,35 +243,7 @@ class TrajectoryVisualizer():
         ax3.set_xlabel("arclength [m]")
         ax3.set_ylabel("yaw")
         
-        ax3 = plt.subplot(7,1,4)
-        x = self.CalcArcLength(self.debug_trajectory)
-        y = self.CalcYaw(self.debug_trajectory)
-        if len(x) == len(y):
-            ax3.plot(x, y, label="final",  marker="*")
-        ax3.set_xlabel("arclength [m]")
-        ax3.set_ylabel("yaw")
-        
-        ax3 = plt.subplot(7,1,5)
-        x = self.CalcArcLength(self.debug_fixed_trajectory)
-        y = self.CalcYaw(self.debug_fixed_trajectory)
-        for a in y:
-            print(a)
-        if len(x) == len(y):
-            ax3.plot(x, y, label="final",  marker="*")
-        ax3.set_xlabel("arclength [m]")
-        ax3.set_ylabel("yaw")
-        
-        
-        
-        # ax3 = plt.subplot(5,1,1)
-        # x = self.CalcArcLength(self.in_trajectory)
-        # y = self.CalcYaw(self.in_trajectory)
-        # if len(x) == len(y):
-        #     ax3.plot(x, y, label="final",  marker="*")
-        # ax3.set_xlabel("arclength [m]")
-        # ax3.set_ylabel("yaw")
-        
-        # ax3 = plt.subplot(5,1,2)
+        # ax3 = plt.subplot(7,1,4)
         # x = self.CalcArcLength(self.debug_trajectory)
         # y = self.CalcYaw(self.debug_trajectory)
         # if len(x) == len(y):
@@ -279,31 +251,59 @@ class TrajectoryVisualizer():
         # ax3.set_xlabel("arclength [m]")
         # ax3.set_ylabel("yaw")
         
-        # ax3 = plt.subplot(5,1,3)
+        # ax3 = plt.subplot(7,1,5)
         # x = self.CalcArcLength(self.debug_fixed_trajectory)
         # y = self.CalcYaw(self.debug_fixed_trajectory)
+        # for a in y:
+        #     print(a)
         # if len(x) == len(y):
         #     ax3.plot(x, y, label="final",  marker="*")
         # ax3.set_xlabel("arclength [m]")
         # ax3.set_ylabel("yaw")
+        
+        
+        
+        # # ax3 = plt.subplot(5,1,1)
+        # # x = self.CalcArcLength(self.in_trajectory)
+        # # y = self.CalcYaw(self.in_trajectory)
+        # # if len(x) == len(y):
+        # #     ax3.plot(x, y, label="final",  marker="*")
+        # # ax3.set_xlabel("arclength [m]")
+        # # ax3.set_ylabel("yaw")
+        
+        # # ax3 = plt.subplot(5,1,2)
+        # # x = self.CalcArcLength(self.debug_trajectory)
+        # # y = self.CalcYaw(self.debug_trajectory)
+        # # if len(x) == len(y):
+        # #     ax3.plot(x, y, label="final",  marker="*")
+        # # ax3.set_xlabel("arclength [m]")
+        # # ax3.set_ylabel("yaw")
+        
+        # # ax3 = plt.subplot(5,1,3)
+        # # x = self.CalcArcLength(self.debug_fixed_trajectory)
+        # # y = self.CalcYaw(self.debug_fixed_trajectory)
+        # # if len(x) == len(y):
+        # #     ax3.plot(x, y, label="final",  marker="*")
+        # # ax3.set_xlabel("arclength [m]")
+        # # ax3.set_ylabel("yaw")
 
-        ax1 = plt.subplot(7,1,6)#row, col, index(<raw*col)
-        x = self.CalcArcLength(self.debug_fixed_trajectory)
-        y = self.CalcX(self.debug_fixed_trajectory)
-        if len(x) == len(y):
-            ax1.plot(x, y, label="0: raw",  marker="*")
+        # ax1 = plt.subplot(7,1,6)#row, col, index(<raw*col)
+        # x = self.CalcArcLength(self.debug_fixed_trajectory)
+        # y = self.CalcX(self.debug_fixed_trajectory)
+        # if len(x) == len(y):
+        #     ax1.plot(x, y, label="0: raw",  marker="*")
 
 
-        # ax1.set_title("trajectorys ")
-        ax1.legend()
-        ax1.set_ylabel("x")
+        # # ax1.set_title("trajectorys ")
+        # ax1.legend()
+        # ax1.set_ylabel("x")
 
-        ax2 = plt.subplot(7,1,7)
-        x = self.CalcArcLength(self.debug_fixed_trajectory)
-        y = self.CalcY(self.debug_fixed_trajectory)
-        if len(x) == len(y):
-            ax2.plot(x, y, label="final",  marker="*")
-        ax2.set_ylabel("Y ")
+        # ax2 = plt.subplot(7,1,7)
+        # x = self.CalcArcLength(self.debug_fixed_trajectory)
+        # y = self.CalcY(self.debug_fixed_trajectory)
+        # if len(x) == len(y):
+        #     ax2.plot(x, y, label="final",  marker="*")
+        # ax2.set_ylabel("Y ")
 
         # plt.show()
         plt.pause(0.01)

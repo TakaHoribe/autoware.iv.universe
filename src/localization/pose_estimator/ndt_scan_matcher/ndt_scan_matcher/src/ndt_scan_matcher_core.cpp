@@ -157,7 +157,7 @@ void NDTScanMatcher::timerDiagnostic()
       diag_status_msg.message += "Initializing State. ";
     }
     if (key_value_stdmap_.count("skipping_publish_num") && std::stoi(key_value_stdmap_["skipping_publish_num"]) > 1) {
-      diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      diag_status_msg.level = diagnostic_msgs::DiagnosticStatus::WARN;
       diag_status_msg.message += "skipping_publish_num > 1. ";
     }
     if (key_value_stdmap_.count("skipping_publish_num") && std::stoi(key_value_stdmap_["skipping_publish_num"]) >= 5) {

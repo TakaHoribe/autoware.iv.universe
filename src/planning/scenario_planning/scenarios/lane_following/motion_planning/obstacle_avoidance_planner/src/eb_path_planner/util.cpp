@@ -24,7 +24,7 @@
 #include <Eigen/Core>
 
 #include "eb_path_planner/util.h"
-#include "eb_path_planner/horibe_interpolate.h"
+#include "eb_path_planner/spline_interpolate.h"
 
 namespace util
 {
@@ -119,7 +119,7 @@ bool interpolate2DPoints(const std::vector<double>& base_x,
   {
     return false;
   }
-  std::vector<double> base_s = horibe_spline::calcEuclidDist(base_x, base_y);
+  std::vector<double> base_s = spline::calcEuclidDist(base_x, base_y);
   if(base_s.empty())
   {
     return false;
@@ -132,7 +132,7 @@ bool interpolate2DPoints(const std::vector<double>& base_x,
     new_s.push_back(i);
   }
   new_s.push_back(base_s.back());
-  horibe_spline::SplineInterpolate spline;
+  spline::SplineInterpolate spline;
   std::vector<double> interpolated_x;
   std::vector<double> interpolated_y;
   spline.interpolate(base_s, base_x, new_s, interpolated_x);

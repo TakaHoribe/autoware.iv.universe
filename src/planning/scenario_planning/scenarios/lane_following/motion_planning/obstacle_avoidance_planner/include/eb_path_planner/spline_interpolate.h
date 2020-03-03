@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef HORIBE_INTERPOLATE_H_
-#define HORIBE_INTERPOLATE_H_
+#ifndef SPLINE_INTERPOLATE_H_
+#define SPLINE_INTERPOLATE_H_
 
 #include <iostream>
 #include <cmath>
 #include <vector>
 
-namespace horibe_spline
+namespace spline
 {
 
 class SplineInterpolate

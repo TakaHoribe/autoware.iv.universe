@@ -3,13 +3,13 @@
   <arg name="launch_driver" default="true" />
 
   <group ns="imu">
-    <group ns="gx5">
+    <!-- <group ns="gx5">
       <remap from="imu/data" to="imu_raw" />
       <include file="$(find microstrain_mips)/launch/microstrain.launch"  if="$(eval launch_driver==true)">
         <arg name="port" value="/dev/ttyACM0" />
         <arg name="imu_frame_id" value="gx5/imu_link" />
       </include>
-    </group>
+    </group> -->
 
     <group ns="tamagawa">
       <node pkg="tamagawa_imu_driver" name="tag_serial_driver" type="tag_serial_driver" if="$(eval launch_driver==true)">
