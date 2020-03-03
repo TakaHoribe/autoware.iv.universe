@@ -87,7 +87,5 @@ class AutowareStateMonitorNode {
   std::shared_ptr<StateMachine> state_machine_;
   StateInput state_input_;
   StateParam state_param_;
-
-  // Debug
-  void displayErrors() const;
+  std::vector<std::string> generateErrorMessages() const;
 };

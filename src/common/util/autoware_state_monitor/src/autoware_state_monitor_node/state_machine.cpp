@@ -59,22 +59,28 @@ bool StateMachine::isModuleInitialized(const char* module_name) const {
   }
 
   for (const auto& topic_config : non_received_topics) {
-    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name,
-                     fmt::format("topic `{}` is not received yet", topic_config.name));
+    const auto msg = fmt::format("topic `{}` is not received yet", topic_config.name);
+    msgs_.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
   }
 
   for (const auto& param_config : non_set_params) {
-    logThrottleNamed(ros::console::levels::Warn, 1.0, param_config.name,
-                     fmt::format("param `{}` is not set", param_config.name));
+    const auto msg = fmt::format("param `{}` is not set", param_config.name);
+    msgs_.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, param_config.name, msg);
   }
 
   for (const auto& tf_config : non_received_tfs) {
-    logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to),
-                     fmt::format("tf from `{}` to `{}` is not received yet", tf_config.from, tf_config.to));
+    const auto msg = fmt::format("tf from `{}` to `{}` is not received yet", tf_config.from, tf_config.to);
+    msgs_.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to), msg);
   }
 
-  logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("module-{}", module_name),
-                   fmt::format("module `{}` is not initialized", module_name));
+  {
+    const auto msg = fmt::format("module `{}` is not initialized", module_name);
+    msgs_.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("module-{}", module_name), msg);
+  }
 
   return false;
 }
@@ -152,6 +158,7 @@ bool StateMachine::hasFailedToArriveGoal() const {
 }
 
 AutowareState StateMachine::updateState(const StateInput& state_input) {
+  msgs_ = {};
   state_input_ = state_input;
   autoware_state_ = judgeAutowareState();
   return autoware_state_;

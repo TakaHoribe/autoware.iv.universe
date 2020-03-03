@@ -8,3 +8,4 @@ string ArrivedGoal=ArrivedGoal
 string FailedToArriveGoal=FailedToArriveGoal
 
 string state
+string msg

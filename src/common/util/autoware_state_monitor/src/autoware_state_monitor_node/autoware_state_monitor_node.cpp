@@ -114,23 +114,46 @@ void AutowareStateMonitorNode::onTwist(const geometry_msgs::TwistStamped::ConstP
 }
 
 void AutowareStateMonitorNode::onTimer(const ros::TimerEvent& event) {
+  // Prepare state input
   state_input_.current_pose = getCurrentPose(tf_buffer_);
 
   state_input_.topic_stats = getTopicStats();
   state_input_.param_stats = getParamStats();
   state_input_.tf_stats = getTfStats();
 
+  // Update state
   const auto prev_autoware_state = state_machine_->getCurrentState();
   const auto autoware_state = state_machine_->updateState(state_input_);
 
   if (autoware_state != prev_autoware_state) {
-    ROS_INFO("state changed: %s -> %s", toMsg(prev_autoware_state).state.c_str(), toMsg(autoware_state).state.c_str());
+    ROS_INFO("state changed: %s -> %s", toString(prev_autoware_state).c_str(), toString(autoware_state).c_str());
   }
 
-  displayErrors();
+  // Generate messages
+  const auto error_msgs = generateErrorMessages();
 
-  pub_autoware_state_.publish(toMsg(autoware_state));
+  // Publish state message
+  {
+    autoware_system_msgs::AutowareState autoware_state_msg;
+    autoware_state_msg.state = toString(autoware_state);
 
+    // Add messages line by line
+    std::ostringstream oss;
+
+    for (const auto& msg : state_machine_->getErrorMessages()) {
+      oss << msg << std::endl;
+    }
+
+    for (const auto& msg : error_msgs) {
+      oss << msg << std::endl;
+    }
+
+    autoware_state_msg.msg = oss.str();
+
+    pub_autoware_state_.publish(autoware_state_msg);
+  }
+
+  // Reset when error
   if (autoware_state == AutowareState::Error) {
     ROS_INFO("reset state machine due to an error");
     state_machine_ = std::make_shared<StateMachine>(state_param_);
@@ -254,7 +277,9 @@ TfStats AutowareStateMonitorNode::getTfStats() const {
   return tf_stats;
 }
 
-void AutowareStateMonitorNode::displayErrors() const {
+std::vector<std::string> AutowareStateMonitorNode::generateErrorMessages() const {
+  std::vector<std::string> error_msgs;
+
   const auto& topic_stats = state_input_.topic_stats;
   const auto& tf_stats = state_input_.tf_stats;
 
@@ -262,33 +287,38 @@ void AutowareStateMonitorNode::displayErrors() const {
     const auto& topic_config = topic_config_pair.first;
     const auto& last_received_time = topic_config_pair.second;
 
-    logThrottleNamed(
-        ros::console::levels::Error, 1.0, topic_config.name,
-        fmt::format("topic `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
-                    topic_config.name, topic_config.timeout, topic_stats.checked_time.toSec(),
-                    last_received_time.toSec()));
+    const auto msg = fmt::format(
+        "topic `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
+        topic_config.name, topic_config.timeout, topic_stats.checked_time.toSec(), last_received_time.toSec());
+
+    error_msgs.push_back(msg);
+    logThrottleNamed(ros::console::levels::Error, 1.0, topic_config.name, msg);
   }
 
   for (const auto& topic_config_pair : topic_stats.slow_rate_list) {
     const auto& topic_config = topic_config_pair.first;
     const auto& topic_rate = topic_config_pair.second;
 
-    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name,
-                     fmt::format("topic `{}` is slow rate: warn_rate = {}, acctual_rate = {}", topic_config.name,
-                                 topic_config.warn_rate, topic_rate));
+    const auto msg = fmt::format("topic `{}` is slow rate: warn_rate = {}, acctual_rate = {}", topic_config.name,
+                                 topic_config.warn_rate, topic_rate);
+
+    error_msgs.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
   }
 
   for (const auto& tf_config_pair : tf_stats.timeout_list) {
     const auto& tf_config = tf_config_pair.first;
     const auto& last_received_time = tf_config_pair.second;
 
-    logThrottleNamed(
-        ros::console::levels::Error, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to),
-        fmt::format(
-            "tf from `{}` to `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
-            tf_config.from, tf_config.to, tf_config.timeout, tf_stats.checked_time.toSec(),
-            last_received_time.toSec()));
+    const auto msg = fmt::format(
+        "tf from `{}` to `{}` is timeout: timeout = {}, checked_time = {:10.3f}, last_received_time = {:10.3f}",
+        tf_config.from, tf_config.to, tf_config.timeout, tf_stats.checked_time.toSec(), last_received_time.toSec());
+
+    error_msgs.push_back(msg);
+    logThrottleNamed(ros::console::levels::Error, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to), msg);
   }
+
+  return error_msgs;
 }
 
 AutowareStateMonitorNode::AutowareStateMonitorNode() {

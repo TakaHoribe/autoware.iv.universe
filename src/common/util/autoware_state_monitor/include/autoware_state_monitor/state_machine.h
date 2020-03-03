@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <string>
+#include <vector>
 
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Trajectory.h>
@@ -43,12 +45,14 @@ class StateMachine {
 
   AutowareState getCurrentState() const { return autoware_state_; }
   AutowareState updateState(const StateInput& state_input);
+  std::vector<std::string> getErrorMessages() const { return msgs_; }
 
  private:
   AutowareState autoware_state_ = AutowareState::InitializingVehicle;
   StateInput state_input_;
   const StateParam state_param_;
 
+  mutable std::vector<std::string> msgs_;
   mutable Times times_;
   mutable autoware_planning_msgs::Route::ConstPtr executing_route_;
 
