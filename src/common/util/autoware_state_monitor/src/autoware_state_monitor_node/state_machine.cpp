@@ -275,6 +275,10 @@ AutowareState StateMachine::judgeAutowareState() const {
     case (AutowareState::Error): {
       msgs_.push_back("[Error] An error has occurred. Please override.");
 
+      if (isOverrided()) {
+        return AutowareState::WaitingForEngage;
+      }
+
       break;
     }
 
