@@ -50,9 +50,8 @@ std_msgs::ColorRGBA createMarkerColor(float r, float g, float b, float a) {
   return color;
 }
 
-visualization_msgs::Marker createDefaultMarker(const char* frame_id, const char* ns,
-                                               const int32_t id, const int32_t type,
-                                               const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createDefaultMarker(const char* frame_id, const char* ns, const int32_t id,
+                                               const int32_t type, const std_msgs::ColorRGBA& color) {
   visualization_msgs::Marker marker;
 
   marker.header.frame_id = frame_id;
@@ -125,9 +124,8 @@ std::vector<Triangle> polygon2triangles(const Polygon3d& polygon) {
 }
 
 template <>
-visualization_msgs::Marker createMarker<Point3d>(const char* frame_id, const char* ns,
-                                                 const int32_t id, const Point3d& geometry,
-                                                 const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<Point3d>(const char* frame_id, const char* ns, const int32_t id,
+                                                 const Point3d& geometry, const std_msgs::ColorRGBA& color) {
   auto marker = createDefaultMarker(frame_id, ns, id, visualization_msgs::Marker::SPHERE, color);
 
   marker.pose.position = toRosGeometry(geometry);
@@ -139,12 +137,9 @@ visualization_msgs::Marker createMarker<Point3d>(const char* frame_id, const cha
 }
 
 template <>
-visualization_msgs::Marker createMarker<LineString3d>(const char* frame_id, const char* ns,
-                                                      const int32_t id,
-                                                      const LineString3d& geometry,
-                                                      const std_msgs::ColorRGBA& color) {
-  auto marker =
-      createDefaultMarker(frame_id, ns, id, visualization_msgs::Marker::LINE_STRIP, color);
+visualization_msgs::Marker createMarker<LineString3d>(const char* frame_id, const char* ns, const int32_t id,
+                                                      const LineString3d& geometry, const std_msgs::ColorRGBA& color) {
+  auto marker = createDefaultMarker(frame_id, ns, id, visualization_msgs::Marker::LINE_STRIP, color);
 
   for (const auto& point : geometry) {
     marker.points.push_back(toRosGeometry(point));
@@ -155,11 +150,9 @@ visualization_msgs::Marker createMarker<LineString3d>(const char* frame_id, cons
 }
 
 template <>
-visualization_msgs::Marker createMarker<Polygon3d>(const char* frame_id, const char* ns,
-                                                   const int32_t id, const Polygon3d& geometry,
-                                                   const std_msgs::ColorRGBA& color) {
-  auto marker =
-      createDefaultMarker(frame_id, ns, id, visualization_msgs::Marker::TRIANGLE_LIST, color);
+visualization_msgs::Marker createMarker<Polygon3d>(const char* frame_id, const char* ns, const int32_t id,
+                                                   const Polygon3d& geometry, const std_msgs::ColorRGBA& color) {
+  auto marker = createDefaultMarker(frame_id, ns, id, visualization_msgs::Marker::TRIANGLE_LIST, color);
 
   for (const auto& triangle : polygon2triangles(geometry)) {
     for (const auto& point : triangle) {
@@ -172,42 +165,34 @@ visualization_msgs::Marker createMarker<Polygon3d>(const char* frame_id, const c
 }
 
 template <>
-visualization_msgs::Marker createMarker<LinearRing3d>(const char* frame_id, const char* ns,
-                                                      const int32_t id,
-                                                      const LinearRing3d& geometry,
-                                                      const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<LinearRing3d>(const char* frame_id, const char* ns, const int32_t id,
+                                                      const LinearRing3d& geometry, const std_msgs::ColorRGBA& color) {
   Polygon3d polygon{};
   polygon.exterior = geometry;
   return createMarker(frame_id, ns, id, polygon, color);
 }
 
 template <>
-visualization_msgs::Marker createMarker<Point2d>(const char* frame_id, const char* ns,
-                                                 const int32_t id, const Point2d& geometry,
-                                                 const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<Point2d>(const char* frame_id, const char* ns, const int32_t id,
+                                                 const Point2d& geometry, const std_msgs::ColorRGBA& color) {
   return createMarker(frame_id, ns, id, geometry.to_3d(), color);
 }
 
 template <>
-visualization_msgs::Marker createMarker<LineString2d>(const char* frame_id, const char* ns,
-                                                      const int32_t id,
-                                                      const LineString2d& geometry,
-                                                      const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<LineString2d>(const char* frame_id, const char* ns, const int32_t id,
+                                                      const LineString2d& geometry, const std_msgs::ColorRGBA& color) {
   return createMarker(frame_id, ns, id, geometry.to_3d(), color);
 }
 
 template <>
-visualization_msgs::Marker createMarker<LinearRing2d>(const char* frame_id, const char* ns,
-                                                      const int32_t id,
-                                                      const LinearRing2d& geometry,
-                                                      const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<LinearRing2d>(const char* frame_id, const char* ns, const int32_t id,
+                                                      const LinearRing2d& geometry, const std_msgs::ColorRGBA& color) {
   return createMarker(frame_id, ns, id, geometry.to_3d(), color);
 }
 
 template <>
-visualization_msgs::Marker createMarker<Polygon2d>(const char* frame_id, const char* ns,
-                                                   const int32_t id, const Polygon2d& geometry,
-                                                   const std_msgs::ColorRGBA& color) {
+visualization_msgs::Marker createMarker<Polygon2d>(const char* frame_id, const char* ns, const int32_t id,
+                                                   const Polygon2d& geometry, const std_msgs::ColorRGBA& color) {
   return createMarker(frame_id, ns, id, geometry.to_3d(), color);
 }
 

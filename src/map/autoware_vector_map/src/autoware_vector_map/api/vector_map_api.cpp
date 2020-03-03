@@ -16,10 +16,8 @@ std::vector<Lane> VectorMapApi::findNearLanes(const Point3d& p, const double ran
   return gpkg_interface_->findFeaturesByRange<Lane>(p, range);
 }
 
-std::optional<Lane> VectorMapApi::findNearestLane(const std::vector<Lane>& lanes,
-                                                  const Point3d& p) {
-  const auto distances =
-      util::map(lanes, [&](const auto& lane) { return geometry::distance2d(lane.geometry, p); });
+std::optional<Lane> VectorMapApi::findNearestLane(const std::vector<Lane>& lanes, const Point3d& p) {
+  const auto distances = util::map(lanes, [&](const auto& lane) { return geometry::distance2d(lane.geometry, p); });
 
   return lanes.at(util::argmin(distances));
 }

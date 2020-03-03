@@ -48,10 +48,9 @@ class ObjectsToCostmap {
   /// \param[in] size_of_expansion_kernel: kernel size for blurring cost
   /// \param[in] in_objects: subscribed DynamicObjectArray
   /// \param[out] calculated cost in grid_map::Matrix format
-  grid_map::Matrix makeCostmapFromObjects(
-      const grid_map::GridMap& costmap, const double expand_polygon_size,
-      const double size_of_expansion_kernel,
-      const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
+  grid_map::Matrix makeCostmapFromObjects(const grid_map::GridMap& costmap, const double expand_polygon_size,
+                                          const double size_of_expansion_kernel,
+                                          const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
 
  private:
   const int NUMBER_OF_POINTS;
@@ -70,9 +69,9 @@ class ObjectsToCostmap {
   /// \param[in] in_object: subscribed one of DynamicObjectArray
   /// \param[in] expand_rectangle_size: expanding 4 points
   /// \param[out] polygon with 4 rectangle points
-  grid_map::Polygon makePolygonFromObjectBox(
-      const std_msgs::Header& header, const autoware_perception_msgs::DynamicObject& in_object,
-      const double expand_rectangle_size);
+  grid_map::Polygon makePolygonFromObjectBox(const std_msgs::Header& header,
+                                             const autoware_perception_msgs::DynamicObject& in_object,
+                                             const double expand_rectangle_size);
 
   /// \brief make expanded point from convex hull's point
   /// \param[in] in_centroid: object's centroid
@@ -87,17 +86,17 @@ class ObjectsToCostmap {
   /// \param[in] in_centroid: object's centroid
   /// \param[in] expand_polygon_size: expanding convex_hull points
   /// \param[out] polygon object with convex hull points
-  grid_map::Polygon makePolygonFromObjectConvexHull(
-      const std_msgs::Header& header, const autoware_perception_msgs::DynamicObject& in_object,
-      const double expand_polygon_size);
+  grid_map::Polygon makePolygonFromObjectConvexHull(const std_msgs::Header& header,
+                                                    const autoware_perception_msgs::DynamicObject& in_object,
+                                                    const double expand_polygon_size);
 
   /// \brief set cost in polygon by using DynamicObject's score
   /// \param[in] polygon: 4 rectangle points in polygon format
   /// \param[in] gridmap_layer_name: target gridmap layer name for calculated cost
   /// \param[in] score: set score as a cost for costmap
   /// \param[in] objects_costmap: update cost in this objects_costmap[gridmap_layer_name]
-  void setCostInPolygon(const grid_map::Polygon& polygon, const std::string& gridmap_layer_name,
-                        const float score, grid_map::GridMap& objects_costmap);
+  void setCostInPolygon(const grid_map::Polygon& polygon, const std::string& gridmap_layer_name, const float score,
+                        grid_map::GridMap& objects_costmap);
 };
 
 #endif  // OBJECTS_TO_COSTMAP_H

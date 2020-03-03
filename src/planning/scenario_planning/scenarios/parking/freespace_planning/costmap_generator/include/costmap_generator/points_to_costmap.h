@@ -52,11 +52,10 @@ class PointsToCostmap {
   /// \param[in] gridmap_layer_name: gridmap layer name for gridmap
   /// \param[in] in_sensor_points: subscribed pointcloud
   /// \param[out] calculated cost in grid_map::Matrix format
-  grid_map::Matrix makeCostmapFromPoints(
-      const double maximum_height_thres, const double minimum_height_thres,
-      const double grid_min_value, const double grid_max_value, const grid_map::GridMap& gridmap,
-      const std::string& gridmap_layer_name,
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_sensor_points);
+  grid_map::Matrix makeCostmapFromPoints(const double maximum_height_thres, const double minimum_height_thres,
+                                         const double grid_min_value, const double grid_max_value,
+                                         const grid_map::GridMap& gridmap, const std::string& gridmap_layer_name,
+                                         const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_sensor_points);
 
  private:
   double grid_length_x_;
@@ -87,8 +86,7 @@ class PointsToCostmap {
   /// \param[out] grid-x-length x grid-y-length size grid stuffed with point's height in
   /// corresponding grid cell
   std::vector<std::vector<std::vector<double>>> assignPoints2GridCell(
-      const grid_map::GridMap& gridmap,
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_sensor_points);
+      const grid_map::GridMap& gridmap, const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_sensor_points);
 
   /// \brief calculate costmap from subscribed pointcloud
   /// \param[in] maximum_height_thres: Maximum height threshold for pointcloud data
@@ -99,11 +97,9 @@ class PointsToCostmap {
   /// \param[in] gridmap_layer_name: gridmap layer name for gridmap
   /// \param[in] grid_vec: grid-x-length x grid-y-length size grid stuffed with point's height in
   /// corresponding grid cell \param[out] caculated costmap in grid_map::Matrix format
-  grid_map::Matrix calculateCostmap(const double maximum_height_thres,
-                                    const double minimum_lidar_height_thres,
+  grid_map::Matrix calculateCostmap(const double maximum_height_thres, const double minimum_lidar_height_thres,
                                     const double grid_min_value, const double grid_max_value,
-                                    const grid_map::GridMap& gridmap,
-                                    const std::string& gridmap_layer_name,
+                                    const grid_map::GridMap& gridmap, const std::string& gridmap_layer_name,
                                     const std::vector<std::vector<std::vector<double>>> grid_vec);
 };
 

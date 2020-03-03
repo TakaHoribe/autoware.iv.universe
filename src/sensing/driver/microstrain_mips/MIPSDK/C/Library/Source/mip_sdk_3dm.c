@@ -1833,8 +1833,8 @@ u16 mip_3dm_cmd_capture_gyro_bias(mip_interface* device_interface, u16 duration_
 //!
 //! @param [in] mip_interface *device_interface	- The device interface.
 //! @param [in] u8 function_selector            - The model number of the device.
-//! @param [in,out] float *vector		        - Pointer to array containing input hard iron vector on write commands
-//! or to contain output hard iron vector on read commands.
+//! @param [in,out] float *vector		        - Pointer to array containing input hard iron vector on write
+//! commands or to contain output hard iron vector on read commands.
 //
 //! @retval MIP_INTERFACE_ERROR  When there is a problem with the command format or the\n
 //!                              the device communications failed.\n
@@ -1903,8 +1903,8 @@ u16 mip_3dm_cmd_hard_iron(mip_interface* device_interface, u8 function_selector,
 //!
 //! @param [in] mip_interface *device_interface	- The device interface.
 //! @param [in] u8 function_selector            - The model number of the device.
-//! @param [in,out] float *vector		        - Pointer to array containing input soft iron 3x3 matrix on write
-//! commands or to contain output soft iron 3x3 matrix on read commands.
+//! @param [in,out] float *vector		        - Pointer to array containing input soft iron 3x3 matrix on
+//! write commands or to contain output soft iron 3x3 matrix on read commands.
 //
 //! @retval MIP_INTERFACE_ERROR  When there is a problem with the command format or the\n
 //!                              the device communications failed.\n
@@ -1974,8 +1974,8 @@ u16 mip_3dm_cmd_soft_iron(mip_interface* device_interface, u8 function_selector,
 //!
 //! @param [in] mip_interface *device_interface	- The device interface.
 //! @param [in] u8 function_selector            - The model number of the device.
-//! @param [in,out] float *vector		        - Pointer to array containing input Euler angles on write commands or
-//! to contain output Euler angles on read commands.
+//! @param [in,out] float *vector		        - Pointer to array containing input Euler angles on write commands
+//! or to contain output Euler angles on read commands.
 //
 //! @retval MIP_INTERFACE_ERROR  When there is a problem with the command format or the\n
 //!                              the device communications failed.\n

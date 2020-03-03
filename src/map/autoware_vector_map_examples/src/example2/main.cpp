@@ -43,6 +43,4 @@ void example(const char* vector_map_path) {
 
 }  // namespace autoware_vector_map
 
-int main(int argc, char* argv[]) {
-  autoware_vector_map::example(helper::getExampleFilePath().c_str());
-}
+int main(int argc, char* argv[]) { autoware_vector_map::example(helper::getExampleFilePath().c_str()); }

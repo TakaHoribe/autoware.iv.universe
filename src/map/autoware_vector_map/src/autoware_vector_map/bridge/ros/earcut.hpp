@@ -72,8 +72,7 @@ class Earcut {
   Node* sortLinked(Node* list);
   int32_t zOrder(const double x_, const double y_);
   Node* getLeftmost(Node* start);
-  bool pointInTriangle(double ax, double ay, double bx, double by, double cx, double cy, double px,
-                       double py) const;
+  bool pointInTriangle(double ax, double ay, double bx, double by, double cx, double cy, double px, double py) const;
   bool isValidDiagonal(Node* a, Node* b);
   double area(const Node* p, const Node* q, const Node* r) const;
   bool equals(const Node* p1, const Node* p2);
@@ -318,9 +317,7 @@ bool Earcut<N>::isEar(Node* ear) {
   Node* p = ear->next->next;
 
   while (p != ear->prev) {
-    if (pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) &&
-        area(p->prev, p, p->next) >= 0)
-      return false;
+    if (pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) && area(p->prev, p, p->next) >= 0) return false;
     p = p->next;
   }
 
@@ -349,8 +346,7 @@ bool Earcut<N>::isEarHashed(Node* ear) {
   Node* p = ear->nextZ;
 
   while (p && p->z <= maxZ) {
-    if (p != ear->prev && p != ear->next &&
-        pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) &&
+    if (p != ear->prev && p != ear->next && pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) &&
         area(p->prev, p, p->next) >= 0)
       return false;
     p = p->nextZ;
@@ -360,8 +356,7 @@ bool Earcut<N>::isEarHashed(Node* ear) {
   p = ear->prevZ;
 
   while (p && p->z >= minZ) {
-    if (p != ear->prev && p != ear->next &&
-        pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) &&
+    if (p != ear->prev && p != ear->next && pointInTriangle(a->x, a->y, b->x, b->y, c->x, c->y, p->x, p->y) &&
         area(p->prev, p, p->next) >= 0)
       return false;
     p = p->prevZ;
@@ -379,8 +374,7 @@ typename Earcut<N>::Node* Earcut<N>::cureLocalIntersections(Node* start) {
     Node* b = p->next->next;
 
     // a self-intersection where edge (v[i-1],v[i]) intersects (v[i+1],v[i+2])
-    if (!equals(a, b) && intersects(a, p, p->next, b) && locallyInside(a, b) &&
-        locallyInside(b, a)) {
+    if (!equals(a, b) && intersects(a, p, p->next, b) && locallyInside(a, b) && locallyInside(b, a)) {
       indices.emplace_back(a->i);
       indices.emplace_back(p->i);
       indices.emplace_back(b->i);
@@ -648,19 +642,17 @@ typename Earcut<N>::Node* Earcut<N>::getLeftmost(Node* start) {
 
 // check if a point lies within a convex triangle
 template <typename N>
-bool Earcut<N>::pointInTriangle(double ax, double ay, double bx, double by, double cx, double cy,
-                                double px, double py) const {
-  return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
-         (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
+bool Earcut<N>::pointInTriangle(double ax, double ay, double bx, double by, double cx, double cy, double px,
+                                double py) const {
+  return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 && (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
          (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
 }
 
 // check if a diagonal between two polygon nodes is valid (lies in polygon interior)
 template <typename N>
 bool Earcut<N>::isValidDiagonal(Node* a, Node* b) {
-  return a->next->i != b->i && a->prev->i != b->i &&
-         !intersectsPolygon(a, b) &&  // dones't intersect other edges
-         ((locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) &&  // locally visible
+  return a->next->i != b->i && a->prev->i != b->i && !intersectsPolygon(a, b) &&  // dones't intersect other edges
+         ((locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) &&    // locally visible
            (area(a->prev, a, b->prev) != 0.0 ||
             area(a, b->prev, b) != 0.0)) ||  // does not create opposite-facing sectors
           (equals(a, b) && area(a->prev, a, a->next) > 0 &&
@@ -689,14 +681,10 @@ bool Earcut<N>::intersects(const Node* p1, const Node* q1, const Node* p2, const
 
   if (o1 != o2 && o3 != o4) return true;  // general case
 
-  if (o1 == 0 && onSegment(p1, p2, q1))
-    return true;  // p1, q1 and p2 are collinear and p2 lies on p1q1
-  if (o2 == 0 && onSegment(p1, q2, q1))
-    return true;  // p1, q1 and q2 are collinear and q2 lies on p1q1
-  if (o3 == 0 && onSegment(p2, p1, q2))
-    return true;  // p2, q2 and p1 are collinear and p1 lies on p2q2
-  if (o4 == 0 && onSegment(p2, q1, q2))
-    return true;  // p2, q2 and q1 are collinear and q1 lies on p2q2
+  if (o1 == 0 && onSegment(p1, p2, q1)) return true;  // p1, q1 and p2 are collinear and p2 lies on p1q1
+  if (o2 == 0 && onSegment(p1, q2, q1)) return true;  // p1, q1 and q2 are collinear and q2 lies on p1q1
+  if (o3 == 0 && onSegment(p2, p1, q2)) return true;  // p2, q2 and p1 are collinear and p1 lies on p2q2
+  if (o4 == 0 && onSegment(p2, q1, q2)) return true;  // p2, q2 and q1 are collinear and q1 lies on p2q2
 
   return false;
 }
@@ -718,8 +706,7 @@ template <typename N>
 bool Earcut<N>::intersectsPolygon(const Node* a, const Node* b) {
   const Node* p = a;
   do {
-    if (p->i != a->i && p->next->i != a->i && p->i != b->i && p->next->i != b->i &&
-        intersects(p, p->next, a, b))
+    if (p->i != a->i && p->next->i != a->i && p->i != b->i && p->next->i != b->i && intersects(p, p->next, a, b))
       return true;
     p = p->next;
   } while (p != a);
@@ -780,8 +767,7 @@ typename Earcut<N>::Node* Earcut<N>::splitPolygon(Node* a, Node* b) {
 template <typename N>
 template <typename Point>
 typename Earcut<N>::Node* Earcut<N>::insertNode(std::size_t i, const Point& pt, Node* last) {
-  Node* p = nodes.construct(static_cast<N>(i), util::nth<0, Point>::get(pt),
-                            util::nth<1, Point>::get(pt));
+  Node* p = nodes.construct(static_cast<N>(i), util::nth<0, Point>::get(pt), util::nth<1, Point>::get(pt));
 
   if (!last) {
     p->prev = p;
