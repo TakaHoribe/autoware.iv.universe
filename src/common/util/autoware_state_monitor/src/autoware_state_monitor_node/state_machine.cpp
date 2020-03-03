@@ -97,6 +97,8 @@ bool StateMachine::isVehicleInitialized() const {
 
 bool StateMachine::isRouteReceived() const { return state_input_.route != nullptr; }
 
+bool StateMachine::isNewRouteReceived() const { return state_input_.route != executing_route_; }
+
 bool StateMachine::isPlanningCompleted() const {
   if (!isModuleInitialized(ModuleName::Planning)) {
     return false;
@@ -172,16 +174,16 @@ AutowareState StateMachine::judgeAutowareState() const {
         break;
       }
 
-      if (state_input_.route == executing_route_) {
+      if (!isNewRouteReceived()) {
         break;
       }
-
-      executing_route_ = state_input_.route;
 
       return AutowareState::Planning;
     }
 
     case (AutowareState::Planning): {
+      executing_route_ = state_input_.route;
+
       if (!isPlanningCompleted()) {
         break;
       }
@@ -194,12 +196,20 @@ AutowareState StateMachine::judgeAutowareState() const {
         break;
       }
 
+      if (isNewRouteReceived()) {
+        return AutowareState::Planning;
+      }
+
       return AutowareState::Driving;
     }
 
     case (AutowareState::Driving): {
       if (isOverrided()) {
         return AutowareState::WaitingForEngage;
+      }
+
+      if (isNewRouteReceived()) {
+        return AutowareState::Planning;
       }
 
       if (hasArrivedGoal()) {
