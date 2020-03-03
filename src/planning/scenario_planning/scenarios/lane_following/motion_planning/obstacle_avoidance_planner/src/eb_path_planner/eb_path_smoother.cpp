@@ -448,8 +448,6 @@ void EBPathSmoother::updateQPConstrain(
   double lower_bound[number_of_sampling_points_ * 2];
   double upper_bound[number_of_sampling_points_ * 2];
   
-  // std::cout << "farrest idx "<< farrest_point_idx << std::endl;
-  // std::cout << "num fixed points "<< num_fixed_points << std::endl;
   for (int i = 0; i < number_of_sampling_points_ ; ++i)
   {
     if(i==0)
@@ -458,11 +456,6 @@ void EBPathSmoother::updateQPConstrain(
       upper_bound[i] = interpolated_points[i].x;
     }
     else if (i == 1)//second initial x
-    {
-      lower_bound[i] = interpolated_points[i].x;
-      upper_bound[i] = interpolated_points[i].x;
-    }
-    else if( i < num_fixed_points)
     {
       lower_bound[i] = interpolated_points[i].x;
       upper_bound[i] = interpolated_points[i].x;
@@ -482,10 +475,20 @@ void EBPathSmoother::updateQPConstrain(
       lower_bound[i] = interpolated_points[farrest_point_idx].x;
       upper_bound[i] = interpolated_points[farrest_point_idx].x;
     }
+    else if( i < num_fixed_points)
+    {
+      lower_bound[i] = interpolated_points[i].x;
+      upper_bound[i] = interpolated_points[i].x;
+    }
     else
     {
       if(qp_optimization_mode == Mode::Avoidance)
       {
+        double min_constrain_buffer = loose_constrain_disntance_;
+        if( i >= num_fixed_points+5 && i < num_fixed_points+15)
+        {
+          min_constrain_buffer = 0.5;
+        }
         geometry_msgs::Point interpolated_p_in_image;
         float clearance;
         if(util::transformMapToImage(
@@ -504,7 +507,7 @@ void EBPathSmoother::updateQPConstrain(
         }
         float diff = 
           std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_,
-                    loose_constrain_disntance_);
+                    min_constrain_buffer);
         lower_bound[i] = interpolated_points[i].x - diff;
         upper_bound[i] = interpolated_points[i].x + diff;
       }
@@ -527,11 +530,6 @@ void EBPathSmoother::updateQPConstrain(
       lower_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
       upper_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
     }
-    else if( i < num_fixed_points)
-    {
-      lower_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
-      upper_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
-    }
     else if (i == farrest_point_idx - 1)//second last x
     {
       lower_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
@@ -547,10 +545,20 @@ void EBPathSmoother::updateQPConstrain(
       lower_bound[i+number_of_sampling_points_] = interpolated_points[farrest_point_idx].y;
       upper_bound[i+number_of_sampling_points_] = interpolated_points[farrest_point_idx].y;
     }
+    else if( i < num_fixed_points)
+    {
+      lower_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
+      upper_bound[i+number_of_sampling_points_] = interpolated_points[i].y;
+    }
     else
     {
       if(qp_optimization_mode == Mode::Avoidance)
       {
+        double min_constrain_buffer = loose_constrain_disntance_;
+        if( i >= num_fixed_points+5 && i < num_fixed_points+15)
+        {
+          min_constrain_buffer = 0.5;
+        }
         geometry_msgs::Point interpolated_p = interpolated_points[i];
         geometry_msgs::Point interpolated_p_in_image;
         float clearance;
@@ -571,7 +579,7 @@ void EBPathSmoother::updateQPConstrain(
         }
         float diff = 
           std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_,
-                    loose_constrain_disntance_);
+                    min_constrain_buffer);
         lower_bound[i+number_of_sampling_points_] = interpolated_points[i].y - diff;
         upper_bound[i+number_of_sampling_points_] = interpolated_points[i].y + diff;
         

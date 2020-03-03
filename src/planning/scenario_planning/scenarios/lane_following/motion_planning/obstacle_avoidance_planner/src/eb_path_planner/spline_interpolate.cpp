@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "eb_path_planner/horibe_interpolate.h"
+#include "eb_path_planner/spline_interpolate.h"
 
-namespace horibe_spline
+namespace spline
 {
 
 /*
@@ -190,4 +190,4 @@ std::vector<double> calcEuclidDist(const std::vector<double> &x, const std::vect
   return dist_v;
 }
 
-} // namespace horibe_spline
+} // namespace spline

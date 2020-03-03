@@ -19,7 +19,7 @@
 #include <opencv2/highgui.hpp>
 
 
-#include "eb_path_planner/horibe_interpolate.h"
+#include "eb_path_planner/spline_interpolate.h"
 #include "eb_path_planner/util.h"
 #include "eb_path_planner/modify_reference_path.h"
 #include "eb_path_planner/eb_path_smoother.h"
@@ -201,7 +201,6 @@ autoware_planning_msgs::Trajectory::Ptr
           clearance_map,
           only_objects_clearance_map,
           input_path.drivable_area.info);
-  
   //2 generateExploredPoints(merged explored points)
   bool is_explore_needed = false;
   std::unique_ptr<std::vector<geometry_msgs::Point>> non_fixed_explored_points
@@ -272,6 +271,7 @@ autoware_planning_msgs::Trajectory::Ptr
   output_smooth_trajectory->points = fine_optimized_points;
   resettingPtrForLaneFollowing();
   is_previously_avoidance_mode_ = true;
+  // ros::Duration(5.0).sleep();
   return output_smooth_trajectory;
 }
 
@@ -2170,8 +2170,9 @@ void EBPathPlannerNode::debugMarkers(
     marker_array.markers.push_back(constrain_points_marker);
   }
   
+  unique_id = 0;
   visualization_msgs::Marker interpolated_points_marker;
-  interpolated_points_marker.lifetime = ros::Duration(.1);
+  interpolated_points_marker.lifetime = ros::Duration(5);
   interpolated_points_marker.header.frame_id = "map";
   interpolated_points_marker.header.stamp = ros::Time(0);
   interpolated_points_marker.ns = std::string("interpolated_points_marker");
