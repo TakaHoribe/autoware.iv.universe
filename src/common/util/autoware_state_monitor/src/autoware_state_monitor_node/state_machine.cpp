@@ -167,6 +167,8 @@ AutowareState StateMachine::updateState(const StateInput& state_input) {
 AutowareState StateMachine::judgeAutowareState() const {
   switch (autoware_state_) {
     case (AutowareState::InitializingVehicle): {
+      msgs_.push_back("[InitializingVehicle] Please wait for a while.");
+
       if (!isVehicleInitialized()) {
         break;
       }
@@ -175,6 +177,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::WaitingForRoute): {
+      msgs_.push_back("[WaitingForRoute] Please send a route.");
+
       // TODO: canExecuteAutonomousDriving, inGeoFence, etc...?
 
       if (!isRouteReceived()) {
@@ -189,6 +193,7 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::Planning): {
+      msgs_.push_back("[Planning] Please wait for a while.");
       executing_route_ = state_input_.route;
 
       if (!isPlanningCompleted()) {
@@ -199,6 +204,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::WaitingForEngage): {
+      msgs_.push_back("[WaitingForEngage] Please set engage.");
+
       if (!isEngaged()) {
         break;
       }
@@ -211,6 +218,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::Driving): {
+      msgs_.push_back("[Driving] Under autonomous driving. Have fun!");
+
       if (isOverrided()) {
         return AutowareState::WaitingForEngage;
       }
@@ -232,6 +241,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::ArrivedGoal): {
+      msgs_.push_back("[ArrivedGoal] Autonomous driving has completed. Thank you!");
+
       if (isOverrided()) {
         return AutowareState::WaitingForEngage;
       }
@@ -246,6 +257,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::FailedToArriveGoal): {
+      msgs_.push_back("[FailedToArriveGoal] Autonomous driving has failed. Please override.");
+
       if (isOverrided()) {
         return AutowareState::WaitingForEngage;
       }
@@ -260,6 +273,8 @@ AutowareState StateMachine::judgeAutowareState() const {
     }
 
     case (AutowareState::Error): {
+      msgs_.push_back("[Error] An error has occurred. Please override.");
+
       break;
     }
 
