@@ -7,7 +7,7 @@ load:
   device: 4
 
 
-device: /dev/ublox
+device: /dev/ttyACM1
 frame_id: gnss_link
 rate: 5                     # in Hz
 nav_rate: 1                 # [# of measurement cycles], recommended 1 Hz, may

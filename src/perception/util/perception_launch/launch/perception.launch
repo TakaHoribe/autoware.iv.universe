@@ -5,22 +5,22 @@
   <arg name="mode" default="camera_lidar_fusion"/>
   <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   <arg name="image_raw0" default="/image_raw"/>
-  <arg name="camera_info0" default="/sensing/camera/camera1/camera_info"/>
+  <arg name="camera_info0" default="/camera_info"/>
   <arg name="image_raw1" default=""/>
-  <arg name="camera_info1" default="/sensing/camera/camera2/camera_info"/>
+  <arg name="camera_info1" default=""/>
   <arg name="image_raw2" default=""/>
-  <arg name="camera_info2" default="/sensing/camera/camera3/camera_info"/>
+  <arg name="camera_info2" default=""/>
   <arg name="image_raw3" default=""/>
-  <arg name="camera_info3" default="/sensing/camera/camera4/camera_info"/>
+  <arg name="camera_info3" default=""/>
   <arg name="image_raw4" default=""/>
-  <arg name="camera_info4" default="/sensing/camera/camera5/camera_info"/>
+  <arg name="camera_info4" default=""/>
   <arg name="image_raw5" default=""/>
-  <arg name="camera_info5" default="/sensing/camera/camera6/camera_info"/>
+  <arg name="camera_info5" default=""/>
   <arg name="image_raw6" default=""/>
   <arg name="camera_info6" default=""/>
   <arg name="image_raw7" default=""/>
   <arg name="camera_info7" default=""/>
-  <arg name="image_number" default="6"/>
+  <arg name="image_number" default="1"/>
   <arg name="use_vector_map" default="true"/>
 
   <!-- preception module -->

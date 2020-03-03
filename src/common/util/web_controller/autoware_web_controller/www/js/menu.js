@@ -34,10 +34,6 @@ $(function() {
         runEffect("#autoware");
         return false;
     });
-    $("#menu_monitor").click(function() {
-        runEffect("#monitor");
-        return false;
-    });
     $("#menu_vehicle").click(function() {
         runEffect("#vehicle");
         return false;
@@ -47,7 +43,6 @@ $(function() {
 
 function ChangeTab(tabName) {
     document.getElementById('autoware').style.display = 'none';
-    document.getElementById('monitor').style.display = 'none';
     document.getElementById('vehicle').style.display = 'none';
     document.getElementById(tabName).style.display = 'block';
 }
