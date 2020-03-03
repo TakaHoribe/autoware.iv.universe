@@ -19,7 +19,8 @@ if (!AutowareEngagePublisher) {
             var pub = new ROSLIB.Topic({
                 ros: this.ros,
                 name: '/autoware/engage',
-                messageType: 'std_msgs/Bool'
+                messageType: 'std_msgs/Bool',
+                latch: 'true'
             });
 
             var str = new ROSLIB.Message({
@@ -56,7 +57,8 @@ if (!AutowareDisengagePublisher) {
             var pub = new ROSLIB.Topic({
                 ros: this.ros,
                 name: '/autoware/engage',
-                messageType: 'std_msgs/Bool'
+                messageType: 'std_msgs/Bool',
+                latch: 'true'
             });
 
             var str = new ROSLIB.Message({

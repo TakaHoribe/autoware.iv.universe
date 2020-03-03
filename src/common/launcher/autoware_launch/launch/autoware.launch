@@ -9,6 +9,18 @@
   <!-- Vehicle Setting -->
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
 
+  <!-- State Monitor -->
+  <include file="$(find autoware_state_monitor)/launch/autoware_state_monitor.launch">
+    <arg name="input_autoware_engage" value="/autoware/engage" />
+    <arg name="input_vehicle_engage" value="/vehicle/engage" />
+    <arg name="input_route" value="/planning/mission_planning/route" />
+    <arg name="input_twist" value="/vehicle/status/twist" />
+
+    <arg name="output_autoware_state" value="/autoware/state" />
+
+    <arg name="config_file" value="$(find autoware_state_monitor)/config/autoware_state_monitor.yaml" />
+  </include>
+
   <!-- Map -->
   <include file="$(find map_launch)/launch/map.launch">
     <arg name="map_path" value="$(arg map_path)"/>
