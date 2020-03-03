@@ -8,7 +8,9 @@ namespace traffic_light
 TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~")
 {
   std::string package_path = ros::package::getPath("traffic_light_fine_detector");
+  std::string data_path = package_path + "/data/";
   std::string engine_path = package_path + "/data/yolov3-tlr.engine";
+  std::string calib_image_path = package_path + "/calib_image/";
   std::ifstream fs(engine_path);
   if (fs.is_open())
   {
@@ -18,12 +20,45 @@ TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~")
   else
   {
     ROS_INFO("Could not find %s, try making TensorRT engine from onnx", engine_path.c_str());
-    boost::filesystem::create_directories(package_path + "/data");
+    boost::filesystem::create_directories(data_path);
+    boost::filesystem::create_directories(calib_image_path);
     std::string onnx_file;
+    std::string mode;
+    bool read_cache;
     pnh_.param<std::string>("onnx_file", onnx_file, "");
+    pnh_.param<std::string>("mode", mode, "fp32");
+    pnh_.param<bool>("read_cache", read_cache, true);
     std::vector<std::vector<float>> calib_data;
+    int count = 0;
     Tn::RUN_MODE run_mode = Tn::RUN_MODE::FLOAT32;
-    net_ptr_.reset(new Tn::trtNet(onnx_file, calib_data, run_mode));
+    if (boost::filesystem::is_directory(calib_image_path))
+    {
+        for (const auto& entry: boost::make_iterator_range(boost::filesystem::directory_iterator(calib_image_path), {}))
+        {
+            cv::Mat img = cv::imread(entry.path().string());
+            if (img.empty())
+            {
+                ROS_INFO("fail to load image: %s", entry.path().string().c_str());
+                continue;
+            }
+            auto data = prepareImage(img);
+            calib_data.emplace_back(data);
+            count++;
+        }
+    }
+    if (mode == "int8")
+    {
+        if (count == 0)
+            ROS_INFO("run int8 please input calibration file, will run in fp32");
+        else
+            run_mode = Tn::RUN_MODE::INT8;
+    }
+    else if (mode == "fp16")
+    {
+        run_mode = Tn::RUN_MODE::FLOAT16;
+    }
+    
+    net_ptr_.reset(new Tn::trtNet(onnx_file, calib_data, run_mode, read_cache, data_path));
     net_ptr_->saveEngine(engine_path);
   }
   initROS();
