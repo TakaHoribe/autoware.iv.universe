@@ -64,7 +64,7 @@ bool isRouteLooped(const RouteSections& route_sections) {
 
 namespace mission_planner {
 MissionPlannerLanelet2::MissionPlannerLanelet2() : is_graph_ready_(false) {
-  map_subscriber_ = pnh_.subscribe("input/lanelet_map_bin", 10, &MissionPlannerLanelet2::mapCallback, this);
+  map_subscriber_ = pnh_.subscribe("input/vector_map", 10, &MissionPlannerLanelet2::mapCallback, this);
 }
 
 void MissionPlannerLanelet2::mapCallback(const autoware_lanelet2_msgs::MapBin& msg) {

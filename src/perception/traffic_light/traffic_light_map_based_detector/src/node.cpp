@@ -39,7 +39,7 @@
 namespace traffic_light {
 
 MapBasedDetector::MapBasedDetector() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
-  map_sub_ = pnh_.subscribe("input/lanelet_map_bin", 1, &MapBasedDetector::mapCallback, this);
+  map_sub_ = pnh_.subscribe("input/vector_map", 1, &MapBasedDetector::mapCallback, this);
   camera_info_sub_ = pnh_.subscribe("input/camera_info", 1, &MapBasedDetector::cameraInfoCallback, this);
   route_sub_ = pnh_.subscribe("input/route", 1, &MapBasedDetector::routeCallback, this);
   roi_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);

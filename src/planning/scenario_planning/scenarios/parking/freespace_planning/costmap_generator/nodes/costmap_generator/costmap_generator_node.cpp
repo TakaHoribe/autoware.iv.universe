@@ -90,7 +90,7 @@ CostmapGenerator::CostmapGenerator() : nh_(""), private_nh_("~"), tf_listener_(t
   // Subscribers
   sub_objects_ = private_nh_.subscribe("input/objects", 1, &CostmapGenerator::onObjects, this);
   sub_points_ = private_nh_.subscribe("input/points_no_ground", 1, &CostmapGenerator::onPoints, this);
-  sub_lanelet_bin_map_ = private_nh_.subscribe("input/lanelet_map_bin", 1, &CostmapGenerator::onLaneletMapBin, this);
+  sub_lanelet_bin_map_ = private_nh_.subscribe("input/vector_map", 1, &CostmapGenerator::onLaneletMapBin, this);
   sub_scenario_ = private_nh_.subscribe("input/scenario", 1, &CostmapGenerator::onScenario, this);
 
   // Publishers

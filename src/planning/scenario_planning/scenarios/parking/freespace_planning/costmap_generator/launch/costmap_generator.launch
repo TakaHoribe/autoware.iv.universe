@@ -1,7 +1,7 @@
 <launch>
   <arg name="input_objects" />
   <arg name="input_points_no_ground" />
-  <arg name="input_lanelet_map_bin" />
+  <arg name="input_lanelet_map" />
   <arg name="input_scenario" />
   <arg name="output_grid_map" />
   <arg name="output_occupancy_grid" />
@@ -9,7 +9,7 @@
   <node pkg="costmap_generator" type="costmap_generator" name="costmap_generator" output="screen">
     <remap from="~input/objects" to="$(arg input_objects)" />
     <remap from="~input/points_no_ground" to="$(arg input_points_no_ground)" />
-    <remap from="~input/lanelet_map_bin" to="$(arg input_lanelet_map_bin)" />
+    <remap from="~input/vector_map" to="$(arg input_lanelet_map)" />
     <remap from="~input/scenario" to="$(arg input_scenario)" />
     <remap from="~output/grid_map" to="$(arg output_grid_map)" />
     <remap from="~output/occupancy_grid" to="$(arg output_occupancy_grid)" />

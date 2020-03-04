@@ -40,7 +40,7 @@ void printUsage() {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "lanelet_map_loader");
-  ros::NodeHandle rosnode;
+  ros::NodeHandle pnh("~");
 
   if (argc < 2) {
     printUsage();
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
   std::string format_version, map_version;
   lanelet::io_handlers::AutowareOsmParser::parseVersions(lanelet2_filename, &format_version, &map_version);
 
-  ros::Publisher map_bin_pub = rosnode.advertise<autoware_lanelet2_msgs::MapBin>("/lanelet_map_bin", 1, true);
+  ros::Publisher map_bin_pub = pnh.advertise<autoware_lanelet2_msgs::MapBin>("output/lanelet2_map", 1, true);
   autoware_lanelet2_msgs::MapBin map_bin_msg;
   map_bin_msg.header.stamp = ros::Time::now();
   map_bin_msg.header.frame_id = "map";

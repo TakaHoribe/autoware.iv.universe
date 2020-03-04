@@ -10,7 +10,7 @@ This node reads `PointCloud` and/or `DynamicObjectArray` and creates an `Occupan
 | ------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------- |
 | `~input/objects`          | autoware_perception_msgs::DynamicObjectArray | predicted objects, for obstacles areas                                       |
 | `~input/points_no_ground` | sensor_msgs::PointCloud2                     | ground-removed points, for obstacle areas which can't be detected as objects |
-| `~input/lanelet_map_bin`  | autoware_lanelet2_msgs::MapBin               | vector map, for drivable areas                                               |
+| `~input/vector_map`       | autoware_lanelet2_msgs::MapBin               | vector map, for drivable areas                                               |
 | `~input/scenario`         | autoware_planning_msgs::Scenario             | scenarios to be activated, for node activation                               |
 
 ### Output topics
@@ -36,7 +36,7 @@ None
 | `update_rate`                | double | timer's update rate                                          |
 | `use_objects`                | bool   | whether using `~input/objects` or not                        |
 | `use_points`                 | bool   | whether using `~input/points_no_ground` or not               |
-| `use_wayarea`                | bool   | whether using `wayarea` from `~input/lanelet_map_bin` or not |
+| `use_wayarea`                | bool   | whether using `wayarea` from `~input/vector_map` or not |
 | `costmap_frame`              | string | created costmap's coordinate                                 |
 | `vehicle_frame`              | string | vehicle's coordinate                                         |
 | `map_frame`                  | string | map's coordinate                                             |
