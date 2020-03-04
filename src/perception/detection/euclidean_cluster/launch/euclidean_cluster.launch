@@ -2,7 +2,7 @@
 
 <launch>
   <arg name="input/pointcloud" default="/sensing/lidar/no_ground/pointcloud"/>
-  <arg name="input/map" default="/map/pointcloud" />
+  <arg name="input/map" default="/map/pointcloud_map" />
   <arg name="output/clusters" default="clusters"/>
   <arg name="use_pointcloud_map" default="false"/>
 
