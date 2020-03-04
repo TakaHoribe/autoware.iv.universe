@@ -233,10 +233,8 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   }
 
   const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
-  for (const auto& right_of_way : right_of_ways)
-  {
-    for (const auto& yield_lanelets : right_of_way->yieldLanelets())
-    {
+  for (const auto& right_of_way : right_of_ways) {
+    for (const auto& yield_lanelets : right_of_way->yieldLanelets()) {
       exclude_lanelets.push_back(yield_lanelets);
       for (const auto& previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
         exclude_lanelets.push_back(previous_lanelet);
