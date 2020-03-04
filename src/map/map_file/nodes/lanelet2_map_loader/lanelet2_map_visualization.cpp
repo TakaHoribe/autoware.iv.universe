@@ -98,12 +98,12 @@ void binMapCallback(autoware_lanelet2_msgs::MapBin msg) {
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "lanelet_map_visualizer");
-  ros::NodeHandle rosnode;
+  ros::init(argc, argv, "lanelet2_map_visualizer");
+  ros::NodeHandle pnh("~");
   ros::Subscriber bin_map_sub;
 
-  bin_map_sub = rosnode.subscribe("/lanelet_map_bin", 1, binMapCallback);
-  g_map_pub = rosnode.advertise<visualization_msgs::MarkerArray>("lanelet2_map_viz", 1, true);
+  bin_map_sub = pnh.subscribe("input/lanelet2_map", 1, binMapCallback);
+  g_map_pub = pnh.advertise<visualization_msgs::MarkerArray>("output/lanelet2_map_marker", 1, true);
 
   ros::spin();
 
