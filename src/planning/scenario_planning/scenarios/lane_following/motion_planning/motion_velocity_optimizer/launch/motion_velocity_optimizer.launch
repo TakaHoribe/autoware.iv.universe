@@ -7,8 +7,8 @@
   <arg name="show_debug_info_all" default="false"/>
   <arg name="publish_debug_trajs" default="true"/>
 
-  <node pkg="motion_velocity_planner" type="motion_velocity_planner_osqp" name="motion_velocity_planner_osqp" output="$(arg output)">
-    <rosparam command="load" file="$(find motion_velocity_planner)/config/motion_velocity_planner_osqp.yaml" />
+  <node pkg="motion_velocity_optimizer" type="motion_velocity_optimizer" name="motion_velocity_optimizer" output="$(arg output)">
+    <rosparam command="load" file="$(find motion_velocity_optimizer)/config/motion_velocity_optimizer.yaml" />
     <param name="show_debug_info" value="$(arg show_debug_info)"/>
     <param name="show_debug_info_all" value="$(arg show_debug_info_all)"/>
     <param name="publish_debug_trajs" value="$(arg publish_debug_trajs)"/>

@@ -58,7 +58,7 @@
     <!-- dir/file name of rosbag file(**it must be absolute path ** ) -->
     <param name="use_ndt" value="false" />
     <!-- use ndt or not -->
-    <remap from="/max_speed_mps" to="/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps" />
+    <remap from="/max_speed_mps" to="/planning/scenario_planning/motion_velocity_optimizer/external_velocity_limit_mps" />
   </node>
 
 </launch>

@@ -15,7 +15,7 @@
  */
 
 #include <chrono>
-#include <motion_velocity_planner/motion_velocity_planner_osqp.hpp>
+#include <motion_velocity_optimizer/motion_velocity_optimizer.hpp>
 
 // clang-format off
 #define DEBUG_INFO(...) { if (show_debug_info_) {ROS_INFO(__VA_ARGS__); } }
@@ -23,7 +23,7 @@
 #define DEBUG_INFO_ALL(...) { if (show_debug_info_all_) {ROS_INFO(__VA_ARGS__); } }
 
 // clang-format on
-MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
+MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_) {
   pnh_.param<double>("max_velocity", planning_param_.max_velocity, 20.0);  // 72.0 kmph
   pnh_.param<double>("max_accel", planning_param_.max_accel, 2.0);         // 0.11G
   pnh_.param<double>("min_decel", planning_param_.min_decel, -3.0);        // -0.2G
@@ -58,15 +58,15 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
   pub_trajectory_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
   pub_dist_to_stopline_ = pnh_.advertise<std_msgs::Float32>("distance_to_stopline", 1);
   sub_current_trajectory_ =
-      pnh_.subscribe("input/trajectory", 1, &MotionVelocityPlanner::callbackCurrentTrajectory, this);
+      pnh_.subscribe("input/trajectory", 1, &MotionVelocityOptimizer::callbackCurrentTrajectory, this);
   sub_current_velocity_ =
-      pnh_.subscribe("/vehicle/status/twist", 1, &MotionVelocityPlanner::callbackCurrentVelocity, this);
+      pnh_.subscribe("/vehicle/status/twist", 1, &MotionVelocityOptimizer::callbackCurrentVelocity, this);
   sub_external_velocity_limit_ =
-      pnh_.subscribe("external_velocity_limit_mps", 1, &MotionVelocityPlanner::callbackExternalVelocityLimit, this);
+      pnh_.subscribe("external_velocity_limit_mps", 1, &MotionVelocityOptimizer::callbackExternalVelocityLimit, this);
 
   /* dynamic reconfigure */
-  dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig>::CallbackType dyncon_f =
-      boost::bind(&MotionVelocityPlanner::dynamicRecofCallback, this, _1, _2);
+  dynamic_reconfigure::Server<motion_velocity_optimizer::MotionVelocityOptimizerConfig>::CallbackType dyncon_f =
+      boost::bind(&MotionVelocityOptimizer::dynamicRecofCallback, this, _1, _2);
   dyncon_server_.setCallback(dyncon_f);
 
   /* debug */
@@ -84,34 +84,34 @@ MotionVelocityPlanner::MotionVelocityPlanner() : nh_(""), pnh_("~"), tf_listener
       tf_buffer_.lookupTransform("map", "base_link", ros::Time::now(), ros::Duration(5.0));
       break;
     } catch (tf2::TransformException& ex) {
-      ROS_INFO("[MotionVelocityPlanner] is waitting to get map to base_link transform. %s", ex.what());
+      ROS_INFO("[MotionVelocityOptimizer] is waitting to get map to base_link transform. %s", ex.what());
       continue;
     }
   }
 }
-MotionVelocityPlanner::~MotionVelocityPlanner() {}
+MotionVelocityOptimizer::~MotionVelocityOptimizer() {}
 
-void MotionVelocityPlanner::publishTrajectory(const autoware_planning_msgs::Trajectory& trajectory) const {
+void MotionVelocityOptimizer::publishTrajectory(const autoware_planning_msgs::Trajectory& trajectory) const {
   pub_trajectory_.publish(trajectory);
 }
 
-void MotionVelocityPlanner::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg) {
+void MotionVelocityOptimizer::callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg) {
   current_velocity_ptr_ = msg;
 }
-void MotionVelocityPlanner::callbackCurrentTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr msg) {
+void MotionVelocityOptimizer::callbackCurrentTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr msg) {
   base_traj_raw_ptr_ = msg;
   run();
 }
-void MotionVelocityPlanner::callbackExternalVelocityLimit(const std_msgs::Float32::ConstPtr msg) {
+void MotionVelocityOptimizer::callbackExternalVelocityLimit(const std_msgs::Float32::ConstPtr msg) {
   external_velocity_limit_ptr_ = msg;
 }
 
-void MotionVelocityPlanner::updateCurrentPose() {
+void MotionVelocityOptimizer::updateCurrentPose() {
   geometry_msgs::TransformStamped transform;
   try {
     transform = tf_buffer_.lookupTransform("map", "base_link", ros::Time(0));
   } catch (tf2::TransformException& ex) {
-    ROS_WARN("[MotionVelocityPlanner] cannot get map to base_link transform. %s", ex.what());
+    ROS_WARN("[MotionVelocityOptimizer] cannot get map to base_link transform. %s", ex.what());
     return;
   }
 
@@ -124,7 +124,7 @@ void MotionVelocityPlanner::updateCurrentPose() {
   current_pose_ptr_ = boost::make_shared<geometry_msgs::PoseStamped>(ps);
 }
 
-void MotionVelocityPlanner::run() {
+void MotionVelocityOptimizer::run() {
   auto t_start = std::chrono::system_clock::now();
   DEBUG_INFO("============================== run() start ==============================");
 
@@ -153,7 +153,7 @@ void MotionVelocityPlanner::run() {
   DEBUG_INFO("============================== run() end ==============================\n\n");
 }
 
-autoware_planning_msgs::Trajectory MotionVelocityPlanner::calcTrajectoryVelocity(
+autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVelocity(
     const autoware_planning_msgs::Trajectory& traj_input) {
   /* (1) Find the nearest point to reference_traj */
   int input_closest = vpu::calcClosestWaypoint(traj_input, current_pose_ptr_->pose);
@@ -230,7 +230,7 @@ autoware_planning_msgs::Trajectory MotionVelocityPlanner::calcTrajectoryVelocity
   return output;
 }
 
-void MotionVelocityPlanner::insertBehindVelocity(const int prev_output_closest,
+void MotionVelocityOptimizer::insertBehindVelocity(const int prev_output_closest,
                                                  const autoware_planning_msgs::Trajectory& prev_output,
                                                  const int output_closest, autoware_planning_msgs::Trajectory& output) {
   int j = std::max(prev_output_closest - 1, 0);
@@ -246,7 +246,7 @@ void MotionVelocityPlanner::insertBehindVelocity(const int prev_output_closest,
   }
 }
 
-void MotionVelocityPlanner::publishStopDistance(const autoware_planning_msgs::Trajectory& trajectory,
+void MotionVelocityOptimizer::publishStopDistance(const autoware_planning_msgs::Trajectory& trajectory,
                                                 const int closest) const {
   /* stop distance calculation */
   int stop_idx = 0;
@@ -261,7 +261,7 @@ void MotionVelocityPlanner::publishStopDistance(const autoware_planning_msgs::Tr
   pub_dist_to_stopline_.publish(dist_to_stopline);
 }
 
-bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Trajectory& input,
+bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::Trajectory& input,
                                                autoware_planning_msgs::Trajectory& output) const {
   std::vector<double> in_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
@@ -292,7 +292,7 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
   }
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
     ROS_WARN(
-        "[motion_velocity_planner]: fail trajectory interpolation. size : in_arclength = %lu, input = %lu, "
+        "[motion_velocity_optimizer]: fail trajectory interpolation. size : in_arclength = %lu, input = %lu, "
         "out_arclength = %lu, output = %lu",
         in_arclength.size(), input.points.size(), out_arclength.size(), output.points.size());
     return false;
@@ -305,7 +305,7 @@ bool MotionVelocityPlanner::resampleTrajectory(const autoware_planning_msgs::Tra
   return true;
 }
 
-void MotionVelocityPlanner::calcInitialMotion(const double& target_vel,
+void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
                                               const autoware_planning_msgs::Trajectory& reference_traj,
                                               const int reference_traj_closest,
                                               const autoware_planning_msgs::Trajectory& prev_output,
@@ -367,7 +367,7 @@ void MotionVelocityPlanner::calcInitialMotion(const double& target_vel,
   return;
 }
 
-void MotionVelocityPlanner::solveOptimization(const double initial_vel, const double initial_acc,
+void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const double initial_acc,
                                               const autoware_planning_msgs::Trajectory& input, const int closest,
                                               autoware_planning_msgs::Trajectory& output) {
   auto ts = std::chrono::system_clock::now();
@@ -375,12 +375,12 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
   output = input;
 
   if ((int)input.points.size() < closest) {
-    ROS_WARN("[MotionVelocityPlanner::solveOptimization] invalid closest.");
+    ROS_WARN("[MotionVelocityOptimizer::solveOptimization] invalid closest.");
     return;
   }
 
   if (std::fabs(input.points.at(closest).twist.linear.x) < 0.1) {
-    DEBUG_INFO("[MotionVelocityPlanner::solveOptimization] closest vmax < 0.1, keep stopping. return.");
+    DEBUG_INFO("[MotionVelocityOptimizer::solveOptimization] closest vmax < 0.1, keep stopping. return.");
     return;
   }
 
@@ -529,7 +529,7 @@ void MotionVelocityPlanner::solveOptimization(const double initial_vel, const do
   DEBUG_INFO("[optimization] initialization time = %f [ms], optimization time = %f [ms]", elapsed_ms1, elapsed_ms2);
 }
 
-void MotionVelocityPlanner::optimizeVelocity(const autoware_planning_msgs::Trajectory& input, const int input_closest,
+void MotionVelocityOptimizer::optimizeVelocity(const autoware_planning_msgs::Trajectory& input, const int input_closest,
                                              const autoware_planning_msgs::Trajectory& prev_output,
                                              const int prev_output_closest,
                                              autoware_planning_msgs::Trajectory& output) {
@@ -561,7 +561,7 @@ void MotionVelocityPlanner::optimizeVelocity(const autoware_planning_msgs::Traje
   DEBUG_INFO("[optimizeVelocity] : current_replanned.size() = %d", (int)output.points.size());
 }
 
-bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory& input,
+bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory& input,
                                                       autoware_planning_msgs::Trajectory& output) const {
   if (input.points.size() == 0) {
     return false;
@@ -574,7 +574,7 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
     out_arclength.push_back(s);
   }
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
-    ROS_WARN("[motion_velocity_planner]: fail trajectory interpolation at lateral acceleraion filter.");
+    ROS_WARN("[motion_velocity_optimizer]: fail trajectory interpolation at lateral acceleraion filter.");
     return false;
   }
 
@@ -609,7 +609,7 @@ bool MotionVelocityPlanner::lateralAccelerationFilter(const autoware_planning_ms
   return true;
 }
 
-bool MotionVelocityPlanner::externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory& input,
+bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory& input,
                                                         autoware_planning_msgs::Trajectory& output) const {
   output = input;
   if (external_velocity_limit_ptr_ != nullptr) {
@@ -621,7 +621,7 @@ bool MotionVelocityPlanner::externalVelocityLimitFilter(const autoware_planning_
   }
 }
 
-void MotionVelocityPlanner::preventMoveToCloseStopLine(const int closest,
+void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
                                                        autoware_planning_msgs::Trajectory& trajectory) const {
   if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.1) {
     int stop_idx = 0;
@@ -647,7 +647,7 @@ void MotionVelocityPlanner::preventMoveToCloseStopLine(const int closest,
   }
 }
 
-bool MotionVelocityPlanner::extractPathAroundIndex(const autoware_planning_msgs::Trajectory& input, const int index,
+bool MotionVelocityOptimizer::extractPathAroundIndex(const autoware_planning_msgs::Trajectory& input, const int index,
                                                    autoware_planning_msgs::Trajectory& output) const {
   const double ahead_length = planning_param_.extract_ahead_dist;
   const double behind_length = planning_param_.extract_behind_dist;
@@ -692,15 +692,15 @@ bool MotionVelocityPlanner::extractPathAroundIndex(const autoware_planning_msgs:
   return true;
 }
 
-void MotionVelocityPlanner::publishClosestVelocity(const double& vel) const {
+void MotionVelocityOptimizer::publishClosestVelocity(const double& vel) const {
   std_msgs::Float32 closest_velocity;
   closest_velocity.data = vel;
   debug_closest_velocity_.publish(closest_velocity);
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "motion_velocity_planner");
-  MotionVelocityPlanner obj;
+  ros::init(argc, argv, "motion_velocity_optimizer");
+  MotionVelocityOptimizer obj;
 
   ros::spin();
 

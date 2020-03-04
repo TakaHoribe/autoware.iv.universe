@@ -25,17 +25,17 @@
 #include <iostream>
 
 #include <dynamic_reconfigure/server.h>
-#include <motion_velocity_planner/MotionVelocityPlannerConfig.h>
+#include <motion_velocity_optimizer/MotionVelocityOptimizerConfig.h>
 
-#include <motion_velocity_planner/motion_velocity_planner_utils.hpp>
+#include <motion_velocity_optimizer/motion_velocity_optimizer_utils.hpp>
 
 #include <osqp_interface/osqp_interface.h>
 #include <stop_planner/planning_utils.h>
 
-class MotionVelocityPlanner {
+class MotionVelocityOptimizer {
  public:
-  MotionVelocityPlanner();
-  ~MotionVelocityPlanner();
+  MotionVelocityOptimizer();
+  ~MotionVelocityOptimizer();
 
  private:
   ros::NodeHandle nh_;
@@ -69,7 +69,7 @@ class MotionVelocityPlanner {
   bool show_figure_;          // for plot visualize
   bool publish_debug_trajs_;  // publish planned trajectories
 
-  struct MotionVelocityPlannerParam {
+  struct MotionVelocityOptimizerParam {
     double max_velocity;                      // max velocity [m/s]
     double max_accel;                         // max acceleration in planning [m/s2] > 0
     double min_decel;                         // min deceltion in planning [m/s2] < 0
@@ -133,8 +133,8 @@ class MotionVelocityPlanner {
   void insertBehindVelocity(const int prev_out_closest, const autoware_planning_msgs::Trajectory& prev_output,
                             const int output_closest, autoware_planning_msgs::Trajectory& output);
   /* dynamic reconfigure */
-  dynamic_reconfigure::Server<motion_velocity_planner::MotionVelocityPlannerConfig> dyncon_server_;
-  void dynamicRecofCallback(motion_velocity_planner::MotionVelocityPlannerConfig& config, uint32_t level) {
+  dynamic_reconfigure::Server<motion_velocity_optimizer::MotionVelocityOptimizerConfig> dyncon_server_;
+  void dynamicRecofCallback(motion_velocity_optimizer::MotionVelocityOptimizerConfig& config, uint32_t level) {
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;
     planning_param_.engage_velocity = config.engage_velocity;

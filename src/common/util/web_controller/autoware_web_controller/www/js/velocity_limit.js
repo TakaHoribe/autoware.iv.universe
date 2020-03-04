@@ -18,7 +18,7 @@ if (!VelocityLimitPublisher) {
         send: function() {
             var pub = new ROSLIB.Topic({
                 ros: this.ros,
-                name: '/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps',
+                name: '/planning/scenario_planning/motion_velocity_optimizer/external_velocity_limit_mps',
                 messageType: 'std_msgs/Float32'
             });
             var str = new ROSLIB.Message({
@@ -53,7 +53,7 @@ if (!VelocityLimitSubscriber) {
 
             var sub = new ROSLIB.Topic({
                 ros: this.ros,
-                name: '/planning/scenario_planning/motion_velocity_planner_osqp/external_velocity_limit_mps',
+                name: '/planning/scenario_planning/motion_velocity_optimizer/external_velocity_limit_mps',
                 messageType: 'std_msgs/Float32'
             });
             sub.subscribe(function(message) {

@@ -769,7 +769,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/planning/scenario_planning/motion_velocity_planner_osqp/distance_to_stopline</topic>
+                                    <topic>/planning/scenario_planning/motion_velocity_optimizer/distance_to_stopline</topic>
                                     <type>std_msgs/Float32</type>
                                 </x_axis>
                                 <y_axis>
@@ -782,7 +782,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/planning/scenario_planning/motion_velocity_planner_osqp/distance_to_stopline</topic>
+                                    <topic>/planning/scenario_planning/motion_velocity_optimizer/distance_to_stopline</topic>
                                     <type>std_msgs/Float32</type>
                                 </y_axis>
                             </axes>

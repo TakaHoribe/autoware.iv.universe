@@ -17,7 +17,7 @@
   <group>
     <remap from="~/input/trajectory" to="/planning/scenario_planning/scenario_selector/trajectory"/>
     <remap from="~/output/trajectory" to="/planning/scenario_planning/trajectory"/>
-    <include file="$(find motion_velocity_planner)/launch/motion_velocity_planner_osqp.launch"/>
+    <include file="$(find motion_velocity_optimizer)/launch/motion_velocity_optimizer.launch"/>
   </group>
 
   <!-- scenarios-->

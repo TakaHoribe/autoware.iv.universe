@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>motion_velocity_planner</name>
+  <name>motion_velocity_optimizer</name>
   <version>0.0.0</version>
-  <description>The motion_velocity_planner package</description>
+  <description>The motion_velocity_optimizer package</description>
 
   <maintainer email="horibe.takamasa@gmail.com">Takamasa Horibe</maintainer>
 
