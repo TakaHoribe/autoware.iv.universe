@@ -30,6 +30,11 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
     return false;
   }
 
+  /* set judge line dist */
+  double current_velocity = planner_data_->current_velocity->twist.linear.x;
+  double max_accel = planner_data_->max_stop_acceleration_threshold_;
+  judge_line_dist_ = planning_utils::calcJudgeLineDist(current_velocity, max_accel, 0.0);
+
   /* set stop-line and stop-judgement-line */
   if (!setStopLineIdx(closest, judge_line_dist_, *path, stop_line_idx_, judge_line_idx_)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] setStopLineIdx fail");

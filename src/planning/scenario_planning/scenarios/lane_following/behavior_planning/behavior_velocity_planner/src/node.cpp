@@ -110,13 +110,16 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
 
   // Parameters
-  pnh_.param("foward_path_length", foward_path_length_, 1000.0);
+  pnh_.param("forward_path_length", forward_path_length_, 1000.0);
   pnh_.param("backward_path_length", backward_path_length_, 5.0);
 
   // Vehicle Parameters
   planner_data_.wheel_base = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
   planner_data_.front_overhang = waitForParam<double>(pnh_, "/vehicle_info/front_overhang");
   planner_data_.vehicle_width = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
+  // Additional Vehicle Parameters
+  pnh_.param("max_accel", planner_data_.max_stop_acceleration_threshold_,
+             -5.0);  // TODO read min_acc in velocity_controller_param.yaml?
   // TODO(Kenji Miyake): get from additional vehicle_info?
   planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
 
@@ -226,7 +229,7 @@ void BehaviorVelocityPlannerNode::onTrigger(const autoware_planning_msgs::PathWi
   const auto filtered_path = filterLitterPathPoint(to_path(veloctiy_planed_path));
 
   // interpolation
-  const auto interpolated_path_msg = interpolatePath(filtered_path, foward_path_length_);
+  const auto interpolated_path_msg = interpolatePath(filtered_path, forward_path_length_);
 
   // check stop point
   auto output_path_msg = filterStopPathPoint(interpolated_path_msg);

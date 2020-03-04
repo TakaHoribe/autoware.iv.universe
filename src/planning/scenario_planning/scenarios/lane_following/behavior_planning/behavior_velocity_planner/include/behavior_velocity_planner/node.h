@@ -63,7 +63,7 @@ class BehaviorVelocityPlannerNode {
   void publishDebugMarker(const autoware_planning_msgs::Path& path, const ros::Publisher& pub);
 
   //  parameter
-  double foward_path_length_;
+  double forward_path_length_;
   double backward_path_length_;
 
   // member

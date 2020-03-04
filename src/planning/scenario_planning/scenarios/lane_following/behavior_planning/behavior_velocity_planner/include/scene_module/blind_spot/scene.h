@@ -99,7 +99,7 @@ class BlindSpotModule : public SceneModuleInterface {
   int judge_line_idx_;  //! stop-judgement-line index
 
   // Parameter
-  const double judge_line_dist_ = 1.5;    //! distance from stop-line to stop-judgement line
+  double judge_line_dist_ = 0.0;          //! distance from stop-line to stop-judgement line
   const double path_expand_width_ = 2.0;  //! path width to calculate the edge line for both side
   const bool show_debug_info_ = false;
 

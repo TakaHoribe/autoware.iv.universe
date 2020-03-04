@@ -109,4 +109,11 @@ geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose& relative
 
   return absolute;
 }
+
+double calcJudgeLineDist(double velocity, double max_accel, double margin)  // TODO: also consider jerk
+{
+  double judge_line_dist = (velocity * velocity) / (2.0 * (-max_accel)) + margin;
+  return judge_line_dist;
+}
+
 }  // namespace planning_utils

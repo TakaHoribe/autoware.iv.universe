@@ -65,6 +65,9 @@ struct PlannerData {
   double vehicle_width;
   double base_link2front;
 
+  // additional parameters
+  double max_stop_acceleration_threshold_;
+
   bool isVehicleStopping() const {
     if (!current_velocity) return false;
     return current_velocity->twist.linear.x < 0.1;

@@ -64,6 +64,8 @@ bool calcClosestIndex(const T& path, const geometry_msgs::Pose& pose, int& close
 geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose& target, const geometry_msgs::Pose& origin);
 geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose& relative, const geometry_msgs::Pose& origin);
 
+double calcJudgeLineDist(double velocity, double max_accel, double margin);
+
 }  // namespace planning_utils
 
 #endif  // COMMON_MATH_PLANNING_UTILS_H

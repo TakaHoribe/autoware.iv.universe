@@ -90,7 +90,7 @@ class IntersectionModule : public SceneModuleInterface {
   int judge_line_idx_;  //! stop-judgement-line index
 
   // Parameter
-  double judge_line_dist_ = 1.5;                        //! distance from stop-line to stop-judgement line
+  double judge_line_dist_ = 0.0;                        //! distance from stop-line to stop-judgement line
   double approaching_speed_to_stopline_ = 100.0 / 3.6;  //! speed when approaching stop-line (should be slow)
   double path_expand_width_ = 2.0;                      //! path width to calculate the edge line for both side
   bool show_debug_info_ = false;
