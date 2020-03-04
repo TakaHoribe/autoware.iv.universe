@@ -2,6 +2,7 @@
 
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_extension/utility/utilities.h>
+#include <lanelet2_core/primitives/BasicRegulatoryElements.h>
 
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
@@ -218,22 +219,32 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
     }
   }
 
-  // get same-group lanelets of assigned lanelet
-  std::vector<lanelet::ConstLanelet> same_group_lanelets;
+  // get lanelets that must be ignored
+  std::vector<lanelet::ConstLanelet> exclude_lanelets;
   for (const auto& previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
-    same_group_lanelets.push_back(previous_lanelet);
+    exclude_lanelets.push_back(previous_lanelet);
 
     for (const auto& following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
-      if (lanelet::utils::contains(same_group_lanelets, following_lanelet)) {
+      if (lanelet::utils::contains(exclude_lanelets, following_lanelet)) {
         continue;
       }
-      same_group_lanelets.push_back(following_lanelet);
+      exclude_lanelets.push_back(following_lanelet);
+    }
+  }
+
+  const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
+  for (const auto& right_of_way : right_of_ways) {
+    for (const auto& yield_lanelets : right_of_way->yieldLanelets()) {
+      exclude_lanelets.push_back(yield_lanelets);
+      for (const auto& previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
+        exclude_lanelets.push_back(previous_lanelet);
+      }
     }
   }
 
   // Filter candidates
   for (const auto& candidate_lanelet : candidate_lanelets) {
-    if (lanelet::utils::contains(same_group_lanelets, candidate_lanelet)) {
+    if (lanelet::utils::contains(exclude_lanelets, candidate_lanelet)) {
       continue;
     }
 
