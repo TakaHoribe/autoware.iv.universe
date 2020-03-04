@@ -25,6 +25,7 @@ generate_dynamic_reconfigure_options(
   cfg/VoxelGridDownsampleFilter.cfg
   cfg/PointcloudAccumulator.cfg
   cfg/PassThroughFilter.cfg
+  cfg/PassThroughFilterUInt16.cfg
   cfg/RayGroundFilter.cfg
   cfg/CropBoxFilter.cfg
 )
@@ -189,6 +190,8 @@ add_dependencies(pointcloud_accumulator_node ${catkin_EXPORTED_TARGETS} ${PROJEC
 add_library(
   passthrough_filter
   src/passthrough_filter/passthrough_filter_nodelet.cpp
+  src/passthrough_filter/passthrough_uint16.cpp
+  src/passthrough_filter/passthrough_filter_uint16_nodelet.cpp
   src/filter.cpp # copy from pcl_ros https://github.com/ros-
                  # perception/perception_pcl/issues/9
   )
@@ -197,6 +200,7 @@ target_link_libraries(passthrough_filter
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(passthrough_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
 add_executable(
   passthrough_filter_node
   src/passthrough_filter/passthrough_filter_node.cpp)
@@ -206,6 +210,19 @@ target_link_libraries(passthrough_filter_node
                       ${catkin_LIBRARIES}
                       ${PCL_LIBRARIES})
 add_dependencies(passthrough_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
+
+# PassThroughUInt16
+add_executable(
+  passthrough_filter_uint16_node
+  src/passthrough_filter/passthrough_filter_uint16_node.cpp)
+target_link_libraries(passthrough_filter_uint16_node
+                      passthrough_filter
+                      ${Boost_LIBRARIES}
+                      ${catkin_LIBRARIES}
+                      ${PCL_LIBRARIES})
+add_dependencies(passthrough_filter_uint16_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+
 
 # Ray Ground Filter
 add_library(ground_filter
