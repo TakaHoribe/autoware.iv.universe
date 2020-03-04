@@ -101,7 +101,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
       pnh_.subscribe("input/no_ground_pointcloud", 1, &BehaviorVelocityPlannerNode::onNoGroundPointCloud, this);
   sub_vehicle_velocity_ =
       pnh_.subscribe("input/vehicle_velocity", 1, &BehaviorVelocityPlannerNode::onVehicleVelocity, this);
-  sub_lanelet_map_ = pnh_.subscribe("input/lanelet_map_bin", 10, &BehaviorVelocityPlannerNode::onLaneletMap, this);
+  sub_lanelet_map_ = pnh_.subscribe("input/vector_map", 10, &BehaviorVelocityPlannerNode::onLaneletMap, this);
   sub_traffic_light_states_ =
       pnh_.subscribe("input/traffic_light_states", 10, &BehaviorVelocityPlannerNode::onTrafficLightStates, this);
 

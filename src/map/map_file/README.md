@@ -31,7 +31,7 @@ Run from CLI:
 `rosrun map_file lanelet2_map_loader path/to/map.osm`
 
 ### Published Topic
-/lanelet_map_bin (autoware_lanelet2_msgs/MapBin) : Binary data of loaded Lanelet2 Map.
+~output/lanelet2_map (autoware_lanelet2_msgs/MapBin) : Binary data of loaded Lanelet2 Map.
 
 ## lanelet2_map_visualization
 ### Feature
@@ -42,7 +42,7 @@ Run from CLI:
 `rosrun map_file lanelet2_map_visualization`
 
 ### Subscribed Topics
-/lanelet_map_bin (autoware_lanelet2_msgs/MapBin) : binary data of Lanelet2 Map
+~input/lanelet2_map (autoware_lanelet2_msgs/MapBin) : binary data of Lanelet2 Map
 
 ### Published Topics
-/lanelet2_map_viz (visualization_msgs/MarkerArray) : visualization messages for RVIZ
+~output/lanelet2_map_marker (visualization_msgs/MarkerArray) : visualization messages for RVIZ

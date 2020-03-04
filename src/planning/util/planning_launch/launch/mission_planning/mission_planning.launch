@@ -1,7 +1,7 @@
 <launch>
   <arg name="input_topic_name" default="/move_base_simple/goal"/>
   <arg name="output_topic_name" default="/planning/mission_planning/route"/>
-  <arg name="map_topic_name" default="/lanelet_map_bin"/>
+  <arg name="map_topic_name" default="/map/vector_map"/>
   <arg name="visualization_topic_name" default="/planning/mission_planning/route_marker"/>
   <arg name="checkpoint_topic_name" default="/checkpoint"/>
   <node pkg="mission_planner" type="mission_planner" name="mission_planner" output="screen">
@@ -9,7 +9,7 @@
     <param name="base_link_frame" value="base_link"/>
     <remap from="~input/goal_pose" to="$(arg input_topic_name)"/>
     <remap from="~input/checkpoint" to="$(arg checkpoint_topic_name)"/>
-    <remap from="~input/lanelet_map_bin" to="$(arg map_topic_name)"/>
+    <remap from="~input/vector_map" to="$(arg map_topic_name)"/>
     <remap from="~output/route" to="$(arg output_topic_name)"/>
     <remap from="~output/debug/route_marker" to="$(arg visualization_topic_name)"/>
   </node>
