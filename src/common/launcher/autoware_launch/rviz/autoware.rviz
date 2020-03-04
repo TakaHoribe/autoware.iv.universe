@@ -302,14 +302,14 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.05000000074505806
           Style: Points
-          Topic: /pointcloud_map
+          Topic: /map/pointcloud_map
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: false
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: /lanelet2_map_viz
+          Marker Topic: /map/vector_map_marker
           Name: Lanelet2VectorMap
           Namespaces:
             center_lane_line: true
