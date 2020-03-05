@@ -98,7 +98,7 @@ namespace pcl
         FilterIndices<PointT>::FilterIndices (extract_removed_indices),
         filter_field_name_ (""),
         filter_limit_min_ (0),
-        filter_limit_max_ (UINT_MAX)
+        filter_limit_max_ (UINT16_MAX)
       {
         filter_name_ = "PassThroughUInt16";
       }
@@ -239,8 +239,8 @@ namespace pcl
       /** \brief Constructor. */
       PassThroughUInt16 (bool extract_removed_indices = false) :
         Filter<pcl::PCLPointCloud2>::Filter (extract_removed_indices), keep_organized_ (false),
-        user_filter_value_ (std::numeric_limits<uint16_t>::quiet_NaN ()),
-        filter_field_name_ (""), filter_limit_min_ (0), filter_limit_max_ (UINT_MAX),
+        user_filter_value_ (std::numeric_limits<float>::quiet_NaN ()),
+        filter_field_name_ (""), filter_limit_min_ (0), filter_limit_max_ (UINT16_MAX),
         filter_limit_negative_ (false)
       {
         filter_name_ = "PassThroughUInt16";
@@ -273,7 +273,7 @@ namespace pcl
         * \param[in] val the user given value that the filtered point dimensions should be set to
         */
       inline void
-      setUserFilterValue (uint16_t val)
+      setUserFilterValue (float val)
       {
         user_filter_value_ = val;
       }
@@ -358,7 +358,7 @@ namespace pcl
       /** \brief User given value to be set to any filtered point. Casted to
         * the correct field type. 
         */
-      uint16_t user_filter_value_;
+      float user_filter_value_;
 
       /** \brief The desired user filter field name. */
       std::string filter_field_name_;
