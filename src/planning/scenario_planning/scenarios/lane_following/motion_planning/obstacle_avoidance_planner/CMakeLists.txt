@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   roscpp
   tf2_ros
+  osqp_interface
 )
 
 catkin_package(
@@ -16,6 +17,7 @@ catkin_package(
    autoware_perception_msgs
    roscpp 
    tf2_ros
+   osqp_interface
 )
 
 find_package(Eigen3 REQUIRED)
@@ -26,9 +28,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
-
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/osqp/include)
 
 add_compile_options(-std=c++14)
 
@@ -66,5 +65,4 @@ target_link_libraries(eb_path_planner_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
   path_base_planner
-  emosqpstatic
 )

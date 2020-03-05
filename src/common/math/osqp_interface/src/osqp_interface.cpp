@@ -15,9 +15,13 @@
  *
  * Author: Robin Karlsson
  */
-#include "osqp_interface/osqp_interface.h"
 #include <chrono>
 #include <iostream>
+#include <vector>
+
+#include "osqp.h"
+#include "osqp_interface/csc_matrix_conv.h"
+#include "osqp_interface/osqp_interface.h"
 
 namespace osqp {
 
@@ -100,6 +104,9 @@ c_int OSQPInterface::initializeProblem(const Eigen::MatrixXd& P, const Eigen::Ma
 
 OSQPInterface::~OSQPInterface() {
   // Cleanup dynamic OSQP memory
+  if (work) {
+    osqp_cleanup(work);
+  }
   if (data) {
     if (problem_in_memory) {
       c_free(data->A);
@@ -110,7 +117,7 @@ OSQPInterface::~OSQPInterface() {
   if (settings) c_free(settings);
 }
 
-c_int OSQPInterface::updateP(const Eigen::MatrixXd& P_new) {
+void OSQPInterface::updateP(const Eigen::MatrixXd& P_new) {
   /*
   // Transform 'P' into an 'upper trapesoidal matrix'
   Eigen::MatrixXd P_trap = P_new.triangularView<Eigen::Upper>();
@@ -124,7 +131,7 @@ c_int OSQPInterface::updateP(const Eigen::MatrixXd& P_new) {
   osqp_update_P(work, P_csc.vals.data(), OSQP_NULL, P_csc.vals.size());
 }
 
-c_int OSQPInterface::updateA(const Eigen::MatrixXd& A_new) {
+void OSQPInterface::updateA(const Eigen::MatrixXd& A_new) {
   /*
   // Transform 'A' into a sparse matrix and extract data as dynamic arrays
   Eigen::SparseMatrix<double> A_sparse = A_new.sparseView();
@@ -136,23 +143,39 @@ c_int OSQPInterface::updateA(const Eigen::MatrixXd& A_new) {
   osqp_update_A(work, A_csc.vals.data(), OSQP_NULL, A_csc.vals.size());
 }
 
-c_int OSQPInterface::updateQ(const std::vector<double>& q_new) {
+void OSQPInterface::updateQ(const std::vector<double>& q_new) {
   std::vector<double> q_tmp(q_new.begin(), q_new.end());
   double* q_dyn = q_tmp.data();
   osqp_update_lin_cost(work, q_dyn);
 }
 
-c_int OSQPInterface::updateL(const std::vector<double>& l_new) {
+void OSQPInterface::updateL(const std::vector<double>& l_new) {
   std::vector<double> l_tmp(l_new.begin(), l_new.end());
   double* l_dyn = l_tmp.data();
   osqp_update_lower_bound(work, l_dyn);
 }
 
-c_int OSQPInterface::updateU(const std::vector<double>& u_new) {
+void OSQPInterface::updateU(const std::vector<double>& u_new) {
   std::vector<double> u_tmp(u_new.begin(), u_new.end());
   double* u_dyn = u_tmp.data();
   osqp_update_upper_bound(work, u_dyn);
 }
+
+void OSQPInterface::updateBounds(const std::vector<double>& l_new, const std::vector<double>& u_new) {
+  std::vector<double> l_tmp(l_new.begin(), l_new.end());
+  std::vector<double> u_tmp(u_new.begin(), u_new.end());
+  double* l_dyn = l_tmp.data();
+  double* u_dyn = u_tmp.data();
+  osqp_update_bounds(work, l_dyn, u_dyn);
+}
+
+void OSQPInterface::updateEpsAbs(const double eps_abs) { osqp_update_eps_abs(work, eps_abs); }
+
+void OSQPInterface::updateEpsRel(const double eps_rel) { osqp_update_eps_rel(work, eps_rel); }
+
+void OSQPInterface::updateMaxIter(const int max_iter) { osqp_update_max_iter(work, max_iter); }
+
+int OSQPInterface::getTakenIter() { return work->info->iter; }
 
 std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::solve() {
   // Solve Problem
@@ -171,8 +194,6 @@ std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::solve()
   std::tuple<std::vector<double>, std::vector<double>, int> result =
       std::make_tuple(sol_primal, sol_lagrange_multiplier, status_polish);
 
-  osqp_cleanup(work);
-
   return result;
 }
 
@@ -187,10 +208,14 @@ std::tuple<std::vector<double>, std::vector<double>, int> OSQPInterface::optimiz
                                                                                   const std::vector<double>& q,
                                                                                   const std::vector<double>& l,
                                                                                   const std::vector<double>& u) {
+  // Allocate memory for problem
   initializeProblem(P, A, q, l, u);
 
   // Run the solver on the stored problem representation.
   std::tuple<std::vector<double>, std::vector<double>, int> result = solve();
+
+  // Free allocated memory for problem
+  osqp_cleanup(work);
   return result;
 }
 

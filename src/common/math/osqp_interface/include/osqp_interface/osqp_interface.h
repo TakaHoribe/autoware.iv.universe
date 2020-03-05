@@ -18,14 +18,15 @@
 #ifndef OSQP_INTERFACE_H
 #define OSQP_INTERFACE_H
 
-#include <eigen3/Eigen/SparseCore>
-#include <tuple>
+#include <eigen3/Eigen/Core>
 #include <vector>
 #include "osqp.h"
-#include "osqp_interface/csc_matrix_conv.h"
 
 namespace osqp {
+struct CSC_Matrix;
+}
 
+namespace osqp {
 /**
  * Implementation of a native C++ interface for the OSQP solver.
  *
@@ -204,11 +205,17 @@ class OSQPInterface {
   //   q_new: (n) vector defining the linear cost of the problem.
   //   l_new: (m) vector defining the lower bound problem constraint.
   //   u_new: (m) vector defining the upper bound problem constraint.
-  c_int updateP(const Eigen::MatrixXd& P_new);
-  c_int updateA(const Eigen::MatrixXd& A_new);
-  c_int updateQ(const std::vector<double>& q_new);
-  c_int updateL(const std::vector<double>& l_new);
-  c_int updateU(const std::vector<double>& u_new);
+  void updateP(const Eigen::MatrixXd& P_new);
+  void updateA(const Eigen::MatrixXd& A_new);
+  void updateQ(const std::vector<double>& q_new);
+  void updateL(const std::vector<double>& l_new);
+  void updateU(const std::vector<double>& u_new);
+  void updateBounds(const std::vector<double>& l_new, const std::vector<double>& u_new);
+  void updateEpsAbs(const double eps_abs);
+  void updateEpsRel(const double eps_rel);
+  void updateMaxIter(const int iter);
+
+  int getTakenIter();
 };
 
 }  // namespace osqp

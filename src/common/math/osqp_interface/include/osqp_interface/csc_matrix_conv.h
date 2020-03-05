@@ -2,10 +2,7 @@
 #define CSC_MATRIX_CONV_H
 
 #include <eigen3/Eigen/Core>
-#include <exception>
-#include <iostream>
-#include <vector>
-#include "osqp.h"  // for 'c_int' type ('long' or 'long long')
+#include "types.h"  // for 'c_int' type ('long' or 'long long')
 
 namespace osqp {
 

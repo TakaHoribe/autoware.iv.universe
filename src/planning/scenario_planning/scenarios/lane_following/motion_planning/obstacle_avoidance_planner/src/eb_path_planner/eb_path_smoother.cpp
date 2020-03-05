@@ -13,9 +13,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "auxil.h"
-#include "osqp.h"
-#include "workspace.h"
+#include <osqp_interface/osqp_interface.h>
 
 #include "eb_path_planner/eb_path_smoother.h"
 #include "eb_path_planner/util.h"
@@ -29,12 +27,70 @@ EBPathSmoother::EBPathSmoother(double exploring_minimum_radius, double backward_
       fixing_distance_(fixing_distance),
       delta_arc_length_for_path_smoothing_(delta_arc_length_for_path_smoothing),
       delta_arc_length_for_explored_points_(delta_arc_length_for_explored_points),
-      loose_constrain_disntance_(0.1),
-      tighten_constrain_disntance_(0.2) {
-  cold_start(&workspace);
+      loose_constrain_disntance_(0.1) {
+  initializeSolver();
 }
 
 EBPathSmoother::~EBPathSmoother() {}
+
+void EBPathSmoother::initializeSolver() {
+  Eigen::MatrixXd P = makePMatrix();
+  std::vector<double> q(number_of_sampling_points_ * 2, 0.0);
+  Eigen::MatrixXd A = Eigen::MatrixXd::Identity(number_of_sampling_points_ * 2, number_of_sampling_points_ * 2);
+  std::vector<double> lower_bound(number_of_sampling_points_ * 2, 0.0);
+  std::vector<double> upper_bound(number_of_sampling_points_ * 2, 0.0);
+  const double eps_abs = 1.0e-6;
+  osqp_solver_ptr_ = std::make_unique<osqp::OSQPInterface>(P, A, q, lower_bound, upper_bound, eps_abs);
+  const double eps_rel = 1.0e-9;
+  const int max_iter = 10000;
+  osqp_solver_ptr_->updateEpsRel(eps_rel);
+  osqp_solver_ptr_->updateMaxIter(max_iter);
+}
+
+Eigen::MatrixXd EBPathSmoother::makePMatrix() {
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(number_of_sampling_points_ * 2, number_of_sampling_points_ * 2);
+  for (int r = 0; r < number_of_sampling_points_ * 2; r++) {
+    for (int c = 0; c < number_of_sampling_points_ * 2; c++) {
+      if ((r < number_of_sampling_points_ - 2 && r > 1) ||
+          (r < number_of_sampling_points_ * 2 - 2 && r > number_of_sampling_points_ + 1)) {
+        if (r == c) {
+          P(r, c) = 6;
+        } else if (std::abs(c - r) == 1) {
+          P(r, c) = -4;
+        } else if (std::abs(c - r) == 2) {
+          P(r, c) = 1;
+        } else {
+          P(r, c) = 0;
+        }
+      } else if (r == 1 || r == number_of_sampling_points_ + 1 || r == number_of_sampling_points_ - 2 ||
+                 r == number_of_sampling_points_ * 2 - 2) {
+        if (c == 0) {
+          P(r, c) = -2;
+        } else if (c == 1) {
+          P(r, c) = 5;
+        } else if (c == 2) {
+          P(r, c) = -4;
+        } else if (c == 3) {
+          P(r, c) = 1;
+        } else {
+          P(r, c) = 0;
+        }
+      } else if (r == 0 || r == number_of_sampling_points_ || r == number_of_sampling_points_ - 1 ||
+                 r == number_of_sampling_points_ * 2 - 1) {
+        if (c == 0) {
+          P(r, c) = 1;
+        } else if (c == 1) {
+          P(r, c) = -2;
+        } else if (c == 2) {
+          P(r, c) = 1;
+        } else {
+          P(r, c) = 0;
+        }
+      }
+    }
+  }
+  return P;
+}
 
 bool EBPathSmoother::preprocessExploredPoints(const std::vector<geometry_msgs::Point>& explored_points,
                                               const geometry_msgs::Pose& ego_pose, std::vector<double>& interpolated_x,
@@ -172,17 +228,17 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   num_fixed_points = std::min(num_fixed_points, farrest_idx_from_start_point);
   // std::cout << "farrest idx  "<< farrest_idx_from_start_point << std::endl;
   // std::cout << "num points "<< farrest_idx_from_start_point << std::endl;
-
   Mode qp_mode = Mode::Avoidance;
   updateQPConstrain(interpolated_points, farrest_idx_from_start_point, num_fixed_points, clearance_map, map_info,
                     qp_mode, debug_constrain_points);
-  solveQP(qp_mode);
+
+  std::vector<double> optval = solveQP();
 
   std::vector<autoware_planning_msgs::TrajectoryPoint> traj_points;
   for (size_t i = 0; i <= farrest_idx_from_start_point; i++) {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
-    tmp_point.pose.position.x = workspace.solution->x[i];
-    tmp_point.pose.position.y = workspace.solution->x[i + number_of_sampling_points_];
+    tmp_point.pose.position.x = optval[i];
+    tmp_point.pose.position.y = optval[i + number_of_sampling_points_];
     tmp_point.pose.position.z = 0;
     traj_points.push_back(tmp_point);
   }
@@ -280,13 +336,13 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
 
   // std::cout << "farrest idx  "<< farrest_idx_from_start_point << std::endl;
   updateQPConstrain(interpolated_points, num_fixed_points, farrest_idx_from_start_point, debug_constrain);
-  solveQP(qp_mode);
+  std::vector<double> optval = solveQP();
 
   std::vector<autoware_planning_msgs::TrajectoryPoint> traj_points;
   for (size_t i = 0; i <= farrest_idx_from_start_point; i++) {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
-    tmp_point.pose.position.x = workspace.solution->x[i];
-    tmp_point.pose.position.y = workspace.solution->x[i + number_of_sampling_points_];
+    tmp_point.pose.position.x = optval[i];
+    tmp_point.pose.position.y = optval[i + number_of_sampling_points_];
     tmp_point.pose.position.z = 0;
     traj_points.push_back(tmp_point);
   }
@@ -310,23 +366,14 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   return traj_points;
 }
 
-void EBPathSmoother::solveQP(const Mode qp_mode) {
+std::vector<double> EBPathSmoother::solveQP() {
   std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
-  if (qp_mode == Mode::Avoidance) {
-    osqp_update_eps_rel(&workspace, 1e-6f);
-  } else {
-    osqp_update_eps_rel(&workspace, 1e-6f);
-  }
-  osqp_update_eps_abs(&workspace, 1e-4f);
-  osqp_update_alpha(&workspace, 1.6);
-  osqp_update_max_iter(&workspace, 50000);
-  osqp_solve(&workspace);
+  std::tuple<std::vector<double>, std::vector<double>, int> result = osqp_solver_ptr_->optimize();
   std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  std::cout << "taken iter " << osqp_solver_ptr_->getTakenIter() << std::endl;
   std::cout << "opt time " << time.count() / (1000.0 * 1000.0) << " ms" << std::endl;
-  // printf("Status:                %s\n", (&workspace)->info->status);
-  // printf("Number of iterations:  %d\n", (int)((&workspace)->info->iter));
-  // printf("Objective value:       %.4e\n", (&workspace)->info->obj_val);
+  return std::get<0>(result);
 }
 
 void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& interpolated_points,
@@ -334,8 +381,8 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
                                        const cv::Mat& clearance_map, const nav_msgs::MapMetaData& map_info,
                                        const Mode qp_optimization_mode,
                                        std::vector<geometry_msgs::Point>& debug_constrain_points) {
-  double lower_bound[number_of_sampling_points_ * 2];
-  double upper_bound[number_of_sampling_points_ * 2];
+  std::vector<double> lower_bound(number_of_sampling_points_ * 2, 0.0);
+  std::vector<double> upper_bound(number_of_sampling_points_ * 2, 0.0);
 
   for (int i = 0; i < number_of_sampling_points_; ++i) {
     if (i == 0) {
@@ -362,8 +409,8 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     } else {
       if (qp_optimization_mode == Mode::Avoidance) {
         double min_constrain_buffer = loose_constrain_disntance_;
-        if (i >= num_fixed_points + 5 && i < num_fixed_points + 15) {
-          min_constrain_buffer = 0.5;
+        if (i >= num_fixed_points && i < num_fixed_points + 15) {
+          min_constrain_buffer = 0.25;
         }
         geometry_msgs::Point interpolated_p_in_image;
         float clearance;
@@ -371,10 +418,9 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
           clearance = clearance_map.ptr<float>((int)interpolated_p_in_image.y)[(int)interpolated_p_in_image.x] *
                       map_info.resolution;
         } else {
-          clearance = 0.5;
+          clearance = 0.25;
         }
-        float diff =
-            std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_, min_constrain_buffer);
+        float diff = std::fmax(clearance - exploring_minimum_radius_, min_constrain_buffer);
         lower_bound[i] = interpolated_points[i].x - diff;
         upper_bound[i] = interpolated_points[i].x + diff;
       } else {
@@ -409,8 +455,8 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     } else {
       if (qp_optimization_mode == Mode::Avoidance) {
         double min_constrain_buffer = loose_constrain_disntance_;
-        if (i >= num_fixed_points + 5 && i < num_fixed_points + 15) {
-          min_constrain_buffer = 0.5;
+        if (i >= num_fixed_points && i < num_fixed_points + 15) {
+          min_constrain_buffer = 0.25;
         }
         geometry_msgs::Point interpolated_p = interpolated_points[i];
         geometry_msgs::Point interpolated_p_in_image;
@@ -421,8 +467,7 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
         } else {
           clearance = 0.5;
         }
-        float diff =
-            std::fmax(clearance - exploring_minimum_radius_ - tighten_constrain_disntance_, min_constrain_buffer);
+        float diff = std::fmax(clearance - exploring_minimum_radius_, min_constrain_buffer);
         lower_bound[i + number_of_sampling_points_] = interpolated_points[i].y - diff;
         upper_bound[i + number_of_sampling_points_] = interpolated_points[i].y + diff;
 
@@ -434,14 +479,14 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
       }
     }
   }
-  osqp_update_bounds(&workspace, lower_bound, upper_bound);
+  osqp_solver_ptr_->updateBounds(lower_bound, upper_bound);
 }
 
 void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& interpolated_points,
                                        const int num_fixed_points, const int farrest_point_idx,
                                        std::vector<geometry_msgs::Point>& debug_constrain_points) {
-  double lower_bound[number_of_sampling_points_ * 2];
-  double upper_bound[number_of_sampling_points_ * 2];
+  std::vector<double> lower_bound(number_of_sampling_points_ * 2, 0.0);
+  std::vector<double> upper_bound(number_of_sampling_points_ * 2, 0.0);
 
   for (int i = 0; i < number_of_sampling_points_; ++i) {
     if (i == 0) {
@@ -512,44 +557,5 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
       upper_bound[i + number_of_sampling_points_] = interpolated_points[i].y + 0.2;
     }
   }
-  osqp_update_bounds(&workspace, lower_bound, upper_bound);
-}
-
-std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generatePostProcessedTrajectoryPoints(
-    const int number_of_optimized_points, const geometry_msgs::Pose& ego_pose) {
-  std::vector<double> tmp_x;
-  std::vector<double> tmp_y;
-  for (size_t i = 0; i <= number_of_optimized_points; i++) {
-    autoware_planning_msgs::TrajectoryPoint tmp_point;
-    tmp_point.pose.position.x = workspace.solution->x[i];
-    tmp_point.pose.position.y = workspace.solution->x[i + number_of_sampling_points_];
-    tmp_x.push_back(tmp_point.pose.position.x);
-    tmp_y.push_back(tmp_point.pose.position.y);
-  }
-  std::vector<geometry_msgs::Point> post_interpolated_points;
-  util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_path_smoothing_, post_interpolated_points);
-
-  std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
-  for (int i = 0; i < post_interpolated_points.size(); i++) {
-    autoware_planning_msgs::TrajectoryPoint tmp_point;
-    tmp_point.pose.position = post_interpolated_points[i];
-    tmp_point.pose.position.z = ego_pose.position.z;
-    double roll = 0;
-    double pitch = 0;
-    double yaw = 0;
-    if (i == post_interpolated_points.size() - 1) {
-      double dx = post_interpolated_points[i].x - post_interpolated_points[i - 1].x;
-      double dy = post_interpolated_points[i].y - post_interpolated_points[i - 1].y;
-      yaw = std::atan2(dy, dx);
-    } else {
-      double dx = post_interpolated_points[i + 1].x - post_interpolated_points[i].x;
-      double dy = post_interpolated_points[i + 1].y - post_interpolated_points[i].y;
-      yaw = std::atan2(dy, dx);
-    }
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(roll, pitch, yaw);
-    tmp_point.pose.orientation = tf2::toMsg(quaternion);
-    optimized_points.push_back(tmp_point);
-  }
-  return optimized_points;
+  osqp_solver_ptr_->updateBounds(lower_bound, upper_bound);
 }

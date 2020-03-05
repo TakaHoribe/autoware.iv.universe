@@ -1,6 +1,8 @@
 #ifndef EB_PATH_SMOOTHER__H
 #define EB_PATH_SMOOTHER__H
 
+#include <Eigen/Core>
+
 enum Mode {
   Avoidance = 0,
   LaneFollowing = 1,
@@ -23,6 +25,10 @@ namespace cv {
 class Mat;
 }
 
+namespace osqp {
+class OSQPInterface;
+}
+
 class EBPathSmoother {
  private:
   const int number_of_sampling_points_;
@@ -33,7 +39,11 @@ class EBPathSmoother {
   const double delta_arc_length_for_path_smoothing_;
   const double delta_arc_length_for_explored_points_;
   const double loose_constrain_disntance_;
-  const double tighten_constrain_disntance_;
+  std::unique_ptr<osqp::OSQPInterface> osqp_solver_ptr_;
+
+  void initializeSolver();
+
+  Eigen::MatrixXd makePMatrix();
 
   bool preprocessExploredPoints(const std::vector<geometry_msgs::Point>& current_explored_points,
                                 const geometry_msgs::Pose& ego_pose,
@@ -64,10 +74,7 @@ class EBPathSmoother {
   void updateQPConstrain(const std::vector<geometry_msgs::Point>& interpolated_points, const int num_fixed_points,
                          const int farrest_point_idx, std::vector<geometry_msgs::Point>& debug_constrain);
 
-  void solveQP(const Mode qp_optimization_mode);
-
-  std::vector<autoware_planning_msgs::TrajectoryPoint> generatePostProcessedTrajectoryPoints(
-      const int number_of_optimized_points, const geometry_msgs::Pose& ego_pose);
+  std::vector<double> solveQP();
 
  public:
   EBPathSmoother(double exploring_minimum_raidus, double backward_distance, double fixing_distance,

@@ -80,6 +80,7 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
                             min_distance_threshold_when_switching_avoindance_to_path_following_, 0.1);
   private_nh_.param<double>("min_cos_similarity_when_switching_avoindance_to_path_following",
                             min_cos_similarity_when_switching_avoindance_to_path_following_, 0.95);
+  in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
   is_previously_avoidance_mode_ = false;
   initializing();
 }
@@ -88,15 +89,8 @@ EBPathPlannerNode::~EBPathPlannerNode() {}
 
 void EBPathPlannerNode::callback(const autoware_planning_msgs::Path& input_path_msg,
                                  autoware_planning_msgs::Trajectory& output_trajectory_msg) {
-  if (!in_objects_ptr_) {
-    in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
-  }
   current_ego_pose_ = getCurrentEgoPose(tf_buffer_);
   if (!current_ego_pose_) {
-    return;
-  }
-  if (!previous_ego_point_ptr_) {
-    previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
     return;
   }
   output_trajectory_msg = generateSmoothTrajectory(input_path_msg);
@@ -108,7 +102,6 @@ autoware_planning_msgs::Trajectory EBPathPlannerNode::generateSmoothTrajectory(
   if (!smoothed_trajectory) {
     smoothed_trajectory = generateSmoothTrajectoryFromPath(input_path);
   }
-  previous_ego_point_ptr_ = std::make_unique<geometry_msgs::Point>(current_ego_pose_->position);
   previous_optimized_points_ptr_ =
       std::make_unique<std::vector<autoware_planning_msgs::TrajectoryPoint>>(smoothed_trajectory->points);
   previous_path_points_ptr_ = std::make_unique<std::vector<autoware_planning_msgs::PathPoint>>(input_path.points);
@@ -117,7 +110,7 @@ autoware_planning_msgs::Trajectory EBPathPlannerNode::generateSmoothTrajectory(
 
 autoware_planning_msgs::Trajectory::Ptr EBPathPlannerNode::generateSmoothTrajectoryFromExploredPoints(
     const autoware_planning_msgs::Path& input_path) {
-  bool is_avoidance_needed = isAvoidanceNeeded(input_path.points, *current_ego_pose_, *previous_optimized_points_ptr_);
+  bool is_avoidance_needed = isAvoidanceNeeded(input_path.points, *current_ego_pose_, previous_optimized_points_ptr_);
   if (!is_avoidance_needed || !enable_avoidance_) {
     return nullptr;
   }
@@ -192,7 +185,7 @@ autoware_planning_msgs::Trajectory::Ptr EBPathPlannerNode::generateSmoothTraject
 
 bool EBPathPlannerNode::isAvoidanceNeeded(
     const std::vector<autoware_planning_msgs::PathPoint> in_path, const geometry_msgs::Pose self_pose,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& previous_output_trajectory_points) {
+    const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& previous_output_trajectory_points) {
   bool is_detecting_fixed_path_points = isDetectingFixedPathPoint(in_path);
   if (is_detecting_fixed_path_points) {
     return false;
@@ -227,12 +220,16 @@ bool EBPathPlannerNode::isDetectingFixedPathPoint(const std::vector<autoware_pla
   return false;
 }
 
-bool EBPathPlannerNode::getNearestPose(const geometry_msgs::Pose self_pose,
-                                       const std::vector<autoware_planning_msgs::TrajectoryPoint>& trajectory_points,
-                                       geometry_msgs::Pose& nearest_pose) {
+bool EBPathPlannerNode::getNearestPose(
+    const geometry_msgs::Pose self_pose,
+    const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& trajectory_points,
+    geometry_msgs::Pose& nearest_pose) {
+  if (!trajectory_points) {
+    return false;
+  }
   double min_dist = 999999999;
   geometry_msgs::Pose tmp_nearest_pose;
-  for (const auto& point : trajectory_points) {
+  for (const auto& point : *trajectory_points) {
     double dx = point.pose.position.x - self_pose.position.x;
     double dy = point.pose.position.y - self_pose.position.y;
     double dist = std::sqrt(dx * dx + dy * dy);
@@ -305,7 +302,6 @@ void EBPathPlannerNode::initializing() {
       std::make_unique<EBPathSmoother>(exploring_minimum_radius_, backward_fixing_distance_, forward_fixing_distance_,
                                        delta_arc_length_for_path_smoothing_, delta_arc_length_for_explored_points_);
   is_previously_avoidance_mode_ = false;
-  previous_ego_point_ptr_ = nullptr;
   previous_start_path_point_ptr_ = nullptr;
   previous_goal_path_point_ptr_ = nullptr;
   previous_optimized_points_ptr_ = nullptr;

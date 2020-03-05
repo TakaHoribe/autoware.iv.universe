@@ -13,7 +13,6 @@ ROS_DECLARE_MESSAGE(Bool);
 namespace autoware_planning_msgs {
 ROS_DECLARE_MESSAGE(Path);
 ROS_DECLARE_MESSAGE(TrajectoryPoint);
-
 }  // namespace autoware_planning_msgs
 
 namespace autoware_perception_msgs {
@@ -23,7 +22,7 @@ ROS_DECLARE_MESSAGE(DynamicObject);
 
 namespace nav_msgs {
 ROS_DECLARE_MESSAGE(OccupancyGrid);
-}
+}  // namespace nav_msgs
 
 namespace geometry_msgs {
 ROS_DECLARE_MESSAGE(PoseStamped);
@@ -60,13 +59,11 @@ class EBPathPlannerNode : public BasePlannerNode {
   geometry_msgs::Pose::ConstPtr current_ego_pose_;
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
-  std::unique_ptr<geometry_msgs::Point> previous_ego_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_start_path_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_goal_path_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_goal_point_for_exploration_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>> previous_path_points_ptr_;
-  // std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_explored_points_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
   ros::NodeHandle nh_, private_nh_;
   ros::Publisher markers_pub_;
@@ -89,14 +86,14 @@ class EBPathPlannerNode : public BasePlannerNode {
                                                 previous_optimized_explored_points_ptr,
                                             const std::vector<autoware_perception_msgs::DynamicObject>& objects);
 
-  bool isAvoidanceNeeded(const std::vector<autoware_planning_msgs::PathPoint> in_path,
-                         const geometry_msgs::Pose self_pose,
-                         const std::vector<autoware_planning_msgs::TrajectoryPoint>& previous_output_trajectory_points);
+  bool isAvoidanceNeeded(
+      const std::vector<autoware_planning_msgs::PathPoint> in_path, const geometry_msgs::Pose self_pose,
+      const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& previous_output_trajectory_points);
 
   bool isDetectingFixedPathPoint(const std::vector<autoware_planning_msgs::PathPoint>& path_points);
 
   bool getNearestPose(const geometry_msgs::Pose self_pose,
-                      const std::vector<autoware_planning_msgs::TrajectoryPoint>& trajectory_points,
+                      const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& trajectory_points,
                       geometry_msgs::Pose& nearest_pose);
 
   bool isPoseCloseToPath(const std::vector<autoware_planning_msgs::PathPoint> in_path,
