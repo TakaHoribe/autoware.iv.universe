@@ -20,12 +20,15 @@ class SimulateSteer():
         self.current_time = None
         self.command_array = []
 
+        # steering command from Autoware
         self.subcmd = rospy.Subscriber(
             "/control/vehicle_cmd", VehicleCommand, self.CallBackVehicleCmd, queue_size=1, tcp_nodelay=True)
 
+        # current steering from vehicle
         self.substatus = rospy.Subscriber(
             "/vehicle/status/steering", Steering, self.CallBackSteering, queue_size=1, tcp_nodelay=True)
 
+        # simulated steering
         self.pubstatus = rospy.Publisher(
             "/debug/mpc_predicted_steering", Steering, queue_size=1)
 
