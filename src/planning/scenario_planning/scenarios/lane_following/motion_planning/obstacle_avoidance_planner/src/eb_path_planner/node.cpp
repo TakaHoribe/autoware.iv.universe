@@ -26,23 +26,32 @@
 #include "eb_path_planner/spline_interpolate.h"
 #include "eb_path_planner/util.h"
 
+// clang-format off
+#define DEBUG_INFO(...) { if (show_debug_info_) {ROS_INFO(__VA_ARGS__); } }
+#define DEBUG_WARN(...) { if (show_debug_info_) {ROS_WARN(__VA_ARGS__); } }
+// clang-format on
+
 EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
   tf_buffer_ptr_ = std::make_unique<tf2_ros::Buffer>();
   tf_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_ptr_);
+
   trajectory_pub_ = private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/path", 1);
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("eb_path_planner_marker", 1, true);
   debug_clearance_map_in_occupancy_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("debug_clearance_map", 1, true);
+
   path_sub_ = private_nh_.subscribe("input/path", 1, &EBPathPlannerNode::pathCallback, this);
   objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10, &EBPathPlannerNode::objectsCallback, this);
   initial_sub_ = private_nh_.subscribe("/initialpose", 10, &EBPathPlannerNode::initialposeCallback, this);
   goal_sub_ = private_nh_.subscribe("/move_base_simple/goal", 10, &EBPathPlannerNode::goalCallback, this);
   enable_avoidance_sub_ =
-      private_nh_.subscribe("/enable_avoidance", 10, &EBPathPlannerNode::enableAvoidanceCallback, this);
+      private_nh_.subscribe("enable_avoidance", 10, &EBPathPlannerNode::enableAvoidanceCallback, this);
+
   private_nh_.param<bool>("is_debug_clearance_map_mode", is_debug_clearance_map_mode_, true);
   private_nh_.param<bool>("is_debug_drivable_area_mode", is_debug_drivable_area_mode_, false);
   private_nh_.param<bool>("is_publishing_clearance_map_as_occupancy_grid",
                           is_publishing_clearance_map_as_occupancy_grid_, false);
   private_nh_.param<bool>("enable_avoidance", enable_avoidance_, true);
+  private_nh_.param<bool>("show_debug_info", show_debug_info_, false);
   private_nh_.param<int>("number_of_backward_path_points_for_detecting_objects",
                          number_of_backward_path_points_for_detecting_objects_, 5);
   private_nh_.param<double>("forward_fixing_distance", forward_fixing_distance_, 20.0);
@@ -1116,7 +1125,6 @@ bool EBPathPlannerNode::needReplanForPathSmoothing(
     }
   }
   if (accum_dist1 < 50 && dist > delta_arc_length_for_path_smoothing_) {
-    ROS_WARN("4: check3 failed");
     return true;
   }
   return false;
@@ -1441,12 +1449,14 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
   // 2 generate fixed points for optimization
   std::vector<geometry_msgs::Pose> fixed_points =
       generateFixedOptimizedPathPoints(ego_pose, path_points, start_point, previous_optimized_points_ptr_);
-
+  DEBUG_INFO("path points size %d ", path_points.size());
+  DEBUG_INFO("fixed points size %d ", fixed_points.size());
   // 3 generate non fixed points for optimization
   std::vector<geometry_msgs::Pose> non_fixed_points;
   if (!fixed_points.empty()) {
     non_fixed_points = generateNonFixedPoints(path_points, fixed_points, goal_point);
   }
+  DEBUG_INFO("non fixed points size %d ", non_fixed_points.size());
 
   std::vector<geometry_msgs::Point> tmp_fixed;
   std::vector<geometry_msgs::Point> tmp_non_fixed;
@@ -1568,7 +1578,7 @@ void EBPathPlannerNode::debugMarkers(const std::vector<geometry_msgs::Point>& co
 
   for (int i = 0; i < constrain_points.size(); i++) {
     visualization_msgs::Marker constrain_points_marker;
-    constrain_points_marker.lifetime = ros::Duration(20.0);
+    constrain_points_marker.lifetime = ros::Duration(40.0);
     constrain_points_marker.header.frame_id = "map";
     constrain_points_marker.header.stamp = ros::Time(0);
     constrain_points_marker.ns = std::string("constrain_points_marker");
@@ -1590,7 +1600,7 @@ void EBPathPlannerNode::debugMarkers(const std::vector<geometry_msgs::Point>& co
 
   unique_id = 0;
   visualization_msgs::Marker interpolated_points_marker;
-  interpolated_points_marker.lifetime = ros::Duration(5);
+  interpolated_points_marker.lifetime = ros::Duration(40);
   interpolated_points_marker.header.frame_id = "map";
   interpolated_points_marker.header.stamp = ros::Time(0);
   interpolated_points_marker.ns = std::string("interpolated_points_marker");

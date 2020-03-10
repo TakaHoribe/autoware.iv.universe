@@ -6,6 +6,7 @@
 #include <nav_msgs/MapMetaData.h>
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <vector>
 
 #include <ros/console.h>
@@ -51,41 +52,14 @@ Eigen::MatrixXd EBPathSmoother::makePMatrix() {
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(number_of_sampling_points_ * 2, number_of_sampling_points_ * 2);
   for (int r = 0; r < number_of_sampling_points_ * 2; r++) {
     for (int c = 0; c < number_of_sampling_points_ * 2; c++) {
-      if ((r < number_of_sampling_points_ - 2 && r > 1) ||
-          (r < number_of_sampling_points_ * 2 - 2 && r > number_of_sampling_points_ + 1)) {
-        if (r == c) {
-          P(r, c) = 6;
-        } else if (std::abs(c - r) == 1) {
-          P(r, c) = -4;
-        } else if (std::abs(c - r) == 2) {
-          P(r, c) = 1;
-        } else {
-          P(r, c) = 0;
-        }
-      } else if (r == 1 || r == number_of_sampling_points_ + 1 || r == number_of_sampling_points_ - 2 ||
-                 r == number_of_sampling_points_ * 2 - 2) {
-        if (c == 0) {
-          P(r, c) = -2;
-        } else if (c == 1) {
-          P(r, c) = 5;
-        } else if (c == 2) {
-          P(r, c) = -4;
-        } else if (c == 3) {
-          P(r, c) = 1;
-        } else {
-          P(r, c) = 0;
-        }
-      } else if (r == 0 || r == number_of_sampling_points_ || r == number_of_sampling_points_ - 1 ||
-                 r == number_of_sampling_points_ * 2 - 1) {
-        if (c == 0) {
-          P(r, c) = 1;
-        } else if (c == 1) {
-          P(r, c) = -2;
-        } else if (c == 2) {
-          P(r, c) = 1;
-        } else {
-          P(r, c) = 0;
-        }
+      if (r == c) {
+        P(r, c) = 6;
+      } else if (std::abs(c - r) == 1) {
+        P(r, c) = -4;
+      } else if (std::abs(c - r) == 2) {
+        P(r, c) = 1;
+      } else {
+        P(r, c) = 0;
       }
     }
   }
@@ -124,12 +98,6 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   }
   std::vector<geometry_msgs::Point> interpolated_points;
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_explored_points_, interpolated_points);
-  // prevent from getting few interpolated_points,
-  // which could result in twisted line by spline itnerpolation in post process
-  if (candidate_points.size() < 10) {
-    interpolated_points.clear();
-    util::interpolate2DPoints(tmp_x, tmp_y, 0.1, interpolated_points);
-  }
   debug_interpolated_points = interpolated_points;
   // std::cout << "explore fixed size "<< fixed_points.size() << std::endl;
   // std::cout << "explore non fixed size "<< non_fixed_points.size() << std::endl;
@@ -218,12 +186,6 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   }
   std::vector<geometry_msgs::Point> interpolated_points;
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_path_smoothing_, interpolated_points);
-  // prevent from getting few interpolated_points,
-  // which could result in twisted line by spline itnerpolation in post process
-  if (candidate_points.size() < 10) {
-    interpolated_points.clear();
-    util::interpolate2DPoints(tmp_x, tmp_y, 0.1, interpolated_points);
-  }
   debug_interpolated = interpolated_points;
 
   Mode qp_mode = Mode::LaneFollowing;

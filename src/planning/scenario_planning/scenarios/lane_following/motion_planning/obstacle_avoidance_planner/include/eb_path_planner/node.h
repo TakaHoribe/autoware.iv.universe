@@ -52,6 +52,7 @@ class EBPathPlannerNode {
   bool is_publishing_clearance_map_as_occupancy_grid_;
   bool is_previously_avoidance_mode_;
   bool enable_avoidance_;
+  bool show_debug_info_;
   int number_of_backward_path_points_for_detecting_objects_;
   double forward_fixing_distance_;
   double backward_fixing_distance_;
