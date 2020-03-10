@@ -1449,14 +1449,14 @@ bool EBPathPlannerNode::convertPathToSmoothTrajectory(
   // 2 generate fixed points for optimization
   std::vector<geometry_msgs::Pose> fixed_points =
       generateFixedOptimizedPathPoints(ego_pose, path_points, start_point, previous_optimized_points_ptr_);
-  DEBUG_INFO("path points size %d ", path_points.size());
-  DEBUG_INFO("fixed points size %d ", fixed_points.size());
+  DEBUG_INFO("path points size %zu ", path_points.size());
+  DEBUG_INFO("fixed points size %zu ", fixed_points.size());
   // 3 generate non fixed points for optimization
   std::vector<geometry_msgs::Pose> non_fixed_points;
   if (!fixed_points.empty()) {
     non_fixed_points = generateNonFixedPoints(path_points, fixed_points, goal_point);
   }
-  DEBUG_INFO("non fixed points size %d ", non_fixed_points.size());
+  DEBUG_INFO("non fixed points size %zu ", non_fixed_points.size());
 
   std::vector<geometry_msgs::Point> tmp_fixed;
   std::vector<geometry_msgs::Point> tmp_non_fixed;
