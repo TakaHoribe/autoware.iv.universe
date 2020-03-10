@@ -10,5 +10,5 @@
     - tensorrt
     - {role: ros, release: kinetic}
     - caffe
-    - autoware
+    - {role: autoware, release: kinetic}
     - us_sample #could be deprecated in the future
