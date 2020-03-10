@@ -3,6 +3,7 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
+#include <autoware_system_msgs/AutowareState.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
@@ -41,8 +42,7 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
 
   path_sub_ = private_nh_.subscribe("input/path", 1, &EBPathPlannerNode::pathCallback, this);
   objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10, &EBPathPlannerNode::objectsCallback, this);
-  initial_sub_ = private_nh_.subscribe("/initialpose", 10, &EBPathPlannerNode::initialposeCallback, this);
-  goal_sub_ = private_nh_.subscribe("/move_base_simple/goal", 10, &EBPathPlannerNode::goalCallback, this);
+  monitored_state_sub_ = private_nh_.subscribe("/autoware/state", 10, &EBPathPlannerNode::monitoredStateCallback, this);
   enable_avoidance_sub_ =
       private_nh_.subscribe("enable_avoidance", 10, &EBPathPlannerNode::enableAvoidanceCallback, this);
 
@@ -314,9 +314,11 @@ void EBPathPlannerNode::objectsCallback(const autoware_perception_msgs::DynamicO
   in_objects_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(msg);
 }
 
-void EBPathPlannerNode::initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) { initializing(); }
-
-void EBPathPlannerNode::goalCallback(const geometry_msgs::PoseStamped& msg) { initializing(); }
+void EBPathPlannerNode::monitoredStateCallback(const autoware_system_msgs::AutowareState& msg) {
+  if (msg.state == autoware_system_msgs::AutowareState::Planning) {
+    initializing();
+  }
+}
 
 void EBPathPlannerNode::enableAvoidanceCallback(const std_msgs::Bool& msg) { enable_avoidance_ = msg.data; }
 
@@ -1099,7 +1101,6 @@ bool EBPathPlannerNode::needReplanForPathSmoothing(
   // ROS_WARN("dist from goal %lf", dist);
   // ROS_WARN("accum dist  %lf", accum_dist);
   if (accum_dist < 50 && dist > delta_arc_length_for_path_smoothing_) {
-    ROS_WARN("3");
     return true;
   }
 

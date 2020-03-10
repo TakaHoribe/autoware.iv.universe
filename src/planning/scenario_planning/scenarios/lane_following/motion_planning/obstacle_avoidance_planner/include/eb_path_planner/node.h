@@ -16,6 +16,10 @@ namespace std_msgs {
 ROS_DECLARE_MESSAGE(Bool);
 }
 
+namespace autoware_system_msgs {
+ROS_DECLARE_MESSAGE(AutowareState);
+}
+
 namespace autoware_planning_msgs {
 ROS_DECLARE_MESSAGE(PathPoint);
 ROS_DECLARE_MESSAGE(Path);
@@ -83,13 +87,11 @@ class EBPathPlannerNode {
   ros::Publisher debug_clearance_map_in_occupancy_grid_pub_;
   ros::Subscriber path_sub_;
   ros::Subscriber objects_sub_;
-  ros::Subscriber initial_sub_;
-  ros::Subscriber goal_sub_;
+  ros::Subscriber monitored_state_sub_;
   ros::Subscriber enable_avoidance_sub_;
   void pathCallback(const autoware_planning_msgs::Path& msg);
   void objectsCallback(const autoware_perception_msgs ::DynamicObjectArray& msg);
-  void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg);
-  void goalCallback(const geometry_msgs::PoseStamped& msg);
+  void monitoredStateCallback(const autoware_system_msgs::AutowareState& msg);
   void enableAvoidanceCallback(const std_msgs::Bool& msg);
   void initializing();
   void resettingPtrForAvoidance();

@@ -4,6 +4,7 @@ project(obstacle_avoidance_planner)
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
   autoware_perception_msgs
+  autoware_system_msgs
   roscpp
   tf2_ros
   osqp_interface
@@ -15,6 +16,7 @@ catkin_package(
   CATKIN_DEPENDS 
    autoware_planning_msgs 
    autoware_perception_msgs
+   autoware_system_msgs
    roscpp 
    tf2_ros
    osqp_interface
