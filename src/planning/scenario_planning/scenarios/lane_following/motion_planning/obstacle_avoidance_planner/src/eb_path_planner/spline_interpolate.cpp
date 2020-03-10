@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cmath>
+#include <iostream>
+#include <vector>
 
 #include "eb_path_planner/spline_interpolate.h"
 

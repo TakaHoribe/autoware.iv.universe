@@ -17,10 +17,6 @@
 #ifndef SPLINE_INTERPOLATE_H_
 #define SPLINE_INTERPOLATE_H_
 
-#include <cmath>
-#include <iostream>
-#include <vector>
-
 namespace spline {
 
 class SplineInterpolate {

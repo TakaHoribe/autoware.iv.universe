@@ -92,75 +92,6 @@ Eigen::MatrixXd EBPathSmoother::makePMatrix() {
   return P;
 }
 
-bool EBPathSmoother::preprocessExploredPoints(const std::vector<geometry_msgs::Point>& explored_points,
-                                              const geometry_msgs::Pose& ego_pose, std::vector<double>& interpolated_x,
-                                              std::vector<double>& interpolated_y,
-                                              std::vector<geometry_msgs::Point>& interpolated_points, int& farrest_idx,
-                                              std::vector<geometry_msgs::Point>& debug_interpolated_points) {
-  if (explored_points.empty() || explored_points.size() == 1) {
-    ROS_WARN_THROTTLE(5.0, "[EBPathPlanner] Almost no explored points; Skip optimization");
-    return false;
-  }
-
-  std::vector<double> tmp_x;
-  std::vector<double> tmp_y;
-  for (size_t i = 0; i < explored_points.size(); i++) {
-    tmp_x.push_back(explored_points[i].x);
-    tmp_y.push_back(explored_points[i].y);
-  }
-  // std::vector<geometry_msgs::Point> interpolated_points;
-  util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_explored_points_, interpolated_points);
-
-  debug_interpolated_points = interpolated_points;
-  farrest_idx = std::min((int)(number_of_sampling_points_ - 1), (int)(interpolated_points.size() - 1));
-  return true;
-}
-
-bool EBPathSmoother::preprocessPathPoints(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                                          const geometry_msgs::Point& start_point,
-                                          const geometry_msgs::Point& goal_point, const geometry_msgs::Pose& ego_pose,
-                                          std::vector<double>& interpolated_x, std::vector<double>& interpolated_y,
-                                          std::vector<geometry_msgs::Point>& interpolated_points, int& farrest_idx,
-                                          std::vector<geometry_msgs::Point>& debug_interpolated_points) {
-  if (path_points.empty() || path_points.size() == 1) {
-    ROS_WARN("[EBPathPlanner] Almost no path points");
-    return false;
-  }
-
-  int start_ind = -1;
-  int goal_ind = -1;
-  // for(const auto& point: path_points)
-  for (int i = 0; i < path_points.size(); i++) {
-    double dx1 = path_points[i].pose.position.x - start_point.x;
-    double dy1 = path_points[i].pose.position.y - start_point.y;
-    double dist1 = std::sqrt(dx1 * dx1 + dy1 * dy1);
-    if (dist1 < 1e-4) {
-      start_ind = i;
-    }
-    double dx2 = path_points[i].pose.position.x - goal_point.x;
-    double dy2 = path_points[i].pose.position.y - goal_point.y;
-    double dist2 = std::sqrt(dx2 * dx2 + dy2 * dy2);
-    if (dist2 < 1e-4) {
-      goal_ind = i;
-    }
-  }
-  if (start_ind == -1 || goal_ind == -1) {
-    ROS_WARN("Could not find correspongin path points with start and/or goal in preprocessPathPoints");
-  }
-
-  std::vector<double> tmp_x;
-  std::vector<double> tmp_y;
-  for (size_t i = start_ind; i <= goal_ind; i++) {
-    tmp_x.push_back(path_points[i].pose.position.x);
-    tmp_y.push_back(path_points[i].pose.position.y);
-  }
-  util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_path_smoothing_, interpolated_points);
-
-  debug_interpolated_points = interpolated_points;
-  farrest_idx = std::min((int)(number_of_sampling_points_ - 1), (int)(interpolated_points.size() - 1));
-  return true;
-}
-
 std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOptimizedExploredPoints(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points,
     const std::vector<geometry_msgs::Point>& fixed_points, const std::vector<geometry_msgs::Point>& non_fixed_points,
@@ -193,6 +124,12 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   }
   std::vector<geometry_msgs::Point> interpolated_points;
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_explored_points_, interpolated_points);
+  // prevent from getting few interpolated_points,
+  // which could result in twisted line by spline itnerpolation in post process
+  if (candidate_points.size() < 10) {
+    interpolated_points.clear();
+    util::interpolate2DPoints(tmp_x, tmp_y, 0.1, interpolated_points);
+  }
   debug_interpolated_points = interpolated_points;
   // std::cout << "explore fixed size "<< fixed_points.size() << std::endl;
   // std::cout << "explore non fixed size "<< non_fixed_points.size() << std::endl;
@@ -207,24 +144,12 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
       double dx = interpolated_points[i].x - fixed_points.back().x;
       double dy = interpolated_points[i].y - fixed_points.back().y;
       double dist = std::sqrt(dx * dx + dy * dy);
-      double dx1 = 0;
-      double dy1 = 0;
-      if (i == interpolated_points.size() - 1) {
-        dx1 = interpolated_points[i].x - interpolated_points[i - 1].x;
-        dy1 = interpolated_points[i].y - interpolated_points[i - 1].y;
-      } else {
-        dx1 = interpolated_points[i + 1].x - interpolated_points[i].x;
-        dy1 = interpolated_points[i + 1].y - interpolated_points[i].y;
-      }
-      double ip = dx * dx1 + dy * dy1;
-      if (dist < min_dist && ip < 0) {
+      if (dist < min_dist) {
         min_dist = dist;
         num_fixed_points = i;
       }
     }
   }
-  // make buffer between fixed poins and non-fixed poins
-  num_fixed_points = std::max(num_fixed_points - 5, 0);
   num_fixed_points = std::min(num_fixed_points, farrest_idx_from_start_point);
   // std::cout << "farrest idx  "<< farrest_idx_from_start_point << std::endl;
   // std::cout << "num points "<< farrest_idx_from_start_point << std::endl;
@@ -293,6 +218,12 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   }
   std::vector<geometry_msgs::Point> interpolated_points;
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_path_smoothing_, interpolated_points);
+  // prevent from getting few interpolated_points,
+  // which could result in twisted line by spline itnerpolation in post process
+  if (candidate_points.size() < 10) {
+    interpolated_points.clear();
+    util::interpolate2DPoints(tmp_x, tmp_y, 0.1, interpolated_points);
+  }
   debug_interpolated = interpolated_points;
 
   Mode qp_mode = Mode::LaneFollowing;
@@ -303,37 +234,26 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   // num_fixed_points = std::min(num_fixed_points, farrest_idx_from_start_point);
   int num_fixed_points = 0;
   if (!fixed_points.empty() && !interpolated_points.empty()) {
-    double min_dist = 9999999;
+    double min_dist = 999999999;
     // int nearest_i = 0;
     for (int i = 0; i < interpolated_points.size(); i++) {
       double dx = interpolated_points[i].x - fixed_points.back().position.x;
       double dy = interpolated_points[i].y - fixed_points.back().position.y;
       double dist = std::sqrt(dx * dx + dy * dy);
-      double dx1 = 0;
-      double dy1 = 0;
-      if (i == interpolated_points.size() - 1) {
-        dx1 = interpolated_points[i].x - interpolated_points[i - 1].x;
-        dy1 = interpolated_points[i].y - interpolated_points[i - 1].y;
-      } else {
-        dx1 = interpolated_points[i + 1].x - interpolated_points[i].x;
-        dy1 = interpolated_points[i + 1].y - interpolated_points[i].y;
-      }
-      double ip = dx * dx1 + dy * dy1;
-      if (dist < min_dist && ip < 0) {
+      if (dist < min_dist) {
         min_dist = dist;
         num_fixed_points = i;
       }
     }
   }
-  // make buffer between fixed poins and non-fixed poins
-  num_fixed_points = std::max(num_fixed_points - 5, 0);
   num_fixed_points = std::min(num_fixed_points, farrest_idx_from_start_point);
 
   // std::cout << "interpolated size "<< interpolated_points.size() << std::endl;
+  // std::cout << "fixed points size "<< fixed_points.size() << std::endl;
+  // std::cout << "farrest idx  "<< farrest_idx_from_start_point << std::endl;
   // std::cout << "path fixed size "<< fixed_points.size() << std::endl;
   // std::cout << "path non fixed size "<< non_fixed_points.size() << std::endl;
-  // std::cout << "num fixed points "<< num_fixed_points << std::endl;
-
+  // std::cout << "num fixed points " << num_fixed_points << std::endl;
   // std::cout << "farrest idx  "<< farrest_idx_from_start_point << std::endl;
   updateQPConstrain(interpolated_points, num_fixed_points, farrest_idx_from_start_point, debug_constrain);
   std::vector<double> optval = solveQP();
@@ -371,8 +291,8 @@ std::vector<double> EBPathSmoother::solveQP() {
   std::tuple<std::vector<double>, std::vector<double>, int> result = osqp_solver_ptr_->optimize();
   std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  std::cout << "taken iter " << osqp_solver_ptr_->getTakenIter() << std::endl;
-  std::cout << "opt time " << time.count() / (1000.0 * 1000.0) << " ms" << std::endl;
+  // std::cout << "taken iter " << osqp_solver_ptr_->getTakenIter() << std::endl;
+  // std::cout << "opt time " << time.count() / (1000.0 * 1000.0) << " ms" << std::endl;
   return std::get<0>(result);
 }
 
@@ -409,8 +329,8 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     } else {
       if (qp_optimization_mode == Mode::Avoidance) {
         double min_constrain_buffer = loose_constrain_disntance_;
-        if (i >= num_fixed_points && i < num_fixed_points + 15) {
-          min_constrain_buffer = 0.25;
+        if (i >= num_fixed_points - 2 && i <= num_fixed_points + 10) {
+          min_constrain_buffer = 0.6;
         }
         geometry_msgs::Point interpolated_p_in_image;
         float clearance;
@@ -455,8 +375,8 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     } else {
       if (qp_optimization_mode == Mode::Avoidance) {
         double min_constrain_buffer = loose_constrain_disntance_;
-        if (i >= num_fixed_points && i < num_fixed_points + 15) {
-          min_constrain_buffer = 0.25;
+        if (i >= num_fixed_points - 2 && i <= num_fixed_points + 10) {
+          min_constrain_buffer = 0.6;
         }
         geometry_msgs::Point interpolated_p = interpolated_points[i];
         geometry_msgs::Point interpolated_p_in_image;
@@ -510,7 +430,7 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     } else if (i < num_fixed_points) {
       lower_bound[i] = interpolated_points[i].x;
       upper_bound[i] = interpolated_points[i].x;
-    } else if (i >= num_fixed_points + 5 && i < num_fixed_points + 10) {
+    } else if (i >= num_fixed_points && i <= num_fixed_points + 2) {
       lower_bound[i] = interpolated_points[i].x - 1.0;
       upper_bound[i] = interpolated_points[i].x + 1.0;
       geometry_msgs::Point tmp_p = interpolated_points[i];
@@ -541,15 +461,13 @@ void EBPathSmoother::updateQPConstrain(const std::vector<geometry_msgs::Point>& 
     {
       lower_bound[i + number_of_sampling_points_] = interpolated_points[i].y;
       upper_bound[i + number_of_sampling_points_] = interpolated_points[i].y;
-    } else if (i >= farrest_point_idx) {
+    } else if (i > farrest_point_idx) {
       lower_bound[i + number_of_sampling_points_] = interpolated_points[farrest_point_idx].y;
       upper_bound[i + number_of_sampling_points_] = interpolated_points[farrest_point_idx].y;
     } else if (i < num_fixed_points) {
       lower_bound[i + number_of_sampling_points_] = interpolated_points[i].y;
       upper_bound[i + number_of_sampling_points_] = interpolated_points[i].y;
-    } else if (i >= num_fixed_points + 5 && i < num_fixed_points + 10)
-    // else if( i >= num_fixed_points && i < num_fixed_points+5)
-    {
+    } else if (i >= num_fixed_points && i <= num_fixed_points + 2) {
       lower_bound[i + number_of_sampling_points_] = interpolated_points[i].y - 1.0;
       upper_bound[i + number_of_sampling_points_] = interpolated_points[i].y + 1.0;
     } else {

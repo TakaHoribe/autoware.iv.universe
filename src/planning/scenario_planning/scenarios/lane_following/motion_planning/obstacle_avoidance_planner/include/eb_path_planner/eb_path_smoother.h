@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 
-enum Mode {
+enum Mode : int {
   Avoidance = 0,
   LaneFollowing = 1,
 };
@@ -44,27 +44,6 @@ class EBPathSmoother {
   void initializeSolver();
 
   Eigen::MatrixXd makePMatrix();
-
-  bool preprocessExploredPoints(const std::vector<geometry_msgs::Point>& current_explored_points,
-                                const geometry_msgs::Pose& ego_pose,
-                                std::unique_ptr<std::vector<geometry_msgs::Point>>& previous_explored_points_ptr,
-                                std::unique_ptr<std::vector<double>>& previous_explored_x_ptr,
-                                std::unique_ptr<std::vector<double>>& previous_explored_y_ptr,
-                                std::vector<double>& intrepolated_x, std::vector<double>& intrepolated_y,
-                                int& nearest_idx, int& farrest_idx, int& nearest_idx_in_previous_optimized_points,
-                                std::vector<geometry_msgs::Point>& debug_interpolated_points);
-
-  bool preprocessExploredPoints(const std::vector<geometry_msgs::Point>& explored_points,
-                                const geometry_msgs::Pose& ego_pose, std::vector<double>& interpolated_x,
-                                std::vector<double>& interpolated_y,
-                                std::vector<geometry_msgs::Point>& interpolated_points, int& farrest_idx,
-                                std::vector<geometry_msgs::Point>& debug_interpolated_points);
-
-  bool preprocessPathPoints(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                            const geometry_msgs::Point& start_point, const geometry_msgs::Point& goal_point,
-                            const geometry_msgs::Pose& ego_pose, std::vector<double>& interpolated_x,
-                            std::vector<double>& interpolated_y, std::vector<geometry_msgs::Point>& interpolated_points,
-                            int& farrest_idx, std::vector<geometry_msgs::Point>& debug_interpolated_points);
 
   void updateQPConstrain(const std::vector<geometry_msgs::Point>& interpolated_points, const int farrest_point_idx,
                          const int num_fixed_points, const cv::Mat& clearance_map,

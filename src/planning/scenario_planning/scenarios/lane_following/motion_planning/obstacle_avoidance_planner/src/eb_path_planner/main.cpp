@@ -1,9 +1,9 @@
 #include <ros/ros.h>
-#include "eb_path_planner/node.hpp"
+#include "eb_path_planner/node.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "eb_path_planner");
-  path_planner::EBPathPlannerNode node;
+  EBPathPlannerNode node;
 
   ros::spin();
 

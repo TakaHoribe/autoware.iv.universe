@@ -1,18 +1,26 @@
-#ifndef EB_PATH_PLANNER_H
-#define EB_PATH_PLANNER_H
-#include "path_base_planner/node.hpp"
+#ifndef NODE_H
+#define NODE_H
+
+#include <ros/ros.h>
 
 namespace cv {
 class Mat;
 }
+
+namespace tf2_ros {
+class Buffer;
+class TransformListener;
+}  // namespace tf2_ros
 
 namespace std_msgs {
 ROS_DECLARE_MESSAGE(Bool);
 }
 
 namespace autoware_planning_msgs {
+ROS_DECLARE_MESSAGE(PathPoint);
 ROS_DECLARE_MESSAGE(Path);
 ROS_DECLARE_MESSAGE(TrajectoryPoint);
+ROS_DECLARE_MESSAGE(Trajectory);
 }  // namespace autoware_planning_msgs
 
 namespace autoware_perception_msgs {
@@ -22,20 +30,22 @@ ROS_DECLARE_MESSAGE(DynamicObject);
 
 namespace nav_msgs {
 ROS_DECLARE_MESSAGE(OccupancyGrid);
+ROS_DECLARE_MESSAGE(MapMetaData);
 }  // namespace nav_msgs
 
 namespace geometry_msgs {
 ROS_DECLARE_MESSAGE(PoseStamped);
 ROS_DECLARE_MESSAGE(PoseWithCovarianceStamped);
 ROS_DECLARE_MESSAGE(Pose);
+ROS_DECLARE_MESSAGE(Point);
 ROS_DECLARE_MESSAGE(TwistStamped);
 }  // namespace geometry_msgs
 
 class ModifyReferencePath;
 class EBPathSmoother;
+enum Mode : int;
 
-namespace path_planner {
-class EBPathPlannerNode : public BasePlannerNode {
+class EBPathPlannerNode {
  private:
   bool is_debug_clearance_map_mode_;
   bool is_debug_drivable_area_mode_;
@@ -56,24 +66,26 @@ class EBPathPlannerNode : public BasePlannerNode {
   double fixing_point_clearance_from_obstacle_;
   double min_distance_threshold_when_switching_avoindance_to_path_following_;
   double min_cos_similarity_when_switching_avoindance_to_path_following_;
-  geometry_msgs::Pose::ConstPtr current_ego_pose_;
+  Mode previous_mode_;
+  std::shared_ptr<geometry_msgs::Pose> current_ego_pose_ptr_;
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
   std::unique_ptr<EBPathSmoother> eb_path_smoother_ptr_;
-  std::unique_ptr<geometry_msgs::Point> previous_start_path_point_ptr_;
-  std::unique_ptr<geometry_msgs::Point> previous_goal_path_point_ptr_;
   std::unique_ptr<geometry_msgs::Point> previous_goal_point_for_exploration_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> previous_optimized_points_ptr_;
   std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>> previous_path_points_ptr_;
   std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> in_objects_ptr_;
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_ptr_;
+  std::unique_ptr<tf2_ros::TransformListener> tf_listener_ptr_;
   ros::NodeHandle nh_, private_nh_;
+  ros::Publisher trajectory_pub_;
   ros::Publisher markers_pub_;
   ros::Publisher debug_clearance_map_in_occupancy_grid_pub_;
+  ros::Subscriber path_sub_;
   ros::Subscriber objects_sub_;
   ros::Subscriber initial_sub_;
   ros::Subscriber goal_sub_;
   ros::Subscriber enable_avoidance_sub_;
-  void callback(const autoware_planning_msgs::Path& input_path_msg,
-                autoware_planning_msgs::Trajectory& output_trajectory_msg) override;
+  void pathCallback(const autoware_planning_msgs::Path& msg);
   void objectsCallback(const autoware_perception_msgs ::DynamicObjectArray& msg);
   void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg);
   void goalCallback(const geometry_msgs::PoseStamped& msg);
@@ -128,15 +140,13 @@ class EBPathPlannerNode : public BasePlannerNode {
                                           const std::vector<autoware_perception_msgs::DynamicObject>& objects,
                                           const nav_msgs::MapMetaData& map_info);
 
-  bool areValidStartAndGoal(
+  bool needReplanForPathSmoothing(
       const geometry_msgs::Pose& ego_pose, const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::unique_ptr<geometry_msgs::Point>& start_point, const std::unique_ptr<geometry_msgs::Point>& goal_point,
       const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path);
 
   bool calculateNewStartAndGoal(const geometry_msgs::Pose& ego_pose,
                                 const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                                std::unique_ptr<geometry_msgs::Point>& start_point,
-                                std::unique_ptr<geometry_msgs::Point>& goal_point);
+                                geometry_msgs::Point& start_point, geometry_msgs::Point& goal_point);
 
   bool detectAvoidingObjectsOnPath(const geometry_msgs::Pose& ego_pose,
                                    const std::vector<autoware_perception_msgs::DynamicObject>& objects,
@@ -146,10 +156,10 @@ class EBPathPlannerNode : public BasePlannerNode {
       const std::vector<autoware_perception_msgs::DynamicObject>& objects,
       const std::vector<autoware_planning_msgs::TrajectoryPoint>& prev_optimized_explored_points);
 
-  autoware_planning_msgs::Trajectory::Ptr generateSmoothTrajectoryFromPath(
+  std::shared_ptr<autoware_planning_msgs::Trajectory> generateSmoothTrajectoryFromPath(
       const autoware_planning_msgs::Path& input_path);
 
-  autoware_planning_msgs::Trajectory::Ptr generateSmoothTrajectoryFromExploredPoints(
+  std::shared_ptr<autoware_planning_msgs::Trajectory> generateSmoothTrajectoryFromExploredPoints(
       const autoware_planning_msgs::Path& input_path);
 
   void getOccupancyGridValue(const nav_msgs::OccupancyGrid& occupancy_grid, const int i, const int j,
@@ -168,8 +178,10 @@ class EBPathPlannerNode : public BasePlannerNode {
 
   std::vector<geometry_msgs::Pose> generateFixedOptimizedPathPoints(
       const geometry_msgs::Pose& ego_pose, const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::unique_ptr<geometry_msgs::Point>& start_point,
+      const geometry_msgs::Point& start_point,
       std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path);
+
+  std::unique_ptr<geometry_msgs::Pose> getCurrentEgoPose();
 
   bool isPathShapeChanged(const geometry_msgs::Pose& ego_pose,
                           const std::vector<autoware_planning_msgs::PathPoint>& path_points,
@@ -177,7 +189,7 @@ class EBPathPlannerNode : public BasePlannerNode {
 
   std::vector<geometry_msgs::Pose> generateNonFixedPoints(
       const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::vector<geometry_msgs::Pose>& fixed_points, const std::unique_ptr<geometry_msgs::Point>& goal_point);
+      const std::vector<geometry_msgs::Pose>& fixed_points, const geometry_msgs::Point& goal_point);
 
   autoware_planning_msgs::Trajectory generateSmoothTrajectory(const autoware_planning_msgs::Path& in_path);
 
@@ -194,6 +206,5 @@ class EBPathPlannerNode : public BasePlannerNode {
   EBPathPlannerNode();
   ~EBPathPlannerNode();
 };
-}  // namespace path_planner
 
 #endif

@@ -32,18 +32,6 @@ include_directories(
 add_compile_options(-std=c++14)
 
 
-add_library(path_base_planner
-  src/path_base_planner/node.cpp
-)
-
-target_link_libraries(path_base_planner
-  ${catkin_LIBRARIES}
-)
-
-add_dependencies(path_base_planner 
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
-  ${catkin_EXPORTED_TARGETS})
-
 add_executable(eb_path_planner_node
   src/eb_path_planner/util.cpp
   src/eb_path_planner/spline_interpolate.cpp
@@ -64,5 +52,4 @@ target_include_directories(eb_path_planner_node
 target_link_libraries(eb_path_planner_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  path_base_planner
 )
