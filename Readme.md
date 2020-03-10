@@ -59,8 +59,8 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 
-# for developper (temporary)
-## rule
+# For developer (temporary)
+## Rule
 - only use tf2
 - base_link is rear wheel center
 - global param list
