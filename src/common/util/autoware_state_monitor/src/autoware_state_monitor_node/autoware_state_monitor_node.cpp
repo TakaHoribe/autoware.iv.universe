@@ -57,7 +57,6 @@ geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_bu
   try {
     tf_current_pose = tf_buffer.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR_THROTTLE(1.0, "%s", ex.what());
     return nullptr;
   }
 
@@ -92,7 +91,7 @@ void AutowareStateMonitorNode::onRoute(const autoware_planning_msgs::Route::Cons
   }
 
   if (disengage_on_route_) {
-    // TODO: set disengage
+    setDisengage();
   }
 }
 
@@ -127,6 +126,15 @@ void AutowareStateMonitorNode::onTimer(const ros::TimerEvent& event) {
 
   if (autoware_state != prev_autoware_state) {
     ROS_INFO("state changed: %s -> %s", toString(prev_autoware_state).c_str(), toString(autoware_state).c_str());
+  }
+
+  // Disengage on event
+  if (disengage_on_complete_ && autoware_state == AutowareState::ArrivedGoal) {
+    setDisengage();
+  }
+
+  if (disengage_on_error_ && autoware_state == AutowareState::Error) {
+    setDisengage();
   }
 
   // Generate messages
@@ -321,6 +329,12 @@ std::vector<std::string> AutowareStateMonitorNode::generateErrorMessages() const
   return error_msgs;
 }
 
+void AutowareStateMonitorNode::setDisengage() {
+  std_msgs::Bool msg;
+  msg.data = false;
+  pub_autoware_engage_.publish(msg);
+}
+
 AutowareStateMonitorNode::AutowareStateMonitorNode() {
   // Parameter
   private_nh_.param("update_rate", update_rate_, 10.0);
@@ -359,6 +373,7 @@ AutowareStateMonitorNode::AutowareStateMonitorNode() {
 
   // Publisher
   pub_autoware_state_ = private_nh_.advertise<autoware_system_msgs::AutowareState>("output/autoware_state", 1);
+  pub_autoware_engage_ = private_nh_.advertise<std_msgs::Bool>("output/autoware_engage", 1);
 
   // Wait for first topics
   ros::Duration(1.0).sleep();
