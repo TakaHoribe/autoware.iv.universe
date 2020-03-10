@@ -284,7 +284,26 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
         left_paths = routing_graph_ptr_->possiblePaths(*opt_left, 20, 0, false);
       }
 
-      lanelet::routing::LaneletPaths center_paths = routing_graph_ptr_->possiblePaths(origin_lanelet, 20, 0, false);
+      lanelet::routing::LaneletPaths center_paths;
+      double delta_sampling_meters = 20;
+      for (double minimum_dist_for_route_search = 100; minimum_dist_for_route_search >= 20;
+           minimum_dist_for_route_search -= delta_sampling_meters) {
+        lanelet::routing::LaneletPaths tmp_paths =
+            routing_graph_ptr_->possiblePaths(origin_lanelet, minimum_dist_for_route_search, 0, false);
+        for (const auto& tmp_path : tmp_paths) {
+          bool already_searched = false;
+          for (const auto& path : center_paths) {
+            for (const auto& llt : path) {
+              if (tmp_path.back().id() == llt.id()) {
+                already_searched = true;
+              }
+            }
+          }
+          if (!already_searched) {
+            center_paths.push_back(tmp_path);
+          }
+        }
+      }
       paths.insert(paths.end(), center_paths.begin(), center_paths.end());
       paths.insert(paths.end(), right_paths.begin(), right_paths.end());
       paths.insert(paths.end(), left_paths.begin(), left_paths.end());

@@ -1,7 +1,6 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include <ros/ros.h>
 
 namespace cv {
 class Mat;
