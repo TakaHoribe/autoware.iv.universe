@@ -57,7 +57,6 @@ geometry_msgs::PoseStamped::ConstPtr getCurrentPose(const tf2_ros::Buffer& tf_bu
   try {
     tf_current_pose = tf_buffer.lookupTransform("map", "base_link", ros::Time(0), ros::Duration(0));
   } catch (tf2::TransformException ex) {
-    ROS_ERROR_THROTTLE(1.0, "%s", ex.what());
     return nullptr;
   }
 
