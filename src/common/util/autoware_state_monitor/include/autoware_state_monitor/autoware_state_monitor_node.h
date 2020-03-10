@@ -73,6 +73,9 @@ class AutowareStateMonitorNode {
 
   // Publisher
   ros::Publisher pub_autoware_state_;
+  ros::Publisher pub_autoware_engage_;
+
+  void setDisengage();
 
   // Timer
   void onTimer(const ros::TimerEvent& event);

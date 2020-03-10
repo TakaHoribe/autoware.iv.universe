@@ -15,6 +15,7 @@
     <arg name="input_twist" value="/vehicle/status/twist" />
 
     <arg name="output_autoware_state" value="/autoware/state" />
+    <arg name="output_autoware_engage" value="/autoware/engage" />
 
     <arg name="config_file" value="$(find autoware_state_monitor)/config/autoware_state_monitor.yaml" />
   </include>

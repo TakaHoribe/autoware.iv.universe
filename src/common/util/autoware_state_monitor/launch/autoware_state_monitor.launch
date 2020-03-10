@@ -5,6 +5,8 @@
   <arg name="input_twist" />
 
   <arg name="output_autoware_state" />
+  <arg name="output_autoware_engage" />
+  <arg name="output_vehicle_engage" />
 
   <arg name="config_file" />
 
@@ -15,6 +17,7 @@
     <remap from="~input/twist" to="$(arg input_twist)"/>
 
     <remap from="~output/autoware_state" to="$(arg output_autoware_state)"/>
+    <remap from="~output/autoware_engage" to="$(arg output_autoware_engage)"/>
 
     <rosparam command="load" file="$(arg config_file)" />
 
