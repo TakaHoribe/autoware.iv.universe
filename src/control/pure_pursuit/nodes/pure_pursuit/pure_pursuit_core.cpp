@@ -114,7 +114,9 @@ void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
     return;
   }
 
-  const double cmd_vel = computeCommandVelocity(*ppdconf_ptr_, current_trajectory_ptr_->points, clst_pair.second);
+  const double cmd_vel = computeCommandVelocityWithDelayCompensation(
+      *ppdconf_ptr_, current_trajectory_ptr_->points, clst_pair.second, velocity_delay_compensation_time_,
+      current_velocity_ptr_->twist.linear.x);
   const double cmd_acc = computeCommandAccelerationWithDelayCompensation(
       *ppdconf_ptr_, current_trajectory_ptr_->points, clst_pair.second, velocity_delay_compensation_time_,
       current_velocity_ptr_->twist.linear.x);
@@ -283,10 +285,10 @@ double computeCommandAcceleration(const PurePursuitDynamicConfig& ppdconf,
   return cmd_acc;
 }
 
-double computeCommandAccelerationWithDelayCompensation(
+autoware_planning_msgs::TrajectoryPoint computeTargetPointsWithDelayCompensation(
     const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
-    const int32_t clst_wp_idx, const double& delay, const double& cur_v) {
-  const double delay_dist = cur_v * delay;  // [m]
+    const int32_t clst_wp_idx, const double& delay, const double& curr_vel) {
+  const double delay_dist = curr_vel * delay;  // [m]
 
   int32_t idx = clst_wp_idx;
   double dist_sum = 0.0;
@@ -296,7 +298,30 @@ double computeCommandAccelerationWithDelayCompensation(
     if (dist_sum > delay_dist) break;
   }
 
-  double cmd_acc = points.at(idx).accel.linear.x;
+  return points.at(idx);
+}
+
+double computeCommandVelocityWithDelayCompensation(const PurePursuitDynamicConfig& ppdconf,
+                                                   const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
+                                                   const int32_t clst_wp_idx, const double& delay,
+                                                   const double& curr_vel) {
+  auto target_point = computeTargetPointsWithDelayCompensation(ppdconf, points, clst_wp_idx, delay, curr_vel);
+  double cmd_vel = target_point.twist.linear.x;
+
+  if (ppdconf.param_flag_ == enumToInteger(Mode::dialog)) {
+    const int sgn = (cmd_vel < 0) ? -1 : 1;
+    cmd_vel = sgn * planning_utils::kmph2mps(ppdconf.const_velocity_);
+  }
+
+  ROS_DEBUG("cmd_vel: %lf", cmd_vel);
+  return cmd_vel;
+}
+
+double computeCommandAccelerationWithDelayCompensation(
+    const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
+    const int32_t clst_wp_idx, const double& delay, const double& curr_vel) {
+  auto target_point = computeTargetPointsWithDelayCompensation(ppdconf, points, clst_wp_idx, delay, curr_vel);
+  double cmd_acc = target_point.accel.linear.x;
   if (ppdconf.param_flag_ == enumToInteger(Mode::dialog)) cmd_acc = 0.0;
 
   ROS_DEBUG("amd_acc: %lf", cmd_acc);

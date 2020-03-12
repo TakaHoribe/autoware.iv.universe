@@ -144,6 +144,13 @@ double computeCommandVelocity(const PurePursuitDynamicConfig& ppdconf,
 double computeCommandAcceleration(const PurePursuitDynamicConfig& ppdconf,
                                   const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
                                   int32_t clst_wp_idx);
+autoware_planning_msgs::TrajectoryPoint computeTargetPointsWithDelayCompensation(
+    const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
+    const int32_t clst_wp_idx, const double& delay, const double& curr_vel);
+double computeCommandVelocityWithDelayCompensation(const PurePursuitDynamicConfig& ppdconf,
+                                                   const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
+                                                   const int32_t clst_wp_idx, const double& delay,
+                                                   const double& curr_vel);
 double computeCommandAccelerationWithDelayCompensation(
     const PurePursuitDynamicConfig& ppdconf, const std::vector<autoware_planning_msgs::TrajectoryPoint>& points,
     const int32_t clst_wp_idx, const double& delay, const double& curr_vel);

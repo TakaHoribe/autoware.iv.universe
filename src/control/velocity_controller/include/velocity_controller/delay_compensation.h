@@ -25,20 +25,42 @@ class DelayCompensator {
   DelayCompensator();
   ~DelayCompensator();
 
-  static double getAccelerationAfterTimeDelay(const autoware_planning_msgs::Trajectory& trajectory,
-                                              int32_t closest_waypoint_index, double delay_time,
-                                              double current_velocity) {
+  static int getTrajectoryPointIndexAfterTimeDelay(const autoware_planning_msgs::Trajectory& trajectory,
+                                                   int32_t closest_waypoint_index, double delay_time,
+                                                   double current_velocity) {
     const double delay_distance = current_velocity * delay_time;
 
     double sum_distance = 0.0;
     for (unsigned int i = closest_waypoint_index; i < trajectory.points.size() - 1; ++i) {
       sum_distance += vcutils::calcDistance2D(trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose);
       if (sum_distance > delay_distance) {
-        return trajectory.points.at(i).accel.linear.x;
+        return i;
       }
     }
+    return trajectory.points.size() - 1;
+  }
 
-    return trajectory.points.back().accel.linear.x;
+  static autoware_planning_msgs::TrajectoryPoint getTrajectoryPointAfterTimeDelay(
+      const autoware_planning_msgs::Trajectory& trajectory, int32_t closest_waypoint_index, double delay_time,
+      double current_velocity) {
+    int target_waypoint_index =
+        getTrajectoryPointIndexAfterTimeDelay(trajectory, closest_waypoint_index, delay_time, current_velocity);
+    return trajectory.points.at(target_waypoint_index);
+  }
+
+  static double getAccelerationAfterTimeDelay(const autoware_planning_msgs::Trajectory& trajectory,
+                                              int32_t closest_waypoint_index, double delay_time,
+                                              double current_velocity) {
+    auto point_after_delay =
+        getTrajectoryPointAfterTimeDelay(trajectory, closest_waypoint_index, delay_time, current_velocity);
+    return point_after_delay.accel.linear.x;
+  }
+
+  static double getVelocityAfterTimeDelay(const autoware_planning_msgs::Trajectory& trajectory,
+                                          int32_t closest_waypoint_index, double delay_time, double current_velocity) {
+    auto point_after_delay =
+        getTrajectoryPointAfterTimeDelay(trajectory, closest_waypoint_index, delay_time, current_velocity);
+    return point_after_delay.twist.linear.x;
   }
 };
 
