@@ -78,6 +78,9 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
       pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_lateral_acc_filtered", 1);
   pub_trajectory_resampled_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_time_resampled", 1);
 
+  const double timer_dt = 0.1;
+  timer_ = nh_.createTimer(ros::Duration(timer_dt), &MotionVelocityOptimizer::timerCallback, this);
+
   /* wait to get vehicle position */
   while (ros::ok()) {
     try {
@@ -131,7 +134,7 @@ void MotionVelocityOptimizer::run() {
   updateCurrentPose();
 
   /* guard */
-  if (!current_pose_ptr_ || !current_velocity_ptr_ || !base_traj_raw_ptr_ || base_traj_raw_ptr_->points.size() == 0) {
+  if (!current_pose_ptr_ || !current_velocity_ptr_ || !base_traj_raw_ptr_ || base_traj_raw_ptr_->points.empty()) {
     DEBUG_INFO("wait topics : current_pose = %d, current_vel = %d, base_traj = %d, traj.size = %lu",
                (bool)current_pose_ptr_, (bool)current_velocity_ptr_, (bool)base_traj_raw_ptr_,
                base_traj_raw_ptr_->points.size());
@@ -230,8 +233,9 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
 }
 
 void MotionVelocityOptimizer::insertBehindVelocity(const int prev_output_closest,
-                                                 const autoware_planning_msgs::Trajectory& prev_output,
-                                                 const int output_closest, autoware_planning_msgs::Trajectory& output) {
+                                                   const autoware_planning_msgs::Trajectory& prev_output,
+                                                   const int output_closest,
+                                                   autoware_planning_msgs::Trajectory& output) const {
   int j = std::max(prev_output_closest - 1, 0);
   for (int i = output_closest - 1; i >= 0; --i) {
     if (initialize_type_ == InitializeType::INIT || initialize_type_ == InitializeType::LARGE_DEVIATION_REPLAN ||
@@ -611,13 +615,12 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
 bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory& input,
                                                         autoware_planning_msgs::Trajectory& output) const {
   output = input;
-  if (external_velocity_limit_ptr_ != nullptr) {
-    vpu::maximumVelocityFilter(external_velocity_limit_ptr_->data, output);
-    DEBUG_INFO("[External Velocity Limit] : limit_vel = %3.3f", external_velocity_limit_ptr_->data);
-    return true;
-  } else {
+  if (!external_velocity_limit_acc_limited_ptr_)
     return false;
-  }
+
+  vpu::maximumVelocityFilter(*external_velocity_limit_acc_limited_ptr_, output);
+  DEBUG_INFO("[External Velocity Limit] : limit_vel = %3.3f", *external_velocity_limit_acc_limited_ptr_);
+  return true;
 }
 
 void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
@@ -695,6 +698,24 @@ void MotionVelocityOptimizer::publishClosestVelocity(const double& vel) const {
   std_msgs::Float32 closest_velocity;
   closest_velocity.data = vel;
   debug_closest_velocity_.publish(closest_velocity);
+}
+
+void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt) {
+  if (!external_velocity_limit_ptr_) return;
+
+  if (!external_velocity_limit_acc_limited_ptr_) {
+    external_velocity_limit_acc_limited_ptr_ = boost::make_shared<double>(external_velocity_limit_ptr_->data);
+    return;
+  }
+
+  double dv_raw = (external_velocity_limit_ptr_->data - *external_velocity_limit_acc_limited_ptr_);
+  double dv_filtered = std::max(std::min(dv_raw, planning_param_.max_accel * dt), planning_param_.min_decel * dt);
+  *external_velocity_limit_acc_limited_ptr_ += dv_filtered;
+}
+
+void MotionVelocityOptimizer::timerCallback(const ros::TimerEvent& e) {
+  const double dt = (e.current_expected - e.last_expected).toSec();
+  updateExternalVelocityLimit(dt);
 }
 
 int main(int argc, char** argv) {

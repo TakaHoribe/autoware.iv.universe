@@ -46,11 +46,13 @@ class MotionVelocityOptimizer {
   ros::Subscriber sub_external_velocity_limit_;  //!< @brief subscriber for external velocity limit
   tf2_ros::Buffer tf_buffer_;                    //!< @brief tf butter
   tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
+  ros::Timer timer_;
 
   boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;           // current vehicle pose
   boost::shared_ptr<geometry_msgs::TwistStamped const> current_velocity_ptr_;      // current vehicle twist
   boost::shared_ptr<autoware_planning_msgs::Trajectory const> base_traj_raw_ptr_;  // current base_waypoints
   boost::shared_ptr<std_msgs::Float32 const> external_velocity_limit_ptr_;         // current external_velocity_limit
+  boost::shared_ptr<double> external_velocity_limit_acc_limited_ptr_;
 
   autoware_planning_msgs::Trajectory prev_output_;  // previously published trajectory
 
@@ -100,19 +102,24 @@ class MotionVelocityOptimizer {
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg);
   void callbackCurrentTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr msg);
   void callbackExternalVelocityLimit(const std_msgs::Float32::ConstPtr msg);
+  void timerCallback(const ros::TimerEvent& e);
 
   /* non-const methods */
   void run();
   void updateCurrentPose();
   autoware_planning_msgs::Trajectory calcTrajectoryVelocity(const autoware_planning_msgs::Trajectory& base_traj);
-
+  void updateExternalVelocityLimit(const double dt);
   void optimizeVelocity(const autoware_planning_msgs::Trajectory& input, const int input_closest,
                         const autoware_planning_msgs::Trajectory& prev_output_traj, const int prev_output_closest,
                         autoware_planning_msgs::Trajectory& output);
   void calcInitialMotion(const double& base_speed, const autoware_planning_msgs::Trajectory& base_waypoints,
                          const int base_closest, const autoware_planning_msgs::Trajectory& prev_replanned_traj,
                          const int prev_replanned_traj_closest, double& initial_vel, double& initial_acc);
+  void solveOptimization(const double initial_vel, const double initial_acc,
+                         const autoware_planning_msgs::Trajectory& input, const int closest,
+                         autoware_planning_msgs::Trajectory& output);
 
+  /* const methods */
   bool resampleTrajectory(const autoware_planning_msgs::Trajectory& input,
                           autoware_planning_msgs::Trajectory& output) const;
 
@@ -126,12 +133,9 @@ class MotionVelocityOptimizer {
 
   void publishTrajectory(const autoware_planning_msgs::Trajectory& traj) const;
   void publishStopDistance(const autoware_planning_msgs::Trajectory& trajectory, const int closest) const;
-
-  void solveOptimization(const double initial_vel, const double initial_acc,
-                         const autoware_planning_msgs::Trajectory& input, const int closest,
-                         autoware_planning_msgs::Trajectory& output);
   void insertBehindVelocity(const int prev_out_closest, const autoware_planning_msgs::Trajectory& prev_output,
-                            const int output_closest, autoware_planning_msgs::Trajectory& output);
+                            const int output_closest, autoware_planning_msgs::Trajectory& output) const;
+
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_optimizer::MotionVelocityOptimizerConfig> dyncon_server_;
   void dynamicRecofCallback(motion_velocity_optimizer::MotionVelocityOptimizerConfig& config, uint32_t level) {
@@ -139,6 +143,7 @@ class MotionVelocityOptimizer {
     planning_param_.min_decel = config.min_decel;
     planning_param_.engage_velocity = config.engage_velocity;
     planning_param_.engage_acceleration = config.engage_acceleration;
+    show_debug_info_ = config.show_debug_info;
   }
 
   /* debug */
