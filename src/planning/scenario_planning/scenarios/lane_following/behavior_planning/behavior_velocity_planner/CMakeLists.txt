@@ -56,12 +56,20 @@ add_library(scene_module_lib
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp
 )
+add_dependencies(scene_module_lib
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 # Scene Module: Momentary Stop
 add_library(scene_module_momentary_stop
   src/scene_module/momentary_stop/manager.cpp
   src/scene_module/momentary_stop/scene.cpp
   src/scene_module/momentary_stop/debug.cpp
+)
+add_dependencies(scene_module_momentary_stop
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
 )
 
 target_link_libraries(scene_module_momentary_stop
@@ -75,6 +83,11 @@ add_library(scene_module_crosswalk
   src/scene_module/crosswalk/debug.cpp
 )
 
+add_dependencies(scene_module_crosswalk
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 target_link_libraries(scene_module_crosswalk
   scene_module_lib
 )
@@ -84,6 +97,11 @@ add_library(scene_module_intersection
   src/scene_module/intersection/manager.cpp
   src/scene_module/intersection/scene.cpp
   src/scene_module/intersection/debug.cpp
+)
+
+add_dependencies(scene_module_intersection
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
 )
 
 target_link_libraries(scene_module_intersection
@@ -97,6 +115,11 @@ add_library(scene_module_traffic_light
   src/scene_module/traffic_light/debug.cpp
 )
 
+add_dependencies(scene_module_traffic_light
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 target_link_libraries(scene_module_intersection
   scene_module_lib
 )
@@ -108,6 +131,11 @@ add_library(scene_module_blind_spot
   src/scene_module/blind_spot/debug.cpp
 )
 
+add_dependencies(scene_module_blind_spot
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 target_link_libraries(scene_module_intersection
   scene_module_lib
 )
@@ -115,6 +143,11 @@ target_link_libraries(scene_module_intersection
 # Scene Module Manager
 add_library(scene_module_manager
   src/planner_manager.cpp
+)
+
+add_dependencies(scene_module_manager
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
 )
 
 target_link_libraries(scene_module_manager
