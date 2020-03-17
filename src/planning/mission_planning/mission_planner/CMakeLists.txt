@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   lanelet2_extension
   roscpp
   tf2_ros
+  tf2_geometry_msgs
 )
 
 catkin_package(
@@ -28,11 +29,11 @@ add_executable(mission_planner
   src/mission_planner_lanelet2/mission_planner_main.cpp
   src/mission_planner_lanelet2/utility_functions.cpp
 )
-add_dependencies(mission_planner 
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+add_dependencies(mission_planner
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(mission_planner 
+target_link_libraries(mission_planner
   ${catkin_LIBRARIES}
 )
 
