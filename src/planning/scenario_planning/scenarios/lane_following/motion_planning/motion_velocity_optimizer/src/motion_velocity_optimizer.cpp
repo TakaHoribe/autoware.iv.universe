@@ -280,8 +280,8 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
   for (int i = 1; i <= N; ++i) {
     double ds = ds_nominal;
     if (i > Nt) {
-      ds = std::max(1.0, ds_nominal);  // if the planning time is not enough to see the desired distance, change the
-                                       // interval distance to see far.
+      // if the planning time is not enough to see the desired distance, change the interval distance to see far.
+      ds = std::max(1.0, ds_nominal);
     }
     dist_i += ds;
     if (dist_i > planning_param_.max_trajectory_length) {
@@ -570,6 +570,8 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
     return false;
   }
 
+  output = input;  // initialize
+
   const double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
@@ -580,14 +582,13 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
     ROS_WARN("[motion_velocity_optimizer]: fail trajectory interpolation at lateral acceleraion filter.");
     return false;
   }
+  output.points.back().twist = input.points.back().twist;  // keep the final speed.
 
   const double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
-  output = input;  // initialize
-
   std::vector<double> curvature_v;
-  vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, curvature_v);
+  vpu::calcTrajectoryCurvatureFrom3Points(output, idx_dist, curvature_v);
 
   const int before_decel_index =
       static_cast<int>(std::round(planning_param_.decel_distance_before_curve / points_interval));
@@ -595,11 +596,11 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
       static_cast<int>(std::round(planning_param_.decel_distance_after_curve / points_interval));
   const double max_lateral_accel_abs = std::fabs(planning_param_.max_lateral_accel);
 
-  const int input_size = static_cast<int>(input.points.size());
-  for (int i = 0; i < input_size; ++i) {
+  const int output_size = static_cast<int>(output.points.size());
+  for (int i = 0; i < output_size; ++i) {
     double curvature = 0.0;
     const int start = std::max(i - after_decel_index, 0);
-    const int end = std::min(input_size, i + before_decel_index);
+    const int end = std::min(output_size, i + before_decel_index);
     for (int j = start; j < end; ++j) {
       curvature = std::max(curvature, std::fabs(curvature_v.at(j)));
     }
