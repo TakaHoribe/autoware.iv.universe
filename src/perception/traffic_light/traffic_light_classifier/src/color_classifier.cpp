@@ -2,7 +2,7 @@
 
 namespace traffic_light {
 ColorClassifier::ColorClassifier() : nh_(""), pnh_("~"), image_transport_(pnh_), ratio_threshold_(0.02) {
-  image_pub_ = image_transport_.advertise("output/debug/image", 1);
+  image_pub_ = image_transport_.advertise("debug/image", 1);
   dynamic_reconfigure_.setCallback(boost::bind(&ColorClassifier::parametersCallback, this, _1, _2));
 }
 

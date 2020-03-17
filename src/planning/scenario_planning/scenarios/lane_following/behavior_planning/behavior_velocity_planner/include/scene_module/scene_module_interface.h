@@ -31,7 +31,7 @@ class SceneModuleInterface {
 class SceneModuleManagerInterface {
  public:
   SceneModuleManagerInterface(const char* module_name) {
-    const auto ns = std::string("output/debug/") + module_name;
+    const auto ns = std::string("debug/") + module_name;
     pub_debug_ = private_nh_.advertise<visualization_msgs::MarkerArray>(ns, 20);
   }
 

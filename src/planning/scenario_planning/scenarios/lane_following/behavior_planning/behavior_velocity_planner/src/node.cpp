@@ -107,7 +107,7 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/path", 1);
+  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/path", 1);
 
   // Parameters
   pnh_.param("forward_path_length", forward_path_length_, 1000.0);

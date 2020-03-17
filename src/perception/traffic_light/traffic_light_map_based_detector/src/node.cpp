@@ -43,7 +43,7 @@ MapBasedDetector::MapBasedDetector() : nh_(""), pnh_("~"), tf_listener_(tf_buffe
   camera_info_sub_ = pnh_.subscribe("input/camera_info", 1, &MapBasedDetector::cameraInfoCallback, this);
   route_sub_ = pnh_.subscribe("input/route", 1, &MapBasedDetector::routeCallback, this);
   roi_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
-  viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/markers", 1);
+  viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
   pnh_.getParam("max_vibration_pitch", config_.max_vibration_pitch);
   pnh_.getParam("max_vibration_yaw", config_.max_vibration_yaw);
   pnh_.getParam("max_vibration_height", config_.max_vibration_height);

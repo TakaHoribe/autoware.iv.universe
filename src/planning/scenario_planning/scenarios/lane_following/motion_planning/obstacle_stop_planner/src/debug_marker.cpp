@@ -6,7 +6,7 @@
 namespace motion_planning {
 ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode(const double base_link2front)
     : nh_(), pnh_("~"), base_link2front_(base_link2front) {
-  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/marker", 1);
+  debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/marker", 1);
 }
 
 void ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<cv::Point2d>& polygon, const double z) {
