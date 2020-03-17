@@ -3,7 +3,7 @@
   <group ns="parking">
     <!-- freespace planning module -->
     <group ns="freespace_planning">
-      <include file="$(find planning_launch)/launch/scenario_planning/scenarios/parking/freespace_planning/freespace_planning.launch">
+      <include file="$(find planning_launch)/launch/scenario_planning/parking/freespace_planning/freespace_planning.launch">
       </include>
     </group>
   </group>

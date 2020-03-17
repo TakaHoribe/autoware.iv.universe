@@ -1,6 +1,6 @@
 <launch>
   <arg name="input_path_topic" 
-    default="/planning/scenario_planning/scenarios/lane_following/behavior_planning/path" />
+    default="/planning/scenario_planning/lane_following/behavior_planning/path" />
   <group>
     <remap from="~input/path" to="$(arg input_path_topic)" />
     <remap from="~output/path" to="obstacle_avoidance_planner/trajectory" />

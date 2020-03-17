@@ -13,7 +13,7 @@
     <arg name="input_occupancy_grid" value="costmap_generator/occupancy_grid" />
     <arg name="input_scenario" value="/planning/scenario_planning/scenario" />
     <arg name="input_twist" default="/vehicle/status/twist" />
-    <arg name="output_trajectory" value="/planning/scenario_planning/scenarios/parking/freespace_planning/trajectory" />
-    <arg name="is_completed" value="/planning/scenario_planning/scenarios/parking/freespace_planning/is_completed" />
+    <arg name="output_trajectory" value="/planning/scenario_planning/parking/freespace_planning/trajectory" />
+    <arg name="is_completed" value="/planning/scenario_planning/parking/freespace_planning/is_completed" />
   </include>
 </launch>

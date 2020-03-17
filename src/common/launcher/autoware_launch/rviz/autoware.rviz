@@ -734,7 +734,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: true
                       Name: Path
-                      Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
+                      Topic: /planning/scenario_planning/lane_following/behavior_planning/path
                       Unreliable: false
                       Value: true
                       View Path:
@@ -751,7 +751,7 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: false
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/path
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/path
                       Name: Arrow
                       Namespaces:
                         {}
@@ -759,7 +759,7 @@ Visualization Manager:
                       Value: false
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
                       Name: PathWithLaneId
                       Namespaces:
                         lane_id: true
@@ -769,7 +769,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/crosswalk
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/crosswalk
                       Name: Crosswalk
                       Namespaces:
                         {}
@@ -777,7 +777,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/intersection
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/intersection
                       Name: Intersection
                       Namespaces:
                         factor text: true
@@ -793,7 +793,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/blind_spot
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/blind_spot
                       Name: Blind Spot
                       Namespaces:
                         blind_spot_detection_area: false
@@ -809,7 +809,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/traffic_light
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/traffic_light
                       Name: TrafficLight
                       Namespaces:
                         {}
@@ -817,7 +817,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/debug/momentary_stop
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/momentary_stop
                       Name: StopLine
                       Namespaces:
                         factor text: true
@@ -832,7 +832,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: false
                       Name: Trajectory
-                      Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
+                      Topic: /planning/scenario_planning/lane_following/motion_planning/trajectory
                       Unreliable: false
                       Value: false
                       View Path:
@@ -849,7 +849,7 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_stop_planner/debug/marker
+                      Marker Topic: /planning/scenario_planning/lane_following/motion_planning/obstacle_stop_planner/debug/marker
                       Name: ObstaclePointCloudStop
                       Namespaces:
                         collision polygons: true
@@ -874,7 +874,7 @@ Visualization Manager:
                       Draw Behind: false
                       Enabled: false
                       Name: Costmap
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
+                      Topic: /planning/scenario_planning/parking/freespace_planning/costmap_generator/occupancy_grid
                       Unreliable: false
                       Use Timestamp: false
                       Value: false
@@ -891,7 +891,7 @@ Visualization Manager:
                       Shaft Length: 0.20000000298023224
                       Shaft Radius: 0.05000000074505806
                       Shape: Arrow (3D)
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/partial_pose_array
+                      Topic: /planning/scenario_planning/parking/freespace_planning/freespace_planner/debug/partial_pose_array
                       Unreliable: false
                       Value: true
                     - Alpha: 1
@@ -907,7 +907,7 @@ Visualization Manager:
                       Shaft Length: 0.20000000298023224
                       Shaft Radius: 0.05000000074505806
                       Shape: Arrow (Flat)
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/pose_array
+                      Topic: /planning/scenario_planning/parking/freespace_planning/freespace_planner/debug/pose_array
                       Unreliable: false
                       Value: true
                   Enabled: true
