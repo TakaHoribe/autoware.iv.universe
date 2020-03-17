@@ -573,6 +573,7 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
 
   output = input;  // initialize
 
+  /* Interpolate with constant interval distance for lateral acceleration calculation. */
   const double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
@@ -588,9 +589,11 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
   const double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
+  /* Calculate curvature assuming the trajectory points interval is constant */
   std::vector<double> curvature_v;
   vpu::calcTrajectoryCurvatureFrom3Points(output, idx_dist, curvature_v);
 
+  /*  Decrease speed according to lateral G */
   const int before_decel_index =
       static_cast<int>(std::round(planning_param_.decel_distance_before_curve / points_interval));
   const int after_decel_index =
