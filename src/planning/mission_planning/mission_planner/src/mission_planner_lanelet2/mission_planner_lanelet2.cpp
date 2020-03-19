@@ -18,6 +18,7 @@
 #include <mission_planner/lanelet2_impl/route_handler.h>
 #include <mission_planner/lanelet2_impl/utility_functions.h>
 
+#include <tf2/utils.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -25,6 +26,7 @@
 #include <lanelet2_routing/RoutingCost.h>
 
 #include <lanelet2_extension/utility/message_conversion.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
@@ -58,6 +60,14 @@ bool isRouteLooped(const RouteSections& route_sections) {
     }
   }
   return false;
+}
+
+constexpr double normalizeRadian(const double rad, const double min_rad = -M_PI, const double max_rad = M_PI) {
+  const auto value = std::fmod(rad, 2 * M_PI);
+  if (min_rad < value && value <= max_rad)
+    return value;
+  else
+    return value - std::copysign(2 * M_PI, value);
 }
 
 }  // anonymous namespace
@@ -116,6 +126,24 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
   marker_publisher_.publish(route_marker_array);
 }
 
+bool MissionPlannerLanelet2::isGoalValid() const {
+  lanelet::Lanelet goal_lanelet;
+  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &goal_lanelet)) {
+    return false;
+  }
+
+  const auto lane_yaw = lanelet::utils::getLaneletAngle(goal_lanelet, goal_pose_.pose.position);
+  const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
+  const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
+
+  constexpr double th_angle = M_PI / 4;
+  if (std::abs(angle_diff) > th_angle) {
+    return false;
+  }
+
+  return true;
+}
+
 autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
   std::stringstream ss;
   for (const auto& checkpoint : checkpoints_) {
@@ -126,6 +154,11 @@ autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
 
   autoware_planning_msgs::Route route_msg;
   RouteSections route_sections;
+
+  if (!isGoalValid()) {
+    ROS_WARN("Goal is not valid! Please check position and angle of goal_pose");
+    return route_msg;
+  }
 
   for (std::size_t i = 1; i < checkpoints_.size(); i++) {
     const auto start_checkpoint = checkpoints_.at(i - 1);

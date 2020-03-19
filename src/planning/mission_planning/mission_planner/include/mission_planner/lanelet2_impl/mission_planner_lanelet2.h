@@ -51,6 +51,7 @@ class MissionPlannerLanelet2 : public MissionPlanner {
   ros::Subscriber map_subscriber_;
 
   void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
+  bool isGoalValid() const;
 
   // virtual functions
   bool isRoutingGraphReady() const;
