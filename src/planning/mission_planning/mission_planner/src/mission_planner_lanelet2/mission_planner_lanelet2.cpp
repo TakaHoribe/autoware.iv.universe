@@ -22,12 +22,13 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingCost.h>
 
 #include <lanelet2_extension/utility/message_conversion.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/query.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
 #include <unordered_set>
@@ -68,6 +69,43 @@ constexpr double normalizeRadian(const double rad, const double min_rad = -M_PI,
     return value;
   else
     return value - std::copysign(2 * M_PI, value);
+}
+
+bool isInLane(const lanelet::ConstLanelet& lanelet, const lanelet::ConstPoint3d& point) {
+  // check if goal is on a lane at appropriate angle
+  const auto distance =
+      boost::geometry::distance(lanelet.polygon2d().basicPolygon(), lanelet::utils::to2D(point).basicPoint());
+  constexpr double th_distance = std::numeric_limits<double>::epsilon();
+  return distance < th_distance;
+}
+
+bool isInParkingSpace(const lanelet::ConstLineStrings3d& parking_spaces, const lanelet::ConstPoint3d& point) {
+  for (const auto& parking_space : parking_spaces) {
+    lanelet::ConstPolygon3d parking_space_polygon;
+    if (!lanelet::utils::lineStringWithWidthToPolygon(parking_space, &parking_space_polygon)) {
+      continue;
+    }
+
+    const double distance = boost::geometry::distance(lanelet::utils::to2D(parking_space_polygon).basicPolygon(),
+                                                      lanelet::utils::to2D(point).basicPoint());
+    constexpr double th_distance = std::numeric_limits<double>::epsilon();
+    if (distance < th_distance) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool isInParkingLot(const lanelet::ConstPolygons3d& parking_lots, const lanelet::ConstPoint3d& point) {
+  for (const auto& parking_lot : parking_lots) {
+    const double distance = boost::geometry::distance(lanelet::utils::to2D(parking_lot).basicPolygon(),
+                                                      lanelet::utils::to2D(point).basicPoint());
+    constexpr double th_distance = std::numeric_limits<double>::epsilon();
+    if (distance < th_distance) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // anonymous namespace
@@ -127,21 +165,37 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
 }
 
 bool MissionPlannerLanelet2::isGoalValid() const {
-  lanelet::Lanelet goal_lanelet;
-  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &goal_lanelet)) {
+  lanelet::Lanelet closest_lanelet;
+  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &closest_lanelet)) {
     return false;
   }
+  const auto goal_lanelet_pt = lanelet::utils::conversion::toLaneletPoint(goal_pose_.pose.position);
 
-  const auto lane_yaw = lanelet::utils::getLaneletAngle(goal_lanelet, goal_pose_.pose.position);
-  const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
-  const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
+  if (isInLane(closest_lanelet, goal_lanelet_pt)) {
+    const auto lane_yaw = lanelet::utils::getLaneletAngle(closest_lanelet, goal_pose_.pose.position);
+    const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
+    const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
 
-  constexpr double th_angle = M_PI / 4;
-  if (std::abs(angle_diff) > th_angle) {
-    return false;
+    constexpr double th_angle = M_PI / 4;
+
+    if (std::abs(angle_diff) < th_angle) {
+      return true;
+    }
   }
 
-  return true;
+  // check if goal is in parking space
+  const auto parking_spaces = lanelet::utils::query::getAllParkingSpaces(lanelet_map_ptr_);
+  if (isInParkingSpace(parking_spaces, goal_lanelet_pt)) {
+    return true;
+  }
+
+  // check if goal is in parking lot
+  const auto parking_lots = lanelet::utils::query::getAllParkingLots(lanelet_map_ptr_);
+  if (isInParkingLot(parking_lots, goal_lanelet_pt)) {
+    return true;
+  }
+
+  return false;
 }
 
 autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
