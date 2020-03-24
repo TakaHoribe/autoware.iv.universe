@@ -36,3 +36,7 @@ target_link_libraries(osqp_interface
   ${catkin_LIBRARIES}
 )
 
+## Install project namespaced headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)

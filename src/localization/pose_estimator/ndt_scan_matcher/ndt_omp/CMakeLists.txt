@@ -61,3 +61,8 @@ target_link_libraries(align
   ${PCL_LIBRARIES}
   ndt_omp
 )
+
+## Install project namespaced headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
