@@ -30,7 +30,7 @@ namespace velodyne_pointcloud
   Convert::Convert(ros::NodeHandle node, ros::NodeHandle private_nh)
     : tf2_listener_(tf2_buffer_)
     , data_(new velodyne_rawdata::RawData())
-    , num_points_thresthold_(300)
+    , num_points_threshold_(300)
     , base_link_frame_("base_link")
   {
 
@@ -38,7 +38,7 @@ namespace velodyne_pointcloud
 
     data_->setup(private_nh);
 
-    private_nh.getParam("num_points_thresthold", num_points_thresthold_);
+    private_nh.getParam("num_points_threshold", num_points_threshold_);
 
     std::string invalid_intensity;
     private_nh.getParam("invalid_intensity", invalid_intensity);
@@ -67,7 +67,7 @@ namespace velodyne_pointcloud
   {
   	ROS_INFO("Reconfigure Request");
   	data_->setParameters(config.min_range, config.max_range, config.view_direction, config.view_width);
-    num_points_thresthold_ = config.num_points_thresthold;
+    num_points_threshold_ = config.num_points_threshold;
 
     YAML::Node invalid_intensity_yaml = YAML::Load(config.invalid_intensity);
     invalid_intensity_array_ = std::vector<float>(data_->getNumLasers(), 0);
@@ -108,7 +108,7 @@ namespace velodyne_pointcloud
     if(velodyne_points_invalid_near_pub_.getNumSubscribers() > 0 || velodyne_points_combined_ex_pub_.getNumSubscribers() > 0) {
       const size_t num_lasers = data_->getNumLasers();
       const auto sorted_invalid_points_xyziradt = sortZeroIndex(scan_points_xyziradt.pc, num_lasers);
-      invalid_near_points_filtered_xyziradt = extractInvalidNearPointsFiltered(sorted_invalid_points_xyziradt, invalid_intensity_array_, num_lasers, num_points_thresthold_);
+      invalid_near_points_filtered_xyziradt = extractInvalidNearPointsFiltered(sorted_invalid_points_xyziradt, invalid_intensity_array_, num_lasers, num_points_threshold_);
       if(velodyne_points_invalid_near_pub_.getNumSubscribers() > 0) {
         const auto invalid_near_points_filtered_xyzir = convert(invalid_near_points_filtered_xyziradt);
         velodyne_points_invalid_near_pub_.publish(invalid_near_points_filtered_xyzir);

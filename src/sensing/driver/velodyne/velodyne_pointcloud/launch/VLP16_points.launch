@@ -21,7 +21,7 @@
   <arg name="cut_angle" default="-0.01" />
   <arg name="laserscan_ring" default="-1" />
   <arg name="laserscan_resolution" default="0.007" />
-  <arg name="num_points_thresthold" default="300"/>
+  <arg name="num_points_threshold" default="300"/>
   <arg name="invalid_intensity" default="[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"/>
 
   <!-- start nodelet manager -->
@@ -48,7 +48,7 @@
     <arg name="manager" value="$(arg manager)" />
     <arg name="max_range" value="$(arg max_range)"/>
     <arg name="min_range" value="$(arg min_range)"/>
-    <arg name="num_points_thresthold" value="$(arg num_points_thresthold)"/>
+    <arg name="num_points_threshold" value="$(arg num_points_threshold)"/>
     <arg name="invalid_intensity" value="$(arg invalid_intensity)"/>
   </include>
 
