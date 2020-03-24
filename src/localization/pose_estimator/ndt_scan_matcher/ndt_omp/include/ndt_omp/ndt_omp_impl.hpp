@@ -44,7 +44,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform()
+ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform()
     : target_cells_(),
       resolution_(1.0f),
       step_size_(0.1),
@@ -96,7 +96,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransformation(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransformation(
     PointCloudSource& output, const Eigen::Matrix4f& guess) {
   nr_iterations_ = 0;
   converged_ = false;
@@ -228,7 +228,7 @@ int omp_get_thread_num() { return 0; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
+double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
     Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian, PointCloudSource& trans_cloud,
     Eigen::Matrix<double, 6, 1>& p, bool compute_hessian) {
   score_gradient.setZero();
@@ -337,7 +337,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDe
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDerivatives(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDerivatives(
     Eigen::Matrix<double, 6, 1>& p, bool compute_hessian) {
   // Simplified math for near 0 angles
   double cx, cy, cz, sx, sy, sz;
@@ -439,7 +439,7 @@ void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngl
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
     Eigen::Vector3d& x, Eigen::Matrix<float, 4, 6>& point_gradient_, Eigen::Matrix<float, 24, 6>& point_hessian_,
     bool compute_hessian) const {
   Eigen::Vector4f x4(x[0], x[1], x[2], 0.0f);
@@ -485,7 +485,7 @@ void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePoin
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
     Eigen::Vector3d& x, Eigen::Matrix<double, 3, 6>& point_gradient_, Eigen::Matrix<double, 18, 6>& point_hessian_,
     bool compute_hessian) const {
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
@@ -527,7 +527,7 @@ void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePoin
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
+double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
     Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
     const Eigen::Matrix<float, 4, 6>& point_gradient4, const Eigen::Matrix<float, 24, 6>& point_hessian_,
     const Eigen::Vector3d& x_trans, const Eigen::Matrix3d& c_inv, bool compute_hessian) const {
@@ -581,7 +581,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDer
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
     Eigen::Matrix<double, 6, 6>& hessian, PointCloudSource& trans_cloud, Eigen::Matrix<double, 6, 1>&) {
   // Original Point and Transformed Point
   PointSource x_pt, x_trans_pt;
@@ -640,7 +640,7 @@ void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHess
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
+void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
     Eigen::Matrix<double, 6, 6>& hessian, const Eigen::Matrix<double, 3, 6>& point_gradient_,
     const Eigen::Matrix<double, 18, 6>& point_hessian_, const Eigen::Vector3d& x_trans,
     const Eigen::Matrix3d& c_inv) const {
@@ -669,7 +669,7 @@ void pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-bool pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateIntervalMT(
+bool ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateIntervalMT(
     double& a_l, double& f_l, double& g_l, double& a_u, double& f_u, double& g_u, double a_t, double f_t, double g_t) {
   // Case U1 in Update Algorithm and Case a in Modified Update Algorithm [More, Thuente 1994]
   if (f_t > f_l) {
@@ -703,7 +703,7 @@ bool pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateInter
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelectionMT(
+double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelectionMT(
     double a_l, double f_l, double g_l, double a_u, double f_u, double g_u, double a_t, double f_t, double g_t) {
   // Case 1 in Trial Value Selection [More, Thuente 1994]
   if (f_t > f_l) {
@@ -778,7 +778,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValu
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengthMT(
+double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengthMT(
     const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix<double, 6, 1>& step_dir, double step_init, double step_max,
     double step_min, double& score, Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
     PointCloudSource& trans_cloud) {
@@ -927,7 +927,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeSt
 }
 
 template <typename PointSource, typename PointTarget>
-double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculateScore(
+double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::calculateScore(
     const PointCloudSource& trans_cloud) const {
   double score = 0;
 

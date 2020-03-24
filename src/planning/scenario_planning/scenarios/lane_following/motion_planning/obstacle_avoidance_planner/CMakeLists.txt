@@ -11,13 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     include
-  CATKIN_DEPENDS 
-   autoware_planning_msgs 
+  CATKIN_DEPENDS
+   autoware_planning_msgs
    autoware_perception_msgs
    autoware_system_msgs
-   roscpp 
+   roscpp
    tf2_ros
    osqp_interface
 )
@@ -42,11 +42,11 @@ add_executable(eb_path_planner_node
   src/eb_path_planner/node.cpp
   src/eb_path_planner/main.cpp)
 
-add_dependencies(eb_path_planner_node 
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+add_dependencies(eb_path_planner_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
 
-target_include_directories(eb_path_planner_node 
+target_include_directories(eb_path_planner_node
   PUBLIC
     ${Opencv_INCLUDE_DIRS}
 )

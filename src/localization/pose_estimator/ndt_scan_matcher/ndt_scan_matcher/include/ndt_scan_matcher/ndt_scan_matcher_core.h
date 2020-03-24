@@ -54,8 +54,8 @@ class NDTScanMatcher {
 
   // TODO move file
   struct OMPParams {
-    OMPParams() : search_method(pclomp::NeighborSearchMethod::KDTREE), num_threads(1){};
-    pclomp::NeighborSearchMethod search_method;
+    OMPParams() : search_method(ndt_omp::NeighborSearchMethod::KDTREE), num_threads(1){};
+    ndt_omp::NeighborSearchMethod search_method;
     int num_threads;
   };
 

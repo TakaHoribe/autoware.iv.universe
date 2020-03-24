@@ -7,7 +7,7 @@
 #include <ros/ros.h>
 #include <iostream>
 
-#include <pclomp/ndt_omp.h>
+#include <ndt_omp/ndt_omp.h>
 
 // align point clouds and measure processing time
 pcl::PointCloud<pcl::PointXYZ>::Ptr align(pcl::Registration<pcl::PointXYZ, pcl::PointXYZ>::Ptr registration,
@@ -77,16 +77,16 @@ int main(int argc, char** argv) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align(ndt, target_cloud, source_cloud);
 
   std::vector<int> num_threads = {1, omp_get_max_threads()};
-  std::vector<std::pair<std::string, pclomp::NeighborSearchMethod>> search_methods = {
-      {"KDTREE", pclomp::KDTREE}, {"DIRECT7", pclomp::DIRECT7}, {"DIRECT1", pclomp::DIRECT1}};
+  std::vector<std::pair<std::string, ndt_omp::NeighborSearchMethod>> search_methods = {
+      {"KDTREE", ndt_omp::KDTREE}, {"DIRECT7", ndt_omp::DIRECT7}, {"DIRECT1", ndt_omp::DIRECT1}};
 
-  pclomp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt_omp(
-      new pclomp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
+  ndt_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt_omp(
+      new ndt_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
   ndt_omp->setResolution(1.0);
 
   for (int n : num_threads) {
     for (const auto& search_method : search_methods) {
-      std::cout << "--- pclomp::NDT (" << search_method.first << ", " << n << " threads) ---" << std::endl;
+      std::cout << "--- ndt_omp::NDT (" << search_method.first << ", " << n << " threads) ---" << std::endl;
       ndt_omp->setNumThreads(n);
       ndt_omp->setNeighborhoodSearchMethod(search_method.second);
       aligned = align(ndt_omp, target_cloud, source_cloud);

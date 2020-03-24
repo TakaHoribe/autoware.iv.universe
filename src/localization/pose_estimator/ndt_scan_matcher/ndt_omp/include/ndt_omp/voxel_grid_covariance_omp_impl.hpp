@@ -46,7 +46,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-void pclomp::VoxelGridCovariance<PointT>::applyFilter(PointCloud& output) {
+void ndt_omp::VoxelGridCovariance<PointT>::applyFilter(PointCloud& output) {
   voxel_centroids_leaf_indices_.clear();
 
   // Has the input dataset been set already?
@@ -335,7 +335,7 @@ void pclomp::VoxelGridCovariance<PointT>::applyFilter(PointCloud& output) {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const Eigen::MatrixXi& relative_coordinates,
+int ndt_omp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const Eigen::MatrixXi& relative_coordinates,
                                                                 const PointT& reference_point,
                                                                 std::vector<LeafConstPtr>& neighbors) const {
   neighbors.clear();
@@ -367,7 +367,7 @@ int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const Eigen::Mat
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const PointT& reference_point,
+int ndt_omp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const PointT& reference_point,
                                                                 std::vector<LeafConstPtr>& neighbors) const {
   neighbors.clear();
 
@@ -378,7 +378,7 @@ int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const PointT& re
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint7(const PointT& reference_point,
+int ndt_omp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint7(const PointT& reference_point,
                                                                  std::vector<LeafConstPtr>& neighbors) const {
   neighbors.clear();
 
@@ -396,7 +396,7 @@ int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint7(const PointT& r
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint1(const PointT& reference_point,
+int ndt_omp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint1(const PointT& reference_point,
                                                                  std::vector<LeafConstPtr>& neighbors) const {
   neighbors.clear();
   return getNeighborhoodAtPoint(Eigen::MatrixXi::Zero(3, 1), reference_point, neighbors);
@@ -404,7 +404,7 @@ int pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint1(const PointT& r
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT>
-void pclomp::VoxelGridCovariance<PointT>::getDisplayCloud(pcl::PointCloud<pcl::PointXYZ>& cell_cloud) {
+void ndt_omp::VoxelGridCovariance<PointT>::getDisplayCloud(pcl::PointCloud<pcl::PointXYZ>& cell_cloud) {
   cell_cloud.clear();
 
   int pnt_per_cell = 1000;

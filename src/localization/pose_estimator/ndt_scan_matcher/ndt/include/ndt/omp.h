@@ -22,7 +22,7 @@
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <pclomp/ndt_omp.h>
+#include <ndt_omp/ndt_omp.h>
 
 template <class PointSource, class PointTarget>
 class NormalDistributionsTransformOMP : public NormalDistributionsTransformBase<PointSource, PointTarget> {
@@ -57,13 +57,13 @@ class NormalDistributionsTransformOMP : public NormalDistributionsTransformBase<
 
   // only OMP Impl
   void setNumThreads(int n);
-  void setNeighborhoodSearchMethod(pclomp::NeighborSearchMethod method);
+  void setNeighborhoodSearchMethod(ndt_omp::NeighborSearchMethod method);
 
   int getNumThreads() const;
-  pclomp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
+  ndt_omp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
 
  private:
-  boost::shared_ptr<pclomp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
+  boost::shared_ptr<ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
 };
 
 #include "ndt/impl/omp.hpp"
