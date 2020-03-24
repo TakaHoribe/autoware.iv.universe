@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(simple_planning_simulator)
 
-add_compile_options(-std=c++11) 
+add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -77,7 +77,4 @@ catkin_install_python(PROGRAMS scripts/fitParamDelayInputModel.py DESTINATION ${
 
 if (CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
-    add_rostest_gtest(test-simple_planning_simulator test/test_simple_planning_simulator.test test/src/test_simple_planning_simulator.cpp src/simple_planning_simulator_core.cpp ${simple_planning_simulator_SRC})
-    add_dependencies(test-simple_planning_simulator ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(test-simple_planning_simulator ${catkin_LIBRARIES})
 endif ()
