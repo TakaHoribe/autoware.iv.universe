@@ -2,11 +2,12 @@
 .vscode/
 *.code-workspace
 
-# catkin
+# catkin / colcon
 build/
 devel/
 install/
 logs/
+log/
 .catkin_tools/
 .catkin_workspace
 /src/CMakeLists.txt
