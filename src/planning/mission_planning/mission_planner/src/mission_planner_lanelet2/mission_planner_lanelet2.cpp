@@ -22,12 +22,13 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingCost.h>
 
 #include <lanelet2_extension/utility/message_conversion.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/utility/query.h>
+#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
 #include <unordered_set>
@@ -127,21 +128,49 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
 }
 
 bool MissionPlannerLanelet2::isGoalValid() const {
-  lanelet::Lanelet goal_lanelet;
-  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &goal_lanelet)) {
+  lanelet::Lanelet closest_lanelet;
+  if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &closest_lanelet)) {
     return false;
   }
+  const auto lanelet_pt = lanelet::utils::conversion::toLaneletPoint(goal_pose_.pose.position);
 
-  const auto lane_yaw = lanelet::utils::getLaneletAngle(goal_lanelet, goal_pose_.pose.position);
-  const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
-  const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
+  // check if goal is on a lane at appropriate angle
+  {
+    const auto distance = boost::geometry::distance(closest_lanelet.polygon2d().basicPolygon(),
+                                                    lanelet::utils::to2D(lanelet_pt).basicPoint());
 
-  constexpr double th_angle = M_PI / 4;
-  if (std::abs(angle_diff) > th_angle) {
-    return false;
+    const auto lane_yaw = lanelet::utils::getLaneletAngle(closest_lanelet, goal_pose_.pose.position);
+    const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
+    const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
+
+    constexpr double th_angle = M_PI / 4;
+    constexpr double th_distance = std::numeric_limits<double>::epsilon();
+
+    if (std::abs(angle_diff) < th_angle && distance < th_distance) {
+      return true;
+    }
   }
 
-  return true;
+  // check if goal is on parking space
+  {
+    const auto parking_spaces = lanelet::utils::query::getLinkedParkingSpaces(closest_lanelet, lanelet_map_ptr_);
+
+    for (const auto& parking_space : parking_spaces) {
+      lanelet::ConstPolygon3d parking_space_polygon;
+      if (!lanelet::utils::lineStringWithWidthToPolygon(parking_space, &parking_space_polygon)) {
+        continue;
+      }
+
+      const double distance = boost::geometry::distance(lanelet::utils::to2D(parking_space_polygon).basicPolygon(),
+                                                        lanelet::utils::to2D(lanelet_pt).basicPoint());
+      constexpr double th_distance = std::numeric_limits<double>::epsilon();
+
+      if (distance < th_distance) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
