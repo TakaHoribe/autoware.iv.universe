@@ -18,7 +18,8 @@
   <depend>geometry_msgs</depend>
   <depend>message_filters</depend>
   <depend>pacmod_msgs</depend>
-  <depend>accel_map_converter</depend>
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
+
+  <exec_depend>accel_map_converter</exec_depend>
 </package>

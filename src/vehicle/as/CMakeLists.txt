@@ -13,7 +13,6 @@ find_package(
   pacmod_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
-  accel_map_converter
 )
 
 catkin_package(
@@ -27,7 +26,6 @@ catkin_package(
   pacmod_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
-  accel_map_converter
 )
 
 include_directories(

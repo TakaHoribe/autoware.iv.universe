@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   dynamic_reconfigure
-  stop_planner
   osqp_interface
 )
 
@@ -26,14 +25,13 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS 
+ CATKIN_DEPENDS
       roscpp
       std_msgs
       autoware_planning_msgs
       geometry_msgs
       tf2
       tf2_ros
-      stop_planner
       osqp_interface
 )
 
