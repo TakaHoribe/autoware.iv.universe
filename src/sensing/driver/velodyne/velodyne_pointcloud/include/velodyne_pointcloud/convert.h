@@ -64,7 +64,7 @@ class Convert {
 
   boost::shared_ptr<velodyne_rawdata::RawData> data_;
 
-  int num_points_thresthold_;
+  int num_points_threshold_;
   std::vector<float> invalid_intensity_array_;
   std::string base_link_frame_;
 
