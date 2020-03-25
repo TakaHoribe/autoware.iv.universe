@@ -62,6 +62,7 @@ endif()
 set(CAFFE_PATH "/usr/local/caffe")
 
 if (EXISTS "${CAFFE_PATH}")
+    set(CMAKE_INSTALL_RPATH "${CAFFE_PATH}/lib")
 
     include_directories(
             include
