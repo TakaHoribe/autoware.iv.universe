@@ -22,8 +22,8 @@ include_directories(
 )
 
 add_library(accel_map_converter
-  src/accel_map.cpp 
-  src/brake_map.cpp 
+  src/accel_map.cpp
+  src/brake_map.cpp
   src/csv_loader.cpp
   src/interpolate.cpp
 )
@@ -47,3 +47,9 @@ add_executable(test_accel_map_converter
 )
 target_link_libraries(test_accel_map_converter ${catkin_LIBRARIES})
 add_dependencies(test_accel_map_converter ${catkin_EXPORTED_TARGETS})
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

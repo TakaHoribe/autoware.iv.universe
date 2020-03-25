@@ -69,9 +69,11 @@ install(TARGETS simple_planning_simulator
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        PATTERN ".svn" EXCLUDE)
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 catkin_install_python(PROGRAMS scripts/fitParamDelayInputModel.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 

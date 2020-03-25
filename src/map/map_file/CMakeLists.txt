@@ -63,7 +63,7 @@ target_link_libraries(get_file ${CURL_LIBRARIES})
 
 add_executable(pointcloud_map_loader nodes/pointcloud_map_loader/pointcloud_map_loader.cpp)
 target_link_libraries(pointcloud_map_loader ${catkin_LIBRARIES} get_file ${CURL_LIBRARIES} ${PCL_IO_LIBRARIES})
-add_dependencies(pointcloud_map_loader 
+add_dependencies(pointcloud_map_loader
   ${catkin_EXPORTED_TARGETS}
 )
 
@@ -96,7 +96,8 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-  PATTERN ".svn" EXCLUDE
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

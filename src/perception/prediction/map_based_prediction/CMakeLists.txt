@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
         roscpp
         tf2_ros
         tf2_geometry_msgs
-        lanelet2_extension 
+        lanelet2_extension
         )
 
 find_package(Eigen3 REQUIRED)
@@ -52,7 +52,8 @@ install(TARGETS map_based_prediction
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )
 
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        FILES_MATCHING PATTERN "*.launch"
-        )
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

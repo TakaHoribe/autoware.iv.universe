@@ -48,3 +48,13 @@ target_link_libraries(voxel_grid_based_euclidean_cluster_node
                       ${PCL_LIBRARIES})
 add_dependencies(voxel_grid_based_euclidean_cluster_node
                  ${catkin_EXPORTED_TARGETS})
+
+install(FILES nodelets.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

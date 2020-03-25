@@ -15,3 +15,9 @@ include_directories(# include
 
 install(FILES launch/control.launch
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

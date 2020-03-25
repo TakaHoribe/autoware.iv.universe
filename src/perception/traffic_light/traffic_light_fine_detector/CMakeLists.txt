@@ -86,7 +86,7 @@ message(STATUS "Checking and downloading yolov3-tlr.onnx")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
   execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118901&authkey=AB6BiE4PoWNAcJw" -O ${PATH}/yolov3-tlr.onnx)
-  
+
 endif()
 
 
@@ -101,7 +101,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${CUDA_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     )
-    
+
   catkin_package(
     INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} include
     LIBRARIES ${PROJECT_NAME}
@@ -116,11 +116,11 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     lib/src/EntropyCalibrator.cpp
     lib/src/TrtNet.cpp
     )
-    
+
   target_include_directories(libtlrdetector PUBLIC
     lib/include
   )
-    
+
   target_link_libraries(libtlrdetector
           ${NVINFER}
           ${NVONNXPARSER}
@@ -147,7 +147,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${catkin_EXPORTED_TARGETS}
     )
 
-  add_executable(traffic_light_roi_image_saver_node 
+  add_executable(traffic_light_roi_image_saver_node
     src/roi_image_saver/node.cpp
     src/roi_image_saver/main.cpp)
   add_dependencies(traffic_light_roi_image_saver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -161,12 +161,13 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-  install(DIRECTORY launch/
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-    PATTERN ".svn" EXCLUDE)
-  install(DIRECTORY data/
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/data
-    PATTERN ".svn" EXCLUDE)
+
+  install(
+    DIRECTORY
+      launch
+      data
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
 else()
   find_package(catkin REQUIRED)
   catkin_package()

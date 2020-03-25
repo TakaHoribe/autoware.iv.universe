@@ -58,7 +58,7 @@ set(FILE "${PATH}/yolov3_416.caffemodel")
 message(STATUS "Checking and downloading yolov3_416.caffemodel")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118772&authkey=AJ6vPO3jDyA0Cic" -O ${PATH}/yolov3_416.caffemodel)  
+  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118772&authkey=AJ6vPO3jDyA0Cic" -O ${PATH}/yolov3_416.caffemodel)
 endif()
 set(FILE "${PATH}/yolov3_416_trt.prototxt")
 message(STATUS "Checking and downloading yolov3_416_trt.prototxt")
@@ -152,14 +152,16 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
          RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
-  install(DIRECTORY launch/
-         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-         PATTERN ".svn" EXCLUDE)
-
   install(DIRECTORY include/
          DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/${PROJECT_NAME}/
          PATTERN ".svn" EXCLUDE
          )
+
+  install(
+    DIRECTORY
+      launch
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
 
 #   if (CATKIN_ENABLE_TESTING)
 #     find_package(rostest REQUIRED)
