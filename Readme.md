@@ -12,7 +12,7 @@ if you got cmake error in caffe build, please see [this](https://github.com/tier
 
 3. source build
 ```
-catkin build -DCMAKE_BUILD_TYPE=Release
+catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 ### Prepare map
 you need to prepare maps. sample map is [here](https://drive.google.com/open?id=1vH0Z90P2mPLBw0StXP8rZYvTr1CPPsNG).
