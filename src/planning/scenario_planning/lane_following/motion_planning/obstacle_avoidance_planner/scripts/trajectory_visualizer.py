@@ -41,7 +41,7 @@ class TrajectoryVisualizer():
         self.substatus2 = rospy.Subscriber("/debug_fixed_traj", Trajectory, self.CallBackDebugFixedTraj, queue_size=1, tcp_nodelay=True)
         # self.substatus3 = rospy.Subscriber("/planning/scenario_planning/lane_following/motion_planning/motion_velocity_optimizer/debug/trajectory_raw", Trajectory, self.CallBackTrajRaw, queue_size=1, tcp_nodelay=True)
         # self.substatus4 = rospy.Subscriber("/planning/scenario_planning/lane_following/motion_planning/motion_velocity_optimizer/debug/trajectory_time_resampled", Trajectory, self.CallBackTrajTimeResampled, queue_size=1, tcp_nodelay=True)
-        # self.substatus5 = rospy.Subscriber("/planning/scenario_planning/lane_following/motion_planning/trajectory", Trajectory, self.CallBackTrajFinal, queue_size=1, tcp_nodelay=True)
+        # self.substatus5 = rospy.Subscriber("/planning/scenario_planning/lane_following/trajectory", Trajectory, self.CallBackTrajFinal, queue_size=1, tcp_nodelay=True)
         rospy.Timer(rospy.Duration(0.3), self.timerCallback)
 
     def CallBackTraj(self, cmd):

@@ -1,6 +1,5 @@
 <launch>
-  <arg name="input_path_topic" 
-    default="/planning/scenario_planning/lane_following/behavior_planning/path" />
+  <arg name="input_path_topic" default="/planning/scenario_planning/lane_following/behavior_planning/path" />
   <group>
     <remap from="~input/path" to="$(arg input_path_topic)" />
     <remap from="~output/path" to="obstacle_avoidance_planner/trajectory" />
@@ -13,7 +12,7 @@
   <group>
     <remap from="~input/trajectory" to="obstacle_avoidance_planner/trajectory" />
     <remap from="~input/pointcloud" to="/sensing/lidar/no_ground/pointcloud" />
-    <remap from="~output/trajectory" to="trajectory" />
+    <remap from="~output/trajectory" to="/planning/scenario_planning/lane_following/trajectory" />
     <include file="$(find obstacle_stop_planner)/launch/obstacle_stop_planner.launch">
     </include>
   </group>

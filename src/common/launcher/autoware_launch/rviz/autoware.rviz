@@ -57,8 +57,7 @@ Visualization Manager:
           Show Arrows: true
           Show Axes: true
           Show Names: true
-          Tree:
-            {}
+          Tree: {}
           Update Interval: 0
           Value: false
         - Alpha: 0.5
@@ -329,8 +328,7 @@ Visualization Manager:
           Enabled: true
           Marker Topic: /autoware_vector_map/vizualization
           Name: AutowareVectorMap
-          Namespaces:
-            {}
+          Namespaces: {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -583,8 +581,7 @@ Visualization Manager:
               Enabled: true
               Marker Topic: /localization/pose_estimator/monte_colro_initial_pose_marker
               Name: MonteColroInitialPose
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 1
               Value: true
           Enabled: true
@@ -613,8 +610,7 @@ Visualization Manager:
               Enabled: true
               Marker Topic: /perception/detection/objects/visualization
               Name: DynamicObjects
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: false
@@ -625,8 +621,7 @@ Visualization Manager:
               Enabled: true
               Marker Topic: /perception/tracking/objects/visualization
               Name: DynamicObjects
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: false
@@ -665,8 +660,7 @@ Visualization Manager:
               Enabled: true
               Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/debug/markers
               Name: Beam
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -753,8 +747,7 @@ Visualization Manager:
                       Enabled: false
                       Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/path
                       Name: Arrow
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: false
                     - Class: rviz/MarkerArray
@@ -771,8 +764,7 @@ Visualization Manager:
                       Enabled: true
                       Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/crosswalk
                       Name: Crosswalk
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -811,8 +803,7 @@ Visualization Manager:
                       Enabled: true
                       Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/traffic_light
                       Name: TrafficLight
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
@@ -832,7 +823,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: false
                       Name: Trajectory
-                      Topic: /planning/scenario_planning/lane_following/motion_planning/trajectory
+                      Topic: /planning/scenario_planning/lane_following/trajectory
                       Unreliable: false
                       Value: false
                       View Path:
@@ -924,8 +915,7 @@ Visualization Manager:
           Enabled: false
           Marker Topic: /control/mpc_follower/debug/markers
           Name: Debug/MPC
-          Namespaces:
-            {}
+          Namespaces: {}
           Queue Size: 100
           Value: false
       Enabled: true
