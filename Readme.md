@@ -5,13 +5,15 @@
 ### Install Autoware
 1. install nvidia driver
 2. setup ROS, Caffe, CUDA 10.0, cuDNN7, TensorRT7
-- ubuntu 18.04
-
 ```
 ./setup_ubuntu18.04.sh
 ```
 if you got cmake error in caffe build, please see [this](https://github.com/tier4/Autoware-T4B/wiki/Trouble-shooting).
 
+3. source build
+```
+catkin build -DCMAKE_BUILD_TYPE=Release
+```
 ### Prepare map
 you need to prepare maps. sample map is [here](https://drive.google.com/open?id=1vH0Z90P2mPLBw0StXP8rZYvTr1CPPsNG).
 - lanelet2 map
