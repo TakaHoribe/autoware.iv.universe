@@ -40,8 +40,8 @@ class FollowingLaneState : public StateBase {
   bool isVehicleInPreferredLane() const;
   bool isTooCloseToDeadEnd() const;
   bool laneChangeForcedByOperator() const;
-  bool isLaneChangeable() const;
   bool isLaneBlocked(const lanelet::ConstLanelets& lanes) const;
+  bool isLaneChangeReady() const;
   // minor conditions
   bool hasEnoughDistance() const;
   bool isLaneChangePathSafe() const;

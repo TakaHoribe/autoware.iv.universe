@@ -20,6 +20,7 @@
 // ROS
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
+#include <std_msgs/Bool.h>
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
@@ -46,6 +47,8 @@ class LaneChanger {
   ros::Publisher path_publisher_;
   ros::Publisher path_marker_publisher_;
   ros::Publisher drivable_area_publisher_;
+  ros::Publisher lane_change_ready_publisher_;
+  ros::Publisher lane_change_available_publisher_;
 
   ros::NodeHandle pnh_;
 

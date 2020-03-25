@@ -65,10 +65,12 @@ void LaneChanger::init() {
   route_subscriber_ = pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &RouteHandler::getInstance());
   route_init_subscriber_ = pnh_.subscribe("input/route", 1, &StateMachine::init, &state_machine_);
 
-  // path_publisher
+  // publisher
   path_publisher_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
   path_marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
   drivable_area_publisher_ = pnh_.advertise<nav_msgs::OccupancyGrid>("debug/drivable_area", 1);
+  lane_change_ready_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_ready", 1);
+  lane_change_available_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_available", 1);
 
   // wait until mandatory data is ready
   {
@@ -123,6 +125,17 @@ void LaneChanger::run(const ros::TimerEvent& event) {
 
   publishDebugMarkers();
   publishDrivableArea(refined_path);
+
+  // publish lane change status
+  const auto lane_change_status = state_machine_.getStatus();
+  std_msgs::Bool lane_change_ready_msg;
+  lane_change_ready_msg.data = lane_change_status.lane_change_ready;
+  lane_change_ready_publisher_.publish(lane_change_ready_msg);
+  
+  std_msgs::Bool lane_change_available_msg;
+  lane_change_available_msg.data = lane_change_status.lane_change_available;
+  lane_change_available_publisher_.publish(lane_change_available_msg);
+  
 }
 
 void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path) {

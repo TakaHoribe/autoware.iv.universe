@@ -32,6 +32,8 @@ void FollowingLaneState::entry(const Status& status) {
   }
   lane_change_approved_ = false;
   force_lane_change_ = false;
+  status_.lane_change_available = false;
+  status_.lane_change_ready = false;
 }
 
 autoware_planning_msgs::PathWithLaneId FollowingLaneState::getPath() const { return status_.lane_follow_path; }
@@ -97,6 +99,19 @@ void FollowingLaneState::update() {
     status_.lane_follow_path.drivable_area =
         util::convertLanesToDrivableArea(current_lanes_, current_pose_, width, height, resolution);
   }
+
+  // update lane_change_ready flags
+  {
+    status_.lane_change_ready = false;
+    status_.lane_change_available = false;
+
+    if (!lane_change_lanes_.empty()) {
+      status_.lane_change_available = true;
+    }
+    if (hasEnoughDistance() && isLaneChangePathSafe() && !isLaneBlocked(lane_change_lanes_)) {
+      status_.lane_change_ready = true;
+    }
+  }
 }
 
 State FollowingLaneState::getNextState() const {
@@ -109,13 +124,17 @@ State FollowingLaneState::getNextState() const {
   if (isTooCloseToDeadEnd() || laneChangeForcedByOperator()) {
     return State::FORCING_LANE_CHANGE;
   }
-  if (isLaneChangeable()) {
+  if (isLaneChangeReady() && isLaneChangeApproved()) {
     return State::EXECUTING_LANE_CHANGE;
   }
   return State::FOLLOWING_LANE;
 }
 
 bool FollowingLaneState::isLaneBlocked(const lanelet::ConstLanelets& lanes) const {
+  if(lanes.empty())
+  {
+    return false;
+  }
   const auto arc = lanelet::utils::getArcCoordinates(lanes, current_pose_.pose);
   constexpr double max_check_distance = 100;
   constexpr double static_obj_velocity_thresh = 0.1;
@@ -157,23 +176,7 @@ bool FollowingLaneState::isLaneChangeApproved() const { return lane_change_appro
 
 bool FollowingLaneState::laneChangeForcedByOperator() const { return force_lane_change_; }
 
-bool FollowingLaneState::isLaneChangeable() const {
-  if (!hasEnoughDistance()) {
-    return false;
-  }
-  if (!isLaneChangePathSafe()) {
-    return false;
-  }
-  if (isLaneBlocked(lane_change_lanes_)) {
-    return false;
-  }
-  if (!isLaneChangeApproved()) {
-    return false;
-  } else {
-    ROS_INFO("waiting for lane change approval");
-  }
-  return true;
-}
+bool FollowingLaneState::isLaneChangeReady() const { return status_.lane_change_ready; }
 
 bool FollowingLaneState::hasEnoughDistance() const {
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;

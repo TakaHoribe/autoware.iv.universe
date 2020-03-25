@@ -13,10 +13,12 @@ bool isLaneChangePathSafe(const autoware_planning_msgs::PathWithLaneId& path,
   if (path.points.empty()) {
     return false;
   }
+  if (target_lanes.empty() || current_lanes.empty()) {
+    return false;
+  }
   if (dynamic_objects == nullptr) {
     return true;
   }
-
   const auto arc = lanelet::utils::getArcCoordinates(current_lanes, current_pose);
   constexpr double check_distance = 100.0;
   const auto target_lane_object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
