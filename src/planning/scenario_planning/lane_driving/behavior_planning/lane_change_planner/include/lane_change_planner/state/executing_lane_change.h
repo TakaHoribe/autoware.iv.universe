@@ -47,7 +47,7 @@ class ExecutingLaneChangeState : public StateBase {
   ExecutingLaneChangeState() = default;
 
   // override virtual functions
-  void entry(const Status& status) override;
+  void entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;

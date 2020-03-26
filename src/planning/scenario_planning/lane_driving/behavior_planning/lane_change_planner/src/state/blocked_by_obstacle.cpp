@@ -26,11 +26,11 @@
 namespace lane_change_planner {
 State BlockedByObstacleState::getCurrentState() const { return State::BLOCKED_BY_OBSTACLE; }
 
-void BlockedByObstacleState::entry(const Status& status) {
+void BlockedByObstacleState::entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) {
+  data_manager_ptr_ = data_manager_ptr;
   status_ = status;
-  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_)) {
-    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
-  }
+  ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
+
   lane_change_approved_ = false;
   force_lane_change_ = false;
   found_safe_path_ = false;
@@ -41,19 +41,11 @@ autoware_planning_msgs::PathWithLaneId BlockedByObstacleState::getPath() const {
 
 void BlockedByObstacleState::update() {
   // update input data
-  {
-    if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_)) {
-      ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity.");
-    }
-    if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_)) {
-      ROS_ERROR_STREAM("Failed to get self pose. Using previous pose.");
-    }
-    if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects_)) {
-      ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects.");
-    }
-    lane_change_approved_ = SingletonDataManager::getInstance().getLaneChangeApproval();
-    force_lane_change_ = SingletonDataManager::getInstance().getForceLaneChangeSignal();
-  }
+  current_twist_ = data_manager_ptr_->getCurrentSelfVelocity();
+  current_pose_ = data_manager_ptr_->getCurrentSelfPose();
+  dynamic_objects_ = data_manager_ptr_->getDynamicObjects();
+  lane_change_approved_ = data_manager_ptr_->getLaneChangeApproval();
+  force_lane_change_ = data_manager_ptr_->getForceLaneChangeSignal();
 
   lanelet::ConstLanelet current_lane;
   lanelet::ConstLanelets right_lanes;
@@ -154,6 +146,7 @@ State BlockedByObstacleState::getNextState() const {
   }
   return State::BLOCKED_BY_OBSTACLE;
 }
+
 bool BlockedByObstacleState::isOutOfCurrentLanes() const {
   lanelet::ConstLanelet closest_lane;
   if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &closest_lane)) {

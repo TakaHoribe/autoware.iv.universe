@@ -19,6 +19,7 @@
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <lane_change_planner/parameters.h>
+#include <lane_change_planner/data_manager.h>
 #include <iostream>
 #include <string>
 
@@ -46,9 +47,10 @@ class StateBase {
  protected:
   Status status_;
   LaneChangerParameters ros_parameters_;
+  std::shared_ptr<DataManager> data_manager_ptr_;
 
  public:
-  virtual void entry(const Status& status) = 0;
+  virtual void entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) = 0;
   virtual void update() = 0;
   virtual State getNextState() const = 0;
   virtual State getCurrentState() const = 0;

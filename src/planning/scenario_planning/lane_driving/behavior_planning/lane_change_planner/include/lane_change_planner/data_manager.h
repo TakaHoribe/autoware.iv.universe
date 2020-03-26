@@ -30,7 +30,6 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_planning_msgs/Route.h>
-#include <lane_change_planner/lane_changer.h>
 #include <lane_change_planner/parameters.h>
 
 // lanelet
@@ -59,22 +58,9 @@ struct BoolStamped {
   ros::Time stamp;
 };
 
-class SingletonDataManager {
+class DataManager {
  private:
-  explicit SingletonDataManager();
-  ~SingletonDataManager() = default;
 
- public:
-  SingletonDataManager(const SingletonDataManager&) = delete;
-  SingletonDataManager& operator=(const SingletonDataManager&) = delete;
-  SingletonDataManager(SingletonDataManager&&) = delete;
-  SingletonDataManager& operator=(SingletonDataManager&&) = delete;
-  static SingletonDataManager& getInstance() {
-    static SingletonDataManager instance;
-    return instance;
-  }
-
- private:
   /*
    * Cache
    */
@@ -86,6 +72,7 @@ class SingletonDataManager {
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   BoolStamped lane_change_approval_;
   BoolStamped force_lane_change_;
+  geometry_msgs::PoseStamped self_pose_;
 
   // ROS parameters
   LaneChangerParameters parameters_;
@@ -95,6 +82,12 @@ class SingletonDataManager {
    * SelfPoseLinstener
    */
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
+
+ public:
+  explicit DataManager();
+  ~DataManager() = default;
+
+  // callbacks
   void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray& input_perception_msg);
   void pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg);
   void velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg);
@@ -103,18 +96,16 @@ class SingletonDataManager {
   void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
   void forceLaneChangeSignalCallback(const std_msgs::Bool& input_approval_msg);
 
-  friend class LaneChanger;
-
- public:
-  bool getDynamicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects);
-  bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& pointcloud);
-  bool getCurrentSelfPose(geometry_msgs::PoseStamped& pose);
-  bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const>& twist);
-  bool getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                     lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr);
-  bool getLaneChangerParameters(LaneChangerParameters& parameters);
+  // getters
+  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> getDynamicObjects();
+  std::shared_ptr<sensor_msgs::PointCloud2 const> getNoGroundPointcloud();
+  geometry_msgs::PoseStamped getCurrentSelfPose();
+  std::shared_ptr<geometry_msgs::TwistStamped const> getCurrentSelfVelocity();
+  LaneChangerParameters getLaneChangerParameters();
   bool getLaneChangeApproval();
   bool getForceLaneChangeSignal();
+
+  bool isDataReady();
 };
 }  // namespace lane_change_planner
 

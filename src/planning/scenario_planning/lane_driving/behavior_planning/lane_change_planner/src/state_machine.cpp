@@ -25,20 +25,18 @@
 #include <visualization_msgs/Marker.h>
 
 namespace lane_change_planner {
-StateMachine::StateMachine() : pnh_("~") {
-  path_marker_publisher_ = pnh_.advertise<visualization_msgs::Marker>("debug/markers", 1);
-  // init();
-}
+StateMachine::StateMachine(std::shared_ptr<DataManager>& data_manager_ptr) : data_manager_ptr_(data_manager_ptr) {}
 
 void StateMachine::init() {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
   Status empty_status;
-  state_obj_ptr_->entry(empty_status);
-  path_.points.clear();
+  state_obj_ptr_->entry(empty_status, data_manager_ptr_);
 }
+
 void StateMachine::init(const autoware_planning_msgs::Route& route) { init(); }
 
 void StateMachine::updateState() {
+  // update state status
   state_obj_ptr_->update();
   State current_state = state_obj_ptr_->getCurrentState();
   State next_state = state_obj_ptr_->getNextState();
@@ -64,7 +62,7 @@ void StateMachine::updateState() {
         state_obj_ptr_ = std::make_unique<BlockedByObstacleState>();
         break;
     }
-    state_obj_ptr_->entry(previous_status);
+    state_obj_ptr_->entry(previous_status, data_manager_ptr_);
     state_obj_ptr_->update();
   }
 }

@@ -22,11 +22,11 @@
 namespace lane_change_planner {
 State ForcingLaneChangeState::getCurrentState() const { return State::FORCING_LANE_CHANGE; }
 
-void ForcingLaneChangeState::entry(const Status& status) {
+void ForcingLaneChangeState::entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) {
+  data_manager_ptr_ = data_manager_ptr;
   status_ = status;
-  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_)) {
-    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
-  }
+  ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
+
   original_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
   target_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
 }
@@ -34,9 +34,7 @@ void ForcingLaneChangeState::entry(const Status& status) {
 autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const { return status_.lane_change_path; }
 
 void ForcingLaneChangeState::update() {
-  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_)) {
-    ROS_ERROR("failed to get current pose");
-  }
+  current_pose_ = data_manager_ptr_->getCurrentSelfPose();
 
   // update path
   {
