@@ -250,7 +250,7 @@ void MotionVelocityOptimizer::insertBehindVelocity(const int prev_output_closest
 }
 
 void MotionVelocityOptimizer::publishStopDistance(const autoware_planning_msgs::Trajectory& trajectory,
-                                                const int closest) const {
+                                                  const int closest) const {
   /* stop distance calculation */
   int stop_idx = 0;
   const double stop_dist_lim = 50.0;
@@ -265,7 +265,7 @@ void MotionVelocityOptimizer::publishStopDistance(const autoware_planning_msgs::
 }
 
 bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::Trajectory& input,
-                                               autoware_planning_msgs::Trajectory& output) const {
+                                                 autoware_planning_msgs::Trajectory& output) const {
   std::vector<double> in_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
   const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
@@ -280,8 +280,8 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
   for (int i = 1; i <= N; ++i) {
     double ds = ds_nominal;
     if (i > Nt) {
-      ds = std::max(1.0, ds_nominal);  // if the planning time is not enough to see the desired distance, change the
-                                       // interval distance to see far.
+      // if the planning time is not enough to see the desired distance, change the interval distance to see far.
+      ds = std::max(1.0, ds_nominal);
     }
     dist_i += ds;
     if (dist_i > planning_param_.max_trajectory_length) {
@@ -309,10 +309,11 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
 }
 
 void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
-                                              const autoware_planning_msgs::Trajectory& reference_traj,
-                                              const int reference_traj_closest,
-                                              const autoware_planning_msgs::Trajectory& prev_output,
-                                              const int prev_output_closest, double& initial_vel, double& initial_acc) {
+                                                const autoware_planning_msgs::Trajectory& reference_traj,
+                                                const int reference_traj_closest,
+                                                const autoware_planning_msgs::Trajectory& prev_output,
+                                                const int prev_output_closest, double& initial_vel,
+                                                double& initial_acc) {
   const double vehicle_speed = std::fabs(current_velocity_ptr_->twist.linear.x);
 
   /* first time */
@@ -371,8 +372,8 @@ void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
 }
 
 void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const double initial_acc,
-                                              const autoware_planning_msgs::Trajectory& input, const int closest,
-                                              autoware_planning_msgs::Trajectory& output) {
+                                                const autoware_planning_msgs::Trajectory& input, const int closest,
+                                                autoware_planning_msgs::Trajectory& output) {
   auto ts = std::chrono::system_clock::now();
 
   output = input;
@@ -533,9 +534,9 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
 }
 
 void MotionVelocityOptimizer::optimizeVelocity(const autoware_planning_msgs::Trajectory& input, const int input_closest,
-                                             const autoware_planning_msgs::Trajectory& prev_output,
-                                             const int prev_output_closest,
-                                             autoware_planning_msgs::Trajectory& output) {
+                                               const autoware_planning_msgs::Trajectory& prev_output,
+                                               const int prev_output_closest,
+                                               autoware_planning_msgs::Trajectory& output) {
   const double target_vel = std::fabs(input.points.at(input_closest).twist.linear.x);
 
   /* calculate initial motion for planning */
@@ -565,11 +566,14 @@ void MotionVelocityOptimizer::optimizeVelocity(const autoware_planning_msgs::Tra
 }
 
 bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory& input,
-                                                      autoware_planning_msgs::Trajectory& output) const {
+                                                        autoware_planning_msgs::Trajectory& output) const {
   if (input.points.size() == 0) {
     return false;
   }
 
+  output = input;  // initialize
+
+  /* Interpolate with constant interval distance for lateral acceleration calculation. */
   const double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
@@ -580,26 +584,27 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
     ROS_WARN("[motion_velocity_optimizer]: fail trajectory interpolation at lateral acceleraion filter.");
     return false;
   }
+  output.points.back().twist = input.points.back().twist;  // keep the final speed.
 
   const double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
-  output = input;  // initialize
-
+  /* Calculate curvature assuming the trajectory points interval is constant */
   std::vector<double> curvature_v;
-  vpu::calcTrajectoryCurvatureFrom3Points(input, idx_dist, curvature_v);
+  vpu::calcTrajectoryCurvatureFrom3Points(output, idx_dist, curvature_v);
 
+  /*  Decrease speed according to lateral G */
   const int before_decel_index =
       static_cast<int>(std::round(planning_param_.decel_distance_before_curve / points_interval));
   const int after_decel_index =
       static_cast<int>(std::round(planning_param_.decel_distance_after_curve / points_interval));
   const double max_lateral_accel_abs = std::fabs(planning_param_.max_lateral_accel);
 
-  const int input_size = static_cast<int>(input.points.size());
-  for (int i = 0; i < input_size; ++i) {
+  const int output_size = static_cast<int>(output.points.size());
+  for (int i = 0; i < output_size; ++i) {
     double curvature = 0.0;
     const int start = std::max(i - after_decel_index, 0);
-    const int end = std::min(input_size, i + before_decel_index);
+    const int end = std::min(output_size, i + before_decel_index);
     for (int j = start; j < end; ++j) {
       curvature = std::max(curvature, std::fabs(curvature_v.at(j)));
     }
@@ -613,10 +618,9 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
 }
 
 bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory& input,
-                                                        autoware_planning_msgs::Trajectory& output) const {
+                                                          autoware_planning_msgs::Trajectory& output) const {
   output = input;
-  if (!external_velocity_limit_acc_limited_ptr_)
-    return false;
+  if (!external_velocity_limit_acc_limited_ptr_) return false;
 
   vpu::maximumVelocityFilter(*external_velocity_limit_acc_limited_ptr_, output);
   DEBUG_INFO("[External Velocity Limit] : limit_vel = %3.3f", *external_velocity_limit_acc_limited_ptr_);
@@ -624,7 +628,7 @@ bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_plannin
 }
 
 void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
-                                                       autoware_planning_msgs::Trajectory& trajectory) const {
+                                                         autoware_planning_msgs::Trajectory& trajectory) const {
   if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.1) {
     int stop_idx = 0;
     bool stop_point_exist = vpu::searchZeroVelocityIdx(trajectory, stop_idx);
@@ -650,7 +654,7 @@ void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
 }
 
 bool MotionVelocityOptimizer::extractPathAroundIndex(const autoware_planning_msgs::Trajectory& input, const int index,
-                                                   autoware_planning_msgs::Trajectory& output) const {
+                                                     autoware_planning_msgs::Trajectory& output) const {
   const double ahead_length = planning_param_.extract_ahead_dist;
   const double behind_length = planning_param_.extract_behind_dist;
 

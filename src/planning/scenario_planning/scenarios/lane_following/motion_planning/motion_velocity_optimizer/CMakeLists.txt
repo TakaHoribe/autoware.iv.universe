@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(motion_velocity_optimizer)
 
 
-add_compile_options(-std=c++11 -Wall -O3)
+add_compile_options(-std=c++11 -Wall)
 
 
 find_package(catkin REQUIRED COMPONENTS
