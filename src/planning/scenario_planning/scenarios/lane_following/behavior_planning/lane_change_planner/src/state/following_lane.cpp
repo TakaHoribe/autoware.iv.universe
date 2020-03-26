@@ -107,9 +107,9 @@ void FollowingLaneState::update() {
 
     if (!lane_change_lanes_.empty()) {
       status_.lane_change_available = true;
-    }
-    if (hasEnoughDistance() && isLaneChangePathSafe() && !isLaneBlocked(lane_change_lanes_)) {
-      status_.lane_change_ready = true;
+      if (hasEnoughDistance() && isLaneChangePathSafe() && !isLaneBlocked(lane_change_lanes_)) {
+        status_.lane_change_ready = true;
+      }
     }
   }
 }
@@ -131,10 +131,6 @@ State FollowingLaneState::getNextState() const {
 }
 
 bool FollowingLaneState::isLaneBlocked(const lanelet::ConstLanelets& lanes) const {
-  if(lanes.empty())
-  {
-    return false;
-  }
   const auto arc = lanelet::utils::getArcCoordinates(lanes, current_pose_.pose);
   constexpr double max_check_distance = 100;
   constexpr double static_obj_velocity_thresh = 0.1;

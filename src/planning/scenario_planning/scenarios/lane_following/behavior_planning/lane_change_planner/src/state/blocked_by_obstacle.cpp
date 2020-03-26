@@ -128,16 +128,13 @@ void BlockedByObstacleState::update() {
 
   // update lane_change_ready flags
   {
-    if (hasEnoughDistance() && foundSafeLaneChangePath()) {
-      status_.lane_change_ready = true;
-    } else {
-      status_.lane_change_ready = false;
-    }
-
-    if (left_lanes.empty() && right_lanes.empty()) {
-      status_.lane_change_available = false;
-    } else {
+    status_.lane_change_ready = false;
+    status_.lane_change_available = false;
+    if (!left_lanes.empty() || !right_lanes.empty()) {
       status_.lane_change_available = true;
+      if (hasEnoughDistance() && foundSafeLaneChangePath()) {
+        status_.lane_change_ready = true;
+      }
     }
   }
 }
