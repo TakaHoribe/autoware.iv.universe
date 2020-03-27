@@ -63,7 +63,40 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const ge
 }
 
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
-  return calcClosestWaypoint(trajectory, pose.position);
+  // return calcClosestWaypoint(trajectory, pose.position);
+  double dist_squared_min = std::numeric_limits<double>::max();
+  int idx_min = -1;
+
+  for (int i = 0; i < (int)trajectory.points.size(); ++i) {
+    const double dx = trajectory.points.at(i).pose.position.x - pose.position.x;
+    const double dy = trajectory.points.at(i).pose.position.y - pose.position.y;
+    const double dist_squared = dx * dx + dy * dy;
+    double traj_point_yaw = 0;
+    double traj_dx = 0;
+    double traj_dy = 0;
+    if(i>0)
+    {
+      traj_dx = trajectory.points[i].pose.position.x - trajectory.points[i-1].pose.position.x;
+      traj_dy = trajectory.points[i].pose.position.y - trajectory.points[i-1].pose.position.y;
+    }
+    else
+    {
+      traj_dx = trajectory.points[i+1].pose.position.x - trajectory.points[i].pose.position.x;
+      traj_dy = trajectory.points[i+1].pose.position.y - trajectory.points[i].pose.position.y;
+    }
+    traj_point_yaw = std::atan2(traj_dy, traj_dx);
+    double pose_yaw = tf2::getYaw(pose.orientation);
+    double delta_yaw =traj_point_yaw-pose_yaw; 
+    double norm_delta_yaw = normalizeRadian(delta_yaw);
+    constexpr double delta_yaw_threshold = M_PI/3.0;
+    if (dist_squared < dist_squared_min&&
+        std::fabs(norm_delta_yaw)< delta_yaw_threshold)
+    {
+      dist_squared_min = dist_squared;
+      idx_min = i;
+    }
+  }
+  return idx_min;
 }
 
 bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory& trajectory, const int index,
