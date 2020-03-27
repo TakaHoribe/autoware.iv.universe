@@ -348,13 +348,13 @@ int EBPathPlannerNode::getNearestPathPointsIndFromPose(
   double nearest_dist = std::numeric_limits<double>::max();
   int nearest_ind = 0;
   for (size_t i = 0; i < path_points.size(); i++) {
-    double dx = path_points[i].pose.position.x - pose.position.x;
-    double dy = path_points[i].pose.position.y - pose.position.y;
-    double dist = std::sqrt(dx * dx + dy * dy);
-    double path_point_yaw = tf2::getYaw(path_points[i].pose.orientation);
-    double pose_yaw = tf2::getYaw(pose.orientation);
-    double delta_yaw = path_point_yaw - pose_yaw;
-    double norm_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
+    const double dx = path_points[i].pose.position.x - pose.position.x;
+    const double dy = path_points[i].pose.position.y - pose.position.y;
+    const double dist = std::sqrt(dx * dx + dy * dy);
+    const double path_point_yaw = tf2::getYaw(path_points[i].pose.orientation);
+    const double pose_yaw = tf2::getYaw(pose.orientation);
+    const double delta_yaw = path_point_yaw - pose_yaw;
+    const double norm_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
     if (dist < nearest_dist && std::fabs(norm_delta_yaw) < delta_yaw_threshold_for_closest_point_) {
       nearest_dist = dist;
       nearest_ind = i;
@@ -1160,7 +1160,7 @@ bool EBPathPlannerNode::calculateNewStartAndGoal(const geometry_msgs::Pose& ego_
       accum_dist += dist;
     }
     goal_ind = i;
-    if (accum_dist > 180) {
+    if (accum_dist > 80) {
       break;
     }
   }
