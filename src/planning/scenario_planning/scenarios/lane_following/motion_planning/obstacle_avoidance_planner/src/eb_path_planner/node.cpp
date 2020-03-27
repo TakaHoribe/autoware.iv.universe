@@ -363,8 +363,8 @@ int EBPathPlannerNode::getNearestPathPointsIndFromPose(const std::vector<autowar
     }
     else
     {
-      path_dx = path_points[i].pose.position.x - path_points[i-1].pose.position.x;
-      path_dy = path_points[i].pose.position.y - path_points[i-1].pose.position.y;
+      path_dx = path_points[i+1].pose.position.x - path_points[i].pose.position.x;
+      path_dy = path_points[i+1].pose.position.y - path_points[i].pose.position.y;
     }
     path_point_yaw = std::atan2(path_dy, path_dx);
     double pose_yaw = tf2::getYaw(pose.orientation);
