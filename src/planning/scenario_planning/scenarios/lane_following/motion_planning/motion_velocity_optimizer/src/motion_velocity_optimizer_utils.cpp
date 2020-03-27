@@ -63,7 +63,6 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const ge
 }
 
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
-  // return calcClosestWaypoint(trajectory, pose.position);
   double dist_squared_min = std::numeric_limits<double>::max();
   int idx_min = -1;
 
