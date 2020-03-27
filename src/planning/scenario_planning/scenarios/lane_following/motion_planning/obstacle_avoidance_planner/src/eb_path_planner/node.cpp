@@ -347,21 +347,11 @@ int EBPathPlannerNode::getNearestPathPointsIndFromPose(
     const std::vector<autoware_planning_msgs::PathPoint>& path_points, const geometry_msgs::Pose& pose) {
   double nearest_dist = std::numeric_limits<double>::max();
   int nearest_ind = 0;
-  for (int i = 0; i < path_points.size(); i++) {
+  for (size_t i = 0; i < path_points.size(); i++) {
     double dx = path_points[i].pose.position.x - pose.position.x;
     double dy = path_points[i].pose.position.y - pose.position.y;
     double dist = std::sqrt(dx * dx + dy * dy);
-    double path_point_yaw = 0;
-    double path_dx = 0;
-    double path_dy = 0;
-    if (i > 0) {
-      path_dx = path_points[i].pose.position.x - path_points[i - 1].pose.position.x;
-      path_dy = path_points[i].pose.position.y - path_points[i - 1].pose.position.y;
-    } else {
-      path_dx = path_points[i + 1].pose.position.x - path_points[i].pose.position.x;
-      path_dy = path_points[i + 1].pose.position.y - path_points[i].pose.position.y;
-    }
-    path_point_yaw = std::atan2(path_dy, path_dx);
+    double path_point_yaw = tf2::getYaw(path_points[i].pose.orientation);
     double pose_yaw = tf2::getYaw(pose.orientation);
     double delta_yaw = path_point_yaw - pose_yaw;
     double norm_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
@@ -1170,7 +1160,7 @@ bool EBPathPlannerNode::calculateNewStartAndGoal(const geometry_msgs::Pose& ego_
       accum_dist += dist;
     }
     goal_ind = i;
-    if (accum_dist > 80) {
+    if (accum_dist > 180) {
       break;
     }
   }
