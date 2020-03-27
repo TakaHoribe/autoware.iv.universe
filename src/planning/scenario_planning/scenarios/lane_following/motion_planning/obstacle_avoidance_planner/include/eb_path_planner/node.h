@@ -1,7 +1,6 @@
 #ifndef NODE_H
 #define NODE_H
 
-
 namespace cv {
 class Mat;
 }
@@ -96,7 +95,7 @@ class EBPathPlannerNode {
   void initializing();
   void resettingPtrForAvoidance();
   void resettingPtrForLaneFollowing();
-  
+
   int getNearestPathPointsIndFromPose(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
                                       const geometry_msgs::Pose& pose);
 

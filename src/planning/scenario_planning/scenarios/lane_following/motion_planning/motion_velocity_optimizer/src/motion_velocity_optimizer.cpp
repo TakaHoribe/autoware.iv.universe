@@ -250,7 +250,7 @@ void MotionVelocityOptimizer::insertBehindVelocity(const int prev_output_closest
 }
 
 void MotionVelocityOptimizer::publishStopDistance(const autoware_planning_msgs::Trajectory& trajectory,
-                                                const int closest) const {
+                                                  const int closest) const {
   /* stop distance calculation */
   int stop_idx = 0;
   const double stop_dist_lim = 50.0;
@@ -265,7 +265,7 @@ void MotionVelocityOptimizer::publishStopDistance(const autoware_planning_msgs::
 }
 
 bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::Trajectory& input,
-                                               autoware_planning_msgs::Trajectory& output) const {
+                                                 autoware_planning_msgs::Trajectory& output) const {
   std::vector<double> in_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
   const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
@@ -309,10 +309,11 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
 }
 
 void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
-                                              const autoware_planning_msgs::Trajectory& reference_traj,
-                                              const int reference_traj_closest,
-                                              const autoware_planning_msgs::Trajectory& prev_output,
-                                              const int prev_output_closest, double& initial_vel, double& initial_acc) {
+                                                const autoware_planning_msgs::Trajectory& reference_traj,
+                                                const int reference_traj_closest,
+                                                const autoware_planning_msgs::Trajectory& prev_output,
+                                                const int prev_output_closest, double& initial_vel,
+                                                double& initial_acc) {
   const double vehicle_speed = std::fabs(current_velocity_ptr_->twist.linear.x);
 
   /* first time */
@@ -371,8 +372,8 @@ void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
 }
 
 void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const double initial_acc,
-                                              const autoware_planning_msgs::Trajectory& input, const int closest,
-                                              autoware_planning_msgs::Trajectory& output) {
+                                                const autoware_planning_msgs::Trajectory& input, const int closest,
+                                                autoware_planning_msgs::Trajectory& output) {
   auto ts = std::chrono::system_clock::now();
 
   output = input;
@@ -533,9 +534,9 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
 }
 
 void MotionVelocityOptimizer::optimizeVelocity(const autoware_planning_msgs::Trajectory& input, const int input_closest,
-                                             const autoware_planning_msgs::Trajectory& prev_output,
-                                             const int prev_output_closest,
-                                             autoware_planning_msgs::Trajectory& output) {
+                                               const autoware_planning_msgs::Trajectory& prev_output,
+                                               const int prev_output_closest,
+                                               autoware_planning_msgs::Trajectory& output) {
   const double target_vel = std::fabs(input.points.at(input_closest).twist.linear.x);
 
   /* calculate initial motion for planning */
@@ -565,7 +566,7 @@ void MotionVelocityOptimizer::optimizeVelocity(const autoware_planning_msgs::Tra
 }
 
 bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_msgs::Trajectory& input,
-                                                      autoware_planning_msgs::Trajectory& output) const {
+                                                        autoware_planning_msgs::Trajectory& output) const {
   if (input.points.size() == 0) {
     return false;
   }
@@ -613,10 +614,9 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
 }
 
 bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_planning_msgs::Trajectory& input,
-                                                        autoware_planning_msgs::Trajectory& output) const {
+                                                          autoware_planning_msgs::Trajectory& output) const {
   output = input;
-  if (!external_velocity_limit_acc_limited_ptr_)
-    return false;
+  if (!external_velocity_limit_acc_limited_ptr_) return false;
 
   vpu::maximumVelocityFilter(*external_velocity_limit_acc_limited_ptr_, output);
   DEBUG_INFO("[External Velocity Limit] : limit_vel = %3.3f", *external_velocity_limit_acc_limited_ptr_);
@@ -624,7 +624,7 @@ bool MotionVelocityOptimizer::externalVelocityLimitFilter(const autoware_plannin
 }
 
 void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
-                                                       autoware_planning_msgs::Trajectory& trajectory) const {
+                                                         autoware_planning_msgs::Trajectory& trajectory) const {
   if (std::fabs(current_velocity_ptr_->twist.linear.x) < 0.1) {
     int stop_idx = 0;
     bool stop_point_exist = vpu::searchZeroVelocityIdx(trajectory, stop_idx);
@@ -650,7 +650,7 @@ void MotionVelocityOptimizer::preventMoveToCloseStopLine(const int closest,
 }
 
 bool MotionVelocityOptimizer::extractPathAroundIndex(const autoware_planning_msgs::Trajectory& input, const int index,
-                                                   autoware_planning_msgs::Trajectory& output) const {
+                                                     autoware_planning_msgs::Trajectory& output) const {
   const double ahead_length = planning_param_.extract_ahead_dist;
   const double behind_length = planning_param_.extract_behind_dist;
 

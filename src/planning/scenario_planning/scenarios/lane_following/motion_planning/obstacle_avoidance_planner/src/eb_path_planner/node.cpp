@@ -16,7 +16,6 @@
 #include <chrono>
 #include <limits>
 #include <memory>
-#include <limits>
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -74,8 +73,8 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
                             min_distance_threshold_when_switching_avoindance_to_path_following_, 0.1);
   private_nh_.param<double>("min_cos_similarity_when_switching_avoindance_to_path_following",
                             min_cos_similarity_when_switching_avoindance_to_path_following_, 0.95);
-  private_nh_.param<double>("delta_yaw_threshold_for_closest_point",
-                            delta_yaw_threshold_for_closest_point_, M_PI/3.0);
+  private_nh_.param<double>("delta_yaw_threshold_for_closest_point", delta_yaw_threshold_for_closest_point_,
+                            M_PI / 3.0);
   in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
   is_previously_avoidance_mode_ = false;
   previous_mode_ = Mode::LaneFollowing;
@@ -344,10 +343,9 @@ bool EBPathPlannerNode::needResetPrevOptimizedExploredPoints(
   return is_need_reset;
 }
 
-int EBPathPlannerNode::getNearestPathPointsIndFromPose(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                                      const geometry_msgs::Pose& pose)
-{
-  double nearest_dist =  std::numeric_limits<double>::max();;
+int EBPathPlannerNode::getNearestPathPointsIndFromPose(
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points, const geometry_msgs::Pose& pose) {
+  double nearest_dist = std::numeric_limits<double>::max();
   int nearest_ind = 0;
   for (int i = 0; i < path_points.size(); i++) {
     double dx = path_points[i].pose.position.x - pose.position.x;
@@ -356,21 +354,18 @@ int EBPathPlannerNode::getNearestPathPointsIndFromPose(const std::vector<autowar
     double path_point_yaw = 0;
     double path_dx = 0;
     double path_dy = 0;
-    if(i>0)
-    {
-      path_dx = path_points[i].pose.position.x - path_points[i-1].pose.position.x;
-      path_dy = path_points[i].pose.position.y - path_points[i-1].pose.position.y;
-    }
-    else
-    {
-      path_dx = path_points[i+1].pose.position.x - path_points[i].pose.position.x;
-      path_dy = path_points[i+1].pose.position.y - path_points[i].pose.position.y;
+    if (i > 0) {
+      path_dx = path_points[i].pose.position.x - path_points[i - 1].pose.position.x;
+      path_dy = path_points[i].pose.position.y - path_points[i - 1].pose.position.y;
+    } else {
+      path_dx = path_points[i + 1].pose.position.x - path_points[i].pose.position.x;
+      path_dy = path_points[i + 1].pose.position.y - path_points[i].pose.position.y;
     }
     path_point_yaw = std::atan2(path_dy, path_dx);
     double pose_yaw = tf2::getYaw(pose.orientation);
-    double delta_yaw =path_point_yaw-pose_yaw; 
+    double delta_yaw = path_point_yaw - pose_yaw;
     double norm_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
-    if (dist < nearest_dist&&std::fabs(norm_delta_yaw)< delta_yaw_threshold_for_closest_point_) {
+    if (dist < nearest_dist && std::fabs(norm_delta_yaw) < delta_yaw_threshold_for_closest_point_) {
       nearest_dist = dist;
       nearest_ind = i;
     }
@@ -630,9 +625,8 @@ std::unique_ptr<std::vector<geometry_msgs::Point>> EBPathPlannerNode::generateNo
     const cv::Mat& clearance_map, const cv::Mat& only_objects_clearance_map, bool& is_explore_needed) {
   geometry_msgs::Point start_exploring_point;
   geometry_msgs::Point goal_exploring_point;
-  is_explore_needed =
-      needExprolation(*current_ego_pose_ptr_, input_path, clearance_map, only_objects_clearance_map,
-                      fixed_explored_points, start_exploring_point, goal_exploring_point);
+  is_explore_needed = needExprolation(*current_ego_pose_ptr_, input_path, clearance_map, only_objects_clearance_map,
+                                      fixed_explored_points, start_exploring_point, goal_exploring_point);
   std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
   if (is_explore_needed) {
     debugStartAndGoalMarkers(start_exploring_point, goal_exploring_point);
