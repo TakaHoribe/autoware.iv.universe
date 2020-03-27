@@ -65,31 +65,8 @@ install(TARGETS shape_estimation
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        FILES_MATCHING
-        PATTERN "*.launch")
-
-#
-# Testing ##
-#
-
-# Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_shape_estimation.cpp)
-# if(TARGET ${PROJECT_NAME}-test) target_link_libraries(${PROJECT_NAME}-test
-# ${PROJECT_NAME}) endif()
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  add_rostest_gtest(test-lidar_shape_estimation
-                    test/test_lidar_shape_estimation.test
-                    test/src/test_lidar_shape_estimation.cpp
-                    src/shape_estimator.cpp
-                    src/model/bounding_box.cpp
-                    src/model/convex_hull.cpp
-                    src/model/cylinder.cpp)
-  target_link_libraries(test-lidar_shape_estimation
-                        ${catkin_LIBRARIES}
-                        ${OpenCV_LIBS}
-                        ${PCL_LIBRARIES})
-endif()
-# Add folders to be run by python nosetests catkin_add_nosetests(test)
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

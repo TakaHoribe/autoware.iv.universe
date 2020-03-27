@@ -13,7 +13,6 @@ find_package(
   pacmod_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
-  accel_map_converter
 )
 
 catkin_package(
@@ -27,7 +26,6 @@ catkin_package(
   pacmod_msgs
   autoware_control_msgs
   autoware_vehicle_msgs
-  accel_map_converter
 )
 
 include_directories(
@@ -67,8 +65,8 @@ install(TARGETS pacmod_interface
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-  PATTERN ".svn" EXCLUDE
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

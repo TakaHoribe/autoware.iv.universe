@@ -7,8 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS 
-  CATKIN_DEPENDS 
+  INCLUDE_DIRS
+  CATKIN_DEPENDS
 )
 
 include_directories(
@@ -16,9 +16,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-
-# add_executable()
-
-# add_dependencies(stop_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-# target_link_libraries(stop_planner ${catkin_LIBRARIES} )
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

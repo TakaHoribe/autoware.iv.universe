@@ -12,5 +12,8 @@ catkin_package(# INCLUDE_DIRS include
 include_directories(# include
                     ${catkin_INCLUDE_DIRS})
 
-install(FILES launch/sensing.launch
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

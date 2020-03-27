@@ -86,41 +86,6 @@ class TestSuite : public ::testing::Test {
  private:
 };
 
-TEST_F(TestSuite, MatchWaypointAndLanelet) {
-  std::map<int, lanelet::Id> waypointid2laneletid;
-  autoware_msgs::LaneArray lane_array;
-  autoware_msgs::Lane lane;
-  autoware_msgs::Waypoint waypoint;
-
-  // waypoints that overlap with road_lanelet
-  for (int i = 1; i < 4; i++) {
-    waypoint.gid = i;
-    waypoint.pose.pose.position.x = 0.5;
-    waypoint.pose.pose.position.y = i - 0.5;
-    lane.waypoints.push_back(waypoint);
-  }
-
-  // waypoint that overlaps with no lanelet
-  waypoint.gid = 4;
-  waypoint.pose.pose.position.x = 1.5;
-  waypoint.pose.pose.position.y = 1.5;
-  lane.waypoints.push_back(waypoint);
-
-  lane_array.lanes.push_back(lane);
-
-  lanelet::traffic_rules::TrafficRulesPtr traffic_rules =
-      lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
-  lanelet::routing::RoutingGraphPtr routing_graph =
-      lanelet::routing::RoutingGraph::build(*sample_map_ptr, *traffic_rules);
-
-  lanelet::utils::matchWaypointAndLanelet(sample_map_ptr, routing_graph, lane_array, &waypointid2laneletid);
-
-  ASSERT_EQ(3, waypointid2laneletid.size()) << "failed to match waypoints with lanelets";
-  ASSERT_EQ(road_lanelet.id(), waypointid2laneletid.at(1)) << "failed to match waypoints with lanelet";
-  ASSERT_EQ(next_lanelet.id(), waypointid2laneletid.at(2)) << "failed to match waypoints with lanelet";
-  ASSERT_EQ(next_lanelet2.id(), waypointid2laneletid.at(3)) << "failed to match waypoints with lanelet";
-}
-
 TEST_F(TestSuite, OverwriteLaneletsCenterline) {
   lanelet::utils::overwriteLaneletsCenterline(sample_map_ptr);
 

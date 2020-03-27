@@ -45,9 +45,9 @@ include_directories(
 )
 
 add_library(ndt_omp
-  src/pclomp/voxel_grid_covariance_omp.cpp
-  src/pclomp/ndt_omp.cpp
-  src/pclomp/gicp_omp.cpp
+  src/ndt_omp/voxel_grid_covariance_omp.cpp
+  src/ndt_omp/ndt_omp.cpp
+  src/ndt_omp/gicp_omp.cpp
 )
 
 add_executable(align
@@ -60,4 +60,15 @@ target_link_libraries(align
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ndt_omp
+)
+
+install(TARGETS ndt_omp
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+## Install project namespaced headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

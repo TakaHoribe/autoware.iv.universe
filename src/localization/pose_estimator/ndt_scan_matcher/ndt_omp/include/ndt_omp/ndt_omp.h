@@ -46,7 +46,7 @@
 
 #include <unsupported/Eigen/NonLinearOptimization>
 
-namespace pclomp {
+namespace ndt_omp {
 enum NeighborSearchMethod { KDTREE, DIRECT26, DIRECT7, DIRECT1 };
 
 /** \brief A 3D Normal Distribution Transform registration implementation for point cloud data.
@@ -75,7 +75,7 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   typedef pcl::PointIndices::ConstPtr PointIndicesConstPtr;
 
   /** \brief Typename of searchable voxel grid containing mean and covariance. */
-  typedef pclomp::VoxelGridCovariance<PointTarget> TargetGrid;
+  typedef ndt_omp::VoxelGridCovariance<PointTarget> TargetGrid;
   /** \brief Typename of pointer to searchable voxel grid. */
   typedef TargetGrid* TargetGridPtr;
   /** \brief Typename of const pointer to searchable voxel grid. */
@@ -425,6 +425,6 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-}  // namespace pclomp
+}  // namespace ndt_omp
 
 #endif  // PCL_REGISTRATION_NDT_H_

@@ -45,7 +45,7 @@
 #include <map>
 #include <unordered_map>
 
-namespace pclomp {
+namespace ndt_omp {
 /** \brief A searchable voxel strucure containing the mean and covariance of the data.
  * \note For more information please see
  * <b>Magnusson, M. (2009). The Three-Dimensional Normal-Distributions Transform —
@@ -456,6 +456,6 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   /** \brief KdTree generated using \ref voxel_centroids_ (used for searching). */
   pcl::KdTreeFLANN<PointT> kdtree_;
 };
-}  // namespace pclomp
+}  // namespace ndt_omp
 
 #endif  //#ifndef PCL_VOXEL_GRID_COVARIANCE_H_

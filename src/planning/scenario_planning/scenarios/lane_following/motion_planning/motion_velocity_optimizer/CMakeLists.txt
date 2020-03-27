@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   dynamic_reconfigure
-  stop_planner
   osqp_interface
 )
 
@@ -26,14 +25,13 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS 
+ CATKIN_DEPENDS
       roscpp
       std_msgs
       autoware_planning_msgs
       geometry_msgs
       tf2
       tf2_ros
-      stop_planner
       osqp_interface
 )
 
@@ -48,3 +46,17 @@ add_executable(motion_velocity_optimizer src/motion_velocity_optimizer.cpp src/m
 add_dependencies(motion_velocity_optimizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} motion_velocity_optimizer_gencfg)
 target_link_libraries(motion_velocity_optimizer ${catkin_LIBRARIES} ${PYTHON_LIBRARIES})
 
+install(
+  TARGETS
+    motion_velocity_optimizer
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  DIRECTORY
+    launch
+    config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

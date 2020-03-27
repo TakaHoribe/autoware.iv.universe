@@ -52,7 +52,7 @@ include_directories(
 )
 
 # Common
-add_library(scene_module_lib
+add_library(scene_module_lib STATIC
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp
 )
@@ -62,7 +62,7 @@ add_dependencies(scene_module_lib
 )
 
 # Scene Module: Momentary Stop
-add_library(scene_module_momentary_stop
+add_library(scene_module_momentary_stop STATIC
   src/scene_module/momentary_stop/manager.cpp
   src/scene_module/momentary_stop/scene.cpp
   src/scene_module/momentary_stop/debug.cpp
@@ -77,7 +77,7 @@ target_link_libraries(scene_module_momentary_stop
 )
 
 # Scene Module: Crosswalk
-add_library(scene_module_crosswalk
+add_library(scene_module_crosswalk STATIC
   src/scene_module/crosswalk/manager.cpp
   src/scene_module/crosswalk/scene.cpp
   src/scene_module/crosswalk/debug.cpp
@@ -93,7 +93,7 @@ target_link_libraries(scene_module_crosswalk
 )
 
 # Scene Module: Intersection
-add_library(scene_module_intersection
+add_library(scene_module_intersection STATIC
   src/scene_module/intersection/manager.cpp
   src/scene_module/intersection/scene.cpp
   src/scene_module/intersection/debug.cpp
@@ -109,7 +109,7 @@ target_link_libraries(scene_module_intersection
 )
 
 # Scene Module: Traffic Light
-add_library(scene_module_traffic_light
+add_library(scene_module_traffic_light STATIC
   src/scene_module/traffic_light/manager.cpp
   src/scene_module/traffic_light/scene.cpp
   src/scene_module/traffic_light/debug.cpp
@@ -125,7 +125,7 @@ target_link_libraries(scene_module_intersection
 )
 
 # Scene Module: Blind Spot
-add_library(scene_module_blind_spot
+add_library(scene_module_blind_spot STATIC
   src/scene_module/blind_spot/manager.cpp
   src/scene_module/blind_spot/scene.cpp
   src/scene_module/blind_spot/debug.cpp
@@ -141,7 +141,7 @@ target_link_libraries(scene_module_intersection
 )
 
 # Scene Module Manager
-add_library(scene_module_manager
+add_library(scene_module_manager STATIC
   src/planner_manager.cpp
 )
 
@@ -173,4 +173,12 @@ target_link_libraries(behavior_velocity_planner_node
   scene_module_manager
   ${PCL_LIBRARIES}
   ${catkin_LIBRARIES}
+)
+
+install(
+  TARGETS
+    behavior_velocity_planner_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

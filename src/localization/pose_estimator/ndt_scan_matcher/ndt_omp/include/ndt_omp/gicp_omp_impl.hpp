@@ -47,8 +47,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::setInputCloud(
-    const typename pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::PointCloudSourceConstPtr&
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::setInputCloud(
+    const typename ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::PointCloudSourceConstPtr&
         cloud) {
   setInputSource(cloud);
 }
@@ -56,12 +56,12 @@ void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::setInpu
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 template <typename PointT>
-void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeCovariances(
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeCovariances(
     typename pcl::PointCloud<PointT>::ConstPtr cloud, const typename pcl::search::KdTree<PointT>::ConstPtr kdtree,
     MatricesVector& cloud_covariances) {
   if (k_correspondences_ > int(cloud->size())) {
     PCL_ERROR(
-        "[pclomp::GeneralizedIterativeClosestPoint::computeCovariances] Number or points in cloud (%lu) is less than "
+        "[ndt_omp::GeneralizedIterativeClosestPoint::computeCovariances] Number or points in cloud (%lu) is less than "
         "k_correspondences_ (%lu)!\n",
         cloud->size(), k_correspondences_);
     return;
@@ -131,7 +131,7 @@ void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::compute
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeRDerivative(const Vector6d& x,
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeRDerivative(const Vector6d& x,
                                                                                             const Eigen::Matrix3d& R,
                                                                                             Vector6d& g) const {
   Eigen::Matrix3d dR_dPhi;
@@ -187,13 +187,13 @@ void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::compute
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estimateRigidTransformationBFGS(
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estimateRigidTransformationBFGS(
     const PointCloudSource& cloud_src, const std::vector<int>& indices_src, const PointCloudTarget& cloud_tgt,
     const std::vector<int>& indices_tgt, Eigen::Matrix4f& transformation_matrix) {
   if (indices_src.size() < 4)  // need at least 4 samples
   {
     PCL_THROW_EXCEPTION(pcl::NotEnoughPointsException,
-                        "[pclomp::GeneralizedIterativeClosestPoint::estimateRigidTransformationBFGS] Need at least 4 "
+                        "[ndt_omp::GeneralizedIterativeClosestPoint::estimateRigidTransformationBFGS] Need at least 4 "
                         "points to estimate a transform! Source and target have "
                             << indices_src.size() << " points!");
     return;
@@ -249,7 +249,7 @@ void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estimat
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline double pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::
+inline double ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::
 operator()(const Vector6d& x) {
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
@@ -281,7 +281,7 @@ operator()(const Vector6d& x) {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::df(
+inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::df(
     const Vector6d& x, Vector6d& g) {
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
@@ -336,7 +336,7 @@ inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::fdf(
+inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::fdf(
     const Vector6d& x, double& f, Vector6d& g) {
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
@@ -372,7 +372,7 @@ inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTransformation(
+inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTransformation(
     PointCloudSource& output, const Eigen::Matrix4f& guess) {
   pcl::IterativeClosestPoint<PointSource, PointTarget>::initComputeReciprocal();
   using namespace std;
@@ -507,7 +507,7 @@ inline void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::
 }
 
 template <typename PointSource, typename PointTarget>
-void pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::applyState(Eigen::Matrix4f& t,
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::applyState(Eigen::Matrix4f& t,
                                                                                     const Vector6d& x) const {
   // !!! CAUTION Stanford GICP uses the Z Y X euler angles convention
   Eigen::Matrix3f R;

@@ -464,7 +464,10 @@ install(TARGETS microstrain_mips microstrain_mips_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch config
+install(
+  DIRECTORY
+    launch
+    config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

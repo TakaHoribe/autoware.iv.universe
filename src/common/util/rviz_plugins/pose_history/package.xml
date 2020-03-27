@@ -17,7 +17,7 @@
   <exec_depend>geometry_msgs</exec_depend>
 
   <export>
-    <rviz plugin="${prefix}/plugin_description.xml"/>
+    <rviz plugin="${prefix}/plugins/plugin_description.xml"/>
   </export>
 
 </package>

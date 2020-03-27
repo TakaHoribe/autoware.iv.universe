@@ -44,7 +44,7 @@
 #include <pcl/registration/bfgs.h>
 #include <pcl/registration/icp.h>
 
-namespace pclomp {
+namespace ndt_omp {
 /** \brief GeneralizedIterativeClosestPoint is an ICP variant that implements the
  * generalized iterative closest point algorithm as described by Alex Segal et al. in
  * http://www.robots.ox.ac.uk/~avsegal/resources/papers/Generalized_ICP.pdf
@@ -327,6 +327,6 @@ class GeneralizedIterativeClosestPoint : public pcl::IterativeClosestPoint<Point
                        Eigen::Matrix4f& transformation_matrix)>
       rigid_transformation_estimation_;
 };
-}  // namespace pclomp
+}  // namespace ndt_omp
 
 #endif  //#ifndef PCL_GICP_H_

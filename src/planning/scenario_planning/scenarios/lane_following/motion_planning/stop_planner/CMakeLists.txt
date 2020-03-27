@@ -14,10 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     include
-  CATKIN_DEPENDS 
-   autoware_planning_msgs 
+  CATKIN_DEPENDS
+   autoware_planning_msgs
    roscpp
    tf2
    tf2_ros
@@ -46,3 +46,9 @@ add_executable(stop_planner
 add_dependencies(stop_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(stop_planner ${catkin_LIBRARIES} )
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

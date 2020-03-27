@@ -62,6 +62,7 @@ endif()
 set(CAFFE_PATH "/usr/local/caffe")
 
 if (EXISTS "${CAFFE_PATH}")
+    set(CMAKE_INSTALL_RPATH "${CAFFE_PATH}/lib")
 
     include_directories(
             include
@@ -93,11 +94,16 @@ if (EXISTS "${CAFFE_PATH}")
             lidar_apollo_cnn_seg_detect
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-            RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
             )
-    install(DIRECTORY launch/
-            DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-            PATTERN ".svn" EXCLUDE)
+
+    install(
+      DIRECTORY
+        launch
+        data
+      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    )
+
 else ()
     message("'Caffe' is not installed. 'lidar_apollo_cnn_seg_detect' will not be built.")
 endif ()

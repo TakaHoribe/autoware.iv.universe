@@ -54,3 +54,13 @@ target_link_libraries(roi_cluster_fusion_node
                       ${PCL_LIBRARIES}
                       ${OpenCV_LIBRARIES})
 add_dependencies(roi_cluster_fusion_node ${catkin_EXPORTED_TARGETS})
+
+install(FILES nodelets.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

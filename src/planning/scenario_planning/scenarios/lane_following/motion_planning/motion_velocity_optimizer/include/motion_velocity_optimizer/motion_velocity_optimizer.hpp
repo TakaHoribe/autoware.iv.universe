@@ -30,7 +30,6 @@
 #include <motion_velocity_optimizer/motion_velocity_optimizer_utils.hpp>
 
 #include <osqp_interface/osqp_interface.h>
-#include <stop_planner/planning_utils.h>
 
 class MotionVelocityOptimizer {
  public:
