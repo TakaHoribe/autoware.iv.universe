@@ -21,7 +21,7 @@ double calcDist2d(const geometry_msgs::Pose& a, const geometry_msgs::Pose& b);
 double calcDist2d(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b);
 double calcDist2d(const autoware_planning_msgs::TrajectoryPoint& a, const autoware_planning_msgs::TrajectoryPoint& b);
 int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Point& point);
-int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose);
+int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose, const double delta_yaw_threshold);
 bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory& trajectory, const int index,
                             const double& ahead_length, const double& behind_length,
                             autoware_planning_msgs::Trajectory& extracted_base_waypoints);

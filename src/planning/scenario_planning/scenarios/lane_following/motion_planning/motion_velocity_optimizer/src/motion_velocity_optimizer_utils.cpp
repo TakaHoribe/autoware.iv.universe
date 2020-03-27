@@ -62,11 +62,11 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const ge
   return idx_min;
 }
 
-int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
+int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose, const double delta_yaw_threshold) {
   double dist_squared_min = std::numeric_limits<double>::max();
   int idx_min = -1;
 
-  for (int i = 0; i < (int)trajectory.points.size(); ++i) {
+  for (size_t i = 0; i < trajectory.points.size(); ++i) {
     const double dx = trajectory.points.at(i).pose.position.x - pose.position.x;
     const double dy = trajectory.points.at(i).pose.position.y - pose.position.y;
     const double dist_squared = dx * dx + dy * dy;
@@ -84,7 +84,6 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, co
     double pose_yaw = tf2::getYaw(pose.orientation);
     double delta_yaw = traj_point_yaw - pose_yaw;
     double norm_delta_yaw = normalizeRadian(delta_yaw);
-    constexpr double delta_yaw_threshold = M_PI / 3.0;
     if (dist_squared < dist_squared_min && std::fabs(norm_delta_yaw) < delta_yaw_threshold) {
       dist_squared_min = dist_squared;
       idx_min = i;

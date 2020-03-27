@@ -90,6 +90,7 @@ class MotionVelocityOptimizer {
     double resample_dt;                       // dt to calculate trajectory length
     double min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
     double stop_dist_to_prohibit_engage;      // set zero vel when vehicle stops and stop dist is closer than this
+    double delta_yaw_threshold;               // delta yaw between ego_pose and traj point when calculating closest point
   } planning_param_;
 
   struct QPParam {
