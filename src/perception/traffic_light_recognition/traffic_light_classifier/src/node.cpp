@@ -33,7 +33,15 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   }
   tl_states_pub_ =
       pnh_.advertise<autoware_traffic_light_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
-  classifier_ptr_ = std::make_shared<ColorClassifier>();
+
+  std::string classifier_type;
+  pnh_.param<std::string>("classifier_type", classifier_type, "cnn");
+  if (classifier_type == "color") {
+    classifier_ptr_ = std::make_shared<ColorClassifier>();
+  } else if (classifier_type == "cnn") {
+    classifier_ptr_ = std::make_shared<CNNClassifier>();
+  }
+  
 }
 
 void TrafficLightClassifierNode::imageRoiCallback(
