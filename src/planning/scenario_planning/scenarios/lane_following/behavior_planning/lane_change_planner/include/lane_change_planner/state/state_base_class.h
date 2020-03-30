@@ -38,6 +38,8 @@ struct Status {
   autoware_planning_msgs::PathWithLaneId lane_change_path;
   std::vector<uint64_t> lane_follow_lane_ids;
   std::vector<uint64_t> lane_change_lane_ids;
+  bool lane_change_available;
+  bool lane_change_ready;
 };
 
 class StateBase {

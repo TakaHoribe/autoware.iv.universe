@@ -125,6 +125,18 @@ void BlockedByObstacleState::update() {
       found_safe_path_ = true;
     }
   }
+
+  // update lane_change_ready flags
+  {
+    status_.lane_change_ready = false;
+    status_.lane_change_available = false;
+    if (!left_lanes.empty() || !right_lanes.empty()) {
+      status_.lane_change_available = true;
+      if (hasEnoughDistance() && foundSafeLaneChangePath()) {
+        status_.lane_change_ready = true;
+      }
+    }
+  }
 }
 
 State BlockedByObstacleState::getNextState() const {
@@ -134,7 +146,7 @@ State BlockedByObstacleState::getNextState() const {
   if (!isLaneBlocked()) {
     return State::FOLLOWING_LANE;
   }
-  if (isLaneChangeApproved() && hasEnoughDistance() && foundSafeLaneChangePath()) {
+  if (isLaneChangeApproved() && isLaneChangeReady()) {
     return State::EXECUTING_LANE_CHANGE;
   }
   return State::BLOCKED_BY_OBSTACLE;
@@ -215,6 +227,7 @@ bool BlockedByObstacleState::hasEnoughDistance() const {
 }
 
 bool BlockedByObstacleState::foundSafeLaneChangePath() const { return found_safe_path_; }
+bool BlockedByObstacleState::isLaneChangeReady() const { return status_.lane_change_ready; }
 
 bool BlockedByObstacleState::isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
                                                   const autoware_planning_msgs::PathWithLaneId& path) const {

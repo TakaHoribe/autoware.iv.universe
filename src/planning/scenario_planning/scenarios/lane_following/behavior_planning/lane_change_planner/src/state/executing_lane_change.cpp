@@ -30,6 +30,8 @@ void ExecutingLaneChangeState::entry(const Status& status) {
   }
   original_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
   target_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+  status_.lane_change_available = false;
+  status_.lane_change_ready = false;
 }
 
 autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const { return status_.lane_change_path; }
