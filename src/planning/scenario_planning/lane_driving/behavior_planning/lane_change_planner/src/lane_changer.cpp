@@ -71,22 +71,24 @@ void LaneChanger::init() {
   lane_change_ready_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_ready", 1);
   lane_change_available_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_available", 1);
 
-  // wait until mandatory data is ready
-  {
-    while (!route_handler_ptr_->isHandlerReady() && ros::ok()) {
-      ROS_WARN_THROTTLE(5, "waiting for route to be ready");
-      ros::spinOnce();
-      ros::Duration(0.1).sleep();
-    }
-    while (!data_manager_ptr_->isDataReady() && ros::ok()) {
-      ROS_WARN_THROTTLE(5, "waiting for vehicle pose, vehicle_velocity, and obstacles");
-      ros::spinOnce();
-      ros::Duration(0.1).sleep();
-    }
-  }
+  waitForData();
 
   // Start timer. This must be done after all data (e.g. vehicle pose, velocity) are ready.
   timer_ = pnh_.createTimer(ros::Duration(0.1), &LaneChanger::run, this);
+}
+
+void LaneChanger::waitForData() {
+  // wait until mandatory data is ready
+  while (!route_handler_ptr_->isHandlerReady() && ros::ok()) {
+    ROS_WARN_THROTTLE(5, "waiting for route to be ready");
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+  while (!data_manager_ptr_->isDataReady() && ros::ok()) {
+    ROS_WARN_THROTTLE(5, "waiting for vehicle pose, vehicle_velocity, and obstacles");
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
 }
 
 void LaneChanger::run(const ros::TimerEvent& event) {

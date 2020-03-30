@@ -70,6 +70,7 @@ class LaneChanger {
   void run(const ros::TimerEvent& event);
   void publishDebugMarkers();
   void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path);
+  void waitForData();
 
  public:
   LaneChanger();
