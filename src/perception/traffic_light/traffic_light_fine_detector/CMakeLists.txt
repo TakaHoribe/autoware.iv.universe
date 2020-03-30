@@ -105,23 +105,22 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   catkin_package(
     INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} include
     LIBRARIES ${PROJECT_NAME}
-    libtlrdetector
     CATKIN_DEPENDS
     )
 
   set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS} -fpic -std=c++11 -pthread")
 
   ### tlr_detector ###
-  add_library(libtlrdetector
+  add_library(tlrdetector
     lib/src/EntropyCalibrator.cpp
     lib/src/TrtNet.cpp
     )
 
-  target_include_directories(libtlrdetector PUBLIC
+  target_include_directories(tlrdetector PUBLIC
     lib/include
   )
 
-  target_link_libraries(libtlrdetector
+  target_link_libraries(tlrdetector
           ${NVINFER}
           ${NVONNXPARSER}
           ${NVINFER_PLUGIN}
@@ -130,9 +129,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
           ${CUDA_curand_LIBRARY}
           ${CUDNN_LIBRARY}
           )
-  add_dependencies(libtlrdetector
-    ${catkin_EXPORTED_TARGETS}
-    )
 
   add_executable(traffic_light_fine_detector
     src/traffic_light_fine_detector_main.cpp
@@ -141,7 +137,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   target_link_libraries(traffic_light_fine_detector
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
-    libtlrdetector
+    tlrdetector
     )
   add_dependencies(traffic_light_fine_detector
     ${catkin_EXPORTED_TARGETS}
@@ -156,7 +152,9 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${OpenCV_LIBRARIES}
   )
 
-  install(TARGETS traffic_light_fine_detector
+  install(TARGETS 
+    traffic_light_fine_detector 
+    tlrdetector
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
