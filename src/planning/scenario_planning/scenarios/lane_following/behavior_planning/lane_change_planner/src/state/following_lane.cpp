@@ -115,6 +115,10 @@ void FollowingLaneState::update() {
 }
 
 State FollowingLaneState::getNextState() const {
+  if (current_lanes_.empty()) {
+    ROS_ERROR_THROTTLE(1, "current lanes empty. Keeping state.");
+    return State::BLOCKED_BY_OBSTACLE;
+  }
   if (isLaneBlocked(current_lanes_)) {
     return State::BLOCKED_BY_OBSTACLE;
   }
