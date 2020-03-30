@@ -224,7 +224,7 @@ lanelet::ConstLanelet combineLanelets(const lanelet::ConstLanelets lanelets) {
   }
   const auto left_bound = lanelet::LineString3d(lanelet::InvalId, lefts);
   const auto right_bound = lanelet::LineString3d(lanelet::InvalId, rights);
-  const auto center_line = lanelet::LineString3d(lanelet::InvalId, rights);
+  const auto center_line = lanelet::LineString3d(lanelet::InvalId, centers);
   auto combined_lanelet = lanelet::Lanelet(lanelet::InvalId, left_bound, right_bound);
   combined_lanelet.setCenterline(center_line); 
   return combined_lanelet;
