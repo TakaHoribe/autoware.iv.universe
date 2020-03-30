@@ -73,6 +73,8 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
                             min_distance_threshold_when_switching_avoindance_to_path_following_, 0.1);
   private_nh_.param<double>("min_cos_similarity_when_switching_avoindance_to_path_following",
                             min_cos_similarity_when_switching_avoindance_to_path_following_, 0.95);
+  private_nh_.param<double>("delta_yaw_threshold_for_closest_point", delta_yaw_threshold_for_closest_point_,
+                            M_PI / 3.0);
   in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
   is_previously_avoidance_mode_ = false;
   previous_mode_ = Mode::LaneFollowing;
@@ -341,29 +343,39 @@ bool EBPathPlannerNode::needResetPrevOptimizedExploredPoints(
   return is_need_reset;
 }
 
-bool EBPathPlannerNode::needExprolation(const geometry_msgs::Point& ego_point,
+int EBPathPlannerNode::getNearestPathPointsIndFromPose(
+    const std::vector<autoware_planning_msgs::PathPoint>& path_points, const geometry_msgs::Pose& pose) {
+  double nearest_dist = std::numeric_limits<double>::max();
+  int nearest_ind = 0;
+  for (size_t i = 0; i < path_points.size(); i++) {
+    const double dx = path_points[i].pose.position.x - pose.position.x;
+    const double dy = path_points[i].pose.position.y - pose.position.y;
+    const double dist = std::sqrt(dx * dx + dy * dy);
+    const double path_point_yaw = tf2::getYaw(path_points[i].pose.orientation);
+    const double pose_yaw = tf2::getYaw(pose.orientation);
+    const double delta_yaw = path_point_yaw - pose_yaw;
+    const double norm_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
+    if (dist < nearest_dist && std::fabs(norm_delta_yaw) < delta_yaw_threshold_for_closest_point_) {
+      nearest_dist = dist;
+      nearest_ind = i;
+    }
+  }
+  return nearest_ind;
+}
+
+bool EBPathPlannerNode::needExprolation(const geometry_msgs::Pose& ego_pose,
                                         const autoware_planning_msgs::Path& in_path, const cv::Mat& clearance_map,
                                         const cv::Mat& only_objects_clearance_map,
                                         const std::vector<geometry_msgs::Point>& fixed_explored_points,
                                         geometry_msgs::Point& start_exploring_point,
                                         geometry_msgs::Point& goal_exploring_point) {
   if (fixed_explored_points.empty()) {
-    double min_dist = 9999999999;
-    int min_ind = 0;
-    for (int i = 0; i < in_path.points.size(); i++) {
-      double dx = in_path.points[i].pose.position.x - ego_point.x;
-      double dy = in_path.points[i].pose.position.y - ego_point.y;
-      double dist = std::sqrt(dx * dx + dy * dy);
-      if (dist < min_dist) {
-        min_dist = dist;
-        min_ind = i;
-      }
-    }
+    int nearest_ind = getNearestPathPointsIndFromPose(in_path.points, ego_pose);
     // assuming delta_arc_length in path is about 1m
     const double delta_arc_length_for_path = 1;
     const double backward_distace_for_exploration = 5;
     int start_exploring_ind =
-        std::max((int)(min_ind - backward_distace_for_exploration / delta_arc_length_for_path), 0);
+        std::max((int)(nearest_ind - backward_distace_for_exploration / delta_arc_length_for_path), 0);
     start_exploring_point = in_path.points[start_exploring_ind].pose.position;
   } else {
     start_exploring_point = fixed_explored_points.back();
@@ -603,9 +615,8 @@ std::unique_ptr<std::vector<geometry_msgs::Point>> EBPathPlannerNode::generateNo
     const cv::Mat& clearance_map, const cv::Mat& only_objects_clearance_map, bool& is_explore_needed) {
   geometry_msgs::Point start_exploring_point;
   geometry_msgs::Point goal_exploring_point;
-  is_explore_needed =
-      needExprolation(current_ego_pose_ptr_->position, input_path, clearance_map, only_objects_clearance_map,
-                      fixed_explored_points, start_exploring_point, goal_exploring_point);
+  is_explore_needed = needExprolation(*current_ego_pose_ptr_, input_path, clearance_map, only_objects_clearance_map,
+                                      fixed_explored_points, start_exploring_point, goal_exploring_point);
   std::vector<autoware_planning_msgs::TrajectoryPoint> optimized_points;
   if (is_explore_needed) {
     debugStartAndGoalMarkers(start_exploring_point, goal_exploring_point);
@@ -1135,24 +1146,14 @@ bool EBPathPlannerNode::calculateNewStartAndGoal(const geometry_msgs::Pose& ego_
                                                  const std::vector<autoware_planning_msgs::PathPoint>& path_points,
                                                  geometry_msgs::Point& start_point, geometry_msgs::Point& goal_point) {
   // check2 distance from ego to goal
-  double min_dist = 999999999;
-  double nearest_path_ind_from_ego;
-  for (int i = 0; i < path_points.size(); i++) {
-    double dx = path_points[i].pose.position.x - ego_pose.position.x;
-    double dy = path_points[i].pose.position.y - ego_pose.position.y;
-    double dist = std::sqrt(dx * dx + dy * dy);
-    if (dist < min_dist) {
-      min_dist = dist;
-      nearest_path_ind_from_ego = i;
-    }
-  }
+  int nearest_path_ind_from_ego = getNearestPathPointsIndFromPose(path_points, ego_pose);
   int start_ind = std::max((int)(nearest_path_ind_from_ego - backward_fixing_distance_), 0);
   start_point = path_points[start_ind].pose.position;
 
   double accum_dist = 0;
-  int goal_ind;
+  int goal_ind = 0;
   for (int i = start_ind; i < path_points.size(); i++) {
-    if (i > nearest_path_ind_from_ego) {
+    if (i > start_ind) {
       double dx = path_points[i].pose.position.x - path_points[i - 1].pose.position.x;
       double dy = path_points[i].pose.position.y - path_points[i - 1].pose.position.y;
       double dist = std::sqrt(dx * dx + dy * dy);

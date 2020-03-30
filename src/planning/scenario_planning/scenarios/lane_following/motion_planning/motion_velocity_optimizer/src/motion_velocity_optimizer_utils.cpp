@@ -62,8 +62,25 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const ge
   return idx_min;
 }
 
-int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
-  return calcClosestWaypoint(trajectory, pose.position);
+int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose,
+                        const double delta_yaw_threshold) {
+  double dist_squared_min = std::numeric_limits<double>::max();
+  int idx_min = -1;
+
+  for (size_t i = 0; i < trajectory.points.size(); ++i) {
+    const double dx = trajectory.points.at(i).pose.position.x - pose.position.x;
+    const double dy = trajectory.points.at(i).pose.position.y - pose.position.y;
+    const double dist_squared = dx * dx + dy * dy;
+    const double traj_point_yaw = tf2::getYaw(trajectory.points.at(i).pose.orientation);
+    const double pose_yaw = tf2::getYaw(pose.orientation);
+    const double delta_yaw = traj_point_yaw - pose_yaw;
+    const double norm_delta_yaw = normalizeRadian(delta_yaw);
+    if (dist_squared < dist_squared_min && std::fabs(norm_delta_yaw) < delta_yaw_threshold) {
+      dist_squared_min = dist_squared;
+      idx_min = i;
+    }
+  }
+  return idx_min;
 }
 
 bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory& trajectory, const int index,

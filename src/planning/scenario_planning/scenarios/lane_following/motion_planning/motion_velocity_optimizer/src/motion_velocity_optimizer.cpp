@@ -45,6 +45,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
   pnh_.param<double>("resample_time_interval", planning_param_.resample_dt, 0.1);
   pnh_.param<double>("min_trajectory_interval_distance", planning_param_.min_trajectory_interval_distance, 0.1);
   pnh_.param<double>("stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, 1.5);
+  pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
 
   pnh_.param<bool>("show_debug_info", show_debug_info_, true);
   pnh_.param<bool>("show_debug_info_all", show_debug_info_all_, false);
@@ -159,7 +160,8 @@ void MotionVelocityOptimizer::run() {
 autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVelocity(
     const autoware_planning_msgs::Trajectory& traj_input) {
   /* Find the nearest point to reference_traj */
-  int input_closest = vpu::calcClosestWaypoint(traj_input, current_pose_ptr_->pose);
+  int input_closest =
+      vpu::calcClosestWaypoint(traj_input, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
   if (input_closest < 0) {
     ROS_WARN("[velocity planner] cannot find closest waypoint for input trajectory");
     return prev_output_;
@@ -188,7 +190,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   if (!resampleTrajectory(traj_latacc_filtered, /* out */ traj_resampled)) {
     return prev_output_;
   }
-  int traj_resampled_closest = vpu::calcClosestWaypoint(traj_resampled, current_pose_ptr_->pose);
+  int traj_resampled_closest =
+      vpu::calcClosestWaypoint(traj_resampled, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
 
   /* Change trajectory velocity to zero when current_velocity == 0 & stop_dist is close */
   preventMoveToCloseStopLine(traj_resampled_closest, traj_resampled);
@@ -200,7 +203,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   }
 
   /* Calculate the closest point on the previously planned traj (used to get initial planning speed) */
-  int prev_output_closest = vpu::calcClosestWaypoint(prev_output_, current_pose_ptr_->pose);
+  int prev_output_closest =
+      vpu::calcClosestWaypoint(prev_output_, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
   DEBUG_INFO("[calcClosestWaypoint] for base_resampled : base_resampled.size() = %d, prev_planned_closest_ = %d",
              (int)traj_resampled.points.size(), prev_output_closest);
 

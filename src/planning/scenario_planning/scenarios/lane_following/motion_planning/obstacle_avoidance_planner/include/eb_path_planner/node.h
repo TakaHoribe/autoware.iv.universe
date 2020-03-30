@@ -1,7 +1,6 @@
 #ifndef NODE_H
 #define NODE_H
 
-
 namespace cv {
 class Mat;
 }
@@ -70,6 +69,7 @@ class EBPathPlannerNode {
   double fixing_point_clearance_from_obstacle_;
   double min_distance_threshold_when_switching_avoindance_to_path_following_;
   double min_cos_similarity_when_switching_avoindance_to_path_following_;
+  double delta_yaw_threshold_for_closest_point_;
   Mode previous_mode_;
   std::shared_ptr<geometry_msgs::Pose> current_ego_pose_ptr_;
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;
@@ -96,6 +96,9 @@ class EBPathPlannerNode {
   void resettingPtrForAvoidance();
   void resettingPtrForLaneFollowing();
 
+  int getNearestPathPointsIndFromPose(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
+                                      const geometry_msgs::Pose& pose);
+
   bool needResetPrevOptimizedExploredPoints(const std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>&
                                                 previous_optimized_explored_points_ptr,
                                             const std::vector<autoware_perception_msgs::DynamicObject>& objects);
@@ -113,7 +116,7 @@ class EBPathPlannerNode {
   bool isPoseCloseToPath(const std::vector<autoware_planning_msgs::PathPoint> in_path,
                          const geometry_msgs::Pose in_pose);
 
-  bool needExprolation(const geometry_msgs::Point& ego_point, const autoware_planning_msgs::Path& in_path,
+  bool needExprolation(const geometry_msgs::Pose& ego_pose, const autoware_planning_msgs::Path& in_path,
                        const cv::Mat& clearance_map, const cv::Mat& only_objects_clearance_map,
                        const std::vector<geometry_msgs::Point>& fixed_explored_points,
                        geometry_msgs::Point& start_exploring_point, geometry_msgs::Point& goal_exploring_point);
