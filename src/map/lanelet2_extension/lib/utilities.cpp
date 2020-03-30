@@ -210,7 +210,7 @@ lanelet::LineString3d getLineStringFromArcLength(const lanelet::ConstLineString3
 }
 
 lanelet::ConstLanelet combineLanelets(const lanelet::ConstLanelets lanelets) {
-  lanelet::Points3d lefts, rights;
+  lanelet::Points3d lefts, rights, centers;
   for (const auto& llt : lanelets) {
     for (const auto& pt : llt.leftBound()) {
       lefts.push_back(lanelet::Point3d(pt));
@@ -218,10 +218,16 @@ lanelet::ConstLanelet combineLanelets(const lanelet::ConstLanelets lanelets) {
     for (const auto& pt : llt.rightBound()) {
       rights.push_back(lanelet::Point3d(pt));
     }
+    for (const auto& pt : llt.centerline()) {
+      centers.push_back(lanelet::Point3d(pt));
+    }
   }
   const auto left_bound = lanelet::LineString3d(lanelet::InvalId, lefts);
   const auto right_bound = lanelet::LineString3d(lanelet::InvalId, rights);
-  return lanelet::Lanelet(lanelet::InvalId, left_bound, right_bound);
+  const auto center_line = lanelet::LineString3d(lanelet::InvalId, rights);
+  auto combined_lanelet = lanelet::Lanelet(lanelet::InvalId, left_bound, right_bound);
+  combined_lanelet.setCenterline(center_line); 
+  return combined_lanelet;
 }
 
 }  // namespace
