@@ -2,27 +2,42 @@
 
 namespace traffic_light {
   CNNClassifier::CNNClassifier() : nh_(""), pnh_("~"), image_transport_(pnh_) {
-    pnh_.param<std::string>("engine_file_path", engine_file_path_);
-    pnh_.param<std::string>("label_file_path", label_file_path_);
+    std::string cache_dir = ros::package::getPath("traffic_light_classifier") + "/data";
 
-    image_pub_ = image_transport_.advertise("output/debug/image", 1);
+    pnh_.param<std::string>("precision", precision_, "fp16");
+    
+    std::string label_file_path = "";
+    pnh_.param<std::string>("label_file_path", label_file_path);
+    readLabelfile(label_file_path, labels_);
 
-    readLabelfile(label_file_path_, labels_);
+    std::string model_file_path;
+    pnh_.param<std::string>("model_file_path", model_file_path);
+    const boost::filesystem::path path(model_file_path);
+    std::string extension = path.extension().string();
 
-    /* load the engine */
-    std::ifstream engine_file(engine_file_path_);
-    if (!engine_file.is_open()) {
-      ROS_ERROR("Could not open engine file.");
+    if ( boost::filesystem::exists(path) ) {
+      if ( extension == "engine" ) {
+        ROS_INFO("find engine file [%s]", model_file_path.c_str());
+        loadEngine(model_file_path);
+      } else if ( extension == "onnx" ) {
+
+        std::string cache_engine_path = cache_dir + "/" + path.stem().string() + ".engine";
+        const boost::filesystem::path cache_path(cache_engine_path);
+        if ( boost::filesystem::exists(cache_path) ) {
+          ROS_INFO("load engine from cache file");
+          loadEngine(cache_engine_path);
+        } else {
+          ROS_INFO("build engine from onnx file");
+          buildEngineFromOnnx(model_file_path, cache_engine_path);
+        }
+      } else {
+        ROS_WARN("Does not support this file extension [%s], \nplease input .engine or .onnx file",
+                 extension.c_str());
+      }
+    } else {
+      ROS_ERROR("Could not find file [%s]", model_file_path.c_str());
     }
-    std::stringstream engine_buffer;
-    engine_buffer << engine_file.rdbuf();
-    std::string engine_str = engine_buffer.str();
-
-    runtime_ = UniquePtr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(g_logger_));
-    engine_ = UniquePtr<nvinfer1::ICudaEngine>(runtime_->deserializeCudaEngine
-                                               ((void*)engine_str.data(),
-                                                engine_str.size(),
-                                                nullptr));
+ 
     context_ = UniquePtr<nvinfer1::IExecutionContext>(engine_->createExecutionContext());
 
     input_binding_index_ = engine_->getBindingIndex(input_name_.c_str());
@@ -31,6 +46,66 @@ namespace traffic_light {
     output_dims_ = engine_->getBindingDimensions(output_binding_index_);
     num_input_ = numTensorElements(input_dims_);
     num_output_ = numTensorElements(output_dims_);
+
+    image_pub_ = image_transport_.advertise("output/debug/image", 1);
+  }
+
+  bool CNNClassifier::loadEngine(std::string engine_file_path) {
+    std::ifstream engine_file(engine_file_path);
+    std::stringstream engine_buffer;
+    engine_buffer << engine_file.rdbuf();
+    std::string engine_str = engine_buffer.str();
+    runtime_ = UniquePtr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(g_logger_));
+    engine_ = UniquePtr<nvinfer1::ICudaEngine>(runtime_->deserializeCudaEngine
+                                               ((void*)engine_str.data(),
+                                                engine_str.size(),
+                                                nullptr));
+    return true;
+  }
+
+  bool CNNClassifier::buildEngineFromOnnx(std::string onnx_file_path,
+                                          std::string output_engine_file_path) {
+    auto builder = UniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(g_logger_));
+    const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+    auto network = UniquePtr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
+    auto config = UniquePtr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
+
+    auto parser = UniquePtr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, g_logger_));
+    if ( !parser->parseFromFile(onnx_file_path.c_str(),
+                                static_cast<int>(nvinfer1::ILogger::Severity::kWARNING)) ) {
+      return false;
+    }
+    
+    size_t max_batch_size = 1;
+    builder->setMaxBatchSize(max_batch_size);
+    builder->setMaxWorkspaceSize(16 << 20);
+
+
+    if ( precision_ == "fp16" ) {
+      config->setFlag(nvinfer1::BuilderFlag::kFP16);
+    } else if ( precision_ == "int8" ) {
+      config->setFlag(nvinfer1::BuilderFlag::kINT8);
+    } else {
+      ROS_WARN("Does not support this precision type [%s] \nplease input fp16 or int8", precision_.c_str());
+    }
+
+    engine_ = UniquePtr<nvinfer1::ICudaEngine>(builder->buildEngineWithConfig(*network, *config));
+    if ( !engine_ ) {
+      ROS_ERROR("failed to build engine");
+      return false;
+    }
+
+    // save engine
+    nvinfer1::IHostMemory *data = engine_->serialize();
+    std::ofstream file;
+    file.open(output_engine_file_path, std::ios::binary | std::ios::out);
+    if (!file.is_open()) {
+      std::cerr << "failed to output engine file" << std::endl;
+    }
+    file.write((const char*)data->data(), data->size());
+    file.close();
+
+    return true;
   }
 
   bool CNNClassifier::getLampState(const cv::Mat& input_image,

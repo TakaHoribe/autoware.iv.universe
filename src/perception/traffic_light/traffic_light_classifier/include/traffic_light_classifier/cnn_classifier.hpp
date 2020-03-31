@@ -5,6 +5,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <traffic_light_classifier/HSVFilterConfig.h>
 #include <traffic_light_classifier/classifier_interface.hpp>
 
@@ -16,6 +17,7 @@
 #include <cuda_runtime_api.h>
 #include <algorithm>
 #include <chrono>
+#include <boost/filesystem.hpp>
 
 #include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
@@ -52,7 +54,6 @@ namespace traffic_light {
     ~CNNClassifier(){};
 
     bool getLampState(const cv::Mat& input_image, std::vector<autoware_traffic_light_msgs::LampState>& states) override;
-
   private:
 
     void parametersCallback(traffic_light_classifier::HSVFilterConfig& config, uint32_t level);
@@ -68,6 +69,11 @@ namespace traffic_light {
     std::vector<size_t> argsort(float *tensor);
 
     size_t numTensorElements(nvinfer1::Dims dimensions);
+
+    bool loadEngine(std::string engine_file_path);
+
+    bool buildEngineFromOnnx(std::string onnx_file_path,
+                             std::string output_engine_file_path);
 
 
   private:
@@ -85,9 +91,6 @@ namespace traffic_light {
 
     Logger g_logger_;
 
-    std::string engine_file_path_ = "";
-
-    std::string label_file_path_ = "";
 
     std::string input_name_ = "";
 
@@ -118,6 +121,7 @@ namespace traffic_light {
 
     size_t num_output_;
 
+    std::string precision_;
 
   };
 
