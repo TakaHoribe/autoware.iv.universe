@@ -48,8 +48,17 @@ add_executable(test_accel_map_converter
 target_link_libraries(test_accel_map_converter ${catkin_LIBRARIES})
 add_dependencies(test_accel_map_converter ${catkin_EXPORTED_TARGETS})
 
+install(TARGETS
+  accel_map_converter
+  accel_map_converter_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 install(
   DIRECTORY
     launch
+    data
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
