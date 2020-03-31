@@ -646,7 +646,7 @@ Visualization Manager:
           Displays:
             - Class: rviz/Image
               Enabled: true
-              Image Topic: /perception/traffic_light/debug/rois
+              Image Topic: /perception/traffic_light_recognition/debug/rois
               Max Value: 1
               Median window: 5
               Min Value: 0
@@ -658,7 +658,7 @@ Visualization Manager:
               Value: true
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/debug/markers
+              Marker Topic: /perception/traffic_light_recognition/traffic_light_map_based_detector/debug/markers
               Name: Beam
               Namespaces: {}
               Queue Size: 100

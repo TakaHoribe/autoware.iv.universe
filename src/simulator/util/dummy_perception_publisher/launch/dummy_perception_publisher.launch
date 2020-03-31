@@ -53,8 +53,8 @@
       </include>
     </group>
     <!-- traffic light module -->
-    <group ns="traffic_light">
-      <include file="$(find perception_launch)/launch/traffic_light/traffic_light.launch"></include>
+    <group ns="traffic_light_recognition">
+      <include file="$(find perception_launch)/launch/traffic_light_recognition/traffic_light.launch"></include>
     </group>
   </group>
 </launch>

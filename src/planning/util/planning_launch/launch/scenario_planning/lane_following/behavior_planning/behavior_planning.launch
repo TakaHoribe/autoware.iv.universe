@@ -48,7 +48,7 @@
     <remap from="~input/vehicle_velocity" to="/vehicle/status/twist" />
     <remap from="~input/dynamic_objects" to="/perception/prediction/objects" />
     <remap from="~input/no_ground_pointcloud" to="/sensing/lidar/no_ground/pointcloud" />
-    <remap from="~input/traffic_light_states" to="/perception/traffic_light/traffic_light_states" />
+    <remap from="~input/traffic_light_states" to="/perception/traffic_light_recognition/traffic_light_states" />
     <remap from="~output/path" to="path" />
 
     <param name="launch_momentary_stop" value="true" />
