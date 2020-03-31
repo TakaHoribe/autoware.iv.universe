@@ -70,6 +70,8 @@ class EBPathPlannerNode {
   double min_distance_threshold_when_switching_avoindance_to_path_following_;
   double min_cos_similarity_when_switching_avoindance_to_path_following_;
   double delta_yaw_threshold_for_closest_point_;
+  double min_trajectory_length_for_triggering_replan_;
+  double max_trajectory_length_;
   Mode previous_mode_;
   std::shared_ptr<geometry_msgs::Pose> current_ego_pose_ptr_;
   std::unique_ptr<ModifyReferencePath> modify_reference_path_ptr_;

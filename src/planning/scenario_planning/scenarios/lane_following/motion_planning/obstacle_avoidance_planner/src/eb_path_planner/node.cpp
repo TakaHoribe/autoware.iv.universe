@@ -75,6 +75,9 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
                             min_cos_similarity_when_switching_avoindance_to_path_following_, 0.95);
   private_nh_.param<double>("delta_yaw_threshold_for_closest_point", delta_yaw_threshold_for_closest_point_,
                             M_PI / 3.0);
+  private_nh_.param<double>("min_trajectory_length_for_trigerring_replan", min_trajectory_length_for_triggering_replan_,
+                            80);
+  private_nh_.param<double>("max_trajectory_length", max_trajectory_length_, 80);
   in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
   is_previously_avoidance_mode_ = false;
   previous_mode_ = Mode::LaneFollowing;
@@ -1111,7 +1114,7 @@ bool EBPathPlannerNode::needReplanForPathSmoothing(
   double dist = std::sqrt(dx * dx + dy * dy);
   // ROS_WARN("dist from goal %lf", dist);
   // ROS_WARN("accum dist  %lf", accum_dist);
-  if (accum_dist < 50 && dist > delta_arc_length_for_path_smoothing_) {
+  if (accum_dist < min_trajectory_length_for_triggering_replan_ && dist > delta_arc_length_for_path_smoothing_) {
     return true;
   }
 
@@ -1136,7 +1139,7 @@ bool EBPathPlannerNode::needReplanForPathSmoothing(
       accum_dist1 += dist;
     }
   }
-  if (accum_dist1 < 50 && dist > delta_arc_length_for_path_smoothing_) {
+  if (accum_dist1 < min_trajectory_length_for_triggering_replan_ && dist > delta_arc_length_for_path_smoothing_) {
     return true;
   }
   return false;
@@ -1160,7 +1163,7 @@ bool EBPathPlannerNode::calculateNewStartAndGoal(const geometry_msgs::Pose& ego_
       accum_dist += dist;
     }
     goal_ind = i;
-    if (accum_dist > 80) {
+    if (accum_dist > max_trajectory_length_) {
       break;
     }
   }
