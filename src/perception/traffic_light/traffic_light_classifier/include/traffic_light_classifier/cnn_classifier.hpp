@@ -60,7 +60,8 @@ namespace traffic_light {
 
     void preProcess(const cv::Mat & image, float *tensor, bool normalize=true);
 
-    bool postProcess(float* output_data_host);
+    bool postProcess(float* output_data_host,
+                     std::vector<autoware_traffic_light_msgs::LampState>& states);
 
     bool readLabelfile(std::string filepath, std::vector<std::string>& labels);
 

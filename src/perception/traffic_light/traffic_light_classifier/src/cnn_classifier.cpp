@@ -136,7 +136,9 @@ namespace traffic_light {
                num_output_ * sizeof(float),
                cudaMemcpyDeviceToHost);
 
-    postProcess(output_data_host);
+
+    postProcess(output_data_host, states);
+
 
     cudaFree(input_data_device);
     cudaFree(output_data_device);
@@ -177,14 +179,44 @@ namespace traffic_light {
 
   }
 
-  bool CNNClassifier::postProcess(float* output_data_host)
+  bool CNNClassifier::postProcess(float* output_data_host,
+                                  std::vector<autoware_traffic_light_msgs::LampState>& states)
   {
     std::vector<float> probs;
     calcSoftmax(output_data_host, probs);
     std::vector<size_t> sorted_indices = argsort(output_data_host);
     // ROS_INFO("label: %s, score: %.2f\%\n",
-    //          labels[sortedIndices[0]].c_str(),
-    //          probs[sortedIndices[0]] * 100);
+    //          labels_[sorted_indices[0]].c_str(),
+    //          probs[sorted_indices[0]] * 100);
+
+
+    // TODO
+    // correspond arrow label and lamp state
+    // 
+
+    std::string match_label = labels_[sorted_indices[0]];
+    float probability = probs[sorted_indices[0]];
+    if (match_label == "red") {
+      autoware_traffic_light_msgs::LampState state;
+      state.type = autoware_traffic_light_msgs::LampState::RED;
+      state.confidence = probability;
+      states.push_back(state);
+    } else if (match_label == "yellow") {
+      autoware_traffic_light_msgs::LampState state;
+      state.type = autoware_traffic_light_msgs::LampState::YELLOW;
+      state.confidence = probability;
+      states.push_back(state);
+    } else if (match_label == "green") {
+      autoware_traffic_light_msgs::LampState state;
+      state.type = autoware_traffic_light_msgs::LampState::GREEN;
+      state.confidence = probability;
+      states.push_back(state);
+    } else {
+      autoware_traffic_light_msgs::LampState state;
+      state.type = autoware_traffic_light_msgs::LampState::UNKNOWN;
+      state.confidence = 0.0;
+      states.push_back(state);
+    }
 
     return true;
   }
