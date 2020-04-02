@@ -1,6 +1,0 @@
-go
-goLeft
-stop
-stopLeft
-warning
-warningLeft
