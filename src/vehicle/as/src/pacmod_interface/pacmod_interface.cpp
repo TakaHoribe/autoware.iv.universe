@@ -41,9 +41,9 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("max_throttle", max_throttle_, 0.2);
   private_nh_.param<double>("max_brake", max_brake_, 0.8);
 
-  private_nh_.param<double>("vgr_coef_a_", vgr_coef_a_, 15.713);
-  private_nh_.param<double>("vgr_coef_b_", vgr_coef_b_, 0.053);
-  private_nh_.param<double>("vgr_coef_c_", vgr_coef_c_, 0.042);
+  private_nh_.param<double>("vgr_coef_a", vgr_coef_a_, 15.713);
+  private_nh_.param<double>("vgr_coef_b", vgr_coef_b_, 0.053);
+  private_nh_.param<double>("vgr_coef_c", vgr_coef_c_, 0.042);
 
   /* parameters for limitter */
   private_nh_.param<double>("max_steering_wheel", max_steering_wheel_, 2.7 * M_PI);
