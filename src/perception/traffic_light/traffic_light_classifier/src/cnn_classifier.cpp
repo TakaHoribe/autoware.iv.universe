@@ -160,6 +160,40 @@ namespace traffic_light {
 
     postProcess(output_data_host, states);
 
+    /* debug */
+    if (0 < image_pub_.getNumSubscribers()) {
+      float probability;
+      std::string label;
+      for (auto state : states) {
+        // all lamp confidence are the same
+        probability = state.confidence;
+        label += state2label_[state.type];
+      }
+
+      cv::Mat debug_image = input_image.clone();
+      int expand_w = 200;
+      int expand_h = static_cast<int>((expand_w * input_image.rows) / input_image.cols);
+
+      cv::resize(input_image, debug_image, cv::Size(expand_w, expand_h));
+
+      cv::Mat text_img(cv::Size(expand_w, 50), CV_8UC3, cv::Scalar(0,0,0));
+      std::string text = label + " " + std::to_string(probability);
+
+      cv::putText(text_img,
+                  text,
+                  cv::Point(5, 25),
+                  cv::FONT_HERSHEY_COMPLEX,
+                  0.5,
+                  cv::Scalar(0,255,0), 1);
+
+      cv::Mat concated_image;
+      cv::vconcat(debug_image, text_img, concated_image);
+
+      sensor_msgs::ImagePtr debug_image_msg = cv_bridge::CvImage
+        (std_msgs::Header(), "bgr8", concated_image).toImageMsg();
+      image_pub_.publish(debug_image_msg);
+    }
+
     cudaFree(input_data_device);
     cudaFree(output_data_device);
 

@@ -85,6 +85,13 @@ namespace traffic_light {
 
   private:
 
+    std::map<int, std::string> state2label_{
+      {autoware_traffic_light_msgs::LampState::RED, "stop"},
+      {autoware_traffic_light_msgs::LampState::YELLOW, "warning"},
+      {autoware_traffic_light_msgs::LampState::GREEN, "go"},
+      {autoware_traffic_light_msgs::LampState::UNKNOWN, "unknown"},
+    };
+
     template <typename T>
     using UniquePtr = std::unique_ptr<T, InferDeleter>;
 
