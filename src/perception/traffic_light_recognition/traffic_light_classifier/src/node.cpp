@@ -41,17 +41,7 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   if (classifier_type == "color") {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
   } else if (classifier_type == "cnn") {
-    std::string precision;
-    std::string label_file_path;
-    std::string model_file_path;
-
-    pnh_.param<std::string>("precision", precision, "fp16");
-    pnh_.param<std::string>("label_file_path", label_file_path, "labels.txt");
-    pnh_.param<std::string>("model_file_path", model_file_path, "model.onnx");
-
-    classifier_ptr_ = std::make_shared<CNNClassifier>
-      (label_file_path, model_file_path, precision);
-
+    classifier_ptr_ = std::make_shared<CNNClassifier>();
   }
 }
 
