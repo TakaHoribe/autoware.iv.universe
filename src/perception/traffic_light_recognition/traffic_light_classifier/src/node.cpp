@@ -35,13 +35,24 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
       pnh_.advertise<autoware_traffic_light_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
 
   std::string classifier_type;
-  pnh_.param<std::string>("classifier_type", classifier_type, "cnn");
+  pnh_.param<std::string>("classifier_type", classifier_type, "color");
+
+  ROS_INFO("classifier type: %s", classifier_type.c_str());
   if (classifier_type == "color") {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
   } else if (classifier_type == "cnn") {
-    classifier_ptr_ = std::make_shared<CNNClassifier>();
+    std::string precision;
+    std::string label_file_path;
+    std::string model_file_path;
+
+    pnh_.param<std::string>("precision", precision, "fp16");
+    pnh_.param<std::string>("label_file_path", label_file_path, "labels.txt");
+    pnh_.param<std::string>("model_file_path", model_file_path, "model.onnx");
+
+    classifier_ptr_ = std::make_shared<CNNClassifier>
+      (label_file_path, model_file_path, precision);
+
   }
-  
 }
 
 void TrafficLightClassifierNode::imageRoiCallback(

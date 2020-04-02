@@ -49,16 +49,21 @@ namespace traffic_light {
 
   class CNNClassifier : public ClassifierInterface {
   public:
-    CNNClassifier();
+    CNNClassifier(std::string label_file_path,
+                  std::string model_file_path,
+                  std::string precision,
+                  std::string input_binding_name="input_0",
+                  std::string output_binding_name="output_0");
 
     ~CNNClassifier(){};
 
     bool getLampState(const cv::Mat& input_image, std::vector<autoware_traffic_light_msgs::LampState>& states) override;
+
   private:
 
     void parametersCallback(traffic_light_classifier::HSVFilterConfig& config, uint32_t level);
 
-    void preProcess(const cv::Mat & image, float *tensor, bool normalize=true);
+    void preProcess(cv::Mat & image, float *tensor, bool normalize=true);
 
     bool postProcess(float* output_data_host,
                      std::vector<autoware_traffic_light_msgs::LampState>& states);
@@ -76,6 +81,7 @@ namespace traffic_light {
     bool buildEngineFromOnnx(std::string onnx_file_path,
                              std::string output_engine_file_path);
 
+    bool setup();
 
   private:
 
@@ -93,15 +99,19 @@ namespace traffic_light {
     Logger g_logger_;
 
 
-    std::string input_name_ = "";
+    std::string input_name_;
 
-    std::string output_name_ = "";
+    std::string output_name_;
 
     std::vector<float> mean_{0.485, 0.456, 0.406};
 
     std::vector<float> std_{0.229, 0.224, 0.225};
 
     std::vector<std::string> labels_;
+
+    std::string label_file_path_;
+
+    std::string model_file_path_;
 
     UniquePtr<nvinfer1::IRuntime> runtime_;
 

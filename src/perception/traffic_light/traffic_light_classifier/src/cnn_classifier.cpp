@@ -1,26 +1,38 @@
 #include "traffic_light_classifier/cnn_classifier.hpp"
 
 namespace traffic_light {
-  CNNClassifier::CNNClassifier() : nh_(""), pnh_("~"), image_transport_(pnh_) {
-    std::string cache_dir = ros::package::getPath("traffic_light_classifier") + "/data";
+  CNNClassifier::CNNClassifier(std::string label_file_path,
+                               std::string model_file_path,
+                               std::string precision,
+                               std::string input_binding_name,
+                               std::string output_binding_name)
+    : nh_(""), pnh_("~"), image_transport_(pnh_) {
+    image_pub_ = image_transport_.advertise("output/debug/image", 1);
 
-    pnh_.param<std::string>("precision", precision_, "fp16");
-    
-    std::string label_file_path = "";
-    pnh_.param<std::string>("label_file_path", label_file_path);
-    readLabelfile(label_file_path, labels_);
+    label_file_path_ = label_file_path;
+    model_file_path_ = model_file_path;
+    precision_ = precision;
+    input_name_ = input_binding_name;
+    output_name_ = output_binding_name;
 
-    std::string model_file_path;
-    pnh_.param<std::string>("model_file_path", model_file_path);
-    const boost::filesystem::path path(model_file_path);
+    setup();
+  }
+
+  bool CNNClassifier::setup() {
+    readLabelfile(label_file_path_, labels_);
+
+    const boost::filesystem::path path(model_file_path_);
     std::string extension = path.extension().string();
 
-    if ( boost::filesystem::exists(path) ) {
-      if ( extension == "engine" ) {
-        ROS_INFO("find engine file [%s]", model_file_path.c_str());
-        loadEngine(model_file_path);
-      } else if ( extension == "onnx" ) {
+    std::cout << "extension: " << extension << std::endl;
 
+    if ( boost::filesystem::exists(path) ) {
+      if ( extension == ".engine" ) {
+        ROS_INFO("find engine file [%s]", model_file_path_.c_str());
+        loadEngine(model_file_path_);
+      } else if ( extension == ".onnx" ) {
+
+        std::string cache_dir = ros::package::getPath("traffic_light_classifier") + "/data";
         std::string cache_engine_path = cache_dir + "/" + path.stem().string() + ".engine";
         const boost::filesystem::path cache_path(cache_engine_path);
         if ( boost::filesystem::exists(cache_path) ) {
@@ -28,16 +40,18 @@ namespace traffic_light {
           loadEngine(cache_engine_path);
         } else {
           ROS_INFO("build engine from onnx file");
-          buildEngineFromOnnx(model_file_path, cache_engine_path);
+          buildEngineFromOnnx(model_file_path_, cache_engine_path);
+          ROS_INFO("complete build engine");
         }
       } else {
         ROS_WARN("Does not support this file extension [%s], \nplease input .engine or .onnx file",
                  extension.c_str());
       }
     } else {
-      ROS_ERROR("Could not find file [%s]", model_file_path.c_str());
+      ROS_ERROR("Could not find file [%s]", model_file_path_.c_str());
     }
  
+    ROS_INFO("create execution context");
     context_ = UniquePtr<nvinfer1::IExecutionContext>(engine_->createExecutionContext());
 
     input_binding_index_ = engine_->getBindingIndex(input_name_.c_str());
@@ -47,7 +61,7 @@ namespace traffic_light {
     num_input_ = numTensorElements(input_dims_);
     num_output_ = numTensorElements(output_dims_);
 
-    image_pub_ = image_transport_.advertise("output/debug/image", 1);
+    return true;
   }
 
   bool CNNClassifier::loadEngine(std::string engine_file_path) {
@@ -111,7 +125,9 @@ namespace traffic_light {
   bool CNNClassifier::getLampState(const cv::Mat& input_image,
                                    std::vector<autoware_traffic_light_msgs::LampState>& states) {
     float *input_data_host = (float*) malloc(num_input_ * sizeof(float));
-    preProcess(input_image, input_data_host, true);
+
+    cv::Mat image = input_image.clone();
+    preProcess(image, input_data_host, true);
 
     float *input_data_device;
     cudaMalloc((void**)&input_data_device, num_input_ * sizeof(float));
@@ -128,7 +144,13 @@ namespace traffic_light {
     void *bindings[2];
     bindings[input_binding_index_] = (void*)input_data_device;
     bindings[output_binding_index_] = (void*)output_data_device;
+
+    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     context_->executeV2(bindings);
+    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+    double elapsed_time = static_cast<double>
+      (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()) / 1000;
+    // ROS_INFO("inference elapsed time: %f [ms]", elapsed_time);
 
     float *output_data_host = (float*) malloc(num_output_ * sizeof(float));
     cudaMemcpy(output_data_host,
@@ -136,9 +158,7 @@ namespace traffic_light {
                num_output_ * sizeof(float),
                cudaMemcpyDeviceToHost);
 
-
     postProcess(output_data_host, states);
-
 
     cudaFree(input_data_device);
     cudaFree(output_data_device);
@@ -146,7 +166,7 @@ namespace traffic_light {
     return true;
   }
 
-  void CNNClassifier::preProcess(const cv::Mat & image,
+  void CNNClassifier::preProcess(cv::Mat & image,
                                  float *tensor,
                                  bool normalize)
   {
@@ -185,10 +205,9 @@ namespace traffic_light {
     std::vector<float> probs;
     calcSoftmax(output_data_host, probs);
     std::vector<size_t> sorted_indices = argsort(output_data_host);
-    // ROS_INFO("label: %s, score: %.2f\%\n",
-    //          labels_[sorted_indices[0]].c_str(),
-    //          probs[sorted_indices[0]] * 100);
-
+    ROS_INFO("label: %s, score: %.2f\%",
+             labels_[sorted_indices[0]].c_str(),
+             probs[sorted_indices[0]] * 100);
 
     // TODO
     // correspond arrow label and lamp state
@@ -196,17 +215,17 @@ namespace traffic_light {
 
     std::string match_label = labels_[sorted_indices[0]];
     float probability = probs[sorted_indices[0]];
-    if (match_label == "red") {
+    if (match_label == "stop") {
       autoware_traffic_light_msgs::LampState state;
       state.type = autoware_traffic_light_msgs::LampState::RED;
       state.confidence = probability;
       states.push_back(state);
-    } else if (match_label == "yellow") {
+    } else if (match_label == "warning") {
       autoware_traffic_light_msgs::LampState state;
       state.type = autoware_traffic_light_msgs::LampState::YELLOW;
       state.confidence = probability;
       states.push_back(state);
-    } else if (match_label == "green") {
+    } else if (match_label == "go") {
       autoware_traffic_light_msgs::LampState state;
       state.type = autoware_traffic_light_msgs::LampState::GREEN;
       state.confidence = probability;
@@ -227,7 +246,7 @@ namespace traffic_light {
   {
     std::ifstream labelsFile(filepath);
     if (!labelsFile.is_open()) {
-      std::cout << "\nCould not open label file." << std::endl;
+      ROS_ERROR("Could not open label file. [%s]", filepath.c_str());
       return false;
     }
     std::string label;
