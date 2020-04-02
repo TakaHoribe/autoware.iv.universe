@@ -239,9 +239,10 @@ namespace traffic_light {
     std::vector<float> probs;
     calcSoftmax(output_data_host, probs);
     std::vector<size_t> sorted_indices = argsort(output_data_host);
-    ROS_INFO("label: %s, score: %.2f\%",
-             labels_[sorted_indices[0]].c_str(),
-             probs[sorted_indices[0]] * 100);
+
+    // ROS_INFO("label: %s, score: %.2f\%",
+    //          labels_[sorted_indices[0]].c_str(),
+    //          probs[sorted_indices[0]] * 100);
 
     // TODO
     // correspond arrow label and lamp state
