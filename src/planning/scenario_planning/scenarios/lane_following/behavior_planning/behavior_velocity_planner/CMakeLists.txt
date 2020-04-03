@@ -56,9 +56,14 @@ add_library(scene_module_lib STATIC
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp
 )
+
 add_dependencies(scene_module_lib
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module: Momentary Stop
@@ -67,6 +72,7 @@ add_library(scene_module_momentary_stop STATIC
   src/scene_module/momentary_stop/scene.cpp
   src/scene_module/momentary_stop/debug.cpp
 )
+
 add_dependencies(scene_module_momentary_stop
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
@@ -74,6 +80,7 @@ add_dependencies(scene_module_momentary_stop
 
 target_link_libraries(scene_module_momentary_stop
   scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module: Crosswalk
@@ -90,6 +97,7 @@ add_dependencies(scene_module_crosswalk
 
 target_link_libraries(scene_module_crosswalk
   scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module: Intersection
@@ -106,6 +114,7 @@ add_dependencies(scene_module_intersection
 
 target_link_libraries(scene_module_intersection
   scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module: Traffic Light
@@ -120,8 +129,9 @@ add_dependencies(scene_module_traffic_light
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(scene_module_intersection
+target_link_libraries(scene_module_traffic_light
   scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module: Blind Spot
@@ -136,8 +146,9 @@ add_dependencies(scene_module_blind_spot
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(scene_module_intersection
+target_link_libraries(scene_module_blind_spot
   scene_module_lib
+  ${catkin_LIBRARIES}
 )
 
 # Scene Module Manager
