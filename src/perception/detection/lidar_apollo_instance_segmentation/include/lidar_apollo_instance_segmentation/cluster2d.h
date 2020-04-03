@@ -37,16 +37,17 @@
 #include <pcl_ros/point_cloud.h>
 #include <vector>
 
-#include "caffe/caffe.hpp"
-
 #include "disjoint_set.h"
 #include "util.h"
 
+// #include <autoware_perception_msgs/DynamicObjectWithFeature.h>
+// #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeature.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 
 #include <std_msgs/Header.h>
 
+#include <opencv2/highgui/highgui.hpp>
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -60,7 +61,14 @@ enum ObjectType {
   MAX_OBJECT_TYPE = 6,
 };
 
-enum MetaType { META_UNKNOWN, META_SMALLMOT, META_BIGMOT, META_NONMOT, META_PEDESTRIAN, MAX_META_TYPE };
+enum MetaType {
+  META_UNKNOWN,
+  META_SMALLMOT,
+  META_BIGMOT,
+  META_NONMOT,
+  META_PEDESTRIAN,
+  MAX_META_TYPE
+};
 
 struct Obstacle {
   std::vector<int> grids;
@@ -101,24 +109,26 @@ class Cluster2D {
 
   bool init(int rows, int cols, float range);
 
-  void cluster(const caffe::Blob<float>& category_pt_blob, const caffe::Blob<float>& instance_pt_blob,
-               const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr, const pcl::PointIndices& valid_indices,
-               float objectness_thresh, bool use_all_grids_for_clustering);
+  void cluster(const float *output,
+               const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
+               const pcl::PointIndices &valid_indices, float objectness_thresh,
+               bool use_all_grids_for_clustering);
 
-  void filter(const caffe::Blob<float>& confidence_pt_blob, const caffe::Blob<float>& height_pt_blob);
+  void filter(const float *output);
+  void classify(const float *output);
 
-  void classify(const caffe::Blob<float>& classify_pt_blob);
+  void getObjects(const float confidence_thresh, const float height_thresh,
+                  const int min_pts_num,
+                  autoware_perception_msgs::DynamicObjectWithFeatureArray &objects,
+                  const std_msgs::Header &in_header);
 
-  void getObjects(const float confidence_thresh, const float height_thresh, const int min_pts_num,
-                  autoware_perception_msgs::DynamicObjectWithFeatureArray& objects, const std_msgs::Header& in_header);
-
-  autoware_perception_msgs::DynamicObjectWithFeature obstacleToObject(const Obstacle& in_obstacle,
-                                                                      const std_msgs::Header& in_header);
+  autoware_perception_msgs::DynamicObjectWithFeature obstacleToObject(
+      const Obstacle &in_obstacle, const std_msgs::Header &in_header);
 
  private:
   int rows_;
   int cols_;
-  int grids_;
+  int siz_;
   float range_;
   float scale_;
   float inv_res_x_;
@@ -128,11 +138,11 @@ class Cluster2D {
   std::vector<int> id_img_;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pc_ptr_;
-  const std::vector<int>* valid_indices_in_pc_ = nullptr;
+  const std::vector<int> *valid_indices_in_pc_ = nullptr;
 
   struct Node {
-    Node* center_node;
-    Node* parent;
+    Node *center_node;
+    Node *parent;
     char node_rank;
     char traversed;
     bool is_center;
@@ -152,7 +162,9 @@ class Cluster2D {
     }
   };
 
-  inline bool IsValidRowCol(int row, int col) const { return IsValidRow(row) && IsValidCol(col); }
+  inline bool IsValidRowCol(int row, int col) const {
+    return IsValidRow(row) && IsValidCol(col);
+  }
 
   inline bool IsValidRow(int row) const { return row >= 0 && row < rows_; }
 
@@ -160,7 +172,7 @@ class Cluster2D {
 
   inline int RowCol2Grid(int row, int col) const { return row * cols_ + col; }
 
-  void traverse(Node* x);
+  void traverse(Node *x);
 
   ObjectType getObjectType(const MetaType meta_type_id);
 };

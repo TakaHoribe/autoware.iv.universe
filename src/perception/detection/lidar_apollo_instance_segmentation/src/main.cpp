@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "cnn_segmentation.h"
 
-#include <caffe/caffe.hpp>
+#include "lidar_apollo_instance_segmentation/node.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "lidar_apollo_cnn_seg_detect");
-  CNNSegmentation node;
-  node.run();
+  ros::init(argc, argv, "lidar_apollo_instance_segmentation_node");
+  LidarInstanceSegmentationNode node;
   ros::spin();
 
   return 0;

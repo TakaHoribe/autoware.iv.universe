@@ -1,0 +1,66 @@
+<launch>
+
+  <!-- <arg name="INPUT_CLOUD" default="/points_raw" /> -->
+  <arg name="INPUT_CLOUD" default="/velodyne_points" />
+
+  <arg name="MODEL" default="model_64" />
+  <arg name="ENGINE_64" default="apollo_cnn.engine" />
+  <arg name="ENGINE_128" default="vls128/deploy.engine" />
+
+  <arg name="VIZ_CONFIDENCE_IMAGE" default="false" />
+  <arg name="VIZ_CLASS_IMAGE" default="false" />
+  <arg name="PUB_COLORED_POINTS" default="false" />
+
+  <node pkg="tensorrt_bcnn" type="tensorrt_bcnn"
+        name="$(anon tensorrt_bcnn)" output="screen" >
+
+    <rosparam if="$(eval MODEL=='model_64')" subst_value="true">
+      points_src: $(arg INPUT_CLOUD)
+      trained_model: $(arg ENGINE_64)
+      score_threshold: 0.8
+      range: 60
+      width: 640
+      height: 640
+      use_intensity_feature: true
+      use_constant_feature: true
+      viz_confidence_image: $(arg VIZ_CONFIDENCE_IMAGE)
+      viz_class_image: $(arg VIZ_CLASS_IMAGE)
+      pub_colored_points: $(arg PUB_COLORED_POINTS)
+    </rosparam>
+
+    <rosparam if="$(eval MODEL=='model_128')" subst_value="true">
+      points_src: $(arg INPUT_CLOUD)
+      trained_model: $(arg ENGINE_128)
+      score_threshold: 0.8
+      range: 90
+      width: 864
+      height: 864
+      use_intensity_feature: false
+      use_constant_feature: false
+      viz_confidence_image: $(arg VIZ_CONFIDENCE_IMAGE)
+      viz_class_image: $(arg VIZ_CLASS_IMAGE)
+      pub_colored_points: $(arg PUB_COLORED_POINTS)
+    </rosparam>
+
+  </node>
+
+  <group if="$(eval VIZ_CLASS_IMAGE)" ns="bev_camera">
+    <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster"
+          args="0 0 -1 0 0 3.141592653589793 velodyne bev 100" />
+    <node name="camera_info" pkg="rostopic" type="rostopic"
+          args="pub camera_info sensor_msgs/CameraInfo
+      '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: bev},
+      height: 640, width: 640, distortion_model: 'plumb_bob',
+      D: [0],
+      K: [5.33, 0.0, 320, 0.0, 5.33, 320, 0.0, 0.0, 1.0],
+      R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+      P: [5.33, 0.0, 320, 0.0, 0.0, 5.33, 320, 0.0, 0.0, 0.0, 1.0, 0.0],
+      binning_x: 0, binning_y: 0,
+      roi: {x_offset: 0, y_offset: 0, height: 640, width: 640, do_rectify: false}}' -r 2"
+          output="screen"/>
+  </group>
+
+  <!-- <node pkg="detected_objects_visualizer" type="visualize_dhetected_objects" name="cluster_detect_visualization_01" -->
+  <!--         output="screen" ns="/detection/lidar_detector" /> -->
+
+</launch>

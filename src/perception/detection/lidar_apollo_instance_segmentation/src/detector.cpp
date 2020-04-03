@@ -1,0 +1,118 @@
+/*
+ * Copyright 2020 Autoware Foundation. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "lidar_apollo_instance_segmentation/detector.h"
+#include "lidar_apollo_instance_segmentation/feature_map.h"
+#include <ros/package.h>
+#include <boost/filesystem.hpp>
+
+LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~"){
+  int range, width, height;
+  bool use_intensity_feature, use_constant_feature;
+  pnh_.param<float>("score_threshold", score_threshold_, 0.8);
+  pnh_.param<int>("range", range, 60);
+  pnh_.param<int>("width", width, 640);
+  pnh_.param<int>("height", height, 640);
+  pnh_.param<bool>("use_intensity_feature", use_intensity_feature, true);
+  pnh_.param<bool>("use_constant_feature", use_constant_feature, true);
+
+  // load weight file
+  const std::string engine_path = ros::package::getPath("lidar_apollo_instance_segmentation") + "/data/" +
+                                  "lidar_apollo_instance_segmentation.engine";
+  std::ifstream fs(engine_path);
+  if (fs.is_open()) {
+    net_ptr_.reset(new Tn::trtNet(engine_path));
+  } else {
+    ROS_ERROR("Could not find %s.", engine_path.c_str());
+  }
+
+  cluster2d_.reset(new Cluster2D());
+  if (!cluster2d_->init(height, width, range)) {
+    ROS_ERROR("Fail to Initialize cluster2d");
+  }
+
+  // feature map generator
+  feature_generator_ = std::make_shared<FeatureGenerator>(width, height, range, use_constant_feature, use_intensity_feature);
+}
+
+bool LidarApolloInstanceSegmentation::detectDynamicObjects(
+    const sensor_msgs::PointCloud2& input, autoware_perception_msgs::DynamicObjectWithFeatureArray& output) {
+
+  // convert from ros to pcl
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud_raw_ptr(new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::fromROSMsg(input, *pcl_pointcloud_raw_ptr);
+
+  // generate feature map
+  std::shared_ptr<FeatureMapInterface> feature_map_ptr = feature_generator_->generate(pcl_pointcloud_raw_ptr);
+
+  // inference
+  std::unique_ptr<float[]> inferred_data(new float[net_ptr_->getOutputSize() / sizeof(float)]);
+  net_ptr_->doInference(feature_map_ptr->map_data.data(), inferred_data.get());
+
+
+  float *inferred_data_ptr = inferred_data.get();
+
+  const float objectness_thresh = 0.5;
+
+  pcl::PointIndices valid_idx;
+  auto &indices = valid_idx.indices;
+  indices.resize(pcl_pointcloud_raw_ptr->size());
+  std::iota(indices.begin(), indices.end(), 0);
+  cluster2d_->cluster(inferred_data_ptr, pcl_pointcloud_raw_ptr, valid_idx, objectness_thresh,
+                      true /*use all grids for clustering*/);
+  cluster2d_->filter(inferred_data_ptr);
+  cluster2d_->classify(inferred_data_ptr);
+
+  float height_thresh = 0.5;
+  int min_pts_num = 3;
+
+  cluster2d_->getObjects(score_threshold_, height_thresh, min_pts_num, output,
+                         input.header);
+  output.header = input.header;
+  return true;
+}
+
+
+
+// void LidarApolloInstanceSegmentationNode::pubColoredPoints(
+//     const autoware_perception_msgs::DynamicObjectWithFeatureArray
+//         &objects_array) {
+//   pcl::PointCloud<pcl::PointXYZRGB> colored_cloud;
+//   for (size_t object_i = 0; object_i < objects_array.feature_objects.size();
+//        object_i++) {
+//     pcl::PointCloud<pcl::PointXYZI> object_cloud;
+//     pcl::fromROSMsg(objects_array.feature_objects.at(object_i).feature.cluster,
+//                     object_cloud);
+//     int red = (object_i) % 256;
+//     int green = (object_i * 7) % 256;
+//     int blue = (object_i * 13) % 256;
+
+//     for (size_t i = 0; i < object_cloud.size(); i++) {
+//       pcl::PointXYZRGB colored_point;
+//       colored_point.x = object_cloud[i].x;
+//       colored_point.y = object_cloud[i].y;
+//       colored_point.z = object_cloud[i].z;
+//       colored_point.r = red;
+//       colored_point.g = green;
+//       colored_point.b = blue;
+//       colored_cloud.push_back(colored_point);
+//     }
+//   }
+//   sensor_msgs::PointCloud2 output_colored_cloud;
+//   pcl::toROSMsg(colored_cloud, output_colored_cloud);
+//   output_colored_cloud.header = message_header_;
+//   points_pub_.publish(output_colored_cloud);
+// }
