@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Autoware Foundation. All rights reserved.
+ * Copyright 2020 TierIV. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,4 +28,5 @@ void LidarInstanceSegmentationNode::pointCloudCallback(const sensor_msgs::PointC
   autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
   detector_ptr_->detectDynamicObjects(msg, output_msg);
   dynamic_objects_pub_.publish(output_msg);
+  debugger_.publishColoredPointCloud(output_msg);
 }

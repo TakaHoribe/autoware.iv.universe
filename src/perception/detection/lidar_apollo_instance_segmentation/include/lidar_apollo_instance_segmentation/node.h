@@ -5,6 +5,8 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <memory>
 
+#include "lidar_apollo_instance_segmentation/debugger.h"
+
 class LidarInstanceSegmentationInterface {
  public:
   LidarInstanceSegmentationInterface(){}
@@ -19,8 +21,9 @@ class LidarInstanceSegmentationNode {
   ros::NodeHandle pnh_;
   ros::Subscriber pointcloud_sub_;
   ros::Publisher dynamic_objects_pub_;
-  void pointCloudCallback(const sensor_msgs::PointCloud2& msg);
   std::shared_ptr<LidarInstanceSegmentationInterface> detector_ptr_;
+  Debugger debugger_;
+  void pointCloudCallback(const sensor_msgs::PointCloud2& msg);
 
  public:
   LidarInstanceSegmentationNode();

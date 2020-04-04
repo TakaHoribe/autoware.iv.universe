@@ -83,35 +83,3 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
   output.header = input.header;
   return true;
 }
-
-
-
-// void LidarApolloInstanceSegmentationNode::pubColoredPoints(
-//     const autoware_perception_msgs::DynamicObjectWithFeatureArray
-//         &objects_array) {
-//   pcl::PointCloud<pcl::PointXYZRGB> colored_cloud;
-//   for (size_t object_i = 0; object_i < objects_array.feature_objects.size();
-//        object_i++) {
-//     pcl::PointCloud<pcl::PointXYZI> object_cloud;
-//     pcl::fromROSMsg(objects_array.feature_objects.at(object_i).feature.cluster,
-//                     object_cloud);
-//     int red = (object_i) % 256;
-//     int green = (object_i * 7) % 256;
-//     int blue = (object_i * 13) % 256;
-
-//     for (size_t i = 0; i < object_cloud.size(); i++) {
-//       pcl::PointXYZRGB colored_point;
-//       colored_point.x = object_cloud[i].x;
-//       colored_point.y = object_cloud[i].y;
-//       colored_point.z = object_cloud[i].z;
-//       colored_point.r = red;
-//       colored_point.g = green;
-//       colored_point.b = blue;
-//       colored_cloud.push_back(colored_point);
-//     }
-//   }
-//   sensor_msgs::PointCloud2 output_colored_cloud;
-//   pcl::toROSMsg(colored_cloud, output_colored_cloud);
-//   output_colored_cloud.header = message_header_;
-//   points_pub_.publish(output_colored_cloud);
-// }

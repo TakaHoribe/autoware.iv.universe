@@ -1,6 +1,8 @@
 <launch>
   <arg name="model" default="model_128" />
-  <arg name="trained_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.engine" />
+
+  <arg if="$(eval model=='model_64')" name="trained_file" default="$(find lidar_apollo_instance_segmentation)/data/hdl-64.engine" />
+  <arg if="$(eval model=='model_128')" name="trained_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.engine" />
 
   <node pkg="lidar_apollo_instance_segmentation" type="lidar_apollo_instance_segmentation_node"
         name="lidar_apollo_instance_segmentation" output="screen" >

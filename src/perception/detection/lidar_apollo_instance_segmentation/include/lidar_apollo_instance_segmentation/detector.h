@@ -2,7 +2,7 @@
 #include "lidar_apollo_instance_segmentation/node.h"
 #include "TrtNet.h"
 #include "cluster2d.h"
-#include "data_reader.h"
+// #include "data_reader.h"
 #include "feature_generator.h"
 
 #include <memory>

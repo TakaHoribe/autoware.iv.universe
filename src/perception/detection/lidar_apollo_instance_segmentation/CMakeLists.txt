@@ -56,7 +56,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
    roslib
    pcl_ros
    autoware_perception_msgs
-   cv_bridge
    )
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
@@ -72,7 +71,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
    roslib
    pcl_ros
    autoware_perception_msgs
-   cv_bridge
    )
 
   include_directories(
@@ -90,6 +88,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   src/feature_generator.cpp
   src/feature_map.cpp
   src/cluster2d.cpp
+  src/debugger.cpp
 )
 
   add_dependencies(lidar_apollo_instance_segmentation_node
