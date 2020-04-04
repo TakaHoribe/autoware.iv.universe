@@ -14,14 +14,10 @@ static constexpr int CUDA_THREAD_NUM = 512;
 
 // Integration for serialization.
 using nvinfer1::plugin::INvPlugin;
-using nvinfer1::plugin::createPReLUPlugin;
 using nvinfer1::UpsampleLayerPlugin;
 class PluginFactory : public nvinfer1::IPluginFactory,
                       public nvcaffeparser1::IPluginFactoryExt {
  public:
-  inline bool isLeakyRelu(const char* layerName) {
-    return std::regex_match(layerName, std::regex(R"(layer(\d*)-act)"));
-  }
 
   inline bool isUpsample(const char* layerName) {
     return std::regex_match(layerName, std::regex(R"(layer(\d*)-upsample)"));
@@ -60,13 +56,11 @@ class PluginFactory : public nvinfer1::IPluginFactory,
   bool isPlugin(const char* name) override { return isPluginExt(name); }
 
   bool isPluginExt(const char* name) override {
-    return isLeakyRelu(name) || isUpsample(name);
+    return isUpsample(name);
   }
 
   // The application has to destroy the plugin when it knows it's safe to do so.
   void destroyPlugin() {
-    for (auto& item : mPluginLeakyRelu) item.reset();
-
     for (auto& item : mPluginUpsample) item.reset();
   }
 
@@ -74,8 +68,6 @@ class PluginFactory : public nvinfer1::IPluginFactory,
     if (ptr) ptr->destroy();
   }};
 
-  std::vector<std::unique_ptr<INvPlugin, void (*)(INvPlugin*)>>
-      mPluginLeakyRelu{};
   std::vector<std::unique_ptr<UpsampleLayerPlugin>> mPluginUpsample{};
 };
 }
