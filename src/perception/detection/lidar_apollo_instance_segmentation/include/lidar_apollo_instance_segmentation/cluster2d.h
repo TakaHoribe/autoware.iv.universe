@@ -36,30 +36,15 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <vector>
+#include <memory>
 
 #include "disjoint_set.h"
 #include "util.h"
 
-// #include <autoware_perception_msgs/DynamicObjectWithFeature.h>
-// #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeature.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 
 #include <std_msgs/Header.h>
-
-#include <opencv2/highgui/highgui.hpp>
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-
-enum ObjectType {
-  UNKNOWN = 0,
-  UNKNOWN_MOVABLE = 1,
-  UNKNOWN_UNMOVABLE = 2,
-  PEDESTRIAN = 3,
-  BICYCLE = 4,
-  VEHICLE = 5,
-  MAX_OBJECT_TYPE = 6,
-};
 
 enum MetaType {
   META_UNKNOWN,
@@ -82,40 +67,21 @@ struct Obstacle {
     cloud_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
     meta_type_probs.assign(MAX_META_TYPE, 0.0);
   }
-
-  std::string GetTypeString() const {
-    switch (meta_type) {
-      case META_UNKNOWN:
-        return "unknown";
-      case META_SMALLMOT:
-        return "car";
-      case META_BIGMOT:
-        return "truck";
-      case META_NONMOT:
-        return "bike";
-      case META_PEDESTRIAN:
-        return "pedestrian";
-      default:
-        return "unknown";
-    }
-  }
 };
 
 class Cluster2D {
  public:
-  Cluster2D() = default;
+  Cluster2D(const int rows, const int cols, const float range);
 
-  ~Cluster2D() = default;
+  ~Cluster2D(){};
 
-  bool init(int rows, int cols, float range);
-
-  void cluster(const float *output,
+  void cluster(const std::shared_ptr<float[]> &inferred_data,
                const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
                const pcl::PointIndices &valid_indices, float objectness_thresh,
                bool use_all_grids_for_clustering);
 
-  void filter(const float *output);
-  void classify(const float *output);
+  void filter(const std::shared_ptr<float[]> &inferred_data);
+  void classify(const std::shared_ptr<float[]> &inferred_data);
 
   void getObjects(const float confidence_thresh, const float height_thresh,
                   const int min_pts_num,
@@ -173,8 +139,6 @@ class Cluster2D {
   inline int RowCol2Grid(int row, int col) const { return row * cols_ + col; }
 
   void traverse(Node *x);
-
-  ObjectType getObjectType(const MetaType meta_type_id);
 };
 
 #endif  // CLUSTER_2D_H
