@@ -9,7 +9,6 @@
 #include "UpsampleLayer.h"
 
 namespace Tn {
-static constexpr float NEG_SLOPE = 0.1;
 static constexpr float UPSAMPLE_SCALE = 2.0;
 static constexpr int CUDA_THREAD_NUM = 512;
 
@@ -33,13 +32,7 @@ class PluginFactory : public nvinfer1::IPluginFactory,
                                           int nbWeights) override {
     assert(isPlugin(layerName));
 
-    if (isLeakyRelu(layerName)) {
-      assert(nbWeights == 0 && weights == nullptr);
-      mPluginLeakyRelu.emplace_back(
-          std::unique_ptr<INvPlugin, void (*)(INvPlugin*)>(
-              createPReLUPlugin(NEG_SLOPE), nvPluginDeleter));
-      return mPluginLeakyRelu.back().get();
-    } else if (isUpsample(layerName)) {
+    if (isUpsample(layerName)) {
       assert(nbWeights == 0 && weights == nullptr);
       mPluginUpsample.emplace_back(std::unique_ptr<UpsampleLayerPlugin>(
           new UpsampleLayerPlugin(UPSAMPLE_SCALE, CUDA_THREAD_NUM)));
@@ -54,12 +47,7 @@ class PluginFactory : public nvinfer1::IPluginFactory,
                                   size_t serialLength) override {
     assert(isPlugin(layerName));
 
-    if (isLeakyRelu(layerName)) {
-      mPluginLeakyRelu.emplace_back(
-          std::unique_ptr<INvPlugin, void (*)(INvPlugin*)>(
-              createPReLUPlugin(serialData, serialLength), nvPluginDeleter));
-      return mPluginLeakyRelu.back().get();
-    } else if (isUpsample(layerName)) {
+    if (isUpsample(layerName)) {
       mPluginUpsample.emplace_back(std::unique_ptr<UpsampleLayerPlugin>(
           new UpsampleLayerPlugin(serialData, serialLength)));
       return mPluginUpsample.back().get();
