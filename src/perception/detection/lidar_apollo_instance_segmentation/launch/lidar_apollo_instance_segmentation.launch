@@ -1,0 +1,28 @@
+<launch>
+  <arg name="model" default="model_128" />
+  <arg name="trained_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.engine" />
+
+  <node pkg="lidar_apollo_instance_segmentation" type="lidar_apollo_instance_segmentation_node"
+        name="lidar_apollo_instance_segmentation" output="screen" >
+    <remap from="~input/pointcloud" to="/sensor/lidar/pointcloud"/>
+    <rosparam if="$(eval model=='model_64')" subst_value="true">
+      engine_file: $(arg trained_file)
+      score_threshold: 0.8
+      range: 60
+      width: 640
+      height: 640
+      use_intensity_feature: true
+      use_constant_feature: true
+    </rosparam>
+
+    <rosparam if="$(eval model=='model_128')" subst_value="true">
+      engine_file: $(arg trained_file)
+      score_threshold: 0.8
+      range: 90
+      width: 864
+      height: 864
+      use_intensity_feature: false
+      use_constant_feature: false
+    </rosparam>
+  </node>
+</launch>

@@ -16,27 +16,26 @@
 
 #include "lidar_apollo_instance_segmentation/detector.h"
 #include "lidar_apollo_instance_segmentation/feature_map.h"
-#include <ros/package.h>
 #include <boost/filesystem.hpp>
 
 LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~"){
   int range, width, height;
   bool use_intensity_feature, use_constant_feature;
+  std::string engine_file;
   pnh_.param<float>("score_threshold", score_threshold_, 0.8);
   pnh_.param<int>("range", range, 60);
   pnh_.param<int>("width", width, 640);
   pnh_.param<int>("height", height, 640);
+  pnh_.param("engine_file", engine_file, std::string("vls-128.engine"));
   pnh_.param<bool>("use_intensity_feature", use_intensity_feature, true);
   pnh_.param<bool>("use_constant_feature", use_constant_feature, true);
 
   // load weight file
-  const std::string engine_path = ros::package::getPath("lidar_apollo_instance_segmentation") + "/data/" +
-                                  "lidar_apollo_instance_segmentation.engine";
-  std::ifstream fs(engine_path);
+  std::ifstream fs(engine_file);
   if (fs.is_open()) {
-    net_ptr_.reset(new Tn::trtNet(engine_path));
+    net_ptr_.reset(new Tn::trtNet(engine_file));
   } else {
-    ROS_ERROR("Could not find %s.", engine_path.c_str());
+    ROS_ERROR("Could not find %s.", engine_file.c_str());
   }
 
   cluster2d_.reset(new Cluster2D());
