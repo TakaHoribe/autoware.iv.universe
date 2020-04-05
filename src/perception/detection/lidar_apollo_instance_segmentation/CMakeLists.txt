@@ -95,18 +95,8 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
          ${catkin_EXPORTED_TARGETS}
          )
 
-
-  cuda_add_library(gpu_tensorrt_bcnn_lib
-         lib/src/UpsampleLayer.cu
-         )
-
-  target_link_libraries(gpu_tensorrt_bcnn_lib
-   ${CUDA_LIBRARIES}
-  )
-
   add_library(tensorrt_bcnn_lib
          lib/src/TrtNet.cpp
-         lib/src/UpsampleLayer.cpp
          )
 
   target_link_libraries(tensorrt_bcnn_lib
@@ -117,7 +107,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
          ${CUDA_CUBLAS_LIBRARIES}
          ${CUDA_curand_LIBRARY}
          ${CUDNN_LIBRARY}
-         gpu_tensorrt_bcnn_lib
          )
 
   target_link_libraries(lidar_apollo_instance_segmentation_node
@@ -127,7 +116,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
 
   install(TARGETS
-         gpu_tensorrt_bcnn_lib
          tensorrt_bcnn_lib
          lidar_apollo_instance_segmentation_node
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

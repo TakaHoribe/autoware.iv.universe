@@ -3,12 +3,12 @@
 
 #include <algorithm>
 #include <fstream>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
 #include "NvCaffeParser.h"
 #include "NvInferPlugin.h"
-#include "PluginFactory.h"
 #include "Utils.h"
 
 namespace Tn {
@@ -16,12 +16,6 @@ enum class RUN_MODE { FLOAT32 = 0, FLOAT16 = 1, INT8 = 2 };
 
 class trtNet {
  public:
-  // Load from caffe model
-  trtNet(const std::string& prototxt, const std::string& caffeModel,
-         const std::vector<std::string>& outputNodesName,
-         const std::vector<std::vector<float>>& calibratorData,
-         RUN_MODE mode = RUN_MODE::FLOAT32);
-
   // Load from engine file
   explicit trtNet(const std::string& engineFile);
 
@@ -30,8 +24,6 @@ class trtNet {
     cudaStreamSynchronize(mTrtCudaStream);
     cudaStreamDestroy(mTrtCudaStream);
     for (auto& item : mTrtCudaBuffer) cudaFree(item);
-
-    mTrtPluginFactory.destroyPlugin();
 
     if (!mTrtRunTime) mTrtRunTime->destroy();
     if (!mTrtContext) mTrtContext->destroy();
@@ -66,23 +58,12 @@ class trtNet {
                            mTrtBindBufferSize.end(), 0);
   };
 
-  void printTime() { mTrtProfiler.printLayerTimes(mTrtIterationTime); }
-
  private:
-  nvinfer1::ICudaEngine* loadModelAndCreateEngine(
-      const char* deployFile, const char* modelFile, int maxBatchSize,
-      nvcaffeparser1::ICaffeParser* parser,
-      nvcaffeparser1::IPluginFactory* pluginFactory,
-      nvinfer1::IInt8Calibrator* calibrator,
-      nvinfer1::IHostMemory*& trtModelStream,
-      const std::vector<std::string>& outputNodesName);
-
   void InitEngine();
 
   nvinfer1::IExecutionContext* mTrtContext;
   nvinfer1::ICudaEngine* mTrtEngine;
   nvinfer1::IRuntime* mTrtRunTime;
-  PluginFactory mTrtPluginFactory;
   cudaStream_t mTrtCudaStream;
   Profiler mTrtProfiler;
   RUN_MODE mTrtRunMode;
@@ -90,7 +71,6 @@ class trtNet {
   std::vector<void*> mTrtCudaBuffer;
   std::vector<int64_t> mTrtBindBufferSize;
   int mTrtInputCount;
-  int mTrtIterationTime;
 };
 }
 
