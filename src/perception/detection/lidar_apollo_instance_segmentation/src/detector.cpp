@@ -17,26 +17,57 @@
 #include "lidar_apollo_instance_segmentation/detector.h"
 #include <boost/filesystem.hpp>
 #include "lidar_apollo_instance_segmentation/feature_map.h"
+#include <NvInfer.h>
+#include <NvCaffeParser.h>
+
+static Tn::Logger gLogger;
 
 LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~") {
   int range, width, height;
   bool use_intensity_feature, use_constant_feature;
   std::string engine_file;
+  std::string prototxt_file;
+  std::string caffemodel_file;
   pnh_.param<float>("score_threshold", score_threshold_, 0.8);
   pnh_.param<int>("range", range, 60);
   pnh_.param<int>("width", width, 640);
   pnh_.param<int>("height", height, 640);
-  pnh_.param("engine_file", engine_file, std::string("vls-128.engine"));
+  pnh_.param<std::string>("engine_file", engine_file, "vls-128.engine");
+  pnh_.param<std::string>("prototxt_file", prototxt_file, "vls-128.prototxt");
+  pnh_.param<std::string>("caffemodel_file", caffemodel_file, "vls-128.caffemodel");
   pnh_.param<bool>("use_intensity_feature", use_intensity_feature, true);
   pnh_.param<bool>("use_constant_feature", use_constant_feature, true);
 
   // load weight file
   std::ifstream fs(engine_file);
-  if (fs.is_open()) {
-    net_ptr_.reset(new Tn::trtNet(engine_file));
-  } else {
-    ROS_ERROR("Could not find %s.", engine_file.c_str());
+  if (! fs.is_open()) {
+    ROS_INFO("Could not find %s. try making TensorRT engine from caffemodel and prototxt", engine_file.c_str());
+    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(gLogger);
+    nvinfer1::INetworkDefinition* network = builder->createNetwork();
+    nvcaffeparser1::ICaffeParser* parser = nvcaffeparser1::createCaffeParser();
+    const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor = parser->parse(prototxt_file.c_str(),
+                                                                              caffemodel_file.c_str(),
+                                                                              *network,
+                                                                              nvinfer1::DataType::kFLOAT);
+    std::string outputNodeName = "deconv0";
+    auto output = blobNameToTensor->find(outputNodeName.c_str());
+    if (output == nullptr) std::cout << "can not find output named " << outputNodeName << std::endl;
+    network->markOutput(*output);
+    const int batch_size = 1;
+    builder->setMaxBatchSize(batch_size);
+    builder->setMaxWorkspaceSize(1 << 30);
+    nvinfer1::ICudaEngine* engine = builder->buildCudaEngine(*network);
+    network->destroy();
+    parser->destroy();
+    nvinfer1::IHostMemory* trtModelStream = engine->serialize();
+    builder->destroy();
+    assert(trtModelStream != nullptr);
+    std::ofstream outfile(engine_file, std::ofstream::binary);
+    assert(!outfile.fail());
+    outfile.write(reinterpret_cast<char*>(trtModelStream->data()), trtModelStream->size());
+    outfile.close();
   }
+  net_ptr_.reset(new Tn::trtNet(engine_file));
 
   // feature map generator: pre process
   feature_generator_ =
