@@ -17,7 +17,9 @@
 #pragma once
 #include "lidar_apollo_instance_segmentation/log_table.h"
 #include <cmath>
+#include <string>
 #include <vector>
+
 
 namespace {
 struct LogTable {
