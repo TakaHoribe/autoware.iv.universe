@@ -57,15 +57,15 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
     builder->setMaxBatchSize(batch_size);
     builder->setMaxWorkspaceSize(1 << 30);
     nvinfer1::ICudaEngine* engine = builder->buildCudaEngine(*network);
-    network->destroy();
-    parser->destroy();
     nvinfer1::IHostMemory* trtModelStream = engine->serialize();
-    builder->destroy();
     assert(trtModelStream != nullptr);
     std::ofstream outfile(engine_file, std::ofstream::binary);
     assert(!outfile.fail());
     outfile.write(reinterpret_cast<char*>(trtModelStream->data()), trtModelStream->size());
     outfile.close();
+    network->destroy();
+    parser->destroy();
+    builder->destroy();
   }
   net_ptr_.reset(new Tn::trtNet(engine_file));
 
