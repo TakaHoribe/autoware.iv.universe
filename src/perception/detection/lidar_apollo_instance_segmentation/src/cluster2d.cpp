@@ -66,20 +66,17 @@ void Cluster2D::traverse(Node* x) {
   std::vector<Node*> p;
   p.clear();
 
-  // Cross until reaching center_node
   while (x->traversed == 0) {
     p.push_back(x);
     x->traversed = 2;
     x = x->center_node;
   }
-  // x is center_node. Set is_center to true for all crossed nodes including x.
   if (x->traversed == 2) {
     for (int i = static_cast<int>(p.size()) - 1; i >= 0 && p[i] != x; i--) {
       p[i]->is_center = true;
     }
     x->is_center = true;
   }
-  // Set all the parents of the traversed nodes to x
   for (size_t i = 0; i < p.size(); i++) {
     Node* y = p[i];
     y->traversed = 1;
@@ -98,7 +95,6 @@ void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
 
   std::vector<std::vector<Node>> nodes(rows_, std::vector<Node>(cols_, Node()));
 
-  // map points into grids
   size_t tot_point_num = pc_ptr_->size();
   valid_indices_in_pc_ = &(valid_indices.indices);
   point2grid_.assign(valid_indices_in_pc_->size(), -1);
@@ -112,18 +108,15 @@ void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
     int pos_x = F2I(point.y, range_, inv_res_x_);  // col
     int pos_y = F2I(point.x, range_, inv_res_y_);  // row
     if (IsValidRowCol(pos_y, pos_x)) {
-      // get grid index and count point number for corresponding node
       point2grid_[i] = RowCol2Grid(pos_y, pos_x);
       nodes[pos_y][pos_x].point_num++;
     }
   }
 
-  // construct graph with center offset prediction and objectness
   for (int row = 0; row < rows_; ++row) {
     for (int col = 0; col < cols_; ++col) {
       int grid = RowCol2Grid(row, col);
       Node* node = &nodes[row][col];
-      // DisjoinyMakeSet is x->parent = x; x->node_rank = 0; so x's parent is x.
       DisjointSetMakeSet(node);
       node->is_object = (use_all_grids_for_clustering || nodes[row][col].point_num > 0) &&
                         (*(category_pt_data + grid) >= objectness_thresh);
@@ -135,7 +128,6 @@ void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
     }
   }
 
-  // traverse nodes
   for (int row = 0; row < rows_; ++row) {
     for (int col = 0; col < cols_; ++col) {
       Node* node = &nodes[row][col];
@@ -145,8 +137,6 @@ void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
     }
   }
 
-  // If there is a node with is_center somewhere in the four directions, connect
-  // the nodes
   for (int row = 0; row < rows_; ++row) {
     for (int col = 0; col < cols_; ++col) {
       Node* node = &nodes[row][col];
@@ -158,7 +148,6 @@ void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
           if ((row2 == row || col2 == col) && IsValidRowCol(row2, col2)) {
             Node* node2 = &nodes[row2][col2];
             if (node2->is_center) {
-              // Same if root is different
               DisjointSetUnion(node, node2);
             }
           }
