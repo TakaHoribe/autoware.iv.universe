@@ -56,7 +56,7 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
   std::shared_ptr<FeatureMapInterface> feature_map_ptr = feature_generator_->generate(pcl_pointcloud_raw_ptr);
 
   // inference
-  std::shared_ptr<float[]> inferred_data(new float[net_ptr_->getOutputSize() / sizeof(float)]);
+  std::shared_ptr<float> inferred_data(new float[net_ptr_->getOutputSize() / sizeof(float)]);
   net_ptr_->doInference(feature_map_ptr->map_data.data(), inferred_data.get());
 
   // post process

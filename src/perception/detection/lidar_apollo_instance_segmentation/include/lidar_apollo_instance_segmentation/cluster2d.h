@@ -91,13 +91,13 @@ class Cluster2D {
 
   ~Cluster2D(){};
 
-  void cluster(const std::shared_ptr<float[]> &inferred_data,
+  void cluster(const std::shared_ptr<float> &inferred_data,
                const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
                const pcl::PointIndices &valid_indices, float objectness_thresh,
                bool use_all_grids_for_clustering);
 
-  void filter(const std::shared_ptr<float[]> &inferred_data);
-  void classify(const std::shared_ptr<float[]> &inferred_data);
+  void filter(const std::shared_ptr<float> &inferred_data);
+  void classify(const std::shared_ptr<float> &inferred_data);
 
   void getObjects(const float confidence_thresh, const float height_thresh,
                   const int min_pts_num,

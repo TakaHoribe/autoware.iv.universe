@@ -87,7 +87,7 @@ void Cluster2D::traverse(Node* x) {
   }
 }
 
-void Cluster2D::cluster(const std::shared_ptr<float[]>& inferred_data,
+void Cluster2D::cluster(const std::shared_ptr<float>& inferred_data,
                         const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr, const pcl::PointIndices& valid_indices,
                         float objectness_thresh, bool use_all_grids_for_clustering) {
   const float* category_pt_data = inferred_data.get();
@@ -190,7 +190,7 @@ void Cluster2D::cluster(const std::shared_ptr<float[]>& inferred_data,
   classify(inferred_data);
 }
 
-void Cluster2D::filter(const std::shared_ptr<float[]>& inferred_data) {
+void Cluster2D::filter(const std::shared_ptr<float>& inferred_data) {
   const float* confidence_pt_data = inferred_data.get() + siz_ * 3;
   const float* height_pt_data = inferred_data.get() + siz_ * 11;
 
@@ -208,7 +208,7 @@ void Cluster2D::filter(const std::shared_ptr<float[]>& inferred_data) {
   }
 }
 
-void Cluster2D::classify(const std::shared_ptr<float[]>& inferred_data) {
+void Cluster2D::classify(const std::shared_ptr<float>& inferred_data) {
   const float* classify_pt_data = inferred_data.get() + siz_ * 4;
   int num_classes = 6;
   for (size_t obs_id = 0; obs_id < obstacles_.size(); obs_id++) {
