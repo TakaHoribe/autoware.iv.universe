@@ -73,7 +73,7 @@ SOFTWARE.
  */
 ```
 
-### Special thanks.
+### Special thanks
 - [Apollo Project](https://github.com/ApolloAuto/apollo)
 - [lewes6369](https://github.com/lewes6369)
 - [Autoware Foundation](https://github.com/autowarefoundation/autoware)
