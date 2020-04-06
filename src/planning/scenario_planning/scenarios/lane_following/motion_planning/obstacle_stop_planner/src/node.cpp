@@ -53,8 +53,9 @@ using Line = bg::model::linestring<Point>;
 
 ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_) {
   // Subscribers
-  path_sub_ = pnh_.subscribe("input/pointcloud", 1, &ObstacleStopPlannerNode::obstaclePointcloudCallback, this);
-  obstacle_pointcloud_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
+  obstacle_pointcloud_sub_ =
+      pnh_.subscribe("input/pointcloud", 1, &ObstacleStopPlannerNode::obstaclePointcloudCallback, this);
+  path_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
 
