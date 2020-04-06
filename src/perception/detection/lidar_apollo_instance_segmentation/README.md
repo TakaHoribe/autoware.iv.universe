@@ -1,11 +1,10 @@
 
 
-![result](https://github.com/kosuke55/tensorrt_bcnn/blob/media/media/bcnn_trt_pretrained_0208.gif)  
-
 
 ### Note
 This package makes use of three external codes.
-The trained file is provided by apollo.
+The trained files are provided by apollo. The trained files are automatically downloaded when you build.
+Supported lidars are velodyne 16, 64 and 128, but you can also use velodyne 32 and other lidars with good accuracy
 
 1. [apollo 3D Obstacle Percption description](https://github.com/ApolloAuto/apollo/blob/master/docs/specs/3d_obstacle_perception.md)
 ```
