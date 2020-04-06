@@ -589,7 +589,7 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
  * mahalanobisGate
  */
 bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd& x, const Eigen::MatrixXd& obj_x,
-                                   const Eigen::MatrixXd& cov) {
+                                   const Eigen::MatrixXd& cov) const {
   Eigen::MatrixXd mahalanobis_squared = (x - obj_x).transpose() * cov.inverse() * (x - obj_x);
   DEBUG_INFO("measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)), dist_max);
   if (mahalanobis_squared(0) > dist_max * dist_max) {
@@ -677,4 +677,4 @@ void EKFLocalizer::publishEstimateResult() {
   pub_debug_.publish(msg);
 }
 
-double EKFLocalizer::normalizeYaw(const double& yaw) { return std::atan2(std::sin(yaw), std::cos(yaw)); }
+double EKFLocalizer::normalizeYaw(const double& yaw) const { return std::atan2(std::sin(yaw), std::cos(yaw)); }

@@ -17,6 +17,7 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -79,8 +80,7 @@ class EKFLocalizer {
                                           //!< additional_delay [s]
   double pose_measure_uncertainty_time_;  //!< @brief  added for measurement covariance
   double pose_rate_;                      //!< @brief  pose rate [s], used for covariance calculation
-  double pose_gate_dist_;   //!< @brief  pose measurement is ignored if the maharanobis distance is larger than this
-                            //!< value.
+  double pose_gate_dist_;   //!< @brief  the maharanobis distance threshold to ignore pose measurement
   double pose_stddev_x_;    //!< @brief  standard deviation for pose position x [m]
   double pose_stddev_y_;    //!< @brief  standard deviation for pose position y [m]
   double pose_stddev_yaw_;  //!< @brief  standard deviation for pose position yaw [rad]
@@ -88,8 +88,7 @@ class EKFLocalizer {
   bool use_twist_with_covariance_;  //!< @brief  use covariance in twist_with_covarianve message
 
   /* twist */
-  double twist_additional_delay_;  //!< @brief  compensated delay time = (twist.header.stamp - now) + additional_delay
-                                   //!< [s]
+  double twist_additional_delay_;  //!< @brief  compensated delay = (twist.header.stamp - now) + additional_delay [s]
   double twist_rate_;              //!< @brief  rate [s], used for covariance calculation
   double twist_gate_dist_;  //!< @brief  measurement is ignored if the maharanobis distance is larger than this value.
   double twist_stddev_vx_;  //!< @brief  standard deviation for linear vx
@@ -185,7 +184,7 @@ class EKFLocalizer {
    * @return whether it falls within the mahalanobis distance threshold
    */
   bool mahalanobisGate(const double& dist_max, const Eigen::MatrixXd& estimated, const Eigen::MatrixXd& measured,
-                       const Eigen::MatrixXd& estimated_cov);
+                       const Eigen::MatrixXd& estimated_cov) const;
 
   /**
    * @brief get transform from frame_id
@@ -198,7 +197,7 @@ class EKFLocalizer {
    * @param yaw yaw angle
    * @return normalized yaw
    */
-  double normalizeYaw(const double& yaw);
+  double normalizeYaw(const double& yaw) const;
 
   /**
    * @brief create quaternion from roll, pitch and yaw.
