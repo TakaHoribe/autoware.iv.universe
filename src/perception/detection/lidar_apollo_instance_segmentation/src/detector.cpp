@@ -68,7 +68,7 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
 
   // feature map generator: pre process
   feature_generator_ =
-      std::make_shared<FeatureGenerator>(width, height, range, use_constant_feature, use_intensity_feature);
+      std::make_shared<FeatureGenerator>(width, height, range, use_intensity_feature, use_constant_feature);
 
   // cluster: post process
   cluster2d_ = std::make_shared<Cluster2D>(width, height, range);

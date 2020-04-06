@@ -1,5 +1,5 @@
 <launch>
-  <arg name="model" default="model_128" />
+  <arg name="model" default="model_64" />
 
   <arg if="$(eval model=='model_16')" name="trained_engine_file" default="$(find lidar_apollo_instance_segmentation)/data/vlp-16.engine" />
   <arg if="$(eval model=='model_16')" name="trained_prototxt_file" default="$(find lidar_apollo_instance_segmentation)/data/vlp-16.prototxt" />
@@ -20,31 +20,31 @@
       engine_file: $(arg trained_engine_file)
       prototxt_file: $(arg trained_prototxt_file)
       caffemodel_file: $(arg trained_caffemodel_file)
-      score_threshold: 0.8
+      score_threshold: 0.1
       range: 70
       width: 672
       height: 672
       use_intensity_feature: true
-      use_constant_feature: true
+      use_constant_feature: false
     </rosparam>
 
     <rosparam if="$(eval model=='model_64')" subst_value="true">
       engine_file: $(arg trained_engine_file)
       prototxt_file: $(arg trained_prototxt_file)
       caffemodel_file: $(arg trained_caffemodel_file)
-      score_threshold: 0.8
+      score_threshold: 0.1
       range: 70
       width: 672
       height: 672
       use_intensity_feature: true
-      use_constant_feature: true
+      use_constant_feature: false
     </rosparam>
 
     <rosparam if="$(eval model=='model_128')" subst_value="true">
       engine_file: $(arg trained_engine_file)
       prototxt_file: $(arg trained_prototxt_file)
       caffemodel_file: $(arg trained_caffemodel_file)
-      score_threshold: 0.8
+      score_threshold: 0.1
       range: 90
       width: 864
       height: 864
