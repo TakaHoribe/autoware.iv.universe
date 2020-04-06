@@ -15,12 +15,10 @@
  */
 
 #include "lidar_apollo_instance_segmentation/detector.h"
-#include <boost/filesystem.hpp>
 #include "lidar_apollo_instance_segmentation/feature_map.h"
-#include <NvInfer.h>
 #include <NvCaffeParser.h>
-
-static Tn::Logger gLogger;
+#include <NvInfer.h>
+#include <boost/filesystem.hpp>
 
 LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~") {
   int range, width, height;
@@ -40,17 +38,17 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
 
   // load weight file
   std::ifstream fs(engine_file);
-  if (! fs.is_open()) {
+  if (!fs.is_open()) {
     ROS_INFO("Could not find %s. try making TensorRT engine from caffemodel and prototxt", engine_file.c_str());
-    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(gLogger);
+    Tn::Logger logger;
+    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
     nvinfer1::INetworkDefinition* network = builder->createNetwork();
     nvcaffeparser1::ICaffeParser* parser = nvcaffeparser1::createCaffeParser();
-    const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor = parser->parse(prototxt_file.c_str(),
-                                                                              caffemodel_file.c_str(),
-                                                                              *network,
-                                                                              nvinfer1::DataType::kFLOAT);
+    const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor =
+        parser->parse(prototxt_file.c_str(), caffemodel_file.c_str(), *network, nvinfer1::DataType::kFLOAT);
     std::string outputNodeName = "deconv0";
     auto output = blobNameToTensor->find(outputNodeName.c_str());
+    std::cout << __LINE__ <<std::endl;
     if (output == nullptr) std::cout << "can not find output named " << outputNodeName << std::endl;
     network->markOutput(*output);
     const int batch_size = 1;
