@@ -44,22 +44,21 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
     nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
     nvinfer1::INetworkDefinition* network = builder->createNetwork();
     nvcaffeparser1::ICaffeParser* parser = nvcaffeparser1::createCaffeParser();
-    const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor =
+    const nvcaffeparser1::IBlobNameToTensor* blob_name2tensor =
         parser->parse(prototxt_file.c_str(), caffemodel_file.c_str(), *network, nvinfer1::DataType::kFLOAT);
-    std::string outputNodeName = "deconv0";
-    auto output = blobNameToTensor->find(outputNodeName.c_str());
-    std::cout << __LINE__ <<std::endl;
-    if (output == nullptr) std::cout << "can not find output named " << outputNodeName << std::endl;
+    std::string output_node = "deconv0";
+    auto output = blob_name2tensor->find(output_node.c_str());
+    if (output == nullptr) ROS_ERROR("can not find output named %s", output_node.c_str());
     network->markOutput(*output);
     const int batch_size = 1;
     builder->setMaxBatchSize(batch_size);
     builder->setMaxWorkspaceSize(1 << 30);
     nvinfer1::ICudaEngine* engine = builder->buildCudaEngine(*network);
-    nvinfer1::IHostMemory* trtModelStream = engine->serialize();
-    assert(trtModelStream != nullptr);
+    nvinfer1::IHostMemory* trt_model_stream = engine->serialize();
+    assert(trt_model_stream != nullptr);
     std::ofstream outfile(engine_file, std::ofstream::binary);
     assert(!outfile.fail());
-    outfile.write(reinterpret_cast<char*>(trtModelStream->data()), trtModelStream->size());
+    outfile.write(reinterpret_cast<char*>(trt_model_stream->data()), trt_model_stream->size());
     outfile.close();
     network->destroy();
     parser->destroy();
