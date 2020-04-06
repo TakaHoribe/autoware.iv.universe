@@ -74,6 +74,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
   pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
+  pub_pose_no_yawbias_ = pnh_.advertise<geometry_msgs::PoseStamped>("ekf_pose_without_yawbias", 1);
   sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
   sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
@@ -162,8 +163,10 @@ void EKFLocalizer::setCurrentResult() {
     // pitch = 0;
   }
   yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
-  q_tf.setRPY(roll, pitch, yaw);
-  tf2::convert(q_tf, current_ekf_pose_.pose.orientation);
+  current_ekf_pose_.pose.orientation = createQuaternionFromRPY(roll, pitch, yaw);
+
+  current_ekf_pose_no_yawbias_ = current_ekf_pose_;
+  current_ekf_pose_no_yawbias_.pose.orientation = createQuaternionFromRPY(roll, pitch, ekf_.getXelement(IDX::YAW));
 
   current_ekf_twist_.header.frame_id = "base_link";
   current_ekf_twist_.header.stamp = ros::Time::now();
@@ -597,6 +600,15 @@ bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd
 }
 
 /*
+ * createQuaternionFromRPY
+ */
+geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const {
+  tf2::Quaternion q;
+  q.setRPY(r, p, y);
+  return tf2::toMsg(q);
+}
+
+/*
  * publishEstimateResult
  */
 void EKFLocalizer::publishEstimateResult() {
@@ -608,6 +620,7 @@ void EKFLocalizer::publishEstimateResult() {
 
   /* publish latest pose */
   pub_pose_.publish(current_ekf_pose_);
+  pub_pose_no_yawbias_.publish(current_ekf_pose_no_yawbias_);
 
   /* publish latest pose with covariance */
   geometry_msgs::PoseWithCovarianceStamped pose_cov;

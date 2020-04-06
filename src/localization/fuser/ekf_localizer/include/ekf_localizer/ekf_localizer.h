@@ -50,6 +50,7 @@ class EKFLocalizer {
   ros::Publisher pub_debug_;             //!< @brief debug info publisher
   ros::Publisher pub_measured_pose_;     //!< @brief debug measurement pose publisher
   ros::Publisher pub_yaw_bias_;          //!< @brief ekf estimated yaw bias publisher
+  ros::Publisher pub_pose_no_yawbias_;   //!< @brief ekf estimated yaw bias publisher
   ros::Subscriber sub_initialpose_;      //!< @brief initial pose subscriber
   ros::Subscriber sub_pose_;             //!< @brief measurement pose subscriber
   ros::Subscriber sub_twist_;            //!< @brief measurement twist subscriber
@@ -113,6 +114,7 @@ class EKFLocalizer {
   std::shared_ptr<geometry_msgs::TwistStamped> current_twist_ptr_;  //!< @brief current measured twist
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;    //!< @brief current measured pose
   geometry_msgs::PoseStamped current_ekf_pose_;                     //!< @brief current estimated pose
+  geometry_msgs::PoseStamped current_ekf_pose_no_yawbias_;          //!< @brief current estimated pose w/o yaw bias
   geometry_msgs::TwistStamped current_ekf_twist_;                   //!< @brief current estimated twist
   boost::array<double, 36ul> current_pose_covariance_;
   boost::array<double, 36ul> current_twist_covariance_;
@@ -197,6 +199,11 @@ class EKFLocalizer {
    * @return normalized yaw
    */
   double normalizeYaw(const double& yaw);
+
+  /**
+   * @brief create quaternion from roll, pitch and yaw.
+   */
+  geometry_msgs::Quaternion createQuaternionFromRPY(double r, double p, double y) const;
 
   /**
    * @brief set current EKF estimation result to current_ekf_pose_ & current_ekf_twist_
