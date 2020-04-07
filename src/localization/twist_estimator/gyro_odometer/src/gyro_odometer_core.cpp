@@ -20,51 +20,98 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_(nh), private_nh_(private_nh) {
+GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_(nh), private_nh_(private_nh)
+  , output_frame_("base_link"), tf2_listener_(tf2_buffer_) {
+
+  private_nh_.getParam("output_frame", output_frame_);
+
   vehicle_twist_sub_ = nh_.subscribe("vehicle/twist", 100, &GyroOdometer::callbackTwist, this);
   imu_sub_ = nh_.subscribe("imu", 100, &GyroOdometer::callbackImu, this);
 
   twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
   // linear_x_pub_ = nh_.advertise<std_msgs::Float32>("linear_x", 10);
   // angular_z_pub_ = nh_.advertise<std_msgs::Float32>("angular_z", 10);
+
+  // TODO createTimer
 }
 
 GyroOdometer::~GyroOdometer() {}
 
-double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
-  double diff_rad = lhs_rad - rhs_rad;
-  if (diff_rad > M_PI) {
-    diff_rad = diff_rad - 2 * M_PI;
-  } else if (diff_rad < -M_PI) {
-    diff_rad = diff_rad + 2 * M_PI;
-  }
-  return diff_rad;
-}
-
-// x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose& pose) {
-  geometry_msgs::Vector3 rpy;
-  tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-  tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
-  return rpy;
-}
-
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped& pose) { return getRPY(pose.pose); }
-
 void GyroOdometer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr) {
+
+  // TODO trans from twist_msg_ptr->header to base_frame
   twist_msg_ptr_ = twist_msg_ptr;
 }
 
 void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr) {
+
   if (twist_msg_ptr_ == nullptr) {
     return;
   }
 
+  geometry_msgs::TransformStamped::Ptr tf_base2imu_ptr(new geometry_msgs::TransformStamped);
+  getTransform(output_frame_, imu_msg_ptr->header.frame_id, tf_base2imu_ptr);
+
+  geometry_msgs::Vector3Stamped angular_velocity;
+  angular_velocity.header = imu_msg_ptr->header;
+  angular_velocity.vector = imu_msg_ptr->angular_velocity;
+
+  geometry_msgs::Vector3Stamped transed_angular_velocity;
+  transed_angular_velocity.header = tf_base2imu_ptr->header;
+
+  tf2::doTransform(angular_velocity, transed_angular_velocity, *tf_base2imu_ptr);
+
+  // clear imu yaw bias if vehicle is stopped
+  if(std::fabs(transed_angular_velocity.vector.z) < 0.01 && std::fabs(twist_msg_ptr_->twist.linear.x) < 0.01)
+  {
+    transed_angular_velocity.vector.z = 0.0;
+  }
+
+  // TODO move code
   geometry_msgs::TwistStamped twist;
   twist.header.stamp = imu_msg_ptr->header.stamp;
-  twist.header.frame_id = "base_link";
+  twist.header.frame_id = output_frame_;
   twist.twist.linear = twist_msg_ptr_->twist.linear;
-  twist.twist.angular.z = -imu_msg_ptr->angular_velocity.z;  // TODO
+  twist.twist.angular.z = transed_angular_velocity.vector.z;  // TODO yaw_rate only
 
   twist_pub_.publish(twist);
 }
+
+bool GyroOdometer::getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr)
+{
+  if(target_frame == source_frame) {
+      transform_stamped_ptr->header.stamp = ros::Time::now();
+      transform_stamped_ptr->header.frame_id = target_frame;
+      transform_stamped_ptr->child_frame_id = source_frame;
+      transform_stamped_ptr->transform.translation.x = 0.0;
+      transform_stamped_ptr->transform.translation.y = 0.0;
+      transform_stamped_ptr->transform.translation.z = 0.0;
+      transform_stamped_ptr->transform.rotation.x = 0.0;
+      transform_stamped_ptr->transform.rotation.y = 0.0;
+      transform_stamped_ptr->transform.rotation.z = 0.0;
+      transform_stamped_ptr->transform.rotation.w = 1.0;
+      return true;
+  }
+
+  try {
+    *transform_stamped_ptr = tf2_buffer_.lookupTransform(target_frame, source_frame, ros::Time(0), ros::Duration(1.0));
+  }
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    ROS_ERROR("Please publish TF %s to %s", target_frame.c_str(), source_frame.c_str());
+
+    transform_stamped_ptr->header.stamp = ros::Time::now();
+    transform_stamped_ptr->header.frame_id = target_frame;
+    transform_stamped_ptr->child_frame_id = source_frame;
+    transform_stamped_ptr->transform.translation.x = 0.0;
+    transform_stamped_ptr->transform.translation.y = 0.0;
+    transform_stamped_ptr->transform.translation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.x = 0.0;
+    transform_stamped_ptr->transform.rotation.y = 0.0;
+    transform_stamped_ptr->transform.rotation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.w = 1.0;
+    return false;
+  }
+  return true;
+}
+
