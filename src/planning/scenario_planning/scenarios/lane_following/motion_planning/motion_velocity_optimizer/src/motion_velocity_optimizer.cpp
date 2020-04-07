@@ -36,6 +36,8 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
   pnh_.param<double>("replan_vel_deviation", planning_param_.replan_vel_deviation, 3.0);
   pnh_.param<double>("engage_velocity", planning_param_.engage_velocity, 0.3);
   pnh_.param<double>("engage_acceleration", planning_param_.engage_acceleration, 0.1);
+  pnh_.param<double>("engage_exit_ratio", planning_param_.engage_exit_ratio, 0.5);
+  planning_param_.engage_exit_ratio = std::min(std::max(planning_param_.engage_exit_ratio, 0.0), 1.0);
 
   pnh_.param<double>("extract_ahead_dist", planning_param_.extract_ahead_dist, 200.0);
   pnh_.param<double>("extract_behind_dist", planning_param_.extract_behind_dist, 3.0);
@@ -342,7 +344,8 @@ void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
   }
 
   /* if current vehicle velocity is low && base_desired speed is high, use engage_velocity for engage vehicle */
-  if (vehicle_speed < planning_param_.engage_velocity && target_vel > planning_param_.engage_velocity) {
+  const double engage_vel_thr = planning_param_.engage_velocity * planning_param_.engage_exit_ratio;
+  if (vehicle_speed < engage_vel_thr && target_vel > planning_param_.engage_velocity) {
     int idx = 0;
     const bool ret = vpu::searchZeroVelocityIdx(reference_traj, idx);
     const bool exist_stop_point = (idx >= reference_traj_closest) ? ret : false;
@@ -354,8 +357,8 @@ void MotionVelocityOptimizer::calcInitialMotion(const double& target_vel,
       initial_acc = planning_param_.engage_acceleration;
       DEBUG_INFO(
           "[calcInitialMotion] : vehicle speed is low (%3.3f [m/s]), but desired speed is high (%3.3f [m/s]). "
-          "Use engage speed (%3.3f [m/s]), stop_dist = %3.3f",
-          vehicle_speed, target_vel, planning_param_.engage_velocity, stop_dist);
+          "Use engage speed (%3.3f [m/s]) until vehicle speed reaches engage_vel_thr (%3.3f [m/s]), stop_dist = %3.3f",
+          vehicle_speed, target_vel, planning_param_.engage_velocity, engage_vel_thr, stop_dist);
       initialize_type_ = InitializeType::ENGAGING;
       return;
     } else {
@@ -578,7 +581,7 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
   output = input;  // initialize
 
   /* Interpolate with constant interval distance for lateral acceleration calculation. */
-  const double points_interval = 0.1;  // [m]
+  constexpr double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
   for (double s = 0; s < in_arclength.back(); s += points_interval) {
@@ -590,7 +593,7 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(const autoware_planning_
   }
   output.points.back().twist = input.points.back().twist;  // keep the final speed.
 
-  const double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
+  constexpr double curvature_calc_dist = 3.0;  // [m] calc curvature with 3m away points
   const unsigned int idx_dist = std::max((int)(curvature_calc_dist / points_interval), 1);
 
   /* Calculate curvature assuming the trajectory points interval is constant */

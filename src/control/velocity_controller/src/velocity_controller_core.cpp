@@ -22,8 +22,7 @@ VelocityController::VelocityController()
       tf_listener_(tf_buffer_),
       is_smooth_stop_(false),
       is_emergency_stop_(false),
-      prev_acc_cmd_(0.0),
-      num_debug_values_(21) {
+      prev_acc_cmd_(0.0) {
   // parameters
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
 
@@ -181,6 +180,8 @@ void VelocityController::callbackTimerControl(const ros::TimerEvent& event) {
 
   /* publish control command */
   publishCtrlCmd(ctrl_cmd.vel, ctrl_cmd.acc);
+  debug_values_.data.at(DBGVAL::FLAG_SMOOTH_STOP) = is_smooth_stop_;
+  debug_values_.data.at(DBGVAL::FLAG_EMERGENCY_STOP) = is_emergency_stop_;
 
   /* reset parameters depending on the current control mode */
   resetHandling(controller_mode_);
@@ -226,9 +227,6 @@ CtrlCmd VelocityController::calcCtrlCmd() {
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose_ptr_->pose.orientation));
   const double stop_dist = calcStopDistance(*trajectory_ptr_, closest_idx);
-  // ROS_INFO_COND(show_debug_info_, "current_vel = %3.3f, target_vel = %3.3f, target_acc = %3.3f, pitch_filtered =
-  // %3.3f, is_smooth_stop_ = %d, stop_dist = %3.3f",
-  //               current_vel, target_vel, target_acc, pitch_filtered, is_smooth_stop_, stop_dist);
   writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx);
 
   /* ===== STOPPED =====
@@ -240,8 +238,7 @@ CtrlCmd VelocityController::calcCtrlCmd() {
    * Output acceleration : "stop_state_acc_" with max_jerk limit. (depending on the vehicle interface)
    *
    */
-  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ && std::fabs(target_vel) < stop_state_entry_target_speed_ &&
-      !is_smooth_stop_) {
+  if (checkIsStopped(current_vel, target_vel)) {
     double acc_cmd = calcFilteredAcc(stop_state_acc_, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::STOPPED;
     ROS_INFO_COND(show_debug_info_, "[Stopped]. vel: %3.3f, acc: %3.3f", stop_state_vel_, acc_cmd);
@@ -343,14 +340,14 @@ void VelocityController::publishCtrlCmd(const double vel, const double acc) {
   pub_control_cmd_.publish(cmd);
 
   // debug
-  debug_values_.data.at(7) = (double)controller_mode_;
-  debug_values_.data.at(12) = acc;
+  debug_values_.data.at(DBGVAL::CTRL_MODE) = static_cast<double>(controller_mode_);
+  debug_values_.data.at(DBGVAL::ACCCMD_PUBLISHED) = acc;
   pub_debug_.publish(debug_values_);
   debug_values_.data.clear();
   debug_values_.data.resize(num_debug_values_, 0.0);
 }
 
-bool VelocityController::checkSmoothStop(const int closest, const double target_vel) {
+bool VelocityController::checkSmoothStop(const int closest, const double target_vel) const {
   if (!enable_smooth_stop_) {
     return false;
   }
@@ -367,7 +364,17 @@ bool VelocityController::checkSmoothStop(const int closest, const double target_
   return false;
 }
 
-bool VelocityController::checkEmergency(int closest, double target_vel) {
+bool VelocityController::checkIsStopped(double current_vel, double target_vel) const {
+  if (is_smooth_stop_) return false;  // stopping.
+
+  if (std::fabs(current_vel) < stop_state_entry_ego_speed_ && std::fabs(target_vel) < stop_state_entry_target_speed_) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool VelocityController::checkEmergency(int closest, double target_vel) const {
   // already in emergency.
   if (is_emergency_stop_) {
     return true;
@@ -389,15 +396,15 @@ bool VelocityController::checkEmergency(int closest, double target_vel) {
 }
 
 double VelocityController::calcFilteredAcc(const double raw_acc, const double pitch, const double dt,
-                                           const Shift shift) {
+                                           const Shift shift) const {
   double acc_max_filtered = applyLimitFilter(raw_acc, max_acc_, min_acc_);
-  debug_values_.data.at(9) = acc_max_filtered;
+  debug_values_.data.at(DBGVAL::ACCCMD_ACC_LIMITED) = acc_max_filtered;
 
   double acc_jerk_filtered = applyRateFilter(acc_max_filtered, prev_acc_cmd_, dt, max_jerk_, min_jerk_);
-  debug_values_.data.at(10) = acc_jerk_filtered;
+  debug_values_.data.at(DBGVAL::ACCCMD_JERK_LIMITED) = acc_jerk_filtered;
 
   double acc_slope_filtered = applySlopeCompensation(acc_jerk_filtered, pitch, shift);
-  debug_values_.data.at(11) = acc_slope_filtered;
+  debug_values_.data.at(DBGVAL::ACCCMD_SLOPE_APPLIED) = acc_slope_filtered;
   return acc_slope_filtered;
 }
 
@@ -415,7 +422,7 @@ double VelocityController::getDt() {
   return std::max(std::min(dt, max_dt), min_dt);
 }
 
-enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel) {
+enum VelocityController::Shift VelocityController::getCurrentShift(const double target_vel) const {
   const double ep = 1.0e-5;
   return target_vel > ep ? Shift::Forward : (target_vel < -ep ? Shift::Reverse : prev_shift_);
 }
@@ -452,7 +459,8 @@ double VelocityController::calcSmoothStopAcc() {
   return acc_cmd;
 }
 
-double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajectory& trajectory, const int origin) {
+double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajectory& trajectory,
+                                            const int origin) const {
   const double zero_velocity = 0.01;
   const double origin_velocity = trajectory.points.at(origin).twist.linear.x;
   double stop_dist = 0.0;
@@ -480,7 +488,7 @@ double VelocityController::calcStopDistance(const autoware_planning_msgs::Trajec
 
 double VelocityController::calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory& traj,
                                                           const geometry_msgs::PoseStamped& curr_pose,
-                                                          const double curr_vel, const int closest) {
+                                                          const double curr_vel, const int closest) const {
   const double closest_vel = traj.points.at(closest).twist.linear.x;
 
   if (traj.points.size() < 2) {
@@ -518,24 +526,24 @@ double VelocityController::calcInterpolatedTargetVelocity(const autoware_plannin
   return vel_interp;
 }
 
-double VelocityController::applyLimitFilter(const double input_val, const double max_val, const double min_val) {
+double VelocityController::applyLimitFilter(const double input_val, const double max_val, const double min_val) const {
   const double limitted_val = std::min(std::max(input_val, min_val), max_val);
   return limitted_val;
 }
 
 double VelocityController::applyRateFilter(const double input_val, const double prev_val, const double dt,
-                                           const double max_val, const double min_val) {
+                                           const double max_val, const double min_val) const {
   const double diff_raw = (input_val - prev_val) / dt;
   const double diff = std::min(std::max(diff_raw, min_val), max_val);
   const double filtered_val = prev_val + (diff * dt);
   return filtered_val;
 }
 
-double VelocityController::applySlopeCompensation(const double input_acc, const double pitch, const Shift shift) {
+double VelocityController::applySlopeCompensation(const double input_acc, const double pitch, const Shift shift) const {
   if (!enable_slope_compensation_) {
     return input_acc;
   }
-  const double gravity = 9.80665;
+  constexpr double gravity = 9.80665;
   const double pitch_limited = std::min(std::max(pitch, min_pitch_rad_), max_pitch_rad_);
   double sign = (shift == Shift::Forward) ? -1 : (shift == Shift::Reverse ? 1 : 0);
   double compensated_acc = input_acc + sign * gravity * std::sin(pitch_limited);
@@ -551,11 +559,11 @@ double VelocityController::applyVelocityFeedback(const double target_acc, const 
   const double pid_acc = pid_vel_.calculate(error_vel_filtered, dt, enable_integration, pid_contributions);
   const double feedbacked_acc = target_acc + pid_acc;
 
-  debug_values_.data.at(8) = feedbacked_acc;
-  debug_values_.data.at(14) = error_vel_filtered;
-  debug_values_.data.at(18) = pid_contributions.at(0);  // P
-  debug_values_.data.at(19) = pid_contributions.at(1);  // I
-  debug_values_.data.at(20) = pid_contributions.at(2);  // D
+  debug_values_.data.at(DBGVAL::ACCCMD_PID_APPLIED) = feedbacked_acc;
+  debug_values_.data.at(DBGVAL::ERROR_V_FILTERED) = error_vel_filtered;
+  debug_values_.data.at(DBGVAL::ACCCMD_FB_P_CONTRIBUTION) = pid_contributions.at(0);  // P
+  debug_values_.data.at(DBGVAL::ACCCMD_FB_I_CONTRIBUTION) = pid_contributions.at(1);  // I
+  debug_values_.data.at(DBGVAL::ACCCMD_FB_D_CONTRIBUTION) = pid_contributions.at(2);  // D
 
   return feedbacked_acc;
 }
@@ -570,17 +578,18 @@ void VelocityController::resetEmergencyStop() { is_emergency_stop_ = false; }
 void VelocityController::writeDebugValues(const double dt, const double current_vel, const double target_vel,
                                           const double target_acc, const Shift shift, const double pitch,
                                           const int32_t closest) {
-  const double rad2deg = 180.0 / 3.141592;
+  constexpr double rad2deg = 180.0 / 3.141592;
   const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
-  debug_values_.data.at(0) = dt;
-  debug_values_.data.at(1) = current_vel;
-  debug_values_.data.at(2) = target_vel;
-  debug_values_.data.at(3) = target_acc;
-  debug_values_.data.at(4) = double(shift);
-  debug_values_.data.at(5) = pitch;
-  debug_values_.data.at(6) = target_vel - current_vel;
-  debug_values_.data.at(13) = raw_pitch;
-  debug_values_.data.at(15) = pitch * rad2deg;
-  debug_values_.data.at(16) = raw_pitch * rad2deg;
-  debug_values_.data.at(17) = trajectory_ptr_->points.at(closest).accel.linear.x;
+  debug_values_.data.at(DBGVAL::DT) = dt;
+  debug_values_.data.at(DBGVAL::CURR_V) = current_vel;
+  debug_values_.data.at(DBGVAL::TARGET_V) = target_vel;
+  debug_values_.data.at(DBGVAL::TARGET_ACC) = target_acc;
+  debug_values_.data.at(DBGVAL::CLOSEST_V) = trajectory_ptr_->points.at(closest).twist.linear.x;
+  debug_values_.data.at(DBGVAL::CLOSEST_ACC) = trajectory_ptr_->points.at(closest).accel.linear.x;
+  debug_values_.data.at(DBGVAL::SHIFT) = static_cast<double>(shift);
+  debug_values_.data.at(DBGVAL::PITCH_LPFED_RAD) = pitch;
+  debug_values_.data.at(DBGVAL::PITCH_LPFED_DEG) = pitch * rad2deg;
+  debug_values_.data.at(DBGVAL::PITCH_RAW_RAD) = raw_pitch;
+  debug_values_.data.at(DBGVAL::PITCH_RAW_DEG) = raw_pitch * rad2deg;
+  debug_values_.data.at(DBGVAL::ERROR_V) = target_vel - current_vel;
 }

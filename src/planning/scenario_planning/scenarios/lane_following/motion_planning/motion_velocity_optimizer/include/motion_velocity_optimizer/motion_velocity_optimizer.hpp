@@ -81,6 +81,7 @@ class MotionVelocityOptimizer {
     double replan_vel_deviation;              // replan with current speed if speed deviation exceeds this value [m/s]
     double engage_velocity;                   // use this speed when start moving [m/s]
     double engage_acceleration;               // use this acceleration when start moving [m/ss]
+    double engage_exit_ratio;                 // exit engage sequence when the velocity exceeds ratio x engage_velocity.
     double extract_ahead_dist;                // forward waypoints distance from current position [m]
     double extract_behind_dist;               // backward waypoints distance from current position [m]
     double max_trajectory_length;             // max length of the objective trajectory for resample
