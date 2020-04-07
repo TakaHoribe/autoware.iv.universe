@@ -21,6 +21,11 @@ void onData(const T& data, T* buffer) {
   *buffer = data;
 }
 
+template <class T>
+boost::function<void(const T&)> createCallback(T* buffer) {
+  return static_cast<boost::function<void(const T&)>>(boost::bind(onData<T>, _1, buffer));
+}
+
 std::shared_ptr<lanelet::ConstPolygon3d> findNearestParkinglot(
     const std::shared_ptr<lanelet::LaneletMap>& lanelet_map_ptr, const lanelet::BasicPoint2d& search_point) {
   std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
@@ -246,9 +251,6 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
   }
 }
 
-#define CALLBACK(buffer) \
-  static_cast<boost::function<void(const decltype(buffer)&)>>(boost::bind(onData<decltype(buffer)>, _1, &buffer))
-
 ScenarioSelectorNode::ScenarioSelectorNode()
     : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_), current_scenario_(autoware_planning_msgs::Scenario::Empty) {
   // Parameters
@@ -259,16 +261,14 @@ ScenarioSelectorNode::ScenarioSelectorNode()
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input
-  input_lane_following_.sub_trajectory =
-      private_nh_.subscribe("input/lane_following/trajectory", 1, CALLBACK(input_lane_following_.buf_trajectory));
+  input_lane_following_.sub_trajectory = private_nh_.subscribe("input/lane_following/trajectory", 1,
+                                                               createCallback(&input_lane_following_.buf_trajectory));
 
   input_parking_.sub_trajectory =
-      private_nh_.subscribe("input/parking/trajectory", 1, CALLBACK(input_parking_.buf_trajectory));
+      private_nh_.subscribe("input/parking/trajectory", 1, createCallback(&input_parking_.buf_trajectory));
 
   sub_lanelet_map_ = private_nh_.subscribe("input/lanelet_map", 1, &ScenarioSelectorNode::onMap, this);
-
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
-
   sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output
