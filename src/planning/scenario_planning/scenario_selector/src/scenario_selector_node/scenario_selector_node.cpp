@@ -237,8 +237,12 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
 
   // Output
   const auto now = ros::Time::now();
-  if ((now - input.buf_trajectory->header.stamp).toSec() <= th_max_message_delay_sec_) {
+  const auto delay_sec = (now - input.buf_trajectory->header.stamp).toSec();
+  if (delay_sec <= th_max_message_delay_sec_) {
     output_.pub_trajectory.publish(input.buf_trajectory);
+  } else {
+    ROS_WARN_THROTTLE(1.0, "trajectory is delayed: scenario = %s, delay = %f, th_max_message_delay = %f",
+                      current_scenario_.c_str(), delay_sec, th_max_message_delay_sec_);
   }
 }
 
