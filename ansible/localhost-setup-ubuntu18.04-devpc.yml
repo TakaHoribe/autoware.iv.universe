@@ -3,13 +3,10 @@
   connection: local
   become: no
   roles:
-    # - nvidia_driver
     - cuda
     - cudnn
     - tensorrt
-    - {role: ros, release: melodic}
+    - { role: ros, release: melodic }
     - lanelet2
-    - caffe
     - osqp
-    - {role: autoware, release: melodic}
-    - us_sample #could be deprecated in the future
+    - { role: autoware, release: melodic }
