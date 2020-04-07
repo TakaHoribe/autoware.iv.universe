@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="map_path" default=""/>
+  <arg name="map_path"/>
 
   <!-- Vehicle Setting -->
   <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
