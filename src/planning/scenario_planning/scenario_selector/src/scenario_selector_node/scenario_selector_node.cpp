@@ -253,7 +253,7 @@ ScenarioSelectorNode::ScenarioSelectorNode()
     : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_), current_scenario_(autoware_planning_msgs::Scenario::Empty) {
   // Parameters
   private_nh_.param<double>("update_rate", update_rate_, 10.0);
-  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
+  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 1.0);
   private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
