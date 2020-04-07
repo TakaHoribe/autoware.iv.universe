@@ -24,7 +24,7 @@
 
   <!-- camera lidar fusion based detection-->
   <group if="$(eval mode=='camera_lidar_fusion')">
-    <include file="$(find perception_launch)/launch/detection/camera_lidar_fusion_based_detection.launch">
+    <include file="$(find perception_launch)/launch/object_recognition/detection/camera_lidar_fusion_based_detection.launch">
       <arg name="image_raw0" default="$(arg image_raw0)"/>
       <arg name="camera_info0" default="$(arg camera_info0)"/>
       <arg name="image_raw1" default="$(arg image_raw1)"/>
@@ -47,7 +47,7 @@
   </group>
   <!-- lidar based detection-->
   <group if="$(eval mode=='lidar')">
-    <include file="$(find perception_launch)/launch/detection/lidar_based_detection.launch">
+    <include file="$(find perception_launch)/launch/object_recognition/detection/lidar_based_detection.launch">
       <arg name="use_vector_map" default="$(arg use_vector_map)"/>
     </include>
   </group>

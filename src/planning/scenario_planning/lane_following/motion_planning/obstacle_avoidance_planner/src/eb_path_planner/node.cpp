@@ -41,7 +41,7 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
   debug_clearance_map_in_occupancy_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("debug_clearance_map", 1, true);
 
   path_sub_ = private_nh_.subscribe("input/path", 1, &EBPathPlannerNode::pathCallback, this);
-  objects_sub_ = private_nh_.subscribe("/perception/prediction/objects", 10, &EBPathPlannerNode::objectsCallback, this);
+  objects_sub_ = private_nh_.subscribe("/perception/object_recognition/prediction/objects", 10, &EBPathPlannerNode::objectsCallback, this);
   monitored_state_sub_ = private_nh_.subscribe("/autoware/state", 10, &EBPathPlannerNode::monitoredStateCallback, this);
   enable_avoidance_sub_ =
       private_nh_.subscribe("enable_avoidance", 10, &EBPathPlannerNode::enableAvoidanceCallback, this);
