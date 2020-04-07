@@ -1,10 +1,10 @@
-
+![Peek 2020-04-07 00-17](https://user-images.githubusercontent.com/8327598/78574862-92507d80-7865-11ea-9a2d-56d3453bdb7a.gif)
 
 
 ### Note
 This package makes use of three external codes.
 The trained files are provided by apollo. The trained files are automatically downloaded when you build.
-Supported lidars are velodyne 16, 64 and 128, but you can also use velodyne 32 and other lidars with good accuracy
+Supported lidars are velodyne 16, 64 and 128, but you can also use velodyne 32 and other lidars with good accuracy.
 
 1. [apollo 3D Obstacle Percption description](https://github.com/ApolloAuto/apollo/blob/master/docs/specs/3d_obstacle_perception.md)
 ```
