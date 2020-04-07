@@ -5,7 +5,7 @@
   <node pkg="lane_change_planner" type="lane_change_planner" name="lane_change_planner" output="screen">
     <remap from="~input/route" to="$(arg input_route_topic_name)" />
     <remap from="~input/vector_map" to="$(arg map_topic_name)" />
-    <remap from="~input/perception" to="/perception/object_recognition/prediction/objects" />
+    <remap from="~input/perception" to="/perception/object_recognition/objects" />
     <remap from="~input/velocity" to="/vehicle/status/twist" />
     <remap from="~output/lane_change_path" to="path_with_lane_id" />
     <remap from="~output/lane_change_ready" to="/planning/scenario_planning/lane_following/lane_change_ready" />
@@ -46,7 +46,7 @@
     <remap from="~input/path_with_lane_id" to="path_with_lane_id" />
     <remap from="~input/vector_map" to="$(arg map_topic_name)" />
     <remap from="~input/vehicle_velocity" to="/vehicle/status/twist" />
-    <remap from="~input/dynamic_objects" to="/perception/object_recognition/prediction/objects" />
+    <remap from="~input/dynamic_objects" to="/perception/object_recognition/objects" />
     <remap from="~input/no_ground_pointcloud" to="/sensing/lidar/no_ground/pointcloud" />
     <remap from="~input/traffic_light_states" to="/perception/traffic_light_recognition/traffic_light_states" />
     <remap from="~output/path" to="path" />

@@ -630,7 +630,7 @@ Visualization Manager:
           Displays:
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/object_recognition/prediction/objects/visualization
+              Marker Topic: /perception/object_recognition/objects/visualization
               Name: DynamicObjects
               Namespaces:
                 label: true

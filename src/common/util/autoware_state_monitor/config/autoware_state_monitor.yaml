@@ -40,7 +40,7 @@ topic_configs:
     warn_rate: 5.0
 
   - module: "perception"
-    name: "/perception/object_recognition/prediction/objects"
+    name: "/perception/object_recognition/objects"
     timeout: 1.0
     warn_rate: 5.0
 
