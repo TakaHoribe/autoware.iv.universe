@@ -12,6 +12,6 @@
     <remap from="~input/goal_pose" to="$(arg goal_topic_name)" />
     <remap from="~input/checkpoint" to="$(arg checkpoint_topic_name)" />
     <remap from="~output/route" to="$(arg rout_topic_name)" />
-    <remap from="~output/debug/route_marker" to="$(arg visualization_topic_name)" />
+    <remap from="~debug/route_marker" to="$(arg visualization_topic_name)" />
   </node>
 </launch>

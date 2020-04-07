@@ -30,17 +30,17 @@ topic_configs:
     warn_rate: 5.0
 
   - module: "perception"
-    name: "/perception/detection/objects"
+    name: "/perception/object_recognition/detection/objects"
     timeout: 1.0
     warn_rate: 5.0
 
   - module: "perception"
-    name: "/perception/tracking/objects"
+    name: "/perception/object_recognition/tracking/objects"
     timeout: 1.0
     warn_rate: 5.0
 
   - module: "perception"
-    name: "/perception/prediction/objects"
+    name: "/perception/object_recognition/objects"
     timeout: 1.0
     warn_rate: 5.0
 
