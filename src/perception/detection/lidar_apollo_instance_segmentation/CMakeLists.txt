@@ -138,11 +138,11 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
          ${catkin_EXPORTED_TARGETS}
          )
 
-  add_library(tensorrt_bcnn_lib
+  add_library(tensorrt_apollo_cnn_lib
          lib/src/TrtNet.cpp
          )
 
-  target_link_libraries(tensorrt_bcnn_lib
+  target_link_libraries(tensorrt_apollo_cnn_lib
          ${NVINFER}
          ${NVCAFFE_PARSER}
          ${NVINFER_PLUGIN}
@@ -154,12 +154,12 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
   target_link_libraries(lidar_apollo_instance_segmentation_node
          ${catkin_LIBRARIES}
-         tensorrt_bcnn_lib
+         tensorrt_apollo_cnn_lib
          )
 
 
   install(TARGETS
-         tensorrt_bcnn_lib
+         tensorrt_apollo_cnn_lib
          lidar_apollo_instance_segmentation_node
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -168,6 +168,9 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
   install(DIRECTORY launch/
          DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+         PATTERN ".svn" EXCLUDE)
+  install(DIRECTORY data/
+         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/data
          PATTERN ".svn" EXCLUDE)
 
   install(DIRECTORY include/
