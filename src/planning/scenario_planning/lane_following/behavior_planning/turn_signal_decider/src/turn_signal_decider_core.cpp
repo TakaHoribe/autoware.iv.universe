@@ -123,10 +123,10 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
       if (lane_id == prev_lane_id) {
         continue;
       }
-      prev_lane_id = lane_id;
 
       const auto& prev_lane = data_.getLaneFromId(prev_lane_id);
       const auto& lane = data_.getLaneFromId(lane_id);
+      prev_lane_id = lane_id;
 
       // check lane change relation
       const auto relation = getRelation(prev_lane, lane);
