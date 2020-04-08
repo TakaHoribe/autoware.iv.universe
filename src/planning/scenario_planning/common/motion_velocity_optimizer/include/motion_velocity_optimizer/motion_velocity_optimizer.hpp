@@ -86,7 +86,7 @@ class MotionVelocityOptimizer {
     double extract_behind_dist;               // backward waypoints distance from current position [m]
     double max_trajectory_length;             // max length of the objective trajectory for resample
     double min_trajectory_length;             // min length of the objective trajectory for resample
-    double resample_total_time;               // max time to calculate trajectory length
+    double resample_time;               // max time to calculate trajectory length
     double resample_dt;                       // dt to calculate trajectory length
     double min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
     double stop_dist_to_prohibit_engage;      // set zero vel when vehicle stops and stop dist is closer than this
@@ -156,8 +156,8 @@ class MotionVelocityOptimizer {
     planning_param_.stop_dist_to_prohibit_engage = config.stop_dist_to_prohibit_engage;
     planning_param_.delta_yaw_threshold = config.delta_yaw_threshold;
 
-    planning_param_.resample_total_time = config.resample_total_time;
-    planning_param_.resample_dt = config.resample_time_interval;
+    planning_param_.resample_time = config.resample_time;
+    planning_param_.resample_dt = config.resample_dt;
     planning_param_.max_trajectory_length = config.max_trajectory_length;
     planning_param_.min_trajectory_length = config.min_trajectory_length;
     planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;

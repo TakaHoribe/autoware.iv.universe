@@ -21,8 +21,8 @@ delta_yaw_threshold: 1.0472       # Allowed delta yaw between ego pose and traje
 
 max_trajectory_length: 200.0          # max trajectory length for resampling [m]
 min_trajectory_length: 30.0           # min trajectory length for resampling [m]
-resample_total_time: 10.0             # resample time [s]
-resample_time_interval: 0.1           # resample dt [m]
+resample_time: 10.0                   # resample total time [s]
+resample_dt: 0.1                      # resample time interval [s]
 min_trajectory_interval_distance: 0.1 # resample points-interval length [m]
 
 pseudo_jerk_weight: 100.0 # weight for "smoothness" cost
