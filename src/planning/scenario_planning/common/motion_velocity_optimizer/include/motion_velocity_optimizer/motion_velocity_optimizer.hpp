@@ -140,10 +140,32 @@ class MotionVelocityOptimizer {
   /* dynamic reconfigure */
   dynamic_reconfigure::Server<motion_velocity_optimizer::MotionVelocityOptimizerConfig> dyncon_server_;
   void dynamicRecofCallback(motion_velocity_optimizer::MotionVelocityOptimizerConfig& config, uint32_t level) {
+    planning_param_.max_velocity = config.max_velocity;
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;
+    planning_param_.max_lateral_accel = config.max_lateral_accel;
+    planning_param_.min_curve_velocity = config.min_curve_velocity;
+    planning_param_.decel_distance_before_curve = config.decel_distance_before_curve;
+    planning_param_.decel_distance_after_curve = config.decel_distance_after_curve;
+    planning_param_.replan_vel_deviation = config.replan_vel_deviation;
     planning_param_.engage_velocity = config.engage_velocity;
     planning_param_.engage_acceleration = config.engage_acceleration;
+    planning_param_.engage_exit_ratio = config.engage_exit_ratio;
+    planning_param_.extract_ahead_dist = config.extract_ahead_dist;
+    planning_param_.extract_behind_dist = config.extract_behind_dist;
+    planning_param_.stop_dist_to_prohibit_engage = config.stop_dist_to_prohibit_engage;
+    planning_param_.delta_yaw_threshold = config.delta_yaw_threshold;
+
+    planning_param_.resample_total_time = config.resample_total_time;
+    planning_param_.resample_dt = config.resample_time_interval;
+    planning_param_.max_trajectory_length = config.max_trajectory_length;
+    planning_param_.min_trajectory_length = config.min_trajectory_length;
+    planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
+
+    qp_param_.pseudo_jerk_weight = config.pseudo_jerk_weight;
+    qp_param_.over_v_weight = config.over_v_weight;
+    qp_param_.over_a_weight = config.over_a_weight;
+
     show_debug_info_ = config.show_debug_info;
   }
 
