@@ -109,9 +109,9 @@ void BlockedByObstacleState::update() {
     const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
         current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
         forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
+    status_.lane_change_lane_ids = util::getIds(right_lanes);
+    status_.lane_change_path = lane_change_path;
     if (isLaneChangePathSafe(right_lanes, lane_change_path)) {
-      status_.lane_change_lane_ids = util::getIds(right_lanes);
-      status_.lane_change_path = lane_change_path;
       found_safe_path_ = true;
     }
   }
@@ -119,9 +119,9 @@ void BlockedByObstacleState::update() {
     const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
         current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
         forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
+    status_.lane_change_lane_ids = util::getIds(left_lanes);
+    status_.lane_change_path = lane_change_path;
     if (isLaneChangePathSafe(left_lanes, lane_change_path)) {
-      status_.lane_change_lane_ids = util::getIds(left_lanes);
-      status_.lane_change_path = lane_change_path;
       found_safe_path_ = true;
     }
   }
@@ -145,6 +145,9 @@ State BlockedByObstacleState::getNextState() const {
   }
   if (!isLaneBlocked()) {
     return State::FOLLOWING_LANE;
+  }
+  if (isLaneChangeAvailable() && laneChangeForcedByOperator()) {
+    return State::FORCING_LANE_CHANGE;
   }
   if (isLaneChangeApproved() && isLaneChangeReady()) {
     return State::EXECUTING_LANE_CHANGE;
@@ -198,6 +201,8 @@ bool BlockedByObstacleState::isLaneBlocked() const {
 }
 
 bool BlockedByObstacleState::isLaneChangeApproved() const { return lane_change_approved_; }
+bool BlockedByObstacleState::laneChangeForcedByOperator() const { return force_lane_change_; }
+bool BlockedByObstacleState::isLaneChangeAvailable() const { return status_.lane_change_available; }
 
 bool BlockedByObstacleState::hasEnoughDistance() const {
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
