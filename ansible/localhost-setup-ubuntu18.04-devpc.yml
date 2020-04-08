@@ -2,10 +2,15 @@
 - hosts: localhost
   connection: local
   become: no
+  vars_prompt:
+    - name: yn_trt
+      prompt: "Do you install tensorrt? (y/n)"
+      default: 'y'
+      private: no
   roles:
     - cuda
     - cudnn
-    - tensorrt
+    - { role: tensorrt, when:  yn_trt == 'y' }
     - { role: ros, release: melodic }
     - lanelet2
     - osqp
