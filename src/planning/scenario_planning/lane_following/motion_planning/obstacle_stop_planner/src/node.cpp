@@ -109,10 +109,28 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
    * decimate trajectory for calculation cost
    */
   autoware_planning_msgs::Trajectory decimate_trajectory;
+  const double step_length = 1.0;
   std::map<size_t /* decimate */, size_t /* origin */> decimate_trajectory_index_map;
-  decimateTrajectory(trim_trajectory, 1.0 /*step_length*/, decimate_trajectory, decimate_trajectory_index_map);
+  decimateTrajectory(trim_trajectory, step_length, decimate_trajectory, decimate_trajectory_index_map);
 
   autoware_planning_msgs::Trajectory& trajectory = decimate_trajectory;
+
+  // transform pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle_candidate_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  {
+    geometry_msgs::TransformStamped transform_stamped =
+        tf_buffer_.lookupTransform(trajectory.header.frame_id, obstacle_ros_pointcloud_ptr_->header.frame_id,
+                                   obstacle_ros_pointcloud_ptr_->header.stamp, ros::Duration(0.5));
+    Eigen::Matrix4f affine_matrix = tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
+    sensor_msgs::PointCloud2 transformed_obstacle_ros_pointcloud;
+    pcl_ros::transformPointCloud(affine_matrix, *obstacle_ros_pointcloud_ptr_, transformed_obstacle_ros_pointcloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_obstacle_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromROSMsg(transformed_obstacle_ros_pointcloud, *transformed_obstacle_pointcloud_ptr);
+    // search obstacle candidate pointcloud to reduce calculation cost
+    const double search_range = step_length + std::hypot((vehicle_width_ / 2.0), (wheel_base_ + front_overhang_));
+    searchPointcloudNearTrajectory(trajectory, search_range, transformed_obstacle_pointcloud_ptr,
+                                   obstacle_candidate_pointcloud_ptr);
+  }
 
   /*
    * check collision
@@ -138,20 +156,6 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
     }
     boost_one_step_move_vehicle_polygon.outer().push_back(
         bg::make<Point>(one_step_move_vehicle_polygon.front().x, one_step_move_vehicle_polygon.front().y));
-    // transform pointcloud
-    geometry_msgs::TransformStamped transform_stamped =
-        tf_buffer_.lookupTransform(trajectory.header.frame_id, obstacle_ros_pointcloud_ptr_->header.frame_id,
-                                   obstacle_ros_pointcloud_ptr_->header.stamp, ros::Duration(0.5));
-    Eigen::Matrix4f affine_matrix = tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
-    sensor_msgs::PointCloud2 transformed_obstacle_ros_pointcloud;
-    pcl_ros::transformPointCloud(affine_matrix, *obstacle_ros_pointcloud_ptr_, transformed_obstacle_ros_pointcloud);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_obstacle_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromROSMsg(transformed_obstacle_ros_pointcloud, *transformed_obstacle_pointcloud_ptr);
-    // search obstacle candidate pointcloud to reduce calculation cost
-    pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle_candidate_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    const double search_range = 1.0 + std::hypot((vehicle_width_ / 2.0), (wheel_base_ + front_overhang_));
-    searchPointcloudNearTrajectory(trajectory, search_range, transformed_obstacle_pointcloud_ptr,
-                                   obstacle_candidate_pointcloud_ptr);
     // check within polygon
     pcl::PointCloud<pcl::PointXYZ>::Ptr collision_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
     for (size_t j = 0; j < obstacle_candidate_pointcloud_ptr->size(); ++j) {
