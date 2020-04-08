@@ -1,4 +1,4 @@
-#include "scenario_selector_node.h"
+#include <scenario_selector/scenario_selector_node.h>
 
 #include <string>
 #include <utility>
@@ -19,6 +19,11 @@ namespace {
 template <class T>
 void onData(const T& data, T* buffer) {
   *buffer = data;
+}
+
+template <class T>
+boost::function<void(const T&)> createCallback(T* buffer) {
+  return static_cast<boost::function<void(const T&)>>(boost::bind(onData<T>, _1, buffer));
 }
 
 std::shared_ptr<lanelet::ConstPolygon3d> findNearestParkinglot(
@@ -237,34 +242,33 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
 
   // Output
   const auto now = ros::Time::now();
-  if ((now - input.buf_trajectory->header.stamp).toSec() <= th_max_message_delay_sec_) {
+  const auto delay_sec = (now - input.buf_trajectory->header.stamp).toSec();
+  if (delay_sec <= th_max_message_delay_sec_) {
     output_.pub_trajectory.publish(input.buf_trajectory);
+  } else {
+    ROS_WARN_THROTTLE(1.0, "trajectory is delayed: scenario = %s, delay = %f, th_max_message_delay = %f",
+                      current_scenario_.c_str(), delay_sec, th_max_message_delay_sec_);
   }
 }
-
-#define CALLBACK(buffer) \
-  static_cast<boost::function<void(const decltype(buffer)&)>>(boost::bind(onData<decltype(buffer)>, _1, &buffer))
 
 ScenarioSelectorNode::ScenarioSelectorNode()
     : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_), current_scenario_(autoware_planning_msgs::Scenario::Empty) {
   // Parameters
   private_nh_.param<double>("update_rate", update_rate_, 10.0);
-  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
+  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 1.0);
   private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input
-  input_lane_following_.sub_trajectory =
-      private_nh_.subscribe("input/lane_following/trajectory", 1, CALLBACK(input_lane_following_.buf_trajectory));
+  input_lane_following_.sub_trajectory = private_nh_.subscribe("input/lane_following/trajectory", 1,
+                                                               createCallback(&input_lane_following_.buf_trajectory));
 
   input_parking_.sub_trajectory =
-      private_nh_.subscribe("input/parking/trajectory", 1, CALLBACK(input_parking_.buf_trajectory));
+      private_nh_.subscribe("input/parking/trajectory", 1, createCallback(&input_parking_.buf_trajectory));
 
   sub_lanelet_map_ = private_nh_.subscribe("input/lanelet_map", 1, &ScenarioSelectorNode::onMap, this);
-
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
-
   sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output

@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include "scenario_selector_node.h"
+#include <scenario_selector/scenario_selector_node.h>
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "scenario_selector");

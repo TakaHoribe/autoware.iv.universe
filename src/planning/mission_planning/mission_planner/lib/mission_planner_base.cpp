@@ -33,7 +33,7 @@ MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_) {
   checkpoint_subscriber_ = pnh_.subscribe("input/checkpoint", 10, &MissionPlanner::checkpointCallback, this);
 
   route_publisher_ = pnh_.advertise<autoware_planning_msgs::Route>("output/route", 1, true);
-  marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("output/debug/route_marker", 1, true);
+  marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/route_marker", 1, true);
 }
 
 bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose) {

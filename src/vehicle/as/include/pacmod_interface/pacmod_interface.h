@@ -110,6 +110,8 @@ class PacmodInterface {
   double max_throttle_;                // max throttle [0~1]
   double max_brake_;                   // max throttle [0~1]
   double max_steering_wheel_;          // max steering wheel angle [rad]
+  double max_steering_wheel_rate_;     // [rad/s]
+  double min_steering_wheel_rate_;     // [rad/s]
   bool enable_steering_rate_control_;  // use steering angle speed for command [rad/s]
 
   /* input values */
@@ -145,6 +147,7 @@ class PacmodInterface {
   double calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt& wheel_speed_rpt,
                                   const pacmod_msgs::SystemRptInt& shift_rpt);
   double calculateVariableGearRatio(const double vel, const double steer_wheel);
+  double calcSteerWheelRateCmd(const double gear_ratio);
   uint16_t toPacmodShiftCmd(const autoware_vehicle_msgs::Shift& shift);
   int32_t toAutowareShiftCmd(const pacmod_msgs::SystemRptInt& shift);
   uint16_t toPacmodTurnCmd(const autoware_vehicle_msgs::TurnSignal& turn);
