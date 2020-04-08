@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mission_planner</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The mission_planner package</description>
 
   <maintainer email="ryohsuke.mitsudome@tier4.jp">mitsudome-r</maintainer>

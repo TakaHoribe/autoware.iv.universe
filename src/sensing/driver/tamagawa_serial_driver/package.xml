@@ -1,8 +1,14 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>tamagawa_imu_driver</name>
-  <version>1.0.0</version>
+  <version>0.1.0</version>
   <description>The ROS driver for TAMAGAWA SEIKI IMUs</description>
+
+  <maintainer email="yamato.ando@tier4.jp">Yamato Ando</maintainer>
+  <maintainer email="ryo.watanabe@tier4.jp">Ryo Watanabe</maintainer>
+  
+  <license>Apache 2</license>
+
 
   <maintainer email="osamu.sekino@tier4.jp">Osamu Sekino</maintainer>
 

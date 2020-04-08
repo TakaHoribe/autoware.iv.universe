@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>lidar_apollo_instance_segmentation</name>
-    <version>1.0.0</version>
+    <version>0.1.0</version>
     <description>lidar_apollo_instance_segmentation</description>
 
     <maintainer email="yukky.saito@gmail.com">Yukihiro Saito</maintainer>

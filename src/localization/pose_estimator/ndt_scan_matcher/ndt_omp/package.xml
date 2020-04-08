@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <package>
   <name>ndt_omp</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>OpenMP boosted NDT and GICP algorithms</description>
+
+  <maintainer email="yamato.ando@tier4.jp">Yamato Ando</maintainer>
+  <license>Apache 2</license>
 
   <maintainer email="koide@aisl.cs.tut.ac.jp">koide</maintainer>
 

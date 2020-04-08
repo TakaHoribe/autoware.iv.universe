@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>motion_path_planner_scene_test</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The motion_path_planner_scene_test package</description>
 
   <maintainer email="horibe.takamasa@gmail.com">Takamasa Horibe</maintainer>

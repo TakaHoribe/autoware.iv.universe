@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>lane_change_planner</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The lane_change_planner package</description>
 
   <maintainer email="mitsudome-r@todo.todo">mitsudome-r</maintainer>

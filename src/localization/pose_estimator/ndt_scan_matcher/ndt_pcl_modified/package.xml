@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>ndt_pcl_modified</name>
-    <version>0.0.0</version>
+    <version>0.1.0</version>
     <description>The ndt_pcl_modified package</description>
     <maintainer email="yamato.ando@gmail.com">Yamato Ando</maintainer>
     <license>Apache 2</license>
