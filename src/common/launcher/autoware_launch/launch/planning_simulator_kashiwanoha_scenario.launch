@@ -2,7 +2,7 @@
 <launch>
   <arg name="map_path"/>
 
-  <include file="$(find autoware_launch)/launch/planning_simulator_kashiwanoha.launch">
+  <include file="$(find autoware_launch)/launch/planning_simulator.launch">
     <arg name="map_path" value="$(arg map_path)"/>
   </include>
 
