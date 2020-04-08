@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>freespace_planner</name>
-  <version>1.12.0</version>
+  <version>0.1.0</version>
   <description>The freespace_planner package</description>
+
+  <maintainer email="kenji.miyake@tier4.jp">Kenji Miyake</maintainer>
   <maintainer email="aohsato@gmail.com">Akihito OHSATO</maintainer>
   <author email="aohsato@gmail.com">Akihito OHSATO</author>
   <author email="antm678@ertl.jp">Tomohito ANDO</author>
