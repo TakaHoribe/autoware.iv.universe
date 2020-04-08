@@ -41,12 +41,14 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<double>("max_throttle", max_throttle_, 0.2);
   private_nh_.param<double>("max_brake", max_brake_, 0.8);
 
-  private_nh_.param<double>("vgr_coef_a_", vgr_coef_a_, 15.713);
-  private_nh_.param<double>("vgr_coef_b_", vgr_coef_b_, 0.053);
-  private_nh_.param<double>("vgr_coef_c_", vgr_coef_c_, 0.042);
+  private_nh_.param<double>("vgr_coef_a", vgr_coef_a_, 15.713);
+  private_nh_.param<double>("vgr_coef_b", vgr_coef_b_, 0.053);
+  private_nh_.param<double>("vgr_coef_c", vgr_coef_c_, 0.042);
 
   /* parameters for limitter */
   private_nh_.param<double>("max_steering_wheel", max_steering_wheel_, 2.7 * M_PI);
+  private_nh_.param<double>("max_steering_wheel_rate", max_steering_wheel_rate_, 6.6);
+  private_nh_.param<double>("min_steering_wheel_rate", min_steering_wheel_rate_, 0.5);
 
   rate_ = new ros::Rate(loop_rate_);
 
@@ -244,16 +246,8 @@ void PacmodInterface::publishCommands() {
 
   /* publish steering cmd */
   pacmod_msgs::SteerSystemCmd steer_cmd;
-  double steer_rate_max = 6.6;   // [rad/s]
-  double steer_rate_min = 0.5;   // [rad/s]
   double desired_rotation_rate;  // [rad/s]
-  if (enable_steering_rate_control_) {
-    const double rate_min = 0.5;
-    desired_rotation_rate = 3.0 * vehicle_cmd_ptr_->control.steering_angle * adaptive_gear_ratio;
-    desired_rotation_rate = std::min(std::max(std::fabs(desired_rotation_rate), steer_rate_min), steer_rate_max);
-  } else {
-    desired_rotation_rate = steer_rate_max;
-  }
+
   steer_cmd.header.frame_id = base_frame_id_;
   steer_cmd.header.stamp = current_time;
   steer_cmd.enable = engage_cmd_;
@@ -261,7 +255,7 @@ void PacmodInterface::publishCommands() {
   steer_cmd.clear_override = clear_override;
   steer_cmd.clear_faults = false;
   steer_cmd.command = desired_steer_wheel;
-  steer_cmd.rotation_rate = desired_rotation_rate;
+  steer_cmd.rotation_rate = calcSteerWheelRateCmd(adaptive_gear_ratio);
   steer_cmd_pub_.publish(steer_cmd);
 
   /* publish shift cmd */
@@ -287,6 +281,17 @@ void PacmodInterface::publishCommands() {
     turn_cmd.command = toPacmodTurnCmd(*turn_signal_cmd_ptr_);
     turn_cmd_pub_.publish(turn_cmd);
   }
+}
+
+double PacmodInterface::calcSteerWheelRateCmd(const double gear_ratio) {
+  if (!enable_steering_rate_control_) {
+    return max_steering_wheel_rate_;
+  }
+
+  constexpr double margin = 1.5;
+  double rate = margin * vehicle_cmd_ptr_->control.steering_angle_velocity * gear_ratio;
+  rate = std::min(std::max(std::fabs(rate), min_steering_wheel_rate_), max_steering_wheel_rate_);
+  return rate;
 }
 
 double PacmodInterface::calculateVehicleVelocity(const pacmod_msgs::WheelSpeedRpt& wheel_speed_rpt,

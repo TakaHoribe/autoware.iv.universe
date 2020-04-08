@@ -6,7 +6,7 @@
     <arg name="real" default="true" />
     <group if="$(arg real)">
       <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
-        <remap from="~output/dynamic_object" to="/perception/detection/labeled_clusters" />
+        <remap from="~output/dynamic_object" to="/perception/object_recognition/detection/labeled_clusters" />
         <remap from="~output/objects_pose" to="debug/object_pose" />
         <remap from="~output/points_raw" to="/sensing/lidar/no_ground/pointcloud" />
         <remap from="~input/object" to="dummy_perception_publisher/object_info" />
@@ -16,13 +16,13 @@
         <param name="~enable_ray_tracing" value="true" />
       </node>
       <include file="$(find shape_estimation)/launch/shape_estimation.launch">
-        <arg name="input/objects" default="/perception/detection/labeled_clusters" />
-        <arg name="output/objects" default="/perception/detection/objects" />
+        <arg name="input/objects" default="/perception/object_recognition/detection/labeled_clusters" />
+        <arg name="output/objects" default="/perception/object_recognition/detection/objects" />
       </include>
     </group>
     <group unless="$(arg real)">
       <node pkg="dummy_perception_publisher" type="dummy_perception_publisher_node" name="dummy_perception_publisher" output="screen">
-        <remap from="~output/dynamic_object" to="/perception/detection/objects" />
+        <remap from="~output/dynamic_object" to="/perception/object_recognition/detection/objects" />
         <remap from="~output/objects_pose" to="debug/object_pose" />
         <remap from="~output/points_raw" to="/sensing/lidar/no_ground/pointcloud" />
         <remap from="~input/object" to="dummy_perception_publisher/object_info" />
@@ -36,25 +36,29 @@
 
   <!-- preception module -->
   <group ns="perception">
-    <!-- detection module -->
-    <include file="$(find dynamic_object_visualization)/launch/dynamic_object_visualizer.launch">
-      <arg name="input" value="/perception/detection/objects" />
-      <arg name="with_feature" value="true" />
-      <arg name="only_known_objects" default="false" />
-    </include>
-    <!-- tracking module -->
-    <group ns="tracking">
-      <include file="$(find perception_launch)/launch/tracking/tracking.launch"></include>
-    </group>
-    <!-- prediction module -->
-    <group ns="prediction">
-      <include file="$(find perception_launch)/launch/prediction/prediction.launch">
-        <arg name="use_vector_map" default="true" />
+    <!-- object recognition module -->
+    <group ns="object_recognition">
+      <!-- detection module -->
+      <include file="$(find dynamic_object_visualization)/launch/dynamic_object_visualizer.launch">
+        <arg name="input" value="/perception/object_recognition/detection/objects" />
+        <arg name="with_feature" value="true" />
+        <arg name="only_known_objects" default="false" />
       </include>
+      <!-- tracking module -->
+      <group ns="tracking">
+        <include file="$(find perception_launch)/launch/object_recognition/tracking/tracking.launch"></include>
+      </group>
+      <!-- prediction module -->
+      <group ns="prediction">
+        <include file="$(find perception_launch)/launch/object_recognition/prediction/prediction.launch">
+          <arg name="use_vector_map" default="true" />
+        </include>
+      </group>
     </group>
+
     <!-- traffic light module -->
-    <group ns="traffic_light">
-      <include file="$(find perception_launch)/launch/traffic_light/traffic_light.launch"></include>
+    <group ns="traffic_light_recognition">
+      <include file="$(find perception_launch)/launch/traffic_light_recognition/traffic_light.launch"></include>
     </group>
   </group>
 </launch>

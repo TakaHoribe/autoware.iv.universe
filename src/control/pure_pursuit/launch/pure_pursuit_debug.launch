@@ -1,6 +1,0 @@
-<launch>
-  <group ns="control">
-    <include file="$(find pure_pursuit)/launch/pure_pursuit.launch">
-    </include>
-  </group>
-</launch>
