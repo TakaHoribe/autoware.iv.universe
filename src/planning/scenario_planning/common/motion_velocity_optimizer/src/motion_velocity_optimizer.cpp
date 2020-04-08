@@ -43,8 +43,8 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
   pnh_.param<double>("extract_behind_dist", planning_param_.extract_behind_dist, 3.0);
   pnh_.param<double>("max_trajectory_length", planning_param_.max_trajectory_length, 200.0);
   pnh_.param<double>("min_trajectory_length", planning_param_.min_trajectory_length, 30.0);
-  pnh_.param<double>("resample_total_time", planning_param_.resample_total_time, 10.0);
-  pnh_.param<double>("resample_time_interval", planning_param_.resample_dt, 0.1);
+  pnh_.param<double>("resample_time", planning_param_.resample_time, 10.0);
+  pnh_.param<double>("resample_dt", planning_param_.resample_dt, 0.1);
   pnh_.param<double>("min_trajectory_interval_distance", planning_param_.min_trajectory_interval_distance, 0.1);
   pnh_.param<double>("stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, 1.5);
   pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
@@ -274,7 +274,7 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
                                                  autoware_planning_msgs::Trajectory& output) const {
   std::vector<double> in_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
-  const double Nt = planning_param_.resample_total_time / std::max(planning_param_.resample_dt, 0.001);
+  const double Nt = planning_param_.resample_time / std::max(planning_param_.resample_dt, 0.001);
   const double ds_nominal = std::max(current_velocity_ptr_->twist.linear.x * planning_param_.resample_dt,
                                      planning_param_.min_trajectory_interval_distance);
   const double Ns = planning_param_.min_trajectory_length / std::max(ds_nominal, 0.001);

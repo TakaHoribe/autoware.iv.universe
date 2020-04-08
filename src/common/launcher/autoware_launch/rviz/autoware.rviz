@@ -324,13 +324,6 @@ Visualization Manager:
             traffic_light_triangle: true
           Queue Size: 100
           Value: true
-        - Class: rviz/MarkerArray
-          Enabled: true
-          Marker Topic: /autoware_vector_map/vizualization
-          Name: AutowareVectorMap
-          Namespaces: {}
-          Queue Size: 100
-          Value: true
       Enabled: true
       Name: Map
     - Class: rviz/Group

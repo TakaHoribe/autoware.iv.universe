@@ -114,18 +114,19 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
   auto prev_lane_id = path.points.front().lane_ids.front();
   for (const auto& path_point : path.points) {
     accumulated_distance += getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
+    prev_point = path_point;
     const double distance_from_vehicle = accumulated_distance - vehicle_pose_frenet.length;
+    if (distance_from_vehicle < 0) {
+      continue;
+    }
     for (const auto& lane_id : path_point.lane_ids) {
       if (lane_id == prev_lane_id) {
         continue;
       }
 
-      if (distance_from_vehicle < 0) {
-        prev_lane_id = lane_id;
-        continue;
-      }
       const auto& prev_lane = data_.getLaneFromId(prev_lane_id);
       const auto& lane = data_.getLaneFromId(lane_id);
+      prev_lane_id = lane_id;
 
       // check lane change relation
       const auto relation = getRelation(prev_lane, lane);
@@ -139,13 +140,11 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
         *distance_ptr = distance_from_vehicle;
         return true;
       }
-      prev_lane_id = lane_id;
     }
 
     if (distance_from_vehicle > parameters_.lane_change_search_distance) {
       return false;
     }
-    prev_point = path_point;
   }
   return false;
 }
@@ -156,6 +155,9 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
     ROS_ERROR("Given argument is nullptr.");
     return false;
   }
+  if (path.points.empty()) {
+    return false;
+  }
 
   double accumulated_distance = 0;
 
@@ -163,6 +165,7 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
   auto prev_lane_id = lanelet::InvalId;
   for (const auto& path_point : path.points) {
     accumulated_distance += getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
+    prev_point = path_point;
     const double distance_from_vehicle = accumulated_distance - vehicle_pose_frenet.length;
     if (distance_from_vehicle < 0) {
       continue;
@@ -171,8 +174,9 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
       if (lane_id == prev_lane_id) {
         continue;
       }
-      const auto& lane = data_.getLaneFromId(lane_id);
+      prev_lane_id = lane_id;
 
+      const auto& lane = data_.getLaneFromId(lane_id);
       if (lane.attributeOr("turn_direction", std::string("none")) == "left") {
         signal_state_ptr->data = TurnSignal::LEFT;
         *distance_ptr = distance_from_vehicle;
@@ -187,7 +191,6 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
     if (distance_from_vehicle > parameters_.intersection_search_distance) {
       return false;
     }
-    prev_point = path_point;
   }
   return false;
 }
