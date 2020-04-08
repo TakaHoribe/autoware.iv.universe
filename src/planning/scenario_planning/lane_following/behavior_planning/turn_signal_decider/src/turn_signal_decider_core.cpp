@@ -120,9 +120,9 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
       if (lane_id == prev_lane_id) {
         continue;
       }
+      prev_lane_id = lane_id;
 
       if (distance_from_vehicle < 0) {
-        prev_lane_id = lane_id;
         continue;
       }
       const auto& prev_lane = data_.getLaneFromId(prev_lane_id);
@@ -140,7 +140,6 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
         *distance_ptr = distance_from_vehicle;
         return true;
       }
-      prev_lane_id = lane_id;
     }
 
     if (distance_from_vehicle > parameters_.lane_change_search_distance) {
