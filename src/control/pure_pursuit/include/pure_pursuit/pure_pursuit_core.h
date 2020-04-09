@@ -47,8 +47,8 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 
-#include "libplanning_utils/planning_utils.h"
-#include "libplanning_utils/pure_pursuit.h"
+#include "pure_pursuit/core/planning_utils.h"
+#include "pure_pursuit/core/pure_pursuit.h"
 
 enum class Mode : int32_t {
   waypoint,

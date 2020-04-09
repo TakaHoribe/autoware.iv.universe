@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "libplanning_utils/planning_utils.h"
+#include "pure_pursuit/core/planning_utils.h"
 
 namespace planning_utils {
 

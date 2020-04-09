@@ -10,12 +10,14 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>autoware_control_msgs</depend>
+  <depend>autoware_planning_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>libplanning_utils</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>tf</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_ros</depend>
 
   <export>
   </export>

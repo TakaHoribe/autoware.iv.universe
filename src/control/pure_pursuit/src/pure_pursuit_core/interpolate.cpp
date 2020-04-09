@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "libplanning_utils/interpolate.h"
+#include "pure_pursuit/core/interpolate.h"
 
 bool LinearInterpolate::interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
                                     const std::vector<double>& return_index, std::vector<double>& return_value) {

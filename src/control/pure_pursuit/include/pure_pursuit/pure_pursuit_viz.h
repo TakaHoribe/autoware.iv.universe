@@ -40,7 +40,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include "libplanning_utils/planning_utils.h"
+#include "pure_pursuit/core/planning_utils.h"
 
 constexpr auto MAP_FRAME = "map";  // TODO: parameterize
 
