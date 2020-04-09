@@ -762,7 +762,7 @@ Visualization Manager:
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
@@ -778,7 +778,7 @@ Visualization Manager:
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
@@ -795,7 +795,7 @@ Visualization Manager:
                       Name: StopLine
                       Namespaces:
                         factor text: true
-                        stop geofence: true
+                        stop virtual_wall: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -829,7 +829,7 @@ Visualization Manager:
                         collision polygons: true
                         detection polygons: true
                         factor text: true
-                        stop geofence: true
+                        stop virtual_wall: true
                         stop obstacle point: true
                         stop obstacle text: true
                       Queue Size: 100

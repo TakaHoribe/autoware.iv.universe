@@ -68,8 +68,8 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   }
 
   if (current_state == State::STOP) {
-    // visualize geofence at vehicle front position
-    debug_data_.geofence_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
+    // visualize virtual_wall at vehicle front position
+    debug_data_.virtual_wall_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
   }
   debug_data_.stop_point_pose = path->points.at(stop_line_idx_).point.pose;
   debug_data_.judge_point_pose = path->points.at(judge_line_idx_).point.pose;

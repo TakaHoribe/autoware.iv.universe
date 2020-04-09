@@ -86,7 +86,7 @@ class BlindSpotModule : public SceneModuleInterface {
 
   struct DebugData {
     autoware_planning_msgs::PathWithLaneId path_raw;
-    geometry_msgs::Pose geofence_pose;
+    geometry_msgs::Pose virtual_wall_pose;
     geometry_msgs::Pose stop_point_pose;
     geometry_msgs::Pose judge_point_pose;
     autoware_planning_msgs::PathWithLaneId path_with_judgeline;

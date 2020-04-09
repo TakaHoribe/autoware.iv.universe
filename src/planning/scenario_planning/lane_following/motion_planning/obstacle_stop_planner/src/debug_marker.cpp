@@ -180,7 +180,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "stop geofence";
+    marker.ns = "stop virtual_wall";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;

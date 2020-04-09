@@ -84,19 +84,19 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
 visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
-  visualization_msgs::Marker marker_geofence{};
-  marker_geofence.header.frame_id = "map";
-  marker_geofence.header.stamp = ros::Time::now();
-  marker_geofence.ns = "stop geofence";
-  marker_geofence.id = lane_id;
-  marker_geofence.lifetime = ros::Duration(0.5);
-  marker_geofence.type = visualization_msgs::Marker::CUBE;
-  marker_geofence.action = visualization_msgs::Marker::ADD;
-  marker_geofence.pose = pose;
-  marker_geofence.pose.position.z += 1.0;
-  marker_geofence.scale = createMarkerScale(0.1, 5.0, 2.0);
-  marker_geofence.color = createMarkerColor(1.0, 0.0, 0.0, 0.5);
-  msg.markers.push_back(marker_geofence);
+  visualization_msgs::Marker marker_virtual_wall{};
+  marker_virtual_wall.header.frame_id = "map";
+  marker_virtual_wall.header.stamp = ros::Time::now();
+  marker_virtual_wall.ns = "stop virtual_wall";
+  marker_virtual_wall.id = lane_id;
+  marker_virtual_wall.lifetime = ros::Duration(0.5);
+  marker_virtual_wall.type = visualization_msgs::Marker::CUBE;
+  marker_virtual_wall.action = visualization_msgs::Marker::ADD;
+  marker_virtual_wall.pose = pose;
+  marker_virtual_wall.pose.position.z += 1.0;
+  marker_virtual_wall.scale = createMarkerScale(0.1, 5.0, 2.0);
+  marker_virtual_wall.color = createMarkerColor(1.0, 0.0, 0.0, 0.5);
+  msg.markers.push_back(marker_virtual_wall);
 
   visualization_msgs::Marker marker_factor_text{};
   marker_factor_text.header.frame_id = "map";
@@ -189,7 +189,7 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == IntersectionModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;
