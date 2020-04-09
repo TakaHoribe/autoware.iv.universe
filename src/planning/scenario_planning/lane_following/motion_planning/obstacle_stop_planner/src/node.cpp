@@ -115,7 +115,7 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 
   autoware_planning_msgs::Trajectory& trajectory = decimate_trajectory;
 
-　/*
+  /*
    * search candidate obstacle pointcloud
    */
   pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle_candidate_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
