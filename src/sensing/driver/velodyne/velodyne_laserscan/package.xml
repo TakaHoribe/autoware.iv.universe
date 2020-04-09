@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>velodyne_laserscan</name>
-  <version>1.5.2</version>
+  <version>0.1.0</version>
   <description>
     Extract a single ring of a Velodyne PointCloud2 and publish it as a LaserScan message
   </description>
+
+  <maintainer email="yamato.ando@tier4.jp">Yamato Ando</maintainer>
+  <license>Apache 2</license>
+
   <maintainer email="jwhitley@autonomoustuff.com">Josh Whitley</maintainer>
   <author>Micho Radovnikovich</author>
   <author>Kevin Hallenbeck</author>

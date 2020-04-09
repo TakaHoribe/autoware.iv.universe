@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>tensorrt_yolo3</name>
-    <version>1.11.0</version>
+    <version>0.1.0</version>
     <description>tensorrt_yolo3</description>
 
     <maintainer email="cirpue49@yahoo.co.jp">Kosuke Murakami</maintainer>

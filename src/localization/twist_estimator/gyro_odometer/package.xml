@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>gyro_odometer</name>
-    <version>0.0.0</version>
+    <version>0.1.0</version>
     <description>The gyro_odometer package</description>
     <maintainer email="yamato.ando@gmail.com">Yamato Ando</maintainer>
     <license>Apache 2</license>

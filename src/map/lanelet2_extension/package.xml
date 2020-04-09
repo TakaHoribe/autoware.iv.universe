@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>lanelet2_extension</name>
-  <version>1.12.0</version>
+  <version>0.1.0</version>
   <description>The lanelet2_extension pacakge contains libraries to handle Lanelet2 format data.</description>
 
   <maintainer email="ryohsuke.mitsudome@tier4.jp">mitsudome-r</maintainer>

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>obstacle_avoidance_planner</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The path_planner package</description>
 
   <maintainer email="kosuke.murakami@gmail.com">KosukeMurakami</maintainer>

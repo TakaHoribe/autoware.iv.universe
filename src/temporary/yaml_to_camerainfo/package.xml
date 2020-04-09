@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>yaml_to_camerainfo</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The yaml_to_camerainfo package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
