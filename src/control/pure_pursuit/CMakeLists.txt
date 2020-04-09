@@ -44,7 +44,6 @@ add_dependencies(pure_pursuit
   ${catkin_EXPORTED_TARGETS}
 )
 
-
 ## Install executables and/or libraries
 install(TARGETS pure_pursuit
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

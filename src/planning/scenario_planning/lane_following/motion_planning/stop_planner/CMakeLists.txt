@@ -17,13 +17,13 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
-   autoware_planning_msgs
-   roscpp
-   tf2
-   tf2_ros
-   sensor_msgs
-   pcl_ros
-   pcl_conversions
+    autoware_planning_msgs
+    roscpp
+    tf2
+    tf2_ros
+    sensor_msgs
+    pcl_ros
+    pcl_conversions
 )
 
 find_package(Eigen3 REQUIRED)

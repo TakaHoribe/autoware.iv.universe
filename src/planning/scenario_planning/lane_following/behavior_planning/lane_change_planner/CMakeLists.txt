@@ -17,12 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV REQUIRED)
 
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES lane_change_planner
-#  CATKIN_DEPENDS autoware_perception_msgs autoware_planning_msgs geometry_msgs lanelet2_extension roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros
-#  DEPENDS system_lib
-)
+catkin_package()
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}

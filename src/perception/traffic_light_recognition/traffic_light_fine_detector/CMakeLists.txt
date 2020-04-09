@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   autoware_traffic_light_msgs
-  )
+)
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 QUIET)
@@ -48,12 +48,12 @@ find_library(NVINFER NAMES nvinfer)
 find_library(NVONNXPARSER nvonnxparser)
 find_library(NVINFER_PLUGIN NAMES nvinfer_plugin)
 if(NVINFER AND NVONNXPARSER AND NVINFER_PLUGIN)
-   message("TensorRT is available!")
-   message("NVINFER: ${NVINFER}")
-   message("NVPARSERS: ${NVPARSERS}")
-   message("NVINFER_PLUGIN: ${NVINFER_PLUGIN}")
-   message("NVONNXPARSER: ${NVONNXPARSER}")
-   set(TRT_AVAIL ON)
+  message("TensorRT is available!")
+  message("NVINFER: ${NVINFER}")
+  message("NVPARSERS: ${NVPARSERS}")
+  message("NVINFER_PLUGIN: ${NVINFER_PLUGIN}")
+  message("NVONNXPARSER: ${NVONNXPARSER}")
+  set(TRT_AVAIL ON)
 else()
   message("TensorRT is NOT Available")
   set(TRT_AVAIL OFF)
@@ -68,9 +68,9 @@ PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIB
 PATH_SUFFIXES lib lib64 bin
 DOC "CUDNN library." )
 if(CUDNN_LIBRARY)
-   message("CUDNN is available!")
-   message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
-   set(CUDNN_AVAIL ON)
+  message("CUDNN is available!")
+  message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
+  set(CUDNN_AVAIL ON)
 else()
   message("CUDNN is NOT Available")
   set(CUDNN_AVAIL OFF)
@@ -91,22 +91,19 @@ endif()
 
 
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
-  ###################################
-  ## catkin specific configuration ##
-  ###################################
   include_directories(
     include
     ${Eigen3_INCLUDE_DIRS}
     ${Opencv_INCLUDE_DIRS}
     ${CUDA_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
-    )
+  )
 
   catkin_package(
     INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    )
+  )
 
   set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS} -fpic -std=c++11 -pthread")
 
@@ -114,34 +111,34 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   add_library(tlrdetector
     lib/src/EntropyCalibrator.cpp
     lib/src/TrtNet.cpp
-    )
+  )
 
   target_include_directories(tlrdetector PUBLIC
     lib/include
   )
 
   target_link_libraries(tlrdetector
-          ${NVINFER}
-          ${NVONNXPARSER}
-          ${NVINFER_PLUGIN}
-          ${CUDA_LIBRARIES}
-          ${CUDA_CUBLAS_LIBRARIES}
-          ${CUDA_curand_LIBRARY}
-          ${CUDNN_LIBRARY}
-          )
+    ${NVINFER}
+    ${NVONNXPARSER}
+    ${NVINFER_PLUGIN}
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_curand_LIBRARY}
+    ${CUDNN_LIBRARY}
+  )
 
   add_executable(traffic_light_fine_detector
     src/traffic_light_fine_detector_main.cpp
     src/traffic_light_fine_detector.cpp
-    )
+  )
   target_link_libraries(traffic_light_fine_detector
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     tlrdetector
-    )
+  )
   add_dependencies(traffic_light_fine_detector
     ${catkin_EXPORTED_TARGETS}
-    )
+  )
 
   add_executable(traffic_light_roi_image_saver_node
     src/roi_image_saver/node.cpp
@@ -152,13 +149,13 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${OpenCV_LIBRARIES}
   )
 
-  install(TARGETS 
-    traffic_light_fine_detector 
+  install(TARGETS
+    traffic_light_fine_detector
     tlrdetector
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
+  )
 
   install(
     DIRECTORY

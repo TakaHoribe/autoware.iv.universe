@@ -8,33 +8,28 @@ set(CMAKE_BUILD_TYPE "Release")
 find_package(catkin REQUIRED)
 find_package(PCL REQUIRED)
 
-
-###################################
-## catkin specific configuration ##
-###################################
 catkin_package(
   INCLUDE_DIRS include
 )
-
-###########
-## Build ##
-###########
 
 include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_library(ndt_pcl_modified src/ndt.cpp
+add_library(ndt_pcl_modified
+  src/ndt.cpp
 )
 
 target_link_libraries(ndt_pcl_modified ${catkin_LIBRARIES})
 
-install(TARGETS
-            ndt_pcl_modified
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
+install(
+  TARGETS
+    ndt_pcl_modified
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)

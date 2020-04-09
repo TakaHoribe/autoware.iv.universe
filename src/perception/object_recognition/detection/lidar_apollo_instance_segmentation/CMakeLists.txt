@@ -22,11 +22,11 @@ find_library(NVPARSERS NAMES nvparsers)
 find_library(NVCAFFE_PARSER NAMES nvcaffe_parser)
 find_library(NVINFER_PLUGIN NAMES nvinfer_plugin)
 if(NVINFER AND NVPARSERS AND NVCAFFE_PARSER AND NVINFER_PLUGIN)
-   message("TensorRT is available!")
-   message("NVINFER: ${NVINFER}")
-   message("NVPARSERS: ${NVPARSERS}")
-   message("NVCAFFE_PARSER: ${NVCAFFE_PARSER}")
-   set(TRT_AVAIL ON)
+  message("TensorRT is available!")
+  message("NVINFER: ${NVINFER}")
+  message("NVPARSERS: ${NVPARSERS}")
+  message("NVCAFFE_PARSER: ${NVCAFFE_PARSER}")
+  set(TRT_AVAIL ON)
 else()
   message("TensorRT is NOT Available")
   set(TRT_AVAIL OFF)
@@ -41,9 +41,9 @@ PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIB
 PATH_SUFFIXES lib lib64 bin
 DOC "CUDNN library." )
 if(CUDNN_LIBRARY)
-   message("CUDNN is available!")
-   message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
-   set(CUDNN_AVAIL ON)
+  message("CUDNN is available!")
+  message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
+  set(CUDNN_AVAIL ON)
 else()
   message("CUDNN is NOT Available")
   set(CUDNN_AVAIL OFF)
@@ -76,11 +76,11 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   endif()
 
   find_package(catkin REQUIRED COMPONENTS
-   roscpp
-   roslib
-   pcl_ros
-   autoware_perception_msgs
-   )
+    roscpp
+    roslib
+    pcl_ros
+    autoware_perception_msgs
+  )
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_MWAITXINTRIN_H_INCLUDED")
@@ -88,21 +88,21 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STRICT_ANSI__")
 
   catkin_package(
-       INCLUDE_DIRS
-       include
-   CATKIN_DEPENDS
-   roscpp
-   roslib
-   pcl_ros
-   autoware_perception_msgs
-   )
+    INCLUDE_DIRS
+      include
+    CATKIN_DEPENDS
+      roscpp
+      roslib
+      pcl_ros
+      autoware_perception_msgs
+  )
 
   include_directories(
-   include
-   lib/include
-   ${CUDA_INCLUDE_DIRS}
-   ${catkin_INCLUDE_DIRS}
-   ${PCL_INCLUDE_DIR}
+    include
+    lib/include
+    ${CUDA_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIR}
   )
 
   add_executable(lidar_apollo_instance_segmentation_node
@@ -117,48 +117,49 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 )
 
   add_dependencies(lidar_apollo_instance_segmentation_node
-         ${catkin_EXPORTED_TARGETS}
-         )
+    ${catkin_EXPORTED_TARGETS}
+  )
 
   add_library(tensorrt_apollo_cnn_lib
-         lib/src/TrtNet.cpp
-         )
+    lib/src/TrtNet.cpp
+  )
 
   target_link_libraries(tensorrt_apollo_cnn_lib
-         ${NVINFER}
-         ${NVCAFFE_PARSER}
-         ${NVINFER_PLUGIN}
-         ${CUDA_LIBRARIES}
-         ${CUDA_CUBLAS_LIBRARIES}
-         ${CUDA_curand_LIBRARY}
-         ${CUDNN_LIBRARY}
-         )
+    ${NVINFER}
+    ${NVCAFFE_PARSER}
+    ${NVINFER_PLUGIN}
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_curand_LIBRARY}
+    ${CUDNN_LIBRARY}
+  )
 
   target_link_libraries(lidar_apollo_instance_segmentation_node
-         ${catkin_LIBRARIES}
-         tensorrt_apollo_cnn_lib
-         )
+    ${catkin_LIBRARIES}
+    tensorrt_apollo_cnn_lib
+  )
 
 
-  install(TARGETS
-         tensorrt_apollo_cnn_lib
-         lidar_apollo_instance_segmentation_node
-         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  install(
+    TARGETS
+      tensorrt_apollo_cnn_lib
+      lidar_apollo_instance_segmentation_node
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
   install(DIRECTORY launch/
-         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-         PATTERN ".svn" EXCLUDE)
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  )
+
   install(DIRECTORY data/
-         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/data
-         PATTERN ".svn" EXCLUDE)
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/data
+  )
 
   install(DIRECTORY include/
-         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/${PROJECT_NAME}/
-         PATTERN ".svn" EXCLUDE
-         )
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/${PROJECT_NAME}/
+  )
 
 else()
   find_package(catkin REQUIRED)

@@ -15,12 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES turn_signal_decider
-#  CATKIN_DEPENDS autoware_planning_msgs geometry_msgs lanelet2_extension roscpp std_msgs tf2_ros
-#  DEPENDS system_lib
-)
+catkin_package()
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -33,10 +29,6 @@ target_link_libraries(turn_signal_decider
   ${catkin_LIBRARIES}
 )
 
-#############
-## Install ##
-#############
-
 install(
   TARGETS
     turn_signal_decider
@@ -44,16 +36,3 @@ install(
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_turn_signal_decider.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)

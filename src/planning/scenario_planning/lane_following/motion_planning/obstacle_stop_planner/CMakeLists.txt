@@ -25,9 +25,17 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES obstacle_stop_planner
-  CATKIN_DEPENDS autoware_planning_msgs roscpp sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_eigen tf2_ros visualization_msgs pcl_ros
-#  DEPENDS system_lib
+  CATKIN_DEPENDS
+    autoware_planning_msgs
+    roscpp
+    sensor_msgs
+    std_msgs
+    tf2
+    tf2_geometry_msgs
+    tf2_eigen
+    tf2_ros
+    visualization_msgs
+    pcl_ros
 )
 
 include_directories(

@@ -64,7 +64,6 @@ install(TARGETS ublox_gps ublox_gps_node ublox_logger_node
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
 )
 
 install(
