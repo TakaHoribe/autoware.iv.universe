@@ -114,7 +114,7 @@ visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::P
   visualization_msgs::Marker marker_virtual_wall{};
   marker_virtual_wall.header.frame_id = "map";
   marker_virtual_wall.header.stamp = ros::Time::now();
-  marker_virtual_wall.ns = "stop virtual_wall";
+  marker_virtual_wall.ns = "stop_virtual_wall";
   marker_virtual_wall.id = lane_id;
   marker_virtual_wall.lifetime = ros::Duration(0.5);
   marker_virtual_wall.type = visualization_msgs::Marker::CUBE;
@@ -133,7 +133,7 @@ visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::P
   visualization_msgs::Marker marker_factor_text{};
   marker_factor_text.header.frame_id = "map";
   marker_factor_text.header.stamp = ros::Time::now();
-  marker_factor_text.ns = "factor text";
+  marker_factor_text.ns = "factor_text";
   marker_factor_text.id = lane_id;
   marker_factor_text.lifetime = ros::Duration(0.5);
   marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;

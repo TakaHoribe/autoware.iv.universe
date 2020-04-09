@@ -78,7 +78,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "detection polygons";
+    marker.ns = "detection_polygons";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -129,7 +129,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "collision polygons";
+    marker.ns = "collision_polygons";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -180,7 +180,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "stop virtual_wall";
+    marker.ns = "stop_virtual_wall";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;
@@ -204,7 +204,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "factor text";
+    marker.ns = "factor_text";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
@@ -229,7 +229,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "stop obstacle point";
+    marker.ns = "stop_obstacle_point";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::SPHERE;
@@ -253,7 +253,7 @@ void ObstacleStopPlannerDebugNode::publish() {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "stop obstacle text";
+    marker.ns = "stop_obstacle_text";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
