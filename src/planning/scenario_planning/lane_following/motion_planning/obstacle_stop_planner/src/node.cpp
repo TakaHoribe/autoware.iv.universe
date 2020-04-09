@@ -115,9 +115,12 @@ void ObstacleStopPlannerNode::pathCallback(const autoware_planning_msgs::Traject
 
   autoware_planning_msgs::Trajectory& trajectory = decimate_trajectory;
 
-  // transform pointcloud
+　/*
+   * search candidate obstacle pointcloud
+   */
   pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle_candidate_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
   {
+    // transform pointcloud
     geometry_msgs::TransformStamped transform_stamped =
         tf_buffer_.lookupTransform(trajectory.header.frame_id, obstacle_ros_pointcloud_ptr_->header.frame_id,
                                    obstacle_ros_pointcloud_ptr_->header.stamp, ros::Duration(0.5));
