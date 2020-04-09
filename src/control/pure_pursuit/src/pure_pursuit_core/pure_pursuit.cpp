@@ -29,17 +29,19 @@
  * limitations under the License.
  */
 
-#include "pure_pursuit/core/pure_pursuit.h"
-#include "pure_pursuit/core/planning_utils.h"
+#include "pure_pursuit/pure_pursuit.h"
+#include "pure_pursuit/util/planning_utils.h"
 
 namespace planning_utils {
 
-bool PurePursuit::isRequirementsSatisfied() {
-  return (curr_wps_ptr_ != nullptr && curr_pose_ptr_ != nullptr) ? true : false;
+bool PurePursuit::isDataReady() {
+  if (!curr_wps_ptr_) return false;
+  if (!curr_pose_ptr_) return false;
+  return true;
 }
 
 std::pair<bool, double> PurePursuit::run() {
-  if (!isRequirementsSatisfied()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
+  if (!isDataReady()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
 
   auto clst_pair = findClosestIdxWithDistAngThr(*curr_wps_ptr_, *curr_pose_ptr_, clst_thr_dist_, clst_thr_ang_);
 

@@ -31,15 +31,14 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-// ROS includes
 #include <geometry_msgs/Pose.h>
-
-// C++ includes
-#include <memory>
 
 namespace planning_utils {
 
@@ -62,7 +61,7 @@ class PurePursuit {
   geometry_msgs::Point getLocationOfNextWaypoint() { return loc_next_wp_; }
   geometry_msgs::Point getLocationOfNextTarget() { return loc_next_tgt_; }
 
-  bool isRequirementsSatisfied();
+  bool isDataReady();
   std::pair<bool, double> run();  // calculate curvature
 
  private:

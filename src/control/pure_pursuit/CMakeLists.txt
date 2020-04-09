@@ -54,9 +54,8 @@ add_dependencies(pure_pursuit_core
 
 # pure_pursuit_core
 add_executable(pure_pursuit
+  src/pure_pursuit/main.cpp
   src/pure_pursuit/pure_pursuit_node.cpp
-  src/pure_pursuit/pure_pursuit_core.cpp
-  src/pure_pursuit/pure_pursuit_viz.cpp
 )
 
 target_link_libraries(pure_pursuit

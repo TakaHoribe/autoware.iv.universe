@@ -30,16 +30,170 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
+#include "pure_pursuit/pure_pursuit_node.h"
+#include "pure_pursuit/util/planning_utils.h"
+#include "pure_pursuit/util/tf_utils.h"
 
-#include "pure_pursuit/pure_pursuit_core.h"
+namespace {
 
-int main(int argc, char** argv) {
-  ros::init(argc, argv, "pure_pursuit");
+geometry_msgs::Twist createTwist(const double kappa, const double velocity) {
+  geometry_msgs::Twist twist;
+  twist.linear.x = velocity;
+  twist.angular.z = kappa * twist.linear.x;
+  return twist;
+}
 
-  PurePursuitNode pure_pursuit_node;
+autoware_control_msgs::ControlCommand createControlCommand(const double kappa, const double velocity,
+                                                           const double acceleration, const double wheel_base) {
+  autoware_control_msgs::ControlCommand cmd;
+  cmd.velocity = velocity;
+  cmd.acceleration = acceleration;
+  cmd.steering_angle = planning_utils::convertCurvatureToSteeringAngle(wheel_base, kappa);
+  return cmd;
+}
 
-  ros::spin();
+double calcLookaheadDistance(const double velocity, const double lookahead_distance_ratio,
+                             const double min_lookahead_distance) {
+  const double lookahead_distance = lookahead_distance_ratio * std::abs(velocity);
+  return std::max(lookahead_distance, min_lookahead_distance);
+}
 
-  return 0;
+}  // namespace
+
+PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_) {
+  pure_pursuit_ = std::make_unique<planning_utils::PurePursuit>();
+
+  // Global Parameters
+  private_nh_.param<double>("/vehicle_info/wheel_base", param_.wheel_base, 2.7);
+
+  // Node Parameters
+  private_nh_.param<double>("control_period", param_.ctrl_period, 0.02);
+
+  // Algorithm Parameters
+  private_nh_.param<bool>("use_lerp", param_.use_lerp, true);
+  private_nh_.param<double>("lookahead_distance_ratio", param_.lookahead_distance_ratio, 2.2);
+  private_nh_.param<double>("min_lookahead_distance", param_.min_lookahead_distance, 2.5);
+  private_nh_.param<double>("reverse_min_lookahead_distance", param_.reverse_min_lookahead_distance, 7.0);
+
+  // Subscribers
+  sub_trajectory_ = private_nh_.subscribe("input/reference_trajectory", 1, &PurePursuitNode::onTrajectory, this);
+  sub_current_velocity_ = private_nh_.subscribe("input/current_velocity", 1, &PurePursuitNode::onCurrentVelocity, this);
+
+  // Publishers
+  pub_twist_ = private_nh_.advertise<geometry_msgs::TwistStamped>("output/twist_raw", 1);
+  pub_ctrl_cmd_ = private_nh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
+
+  // Timer
+  timer_ = nh_.createTimer(ros::Duration(param_.ctrl_period), &PurePursuitNode::onTimer, this);
+
+  //  Wait for first current pose
+  tf_utils::waitForTransform(tf_buffer_, "map", "base_link");
+}
+
+bool PurePursuitNode::isDataReady() const {
+  if (!current_velocity_) {
+    ROS_WARN_THROTTLE(5.0, "waiting for current_velocity...");
+    return false;
+  }
+
+  if (!trajectory_) {
+    ROS_WARN_THROTTLE(5.0, "waiting for trajectory...");
+    return false;
+  }
+
+  if (!current_pose_) {
+    ROS_WARN_THROTTLE(5.0, "waiting for current_pose...");
+    return false;
+  }
+
+  return true;
+}
+
+void PurePursuitNode::onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) { current_velocity_ = msg; }
+
+void PurePursuitNode::onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg) { trajectory_ = msg; }
+
+void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
+  current_pose_ = tf_utils::getCurrentPose(tf_buffer_);
+
+  if (!isDataReady()) {
+    return;
+  }
+
+  const auto target_values = calcTargetValues();
+
+  if (target_values) {
+    publishCommand(*target_values);
+  } else {
+    ROS_ERROR("failed to solve pure_pursuit");
+    publishCommand({0.0, 0.0, 0.0});
+  }
+}
+
+void PurePursuitNode::publishCommand(const TargetValues& targets) {
+  // Header
+  std_msgs::Header header;
+  header.stamp = ros::Time::now();
+
+  // Twist
+  {
+    geometry_msgs::TwistStamped twist;
+    twist.header = header;
+    twist.twist = createTwist(targets.kappa, targets.velocity);
+    pub_twist_.publish(twist);
+  }
+
+  // ControlCommand
+  {
+    autoware_control_msgs::ControlCommandStamped cmd;
+    cmd.header = header;
+    cmd.control = createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
+    pub_ctrl_cmd_.publish(cmd);
+  }
+}
+
+boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
+  // Calculate target point for velocity/acceleration
+  const auto target_point = calcTargetPoint();
+  if (!target_point) {
+    return {};
+  }
+
+  const double target_vel = target_point->twist.linear.x;
+  const double target_acc = target_point->accel.linear.x;
+
+  // Calculate lookahead ditance
+  const bool is_reverse = (target_vel < 0);
+  const double min_lookahead_distance =
+      is_reverse ? param_.reverse_min_lookahead_distance : param_.min_lookahead_distance;
+  const double lookahead_distance =
+      calcLookaheadDistance(current_velocity_->twist.linear.x, param_.lookahead_distance_ratio, min_lookahead_distance);
+
+  // Set PurePursuit data
+  pure_pursuit_->setUseLerp(param_.use_lerp);
+  pure_pursuit_->setCurrentPose(current_pose_->pose);
+  pure_pursuit_->setWaypoints(planning_utils::extractPoses(*trajectory_));
+  pure_pursuit_->setLookaheadDistance(lookahead_distance);
+
+  // Run PurePursuit
+  const auto pure_pursuit_result = pure_pursuit_->run();
+  if (!pure_pursuit_result.first) {
+    return {};
+  }
+
+  const auto kappa = pure_pursuit_result.second;
+
+  return TargetValues{kappa, target_vel, target_acc};
+}
+
+boost::optional<autoware_planning_msgs::TrajectoryPoint> PurePursuitNode::calcTargetPoint() const {
+  const auto closest_idx_result = planning_utils::findClosestIdxWithDistAngThr(
+      planning_utils::extractPoses(*trajectory_), current_pose_->pose, 3.0, M_PI_4);
+
+  if (!closest_idx_result.first) {
+    ROS_ERROR("cannot find closest waypoint");
+    return {};
+  }
+
+  return trajectory_->points.at(closest_idx_result.second);
 }
