@@ -22,10 +22,14 @@ namespace {
 
 using State = BlindSpotModule::State;
 
-visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, const State& state, const std::string& ns,
-    const int64_t id) {
+visualization_msgs::MarkerArray createDetectionAreaMarkerArray(const std::vector<geometry_msgs::Point>& detection_area,
+                                                               const State& state, const std::string& ns,
+                                                               const int64_t id) {
   visualization_msgs::MarkerArray msg;
+
+  if (detection_area.empty()) {
+    return msg;
+  }
 
   auto marker = createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
                                     createMarkerColor(0.0, 0.0, 0.0, 0.999));
@@ -33,26 +37,24 @@ visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
   marker.pose.orientation = createMarkerOrientation(0.0, 0.0, 0.0, 1.0);
   marker.scale = createMarkerScale(0.1, 0.0, 0.0);
 
-  for (size_t i = 0; i < detection_areas.size(); ++i) {
-    marker.ns = ns;
-    marker.id = id * 10000 + i;  // to be unique
+  marker.ns = ns;
+  marker.id = id;  // to be unique
 
-    if (state == State::STOP) {
-      marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
-    } else {
-      marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
-    }
-
-    // Add each vertex
-    for (const auto& area_point : detection_areas.at(i)) {
-      marker.points.push_back(area_point);
-    }
-
-    // Close polygon
-    marker.points.push_back(marker.points.front());
-
-    msg.markers.push_back(marker);
+  if (state == State::STOP) {
+    marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
+  } else {
+    marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
   }
+
+  // Add each vertex
+  for (const auto& area_point : detection_area) {
+    marker.points.push_back(area_point);
+  }
+
+  // Close polygon
+  marker.points.push_back(marker.points.front());
+
+  msg.markers.push_back(marker);
 
   return msg;
 }
@@ -176,7 +178,7 @@ visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
       &debug_marker_array);
 
   appendMarkerArray(
-      createDetectionAreaMarkerArray(debug_data_.detection_areas, state, "blind_spot_detection_area", lane_id_),
+      createDetectionAreaMarkerArray(debug_data_.detection_area, state, "blind_spot_detection_area", lane_id_),
       &debug_marker_array);
 
   appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", lane_id_, 0.5, 0.0, 0.5),

@@ -34,7 +34,7 @@
 using Point2d = boost::geometry::model::d2::point_xy<double>;
 using Segment2d = boost::geometry::model::segment<Point2d>;
 using LineString2d = boost::geometry::model::linestring<Point2d>;
-using Polygon2d = boost::geometry::model::polygon<Point2d, false>;  // counter-clockwise, closed
+using Polygon2d = boost::geometry::model::polygon<Point2d, false, false>;  // counter-clockwise, open
 
 BOOST_GEOMETRY_REGISTER_POINT_3D(geometry_msgs::Point, double, cs::cartesian, x, y, z)
 BOOST_GEOMETRY_REGISTER_POINT_3D(geometry_msgs::PoseWithCovarianceStamped, double, cs::cartesian, pose.pose.position.x,
@@ -59,6 +59,16 @@ LineString2d to_bg2d(const std::vector<T>& vec) {
     ps.push_back(to_bg2d(p));
   }
   return ps;
+}
+
+inline Polygon2d linestring2polygon(const LineString2d& line_string) {
+  Polygon2d polygon;
+
+  for (const auto& p : line_string) {
+    polygon.outer().push_back(p);
+  }
+
+  return polygon;
 }
 
 inline Polygon2d lines2polygon(const LineString2d& left_line, const LineString2d& right_line) {

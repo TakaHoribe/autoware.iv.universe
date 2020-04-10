@@ -90,7 +90,7 @@ class BlindSpotModule : public SceneModuleInterface {
     geometry_msgs::Pose stop_point_pose;
     geometry_msgs::Pose judge_point_pose;
     autoware_planning_msgs::PathWithLaneId path_with_judgeline;
-    std::vector<std::vector<geometry_msgs::Point>> detection_areas;
+    std::vector<geometry_msgs::Point> detection_area;
     autoware_planning_msgs::PathWithLaneId path_right_edge;
     autoware_planning_msgs::PathWithLaneId path_left_edge;
   };
@@ -137,14 +137,13 @@ class BlindSpotModule : public SceneModuleInterface {
    * actual collision check algorithm inside this function)
    */
   bool checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
-                      const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
-                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const double path_width,
-                      bool& is_collision);
+                      const std::vector<geometry_msgs::Point>& detection_area,
+                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
+                      const double path_width);
   /**
    * @brief generates detection area
    */
-  bool generateDetectionArea(const geometry_msgs::Pose& current_pose,
-                             std::vector<std::vector<geometry_msgs::Point>>& detection_areas);
+  std::vector<geometry_msgs::Point> generateDetectionArea(const geometry_msgs::Pose& current_pose);
 
   /**
    * @brief calculate right and left path edge line
@@ -160,10 +159,6 @@ class BlindSpotModule : public SceneModuleInterface {
 
   geometry_msgs::Pose getAheadPose(const size_t start_idx, const double ahead_dist,
                                    const autoware_planning_msgs::PathWithLaneId& path) const;
-  /**
-   * @brief convert from lanelet to boost polygon
-   */
-  Polygon convertToBoostGeometryPolygon(const std::vector<geometry_msgs::Point>& detection_area);
 
   StateMachine state_machine_;  //!  for state management
 };
