@@ -117,7 +117,8 @@ bool CrosswalkModule::checkStopArea(
   std::vector<Eigen::Vector3d> points;
   for (size_t i = 0; i < stop_polygon.outer().size(); ++i) {
     Eigen::Vector3d point;
-    point << stop_polygon.outer().at(i).x(), stop_polygon.outer().at(i).y(), 0.0;
+    point << stop_polygon.outer().at(i).x(), stop_polygon.outer().at(i).y(),
+        planner_data_->current_pose.pose.position.z;
     points.push_back(point);
   }
   debug_data_.stop_polygons.push_back(points);
@@ -185,7 +186,7 @@ bool CrosswalkModule::checkSlowArea(
   std::vector<Eigen::Vector3d> points;
   for (size_t i = 0; i < polygon.outer().size(); ++i) {
     Eigen::Vector3d point;
-    point << polygon.outer().at(i).x(), polygon.outer().at(i).y(), 0.0;
+    point << polygon.outer().at(i).x(), polygon.outer().at(i).y(), planner_data_->current_pose.pose.position.z;
     points.push_back(point);
   }
   debug_data_.slow_polygons.push_back(points);
@@ -213,7 +214,7 @@ bool CrosswalkModule::insertTargetVelocityPoint(
     // -- debug code --
     for (const auto& collision_point : collision_points) {
       Eigen::Vector3d point3d;
-      point3d << collision_point.x(), collision_point.y(), 0;
+      point3d << collision_point.x(), collision_point.y(), planner_data_->current_pose.pose.position.z;
       debug_data_.collision_points.push_back(point3d);
     }
     std::vector<Eigen::Vector3d> line3d;
