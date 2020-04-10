@@ -152,7 +152,7 @@ bool SplineInterpolate::interpolate(const std::vector<double>& base_index, const
  */
 std::vector<double> calcEuclidDist(const std::vector<double>& x, const std::vector<double>& y) {
   if (x.size() != y.size()) {
-    printf("you are crazy. please check x y vector size.\n");
+    std::cerr << "x y vector size should be the same." << std::endl;
   }
 
   std::vector<double> dist_v;
