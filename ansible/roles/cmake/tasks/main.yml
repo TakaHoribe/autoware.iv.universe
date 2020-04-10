@@ -1,0 +1,11 @@
+---
+- name: CMake (install CMake)
+  become: yes
+  command: "snap install cmake --classic"
+
+- name: CMake (add path >> bashrc)
+  lineinfile:
+    dest: ~/.bashrc
+    line: export PATH="/snap/bin:$PATH"
+    state: present
+  become: no
