@@ -42,12 +42,12 @@
 
 - name: ROS (install dependencies for building packages)
   apt:
-    name: "{{ item }}"
+    name:
+      - "ros-{{ release }}-velodyne-pointcloud"
+      - "ros-{{ release }}-roswww"
+      - "ros-{{ release }}-rosbridge-server"
+      - build-essential
     state: latest
     update_cache: yes
   become: yes
-  with_items:
-    - "ros-{{ release }}-velodyne-pointcloud"
-    - "ros-{{ release }}-roswww"
-    - "ros-{{ release }}-rosbridge-server"
-    - build-essential
+    
