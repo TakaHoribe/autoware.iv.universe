@@ -22,10 +22,14 @@ namespace {
 
 using State = BlindSpotModule::State;
 
-visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
-    const std::vector<std::vector<geometry_msgs::Point>>& detection_areas, const State& state, const std::string& ns,
-    const int64_t id) {
+visualization_msgs::MarkerArray createDetectionAreaMarkerArray(const std::vector<geometry_msgs::Point>& detection_area,
+                                                               const State& state, const std::string& ns,
+                                                               const int64_t id) {
   visualization_msgs::MarkerArray msg;
+
+  if (detection_area.empty()) {
+    return msg;
+  }
 
   auto marker = createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::LINE_STRIP,
                                     createMarkerColor(0.0, 0.0, 0.0, 0.999));
@@ -33,26 +37,24 @@ visualization_msgs::MarkerArray createDetectionAreaMarkerArray(
   marker.pose.orientation = createMarkerOrientation(0.0, 0.0, 0.0, 1.0);
   marker.scale = createMarkerScale(0.1, 0.0, 0.0);
 
-  for (size_t i = 0; i < detection_areas.size(); ++i) {
-    marker.ns = ns;
-    marker.id = id * 10000 + i;  // to be unique
+  marker.ns = ns;
+  marker.id = id;  // to be unique
 
-    if (state == State::STOP) {
-      marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
-    } else {
-      marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
-    }
-
-    // Add each vertex
-    for (const auto& area_point : detection_areas.at(i)) {
-      marker.points.push_back(area_point);
-    }
-
-    // Close polygon
-    marker.points.push_back(marker.points.front());
-
-    msg.markers.push_back(marker);
+  if (state == State::STOP) {
+    marker.color = createMarkerColor(1.0, 0.0, 0.0, 0.999);
+  } else {
+    marker.color = createMarkerColor(0.0, 1.0, 1.0, 0.999);
   }
+
+  // Add each vertex
+  for (const auto& area_point : detection_area) {
+    marker.points.push_back(area_point);
+  }
+
+  // Close polygon
+  marker.points.push_back(marker.points.front());
+
+  msg.markers.push_back(marker);
 
   return msg;
 }
@@ -111,29 +113,29 @@ visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose&
 visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
-  visualization_msgs::Marker marker_geofence{};
-  marker_geofence.header.frame_id = "map";
-  marker_geofence.header.stamp = ros::Time::now();
-  marker_geofence.ns = "stop geofence";
-  marker_geofence.id = lane_id;
-  marker_geofence.lifetime = ros::Duration(0.5);
-  marker_geofence.type = visualization_msgs::Marker::CUBE;
-  marker_geofence.action = visualization_msgs::Marker::ADD;
-  marker_geofence.pose = pose;
-  marker_geofence.pose.position.z += 1.0;
-  marker_geofence.scale.x = 0.1;
-  marker_geofence.scale.y = 5.0;
-  marker_geofence.scale.z = 2.0;
-  marker_geofence.color.r = 1.0;
-  marker_geofence.color.g = 0.0;
-  marker_geofence.color.b = 0.0;
-  marker_geofence.color.a = 0.5;
-  msg.markers.push_back(marker_geofence);
+  visualization_msgs::Marker marker_virtual_wall{};
+  marker_virtual_wall.header.frame_id = "map";
+  marker_virtual_wall.header.stamp = ros::Time::now();
+  marker_virtual_wall.ns = "stop_virtual_wall";
+  marker_virtual_wall.id = lane_id;
+  marker_virtual_wall.lifetime = ros::Duration(0.5);
+  marker_virtual_wall.type = visualization_msgs::Marker::CUBE;
+  marker_virtual_wall.action = visualization_msgs::Marker::ADD;
+  marker_virtual_wall.pose = pose;
+  marker_virtual_wall.pose.position.z += 1.0;
+  marker_virtual_wall.scale.x = 0.1;
+  marker_virtual_wall.scale.y = 5.0;
+  marker_virtual_wall.scale.z = 2.0;
+  marker_virtual_wall.color.r = 1.0;
+  marker_virtual_wall.color.g = 0.0;
+  marker_virtual_wall.color.b = 0.0;
+  marker_virtual_wall.color.a = 0.5;
+  msg.markers.push_back(marker_virtual_wall);
 
   visualization_msgs::Marker marker_factor_text{};
   marker_factor_text.header.frame_id = "map";
   marker_factor_text.header.stamp = ros::Time::now();
-  marker_factor_text.ns = "factor text";
+  marker_factor_text.ns = "factor_text";
   marker_factor_text.id = lane_id;
   marker_factor_text.lifetime = ros::Duration(0.5);
   marker_factor_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
@@ -176,7 +178,7 @@ visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
       &debug_marker_array);
 
   appendMarkerArray(
-      createDetectionAreaMarkerArray(debug_data_.detection_areas, state, "blind_spot_detection_area", lane_id_),
+      createDetectionAreaMarkerArray(debug_data_.detection_area, state, "blind_spot_detection_area", lane_id_),
       &debug_marker_array);
 
   appendMarkerArray(createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", lane_id_, 0.5, 0.0, 0.5),
@@ -186,7 +188,7 @@ visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == BlindSpotModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.geofence_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;

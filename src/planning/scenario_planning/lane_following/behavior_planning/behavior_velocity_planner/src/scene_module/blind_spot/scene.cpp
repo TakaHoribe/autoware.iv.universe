@@ -15,6 +15,7 @@
  */
 #include <scene_module/blind_spot/scene.h>
 
+#include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
 
 namespace bg = boost::geometry;
@@ -23,7 +24,8 @@ using Polygon = bg::model::polygon<Point, false>;
 
 BlindSpotModule::BlindSpotModule(const int64_t module_id, const int64_t lane_id, const std::string& turn_direction)
     : SceneModuleInterface(module_id), lane_id_(lane_id), turn_direction_(turn_direction) {
-  state_machine_.setMarginTime(2.0);  // [sec]
+  constexpr double state_change_margin_time = 2.0;
+  state_machine_.setMarginTime(state_change_margin_time);  // [sec]
 }
 
 bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
@@ -64,8 +66,8 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
   }
 
   if (current_state == State::STOP) {
-    // visualize geofence at vehicle front position
-    debug_data_.geofence_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
+    // visualize virtual_wall at vehicle front position
+    debug_data_.virtual_wall_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
   }
   debug_data_.stop_point_pose = path->points.at(stop_line_idx_).point.pose;
   debug_data_.judge_point_pose = path->points.at(judge_line_idx_).point.pose;
@@ -83,20 +85,20 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
   }
 
   /* get detection area */
-  std::vector<std::vector<geometry_msgs::Point>> detection_areas;
-  generateDetectionArea(current_pose.pose, detection_areas);
+  if (turn_direction_.compare("right") != 0 && turn_direction_.compare("left") != 0) {
+    ROS_WARN("blind spot detector is running, turn_direction_ = not right or left. (%s)", turn_direction_.c_str());
+    return false;
+  }
 
-  debug_data_.detection_areas = detection_areas;
+  const auto detection_area = generateDetectionArea(current_pose.pose);
+
+  debug_data_.detection_area = detection_area;
 
   /* get dynamic object */
   const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
-  bool is_collision = false;
-  if (!checkCollision(*path, detection_areas, objects_ptr, path_expand_width_, is_collision)) {
-    return false;
-  }
-
+  const bool is_collision = checkCollision(*path, detection_area, objects_ptr, path_expand_width_);
   if (is_collision) {
     state_machine_.setStateWithMarginTime(State::STOP);
   } else {
@@ -105,16 +107,14 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId*
 
   /* set stop speed */
   if (state_machine_.getState() == State::STOP) {
-    const double stop_vel = 0.0;
+    constexpr double stop_vel = 0.0;
     setVelocityFrom(stop_line_idx_, stop_vel, *path);
   }
 
   return true;
 }
 
-bool BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_pose,
-                                            std::vector<std::vector<geometry_msgs::Point>>& detection_areas) {
-  detection_areas.clear();
+std::vector<geometry_msgs::Point> BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_pose) {
   std::vector<geometry_msgs::Point> blind_spot;
 
   double detection_width = 5.0;
@@ -128,10 +128,8 @@ bool BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_p
     detection_width *= -1.0;
   } else if (turn_direction_.compare("left") == 0) {
     // nothing to do.
-  } else {
-    ROS_WARN("blind spot detector is running, turn_direction_ = not right or left. (%s)", turn_direction_.c_str());
-    return false;
   }
+
   geometry_msgs::Pose fl;
   fl.position.x = detection_length_forward;
   fl.position.y = vw;
@@ -148,8 +146,8 @@ bool BlindSpotModule::generateDetectionArea(const geometry_msgs::Pose& current_p
   rl.position.x = -detection_length_backward;
   rl.position.y = vw;
   blind_spot.push_back(planning_utils::transformAbsCoordinate2D(rl, current_pose).position);
-  detection_areas.push_back(blind_spot);
-  return true;
+
+  return blind_spot;
 }
 
 bool BlindSpotModule::setStopLineIdx(const int current_pose_closest, const double judge_line_dist,
@@ -252,51 +250,34 @@ bool BlindSpotModule::setVelocityFrom(const size_t idx, const double vel,
   }
 }
 
-Polygon BlindSpotModule::convertToBoostGeometryPolygon(const std::vector<geometry_msgs::Point>& detection_area) {
-  Polygon polygon;
-  for (const auto& p : detection_area) {
-    polygon.outer().push_back(bg::make<Point>(p.x, p.y));
-  }
-  polygon.outer().push_back(polygon.outer().front());
-  return polygon;
-}
-
 bool BlindSpotModule::checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
-                                     const std::vector<std::vector<geometry_msgs::Point>>& detection_areas,
+                                     const std::vector<geometry_msgs::Point>& detection_area,
                                      const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
-                                     const double path_width, bool& is_collision) {
+                                     const double path_width) {
   /* generates side edge line */
   autoware_planning_msgs::PathWithLaneId path_r;  // right side edge line
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line
   generateEdgeLine(path, path_width, path_r, path_l);
 
-  /* check collision for each objects and lanelets area */
-  is_collision = false;
-  // for each objective lanelets
-  for (size_t i = 0; i < detection_areas.size(); ++i) {
-    Polygon polygon = convertToBoostGeometryPolygon(detection_areas.at(i));
-
-    // for each dynamic objects
-    for (size_t j = 0; j < objects_ptr->objects.size(); ++j) {
-      Point point(objects_ptr->objects.at(j).state.pose_covariance.pose.position.x,
-                  objects_ptr->objects.at(j).state.pose_covariance.pose.position.y);
-      // if the dynamic object is in the lanelet polygon, check collision
-      if (bg::within(point, polygon)) {
-        if (checkPathCollision(path_r, objects_ptr->objects.at(j)) ||
-            checkPathCollision(path_l, objects_ptr->objects.at(j))) {
-          is_collision = true;
-        }
-      }
-
-      if (is_collision) break;
-    }
-    if (is_collision) break;
-  }
-
   debug_data_.path_right_edge = path_r;
   debug_data_.path_left_edge = path_l;
 
-  return true;
+  /* check collision for each objects and detection area */
+  for (const auto& object : objects_ptr->objects) {
+    const auto object_pose = object.state.pose_covariance.pose;
+
+    // Ignore objects outside detection area
+    const auto detection_area_polygon = linestring2polygon(to_bg2d(detection_area));
+    if (!bg::within(to_bg2d(object_pose.position), detection_area_polygon)) {
+      continue;
+    }
+
+    if (checkPathCollision(path_r, object) || checkPathCollision(path_l, object)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool BlindSpotModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId& path,

@@ -35,7 +35,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "stop geofence";
+    marker.ns = "stop_virtual_wall";
     marker.id = j;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;
@@ -59,7 +59,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "factor text";
+    marker.ns = "factor_text";
     marker.id = j;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;

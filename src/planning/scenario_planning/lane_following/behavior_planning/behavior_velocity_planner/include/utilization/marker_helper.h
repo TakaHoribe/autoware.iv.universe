@@ -75,6 +75,7 @@ inline visualization_msgs::Marker createDefaultMarker(const char* frame_id, cons
   marker.pose.orientation = createMarkerOrientation(0.0, 0.0, 0.0, 1.0);
   marker.scale = createMarkerScale(1.0, 1.0, 1.0);
   marker.color = color;
+  marker.frame_locked = true;
 
   return marker;
 }

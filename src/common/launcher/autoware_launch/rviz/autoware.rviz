@@ -755,14 +755,14 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/intersection
                       Name: Intersection
                       Namespaces:
-                        factor text: true
+                        factor_text: true
                         intersection_detection_lanelets: false
                         judge_point_pose_line: true
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop_virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
@@ -772,13 +772,13 @@ Visualization Manager:
                       Name: Blind Spot
                       Namespaces:
                         blind_spot_detection_area: false
-                        factor text: true
+                        factor_text: true
                         judge_point_pose_line: true
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop_virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
@@ -794,8 +794,8 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/momentary_stop
                       Name: StopLine
                       Namespaces:
-                        factor text: true
-                        stop geofence: true
+                        factor_text: true
+                        stop_virtual_wall: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -826,12 +826,12 @@ Visualization Manager:
                       Marker Topic: /planning/scenario_planning/lane_following/motion_planning/obstacle_stop_planner/debug/marker
                       Name: ObstaclePointCloudStop
                       Namespaces:
-                        collision polygons: true
-                        detection polygons: true
-                        factor text: true
-                        stop geofence: true
-                        stop obstacle point: true
-                        stop obstacle text: true
+                        collision_polygons: true
+                        detection_polygons: true
+                        factor_text: true
+                        stop_virtual_wall: true
+                        stop_obstacle_point: true
+                        stop_obstacle_text: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
