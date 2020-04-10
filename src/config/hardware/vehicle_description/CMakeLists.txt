@@ -3,14 +3,12 @@ project(vehicle_description)
 
 add_compile_options(-std=c++14)
 
-find_package(catkin REQUIRED
+find_package(catkin REQUIRED COMPONENTS
   roscpp
   xacro
 )
 
-catkin_package(
-  CATKIN_DEPENDS
-)
+catkin_package()
 
 include_directories(
   ${catkin_INCLUDE_DIRS}

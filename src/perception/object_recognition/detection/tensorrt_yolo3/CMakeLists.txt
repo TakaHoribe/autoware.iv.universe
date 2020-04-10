@@ -22,11 +22,11 @@ find_library(NVPARSERS NAMES nvparsers)
 find_library(NVCAFFE_PARSER NAMES nvcaffe_parser)
 find_library(NVINFER_PLUGIN NAMES nvinfer_plugin)
 if(NVINFER AND NVPARSERS AND NVCAFFE_PARSER AND NVINFER_PLUGIN)
-   message("TensorRT is available!")
-   message("NVINFER: ${NVINFER}")
-   message("NVPARSERS: ${NVPARSERS}")
-   message("NVCAFFE_PARSER: ${NVCAFFE_PARSER}")
-   set(TRT_AVAIL ON)
+  message("TensorRT is available!")
+  message("NVINFER: ${NVINFER}")
+  message("NVPARSERS: ${NVPARSERS}")
+  message("NVCAFFE_PARSER: ${NVCAFFE_PARSER}")
+  set(TRT_AVAIL ON)
 else()
   message("TensorRT is NOT Available")
   set(TRT_AVAIL OFF)
@@ -41,9 +41,9 @@ PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIB
 PATH_SUFFIXES lib lib64 bin
 DOC "CUDNN library." )
 if(CUDNN_LIBRARY)
-   message("CUDNN is available!")
-   message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
-   set(CUDNN_AVAIL ON)
+  message("CUDNN is available!")
+  message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
+  set(CUDNN_AVAIL ON)
 else()
   message("CUDNN is NOT Available")
   set(CUDNN_AVAIL OFF)
@@ -71,91 +71,86 @@ endif()
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
   find_package(catkin REQUIRED COMPONENTS
-   roscpp
-   roslib
-#    pcl_ros
-   autoware_perception_msgs
-   cv_bridge
-#    tf2
-#    tf2_geometry_msgs
-   )
+    roscpp
+    roslib
+    autoware_perception_msgs
+    cv_bridge
+  )
+
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 
   catkin_package(
-   CATKIN_DEPENDS
-   roscpp
-   roslib
-#    pcl_ros
-   autoware_perception_msgs
-   cv_bridge
-#    tf2
-#    tf2_geometry_msgs
-   )
+    CATKIN_DEPENDS
+      roscpp
+      roslib
+      autoware_perception_msgs
+      cv_bridge
+  )
 
   include_directories(
-   include
-   lib/include
-   ${catkin_INCLUDE_DIRS}
+    include
+    lib/include
+    ${catkin_INCLUDE_DIRS}
   )
   set(SOURCE_FILES
-   src/tensorrt_yolo3_main.cpp
-   src/tensorrt_yolo3_ros.cpp
-   )
+    src/tensorrt_yolo3_main.cpp
+    src/tensorrt_yolo3_ros.cpp
+  )
 
   add_executable(tensorrt_yolo3
-         ${SOURCE_FILES})
+    ${SOURCE_FILES}
+  )
 
   add_dependencies(tensorrt_yolo3
-         ${catkin_EXPORTED_TARGETS}
-         )
+    ${catkin_EXPORTED_TARGETS}
+  )
 
 
   cuda_add_library(gpu_tensorrt_yolo3_lib
-         lib/src/UpsampleLayer.cu
-         lib/src/YoloLayer.cu
-         )
+    lib/src/UpsampleLayer.cu
+    lib/src/YoloLayer.cu
+  )
 
   target_link_libraries(gpu_tensorrt_yolo3_lib
-   ${CUDA_LIBRARIES}
+    ${CUDA_LIBRARIES}
   )
 
   add_library(tensorrt_yolo3_lib
-         lib/src/EntroyCalibrator.cpp
-         lib/src/TrtNet.cpp
-         lib/src/UpsampleLayer.cpp
-         )
+    lib/src/EntroyCalibrator.cpp
+    lib/src/TrtNet.cpp
+    lib/src/UpsampleLayer.cpp
+  )
 
   target_link_libraries(tensorrt_yolo3_lib
-         ${NVINFER}
-         ${NVCAFFE_PARSER}
-         ${NVINFER_PLUGIN}
-         ${CUDA_LIBRARIES}
-         ${CUDA_CUBLAS_LIBRARIES}
-         ${CUDA_curand_LIBRARY}
-         ${CUDNN_LIBRARY}
-         gpu_tensorrt_yolo3_lib
-         )
+    ${NVINFER}
+    ${NVCAFFE_PARSER}
+    ${NVINFER_PLUGIN}
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_curand_LIBRARY}
+    ${CUDNN_LIBRARY}
+    gpu_tensorrt_yolo3_lib
+  )
 
   target_link_libraries(tensorrt_yolo3
-         ${catkin_LIBRARIES}
-         tensorrt_yolo3_lib
-         )
+    ${catkin_LIBRARIES}
+    tensorrt_yolo3_lib
+  )
 
 
   install(TARGETS
-         gpu_tensorrt_yolo3_lib
-         tensorrt_yolo3_lib
-         tensorrt_yolo3
-         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+      gpu_tensorrt_yolo3_lib
+      tensorrt_yolo3_lib
+      tensorrt_yolo3
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
   install(DIRECTORY include/
-         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/${PROJECT_NAME}/
-         PATTERN ".svn" EXCLUDE
-         )
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/${PROJECT_NAME}/
+  )
 
   install(
     DIRECTORY
@@ -164,11 +159,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
 
-#   if (CATKIN_ENABLE_TESTING)
-#     find_package(rostest REQUIRED)
-#     catkin_add_gtest(test-point_pillars test/src/test_point_pillars.cpp)
-#     target_link_libraries(test-point_pillars ${catkin_LIBRARIES} point_pillars_lib)
-#   endif()
 else()
   find_package(catkin REQUIRED)
   catkin_package()

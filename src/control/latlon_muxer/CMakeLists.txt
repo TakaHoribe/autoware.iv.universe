@@ -16,7 +16,6 @@ catkin_package(
     autoware_control_msgs
 )
 
-
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}

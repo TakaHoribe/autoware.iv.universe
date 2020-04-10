@@ -35,7 +35,6 @@ add_dependencies(astar_search
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
 )
 
 install(TARGETS astar_search

@@ -1,20 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(control_launch)
 
-find_package(catkin REQUIRED
-             COMPONENTS
-        )
+find_package(catkin REQUIRED)
 
-catkin_package(# INCLUDE_DIRS include
-               # LIBRARIES perception_launch
-               CATKIN_DEPENDS
-               # DEPENDS system_lib
-               )
-include_directories(# include
-                    ${catkin_INCLUDE_DIRS})
-
-install(FILES launch/control.launch
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+catkin_package()
 
 install(
   DIRECTORY

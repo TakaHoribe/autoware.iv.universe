@@ -7,7 +7,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
 )
 
-
 add_service_files(
   FILES
   PoseWithCovarianceStamped.srv

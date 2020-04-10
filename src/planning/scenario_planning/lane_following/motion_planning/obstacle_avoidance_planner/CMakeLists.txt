@@ -14,12 +14,12 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
-   autoware_planning_msgs
-   autoware_perception_msgs
-   autoware_system_msgs
-   roscpp
-   tf2_ros
-   osqp_interface
+    autoware_planning_msgs
+    autoware_perception_msgs
+    autoware_system_msgs
+    roscpp
+    tf2_ros
+    osqp_interface
 )
 
 find_package(Eigen3 REQUIRED)

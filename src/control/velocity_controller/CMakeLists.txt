@@ -18,14 +18,13 @@ find_package(
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
-  roscpp
-  tf2
-  tf2_ros
-  geometry_msgs
-  autoware_planning_msgs
-  autoware_control_msgs
+    roscpp
+    tf2
+    tf2_ros
+    geometry_msgs
+    autoware_planning_msgs
+    autoware_control_msgs
 )
-
 
 ###########
 ## Build ##
@@ -53,7 +52,6 @@ target_link_libraries(
   velocity_controller
   ${catkin_LIBRARIES}
 )
-
 
 #############
 ## Install ##
