@@ -14,7 +14,6 @@
       when: yn_gpu != 'y'
   roles:
     - { role: cuda, when: yn_gpu == 'y' }
-    - { role: cudnn, when: yn_gpu == 'y' }
     - { role: tensorrt, when: yn_gpu == 'y' }
     - { role: ros, release: melodic }
     - lanelet2
