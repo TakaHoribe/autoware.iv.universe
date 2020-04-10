@@ -27,26 +27,24 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(const std::vector<
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
-  for (size_t i = 0; i < lanelets.size(); ++i) {
-    lanelet::CompoundPolygon3d lanelet_i_polygon = lanelets.at(i).polygon3d();
-
+  for (const auto& lanelet : lanelets) {
     visualization_msgs::Marker marker{};
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
 
     marker.ns = ns;
-    marker.id = lane_id * 10000 + i;  // to be unique
+    marker.id = lanelet.id();
     marker.lifetime = ros::Duration(0.3);
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
     marker.scale = createMarkerScale(0.1, 0.0, 0.0);
     marker.color = createMarkerColor(0.0, 1.0, 0.0, 0.999);
-    for (size_t j = 0; j < lanelet_i_polygon.size(); ++j) {
+    for (const auto& p : lanelet.polygon3d()) {
       geometry_msgs::Point point;
-      point.x = lanelet_i_polygon[j].x();
-      point.y = lanelet_i_polygon[j].y();
-      point.z = lanelet_i_polygon[j].z();
+      point.x = p.x();
+      point.y = p.y();
+      point.z = p.z();
       marker.points.push_back(point);
     }
     marker.points.push_back(marker.points.front());
@@ -66,22 +64,24 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
   marker.header.frame_id = "map";
   marker.header.stamp = current_time;
   marker.ns = ns;
+  marker.id = lane_id;
+  marker.lifetime = ros::Duration(0.3);
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+  marker.scale = createMarkerScale(0.3, 0.0, 0.0);
+  marker.color = createMarkerColor(r, g, b, 0.999);
 
-  for (int i = 0; i < path.points.size(); ++i) {
-    marker.id = lane_id * 10000 + i;  // to be unique
-    marker.lifetime = ros::Duration(0.3);
-    marker.type = visualization_msgs::Marker::ARROW;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose = path.points.at(i).point.pose;
-    marker.scale = createMarkerScale(0.5, 0.3, 0.3);
-    marker.color = createMarkerColor(r, g, b, 0.999);
-    msg.markers.push_back(marker);
+  for (const auto& p : path.points) {
+    marker.points.push_back(p.point.pose.position);
   }
+
+  msg.markers.push_back(marker);
 
   return msg;
 }
 
-visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
+visualization_msgs::MarkerArray createVirtualWallMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_virtual_wall{};
@@ -189,7 +189,7 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == IntersectionModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;

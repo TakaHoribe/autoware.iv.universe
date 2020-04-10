@@ -30,7 +30,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
   tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
                                     tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
 
-  // Stop Geofence
+  // Stop VirtualWall
   for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";

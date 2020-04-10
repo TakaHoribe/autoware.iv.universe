@@ -294,7 +294,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
     msg.markers.push_back(marker);
   }
 
-  // Stop Geofence
+  // Stop VirtualWall
   for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -344,7 +344,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
     msg.markers.push_back(marker);
   }
 
-  // Slow Geofence
+  // Slow VirtualWall
   for (size_t j = 0; j < debug_data.slow_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";

@@ -64,16 +64,16 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
                                                       double b) {
   visualization_msgs::MarkerArray msg;
 
-  auto marker =
-      createDefaultMarker("map", ns.c_str(), 0, visualization_msgs::Marker::ARROW, createMarkerColor(r, g, b, 0.999));
+  auto marker = createDefaultMarker("map", ns.c_str(), lane_id, visualization_msgs::Marker::LINE_STRIP,
+                                    createMarkerColor(r, g, b, 0.999));
   marker.lifetime = ros::Duration(0.3);
-  marker.scale = createMarkerScale(0.5, 0.3, 0.3);
+  marker.scale = createMarkerScale(0.3, 0.0, 0.0);
 
-  for (int i = 0; i < path.points.size(); ++i) {
-    marker.id = lane_id * 10000 + i;  // to be unique
-    marker.pose = path.points.at(i).point.pose;
-    msg.markers.push_back(marker);
+  for (const auto& p : path.points) {
+    marker.points.push_back(p.point.pose.position);
   }
+
+  msg.markers.push_back(marker);
 
   return msg;
 }
@@ -110,7 +110,7 @@ visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose&
   return msg;
 }
 
-visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
+visualization_msgs::MarkerArray createVirtualWallMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_virtual_wall{};
@@ -188,7 +188,7 @@ visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == BlindSpotModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;
