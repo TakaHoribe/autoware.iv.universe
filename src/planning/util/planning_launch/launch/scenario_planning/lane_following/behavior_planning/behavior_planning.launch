@@ -30,10 +30,6 @@
 
   <node pkg="rostopic" type="rostopic" name="auto_approve_lane_change" args="pub /lane_change_approval std_msgs/Bool 'data: true' -r 10" />
 
-  <node pkg="behavior_path_visualizer" type="behavior_path_visualizer_node" name="behavior_path_visualizer" output="screen">
-    <remap from="~input/path_with_lane_id" to="path_with_lane_id" />
-  </node>
-
   <node pkg="turn_signal_decider" type="turn_signal_decider" name="turn_signal_decider" output="screen">
     <remap from="~input/path_with_lane_id" to="path_with_lane_id" />
     <remap from="~input/vector_map" to="$(arg map_topic_name)" />
