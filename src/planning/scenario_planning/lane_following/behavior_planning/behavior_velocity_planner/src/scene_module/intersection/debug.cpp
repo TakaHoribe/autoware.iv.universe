@@ -81,7 +81,7 @@ visualization_msgs::MarkerArray createPathMarkerArray(const autoware_planning_ms
   return msg;
 }
 
-visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
+visualization_msgs::MarkerArray createVirtualWallMarkerArray(const geometry_msgs::Pose& pose, const int64_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_virtual_wall{};
@@ -189,7 +189,7 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == IntersectionModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;

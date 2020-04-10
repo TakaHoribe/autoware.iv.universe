@@ -110,7 +110,7 @@ visualization_msgs::MarkerArray createPoseMarkerArray(const geometry_msgs::Pose&
   return msg;
 }
 
-visualization_msgs::MarkerArray createGeofenceMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
+visualization_msgs::MarkerArray createVirtualWallMarkerArray(const geometry_msgs::Pose& pose, int32_t lane_id) {
   visualization_msgs::MarkerArray msg;
 
   visualization_msgs::Marker marker_virtual_wall{};
@@ -188,7 +188,7 @@ visualization_msgs::MarkerArray BlindSpotModule::createDebugMarkerArray() {
                     &debug_marker_array);
 
   if (state == BlindSpotModule::State::STOP) {
-    appendMarkerArray(createGeofenceMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
+    appendMarkerArray(createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
   }
 
   return debug_marker_array;
