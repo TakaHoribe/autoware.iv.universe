@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/momentary_stop/scene.h>
+#include <scene_module/stop_line/scene.h>
 
 #include "utilization/marker_helper.h"
 #include "utilization/util.h"
@@ -22,7 +22,7 @@
 
 namespace {
 
-using DebugData = MomentaryStopModule::DebugData;
+using DebugData = StopLineModule::DebugData;
 
 visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
   visualization_msgs::MarkerArray msg;
@@ -85,7 +85,7 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
 
 }  // namespace
 
-visualization_msgs::MarkerArray MomentaryStopModule::createDebugMarkerArray() {
+visualization_msgs::MarkerArray StopLineModule::createDebugMarkerArray() {
   visualization_msgs::MarkerArray debug_marker_array;
 
   appendMarkerArray(createMarkers(debug_data_), &debug_marker_array);

@@ -14,7 +14,7 @@
 #include <scene_module/blind_spot/manager.h>
 #include <scene_module/crosswalk/manager.h>
 #include <scene_module/intersection/manager.h>
-#include <scene_module/momentary_stop/manager.h>
+#include <scene_module/stop_line/manager.h>
 #include <scene_module/traffic_light/manager.h>
 
 namespace {
@@ -124,8 +124,8 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
   planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
 
   // Initialize PlannerManager
-  if (getParam<bool>(pnh_, "launch_momentary_stop", true))
-    planner_manager_.launchSceneModule(std::make_shared<MomentaryStopModuleManager>());
+  if (getParam<bool>(pnh_, "launch_stop_line", true))
+    planner_manager_.launchSceneModule(std::make_shared<StopLineModuleManager>());
   if (getParam<bool>(pnh_, "launch_crosswalk", true))
     planner_manager_.launchSceneModule(std::make_shared<CrosswalkModuleManager>());
   if (getParam<bool>(pnh_, "launch_traffic_light", true))

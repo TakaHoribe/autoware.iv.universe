@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/momentary_stop/scene.h>
+#include <scene_module/stop_line/scene.h>
 
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point>;
 
-MomentaryStopModule::MomentaryStopModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line)
+StopLineModule::StopLineModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line)
     : SceneModuleInterface(module_id), stop_line_(stop_line), state_(State::APPROARCH) {}
 
-bool MomentaryStopModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
 
@@ -90,7 +90,7 @@ bool MomentaryStopModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
   }
 }
 
-bool MomentaryStopModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
+bool StopLineModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
                                                         const Eigen::Vector2d& line_point2,
                                                         const Eigen::Vector2d& base_point, const double backward_length,
                                                         Eigen::Vector2d& output_point) {

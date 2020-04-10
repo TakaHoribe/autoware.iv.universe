@@ -47,7 +47,7 @@
     <remap from="~input/traffic_light_states" to="/perception/traffic_light_recognition/traffic_light_states" />
     <remap from="~output/path" to="path" />
 
-    <param name="launch_momentary_stop" value="true" />
+    <param name="launch_stop_line" value="true" />
     <param name="launch_crosswalk" value="true" />
     <param name="launch_traffic_light" value="true" />
     <param name="launch_intersection" value="true" />
