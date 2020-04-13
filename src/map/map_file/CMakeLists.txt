@@ -56,17 +56,12 @@ add_executable(lanelet2_map_visualization nodes/lanelet2_map_loader/lanelet2_map
 target_link_libraries(lanelet2_map_visualization ${catkin_LIBRARIES})
 add_dependencies(lanelet2_map_visualization ${catkin_EXPORTED_TARGETS})
 
-add_executable(pointcloud_map_filter nodes/pointcloud_map_filter/pointcloud_map_filter_node.cpp nodes/pointcloud_map_filter/pointcloud_map_filter.cpp)
-target_link_libraries(pointcloud_map_filter ${catkin_LIBRARIES})
-add_dependencies(pointcloud_map_filter ${catkin_EXPORTED_TARGETS})
-
 ## Install executables and/or libraries
 install(
   TARGETS
     pointcloud_map_loader
     lanelet2_map_loader
     lanelet2_map_visualization
-    pointcloud_map_filter
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
