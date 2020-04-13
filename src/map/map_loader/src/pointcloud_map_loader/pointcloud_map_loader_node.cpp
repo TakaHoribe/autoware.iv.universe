@@ -30,21 +30,41 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
+#include <map_loader/pointcloud_map_loader_node.h>
 
-#include <map_file/pointcloud_map_loader_node.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 
-int main(int argc, char* argv[]) {
-  ros::init(argc, argv, "pointcloud_map_loader");
+PointCloudMapLoaderNode::PointCloudMapLoaderNode(const std::vector<std::string>& pcd_paths) {
+  pub_pointcloud_map_ = private_nh_.advertise<sensor_msgs::PointCloud2>("output/pointcloud_map", 1, true);
 
-  std::vector<std::string> pcd_paths;
-  for (int i = 1; i < argc; ++i) {
-    pcd_paths.push_back(argv[i]);
+  const auto pcd = loadPCDFiles(pcd_paths);
+
+  if (pcd.width != 0) {
+    pub_pointcloud_map_.publish(pcd);
+  }
+}
+
+sensor_msgs::PointCloud2 PointCloudMapLoaderNode::loadPCDFiles(const std::vector<std::string>& pcd_paths) {
+  sensor_msgs::PointCloud2 whole_pcd{};
+
+  sensor_msgs::PointCloud2 partial_pcd;
+  for (const auto& path : pcd_paths) {
+    if (pcl::io::loadPCDFile(path, partial_pcd) == -1) {
+      ROS_ERROR_STREAM("PCD load failed: " << path);
+    }
+
+    if (whole_pcd.width == 0) {
+      whole_pcd = partial_pcd;
+    } else {
+      whole_pcd.width += partial_pcd.width;
+      whole_pcd.row_step += partial_pcd.row_step;
+      whole_pcd.data.reserve(whole_pcd.data.size() + partial_pcd.data.size());
+      whole_pcd.data.insert(whole_pcd.data.end(), partial_pcd.data.begin(), partial_pcd.data.end());
+    }
   }
 
-  PointCloudMapLoaderNode pointcloud_map_loader_node(pcd_paths);
+  whole_pcd.header.frame_id = "map";
 
-  ros::spin();
-
-  return 0;
+  return whole_pcd;
 }

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-
-project(map_file)
+project(map_loader)
 
 add_compile_options(-std=c++14)
 
@@ -44,15 +43,15 @@ include_directories(
   ${PCL_IO_INCLUDE_DIRS}
 )
 
-add_executable(pointcloud_map_loader nodes/pointcloud_map_loader/main.cpp nodes/pointcloud_map_loader/pointcloud_map_loader_node.cpp)
+add_executable(pointcloud_map_loader src/pointcloud_map_loader/main.cpp src/pointcloud_map_loader/pointcloud_map_loader_node.cpp)
 target_link_libraries(pointcloud_map_loader ${catkin_LIBRARIES} ${PCL_IO_LIBRARIES})
 add_dependencies(pointcloud_map_loader ${catkin_EXPORTED_TARGETS})
 
-add_executable(lanelet2_map_loader nodes/lanelet2_map_loader/lanelet2_map_loader.cpp)
+add_executable(lanelet2_map_loader src/lanelet2_map_loader/lanelet2_map_loader.cpp)
 target_link_libraries(lanelet2_map_loader ${catkin_LIBRARIES})
 add_dependencies(lanelet2_map_loader ${catkin_EXPORTED_TARGETS})
 
-add_executable(lanelet2_map_visualization nodes/lanelet2_map_loader/lanelet2_map_visualization.cpp)
+add_executable(lanelet2_map_visualization src/lanelet2_map_loader/lanelet2_map_visualization.cpp)
 target_link_libraries(lanelet2_map_visualization ${catkin_LIBRARIES})
 add_dependencies(lanelet2_map_visualization ${catkin_EXPORTED_TARGETS})
 
