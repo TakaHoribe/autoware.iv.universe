@@ -194,7 +194,11 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   }
   int traj_resampled_closest =
       vpu::calcClosestWaypoint(traj_resampled, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
-
+  if (traj_resampled_closest < 0) {
+    ROS_WARN("[velocity planner] cannot find closest waypoint for resampled trajectory");
+    return prev_output_;
+  }
+  
   /* Change trajectory velocity to zero when current_velocity == 0 & stop_dist is close */
   preventMoveToCloseStopLine(traj_resampled_closest, traj_resampled);
 
