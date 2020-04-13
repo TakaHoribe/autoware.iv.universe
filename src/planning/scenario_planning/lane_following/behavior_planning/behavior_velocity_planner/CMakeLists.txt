@@ -66,19 +66,19 @@ target_link_libraries(scene_module_lib
   ${catkin_LIBRARIES}
 )
 
-# Scene Module: Momentary Stop
-add_library(scene_module_momentary_stop STATIC
-  src/scene_module/momentary_stop/manager.cpp
-  src/scene_module/momentary_stop/scene.cpp
-  src/scene_module/momentary_stop/debug.cpp
+# Scene Module: Stop Line
+add_library(scene_module_stop_line STATIC
+  src/scene_module/stop_line/manager.cpp
+  src/scene_module/stop_line/scene.cpp
+  src/scene_module/stop_line/debug.cpp
 )
 
-add_dependencies(scene_module_momentary_stop
+add_dependencies(scene_module_stop_line
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(scene_module_momentary_stop
+target_link_libraries(scene_module_stop_line
   scene_module_lib
   ${catkin_LIBRARIES}
 )
@@ -162,7 +162,7 @@ add_dependencies(scene_module_manager
 )
 
 target_link_libraries(scene_module_manager
-  scene_module_momentary_stop
+  scene_module_stop_line
   scene_module_crosswalk
   scene_module_intersection
   scene_module_traffic_light

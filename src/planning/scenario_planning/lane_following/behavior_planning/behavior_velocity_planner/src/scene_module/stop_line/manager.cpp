@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/momentary_stop/manager.h>
+#include <scene_module/stop_line/manager.h>
 
 namespace {
 
@@ -65,16 +65,16 @@ std::set<int64_t> getStopLineIdSetOnPath(const autoware_planning_msgs::PathWithL
 
 }  // namespace
 
-void MomentaryStopModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
+void StopLineModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
   for (const auto& stop_line : getStopLinesOnPath(path, planner_data_->lanelet_map)) {
     const auto module_id = stop_line.id();
     if (!isModuleRegistered(module_id)) {
-      registerModule(std::make_shared<MomentaryStopModule>(module_id, stop_line));
+      registerModule(std::make_shared<StopLineModule>(module_id, stop_line));
     }
   }
 }
 
-std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> MomentaryStopModuleManager::getModuleExpiredFunction(
+std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> StopLineModuleManager::getModuleExpiredFunction(
     const autoware_planning_msgs::PathWithLaneId& path) {
   const auto stop_line_id_set = getStopLineIdSetOnPath(path, planner_data_->lanelet_map);
 

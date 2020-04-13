@@ -791,7 +791,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/momentary_stop
+                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/stop_line
                       Name: StopLine
                       Namespaces:
                         factor_text: true
