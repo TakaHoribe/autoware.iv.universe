@@ -34,8 +34,8 @@
 
 void printUsage() {
   ROS_ERROR_STREAM("Usage:");
-  ROS_ERROR_STREAM("rosrun map_file lanelet2_map_loader [.OSM]");
-  ROS_ERROR_STREAM("rosrun map_file lanelet2_map_loader download [X] [Y]: WARNING not implemented");
+  ROS_ERROR_STREAM("rosrun map_loader lanelet2_map_loader [.OSM]");
+  ROS_ERROR_STREAM("rosrun map_loader lanelet2_map_loader download [X] [Y]: WARNING not implemented");
 }
 
 int main(int argc, char** argv) {

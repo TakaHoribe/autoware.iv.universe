@@ -17,12 +17,21 @@
     name: "ros-{{ release }}-{{ package }}"
     state: latest
     update_cache: yes
+    cache_valid_time: 3600
   become: yes
 
 - name: ROS (check rosdep file)
   stat:
     path: /etc/ros/rosdep/sources.list.d/20-default.list
   register: ros_repository
+
+- name: ROS (install rosdep)
+  apt:
+    name: "python-rosdep"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
 
 - name: ROS (initilize rosdep)
   command: rosdep init
@@ -49,5 +58,5 @@
       - build-essential
     state: latest
     update_cache: yes
+    cache_valid_time: 3600
   become: yes
-    
