@@ -4,3 +4,7 @@
 - name: Autoware (install dependencies)
   command: "rosdep install -y --from-paths {{ AUTOWARE_DIR }}/src --ignore-src --rosdistro {{ release }}"
   become: yes
+- name: Autoware (install gdown to download some files for neural network)
+  pip:
+    name:
+      - gdown
