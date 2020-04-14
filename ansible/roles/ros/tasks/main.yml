@@ -17,6 +17,7 @@
     name: "ros-{{ release }}-{{ package }}"
     state: latest
     update_cache: yes
+    cache_valid_time: 3600
   become: yes
 
 - name: ROS (check rosdep file)
@@ -29,6 +30,7 @@
     name: "python-rosdep"
     state: latest
     update_cache: yes
+    cache_valid_time: 3600
   become: yes
 
 - name: ROS (initilize rosdep)
@@ -56,4 +58,5 @@
       - build-essential
     state: latest
     update_cache: yes
+    cache_valid_time: 3600
   become: yes
