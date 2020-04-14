@@ -36,6 +36,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 {
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
+  first_stop_path_point_index_ = static_cast<int>(path->points.size()) - 1;
 
   const auto input_path = *path;
 
@@ -194,8 +195,8 @@ bool TrafficLightModule::insertTargetVelocityPoint(
 
   if (!createTargetPoint(input, stop_line, margin, insert_target_point_idx, target_point))
     return false;
-  target_point_with_lane_id =
-    output.points.at(std::max(static_cast<int>(insert_target_point_idx - 1), 0));
+  const int target_velocity_point_idx = std::max(static_cast<int>(insert_target_point_idx - 1), 0);
+  target_point_with_lane_id = output.points.at(target_velocity_point_idx);
   target_point_with_lane_id.point.pose.position.x = target_point.x();
   target_point_with_lane_id.point.pose.position.y = target_point.y();
   target_point_with_lane_id.point.twist.linear.x = velocity;
@@ -208,6 +209,9 @@ bool TrafficLightModule::insertTargetVelocityPoint(
   for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
     output.points.at(j).point.twist.linear.x =
       std::min(velocity, output.points.at(j).point.twist.linear.x);
+  if (velocity == 0.0 && target_velocity_point_idx < first_stop_path_point_index_) {
+    first_stop_path_point_index_ = target_velocity_point_idx;
+  }
   // -- debug code --
   if (velocity == 0.0) debug_data_.stop_poses.push_back(target_point_with_lane_id.point.pose);
   // ----------------
