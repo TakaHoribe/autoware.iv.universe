@@ -15,6 +15,7 @@
  */
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <string>
 #include <traffic_light_roi_visualizer/node.hpp>
 
