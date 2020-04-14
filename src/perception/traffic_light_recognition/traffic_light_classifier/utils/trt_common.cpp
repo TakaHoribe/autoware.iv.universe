@@ -2,45 +2,40 @@
 
 namespace Tn {
 
-  TrtCommon::TrtCommon(std::string model)
-    : cache_dir(""), precision("fp16"),
-      input_name("input_0"), output_name("output_0"),
-      is_initialized(false) {
-    model_file_path = model;
+  TrtCommon::TrtCommon(std::string model_path, std::string cache_dir, std::string precision)
+    : model_file_path_(model_path), cache_dir_(cache_dir), precision_(precision),
+      input_name_("input_0"), output_name_("output_0"),
+      is_initialized_(false), max_batch_size_(1) {
   }
 
   void TrtCommon::setup() {
-    const boost::filesystem::path path(model_file_path);
+    const boost::filesystem::path path(model_file_path_);
     std::string extension = path.extension().string();
 
     if ( boost::filesystem::exists(path) ) {
       if ( extension == ".engine" ) {
-        loadEngine(model_file_path);
+        loadEngine(model_file_path_);
       } else if ( extension == ".onnx" ) {
-        std::string cache_engine_path = cache_dir + "/" + path.stem().string() + ".engine";
+        std::string cache_engine_path = cache_dir_ + "/" + path.stem().string() + ".engine";
         const boost::filesystem::path cache_path(cache_engine_path);
         if ( boost::filesystem::exists(cache_path) ) {
           loadEngine(cache_engine_path);
         } else {
-          buildEngineFromOnnx(model_file_path, cache_engine_path);
+          buildEngineFromOnnx(model_file_path_, cache_engine_path);
         }
       } else {
-        is_initialized = false;
+        is_initialized_ = false;
+        return;
       }
     } else {
-      is_initialized = false;
+      is_initialized_ = false;
+      return;
     }
 
-    context = UniquePtr<nvinfer1::IExecutionContext>(engine->createExecutionContext());
-
-    input_binding_index = engine->getBindingIndex(input_name.c_str());
-    output_binding_index = engine->getBindingIndex(output_name.c_str());
-    input_dims = engine->getBindingDimensions(input_binding_index);
-    output_dims = engine->getBindingDimensions(output_binding_index);
-    num_input = numTensorElements(input_dims);
-    num_output = numTensorElements(output_dims);
-
-    is_initialized = true;
+    context_ = UniquePtr<nvinfer1::IExecutionContext>(engine_->createExecutionContext());
+    input_dims_ = engine_->getBindingDimensions(getInputBindingIndex());
+    output_dims_ = engine_->getBindingDimensions(getOutputBindingIndex());
+    is_initialized_ = true;
   }
 
   bool TrtCommon::loadEngine(std::string engine_file_path) {
@@ -48,8 +43,8 @@ namespace Tn {
     std::stringstream engine_buffer;
     engine_buffer << engine_file.rdbuf();
     std::string engine_str = engine_buffer.str();
-    runtime = UniquePtr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(g_logger));
-    engine = UniquePtr<nvinfer1::ICudaEngine>(runtime->deserializeCudaEngine
+    runtime_ = UniquePtr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(logger_));
+    engine_ = UniquePtr<nvinfer1::ICudaEngine>(runtime_->deserializeCudaEngine
                                               ((void*)engine_str.data(),
                                                engine_str.size(),
                                                nullptr));
@@ -58,35 +53,34 @@ namespace Tn {
 
   bool TrtCommon::buildEngineFromOnnx(std::string onnx_file_path,
                                       std::string output_engine_file_path) {
-    auto builder = UniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(g_logger));
+    auto builder = UniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger_));
     const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
     auto network = UniquePtr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
     auto config = UniquePtr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
 
-    auto parser = UniquePtr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, g_logger));
+    auto parser = UniquePtr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, logger_));
     if ( !parser->parseFromFile(onnx_file_path.c_str(),
                                 static_cast<int>(nvinfer1::ILogger::Severity::kERROR)) ) {
       return false;
     }
     
-    size_t max_batch_size = 1;
-    builder->setMaxBatchSize(max_batch_size);
+    builder->setMaxBatchSize(max_batch_size_);
     builder->setMaxWorkspaceSize(16 << 20);
 
-    if ( precision == "fp16" ) {
+    if ( precision_ == "fp16" ) {
       config->setFlag(nvinfer1::BuilderFlag::kFP16);
-    } else if ( precision == "int8" ) {
+    } else if ( precision_ == "int8" ) {
       config->setFlag(nvinfer1::BuilderFlag::kINT8);
     } else {
       return false;
     }
 
-    engine = UniquePtr<nvinfer1::ICudaEngine>(builder->buildEngineWithConfig(*network, *config));
-    if ( !engine )
+    engine_ = UniquePtr<nvinfer1::ICudaEngine>(builder->buildEngineWithConfig(*network, *config));
+    if ( !engine_ )
       return false;
 
     // save engine
-    nvinfer1::IHostMemory *data = engine->serialize();
+    nvinfer1::IHostMemory *data = engine_->serialize();
     std::ofstream file;
     file.open(output_engine_file_path, std::ios::binary | std::ios::out);
     if (!file.is_open())
@@ -97,14 +91,32 @@ namespace Tn {
     return true;
   }
 
-  size_t TrtCommon::numTensorElements(nvinfer1::Dims dimensions)
-  {
-    if (dimensions.nbDims == 0)
-      return 0;
-    size_t size = 1;
-    for (int i = 0; i < dimensions.nbDims; i++)
-      size *= dimensions.d[i];
-    return size;
+  bool TrtCommon::isInitialized() {
+    return is_initialized_;
+  };
+
+  int TrtCommon::getNumInput() {
+    return std::accumulate
+      (input_dims_.d,
+       input_dims_.d + input_dims_.nbDims,
+       1,
+       std::multiplies<int>());;
+  }
+
+  int TrtCommon::getNumOutput() {
+    return std::accumulate
+      (output_dims_.d,
+       output_dims_.d + output_dims_.nbDims,
+       1,
+       std::multiplies<int>());
+  }
+
+  int TrtCommon::getInputBindingIndex() {
+    return engine_->getBindingIndex(input_name_.c_str());
+  }
+
+  int TrtCommon::getOutputBindingIndex() {
+    return engine_->getBindingIndex(output_name_.c_str());
   }
 
 } // Tn

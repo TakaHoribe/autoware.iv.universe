@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <memory>
+#include <numeric>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -41,61 +42,39 @@ namespace Tn {
   };
 
   class TrtCommon {
-
   public:
-
-    TrtCommon(std::string model_file_path);
-
+    TrtCommon(std::string model_path, std::string cache_dir, std::string precision);
     ~TrtCommon()  {} ;
 
     bool loadEngine(std::string engine_file_path);
-
     bool buildEngineFromOnnx(std::string onnx_file_path,
                              std::string output_engine_file_path);
-
-    size_t numTensorElements(nvinfer1::Dims dimensions);
-
     void setup();
 
+    bool isInitialized();
+    int getNumInput();
+    int getNumOutput();
+    int getInputBindingIndex();
+    int getOutputBindingIndex();
 
     template <typename T>
       using UniquePtr = std::unique_ptr<T, InferDeleter>;
-
-    Logger g_logger;
-
-    bool is_initialized;
-
-    std::string model_file_path;
-
-    UniquePtr<nvinfer1::IRuntime> runtime;
-
-    UniquePtr<nvinfer1::ICudaEngine> engine;
-
-    UniquePtr<nvinfer1::IExecutionContext> context;
-
-    int input_binding_index;
-
-    int output_binding_index;
-
-
-    // nchw
-    nvinfer1::Dims input_dims;
-
-    nvinfer1::Dims output_dims;
-
-    size_t num_input;
-
-    size_t num_output;
-
-    std::string input_name;
-
-    std::string output_name;
-
-    std::string precision;
-
-    std::string cache_dir;
+    UniquePtr<nvinfer1::IExecutionContext> context_;
 
   private:
+    Logger logger_;
+    bool is_initialized_;
+    size_t max_batch_size_;
+    std::string model_file_path_;
+    UniquePtr<nvinfer1::IRuntime> runtime_;
+    UniquePtr<nvinfer1::ICudaEngine> engine_;
+
+    nvinfer1::Dims input_dims_;
+    nvinfer1::Dims output_dims_;
+    std::string input_name_;
+    std::string output_name_;
+    std::string precision_;
+    std::string cache_dir_;
 
   };
 
