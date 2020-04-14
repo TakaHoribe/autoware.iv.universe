@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_msgs/KeyValue.h>
 #include <pcl/filters/voxel_grid.h>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <boost/assert.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/format.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -62,6 +65,29 @@ double getYawFromGeometryMsgsQuaternion(const geometry_msgs::Quaternion & quat)
 
   return yaw;
 }
+std::string jsonDumpsPose(const geometry_msgs::Pose & pose)
+{
+  const std::string json_dumps_pose =
+    (boost::format(
+       R"({"position":{"x":%lf,"y":%lf,"z":%lf},"orientation":{"w":%lf,"x":%lf,"y":%lf,"z":%lf}})") %
+     pose.position.x % pose.position.y % pose.position.z % pose.orientation.w % pose.orientation.x %
+     pose.orientation.y % pose.orientation.z)
+      .str();
+  return json_dumps_pose;
+}
+diagnostic_msgs::DiagnosticStatus makeStopReasonDiag(
+  const std::string stop_reason, const geometry_msgs::Pose & stop_pose)
+{
+  diagnostic_msgs::DiagnosticStatus stop_reason_diag;
+  diagnostic_msgs::KeyValue stop_reason_diag_kv;
+  stop_reason_diag.level = diagnostic_msgs::DiagnosticStatus::OK;
+  stop_reason_diag.name = "stop_reason";
+  stop_reason_diag.message = stop_reason;
+  stop_reason_diag_kv.key = "stop_pose";
+  stop_reason_diag_kv.value = jsonDumpsPose(stop_pose);
+  stop_reason_diag.values.push_back(stop_reason_diag_kv);
+  return stop_reason_diag;
+}
 }  // namespace
 
 namespace motion_planning
@@ -79,6 +105,8 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   path_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
+  stop_reason_diag_pub_ =
+    pnh_.advertise<diagnostic_msgs::DiagnosticStatus>("output/stop_reason", 1);
 
   // Vehicle Parameters
   wheel_base_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
@@ -121,6 +149,7 @@ void ObstacleStopPlannerNode::pathCallback(
   if (obstacle_ros_pointcloud_ptr_ == nullptr) return;
 
   autoware_planning_msgs::Trajectory output_msg = *input_msg;
+  diagnostic_msgs::DiagnosticStatus stop_reason_diag;
   const double epsilon = 0.00001;
   /*
    * trim trajectory from self pose
@@ -321,12 +350,15 @@ void ObstacleStopPlannerNode::pathCallback(
         for (size_t j = insert_stop_point_index; j < output_msg.points.size(); ++j) {
           output_msg.points.at(j).twist.linear.x = 0.0;
         }
+
+        stop_reason_diag = makeStopReasonDiag("obstacle", stop_trajectory_point.pose);
         debug_ptr_->pushStopPose(stop_trajectory_point.pose);
         break;
       }
     }
   }
   path_pub_.publish(output_msg);
+  stop_reason_diag_pub_.publish(stop_reason_diag);
   debug_ptr_->publish();
 }
 
