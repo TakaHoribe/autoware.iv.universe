@@ -46,6 +46,7 @@ class FollowingLaneState : public StateBase {
   bool hasEnoughDistance() const;
   bool isLaneChangePathSafe() const;
   bool isLaneChangeApproved() const;
+  bool isLaneChangeAvailable() const;
 
  public:
   FollowingLaneState() = default;

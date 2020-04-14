@@ -119,13 +119,10 @@ State FollowingLaneState::getNextState() const {
     ROS_ERROR_THROTTLE(1, "current lanes empty. Keeping state.");
     return State::FOLLOWING_LANE;
   }
-  if (isLaneBlocked(current_lanes_)) {
+  if (RouteHandler::getInstance().isInPreferredLane(current_pose_) && isLaneBlocked(current_lanes_)) {
     return State::BLOCKED_BY_OBSTACLE;
   }
-  if (RouteHandler::getInstance().isInPreferredLane(current_pose_)) {
-    return State::FOLLOWING_LANE;
-  }
-  if (isTooCloseToDeadEnd() || laneChangeForcedByOperator()) {
+  if (isLaneChangeAvailable() || laneChangeForcedByOperator()) {
     return State::FORCING_LANE_CHANGE;
   }
   if (isLaneChangeReady() && isLaneChangeApproved()) {
@@ -178,6 +175,8 @@ bool FollowingLaneState::laneChangeForcedByOperator() const { return force_lane_
 
 bool FollowingLaneState::isLaneChangeReady() const { return status_.lane_change_ready; }
 
+bool FollowingLaneState::isLaneChangeAvailable() const { return status_.lane_change_available; }
+
 bool FollowingLaneState::hasEnoughDistance() const {
   const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
   const double lane_changing_duration = ros_parameters_.lane_changing_duration;
@@ -193,21 +192,6 @@ bool FollowingLaneState::hasEnoughDistance() const {
       util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_)) {
     return false;
   }
-
-  // if(lane_change_total_distance > getDistanceToNextTrafficLight())
-  // {
-  //   return false;
-  // }
-
-  // if(lane_change_total_distance > getDistanceToNextCrosswalk())
-  // {
-  //   return false;
-  // }
-
-  // if(lane_change_total_distance > getDistanceToNextStopSign())
-  // {
-  //   return false;
-  // }
   return true;
 }
 
