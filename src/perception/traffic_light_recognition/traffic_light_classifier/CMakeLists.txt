@@ -3,9 +3,12 @@ project(traffic_light_classifier)
 
 add_compile_options(-std=c++14)
 
+# set flags for CUDA availability
 option(CUDA_AVAIL "CUDA available" OFF)
 find_package(CUDA)
 if (CUDA_FOUND)
+  find_library(CUBLAS_LIBRARIES cublas HINTS
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib)
   message("CUDA is available!")
   message("CUDA Libs: ${CUDA_LIBRARIES}")
   message("CUDA Headers: ${CUDA_INCLUDE_DIRS}")
@@ -15,27 +18,32 @@ else()
   set(CUDA_AVAIL OFF)
 endif (CUDA_FOUND)
 
+# set flags for TensorRT availability
 option(TRT_AVAIL "TensorRT available" OFF)
+# try to find the tensorRT modules
 find_library(NVINFER NAMES nvinfer)
-find_library(NVPARSERS NAMES nvparsers)
-find_library(NVONNXPARSERS NAMES nvonnxparser)
-if(NVINFER AND NVPARSERS AND NVONNXPARSERS)
+find_library(NVONNXPARSER nvonnxparser)
+find_library(NVINFER_PLUGIN NAMES nvinfer_plugin)
+if(NVINFER AND NVONNXPARSER AND NVINFER_PLUGIN)
   message("TensorRT is available!")
   message("NVINFER: ${NVINFER}")
   message("NVPARSERS: ${NVPARSERS}")
-  message("NVONNXPARSERS: ${NVONNXPARSERS}")
+  message("NVINFER_PLUGIN: ${NVINFER_PLUGIN}")
+  message("NVONNXPARSER: ${NVONNXPARSER}")
   set(TRT_AVAIL ON)
 else()
   message("TensorRT is NOT Available")
   set(TRT_AVAIL OFF)
 endif()
 
+# set flags for CUDNN availability
 option(CUDNN_AVAIL "CUDNN available" OFF)
+# try to find the CUDNN module
 find_library(CUDNN_LIBRARY
-  NAMES libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name}
-  PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
-  PATH_SUFFIXES lib lib64 bin
-  DOC "CUDNN library." )
+NAMES libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name}
+PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
+PATH_SUFFIXES lib lib64 bin
+DOC "CUDNN library." )
 if(CUDNN_LIBRARY)
   message("CUDNN is available!")
   message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
@@ -44,7 +52,6 @@ else()
   message("CUDNN is NOT Available")
   set(CUDNN_AVAIL OFF)
 endif()
-
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_traffic_light_msgs
@@ -60,16 +67,19 @@ generate_dynamic_reconfigure_options(cfg/HSVFilter.cfg)
 
 find_package(OpenCV REQUIRED)
 
-catkin_package(
-  CATKIN_DEPENDS
-    autoware_traffic_light_msgs
-    cv_bridge
-    roscpp
-    sensor_msgs
-    image_transport
-    message_filters
-    dynamic_reconfigure
+include_directories(
+  include
+  utils
+  ${OpenCV_INCLUDE_DIRS}
+  ${CUDA_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
+
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS
+  )
 
 ###########
 ## Build ##
@@ -81,22 +91,16 @@ add_library(libutils
 target_link_libraries(libutils
   ${OpenCV_LIBRARIES}
   ${NVINFER}
-  ${NVPARSERS}
   ${NVONNXPARSERS}
+  ${NVINFER_PLUGIN}
   ${CUDA_LIBRARIES}
-  ${CUDA_CUBLAS_LIBRARIES}
+  ${CUBLAS_LIBRARIES}
   ${CUDA_curand_LIBRARY}
   ${CUDNN_LIBRARY}
   )
 add_dependencies(libutils
   ${catkin_EXPORTED_TARGETS})
 
-include_directories(
-  include
-  utils
-  ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-)
 
 add_executable(traffic_light_classifier_node
   src/color_classifier.cpp
@@ -105,8 +109,8 @@ add_executable(traffic_light_classifier_node
   src/main.cpp
 )
 
-add_dependencies(traffic_light_classifier_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
+add_dependencies(traffic_light_classifier_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
 target_link_libraries(traffic_light_classifier_node
   libutils
   ${catkin_LIBRARIES}

@@ -11,7 +11,7 @@
 
 #include <NvInfer.h>
 #include <NvOnnxParser.h>
-#include <cuda_runtime_api.h>
+#include <cudnn.h>
 
 #include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
