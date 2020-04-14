@@ -2,6 +2,7 @@
 
 ## Referenced repositiory
 Please check this repository for detail implementation.
+Note that you are using the trained files provided by the repository.
 
 https://github.com/lewes6369/TensorRT-Yolov3
 
