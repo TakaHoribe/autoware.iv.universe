@@ -48,6 +48,11 @@ class TrafficLightClassifierNode {
   virtual ~TrafficLightClassifierNode(){};
 
  private:
+  enum ClassifierType {
+    HSVFilter = 0,
+    CNN = 1,
+  };
+
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   image_transport::ImageTransport image_transport_;

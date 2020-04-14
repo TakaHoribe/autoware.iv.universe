@@ -34,13 +34,11 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   tl_states_pub_ =
       pnh_.advertise<autoware_traffic_light_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
 
-  std::string classifier_type;
-  pnh_.param<std::string>("classifier_type", classifier_type, "color");
-
-  ROS_INFO("classifier type: %s", classifier_type.c_str());
-  if (classifier_type == "color") {
+  int classifier_type;
+  pnh_.param<int>("classifier_type", classifier_type, TrafficLightClassifierNode::ClassifierType::HSVFilter);
+  if (classifier_type == TrafficLightClassifierNode::ClassifierType::HSVFilter) {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
-  } else if (classifier_type == "cnn") {
+  } else if (classifier_type == TrafficLightClassifierNode::ClassifierType::CNN) {
     classifier_ptr_ = std::make_shared<CNNClassifier>();
   }
 }
