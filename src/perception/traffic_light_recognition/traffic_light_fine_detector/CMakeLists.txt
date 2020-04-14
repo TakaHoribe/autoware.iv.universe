@@ -87,7 +87,7 @@ set(FILE "${PATH}/yolov3-tlr.onnx")
 message(STATUS "Checking and downloading yolov3-tlr.onnx")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget --no-check-certificate "https://onedrive.live.com/download?cid=707D1E12CC298F03&resid=707D1E12CC298F03%21118901&authkey=AB6BiE4PoWNAcJw" -O ${PATH}/yolov3-tlr.onnx)
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1goWNFhKYqPrjfPnWTbwaIhjUeX1L7VTS" -O ${PATH}/yolov3-tlr.onnx)
 
 endif()
 
