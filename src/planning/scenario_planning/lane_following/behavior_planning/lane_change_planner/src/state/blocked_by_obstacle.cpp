@@ -171,7 +171,7 @@ bool BlockedByObstacleState::isOutOfCurrentLanes() const {
 bool BlockedByObstacleState::isLaneBlocked() const {
   const auto arc = lanelet::utils::getArcCoordinates(current_lanes_, current_pose_.pose);
   constexpr double max_check_distance = 100;
-  constexpr double static_obj_velocity_thresh = 0.1;
+  double static_obj_velocity_thresh = ros_parameters_.static_obstacle_velocity_thresh;
   const double lane_changeable_distance_left =
       RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
   const double lane_changeable_distance_right =
