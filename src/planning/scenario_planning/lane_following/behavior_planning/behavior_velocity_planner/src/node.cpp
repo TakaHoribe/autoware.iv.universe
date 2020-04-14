@@ -222,11 +222,11 @@ void BehaviorVelocityPlannerNode::onTrigger(const autoware_planning_msgs::PathWi
   }
 
   // Plan path velocity
-  const auto veloctiy_planed_path =
+  const auto velocity_planed_path =
       planner_manager_.planPathVelocity(std::make_shared<const PlannerData>(planner_data_), input_path_msg);
 
   // screening
-  const auto filtered_path = filterLitterPathPoint(to_path(veloctiy_planed_path));
+  const auto filtered_path = filterLitterPathPoint(to_path(velocity_planed_path));
 
   // interpolation
   const auto interpolated_path_msg = interpolatePath(filtered_path, forward_path_length_);
