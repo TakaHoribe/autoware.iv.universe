@@ -32,6 +32,7 @@ struct LaneChangerParameters {
   double drivable_area_width;
   double drivable_area_height;
   double vehicle_width;
+  double static_obstacle_velocity_thresh;
   bool enable_abort_lane_change;
 };
 
