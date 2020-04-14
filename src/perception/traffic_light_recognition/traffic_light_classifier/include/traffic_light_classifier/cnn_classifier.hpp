@@ -62,8 +62,8 @@ class CNNClassifier : public ClassifierInterface {
   image_transport::ImageTransport image_transport_;
   image_transport::Publisher image_pub_;
   std::vector<std::string> labels_;
-  std::vector<float> mean_{0.485, 0.456, 0.406};
-  std::vector<float> std_{0.229, 0.224, 0.225};
+  std::vector<float> mean_{0.242, 0.193, 0.201};
+  std::vector<float> std_{1.0, 1.0, 1.0};
 };
 
 } // namespace traffic_light
