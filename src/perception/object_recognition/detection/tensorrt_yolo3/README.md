@@ -2,7 +2,7 @@
 
 ## Referenced repositiory
 Please check this repository for detail implementation.
-Note that you are using the trained files provided by the repository.
+The trained files are provided by the following repository. The trained files are automatically downloaded when you build.
 
 https://github.com/lewes6369/TensorRT-Yolov3
 
