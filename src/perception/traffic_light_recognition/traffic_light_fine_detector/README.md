@@ -15,3 +15,6 @@
 	roslaunch traffic_light_fine_ditector traffic_light_fine_detector.launch mode:=int8
 ```
 * This node automatically creates data and calib_image directory.
+
+## Note
+The trained files are automatically downloaded when you build.
