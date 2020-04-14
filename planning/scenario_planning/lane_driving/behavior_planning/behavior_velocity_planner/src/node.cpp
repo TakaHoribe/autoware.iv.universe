@@ -22,6 +22,7 @@
 #include <lanelet2_extension/utility/message_conversion.h>
 #include <lanelet2_routing/Route.h>
 
+#include <diagnostic_msgs/DiagnosticStatus.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <utilization/path_utilization.h>
@@ -134,6 +135,8 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
+  stop_reason_diag_pub_ =
+    pnh_.advertise<diagnostic_msgs::DiagnosticStatus>("output/stop_reason", 1);
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/path", 1);
 
   // Parameters
@@ -285,6 +288,7 @@ void BehaviorVelocityPlannerNode::onTrigger(
   output_path_msg.drivable_area = input_path_msg.drivable_area;
 
   path_pub_.publish(output_path_msg);
+  stop_reason_diag_pub_.publish(planner_manager_.getStopReasonDiag());
   publishDebugMarker(output_path_msg, debug_viz_pub_);
 
   return;

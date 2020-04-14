@@ -42,9 +42,12 @@ public:
     planner_data_ = planner_data;
   }
 
+  boost::optional<int> getFirstStopPathPointIndex() { return first_stop_path_point_index_; }
+
 protected:
   const int64_t module_id_;
   std::shared_ptr<const PlannerData> planner_data_;
+  boost::optional<int> first_stop_path_point_index_;
 };
 
 class SceneModuleManagerInterface
@@ -60,6 +63,8 @@ public:
 
   virtual const char * getModuleName() = 0;
 
+  boost::optional<int> getFirstStopPathPointIndex() { return first_stop_path_point_index_; }
+
   void updateSceneModuleInstances(
     const std::shared_ptr<const PlannerData> & planner_data,
     const autoware_planning_msgs::PathWithLaneId & path)
@@ -74,9 +79,14 @@ public:
   {
     visualization_msgs::MarkerArray debug_marker_array;
 
+    first_stop_path_point_index_ = static_cast<int>(path->points.size());
     for (const auto & scene_module : scene_modules_) {
       scene_module->setPlannerData(planner_data_);
       scene_module->modifyPathVelocity(path);
+
+      if (scene_module->getFirstStopPathPointIndex() < first_stop_path_point_index_) {
+        first_stop_path_point_index_ = scene_module->getFirstStopPathPointIndex();
+      }
 
       for (const auto & marker : scene_module->createDebugMarkerArray().markers) {
         debug_marker_array.markers.push_back(marker);
@@ -130,6 +140,8 @@ protected:
   std::set<int64_t> registered_module_id_set_;
 
   std::shared_ptr<const PlannerData> planner_data_;
+
+  boost::optional<int> first_stop_path_point_index_;
 
   // Debug
   ros::NodeHandle private_nh_{"~"};
