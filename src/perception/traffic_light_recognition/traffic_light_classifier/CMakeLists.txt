@@ -40,10 +40,10 @@ endif()
 option(CUDNN_AVAIL "CUDNN available" OFF)
 # try to find the CUDNN module
 find_library(CUDNN_LIBRARY
-NAMES libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name}
-PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
-PATH_SUFFIXES lib lib64 bin
-DOC "CUDNN library." )
+  NAMES libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name}
+  PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
+  PATH_SUFFIXES lib lib64 bin
+  DOC "CUDNN library." )
 if(CUDNN_LIBRARY)
   message("CUDNN is available!")
   message("CUDNN_LIBRARY: ${CUDNN_LIBRARY}")
@@ -61,95 +61,104 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   message_filters
   dynamic_reconfigure
-)
+  )
 
 generate_dynamic_reconfigure_options(cfg/HSVFilter.cfg)
 
 find_package(OpenCV REQUIRED)
 
-include_directories(
-  include
-  utils
-  ${OpenCV_INCLUDE_DIRS}
-  ${CUDA_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
-)
+if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS
-  )
+  include_directories(
+    include
+    utils
+    ${OpenCV_INCLUDE_DIRS}
+    ${CUDA_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    )
 
-# Download caffemodel and prototxt
-set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
-if (NOT EXISTS "${PATH}")
-  execute_process(COMMAND mkdir -p ${PATH})
-endif()
-set(FILE "${PATH}/traffic_light_classifier_mobilenetv2.onnx")
-message(STATUS "Checking and downloading traffic_light_classifier_mobilenetv2.onnx")
-if (NOT EXISTS "${FILE}")
-  message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1Q-pZNTUBDNWddcURARrvtz2jmTiqV5T7" -O ${PATH}/traffic_light_classifier_mobilenetv2.onnx)
-endif()
-set(FILE "${PATH}/lamp_labels.txt")
-message(STATUS "Checking and downloading lamp_labels.txt")
-if (NOT EXISTS "${FILE}")
-  message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
-endif()
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS
+    )
 
-
-###########
-## Build ##
-###########
-
-add_library(libutils
-  utils/trt_common.cpp
-  )
-target_link_libraries(libutils
-  ${OpenCV_LIBRARIES}
-  ${NVINFER}
-  ${NVONNXPARSER}
-  ${NVINFER_PLUGIN}
-  ${CUDA_LIBRARIES}
-  ${CUBLAS_LIBRARIES}
-  ${CUDA_curand_LIBRARY}
-  ${CUDNN_LIBRARY}
-  )
-add_dependencies(libutils
-  ${catkin_EXPORTED_TARGETS})
+  # Download caffemodel and prototxt
+  set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
+  if (NOT EXISTS "${PATH}")
+    execute_process(COMMAND mkdir -p ${PATH})
+  endif()
+  set(FILE "${PATH}/traffic_light_classifier_mobilenetv2.onnx")
+  message(STATUS "Checking and downloading traffic_light_classifier_mobilenetv2.onnx")
+  if (NOT EXISTS "${FILE}")
+    message(STATUS "... file does not exist. Downloading now ...")
+    execute_process(COMMAND gdown "https://drive.google.com/uc?id=1Q-pZNTUBDNWddcURARrvtz2jmTiqV5T7" -O ${PATH}/traffic_light_classifier_mobilenetv2.onnx)
+  endif()
+  set(FILE "${PATH}/lamp_labels.txt")
+  message(STATUS "Checking and downloading lamp_labels.txt")
+  if (NOT EXISTS "${FILE}")
+    message(STATUS "... file does not exist. Downloading now ...")
+    execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
+  endif()
 
 
-add_executable(traffic_light_classifier_node
-  src/color_classifier.cpp
-  src/cnn_classifier.cpp
-  src/node.cpp
-  src/main.cpp
-)
+  ###########
+  ## Build ##
+  ###########
 
-add_dependencies(traffic_light_classifier_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(traffic_light_classifier_node
-  libutils
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
+  add_library(libutils
+    utils/trt_common.cpp
+    )
+  target_link_libraries(libutils
+    ${OpenCV_LIBRARIES}
+    ${NVINFER}
+    ${NVONNXPARSER}
+    ${NVINFER_PLUGIN}
+    ${CUDA_LIBRARIES}
+    ${CUBLAS_LIBRARIES}
+    ${CUDA_curand_LIBRARY}
+    ${CUDNN_LIBRARY}
+    )
+  add_dependencies(libutils
+    ${catkin_EXPORTED_TARGETS})
 
-#############
-## Install ##
-#############
 
-install(
-  TARGETS
+  add_executable(traffic_light_classifier_node
+    src/color_classifier.cpp
+    src/cnn_classifier.cpp
+    src/node.cpp
+    src/main.cpp
+    )
+
+  add_dependencies(traffic_light_classifier_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+    )
+  target_link_libraries(traffic_light_classifier_node
+    libutils
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    )
+
+  #############
+  ## Install ##
+  #############
+
+  install(
+    TARGETS
     traffic_light_classifier_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
-install(
-  DIRECTORY
+  install(
+    DIRECTORY
     launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+    data
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    )
+
+else()
+  find_package(catkin REQUIRED)
+  catkin_package()
+  message("TrafficLightClassifier won't be built, CUDA and/or TensorRT were not found.")
+endif()
