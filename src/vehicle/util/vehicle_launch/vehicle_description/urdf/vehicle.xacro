@@ -1,39 +1,18 @@
 <?xml version="1.0"?>
-<robot name="vehicle"
-  xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="vehicle" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- vehicle -->
+  <xacro:include filename="$(find lexus_description)/urdf/lexus.xacro"/>
+
+  <!-- sensor -->
   <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
   <xacro:include filename="$(find camera_description)/urdf/monocular_camera.xacro"/>
   <xacro:include filename="$(find imu_description)/urdf/imu.xacro"/>
 
-  <!-- <xacro:property name="pi" value="3.1415926835897931"/> -->
+  <xacro:property name="calibration" value="${load_yaml('$(find vehicle_launch)/vehicle_description/config/calibration.yaml')}"/>
   <xacro:arg name="gpu" default="false"/>
 
-  <!-- load parameter -->
-  <xacro:property name="vehicle_info" value="${load_yaml('$(find vehicle_description)/config/vehicle_info.yaml')}"/>
-  <!-- set parameter -->
-  <xacro:property name="wheel_radius" value="${vehicle_info['wheel_radius']}"/>
-  <xacro:property name="wheel_width" value="${vehicle_info['wheel_width']}"/>
-  <xacro:property name="wheel_base" value="${vehicle_info['wheel_base']}"/>
-  <xacro:property name="wheel_tread" value="${vehicle_info['wheel_tread']}"/>
-  <xacro:property name="front_overhang" value="${vehicle_info['front_overhang']}"/>
-  <xacro:property name="rear_overhang" value="${vehicle_info['rear_overhang']}"/>
-  <xacro:property name="vehicle_length" value="${vehicle_info['vehicle_length'}"/>
-  <xacro:property name="vehicle_width" value="${vehicle_info['vehicle_width'}"/>
-  <xacro:property name="vehicle_height" value="${vehicle_info['vehicle_height'}"/>
-
-  <!-- vehicle body -->
-  <link name="base_link">
-    <visual>
-      <origin xyz="${wheel_base/2.0} 0 0" rpy="${pi/2.0} 0 ${pi}"/>
-      <geometry>
-        <mesh filename="package://vehicle_description/mesh/lexus.dae" scale="1 1 1"/>
-      </geometry>
-    </visual>
-  </link>
-
-  <!-- sensor -->
-  <xacro:property name="calibration" value="${load_yaml('$(find vehicle_description)/config/calibration.yaml')}"/>
   <!-- lidar -->
   <VLP-16 parent="base_link" name="velodyne_top" topic="/points_raw" hz="10" samples="220" gpu="$(arg gpu)">
     <origin xyz="${calibration['base_link2velodyne_top']['x']} ${calibration['base_link2velodyne_top']['y']} ${calibration['base_link2velodyne_top']['z']}" rpy="${calibration['base_link2velodyne_top']['roll']} ${calibration['base_link2velodyne_top']['pitch']} ${calibration['base_link2velodyne_top']['yaw']}" />
