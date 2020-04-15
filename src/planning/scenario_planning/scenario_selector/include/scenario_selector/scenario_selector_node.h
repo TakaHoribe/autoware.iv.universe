@@ -72,7 +72,7 @@ class ScenarioSelectorNode {
   ros::Subscriber sub_route_;
   ros::Subscriber sub_twist_;
 
-  Input input_lane_following_;
+  Input input_lane_driving_;
   Input input_parking_;
 
   Output output_;
