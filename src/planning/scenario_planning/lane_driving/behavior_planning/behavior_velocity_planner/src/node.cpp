@@ -208,7 +208,7 @@ void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::Map
 }
 
 void BehaviorVelocityPlannerNode::onTrafficLightStates(
-    const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg) {
+    const autoware_perception_msgs::TrafficLightStateArray::ConstPtr& msg) {
   for (const auto& state : msg->states) {
     planner_data_.traffic_light_id_map_[state.id] = {msg->header, state};
   }

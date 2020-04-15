@@ -7,7 +7,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   autoware_planning_msgs
-  autoware_traffic_light_msgs
+  autoware_perception_msgs
   geometry_msgs
   lanelet2_extension
   pcl_ros
@@ -32,7 +32,7 @@ catkin_package(
   CATKIN_DEPENDS
     autoware_perception_msgs
     autoware_planning_msgs
-    autoware_traffic_light_msgs
+    autoware_perception_msgs
     geometry_msgs
     lanelet2_extension
     pcl_ros

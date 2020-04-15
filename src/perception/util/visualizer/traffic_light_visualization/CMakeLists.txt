@@ -4,7 +4,7 @@ project(traffic_light_visualization)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
-  autoware_traffic_light_msgs
+  autoware_perception_msgs
   cv_bridge
   image_transport
   message_filters
@@ -16,7 +16,7 @@ find_package(OpenCV REQUIRED)
 
 
 catkin_package(
-  CATKIN_DEPENDS autoware_traffic_light_msgs cv_bridge image_transport message_filters roscpp sensor_msgs
+  CATKIN_DEPENDS autoware_perception_msgs cv_bridge image_transport message_filters roscpp sensor_msgs
 )
 
 include_directories(

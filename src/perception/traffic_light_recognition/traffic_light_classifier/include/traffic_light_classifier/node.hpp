@@ -15,10 +15,10 @@
  */
 #pragma once
 
-#include <autoware_traffic_light_msgs/LampState.h>
-#include <autoware_traffic_light_msgs/TrafficLightRoiArray.h>
-#include <autoware_traffic_light_msgs/TrafficLightState.h>
-#include <autoware_traffic_light_msgs/TrafficLightStateArray.h>
+#include <autoware_perception_msgs/LampState.h>
+#include <autoware_perception_msgs/TrafficLightRoiArray.h>
+#include <autoware_perception_msgs/TrafficLightState.h>
+#include <autoware_perception_msgs/TrafficLightStateArray.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
@@ -57,14 +57,14 @@ class TrafficLightClassifierNode {
   ros::NodeHandle pnh_;
   image_transport::ImageTransport image_transport_;
   image_transport::SubscriberFilter image_sub_;
-  message_filters::Subscriber<autoware_traffic_light_msgs::TrafficLightRoiArray> roi_sub_;
+  message_filters::Subscriber<autoware_perception_msgs::TrafficLightRoiArray> roi_sub_;
   typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
-                                                    autoware_traffic_light_msgs::TrafficLightRoiArray>
+                                                    autoware_perception_msgs::TrafficLightRoiArray>
       SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Sync;
   Sync sync_;
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-                                                          autoware_traffic_light_msgs::TrafficLightRoiArray>
+                                                          autoware_perception_msgs::TrafficLightRoiArray>
       ApproximateSyncPolicy;
   typedef message_filters::Synchronizer<ApproximateSyncPolicy> ApproximateSync;
   ApproximateSync approximate_sync_;
@@ -72,7 +72,7 @@ class TrafficLightClassifierNode {
   ros::Publisher tl_states_pub_;
   std::shared_ptr<ClassifierInterface> classifier_ptr_;
   void imageRoiCallback(const sensor_msgs::ImageConstPtr& input_image_msg,
-                        const autoware_traffic_light_msgs::TrafficLightRoiArrayConstPtr& input_rois_msg);
+                        const autoware_perception_msgs::TrafficLightRoiArrayConstPtr& input_rois_msg);
 };
 
 }  // namespace traffic_light

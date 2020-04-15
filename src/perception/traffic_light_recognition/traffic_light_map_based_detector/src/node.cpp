@@ -28,7 +28,7 @@
 #include <lanelet2_routing/RoutingGraphContainer.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-#include <autoware_traffic_light_msgs/TrafficLightRoi.h>
+#include <autoware_perception_msgs/TrafficLightRoi.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Transform.h>
 #include <traffic_light_map_based_detector/node.hpp>
@@ -42,7 +42,7 @@ MapBasedDetector::MapBasedDetector() : nh_(""), pnh_("~"), tf_listener_(tf_buffe
   map_sub_ = pnh_.subscribe("input/vector_map", 1, &MapBasedDetector::mapCallback, this);
   camera_info_sub_ = pnh_.subscribe("input/camera_info", 1, &MapBasedDetector::cameraInfoCallback, this);
   route_sub_ = pnh_.subscribe("input/route", 1, &MapBasedDetector::routeCallback, this);
-  roi_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
+  roi_pub_ = pnh_.advertise<autoware_perception_msgs::TrafficLightRoiArray>("output/rois", 1);
   viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/markers", 1);
   pnh_.getParam("max_vibration_pitch", config_.max_vibration_pitch);
   pnh_.getParam("max_vibration_yaw", config_.max_vibration_yaw);
@@ -55,7 +55,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
   camera_info_ptr_ = input_msg;
   if (lanelet_map_ptr_ == nullptr || camera_info_ptr_ == nullptr) return;
 
-  autoware_traffic_light_msgs::TrafficLightRoiArray output_msg;
+  autoware_perception_msgs::TrafficLightRoiArray output_msg;
   output_msg.header = camera_info_ptr_->header;
   geometry_msgs::PoseStamped camera_pose_stamped;
   try {
@@ -85,7 +85,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
     return;
 
   for (const auto& traffic_light : visible_traffic_lights) {
-    autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
+    autoware_perception_msgs::TrafficLightRoi tl_roi;
     if (!getTrafficLightRoi(camera_pose_stamped.pose, camera_info, traffic_light, config_, tl_roi)) continue;
 
     output_msg.rois.push_back(tl_roi);
@@ -97,7 +97,7 @@ void MapBasedDetector::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPt
 bool MapBasedDetector::getTrafficLightRoi(const geometry_msgs::Pose& camera_pose,
                                           const sensor_msgs::CameraInfo& camera_info,
                                           const lanelet::ConstLineString3d traffic_light, const Config& config,
-                                          autoware_traffic_light_msgs::TrafficLightRoi& tl_roi) {
+                                          autoware_perception_msgs::TrafficLightRoi& tl_roi) {
   const double tl_height = traffic_light.attributeOr("height", 0.0);
   const double& fx = camera_info.K[(0 * 3) + 0];
   const double& fy = camera_info.K[(1 * 3) + 1];

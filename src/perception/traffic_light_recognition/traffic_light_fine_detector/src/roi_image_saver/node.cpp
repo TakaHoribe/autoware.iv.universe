@@ -37,7 +37,7 @@ TrafficLightRoiImageSaver::TrafficLightRoiImageSaver()
 TrafficLightRoiImageSaver::~TrafficLightRoiImageSaver() {}
 void TrafficLightRoiImageSaver::imageRoiCallback(
     const sensor_msgs::ImageConstPtr& input_image_msg,
-    const autoware_traffic_light_msgs::TrafficLightRoiArrayConstPtr& input_tl_roi_msg) {
+    const autoware_perception_msgs::TrafficLightRoiArrayConstPtr& input_tl_roi_msg) {
   ros::Time current_time = ros::Time::now();
   cv_bridge::CvImagePtr cv_ptr;
   try {

@@ -90,7 +90,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       }
 
       // search traffic light state
-      autoware_traffic_light_msgs::TrafficLightState highest_confidence_tl_state;
+      autoware_perception_msgs::TrafficLightState highest_confidence_tl_state;
       if (!getHighestConfidenceTrafficLightState(traffic_lights, highest_confidence_tl_state)) continue;
       // check stop border distance
       Eigen::Vector2d stop_line_point;
@@ -108,7 +108,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       }
 
       // if state is red, insert stop point into path
-      if (highest_confidence_tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::RED) {
+      if (highest_confidence_tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::RED) {
         if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
           continue;
         }
@@ -123,7 +123,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
 bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     lanelet::ConstLineStringsOrPolygons3d& traffic_lights,
-    autoware_traffic_light_msgs::TrafficLightState& highest_confidence_tl_state) {
+    autoware_perception_msgs::TrafficLightState& highest_confidence_tl_state) {
   // search traffic light state
   bool found = false;
   double highest_confidence = 0.0;
@@ -144,7 +144,7 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
       continue;
     }
     if (tl_state.lamp_states.empty() ||
-        tl_state.lamp_states.front().type == autoware_traffic_light_msgs::LampState::UNKNOWN) {
+        tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::UNKNOWN) {
       continue;
     }
 

@@ -54,7 +54,7 @@ class BehaviorVelocityPlannerNode {
   void onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
   void onVehicleVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
   void onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg);
-  void onTrafficLightStates(const autoware_traffic_light_msgs::TrafficLightStateArray::ConstPtr& msg);
+  void onTrafficLightStates(const autoware_perception_msgs::TrafficLightStateArray::ConstPtr& msg);
 
   // publisher
   ros::Publisher path_pub_;
