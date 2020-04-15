@@ -75,6 +75,8 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
   pub_pose_no_yawbias_ = pnh_.advertise<geometry_msgs::PoseStamped>("ekf_pose_without_yawbias", 1);
+  pub_pose_cov_no_yawbias_ =
+      pnh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance_without_yawbias", 1);
   sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
   sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
@@ -637,6 +639,10 @@ void EKFLocalizer::publishEstimateResult() {
   pose_cov.pose.covariance[31] = P(IDX::YAW, IDX::Y);
   pose_cov.pose.covariance[35] = P(IDX::YAW, IDX::YAW);
   pub_pose_cov_.publish(pose_cov);
+
+  geometry_msgs::PoseWithCovarianceStamped pose_cov_no_yawbias = pose_cov;
+  pose_cov_no_yawbias.pose.pose = current_ekf_pose_no_yawbias_.pose;
+  pub_pose_cov_no_yawbias_.publish(pose_cov_no_yawbias);
 
   /* publish latest twist */
   pub_twist_.publish(current_ekf_twist_);

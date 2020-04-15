@@ -42,24 +42,25 @@ class EKFLocalizer {
   ~EKFLocalizer();
 
  private:
-  ros::NodeHandle nh_;                   //!< @brief ros public node handler
-  ros::NodeHandle pnh_;                  //!< @brief  ros private node handler
-  ros::Publisher pub_pose_;              //!< @brief ekf estimated pose publisher
-  ros::Publisher pub_pose_cov_;          //!< @brief estimated ekf pose with covariance publisher
-  ros::Publisher pub_twist_;             //!< @brief ekf estimated twist publisher
-  ros::Publisher pub_twist_cov_;         //!< @brief ekf estimated twist with covariance publisher
-  ros::Publisher pub_debug_;             //!< @brief debug info publisher
-  ros::Publisher pub_measured_pose_;     //!< @brief debug measurement pose publisher
-  ros::Publisher pub_yaw_bias_;          //!< @brief ekf estimated yaw bias publisher
-  ros::Publisher pub_pose_no_yawbias_;   //!< @brief ekf estimated yaw bias publisher
-  ros::Subscriber sub_initialpose_;      //!< @brief initial pose subscriber
-  ros::Subscriber sub_pose_;             //!< @brief measurement pose subscriber
-  ros::Subscriber sub_twist_;            //!< @brief measurement twist subscriber
-  ros::Subscriber sub_pose_with_cov_;    //!< @brief measurement pose with covariance subscriber
-  ros::Subscriber sub_twist_with_cov_;   //!< @brief measurement twist with covariance subscriber
-  ros::Timer timer_control_;             //!< @brief time for ekf calculation callback
-  ros::Timer timer_tf_;                  //!< @brief timer to send transform
-  tf2_ros::TransformBroadcaster tf_br_;  //!< @brief tf broadcaster
+  ros::NodeHandle nh_;                      //!< @brief ros public node handler
+  ros::NodeHandle pnh_;                     //!< @brief  ros private node handler
+  ros::Publisher pub_pose_;                 //!< @brief ekf estimated pose publisher
+  ros::Publisher pub_pose_cov_;             //!< @brief estimated ekf pose with covariance publisher
+  ros::Publisher pub_twist_;                //!< @brief ekf estimated twist publisher
+  ros::Publisher pub_twist_cov_;            //!< @brief ekf estimated twist with covariance publisher
+  ros::Publisher pub_debug_;                //!< @brief debug info publisher
+  ros::Publisher pub_measured_pose_;        //!< @brief debug measurement pose publisher
+  ros::Publisher pub_yaw_bias_;             //!< @brief ekf estimated yaw bias publisher
+  ros::Publisher pub_pose_no_yawbias_;      //!< @brief ekf estimated yaw bias publisher
+  ros::Publisher pub_pose_cov_no_yawbias_;  //!< @brief ekf estimated yaw bias publisher
+  ros::Subscriber sub_initialpose_;         //!< @brief initial pose subscriber
+  ros::Subscriber sub_pose_;                //!< @brief measurement pose subscriber
+  ros::Subscriber sub_twist_;               //!< @brief measurement twist subscriber
+  ros::Subscriber sub_pose_with_cov_;       //!< @brief measurement pose with covariance subscriber
+  ros::Subscriber sub_twist_with_cov_;      //!< @brief measurement twist with covariance subscriber
+  ros::Timer timer_control_;                //!< @brief time for ekf calculation callback
+  ros::Timer timer_tf_;                     //!< @brief timer to send transform
+  tf2_ros::TransformBroadcaster tf_br_;     //!< @brief tf broadcaster
 
   TimeDelayKalmanFilter ekf_;  //!< @brief  extended kalman filter instance.
 
