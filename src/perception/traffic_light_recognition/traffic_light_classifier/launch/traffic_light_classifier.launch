@@ -3,10 +3,10 @@
   <arg name="input/rois" default="rois" />
   <arg name="output/traffic_light_states" default="traffic_light_states" />
 
-  <arg name="use_cnn" default="true" />
+  <arg name="use_gpu" default="false" />
   <!-- classifier_type {hsv_filter: 0, cnn: 1} -->
-  <arg name="classifier_type" default="1" if="$(arg use_cnn)"/>
-  <arg name="classifier_type" default="0" unless="$(arg use_cnn)"/>
+  <arg name="classifier_type" default="1" if="$(arg use_gpu)"/>
+  <arg name="classifier_type" default="0" unless="$(arg use_gpu)"/>
 
   <node name="traffic_light_classifier" pkg="traffic_light_classifier" type="traffic_light_classifier_node" output="screen">
     <remap from="~input/image" to="$(arg input/image)" />
@@ -16,7 +16,7 @@
     <param name="classifier_type" value="$(arg classifier_type)" />
   </node>
 
-  <group ns="traffic_light_classifier" if="$(arg use_cnn)">
+  <group ns="traffic_light_classifier" if="$(arg use_gpu)">
     <param name="model_file_path" value="$(find traffic_light_classifier)/data/traffic_light_classifier_mobilenetv2.onnx"/>
     <param name="label_file_path" value="$(find traffic_light_classifier)/data/lamp_labels.txt"/>
     <param name="precision" value="fp16"/>
