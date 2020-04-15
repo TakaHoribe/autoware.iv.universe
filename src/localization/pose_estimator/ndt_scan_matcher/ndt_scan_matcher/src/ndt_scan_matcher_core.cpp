@@ -114,8 +114,8 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   initial_to_result_distance_old_pub_ = nh_.advertise<std_msgs::Float32>("initial_to_result_distance_old", 10);
   initial_to_result_distance_new_pub_ = nh_.advertise<std_msgs::Float32>("initial_to_result_distance_new", 10);
   ndt_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("ndt_marker", 10);
-  ndt_monte_colro_initial_pose_marker_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("monte_colro_initial_pose_marker", 10);
+  ndt_monte_carlo_initial_pose_marker_pub_ =
+      nh_.advertise<visualization_msgs::MarkerArray>("monte_carlo_initial_pose_marker", 10);
   diagnostics_pub_ = nh_.advertise<diagnostic_msgs::DiagnosticArray>("diagnostics", 10);
 
   service_ = nh_.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
@@ -561,7 +561,7 @@ void NDTScanMatcher::publishMarkerForDebug(const Particle& particle, const size_
   marker.color = ExchangeColorCrc((1.0 * i) / 100);
   marker_array.markers.push_back(marker);
 
-  ndt_monte_colro_initial_pose_marker_pub_.publish(marker_array);
+  ndt_monte_carlo_initial_pose_marker_pub_.publish(marker_array);
 }
 
 void NDTScanMatcher::publishTF(const std::string& frame_id, const std::string& child_frame_id,

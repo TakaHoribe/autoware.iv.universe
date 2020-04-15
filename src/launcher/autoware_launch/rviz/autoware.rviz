@@ -7,7 +7,7 @@ Panels:
         - /Sensing1/LiDAR1/ConcatenatePointCloud1/Autocompute Value Bounds1
         - /Sensing1/GNSS1/PoseWithCovariance1/Covariance1/Position1
         - /Localization1/NDT1/PoseHistory1/Line1
-        - /Localization1/NDT1/MonteColroInitialPose1/Namespaces1
+        - /Localization1/NDT1/MonteCarloInitialPose1/Namespaces1
         - /Localization1/EKF1/PoseHistory1/Line1
         - /Control1/Debug/MPC1/Namespaces1
       Splitter Ratio: 0.557669460773468
@@ -572,8 +572,8 @@ Visualization Manager:
               Value: false
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /localization/pose_estimator/monte_colro_initial_pose_marker
-              Name: MonteColroInitialPose
+              Marker Topic: /localization/pose_estimator/monte_carlo_initial_pose_marker
+              Name: MonteCarloInitialPose
               Namespaces: {}
               Queue Size: 1
               Value: true

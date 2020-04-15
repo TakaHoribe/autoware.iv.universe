@@ -118,7 +118,7 @@ class NDTScanMatcher {
   ros::Publisher initial_to_result_distance_old_pub_;
   ros::Publisher initial_to_result_distance_new_pub_;
   ros::Publisher ndt_marker_pub_;
-  ros::Publisher ndt_monte_colro_initial_pose_marker_pub_;
+  ros::Publisher ndt_monte_carlo_initial_pose_marker_pub_;
   ros::Publisher diagnostics_pub_;
 
   ros::ServiceServer service_;
