@@ -1,7 +1,0 @@
----
-- name: Download us sample path.csv
-  become: yes
-  get_url:
-    url: https://gist.githubusercontent.com/k0suke-murakami/2c444e01847fb636cb8b9b5f729c8bdb/raw/c7af918ea2e35a401f7e3510bda4600247964127/us_sample_path.csv
-    dest: "{{ AUTOWARE_DIR }}/src/planning/util/path_loader/data/"
-    force: True

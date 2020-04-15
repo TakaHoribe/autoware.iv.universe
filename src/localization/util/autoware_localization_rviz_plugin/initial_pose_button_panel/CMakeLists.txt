@@ -37,7 +37,7 @@ add_definitions(-DQT_NO_KEYWORDS -g)
 set(CMAKE_AUTOMOC ON)
 set(SOURCE_FILES
   src/initial_pose_button_panel.cpp
-  )
+)
 
 add_library(initial_pose_button_panel ${SOURCE_FILES} ${UIC_FILES})
 target_link_libraries(initial_pose_button_panel ${QT_LIBRARIES} ${catkin_LIBRARIES} ${rviz_DEFAULT_PLUGIN_LIBRARIES})

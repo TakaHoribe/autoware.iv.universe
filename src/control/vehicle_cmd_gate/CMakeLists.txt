@@ -24,7 +24,6 @@ catkin_package(
     std_msgs
 )
 
-
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -46,16 +45,3 @@ install(
     launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-# if(CATKIN_ENABLE_TESTING)
-#   roslint_add_test()
-#   find_package(rostest REQUIRED)
-#   add_rostest_gtest(
-#     test-vehicle_cmd_gate
-#     test/test_vehicle_cmd_gate.test
-#     test/src/test_vehicle_cmd_gate.cpp
-#     src/vehicle_cmd_gate.cpp
-#   )
-#   add_dependencies(test-vehicle_cmd_gate ${catkin_EXPORTED_TARGETS})
-#   target_link_libraries(test-vehicle_cmd_gate ${catkin_LIBRARIES})
-# endif()

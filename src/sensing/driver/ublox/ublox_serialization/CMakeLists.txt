@@ -10,5 +10,4 @@ catkin_package(
 
 install(DIRECTORY include/
   DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
 )

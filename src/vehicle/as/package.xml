@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>as</name>
-  <version>1.12.0</version>
+  <version>0.1.0</version>
   <description>The pacmod interface package</description>
   <maintainer email="aohsato@gmail.com">Akihito Ohsato</maintainer>
   <author email="aohsato@gmail.com">Akihito Ohsato</author>

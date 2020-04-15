@@ -2,7 +2,7 @@
 <package format="2">
 
   <name>pose_history</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The pose_history package</description>
   <license>Apache 2.0</license>
 

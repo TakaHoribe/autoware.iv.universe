@@ -6,29 +6,20 @@ add_compile_options(-std=c++14)
 set(CMAKE_BUILD_TYPE "Release")
 
 find_package(catkin REQUIRED COMPONENTS
-        roscpp
-        tf2_geometry_msgs
-        std_msgs
-        geometry_msgs
-        sensor_msgs
-        )
+  roscpp
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  std_msgs
+  geometry_msgs
+  sensor_msgs
+)
 
-#add dynamic reconfigure api
-#generate_dynamic_reconfigure_options(config/gyro_odometer.cfg)
-
-###################################
-## catkin specific configuration ##
-###################################
 catkin_package(
   INCLUDE_DIRS include
 )
 
-###########
-## Build ##
-###########
-
 include_directories(include ${catkin_INCLUDE_DIRS})
-
 
 add_executable(gyro_odometer
         src/gyro_odometer_node.cpp

@@ -57,8 +57,7 @@ Visualization Manager:
           Show Arrows: true
           Show Axes: true
           Show Names: true
-          Tree:
-            {}
+          Tree: {}
           Update Interval: 0
           Value: false
         - Alpha: 0.5
@@ -325,14 +324,6 @@ Visualization Manager:
             traffic_light_triangle: true
           Queue Size: 100
           Value: true
-        - Class: rviz/MarkerArray
-          Enabled: true
-          Marker Topic: /autoware_vector_map/vizualization
-          Name: AutowareVectorMap
-          Namespaces:
-            {}
-          Queue Size: 100
-          Value: true
       Enabled: true
       Name: Map
     - Class: rviz/Group
@@ -583,8 +574,7 @@ Visualization Manager:
               Enabled: true
               Marker Topic: /localization/pose_estimator/monte_colro_initial_pose_marker
               Name: MonteColroInitialPose
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 1
               Value: true
           Enabled: true
@@ -599,7 +589,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/fuser/ekf_pose
+              Topic: /localization/pose_twist_fusion_filter/ekf_pose
               Value: true
           Enabled: true
           Name: EKF
@@ -611,10 +601,9 @@ Visualization Manager:
           Displays:
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/detection/objects/visualization
+              Marker Topic: /perception/object_recognition/detection/objects/visualization
               Name: DynamicObjects
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: false
@@ -623,10 +612,9 @@ Visualization Manager:
           Displays:
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/tracking/objects/visualization
+              Marker Topic: /perception/object_recognition/tracking/objects/visualization
               Name: DynamicObjects
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: false
@@ -635,7 +623,7 @@ Visualization Manager:
           Displays:
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/prediction/objects/visualization
+              Marker Topic: /perception/object_recognition/objects/visualization
               Name: DynamicObjects
               Namespaces:
                 label: true
@@ -651,7 +639,7 @@ Visualization Manager:
           Displays:
             - Class: rviz/Image
               Enabled: true
-              Image Topic: /perception/traffic_light/debug/rois
+              Image Topic: /perception/traffic_light_recognition/debug/rois
               Max Value: 1
               Median window: 5
               Min Value: 0
@@ -663,10 +651,9 @@ Visualization Manager:
               Value: true
             - Class: rviz/MarkerArray
               Enabled: true
-              Marker Topic: /perception/traffic_light/traffic_light_map_based_detector/output/debug/markers
+              Marker Topic: /perception/traffic_light_recognition/traffic_light_map_based_detector/debug/markers
               Name: Beam
-              Namespaces:
-                {}
+              Namespaces: {}
               Queue Size: 100
               Value: true
           Enabled: true
@@ -734,7 +721,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: true
                       Name: Path
-                      Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/path
+                      Topic: /planning/scenario_planning/lane_driving/behavior_planning/path
                       Unreliable: false
                       Value: true
                       View Path:
@@ -751,77 +738,64 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: false
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/path
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/path
                       Name: Arrow
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: false
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_path_visualizer/output/path_with_lane_id_marker
-                      Name: PathWithLaneId
-                      Namespaces:
-                        lane_id: true
-                        line: true
-                        points: true
-                      Queue Size: 100
-                      Value: true
-                    - Class: rviz/MarkerArray
-                      Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/crosswalk
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/crosswalk
                       Name: Crosswalk
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/intersection
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/intersection
                       Name: Intersection
                       Namespaces:
-                        factor text: true
+                        factor_text: true
                         intersection_detection_lanelets: false
                         judge_point_pose_line: true
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop_virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/blind_spot
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/blind_spot
                       Name: Blind Spot
                       Namespaces:
                         blind_spot_detection_area: false
-                        factor text: true
+                        factor_text: true
                         judge_point_pose_line: true
                         path_left_edge: false
                         path_raw: false
                         path_right_edge: false
                         path_with_judgeline: false
-                        stop geofence: true
+                        stop_virtual_wall: true
                         stop_point_pose_line: false
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/traffic_light
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/traffic_light
                       Name: TrafficLight
-                      Namespaces:
-                        {}
+                      Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/behavior_planning/behavior_velocity_planner/output/debug/momentary_stop
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/stop_line
                       Name: StopLine
                       Namespaces:
-                        factor text: true
-                        stop geofence: true
+                        factor_text: true
+                        stop_virtual_wall: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
@@ -832,7 +806,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: false
                       Name: Trajectory
-                      Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/trajectory
+                      Topic: /planning/scenario_planning/lane_driving/trajectory
                       Unreliable: false
                       Value: false
                       View Path:
@@ -849,21 +823,21 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/scenarios/lane_following/motion_planning/obstacle_stop_planner/output/debug/marker
+                      Marker Topic: /planning/scenario_planning/lane_driving/motion_planning/obstacle_stop_planner/debug/marker
                       Name: ObstaclePointCloudStop
                       Namespaces:
-                        collision polygons: true
-                        detection polygons: true
-                        factor text: true
-                        stop geofence: true
-                        stop obstacle point: true
-                        stop obstacle text: true
+                        collision_polygons: true
+                        detection_polygons: true
+                        factor_text: true
+                        stop_virtual_wall: true
+                        stop_obstacle_point: true
+                        stop_obstacle_text: true
                       Queue Size: 100
                       Value: true
                   Enabled: true
                   Name: MotionPlanning
               Enabled: true
-              Name: LaneFollowing
+              Name: LaneDriving
             - Class: rviz/Group
               Displays:
                 - Class: rviz/Group
@@ -874,7 +848,7 @@ Visualization Manager:
                       Draw Behind: false
                       Enabled: false
                       Name: Costmap
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/costmap_generator/occupancy_grid
+                      Topic: /planning/scenario_planning/parking/costmap_generator/occupancy_grid
                       Unreliable: false
                       Use Timestamp: false
                       Value: false
@@ -891,7 +865,7 @@ Visualization Manager:
                       Shaft Length: 0.20000000298023224
                       Shaft Radius: 0.05000000074505806
                       Shape: Arrow (3D)
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/partial_pose_array
+                      Topic: /planning/scenario_planning/parking/freespace_planner/debug/partial_pose_array
                       Unreliable: false
                       Value: true
                     - Alpha: 1
@@ -907,7 +881,7 @@ Visualization Manager:
                       Shaft Length: 0.20000000298023224
                       Shaft Radius: 0.05000000074505806
                       Shape: Arrow (Flat)
-                      Topic: /planning/scenario_planning/scenarios/parking/freespace_planning/freespace_planner/debug/pose_array
+                      Topic: /planning/scenario_planning/parking/freespace_planner/debug/pose_array
                       Unreliable: false
                       Value: true
                   Enabled: true
@@ -924,8 +898,7 @@ Visualization Manager:
           Enabled: false
           Marker Topic: /control/mpc_follower/debug/markers
           Name: Debug/MPC
-          Namespaces:
-            {}
+          Namespaces: {}
           Queue Size: 100
           Value: false
       Enabled: true

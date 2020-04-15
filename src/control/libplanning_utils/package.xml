@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>libplanning_utils</name>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
   <description>The libplanning_utils package</description>
   <maintainer email="horibe.takamasa@gmail.com">Takamasa Horibe</maintainer>
   <license>Apache 2</license>

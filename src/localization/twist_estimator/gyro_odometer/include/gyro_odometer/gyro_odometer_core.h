@@ -18,6 +18,10 @@
 
 #include <ros/ros.h>
 
+#include <tf2/transform_datatypes.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+
 #include <std_msgs/Float32.h>
 
 #include <geometry_msgs/PoseStamped.h>
@@ -32,6 +36,7 @@ class GyroOdometer {
  private:
   void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr);
   void callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr);
+  bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -43,5 +48,9 @@ class GyroOdometer {
   ros::Publisher linear_x_pub_;
   ros::Publisher angular_z_pub_;
 
+  tf2_ros::Buffer tf2_buffer_;
+  tf2_ros::TransformListener tf2_listener_;
+
+  std::string output_frame_;
   geometry_msgs::TwistStamped::ConstPtr twist_msg_ptr_;
 };

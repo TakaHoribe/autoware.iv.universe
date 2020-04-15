@@ -1,4 +1,19 @@
-#include "scenario_selector_node.h"
+/*
+ * Copyright 2020 Tier IV, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <scenario_selector/scenario_selector_node.h>
 
 #include <string>
 #include <utility>
@@ -19,6 +34,11 @@ namespace {
 template <class T>
 void onData(const T& data, T* buffer) {
   *buffer = data;
+}
+
+template <class T>
+boost::function<void(const T&)> createCallback(T* buffer) {
+  return static_cast<boost::function<void(const T&)>>(boost::bind(onData<T>, _1, buffer));
 }
 
 std::shared_ptr<lanelet::ConstPolygon3d> findNearestParkinglot(
@@ -121,10 +141,10 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 }  // namespace
 
 Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
-  if (scenario == autoware_planning_msgs::Scenario::LaneFollowing) return input_lane_following_;
+  if (scenario == autoware_planning_msgs::Scenario::LaneDriving) return input_lane_driving_;
   if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
   ROS_ERROR_STREAM("invalid scenario argument: " << scenario);
-  return input_lane_following_;
+  return input_lane_driving_;
 }
 
 std::string ScenarioSelectorNode::selectScenarioByPosition() {
@@ -134,13 +154,13 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
     if (is_in_lane) {
-      return autoware_planning_msgs::Scenario::LaneFollowing;
+      return autoware_planning_msgs::Scenario::LaneDriving;
     } else {
       return autoware_planning_msgs::Scenario::Parking;
     }
   }
 
-  if (current_scenario_ == autoware_planning_msgs::Scenario::LaneFollowing) {
+  if (current_scenario_ == autoware_planning_msgs::Scenario::LaneDriving) {
     if (is_in_parking_lot && !is_goal_in_lane) {
       return autoware_planning_msgs::Scenario::Parking;
     }
@@ -150,7 +170,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
     const auto is_parking_completed = nh_.param<bool>("is_parking_completed", false);
     if (is_parking_completed && is_in_lane) {
       nh_.setParam("is_parking_completed", false);
-      return autoware_planning_msgs::Scenario::LaneFollowing;
+      return autoware_planning_msgs::Scenario::LaneDriving;
     }
   }
 
@@ -237,34 +257,33 @@ void ScenarioSelectorNode::onTimer(const ros::TimerEvent& event) {
 
   // Output
   const auto now = ros::Time::now();
-  if ((now - input.buf_trajectory->header.stamp).toSec() <= th_max_message_delay_sec_) {
+  const auto delay_sec = (now - input.buf_trajectory->header.stamp).toSec();
+  if (delay_sec <= th_max_message_delay_sec_) {
     output_.pub_trajectory.publish(input.buf_trajectory);
+  } else {
+    ROS_WARN_THROTTLE(1.0, "trajectory is delayed: scenario = %s, delay = %f, th_max_message_delay = %f",
+                      current_scenario_.c_str(), delay_sec, th_max_message_delay_sec_);
   }
 }
-
-#define CALLBACK(buffer) \
-  static_cast<boost::function<void(const decltype(buffer)&)>>(boost::bind(onData<decltype(buffer)>, _1, &buffer))
 
 ScenarioSelectorNode::ScenarioSelectorNode()
     : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_), current_scenario_(autoware_planning_msgs::Scenario::Empty) {
   // Parameters
   private_nh_.param<double>("update_rate", update_rate_, 10.0);
-  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 0.5);
+  private_nh_.param<double>("th_max_message_delay_sec", th_max_message_delay_sec_, 1.0);
   private_nh_.param<double>("th_arrived_distance_m", th_arrived_distance_m_, 1.0);
   private_nh_.param<double>("th_stopped_time_sec", th_stopped_time_sec_, 1.0);
   private_nh_.param<double>("th_stopped_velocity_mps", th_stopped_velocity_mps_, 0.01);
 
   // Input
-  input_lane_following_.sub_trajectory =
-      private_nh_.subscribe("input/lane_following/trajectory", 1, CALLBACK(input_lane_following_.buf_trajectory));
+  input_lane_driving_.sub_trajectory = private_nh_.subscribe("input/lane_driving/trajectory", 1,
+                                                               createCallback(&input_lane_driving_.buf_trajectory));
 
   input_parking_.sub_trajectory =
-      private_nh_.subscribe("input/parking/trajectory", 1, CALLBACK(input_parking_.buf_trajectory));
+      private_nh_.subscribe("input/parking/trajectory", 1, createCallback(&input_parking_.buf_trajectory));
 
   sub_lanelet_map_ = private_nh_.subscribe("input/lanelet_map", 1, &ScenarioSelectorNode::onMap, this);
-
   sub_route_ = private_nh_.subscribe("input/route", 1, &ScenarioSelectorNode::onRoute, this);
-
   sub_twist_ = private_nh_.subscribe("input/twist", 100, &ScenarioSelectorNode::onTwist, this);
 
   // Output
