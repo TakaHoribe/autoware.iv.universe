@@ -43,7 +43,7 @@ class TrafficLightModule : public SceneModuleInterface {
   struct DebugData {
     double base_link2front;
     std::vector<
-        std::tuple<std::shared_ptr<const lanelet::TrafficLight>, autoware_traffic_light_msgs::TrafficLightState>>
+        std::tuple<std::shared_ptr<const lanelet::TrafficLight>, autoware_perception_msgs::TrafficLightState>>
         tl_state;  // TODO: replace tuple with struct
     std::vector<geometry_msgs::Pose> stop_poses;
     std::vector<geometry_msgs::Pose> judge_poses;
@@ -68,7 +68,7 @@ class TrafficLightModule : public SceneModuleInterface {
 
   bool getHighestConfidenceTrafficLightState(
       lanelet::ConstLineStringsOrPolygons3d& traffic_lights,
-      autoware_traffic_light_msgs::TrafficLightState& highest_confidence_tl_state);
+      autoware_perception_msgs::TrafficLightState& highest_confidence_tl_state);
 
   bool createTargetPoint(
       const autoware_planning_msgs::PathWithLaneId& input,

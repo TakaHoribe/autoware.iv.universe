@@ -4,7 +4,7 @@ project(traffic_light_map_based_detector)
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
-  autoware_traffic_light_msgs
+  autoware_perception_msgs
   autoware_planning_msgs
   geometry_msgs
   lanelet2_extension
@@ -18,7 +18,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
-    autoware_traffic_light_msgs
+    autoware_perception_msgs
     autoware_planning_msgs
     geometry_msgs
     lanelet2_extension

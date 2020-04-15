@@ -38,7 +38,7 @@ CNNClassifier::CNNClassifier() :
 }
 
 bool CNNClassifier::getLampState(const cv::Mat& input_image,
-                                 std::vector<autoware_traffic_light_msgs::LampState>& states) {
+                                 std::vector<autoware_perception_msgs::LampState>& states) {
   if ( !trt_->isInitialized() ) {
     ROS_WARN("failed to init tensorrt");
     return false;
@@ -97,7 +97,7 @@ bool CNNClassifier::getLampState(const cv::Mat& input_image,
 }
 
 void CNNClassifier::outputDebugImage(cv::Mat& debug_image,
-                                     const std::vector<autoware_traffic_light_msgs::LampState>& states)
+                                     const std::vector<autoware_perception_msgs::LampState>& states)
 {
   float probability;
   std::string label;
@@ -156,7 +156,7 @@ void CNNClassifier::preProcess(cv::Mat & image,
 }
 
 bool CNNClassifier::postProcess(float* output_tensor,
-                                std::vector<autoware_traffic_light_msgs::LampState>& states)
+                                std::vector<autoware_perception_msgs::LampState>& states)
 {
   std::vector<float> probs;
   int num_output = trt_->getNumOutput();
@@ -170,23 +170,23 @@ bool CNNClassifier::postProcess(float* output_tensor,
   std::string match_label = labels_[sorted_indices[0]];
   float probability = probs[sorted_indices[0]];
   if (match_label == "stop") {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::RED;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::RED;
     state.confidence = probability;
     states.push_back(state);
   } else if (match_label == "warning") {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::YELLOW;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::YELLOW;
     state.confidence = probability;
     states.push_back(state);
   } else if (match_label == "go") {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::GREEN;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::GREEN;
     state.confidence = probability;
     states.push_back(state);
   } else {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::UNKNOWN;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::UNKNOWN;
     state.confidence = 0.0;
     states.push_back(state);
   }
