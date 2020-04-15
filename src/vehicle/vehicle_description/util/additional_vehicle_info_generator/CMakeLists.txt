@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(vehicle_description)
+project(additional_vehicle_info_generator)
 
 add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  xacro
 )
 
 catkin_package()
@@ -35,8 +34,5 @@ install(TARGETS additional_vehicle_info_generator
 
 install(DIRECTORY
     launch
-    mesh
-    urdf
-    config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
