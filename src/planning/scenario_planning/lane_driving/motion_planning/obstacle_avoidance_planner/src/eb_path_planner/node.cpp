@@ -216,7 +216,7 @@ bool EBPathPlannerNode::isAvoidanceNeeded(
 
   geometry_msgs::Pose nearest_pose;
   if (!getNearestPose(self_pose, previous_output_trajectory_points, nearest_pose)) {
-    // std::cout << "avoidance -> lanefollowing since ego_pose if close enough with path points" << std::endl;
+    // std::cout << "avoidance -> LaneFollowing since ego_pose if close enough with path points" << std::endl;
     return false;
   }
 

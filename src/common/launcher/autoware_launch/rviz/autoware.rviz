@@ -721,7 +721,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: true
                       Name: Path
-                      Topic: /planning/scenario_planning/lane_following/behavior_planning/path
+                      Topic: /planning/scenario_planning/lane_driving/behavior_planning/path
                       Unreliable: false
                       Value: true
                       View Path:
@@ -738,21 +738,21 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: false
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/path
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/path
                       Name: Arrow
                       Namespaces: {}
                       Queue Size: 100
                       Value: false
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/crosswalk
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/crosswalk
                       Name: Crosswalk
                       Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/intersection
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/intersection
                       Name: Intersection
                       Namespaces:
                         factor_text: true
@@ -768,7 +768,7 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/blind_spot
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/blind_spot
                       Name: Blind Spot
                       Namespaces:
                         blind_spot_detection_area: false
@@ -784,14 +784,14 @@ Visualization Manager:
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/traffic_light
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/traffic_light
                       Name: TrafficLight
                       Namespaces: {}
                       Queue Size: 100
                       Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/behavior_planning/behavior_velocity_planner/debug/stop_line
+                      Marker Topic: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner/debug/stop_line
                       Name: StopLine
                       Namespaces:
                         factor_text: true
@@ -806,7 +806,7 @@ Visualization Manager:
                       Color Border Vel Max: 3
                       Enabled: false
                       Name: Trajectory
-                      Topic: /planning/scenario_planning/lane_following/trajectory
+                      Topic: /planning/scenario_planning/lane_driving/trajectory
                       Unreliable: false
                       Value: false
                       View Path:
@@ -823,7 +823,7 @@ Visualization Manager:
                         Value: true
                     - Class: rviz/MarkerArray
                       Enabled: true
-                      Marker Topic: /planning/scenario_planning/lane_following/motion_planning/obstacle_stop_planner/debug/marker
+                      Marker Topic: /planning/scenario_planning/lane_driving/motion_planning/obstacle_stop_planner/debug/marker
                       Name: ObstaclePointCloudStop
                       Namespaces:
                         collision_polygons: true
@@ -837,7 +837,7 @@ Visualization Manager:
                   Enabled: true
                   Name: MotionPlanning
               Enabled: true
-              Name: LaneFollowing
+              Name: LaneDriving
             - Class: rviz/Group
               Displays:
                 - Class: rviz/Group
