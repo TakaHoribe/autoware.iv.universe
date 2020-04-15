@@ -3,7 +3,7 @@
   <arg name="map_path"/>
 
   <!-- Vehicle Setting -->
-  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
+  <include file="$(find vehicle_launch)/launch/vehicle_description/vehicle_description.launch" />
 
   <!-- State Monitor -->
   <node pkg="rostopic" type="rostopic" name="simulation_vehicle_engage_publisher" args="pub /vehicle/engage std_msgs/Bool 'data: true'" output="screen"/>
