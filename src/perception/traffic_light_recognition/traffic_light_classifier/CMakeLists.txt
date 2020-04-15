@@ -54,7 +54,7 @@ else()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
-  autoware_traffic_light_msgs
+  autoware_perception_msgs
   cv_bridge
   roscpp
   sensor_msgs

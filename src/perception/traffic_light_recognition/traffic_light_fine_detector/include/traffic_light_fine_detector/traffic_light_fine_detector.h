@@ -37,7 +37,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Header.h>
 
-#include <autoware_traffic_light_msgs/TrafficLightRoiArray.h>
+#include <autoware_perception_msgs/TrafficLightRoiArray.h>
 
 typedef struct Detection {
   float x, y, w, h, prob;
@@ -52,17 +52,17 @@ class TrafficLightFineDetectorNode {
   ros::NodeHandle pnh_;
 
   typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
-                                                    autoware_traffic_light_msgs::TrafficLightRoiArray>
+                                                    autoware_perception_msgs::TrafficLightRoiArray>
       SyncPolicy;
 
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-                                                          autoware_traffic_light_msgs::TrafficLightRoiArray>
+                                                          autoware_perception_msgs::TrafficLightRoiArray>
       ApproximateSyncPolicy;
 
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy> > sync_;
   std::shared_ptr<message_filters::Synchronizer<ApproximateSyncPolicy> > approximate_sync_;
   message_filters::Subscriber<sensor_msgs::Image> image_sub_;
-  message_filters::Subscriber<autoware_traffic_light_msgs::TrafficLightRoiArray> traffic_light_roi_sub_;
+  message_filters::Subscriber<autoware_perception_msgs::TrafficLightRoiArray> traffic_light_roi_sub_;
   ros::Publisher output_rois_pub_;
 
   bool is_approximate_sync_;
@@ -78,7 +78,7 @@ class TrafficLightFineDetectorNode {
   void initROS();
 
   void callback(const sensor_msgs::Image::ConstPtr& image_msg,
-                const autoware_traffic_light_msgs::TrafficLightRoiArray::ConstPtr& traffic_light_roi_msg);
+                const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr& traffic_light_roi_msg);
 
   inline float sigmoid(float in) { return 1.f / (1.f + std::exp(-in)); }
 
@@ -87,7 +87,7 @@ class TrafficLightFineDetectorNode {
   void doNms(std::vector<Detection>& detections, float nms_thresh);
   bool rosmsg2cvmat(const sensor_msgs::Image::ConstPtr& image_msg, cv::Mat& image);
   bool fit_in_frame(cv::Point& lt, cv::Point& rb, const cv::Size& size);
-  void cvrect2tlroimsg(const cv::Rect& rect, const int32_t id, autoware_traffic_light_msgs::TrafficLightRoi& tl_roi);
+  void cvrect2tlroimsg(const cv::Rect& rect, const int32_t id, autoware_perception_msgs::TrafficLightRoi& tl_roi);
 
  public:
   TrafficLightFineDetectorNode();

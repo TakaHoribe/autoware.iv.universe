@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include <autoware_traffic_light_msgs/LampState.h>
+#include <autoware_perception_msgs/LampState.h>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_transport/image_transport.h>
@@ -33,7 +33,7 @@ class ColorClassifier : public ClassifierInterface {
   ColorClassifier();
   ~ColorClassifier(){};
 
-  bool getLampState(const cv::Mat& input_image, std::vector<autoware_traffic_light_msgs::LampState>& states) override;
+  bool getLampState(const cv::Mat& input_image, std::vector<autoware_perception_msgs::LampState>& states) override;
 
  private:
   bool filterHSV(const cv::Mat& input_image, cv::Mat& green_image, cv::Mat& yellow_image, cv::Mat& red_image);

@@ -98,7 +98,7 @@ TrafficLightFineDetectorNode::~TrafficLightFineDetectorNode() {}
 void TrafficLightFineDetectorNode::initROS() {
   pnh_.param<bool>("approximate_sync", is_approximate_sync_, false);
   pnh_.param<double>("score_thresh", score_thresh_, 0.7);
-  output_rois_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
+  output_rois_pub_ = pnh_.advertise<autoware_perception_msgs::TrafficLightRoiArray>("output/rois", 1);
   image_sub_.subscribe(pnh_, "input/image", 1);
   traffic_light_roi_sub_.subscribe(pnh_, "input/rois", 1);
   if (is_approximate_sync_) {
@@ -114,9 +114,9 @@ void TrafficLightFineDetectorNode::initROS() {
 
 void TrafficLightFineDetectorNode::callback(
     const sensor_msgs::Image::ConstPtr& in_image_msg,
-    const autoware_traffic_light_msgs::TrafficLightRoiArray::ConstPtr& in_roi_msg) {
+    const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr& in_roi_msg) {
   cv::Mat original_image;
-  autoware_traffic_light_msgs::TrafficLightRoiArray out_rois;
+  autoware_perception_msgs::TrafficLightRoiArray out_rois;
 
   rosmsg2cvmat(in_image_msg, original_image);
   int outputCount = net_ptr_->getOutputSize() / sizeof(float);
@@ -140,7 +140,7 @@ void TrafficLightFineDetectorNode::callback(
         cv::Point lt_roi = cv::Point(lt.x + item.left, lt.y + item.top);
         cv::Point rb_roi = cv::Point(lt.x + item.right, lt.y + item.bot);
         fit_in_frame(lt_roi, rb_roi, cv::Size(original_image.size()));
-        autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
+        autoware_perception_msgs::TrafficLightRoi tl_roi;
         cvrect2tlroimsg(cv::Rect(lt_roi, rb_roi), el.id, tl_roi);
         out_rois.rois.push_back(tl_roi);
         break;
@@ -367,7 +367,7 @@ bool TrafficLightFineDetectorNode::fit_in_frame(cv::Point& lt, cv::Point& rb, co
 }
 
 void TrafficLightFineDetectorNode::cvrect2tlroimsg(const cv::Rect& rect, const int32_t id,
-                                                   autoware_traffic_light_msgs::TrafficLightRoi& tl_roi) {
+                                                   autoware_perception_msgs::TrafficLightRoi& tl_roi) {
   tl_roi.id = id;
   tl_roi.roi.x_offset = rect.x;
   tl_roi.roi.y_offset = rect.y;

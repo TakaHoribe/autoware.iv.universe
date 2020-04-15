@@ -26,7 +26,7 @@
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_perception_msgs/DynamicObjectArray.h>
-#include <autoware_traffic_light_msgs/TrafficLightStateArray.h>
+#include <autoware_perception_msgs/TrafficLightStateArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -40,7 +40,7 @@
 // TODO(Kenji Miyake): Add msg
 struct TrafficLightStateStamped {
   std_msgs::Header header;
-  autoware_traffic_light_msgs::TrafficLightState traffic_light_state;
+  autoware_perception_msgs::TrafficLightState traffic_light_state;
 };
 
 struct PlannerData {

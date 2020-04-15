@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   sensor_msgs
   std_msgs
-  autoware_traffic_light_msgs
+  autoware_perception_msgs
 )
 
 find_package(OpenCV REQUIRED)

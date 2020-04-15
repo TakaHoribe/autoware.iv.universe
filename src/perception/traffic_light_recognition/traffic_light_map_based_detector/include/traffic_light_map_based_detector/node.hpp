@@ -29,7 +29,7 @@
 
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <autoware_planning_msgs/Route.h>
-#include <autoware_traffic_light_msgs/TrafficLightRoiArray.h>
+#include <autoware_perception_msgs/TrafficLightRoiArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <tf2_ros/transform_listener.h>
@@ -86,7 +86,7 @@ class MapBasedDetector {
   double normalizeAngle(const double& angle);
   bool getTrafficLightRoi(const geometry_msgs::Pose& camera_pose, const sensor_msgs::CameraInfo& camera_info,
                           const lanelet::ConstLineString3d traffic_light, const Config& config,
-                          autoware_traffic_light_msgs::TrafficLightRoi& tl_roi);
+                          autoware_perception_msgs::TrafficLightRoi& tl_roi);
   void publishVisibleTrafficLights(const geometry_msgs::PoseStamped camera_pose_stamped,
                                    const std::vector<lanelet::ConstLineString3d>& visible_traffic_lights,
                                    const ros::Publisher& pub);
