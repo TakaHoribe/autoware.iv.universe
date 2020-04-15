@@ -22,7 +22,7 @@
 
   <!-- scenarios-->
   <group>
-    <!-- lane following -->
+    <!-- lane driving -->
     <include file="$(find planning_launch)/launch/scenario_planning/lane_driving.launch">
     </include>
     <!-- parking -->
