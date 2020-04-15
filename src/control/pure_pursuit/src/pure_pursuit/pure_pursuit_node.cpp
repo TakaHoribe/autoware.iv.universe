@@ -36,13 +36,6 @@
 
 namespace {
 
-geometry_msgs::Twist createTwist(const double kappa, const double velocity) {
-  geometry_msgs::Twist twist;
-  twist.linear.x = velocity;
-  twist.angular.z = kappa * twist.linear.x;
-  return twist;
-}
-
 autoware_control_msgs::ControlCommand createControlCommand(const double kappa, const double velocity,
                                                            const double acceleration, const double wheel_base) {
   autoware_control_msgs::ControlCommand cmd;
@@ -80,7 +73,6 @@ PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_
   sub_current_velocity_ = private_nh_.subscribe("input/current_velocity", 1, &PurePursuitNode::onCurrentVelocity, this);
 
   // Publishers
-  pub_twist_ = private_nh_.advertise<geometry_msgs::TwistStamped>("output/twist_raw", 1);
   pub_ctrl_cmd_ = private_nh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
 
   // Timer
@@ -131,25 +123,10 @@ void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
 }
 
 void PurePursuitNode::publishCommand(const TargetValues& targets) {
-  // Header
-  std_msgs::Header header;
-  header.stamp = ros::Time::now();
-
-  // Twist
-  {
-    geometry_msgs::TwistStamped twist;
-    twist.header = header;
-    twist.twist = createTwist(targets.kappa, targets.velocity);
-    pub_twist_.publish(twist);
-  }
-
-  // ControlCommand
-  {
-    autoware_control_msgs::ControlCommandStamped cmd;
-    cmd.header = header;
-    cmd.control = createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
-    pub_ctrl_cmd_.publish(cmd);
-  }
+  autoware_control_msgs::ControlCommandStamped cmd;
+  cmd.header.stamp = ros::Time::now();
+  cmd.control = createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
+  pub_ctrl_cmd_.publish(cmd);
 }
 
 boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {

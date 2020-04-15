@@ -94,7 +94,6 @@ class PurePursuitNode {
   boost::optional<geometry_msgs::PoseStamped> current_pose_;
 
   // Publisher
-  ros::Publisher pub_twist_;
   ros::Publisher pub_ctrl_cmd_;
 
   void publishCommand(const TargetValues& targets);
