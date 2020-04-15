@@ -33,6 +33,7 @@
 
 #include <traffic_light_classifier/classifier_interface.hpp>
 #include <traffic_light_classifier/color_classifier.hpp>
+#include <traffic_light_classifier/cnn_classifier.hpp>
 
 #include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
@@ -47,6 +48,11 @@ class TrafficLightClassifierNode {
   virtual ~TrafficLightClassifierNode(){};
 
  private:
+  enum ClassifierType {
+    HSVFilter = 0,
+    CNN = 1,
+  };
+
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   image_transport::ImageTransport image_transport_;
