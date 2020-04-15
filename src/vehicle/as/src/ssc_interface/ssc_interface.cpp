@@ -114,7 +114,9 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
                                             const automotive_platform_msgs::GearFeedbackConstPtr& msg_gear,
                                             const pacmod_msgs::WheelSpeedRptConstPtr& msg_wheel_speed,
                                             const pacmod_msgs::SystemRptFloatConstPtr& msg_steering_wheel) {
-  ros::Time stamp = msg_velocity->header.stamp;
+  std_msgs::Header published_msgs_header;
+  published_msgs_header.frame_id = BASE_FRAME_ID;
+  published_msgs_header.stamp = msg_velocity->header.stamp;
 
   // current speed
   double speed =
@@ -136,14 +138,14 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
 
   // as_current_velocity (geometry_msgs::TwistStamped)
   geometry_msgs::TwistStamped twist;
-  twist.header.frame_id = BASE_FRAME_ID;
-  twist.header.stamp = stamp;
+  twist.header = published_msgs_header;
   twist.twist.linear.x = speed;               // [m/s]
   twist.twist.angular.z = curvature * speed;  // [rad/s]
   current_twist_pub_.publish(twist);
 
   // gearshift
   autoware_vehicle_msgs::ShiftStamped shift_msg;
+  shift_msg.header = published_msgs_header;
   if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::NONE) {
     shift_msg.shift.data = autoware_vehicle_msgs::Shift::NONE;
   } else if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::PARK) {
@@ -159,12 +161,14 @@ void SSCInterface::callbackFromSSCFeedbacks(const automotive_platform_msgs::Velo
 
   // control mode
   autoware_vehicle_msgs::ControlMode mode;
+  mode.header = published_msgs_header;
   mode.data = (module_states_.state == "active") ? autoware_vehicle_msgs::ControlMode::AUTO
                                                  : autoware_vehicle_msgs::ControlMode::MANUAL;
   control_mode_pub_.publish(mode);
 
   // steering
   autoware_vehicle_msgs::Steering steer;
+  steer.header = published_msgs_header;
   steer.data = steering_angle - steering_offset_;
   current_steer_pub_.publish(steer);
 }
