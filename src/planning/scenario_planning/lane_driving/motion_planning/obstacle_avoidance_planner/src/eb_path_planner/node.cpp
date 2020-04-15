@@ -95,7 +95,7 @@ EBPathPlannerNode::EBPathPlannerNode() : nh_(), private_nh_("~") {
   private_nh_.param<double>("max_trajectory_length", max_trajectory_length_, 80);
   in_objects_ptr_ = std::make_unique<autoware_perception_msgs::DynamicObjectArray>();
   is_previously_avoidance_mode_ = false;
-  previous_mode_ = Mode::LaneDriving;
+  previous_mode_ = Mode::LaneFollowing;
   initializing();
 }
 
@@ -189,7 +189,7 @@ std::shared_ptr<autoware_planning_msgs::Trajectory> EBPathPlannerNode::generateS
       std::make_unique<autoware_planning_msgs::Trajectory>();
   output_smooth_trajectory->header = input_path.header;
   output_smooth_trajectory->points = fine_optimized_points;
-  resettingPtrForLaneDriving();
+  resettingPtrForLaneFollowing();
   is_previously_avoidance_mode_ = true;
   // ros::Duration(5.0).sleep();
   return output_smooth_trajectory;
@@ -216,7 +216,7 @@ bool EBPathPlannerNode::isAvoidanceNeeded(
 
   geometry_msgs::Pose nearest_pose;
   if (!getNearestPose(self_pose, previous_output_trajectory_points, nearest_pose)) {
-    // std::cout << "avoidance -> LaneDriving since ego_pose if close enough with path points" << std::endl;
+    // std::cout << "avoidance -> LaneFollowing since ego_pose if close enough with path points" << std::endl;
     return false;
   }
 
@@ -324,7 +324,7 @@ void EBPathPlannerNode::resettingPtrForAvoidance() {
   }
 }
 
-void EBPathPlannerNode::resettingPtrForLaneDriving() {
+void EBPathPlannerNode::resettingPtrForLaneFollowing() {
   if (!is_previously_avoidance_mode_) {
     ROS_WARN("[EBPathPlanner] Lane Following->Avoidance");
   }

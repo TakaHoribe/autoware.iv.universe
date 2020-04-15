@@ -203,7 +203,7 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathSmoother::generateOpt
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length_for_path_smoothing_, interpolated_points);
   debug_interpolated = interpolated_points;
 
-  Mode qp_mode = Mode::LaneDriving;
+  Mode qp_mode = Mode::LaneFollowing;
   // interpolate point enough to have at least number of sampling points
   int farrest_idx_from_start_point =
       std::min((int)(number_of_sampling_points_ - 1), (int)(interpolated_points.size() - 1));
