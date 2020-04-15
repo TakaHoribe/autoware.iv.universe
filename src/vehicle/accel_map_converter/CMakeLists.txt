@@ -37,17 +37,6 @@ add_executable(accel_map_converter_node
 add_dependencies(accel_map_converter_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(accel_map_converter_node ${catkin_LIBRARIES} accel_map_converter)
 
-# TESTING
-add_executable(test_accel_map_converter
-  src/test_accel_map_converter.cpp
-  src/accel_map.cpp
-  src/brake_map.cpp
-  src/csv_loader.cpp
-  src/interpolate.cpp
-)
-target_link_libraries(test_accel_map_converter ${catkin_LIBRARIES})
-add_dependencies(test_accel_map_converter ${catkin_EXPORTED_TARGETS})
-
 install(TARGETS
   accel_map_converter
   accel_map_converter_node

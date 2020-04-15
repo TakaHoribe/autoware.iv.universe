@@ -78,29 +78,3 @@ bool AccelMap::getThrottle(double acc, double vel, double& throttle) {
 
   return true;
 }
-
-void AccelMap::showAccelMapInfo() {
-  std::cout << "Accel Map Information" << std::endl;
-
-  std::cout << "Vehicle name: " << vehicle_name_ << std::endl;
-
-  std::cout << "Velocity indexes: ";
-  for (double v : vel_index_) {
-    std::cout << v << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "Throttle indexes: ";
-  for (double t : throttle_index_) {
-    std::cout << t << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "Acceleration Map:" << std::endl;
-  for (std::vector<double> accs : accel_map_) {
-    for (double acc : accs) {
-      std::cout << acc << " ";
-    }
-    std::cout << std::endl;
-  }
-}

@@ -88,5 +88,3 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake) {
 
   return true;
 }
-
-void BrakeMap::showBrakeMapInfo() {}

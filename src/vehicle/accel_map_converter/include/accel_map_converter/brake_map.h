@@ -34,7 +34,6 @@ class BrakeMap {
 
   bool readBrakeMapFromCSV(std::string csv_path);
   bool getBrake(double acc, double vel, double& brake);
-  void showBrakeMapInfo();
 
  private:
   std::string vehicle_name_;

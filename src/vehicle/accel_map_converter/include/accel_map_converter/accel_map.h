@@ -34,7 +34,6 @@ class AccelMap {
 
   bool readAccelMapFromCSV(std::string csv_path);
   bool getThrottle(double acc, double vel, double& throttle);
-  void showAccelMapInfo();
 
  private:
   std::string vehicle_name_;
