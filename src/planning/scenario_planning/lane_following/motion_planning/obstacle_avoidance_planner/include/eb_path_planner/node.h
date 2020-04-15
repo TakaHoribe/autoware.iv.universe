@@ -111,7 +111,7 @@ class EBPathPlannerNode {
   void enableAvoidanceCallback(const std_msgs::Bool& msg);
   void initializing();
   void resettingPtrForAvoidance();
-  void resettingPtrForLaneFollowing();
+  void resettingPtrForLaneDriving();
 
   int getNearestPathPointsIndFromPose(const std::vector<autoware_planning_msgs::PathPoint>& path_points,
                                       const geometry_msgs::Pose& pose);

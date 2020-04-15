@@ -141,7 +141,7 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 }  // namespace
 
 Input ScenarioSelectorNode::getScenarioInput(const std::string& scenario) {
-  if (scenario == autoware_planning_msgs::Scenario::LaneFollowing) return input_lane_driving_;
+  if (scenario == autoware_planning_msgs::Scenario::LaneDriving) return input_lane_driving_;
   if (scenario == autoware_planning_msgs::Scenario::Parking) return input_parking_;
   ROS_ERROR_STREAM("invalid scenario argument: " << scenario);
   return input_lane_driving_;
@@ -154,13 +154,13 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
 
   if (current_scenario_ == autoware_planning_msgs::Scenario::Empty) {
     if (is_in_lane) {
-      return autoware_planning_msgs::Scenario::LaneFollowing;
+      return autoware_planning_msgs::Scenario::LaneDriving;
     } else {
       return autoware_planning_msgs::Scenario::Parking;
     }
   }
 
-  if (current_scenario_ == autoware_planning_msgs::Scenario::LaneFollowing) {
+  if (current_scenario_ == autoware_planning_msgs::Scenario::LaneDriving) {
     if (is_in_parking_lot && !is_goal_in_lane) {
       return autoware_planning_msgs::Scenario::Parking;
     }
@@ -170,7 +170,7 @@ std::string ScenarioSelectorNode::selectScenarioByPosition() {
     const auto is_parking_completed = nh_.param<bool>("is_parking_completed", false);
     if (is_parking_completed && is_in_lane) {
       nh_.setParam("is_parking_completed", false);
-      return autoware_planning_msgs::Scenario::LaneFollowing;
+      return autoware_planning_msgs::Scenario::LaneDriving;
     }
   }
 

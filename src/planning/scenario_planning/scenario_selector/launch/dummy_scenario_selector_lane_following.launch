@@ -10,5 +10,5 @@
   <arg name="is_parking_completed" default="" />
 
   <node pkg="topic_tools" type="relay" name="scenario_trajectory_relay" args="$(arg input_lane_driving_trajectory) $(arg output_trajectory)" output="screen"/>
-  <node pkg="rostopic" type="rostopic" name="scenario_pub" args="pub $(arg output_scenario) autoware_planning_msgs/Scenario '{current_scenario: LaneFollowing, activating_scenarios: [LaneFollowing]}'" output="screen"/>
+  <node pkg="rostopic" type="rostopic" name="scenario_pub" args="pub $(arg output_scenario) autoware_planning_msgs/Scenario '{current_scenario: LaneDriving, activating_scenarios: [LaneDriving]}'" output="screen"/>
 </launch>

@@ -8,7 +8,7 @@
 
 | Name                               | Type                               | Description                                           |
 | ---------------------------------- | ---------------------------------- | ----------------------------------------------------- |
-| `~input/lane_driving/trajectory` | autoware_planning_msgs::Trajectory | trajectory of LaneFollowing scenario                  |
+| `~input/lane_driving/trajectory` | autoware_planning_msgs::Trajectory | trajectory of LaneDriving scenario                  |
 | `~input/parking/trajectory`        | autoware_planning_msgs::Trajectory | trajectory of Parking scenario                        |
 | `~input/lanelet_map`               | autoware_lanelet2_msgs::MapBin     |                                                       |
 | `~input/route`                     | autoware_planning_msgs::Route      | route and goal pose                                   |
@@ -90,7 +90,7 @@ endif
 if (scenario is initialized?) then (yes)
 else (no)
   if (is in lane?) then (yes)
-    :set LaneFollowing;
+    :set LaneDriving;
   else (no)
     :set Parking;
   endif
@@ -98,8 +98,8 @@ else (no)
   stop
 endif
 
-' LaneFollowing
-if (current scenario is LaneFollowing?) then (yes)
+' LaneDriving
+if (current scenario is LaneDriving?) then (yes)
   if (is in parking lot & goal is not in lane?) then (yes)
     :set Parking;
     stop
@@ -109,7 +109,7 @@ endif
 ' Parking
 if (current scenario is Parking?) then (yes)
   if (parking is completed and is in lane?) then (yes)
-    :set LaneFollowing;
+    :set LaneDriving;
     stop
   endif
 endif

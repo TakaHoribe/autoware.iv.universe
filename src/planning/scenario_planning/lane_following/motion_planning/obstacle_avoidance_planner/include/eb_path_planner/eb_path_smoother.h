@@ -20,7 +20,7 @@
 
 enum Mode : int {
   Avoidance = 0,
-  LaneFollowing = 1,
+  LaneDriving = 1,
 };
 
 namespace geometry_msgs {

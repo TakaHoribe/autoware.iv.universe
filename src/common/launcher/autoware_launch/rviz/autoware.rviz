@@ -837,7 +837,7 @@ Visualization Manager:
                   Enabled: true
                   Name: MotionPlanning
               Enabled: true
-              Name: LaneFollowing
+              Name: LaneDriving
             - Class: rviz/Group
               Displays:
                 - Class: rviz/Group
