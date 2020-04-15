@@ -38,11 +38,10 @@
 #include <pacmod_msgs/SystemRptInt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
-#include <autoware_vehicle_msgs/Pedal.h>
+#include <autoware_vehicle_msgs/RawVehicleCommand.h>
 #include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
 #include <autoware_vehicle_msgs/TurnSignal.h>
-#include <autoware_vehicle_msgs/VehicleCommand.h>
 
 class PacmodInterface {
  public:
@@ -63,8 +62,7 @@ class PacmodInterface {
 
   /* subscribers */
   // From Autoware
-  ros::Subscriber vehicle_cmd_sub_;
-  ros::Subscriber pedal_cmd_sub_;
+  ros::Subscriber raw_vehicle_cmd_sub_;
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_cmd_sub_;
 
@@ -115,8 +113,7 @@ class PacmodInterface {
   bool enable_steering_rate_control_;  // use steering angle speed for command [rad/s]
 
   /* input values */
-  std::shared_ptr<autoware_vehicle_msgs::VehicleCommand> vehicle_cmd_ptr_;
-  std::shared_ptr<autoware_vehicle_msgs::Pedal> pedal_cmd_ptr_;
+  std::shared_ptr<autoware_vehicle_msgs::RawVehicleCommand> raw_vehicle_cmd_ptr_;
   std::shared_ptr<autoware_vehicle_msgs::TurnSignal> turn_signal_cmd_ptr_;
 
   std::shared_ptr<pacmod_msgs::SystemRptFloat> steer_wheel_rpt_ptr_;  // [rad]
@@ -128,11 +125,9 @@ class PacmodInterface {
   bool engage_cmd_;
   bool prev_engage_cmd_;
   ros::Time vehicle_command_received_time_;
-  ros::Time pedal_command_received_time_;
 
   /* callbacks */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr& msg);
-  void callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr& msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::RawVehicleCommand::ConstPtr& msg);
   void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr& msg);
   void callbackEngage(const std_msgs::BoolConstPtr& msg);
   void callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPtr& steer_wheel_rpt,

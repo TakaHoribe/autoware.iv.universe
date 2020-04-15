@@ -17,7 +17,7 @@
 #include "accel_map_converter/node.hpp"
 
 AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~") {
-  pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::Pedal>("/vehicle/pedal_cmd", 1);
+  pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::RawVehicleCommand>("/vehicle/raw_vehicle_cmd", 1);
   sub_cmd_ = nh_.subscribe("/control/vehicle_cmd", 1, &AccelMapConverter::callbackVehicleCmd, this);
   sub_velocity_ = nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
 
@@ -52,10 +52,14 @@ void AccelMapConverter::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleC
   double desired_brake = 0.0;
   calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle, &desired_brake);
 
-  autoware_vehicle_msgs::Pedal output;
+  autoware_vehicle_msgs::RawVehicleCommand output;
   output.header = vehicle_cmd_ptr->header;
-  output.throttle = desired_throttle;
-  output.brake = desired_brake;
+  output.shift = vehicle_cmd_ptr->shift;
+  output.emergency = vehicle_cmd_ptr->emergency;
+  output.control.steering_angle = vehicle_cmd_ptr->control.steering_angle;
+  output.control.steering_angle_velocity = vehicle_cmd_ptr->control.steering_angle_velocity;
+  output.control.throttle = desired_throttle;
+  output.control.brake = desired_brake;
 
   pub_cmd_.publish(output);
 }
