@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-  <arg name="model" default="$(find vehicle_launch)/vehicle_description/urdf/vehicle.xacro"/>
+  <arg name="model" default="$(find vehicle_launch)/urdf/vehicle.xacro"/>
 
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
 
