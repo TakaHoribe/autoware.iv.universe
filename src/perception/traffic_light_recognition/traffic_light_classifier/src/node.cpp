@@ -33,7 +33,14 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   }
   tl_states_pub_ =
       pnh_.advertise<autoware_traffic_light_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
-  classifier_ptr_ = std::make_shared<ColorClassifier>();
+
+  int classifier_type;
+  pnh_.param<int>("classifier_type", classifier_type, TrafficLightClassifierNode::ClassifierType::HSVFilter);
+  if (classifier_type == TrafficLightClassifierNode::ClassifierType::HSVFilter) {
+    classifier_ptr_ = std::make_shared<ColorClassifier>();
+  } else if (classifier_type == TrafficLightClassifierNode::ClassifierType::CNN) {
+    classifier_ptr_ = std::make_shared<CNNClassifier>();
+  }
 }
 
 void TrafficLightClassifierNode::imageRoiCallback(
