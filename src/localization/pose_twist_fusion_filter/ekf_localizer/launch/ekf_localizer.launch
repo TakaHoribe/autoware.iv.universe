@@ -36,6 +36,11 @@
   <arg name="proc_stddev_vx_c" default="5.0"/>
   <arg name="proc_stddev_wz_c" default="1.0"/>
 
+  <!-- output topic name -->
+  <arg name="output_pose_name" default="ekf_pose"/>
+  <arg name="output_pose_with_covariance_name" default="ekf_pose_with_covariance"/>
+  <arg name="output_twist_name" default="ekf_twist"/>
+  <arg name="output_twist_with_covariance_name" default="ekf_twist_with_covariance"/>
 
   <node pkg="ekf_localizer" type="ekf_localizer" name="ekf_localizer" output="screen">
 
@@ -80,6 +85,11 @@
     <param name="proc_stddev_yaw_bias_c" value="$(arg proc_stddev_yaw_bias_c)"/>
     <param name="proc_stddev_vx_c" value="$(arg proc_stddev_vx_c)"/>
     <param name="proc_stddev_wz_c" value="$(arg proc_stddev_wz_c)"/>
+
+    <remap from="ekf_pose" to="$(arg output_pose_name)"/>
+    <remap from="ekf_pose_with_covariance" to="$(arg output_pose_with_covariance_name)"/>
+    <remap from="ekf_twist" to="$(arg output_twist_name)"/>
+    <remap from="ekf_twist_with_covariance" to="$(arg output_twist_with_covariance_name)"/>
 
   </node>
 

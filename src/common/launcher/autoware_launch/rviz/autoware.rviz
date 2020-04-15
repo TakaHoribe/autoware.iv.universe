@@ -589,7 +589,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/pose_twist_fusion_filter/ekf_pose
+              Topic: /localization/pose_twist_fusion_filter/pose
               Value: true
           Enabled: true
           Name: EKF
