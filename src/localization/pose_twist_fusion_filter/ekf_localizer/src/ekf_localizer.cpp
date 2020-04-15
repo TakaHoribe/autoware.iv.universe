@@ -74,6 +74,9 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
   pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
+  pub_pose_no_yawbias_ = pnh_.advertise<geometry_msgs::PoseStamped>("ekf_pose_without_yawbias", 1);
+  pub_pose_cov_no_yawbias_ =
+      pnh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance_without_yawbias", 1);
   sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
   sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
@@ -162,8 +165,10 @@ void EKFLocalizer::setCurrentResult() {
     // pitch = 0;
   }
   yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
-  q_tf.setRPY(roll, pitch, yaw);
-  tf2::convert(q_tf, current_ekf_pose_.pose.orientation);
+  current_ekf_pose_.pose.orientation = createQuaternionFromRPY(roll, pitch, yaw);
+
+  current_ekf_pose_no_yawbias_ = current_ekf_pose_;
+  current_ekf_pose_no_yawbias_.pose.orientation = createQuaternionFromRPY(roll, pitch, ekf_.getXelement(IDX::YAW));
 
   current_ekf_twist_.header.frame_id = "base_link";
   current_ekf_twist_.header.stamp = ros::Time::now();
@@ -586,7 +591,7 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
  * mahalanobisGate
  */
 bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd& x, const Eigen::MatrixXd& obj_x,
-                                   const Eigen::MatrixXd& cov) {
+                                   const Eigen::MatrixXd& cov) const {
   Eigen::MatrixXd mahalanobis_squared = (x - obj_x).transpose() * cov.inverse() * (x - obj_x);
   DEBUG_INFO("measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)), dist_max);
   if (mahalanobis_squared(0) > dist_max * dist_max) {
@@ -594,6 +599,15 @@ bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd
   }
 
   return true;
+}
+
+/*
+ * createQuaternionFromRPY
+ */
+geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const {
+  tf2::Quaternion q;
+  q.setRPY(r, p, y);
+  return tf2::toMsg(q);
 }
 
 /*
@@ -608,6 +622,7 @@ void EKFLocalizer::publishEstimateResult() {
 
   /* publish latest pose */
   pub_pose_.publish(current_ekf_pose_);
+  pub_pose_no_yawbias_.publish(current_ekf_pose_no_yawbias_);
 
   /* publish latest pose with covariance */
   geometry_msgs::PoseWithCovarianceStamped pose_cov;
@@ -624,6 +639,10 @@ void EKFLocalizer::publishEstimateResult() {
   pose_cov.pose.covariance[31] = P(IDX::YAW, IDX::Y);
   pose_cov.pose.covariance[35] = P(IDX::YAW, IDX::YAW);
   pub_pose_cov_.publish(pose_cov);
+
+  geometry_msgs::PoseWithCovarianceStamped pose_cov_no_yawbias = pose_cov;
+  pose_cov_no_yawbias.pose.pose = current_ekf_pose_no_yawbias_.pose;
+  pub_pose_cov_no_yawbias_.publish(pose_cov_no_yawbias);
 
   /* publish latest twist */
   pub_twist_.publish(current_ekf_twist_);
@@ -664,4 +683,4 @@ void EKFLocalizer::publishEstimateResult() {
   pub_debug_.publish(msg);
 }
 
-double EKFLocalizer::normalizeYaw(const double& yaw) { return std::atan2(std::sin(yaw), std::cos(yaw)); }
+double EKFLocalizer::normalizeYaw(const double& yaw) const { return std::atan2(std::sin(yaw), std::cos(yaw)); }
