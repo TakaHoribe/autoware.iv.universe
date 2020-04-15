@@ -7,7 +7,7 @@
   <param name="/use_sim_time" value="$(arg rosbag)" />
 
   <!-- Vehicle Setting -->
-  <include file="$(find vehicle_description)/launch/vehicle_description.launch" />
+  <include file="$(find vehicle_launch)/launch/vehicle_description/vehicle_description.launch" />
 
   <!-- State Monitor -->
   <include file="$(find autoware_state_monitor)/launch/autoware_state_monitor.launch">

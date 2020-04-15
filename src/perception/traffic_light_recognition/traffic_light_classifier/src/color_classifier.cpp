@@ -22,7 +22,7 @@ ColorClassifier::ColorClassifier() : nh_(""), pnh_("~"), image_transport_(pnh_),
 }
 
 bool ColorClassifier::getLampState(const cv::Mat& input_image,
-                                   std::vector<autoware_traffic_light_msgs::LampState>& states) {
+                                   std::vector<autoware_perception_msgs::LampState>& states) {
   cv::Mat green_image;
   cv::Mat yellow_image;
   cv::Mat red_image;
@@ -108,23 +108,23 @@ bool ColorClassifier::getLampState(const cv::Mat& input_image,
   const double red_ratio = (double)red_pixel_num / (double)(red_filtered_bin_image.rows * red_filtered_bin_image.cols);
 
   if (yellow_ratio < green_ratio && red_ratio < green_ratio) {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::GREEN;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::GREEN;
     state.confidence = std::min(1.0, double(green_pixel_num) / (20.0 * 20.0));
     states.push_back(state);
   } else if (green_ratio < yellow_ratio && red_ratio < yellow_ratio) {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::YELLOW;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::YELLOW;
     state.confidence = std::min(1.0, double(yellow_pixel_num) / (20.0 * 20.0));
     states.push_back(state);
   } else if (green_ratio < red_ratio && yellow_ratio < red_ratio) {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::RED;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::RED;
     state.confidence = std::min(1.0, double(red_pixel_num) / (20.0 * 20.0));
     states.push_back(state);
   } else {
-    autoware_traffic_light_msgs::LampState state;
-    state.type = autoware_traffic_light_msgs::LampState::UNKNOWN;
+    autoware_perception_msgs::LampState state;
+    state.type = autoware_perception_msgs::LampState::UNKNOWN;
     state.confidence = 0.0;
     states.push_back(state);
   }
