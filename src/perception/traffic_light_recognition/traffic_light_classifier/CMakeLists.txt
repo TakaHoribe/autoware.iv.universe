@@ -91,7 +91,7 @@ add_library(libutils
 target_link_libraries(libutils
   ${OpenCV_LIBRARIES}
   ${NVINFER}
-  ${NVONNXPARSERS}
+  ${NVONNXPARSER}
   ${NVINFER_PLUGIN}
   ${CUDA_LIBRARIES}
   ${CUBLAS_LIBRARIES}
