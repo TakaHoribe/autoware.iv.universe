@@ -47,6 +47,7 @@ install(TARGETS
 
 install(
   DIRECTORY
+    icons
     plugins
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

@@ -49,6 +49,9 @@ install(TARGETS autoware_planning_rviz_plugin
 )
 
 
-install(DIRECTORY plugins
+install(
+  DIRECTORY
+    icons
+    plugins
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
