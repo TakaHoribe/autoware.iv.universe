@@ -3,7 +3,7 @@
 
   <!-- scenario selector -->
   <include file="$(find scenario_selector)/launch/scenario_selector.launch">
-    <arg name="input_lane_following_trajectory" value="/planning/scenario_planning/lane_following/trajectory"/>
+    <arg name="input_lane_driving_trajectory" value="/planning/scenario_planning/lane_driving/trajectory"/>
     <arg name="input_parking_trajectory" value="/planning/scenario_planning/parking/trajectory"/>
     <arg name="input_lanelet_map" value="/map/vector_map"/>
     <arg name="input_route" value="/planning/mission_planning/route"/>
@@ -23,7 +23,7 @@
   <!-- scenarios-->
   <group>
     <!-- lane following -->
-    <include file="$(find planning_launch)/launch/scenario_planning/lane_following.launch">
+    <include file="$(find planning_launch)/launch/scenario_planning/lane_driving.launch">
     </include>
     <!-- parking -->
     <include file="$(find planning_launch)/launch/scenario_planning/parking.launch">

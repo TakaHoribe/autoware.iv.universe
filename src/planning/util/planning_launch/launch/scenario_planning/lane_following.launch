@@ -1,15 +1,15 @@
 <launch>
 
-  <!-- lane_following scenario -->
-  <group ns="lane_following">
+  <!-- lane_driving scenario -->
+  <group ns="lane_driving">
     <!-- behavior planning module -->
     <group ns="behavior_planning">
-      <include file="$(find planning_launch)/launch/scenario_planning/lane_following/behavior_planning/behavior_planning.launch"></include>
+      <include file="$(find planning_launch)/launch/scenario_planning/lane_driving/behavior_planning/behavior_planning.launch"></include>
     </group>
 
     <!-- motion planning module -->
     <group ns="motion_planning">
-      <include file="$(find planning_launch)/launch/scenario_planning/lane_following/motion_planning/motion_planning.launch">
+      <include file="$(find planning_launch)/launch/scenario_planning/lane_driving/motion_planning/motion_planning.launch">
       </include>
     </group>
   </group>

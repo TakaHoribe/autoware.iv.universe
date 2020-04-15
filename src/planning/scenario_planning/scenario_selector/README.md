@@ -8,7 +8,7 @@
 
 | Name                               | Type                               | Description                                           |
 | ---------------------------------- | ---------------------------------- | ----------------------------------------------------- |
-| `~input/lane_following/trajectory` | autoware_planning_msgs::Trajectory | trajectory of LaneFollowing scenario                  |
+| `~input/lane_driving/trajectory` | autoware_planning_msgs::Trajectory | trajectory of LaneFollowing scenario                  |
 | `~input/parking/trajectory`        | autoware_planning_msgs::Trajectory | trajectory of Parking scenario                        |
 | `~input/lanelet_map`               | autoware_lanelet2_msgs::MapBin     |                                                       |
 | `~input/route`                     | autoware_planning_msgs::Route      | route and goal pose                                   |
