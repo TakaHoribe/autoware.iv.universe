@@ -62,6 +62,18 @@ bool BrakeMap::getBrake(double acc, double vel, double& brake) {
   LinearInterpolate linear_interp;
   std::vector<double> accs_interpolated;
 
+  if (vel < vel_index_.front()) {
+    ROS_WARN_DELAYED_THROTTLE(
+        1.0, "[Brake Map] Exceeding the vel range. Current vel: %f < min vel on map: %f. Use min velocity.",
+        vel, vel_index_.front());
+    vel = vel_index_.front();
+  } else if (vel_index_.back() < vel) {
+    ROS_WARN_DELAYED_THROTTLE(
+        1.0, "[Brake Map] Exceeding the vel range. Current vel: %f > max vel on map: %f. Use max velocity.",
+        vel, vel_index_.back());
+    vel = vel_index_.back();
+  }
+
   // (throttle, vel, acc) map => (throttle, acc) map by fixing vel
   for (std::vector<double> accs : brake_map_) {
     double acc_interpolated;
