@@ -17,7 +17,7 @@
   </node>
 
   <group ns="traffic_light_classifier" if="$(arg use_cnn)">
-    <param name="model_file_path" value="$(find traffic_light_classifier)/data/mobilenetv2.onnx"/>
+    <param name="model_file_path" value="$(find traffic_light_classifier)/data/traffic_light_classifier_mobilenetv2.onnx"/>
     <param name="label_file_path" value="$(find traffic_light_classifier)/data/lamp_labels.txt"/>
     <param name="precision" value="fp16"/>
     <param name="input_c" value="3"/>

@@ -42,7 +42,9 @@ class BlockedByObstacleState : public StateBase {
   bool isLaneChangeApproved() const;
   bool isLaneBlocked() const;
   bool isOutOfCurrentLanes() const;
+  bool isLaneChangeAvailable() const;
   bool isLaneChangeReady() const;
+  bool laneChangeForcedByOperator() const;
   bool isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
                             const autoware_planning_msgs::PathWithLaneId& path) const;
 

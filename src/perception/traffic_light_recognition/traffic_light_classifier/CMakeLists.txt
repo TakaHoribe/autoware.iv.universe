@@ -81,6 +81,25 @@ catkin_package(
   CATKIN_DEPENDS
   )
 
+# Download caffemodel and prototxt
+set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
+if (NOT EXISTS "${PATH}")
+  execute_process(COMMAND mkdir -p ${PATH})
+endif()
+set(FILE "${PATH}/traffic_light_classifier_mobilenetv2.onnx")
+message(STATUS "Checking and downloading traffic_light_classifier_mobilenetv2.onnx")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1Q-pZNTUBDNWddcURARrvtz2jmTiqV5T7" -O ${PATH}/traffic_light_classifier_mobilenetv2.onnx)
+endif()
+set(FILE "${PATH}/lamp_labels.txt")
+message(STATUS "Checking and downloading lamp_labels.txt")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
+endif()
+
+
 ###########
 ## Build ##
 ###########
