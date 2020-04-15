@@ -13,12 +13,13 @@ add_message_files(
   DIRECTORY msg
   FILES
     VehicleCommand.msg
-    Pedal.msg
     Shift.msg
     ShiftStamped.msg
     ControlMode.msg
     TurnSignal.msg
     Steering.msg
+    RawVehicleCommand.msg
+    RawControlCommand.msg
 )
 
 ## Generate added messages and services with any dependencies listed here

@@ -54,8 +54,7 @@ PacmodInterface::PacmodInterface()
 
   /* subscribers */
   // From autoware
-  vehicle_cmd_sub_ = nh_.subscribe("/control/vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
-  pedal_cmd_sub_ = nh_.subscribe("/vehicle/pedal_cmd", 1, &PacmodInterface::callbackPedalCmd, this);
+  raw_vehicle_cmd_sub_ = nh_.subscribe("/vehicle/raw_vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
   turn_signal_cmd_sub_ = nh_.subscribe("/vehicle/turn_signal_cmd", 1, &PacmodInterface::callbackTurnSignalCmd, this);
   engage_cmd_sub_ = nh_.subscribe("/vehicle/engage", 1, &PacmodInterface::callbackEngage, this);
 
@@ -98,13 +97,9 @@ void PacmodInterface::run() {
   }
 }
 
-void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommand::ConstPtr& msg) {
+void PacmodInterface::callbackVehicleCmd(const autoware_vehicle_msgs::RawVehicleCommand::ConstPtr& msg) {
   vehicle_command_received_time_ = ros::Time::now();
-  vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
-}
-void PacmodInterface::callbackPedalCmd(const autoware_vehicle_msgs::Pedal::ConstPtr& msg) {
-  pedal_command_received_time_ = ros::Time::now();
-  pedal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::Pedal>(*msg);
+  raw_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::RawVehicleCommand>(*msg);
 }
 void PacmodInterface::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignal::ConstPtr& msg) {
   turn_signal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::TurnSignal>(*msg);
@@ -165,24 +160,21 @@ void PacmodInterface::callbackPacmodRpt(const pacmod_msgs::SystemRptFloatConstPt
 
 void PacmodInterface::publishCommands() {
   /* guard */
-  if (!vehicle_cmd_ptr_ || !pedal_cmd_ptr_ || !is_pacmod_rpt_received_) {
-    ROS_INFO_DELAYED_THROTTLE(1.0, "[pacmod interface] vehicle_cmd = %d, pedal_cmd = %d, pacmod_msgs = %d",
-                              vehicle_cmd_ptr_ != nullptr, pedal_cmd_ptr_ != nullptr, is_pacmod_rpt_received_);
+  if (!raw_vehicle_cmd_ptr_ || !is_pacmod_rpt_received_) {
+    ROS_INFO_DELAYED_THROTTLE(1.0, "[pacmod interface] vehicle_cmd = %d, pacmod_msgs = %d",
+                              raw_vehicle_cmd_ptr_ != nullptr, is_pacmod_rpt_received_);
     return;
   }
 
   const ros::Time current_time = ros::Time::now();
 
-  double desired_throttle = pedal_cmd_ptr_->throttle;
-  double desired_brake = pedal_cmd_ptr_->brake;
+  double desired_throttle = raw_vehicle_cmd_ptr_->control.throttle;
+  double desired_brake = raw_vehicle_cmd_ptr_->control.brake;
 
   /* check emergency and timeout */
-  const bool emergency = (vehicle_cmd_ptr_->emergency == 1);
+  const bool emergency = (raw_vehicle_cmd_ptr_->emergency == 1);
   const double vehicle_cmd_delta_time_ms = (ros::Time::now() - vehicle_command_received_time_).toSec() * 1000.0;
-  const double pedal_cmd_delta_time_ms = (ros::Time::now() - pedal_command_received_time_).toSec() * 1000.0;
-  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (vehicle_cmd_delta_time_ms > command_timeout_ms_) ||
-                                                            (pedal_cmd_delta_time_ms > command_timeout_ms_)
-                                                      : false;
+  const bool timeouted = (command_timeout_ms_ >= 0.0) ? (vehicle_cmd_delta_time_ms > command_timeout_ms_) : false;
   if (emergency || timeouted) {
     ROS_ERROR("[pacmod interface] Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_throttle = 0.0;
@@ -194,7 +186,7 @@ void PacmodInterface::publishCommands() {
 
   /* calculate desired steering wheel */
   double adaptive_gear_ratio = calculateVariableGearRatio(current_velocity, curr_steer_wheel);
-  double desired_steer_wheel = (vehicle_cmd_ptr_->control.steering_angle + steering_offset_) * adaptive_gear_ratio;
+  double desired_steer_wheel = (raw_vehicle_cmd_ptr_->control.steering_angle + steering_offset_) * adaptive_gear_ratio;
   desired_steer_wheel = std::min(std::max(desired_steer_wheel, -max_steering_wheel_), max_steering_wheel_);
 
   /* check clear flag */
@@ -212,13 +204,13 @@ void PacmodInterface::publishCommands() {
   const double brake_for_shift_trans = 0.7;
   uint16_t desired_shift = shift_rpt_ptr_->output;
   if (std::fabs(current_velocity) < 0.1) {  // velocity is low -> the shift can be changed
-    if (toPacmodShiftCmd(vehicle_cmd_ptr_->shift) != shift_rpt_ptr_->output) {  // need shift change.
+    if (toPacmodShiftCmd(raw_vehicle_cmd_ptr_->shift) != shift_rpt_ptr_->output) {  // need shift change.
       desired_throttle = 0.0;
       desired_brake = brake_for_shift_trans;  // set brake to change the shift
-      desired_shift = toPacmodShiftCmd(vehicle_cmd_ptr_->shift);
+      desired_shift = toPacmodShiftCmd(raw_vehicle_cmd_ptr_->shift);
       ROS_INFO_COND(show_debug_info_,
                     "[Pacmod Interface] Doing shift change. current = %d, desired = %d. set brake_cmd to %f",
-                    shift_rpt_ptr_->output, toPacmodShiftCmd(vehicle_cmd_ptr_->shift), desired_brake);
+                    shift_rpt_ptr_->output, toPacmodShiftCmd(raw_vehicle_cmd_ptr_->shift), desired_brake);
     }
   }
 
@@ -289,7 +281,7 @@ double PacmodInterface::calcSteerWheelRateCmd(const double gear_ratio) {
   }
 
   constexpr double margin = 1.5;
-  double rate = margin * vehicle_cmd_ptr_->control.steering_angle_velocity * gear_ratio;
+  double rate = margin * raw_vehicle_cmd_ptr_->control.steering_angle_velocity * gear_ratio;
   rate = std::min(std::max(std::fabs(rate), min_steering_wheel_rate_), max_steering_wheel_rate_);
   return rate;
 }
