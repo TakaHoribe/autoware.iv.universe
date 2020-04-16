@@ -286,7 +286,7 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
   std::vector<double> out_arclength;
   double dist_i = 0.0;
   out_arclength.push_back(dist_i);
-  bool is_end_point = false;
+  bool is_endpoint_included = false;
   for (int i = 1; i <= N; ++i) {
     double ds = ds_nominal;
     if (i > Nt) {
@@ -298,7 +298,7 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
       break;  // distance is over max.
     }
     if (dist_i >= in_arclength.back()) {
-      is_end_point = true;  // distance is over input endpoint.
+      is_endpoint_included = true;  // distance is over input endpoint.
       break;
     }
     out_arclength.push_back(dist_i);
@@ -312,8 +312,13 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
   }
 
   // add end point directly to consider the endpoint velocity.
-  if (is_end_point) {
-    output.points.push_back(input.points.back());
+  if (is_endpoint_included) {
+    constexpr double ep_dist = 1.0E-3;
+    if (vpu::calcDist2d(output.points.back(), input.points.back()) < ep_dist) {
+      output.points.back() = input.points.back();
+    } else {
+      output.points.push_back(input.points.back());
+    }
   }
   return true;
 }
