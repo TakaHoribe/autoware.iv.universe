@@ -575,7 +575,7 @@ bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory
     p1.y = trajectory.points.at(i - idx_dist).pose.position.y;
     p2.y = trajectory.points.at(i).pose.position.y;
     p3.y = trajectory.points.at(i + idx_dist).pose.position.y;
-    double den = std::max(calcSquaredDist2d(p1, p2) * calcSquaredDist2d(p2, p3) * calcSquaredDist2d(p3, p1), 0.0001);
+    double den = std::max(calcDist2d(p1, p2) * calcDist2d(p2, p3) * calcDist2d(p3, p1), 0.0001);
     double curvature = 2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / den;
     k_arr.push_back(curvature);
   }
