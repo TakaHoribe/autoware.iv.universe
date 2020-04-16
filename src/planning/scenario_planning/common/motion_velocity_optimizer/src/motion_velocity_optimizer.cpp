@@ -431,15 +431,18 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
 
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
+  const double jerk_sum_max = planning_param_.max_jerk_sum;
   const double smooth_weight = qp_param_.pseudo_jerk_weight;
   const double over_v_weight = qp_param_.over_v_weight;
   const double over_a_weight = qp_param_.over_a_weight;
+  const double over_jerk_weight = qp_param_.over_jerk_weight;
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) {  // bi
     q[i] = -1.0;                          // |vmax^2 - b| -> minimize (-bi)
   }
-
+  
+  #if 0
   for (unsigned int i = N; i < 2 * N - 1; ++i) {  // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
     unsigned int j = i - N;
     const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
