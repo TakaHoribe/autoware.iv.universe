@@ -290,6 +290,8 @@ bool MotionVelocityOptimizer::resampleTrajectory(const autoware_planning_msgs::T
   for (int i = 1; i <= N; ++i) {
     double ds = ds_nominal;
     if (i > Nt) {
+      if (dist_i > planning_param_.min_trajectory_length)
+        break;  // planning time is enough and planning distance is over min length.
       // if the planning time is not enough to see the desired distance, change the interval distance to see far.
       ds = std::max(1.0, ds_nominal);
     }
