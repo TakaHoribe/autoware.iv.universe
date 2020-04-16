@@ -29,17 +29,19 @@
  * limitations under the License.
  */
 
-#include "libplanning_utils/pure_pursuit.h"
-#include "libplanning_utils/planning_utils.h"
+#include "pure_pursuit/pure_pursuit.h"
+#include "pure_pursuit/util/planning_utils.h"
 
 namespace planning_utils {
 
-bool PurePursuit::isRequirementsSatisfied() {
-  return (curr_wps_ptr_ != nullptr && curr_pose_ptr_ != nullptr) ? true : false;
+bool PurePursuit::isDataReady() {
+  if (!curr_wps_ptr_) return false;
+  if (!curr_pose_ptr_) return false;
+  return true;
 }
 
 std::pair<bool, double> PurePursuit::run() {
-  if (!isRequirementsSatisfied()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
+  if (!isDataReady()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
 
   auto clst_pair = findClosestIdxWithDistAngThr(*curr_wps_ptr_, *curr_pose_ptr_, clst_thr_dist_, clst_thr_ang_);
 
@@ -57,8 +59,8 @@ std::pair<bool, double> PurePursuit::run() {
   loc_next_wp_ = curr_wps_ptr_->at(next_wp_idx).position;
 
   geometry_msgs::Point next_tgt_pos;
-  // if use_lerp_ is false or next waypoint is first
-  if (!use_lerp_ || next_wp_idx == 0) {
+  // if next waypoint is first
+  if (next_wp_idx == 0) {
     next_tgt_pos = curr_wps_ptr_->at(next_wp_idx).position;
   } else {
     // linear interpolation
@@ -134,7 +136,6 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
   for (int32_t i = search_start_idx; i < (int32_t)curr_wps_ptr_->size(); i++) {
     // if search waypoint is the last
     if (i == ((int32_t)curr_wps_ptr_->size() - 1)) {
-      ROS_WARN("search waypoint is the last");
       return i;
     }
 

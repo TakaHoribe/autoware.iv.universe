@@ -32,7 +32,7 @@
 
 #include <ros/ros.h>
 
-#include "pure_pursuit/pure_pursuit_core.h"
+#include "pure_pursuit/pure_pursuit_node.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "pure_pursuit");
