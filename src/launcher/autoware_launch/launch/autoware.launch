@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- Map path -->
-  <arg name="map_path" default=""/>
+  <arg name="map_path"/>
+
   <!-- Rosbag -->
   <arg name="rosbag" default="false" />
   <param name="/use_sim_time" value="$(arg rosbag)" />
@@ -29,7 +30,7 @@
 
   <!-- Perception -->
   <include file="$(find perception_launch)/launch/perception.launch">
-    <arg name="mode" default="lidar"/>
+    <arg name="mode" value="lidar"/>
     <!-- "camera_lidar_fusion", "lidar" or "camera" -->
   </include>
 
@@ -38,6 +39,7 @@
 
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch">
+    <arg name="lateral_controller_mode" value="mpc_follower" doc="options: mpc_follower, pure_pursuit"/>
   </include>
 
   <!-- Rviz -->
@@ -45,8 +47,7 @@
 
   <!-- Web Controller -->
   <include file="$(find roswww)/launch/roswww.launch">
-    <arg name="cached" default="false"/>
+    <arg name="cached" value="false"/>
   </include>
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
-
 </launch>
