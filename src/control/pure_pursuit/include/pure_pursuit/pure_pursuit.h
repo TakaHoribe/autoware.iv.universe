@@ -44,11 +44,10 @@ namespace planning_utils {
 
 class PurePursuit {
  public:
-  PurePursuit() : use_lerp_(false), lookahead_distance_(0.0), clst_thr_dist_(3.0), clst_thr_ang_(M_PI / 4) {}
+  PurePursuit() : lookahead_distance_(0.0), clst_thr_dist_(3.0), clst_thr_ang_(M_PI / 4) {}
   ~PurePursuit() = default;
 
   // setter
-  void setUseLerp(bool ul) { use_lerp_ = ul; }
   void setCurrentPose(const geometry_msgs::Pose& msg);
   void setWaypoints(const std::vector<geometry_msgs::Pose>& msg);
   void setLookaheadDistance(double ld) { lookahead_distance_ = ld; }
@@ -70,7 +69,6 @@ class PurePursuit {
   geometry_msgs::Point loc_next_tgt_;
 
   // variables got from outside
-  bool use_lerp_;
   double lookahead_distance_, clst_thr_dist_, clst_thr_ang_;
   std::shared_ptr<std::vector<geometry_msgs::Pose>> curr_wps_ptr_;
   std::shared_ptr<geometry_msgs::Pose> curr_pose_ptr_;

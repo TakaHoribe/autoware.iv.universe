@@ -8,7 +8,6 @@
     <param name="control_period" value="0.033"/>
 
     <!-- Algorithm Parameters -->
-    <param name="uses_lerp" value="true"/>
     <param name="lookahead_distance_ratio" value="2.2"/>
     <param name="min_lookahead_distance" value="2.5"/>
     <param name="reverse_min_lookahead_distance" value="7.0"/>

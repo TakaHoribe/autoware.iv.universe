@@ -63,7 +63,6 @@ PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_
   private_nh_.param<double>("control_period", param_.ctrl_period, 0.02);
 
   // Algorithm Parameters
-  private_nh_.param<bool>("use_lerp", param_.use_lerp, true);
   private_nh_.param<double>("lookahead_distance_ratio", param_.lookahead_distance_ratio, 2.2);
   private_nh_.param<double>("min_lookahead_distance", param_.min_lookahead_distance, 2.5);
   private_nh_.param<double>("reverse_min_lookahead_distance", param_.reverse_min_lookahead_distance, 7.0);
@@ -147,7 +146,6 @@ boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
       calcLookaheadDistance(current_velocity_->twist.linear.x, param_.lookahead_distance_ratio, min_lookahead_distance);
 
   // Set PurePursuit data
-  pure_pursuit_->setUseLerp(param_.use_lerp);
   pure_pursuit_->setCurrentPose(current_pose_->pose);
   pure_pursuit_->setWaypoints(planning_utils::extractPoses(*trajectory_));
   pure_pursuit_->setLookaheadDistance(lookahead_distance);

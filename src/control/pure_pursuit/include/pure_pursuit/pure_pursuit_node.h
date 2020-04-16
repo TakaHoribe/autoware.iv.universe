@@ -55,7 +55,6 @@ struct Param {
   double ctrl_period;
 
   // Algorithm Parameters
-  bool use_lerp;
   double lookahead_distance_ratio;
   double min_lookahead_distance;
   double reverse_min_lookahead_distance;  // min_lookahead_distance in reverse gear

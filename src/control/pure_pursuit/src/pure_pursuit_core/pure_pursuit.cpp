@@ -59,8 +59,8 @@ std::pair<bool, double> PurePursuit::run() {
   loc_next_wp_ = curr_wps_ptr_->at(next_wp_idx).position;
 
   geometry_msgs::Point next_tgt_pos;
-  // if use_lerp_ is false or next waypoint is first
-  if (!use_lerp_ || next_wp_idx == 0) {
+  // if next waypoint is first
+  if (next_wp_idx == 0) {
     next_tgt_pos = curr_wps_ptr_->at(next_wp_idx).position;
   } else {
     // linear interpolation
