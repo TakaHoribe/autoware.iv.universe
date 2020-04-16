@@ -21,5 +21,4 @@
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
 
-  <exec_depend>raw_vehicle_cmd_converter</exec_depend>
 </package>
