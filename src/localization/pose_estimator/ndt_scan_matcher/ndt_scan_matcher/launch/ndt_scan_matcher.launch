@@ -22,7 +22,7 @@
   <arg name="resolution" default="2.0" doc="The ND voxel grid resolution" />
   <arg name="max_iterations" default="30.0" doc="The number of iterations required to calculate alignment" />
 
-  <arg name="converged_param_transform_probability" default="4.5" doc="" />
+  <arg name="converged_param_transform_probability" default="3.0" doc="" />
 
   <!-- OMP Params -->
   <arg name="omp_neighborhood_search_method" default="0" doc="0:KDTREE, 1:DIRECT26, 2:DIRECT7, 3:DIRECT1" />
