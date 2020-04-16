@@ -31,6 +31,7 @@
  */
 
 #include "pure_pursuit/pure_pursuit_node.h"
+#include "pure_pursuit/pure_pursuit_viz.h"
 #include "pure_pursuit/util/planning_utils.h"
 #include "pure_pursuit/util/tf_utils.h"
 
@@ -74,6 +75,9 @@ PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_
   // Publishers
   pub_ctrl_cmd_ = private_nh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
 
+  // Debug Publishers
+  pub_debug_marker_ = private_nh_.advertise<visualization_msgs::MarkerArray>("debug/marker", 0);
+
   // Timer
   timer_ = nh_.createTimer(ros::Duration(param_.ctrl_period), &PurePursuitNode::onTimer, this);
 
@@ -115,17 +119,27 @@ void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
 
   if (target_values) {
     publishCommand(*target_values);
+    publishDebugMarker();
   } else {
     ROS_ERROR("failed to solve pure_pursuit");
     publishCommand({0.0, 0.0, 0.0});
   }
 }
 
-void PurePursuitNode::publishCommand(const TargetValues& targets) {
+void PurePursuitNode::publishCommand(const TargetValues& targets) const {
   autoware_control_msgs::ControlCommandStamped cmd;
   cmd.header.stamp = ros::Time::now();
   cmd.control = createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
   pub_ctrl_cmd_.publish(cmd);
+}
+
+void PurePursuitNode::publishDebugMarker() const {
+  visualization_msgs::MarkerArray marker_array;
+
+  marker_array.markers.push_back(createNextTargetMarker(debug_data_.next_target));
+  marker_array.markers.push_back(createTrajectoryCircleMarker(debug_data_.next_target, current_pose_->pose));
+
+  pub_debug_marker_.publish(marker_array);
 }
 
 boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
@@ -157,6 +171,9 @@ boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
   }
 
   const auto kappa = pure_pursuit_result.second;
+
+  // Set debug data
+  debug_data_.next_target = pure_pursuit_->getLocationOfNextTarget();
 
   return TargetValues{kappa, target_vel, target_acc};
 }

@@ -57,8 +57,8 @@ class PurePursuit {
   }
 
   // getter
-  geometry_msgs::Point getLocationOfNextWaypoint() { return loc_next_wp_; }
-  geometry_msgs::Point getLocationOfNextTarget() { return loc_next_tgt_; }
+  geometry_msgs::Point getLocationOfNextWaypoint() const { return loc_next_wp_; }
+  geometry_msgs::Point getLocationOfNextTarget() const { return loc_next_tgt_; }
 
   bool isDataReady();
   std::pair<bool, double> run();  // calculate curvature

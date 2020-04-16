@@ -66,6 +66,10 @@ struct TargetValues {
   double acceleration;
 };
 
+struct DebugData {
+  geometry_msgs::Point next_target;
+};
+
 class PurePursuitNode {
  public:
   PurePursuitNode();
@@ -95,7 +99,12 @@ class PurePursuitNode {
   // Publisher
   ros::Publisher pub_ctrl_cmd_;
 
-  void publishCommand(const TargetValues& targets);
+  void publishCommand(const TargetValues& targets) const;
+
+  // Debug Publisher
+  ros::Publisher pub_debug_marker_;
+
+  void publishDebugMarker() const;
 
   // Timer
   ros::Timer timer_;
@@ -110,4 +119,7 @@ class PurePursuitNode {
 
   boost::optional<TargetValues> calcTargetValues() const;
   boost::optional<autoware_planning_msgs::TrajectoryPoint> calcTargetPoint() const;
+
+  // Debug
+  mutable DebugData debug_data_;
 };
