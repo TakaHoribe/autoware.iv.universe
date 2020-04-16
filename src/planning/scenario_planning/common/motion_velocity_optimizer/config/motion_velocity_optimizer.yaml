@@ -1,6 +1,7 @@
 max_velocity: 20.0      # max velocity limit [m/s]
 max_accel: 1.0          # max acceleration limit [m/ss]
 min_decel: -1.0         # min deceleration limit [m/ss]
+max_jerk_sum: 100         # max time integration of jerk [m/ss]
 
 # curve parameters
 max_lateral_accel: 0.01            # max lateral acceleration limit [m/ss]
@@ -25,6 +26,7 @@ resample_time: 10.0                   # resample total time [s]
 resample_dt: 0.1                      # resample time interval [s]
 min_trajectory_interval_distance: 0.1 # resample points-interval length [m]
 
-pseudo_jerk_weight: 100.0 # weight for "smoothness" cost
+pseudo_jerk_weight: 200.0 # weight for "smoothness" cost
 over_v_weight: 100000.0   # weight for "overspeed limit" cost
 over_a_weight: 1000.0     # weight for "overaccel limit" cost
+over_jerk_weight: 100.0   # weight for "overjerk limit" cost
