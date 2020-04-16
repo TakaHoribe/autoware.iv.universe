@@ -38,6 +38,7 @@
 
   <!-- Control -->
   <include file="$(find control_launch)/launch/control.launch">
+    <arg name="lateral_controller_mode" value="mpc_follower" doc="options: mpc_follower, pure_pursuit"/>
   </include>
 
   <!-- Rviz -->
