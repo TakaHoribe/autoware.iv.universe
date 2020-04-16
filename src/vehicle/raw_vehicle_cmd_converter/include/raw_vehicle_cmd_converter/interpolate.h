@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ACCEL_MAP_CONVERTER_INTERPOLATE_H
-#define ACCEL_MAP_CONVERTER_INTERPOLATE_H
+#ifndef RAW_VEHICLE_CMD_CONVERTER_INTERPOLATE_H
+#define RAW_VEHICLE_CMD_CONVERTER_INTERPOLATE_H
 
 #include <cmath>
 #include <iostream>

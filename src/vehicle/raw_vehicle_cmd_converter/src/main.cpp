@@ -15,10 +15,10 @@
  */
 
 #include <ros/ros.h>
-#include <accel_map_converter/node.hpp>
+#include <raw_vehicle_cmd_converter/node.hpp>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "accel_map_converter_node");
+  ros::init(argc, argv, "raw_vehicle_cmd_converter_node");
 
   AccelMapConverter node;
 

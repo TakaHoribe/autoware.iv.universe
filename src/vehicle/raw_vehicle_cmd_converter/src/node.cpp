@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accel_map_converter/node.hpp"
+#include "raw_vehicle_cmd_converter/node.hpp"
 
 AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~") {
   pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::RawVehicleCommand>("/vehicle/raw_vehicle_cmd", 1);
