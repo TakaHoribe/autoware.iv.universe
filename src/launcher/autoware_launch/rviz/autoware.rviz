@@ -901,6 +901,14 @@ Visualization Manager:
           Namespaces: {}
           Queue Size: 100
           Value: false
+        - Class: rviz/MarkerArray
+          Enabled: false
+          Marker Topic: /control/pure_pursuit/debug/marker
+          Name: Debug/PurePursuit
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: false
       Enabled: true
       Name: Control
   Enabled: true
