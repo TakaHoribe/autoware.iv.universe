@@ -413,13 +413,13 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(5 * N + N - 1, 5 * N + N - 1);  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3 * N + 1 + 2 * (N - 1), 3 * N + 1 + 2 *(N - 1));  // the matrix size depends on constraint numbers.
 
-  std::vector<double> lower_bound(5 * N + N - 1, 0.0);
-  std::vector<double> upper_bound(5 * N + N - 1, 0.0);
+  std::vector<double> lower_bound(3 * N + 1 + 2 * (N - 1), 0.0);
+  std::vector<double> upper_bound(3 * N + 1 + 2 * (N - 1), 0.0);
 
-  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 2, 4 * N + 2);
-  std::vector<double> q(4 * N + 2, 0.0);
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 1, 4 * N + 1);
+  std::vector<double> q(4 * N + 1, 0.0);
 
   /*
    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
@@ -431,11 +431,11 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
 
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
-  const double jerk_sum_max = planning_param_.max_jerk_sum;
+  //const double jerk_sum_max = planning_param_.max_jerk_sum;
   const double smooth_weight = qp_param_.pseudo_jerk_weight;
   const double over_v_weight = qp_param_.over_v_weight;
   const double over_a_weight = qp_param_.over_a_weight;
-  const double over_jerk_weight = qp_param_.over_jerk_weight;
+  //const double over_jerk_weight = qp_param_.over_jerk_weight;
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) {  // bi
@@ -468,10 +468,12 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     P(i, i) += over_a_weight;
   }
 
+  #if 0
   { // over jerk_sum cost
     const unsigned int ie = 4 * N + 1;
     P(ie, ie) += over_jerk_weight;
   }
+  #endif
 
   /* design constraint matrix */
   // 0 < b - delta < vmax^2
@@ -541,7 +543,7 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     upper_bound[i + N - 1] = 0;
   }
 
-  #if 0
+  #if 0 // temporary: don't consider max jerk constraints
   // sum(psi) - eta < jerk_sum_max
   {
     const unsigned int i = 5 * N;
@@ -552,7 +554,6 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     lower_bound[i] = 0;
     upper_bound[i] = jerk_sum_max;
   }
-  #else
   for (unsigned int i = 5 * N; i < 5 * N + N - 1; ++i) {
     const unsigned int ia = i - 5 * N + N;
     const unsigned int j = i - 5 * N;
