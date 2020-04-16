@@ -9,6 +9,8 @@
     <arg name="input_twist_name" default="/localization/twist_estimator/gyro_twist"/>
     <arg name="output_pose_name" default="pose"/>
     <arg name="output_pose_with_covariance_name" default="pose_with_covariance"/>
+    <arg name="output_pose_without_yawbias_name" default="pose_without_yawbias"/>
+    <arg name="output_pose_with_covariance_without_yawbias_name" default="pose_with_covariance_without_yawbias"/>
     <arg name="output_twist_name" default="twist"/>
     <arg name="output_twist_with_covariance_name" default="twist_with_covariance"/>
 

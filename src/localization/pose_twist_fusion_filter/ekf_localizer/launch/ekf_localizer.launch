@@ -39,6 +39,8 @@
   <!-- output topic name -->
   <arg name="output_pose_name" default="ekf_pose"/>
   <arg name="output_pose_with_covariance_name" default="ekf_pose_with_covariance"/>
+  <arg name="output_pose_without_yawbias_name" default="ekf_pose_without_yawbias"/>
+  <arg name="output_pose_with_covariance_without_yawbias_name" default="ekf_pose_with_covariance_without_yawbias"/>
   <arg name="output_twist_name" default="ekf_twist"/>
   <arg name="output_twist_with_covariance_name" default="ekf_twist_with_covariance"/>
 
@@ -88,6 +90,8 @@
 
     <remap from="ekf_pose" to="$(arg output_pose_name)"/>
     <remap from="ekf_pose_with_covariance" to="$(arg output_pose_with_covariance_name)"/>
+    <remap from="ekf_pose_without_yawbias" to="$(arg output_pose_without_yawbias_name)"/>
+    <remap from="ekf_pose_with_covariance_without_yawbias" to="$(arg output_pose_with_covariance_without_yawbias_name)"/>
     <remap from="ekf_twist" to="$(arg output_twist_name)"/>
     <remap from="ekf_twist_with_covariance" to="$(arg output_twist_with_covariance_name)"/>
 
