@@ -4,6 +4,7 @@
   <version>0.1.0</version>
   <description>The raw_vehicle_cmd_converter package</description>
   <maintainer email="horibe.takamasa@gmail.com">Horibe Takamasa</maintainer>
+  <author email="mkuri8m@gmail.com">Makoto Kurihara</author>
   <author email="horibe.takamasa@gmail.com">Horibe Takamasa</author>
   <license>Apache 2</license>
 
