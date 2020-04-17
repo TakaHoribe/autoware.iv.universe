@@ -23,13 +23,15 @@
 namespace lane_change_planner {
 State ExecutingLaneChangeState::getCurrentState() const { return State::EXECUTING_LANE_CHANGE; }
 
-void ExecutingLaneChangeState::entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) {
+void ExecutingLaneChangeState::entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+                                     const std::shared_ptr<RouteHandler>& route_handler_ptr) {
   data_manager_ptr_ = data_manager_ptr;
+  route_handler_ptr_ = route_handler_ptr;
   status_ = status;
   ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
 
-  original_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
-  target_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+  original_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
+  target_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
   status_.lane_change_available = false;
   status_.lane_change_ready = false;
 }
@@ -90,7 +92,7 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const {
 bool ExecutingLaneChangeState::hasFinishedLaneChange() const {
   static ros::Time start_time = ros::Time::now();
 
-  if (RouteHandler::getInstance().isInTargetLane(current_pose_, target_lanes_)) {
+  if (route_handler_ptr_->isInTargetLane(current_pose_, target_lanes_)) {
     return (ros::Time::now() - start_time > ros::Duration(2));
   } else {
     start_time = ros::Time::now();

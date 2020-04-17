@@ -25,12 +25,14 @@
 #include <visualization_msgs/Marker.h>
 
 namespace lane_change_planner {
-StateMachine::StateMachine(std::shared_ptr<DataManager>& data_manager_ptr) : data_manager_ptr_(data_manager_ptr) {}
+StateMachine::StateMachine(const std::shared_ptr<DataManager>& data_manager_ptr,
+                           const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : data_manager_ptr_(data_manager_ptr), route_handler_ptr_(route_handler_ptr) {}
 
 void StateMachine::init() {
   state_obj_ptr_ = std::make_unique<FollowingLaneState>();
   Status empty_status;
-  state_obj_ptr_->entry(empty_status, data_manager_ptr_);
+  state_obj_ptr_->entry(empty_status, data_manager_ptr_, route_handler_ptr_);
 }
 
 void StateMachine::init(const autoware_planning_msgs::Route& route) { init(); }
@@ -62,7 +64,7 @@ void StateMachine::updateState() {
         state_obj_ptr_ = std::make_unique<BlockedByObstacleState>();
         break;
     }
-    state_obj_ptr_->entry(previous_status, data_manager_ptr_);
+    state_obj_ptr_->entry(previous_status, data_manager_ptr_, route_handler_ptr_);
     state_obj_ptr_->update();
   }
 }

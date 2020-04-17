@@ -61,9 +61,10 @@ class LaneChanger {
   ros::Subscriber vector_map_subscriber_;
   ros::Subscriber route_subscriber_;
   ros::Subscriber route_init_subscriber_;
+
   std::shared_ptr<DataManager> data_manager_ptr_;
   StateMachine state_machine_;
-  // RouteHandler route_handler_;
+  std::shared_ptr<RouteHandler> route_handler_ptr_;
   // PathExtender path_extender_;
 
   void run(const ros::TimerEvent& event);

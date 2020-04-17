@@ -29,7 +29,8 @@ class AbortingLaneChangeState : public StateBase {
   AbortingLaneChangeState() = default;
 
   // override virtual functions
-  void entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) override;
+  void entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+             const std::shared_ptr<RouteHandler>& route_handler_ptr) override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;

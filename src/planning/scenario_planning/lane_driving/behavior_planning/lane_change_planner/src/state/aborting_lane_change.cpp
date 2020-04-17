@@ -19,7 +19,8 @@
 namespace lane_change_planner {
 State AbortingLaneChangeState::getCurrentState() const { return State::ABORTING_LANE_CHANGE; }
 
-void AbortingLaneChangeState::entry(const Status& status, std::shared_ptr<DataManager>& data_manager_ptr) {}
+void AbortingLaneChangeState::entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+                                    const std::shared_ptr<RouteHandler>& route_handler_ptr) {}
 
 autoware_planning_msgs::PathWithLaneId AbortingLaneChangeState::getPath() const { return status_.lane_follow_path; }
 

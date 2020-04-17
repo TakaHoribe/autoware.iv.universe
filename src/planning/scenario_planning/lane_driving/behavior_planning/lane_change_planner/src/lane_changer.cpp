@@ -23,11 +23,12 @@ visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::Predi
                                            const std::string& ns, const double radius);
 
 namespace lane_change_planner {
-LaneChanger::LaneChanger() : pnh_("~"), state_machine_(data_manager_ptr_) {}
+LaneChanger::LaneChanger() : pnh_("~"), state_machine_(data_manager_ptr_, route_handler_ptr_) {}
 
 void LaneChanger::init() {
   // data_manager
   data_manager_ptr_ = std::make_shared<DataManager>();
+  route_handler_ptr_ = std::make_shared<RouteHandler>();
 
   points_subscriber_ = pnh_.subscribe("input/points", 1, &DataManager::pointcloudCallback, &(*data_manager_ptr_));
   velocity_subscriber_ = pnh_.subscribe("input/velocity", 1, &DataManager::velocityCallback, &(*data_manager_ptr_));
@@ -59,9 +60,8 @@ void LaneChanger::init() {
   data_manager_ptr_->setLaneChangerParameters(parameters);
 
   // route_handler
-  vector_map_subscriber_ =
-      pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &RouteHandler::getInstance());
-  route_subscriber_ = pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &RouteHandler::getInstance());
+  vector_map_subscriber_ = pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &(*route_handler_ptr_));
+  route_subscriber_ = pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &(*route_handler_ptr_));
   route_init_subscriber_ = pnh_.subscribe("input/route", 1, &StateMachine::init, &state_machine_);
 
   // publisher
@@ -73,7 +73,7 @@ void LaneChanger::init() {
 
   // wait until mandatory data is ready
   {
-    while (!RouteHandler::getInstance().isHandlerReady() && ros::ok()) {
+    while (!route_handler_ptr_->isHandlerReady() && ros::ok()) {
       ROS_WARN_THROTTLE(5, "waiting for route to be ready");
       ros::spinOnce();
       ros::Duration(0.1).sleep();
@@ -93,13 +93,13 @@ void LaneChanger::run(const ros::TimerEvent& event) {
   state_machine_.updateState();
   const auto path = state_machine_.getPath();
 
-  const auto goal = RouteHandler::getInstance().getGoalPose();
-  const auto goal_lane_id = RouteHandler::getInstance().getGoalLaneId();
+  const auto goal = route_handler_ptr_->getGoalPose();
+  const auto goal_lane_id = route_handler_ptr_->getGoalLaneId();
 
   geometry_msgs::Pose refined_goal;
   {
     lanelet::ConstLanelet goal_lanelet;
-    if (RouteHandler::getInstance().getGoalLanelet(&goal_lanelet)) {
+    if (route_handler_ptr_->getGoalLanelet(&goal_lanelet)) {
       refined_goal = util::refineGoal(goal, goal_lanelet);
     } else {
       refined_goal = goal;
@@ -122,11 +122,10 @@ void LaneChanger::run(const ros::TimerEvent& event) {
   std_msgs::Bool lane_change_ready_msg;
   lane_change_ready_msg.data = lane_change_status.lane_change_ready;
   lane_change_ready_publisher_.publish(lane_change_ready_msg);
-  
+
   std_msgs::Bool lane_change_available_msg;
   lane_change_available_msg.data = lane_change_status.lane_change_available;
   lane_change_available_publisher_.publish(lane_change_available_msg);
-  
 }
 
 void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path) {
@@ -173,7 +172,7 @@ void LaneChanger::publishDebugMarkers() {
 
   // get obstacle path marker
   {
-    const auto& target_lanes = RouteHandler::getInstance().getLaneChangeTarget(current_pose.pose);
+    const auto& target_lanes = route_handler_ptr_->getLaneChangeTarget(current_pose.pose);
     auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
     for (const auto& i : object_indices) {
       const auto& obj = dynamic_objects->objects.at(i);
