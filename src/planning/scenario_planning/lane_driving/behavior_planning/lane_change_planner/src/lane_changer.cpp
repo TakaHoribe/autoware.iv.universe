@@ -23,7 +23,9 @@ visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::Predi
                                            const std::string& ns, const double radius);
 
 namespace lane_change_planner {
-LaneChanger::LaneChanger() : pnh_("~"), state_machine_(data_manager_ptr_, route_handler_ptr_) {}
+LaneChanger::LaneChanger() : pnh_("~"), state_machine_(data_manager_ptr_, route_handler_ptr_) {
+  init();
+}
 
 void LaneChanger::init() {
   // data_manager
