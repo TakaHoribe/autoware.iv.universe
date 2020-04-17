@@ -45,6 +45,7 @@ class SelfPoseLinstener {
  public:
   SelfPoseLinstener();
   bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
+  bool isSelfPoseReady();
 
  private:
   tf2_ros::Buffer tf_buffer_;
@@ -60,7 +61,6 @@ struct BoolStamped {
 
 class DataManager {
  private:
-
   /*
    * Cache
    */

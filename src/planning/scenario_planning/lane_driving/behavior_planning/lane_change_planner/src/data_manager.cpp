@@ -19,8 +19,6 @@
 
 namespace lane_change_planner {
 DataManager::DataManager() : is_parameter_set_(false), lane_change_approval_(false), force_lane_change_(false) {
-  perception_ptr_ = nullptr;
-  vehicle_velocity_ptr_ = nullptr;
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
 
@@ -103,16 +101,17 @@ bool DataManager::isDataReady() {
   if (!vehicle_velocity_ptr_) {
     return false;
   }
-  std_msgs::Header header;
-  header.frame_id = "map";
-  header.stamp = ros::Time(0);
-  if (!self_pose_listener_ptr_->getSelfPose(self_pose_.pose, header)) {
+  if (!self_pose_listener_ptr_->isSelfPoseReady()) {
     return false;
   }
   return true;
 }
 
 SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
+
+bool SelfPoseLinstener::isSelfPoseReady() {
+  return tf_buffer_.canTransform("map", "base_link", ros::Time(0), ros::Duration(0.1));
+}
 
 bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header) {
   try {
