@@ -29,6 +29,7 @@ GyroOdometer::GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_
   imu_sub_ = nh_.subscribe("imu", 100, &GyroOdometer::callbackImu, this);
 
   twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
+  twist_with_covariance_pub_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("twist_with_covariance", 10);
   // linear_x_pub_ = nh_.advertise<std_msgs::Float32>("linear_x", 10);
   // angular_z_pub_ = nh_.advertise<std_msgs::Float32>("angular_z", 10);
 
@@ -73,8 +74,21 @@ void GyroOdometer::callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr) {
   twist.header.frame_id = output_frame_;
   twist.twist.linear = twist_msg_ptr_->twist.linear;
   twist.twist.angular.z = transed_angular_velocity.vector.z;  // TODO yaw_rate only
-
   twist_pub_.publish(twist);
+
+  geometry_msgs::TwistWithCovarianceStamped twist_with_covariance;
+  twist_with_covariance.header.stamp = imu_msg_ptr->header.stamp;
+  twist_with_covariance.header.frame_id = output_frame_;
+  twist_with_covariance.twist.twist.linear = twist_msg_ptr_->twist.linear;
+  twist_with_covariance.twist.twist.angular.z = transed_angular_velocity.vector.z;  // TODO yaw_rate only
+  // TODO temporary value
+  const double vx_covariance = 0.2;
+  const double wz_covariance = 0.03;
+  twist_with_covariance.twist.covariance[0] = vx_covariance * vx_covariance;
+  twist_with_covariance.twist.covariance[0 * 6 + 5] = vx_covariance * wz_covariance;
+  twist_with_covariance.twist.covariance[5 * 6 + 0] = wz_covariance * vx_covariance;
+  twist_with_covariance.twist.covariance[5 * 6 + 5] = wz_covariance * wz_covariance;
+  twist_with_covariance_pub_.publish(twist_with_covariance);
 }
 
 bool GyroOdometer::getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr)
@@ -114,4 +128,3 @@ bool GyroOdometer::getTransform(const std::string &target_frame, const std::stri
   }
   return true;
 }
-
