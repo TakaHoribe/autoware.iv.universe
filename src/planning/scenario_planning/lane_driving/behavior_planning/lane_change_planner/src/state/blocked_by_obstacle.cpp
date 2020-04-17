@@ -60,8 +60,6 @@ void BlockedByObstacleState::update() {
       ROS_ERROR("failed to find closest lanelet within route!!!");
       return;
     }
-    // current_lanes_ = route_handler_ptr_->getLaneletSequence(current_lane, current_pose_.pose,
-    //                                                                 backward_path_length, forward_path_length);
     lanelet::ConstLanelet right_lane;
     if (route_handler_ptr_->getRightLaneletWithinRoute(current_lane, &right_lane)) {
       right_lanes = route_handler_ptr_->getLaneletSequence(right_lane, current_pose_.pose, backward_path_length,
