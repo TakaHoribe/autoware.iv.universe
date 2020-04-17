@@ -18,117 +18,58 @@
 #include <lanelet2_extension/utility/message_conversion.h>
 
 namespace lane_change_planner {
-SingletonDataManager::SingletonDataManager()
-    : is_parameter_set_(false), lane_change_approval_(false), force_lane_change_(false) {
+DataManager::DataManager() : is_parameter_set_(false), lane_change_approval_(false), force_lane_change_(false) {
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
 
-void SingletonDataManager::perceptionCallback(
-    const autoware_perception_msgs::DynamicObjectArray& input_perception_msg) {
-  perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
+void DataManager::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_perception_msg_ptr) {
+  perception_ptr_ = input_perception_msg_ptr;
 }
 
-void SingletonDataManager::pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg) {
-  pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
+void DataManager::velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg_ptr) {
+  vehicle_velocity_ptr_ = input_twist_msg_ptr;
 }
 
-void SingletonDataManager::velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg) {
-  vehicle_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(input_twist_msg);
-}
-
-void SingletonDataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg) {
-  lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
-  lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
-}
-
-void SingletonDataManager::laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg) {
+void DataManager::laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg) {
   lane_change_approval_.data = input_approval_msg.data;
   lane_change_approval_.stamp = ros::Time::now();
 }
 
-void SingletonDataManager::forceLaneChangeSignalCallback(const std_msgs::Bool& input_force_lane_change_msg) {
+void DataManager::forceLaneChangeSignalCallback(const std_msgs::Bool& input_force_lane_change_msg) {
   force_lane_change_.data = input_force_lane_change_msg.data;
   force_lane_change_.stamp = ros::Time::now();
 }
 
-void SingletonDataManager::setLaneChangerParameters(const LaneChangerParameters& parameters) {
+void DataManager::setLaneChangerParameters(const LaneChangerParameters& parameters) {
   is_parameter_set_ = true;
   parameters_ = parameters;
 }
 
-bool SingletonDataManager::getDynamicObjects(
-    std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects) {
-  if (perception_ptr_ == nullptr) return false;
-  objects = perception_ptr_;
-  return true;
+autoware_perception_msgs::DynamicObjectArray::ConstPtr DataManager::getDynamicObjects() {
+  return perception_ptr_;
 }
 
-bool SingletonDataManager::getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& pointcloud) {
-  if (pointcloud_ptr_ == nullptr) return false;
-  pointcloud = pointcloud_ptr_;
-  return true;
+geometry_msgs::TwistStamped::ConstPtr DataManager::getCurrentSelfVelocity() {
+  return vehicle_velocity_ptr_;
 }
 
-bool SingletonDataManager::getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const>& twist) {
-  if (vehicle_velocity_ptr_ == nullptr) return false;
-  twist = vehicle_velocity_ptr_;
-  return true;
+geometry_msgs::PoseStamped DataManager::getCurrentSelfPose() {
+  self_pose_listener_ptr_->getSelfPose(self_pose_);
+  return self_pose_;
 }
 
-bool SingletonDataManager::getCurrentSelfPose(geometry_msgs::PoseStamped& pose) {
-  if (self_pose_listener_ptr_ == nullptr) return false;
-  std_msgs::Header header;
-  header.frame_id = "map";
-  header.stamp = ros::Time(0);
-  pose.header = header;
-  return self_pose_listener_ptr_->getSelfPose(pose.pose, header);
-}
+LaneChangerParameters DataManager::getLaneChangerParameters() { return parameters_; }
 
-bool SingletonDataManager::getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                                         lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr) {
-  if (lanelet_map_ptr_ == nullptr || routing_graph_ptr_ == nullptr) return false;
-  lanelet_map_ptr = lanelet_map_ptr_;
-  routing_graph_ptr = routing_graph_ptr_;
-  return true;
-}
-
-SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
-
-bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header) {
-  try {
-    geometry_msgs::TransformStamped transform;
-    transform = tf_buffer_.lookupTransform(header.frame_id, "base_link", header.stamp, ros::Duration(0.1));
-    self_pose.position.x = transform.transform.translation.x;
-    self_pose.position.y = transform.transform.translation.y;
-    self_pose.position.z = transform.transform.translation.z;
-    self_pose.orientation.x = transform.transform.rotation.x;
-    self_pose.orientation.y = transform.transform.rotation.y;
-    self_pose.orientation.z = transform.transform.rotation.z;
-    self_pose.orientation.w = transform.transform.rotation.w;
-    return true;
-  } catch (tf2::TransformException& ex) {
-    return false;
-  }
-}
-
-bool SingletonDataManager::getLaneChangerParameters(LaneChangerParameters& parameters) {
-  if (!is_parameter_set_) {
-    return false;
-  }
-  parameters = parameters_;
-  return true;
-}
-
-bool SingletonDataManager::getLaneChangeApproval() {
+bool DataManager::getLaneChangeApproval() {
   constexpr double timeout = 0.5;
   if (ros::Time::now() - lane_change_approval_.stamp > ros::Duration(timeout)) {
     return false;
-  } else {
-    return lane_change_approval_.data;
   }
+
+  return lane_change_approval_.data;
 }
 
-bool SingletonDataManager::getForceLaneChangeSignal() {
+bool DataManager::getForceLaneChangeSignal() {
   constexpr double timeout = 0.5;
   if (ros::Time::now() - force_lane_change_.stamp > ros::Duration(timeout)) {
     return false;
@@ -137,4 +78,43 @@ bool SingletonDataManager::getForceLaneChangeSignal() {
   }
 }
 
+bool DataManager::isDataReady() {
+  if (!perception_ptr_) {
+    return false;
+  }
+  if (!vehicle_velocity_ptr_) {
+    return false;
+  }
+  if (!self_pose_listener_ptr_->isSelfPoseReady()) {
+    return false;
+  }
+  return true;
+}
+
+SelfPoseLinstener::SelfPoseLinstener() : tf_listener_(tf_buffer_){};
+
+bool SelfPoseLinstener::isSelfPoseReady() {
+  return tf_buffer_.canTransform("map", "base_link", ros::Time(0), ros::Duration(0.1));
+}
+
+bool SelfPoseLinstener::getSelfPose(geometry_msgs::PoseStamped& self_pose) {
+  try {
+    geometry_msgs::TransformStamped transform;
+    std::string map_frame = "map";
+    transform = tf_buffer_.lookupTransform(map_frame, "base_link", ros::Time(0), ros::Duration(0.1));
+    self_pose.pose.position.x = transform.transform.translation.x;
+    self_pose.pose.position.y = transform.transform.translation.y;
+    self_pose.pose.position.z = transform.transform.translation.z;
+    self_pose.pose.orientation.x = transform.transform.rotation.x;
+    self_pose.pose.orientation.y = transform.transform.rotation.y;
+    self_pose.pose.orientation.z = transform.transform.rotation.z;
+    self_pose.pose.orientation.w = transform.transform.rotation.w;
+    self_pose.header.stamp = ros::Time::now();
+    self_pose.header.frame_id = map_frame;
+    return true;
+  } catch (tf2::TransformException& ex) {
+    ROS_ERROR_STREAM_THROTTLE(1, "failed to find self pose :" << ex.what());
+    return false;
+  }
+}
 }  // namespace lane_change_planner

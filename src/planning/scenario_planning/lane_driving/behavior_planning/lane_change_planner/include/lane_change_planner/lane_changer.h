@@ -62,13 +62,15 @@ class LaneChanger {
   ros::Subscriber route_subscriber_;
   ros::Subscriber route_init_subscriber_;
 
-  StateMachine state_machine_;
-  // RouteHandler route_handler_;
+  std::shared_ptr<DataManager> data_manager_ptr_;
+  std::shared_ptr<StateMachine> state_machine_ptr_;
+  std::shared_ptr<RouteHandler> route_handler_ptr_;
   // PathExtender path_extender_;
 
   void run(const ros::TimerEvent& event);
   void publishDebugMarkers();
   void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path);
+  void waitForData();
 
  public:
   LaneChanger();

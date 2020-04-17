@@ -32,8 +32,8 @@ namespace lane_change_planner {
 class ExecutingLaneChangeState : public StateBase {
  private:
   geometry_msgs::PoseStamped current_pose_;
-  std::shared_ptr<geometry_msgs::TwistStamped const> current_twist_;
-  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> dynamic_objects_;
+  geometry_msgs::TwistStamped::ConstPtr current_twist_;
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects_;
 
   lanelet::ConstLanelets original_lanes_;
   lanelet::ConstLanelets target_lanes_;
@@ -44,10 +44,11 @@ class ExecutingLaneChangeState : public StateBase {
   bool hasFinishedLaneChange() const;
 
  public:
-  ExecutingLaneChangeState() = default;
+  ExecutingLaneChangeState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+             const std::shared_ptr<RouteHandler>& route_handler_ptr);
 
   // override virtual functions
-  void entry(const Status& status) override;
+  void entry() override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;

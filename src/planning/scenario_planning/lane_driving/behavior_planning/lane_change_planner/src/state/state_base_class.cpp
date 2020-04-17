@@ -28,5 +28,9 @@ std::ostream& operator<<(std::ostream& ostream, const State& state) {
   return ostream;
 }
 
+StateBase::StateBase(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+                     const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : data_manager_ptr_(data_manager_ptr), route_handler_ptr_(route_handler_ptr), status_(status) {}
+
 Status StateBase::getStatus() const { return status_; }
 }  // namespace lane_change_planner

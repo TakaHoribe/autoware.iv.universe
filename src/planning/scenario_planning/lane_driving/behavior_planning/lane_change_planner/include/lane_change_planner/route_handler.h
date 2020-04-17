@@ -34,19 +34,9 @@ namespace lane_change_planner {
 enum class LaneChangeDirection { NONE, LEFT, RIGHT };
 
 class RouteHandler {
- private:
-  explicit RouteHandler();
-  ~RouteHandler() = default;
-
  public:
-  RouteHandler(const RouteHandler&) = delete;
-  RouteHandler& operator=(const RouteHandler&) = delete;
-  RouteHandler(RouteHandler&&) = delete;
-  RouteHandler& operator=(RouteHandler&&) = delete;
-  static RouteHandler& getInstance() {
-    static RouteHandler instance;
-    return instance;
-  }
+  RouteHandler();
+  ~RouteHandler() = default;
 
  private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
@@ -63,8 +53,6 @@ class RouteHandler {
   lanelet::ConstLanelets start_lanelets_;
   lanelet::ConstLanelets goal_lanelets_;
 
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& map_msg);
-  void routeCallback(const autoware_planning_msgs::Route& route_msg);
 
   void setRouteLanelets();
 
@@ -74,6 +62,9 @@ class RouteHandler {
   RouteHandler(const lanelet::LaneletMapConstPtr& lanelet_map_ptr,
                const lanelet::routing::RoutingGraphPtr& routing_graph, const lanelet::routing::Route& route);
   bool isHandlerReady();
+
+  void mapCallback(const autoware_lanelet2_msgs::MapBin& map_msg);
+  void routeCallback(const autoware_planning_msgs::Route& route_msg);
 
   bool getPreviousLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* prev_lanelet) const;
   bool getNextLaneletWithinRoute(const lanelet::ConstLanelet& lanelet, lanelet::ConstLanelet* next_lanelet) const;

@@ -21,15 +21,18 @@
 #include <lane_change_planner/utilities.h>
 
 namespace lane_change_planner {
+ExecutingLaneChangeState::ExecutingLaneChangeState(const Status& status,
+                                                   const std::shared_ptr<DataManager>& data_manager_ptr,
+                                                   const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+
 State ExecutingLaneChangeState::getCurrentState() const { return State::EXECUTING_LANE_CHANGE; }
 
-void ExecutingLaneChangeState::entry(const Status& status) {
-  status_ = status;
-  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_)) {
-    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
-  }
-  original_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
-  target_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+void ExecutingLaneChangeState::entry() {
+  ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
+
+  original_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
+  target_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
   status_.lane_change_available = false;
   status_.lane_change_ready = false;
 }
@@ -37,15 +40,9 @@ void ExecutingLaneChangeState::entry(const Status& status) {
 autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const { return status_.lane_change_path; }
 
 void ExecutingLaneChangeState::update() {
-  if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_)) {
-    ROS_ERROR("failed to get current pose");
-  }
-  if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_)) {
-    ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity");
-  }
-  if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects_)) {
-    ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects");
-  }
+  current_twist_ = data_manager_ptr_->getCurrentSelfVelocity();
+  current_pose_ = data_manager_ptr_->getCurrentSelfPose();
+  dynamic_objects_ = data_manager_ptr_->getDynamicObjects();
 
   // update path
   {
@@ -96,7 +93,7 @@ bool ExecutingLaneChangeState::isTargetLaneStillClear() const {
 bool ExecutingLaneChangeState::hasFinishedLaneChange() const {
   static ros::Time start_time = ros::Time::now();
 
-  if (RouteHandler::getInstance().isInTargetLane(current_pose_, target_lanes_)) {
+  if (route_handler_ptr_->isInTargetLane(current_pose_, target_lanes_)) {
     return (ros::Time::now() - start_time > ros::Duration(2));
   } else {
     start_time = ros::Time::now();

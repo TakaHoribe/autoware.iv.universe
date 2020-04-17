@@ -30,7 +30,6 @@
 #include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <autoware_planning_msgs/Route.h>
-#include <lane_change_planner/lane_changer.h>
 #include <lane_change_planner/parameters.h>
 
 // lanelet
@@ -45,7 +44,8 @@ namespace lane_change_planner {
 class SelfPoseLinstener {
  public:
   SelfPoseLinstener();
-  bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
+  bool getSelfPose(geometry_msgs::PoseStamped& self_pose);
+  bool isSelfPoseReady();
 
  private:
   tf2_ros::Buffer tf_buffer_;
@@ -53,39 +53,21 @@ class SelfPoseLinstener {
 };
 
 struct BoolStamped {
-  BoolStamped(bool data) { data = data; }
-  BoolStamped() { data = false; }
-  bool data;
+  explicit BoolStamped(bool in_data):data(in_data){}
+  bool data = false;
   ros::Time stamp;
 };
 
-class SingletonDataManager {
- private:
-  explicit SingletonDataManager();
-  ~SingletonDataManager() = default;
-
- public:
-  SingletonDataManager(const SingletonDataManager&) = delete;
-  SingletonDataManager& operator=(const SingletonDataManager&) = delete;
-  SingletonDataManager(SingletonDataManager&&) = delete;
-  SingletonDataManager& operator=(SingletonDataManager&&) = delete;
-  static SingletonDataManager& getInstance() {
-    static SingletonDataManager instance;
-    return instance;
-  }
-
+class DataManager {
  private:
   /*
    * Cache
    */
-  std::shared_ptr<autoware_perception_msgs::DynamicObjectArray> perception_ptr_;
-  std::shared_ptr<sensor_msgs::PointCloud2> pointcloud_ptr_;
-  std::shared_ptr<geometry_msgs::TwistStamped> vehicle_velocity_ptr_;
-  lanelet::LaneletMapPtr lanelet_map_ptr_;
-  lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
-  lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr perception_ptr_;
+  geometry_msgs::TwistStamped::ConstPtr vehicle_velocity_ptr_;
   BoolStamped lane_change_approval_;
   BoolStamped force_lane_change_;
+  geometry_msgs::PoseStamped self_pose_;
 
   // ROS parameters
   LaneChangerParameters parameters_;
@@ -95,26 +77,27 @@ class SingletonDataManager {
    * SelfPoseLinstener
    */
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
-  void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray& input_perception_msg);
-  void pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg);
-  void velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg);
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
+
+ public:
+  DataManager();
+  ~DataManager() = default;
+
+  // callbacks
+  void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_perception_msg);
+  void velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg);
   void setLaneChangerParameters(const LaneChangerParameters& parameters);
   void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
   void forceLaneChangeSignalCallback(const std_msgs::Bool& input_approval_msg);
 
-  friend class LaneChanger;
-
- public:
-  bool getDynamicObjects(std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const>& objects);
-  bool getNoGroundPointcloud(std::shared_ptr<sensor_msgs::PointCloud2 const>& pointcloud);
-  bool getCurrentSelfPose(geometry_msgs::PoseStamped& pose);
-  bool getCurrentSelfVelocity(std::shared_ptr<geometry_msgs::TwistStamped const>& twist);
-  bool getLaneletMap(lanelet::LaneletMapConstPtr& lanelet_map_ptr,
-                     lanelet::routing::RoutingGraphConstPtr& routing_graph_ptr);
-  bool getLaneChangerParameters(LaneChangerParameters& parameters);
+  // getters
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr getDynamicObjects();
+  geometry_msgs::PoseStamped getCurrentSelfPose();
+  geometry_msgs::TwistStamped::ConstPtr getCurrentSelfVelocity();
+  LaneChangerParameters getLaneChangerParameters();
   bool getLaneChangeApproval();
   bool getForceLaneChangeSignal();
+
+  bool isDataReady();
 };
 }  // namespace lane_change_planner
 

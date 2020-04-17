@@ -24,36 +24,30 @@
 #include <lanelet2_extension/utility/utilities.h>
 
 namespace lane_change_planner {
+BlockedByObstacleState::BlockedByObstacleState(const Status& status,
+                                               const std::shared_ptr<DataManager>& data_manager_ptr,
+                                               const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+
 State BlockedByObstacleState::getCurrentState() const { return State::BLOCKED_BY_OBSTACLE; }
 
-void BlockedByObstacleState::entry(const Status& status) {
-  status_ = status;
-  if (!SingletonDataManager::getInstance().getLaneChangerParameters(ros_parameters_)) {
-    ROS_ERROR_STREAM("Failed to get parameters. Please check if you set ROS parameters correctly.");
-  }
+void BlockedByObstacleState::entry() {
+  ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
   lane_change_approved_ = false;
   force_lane_change_ = false;
   found_safe_path_ = false;
-  current_lanes_ = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_follow_lane_ids);
+  current_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
 }
 
 autoware_planning_msgs::PathWithLaneId BlockedByObstacleState::getPath() const { return status_.lane_follow_path; }
 
 void BlockedByObstacleState::update() {
   // update input data
-  {
-    if (!SingletonDataManager::getInstance().getCurrentSelfVelocity(current_twist_)) {
-      ROS_ERROR_STREAM("Failed to get self velocity. Using previous velocity.");
-    }
-    if (!SingletonDataManager::getInstance().getCurrentSelfPose(current_pose_)) {
-      ROS_ERROR_STREAM("Failed to get self pose. Using previous pose.");
-    }
-    if (!SingletonDataManager::getInstance().getDynamicObjects(dynamic_objects_)) {
-      ROS_ERROR_STREAM("Failed to get dynamic objects. Using previous objects.");
-    }
-    lane_change_approved_ = SingletonDataManager::getInstance().getLaneChangeApproval();
-    force_lane_change_ = SingletonDataManager::getInstance().getForceLaneChangeSignal();
-  }
+  current_twist_ = data_manager_ptr_->getCurrentSelfVelocity();
+  current_pose_ = data_manager_ptr_->getCurrentSelfPose();
+  dynamic_objects_ = data_manager_ptr_->getDynamicObjects();
+  lane_change_approved_ = data_manager_ptr_->getLaneChangeApproval();
+  force_lane_change_ = data_manager_ptr_->getForceLaneChangeSignal();
 
   lanelet::ConstLanelet current_lane;
   lanelet::ConstLanelets right_lanes;
@@ -62,22 +56,20 @@ void BlockedByObstacleState::update() {
   const double forward_path_length = ros_parameters_.forward_path_length;
   // update lanes
   {
-    if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &current_lane)) {
+    if (!route_handler_ptr_->getClosestLaneletWithinRoute(current_pose_.pose, &current_lane)) {
       ROS_ERROR("failed to find closest lanelet within route!!!");
       return;
     }
-    // current_lanes_ = RouteHandler::getInstance().getLaneletSequence(current_lane, current_pose_.pose,
-    //                                                                 backward_path_length, forward_path_length);
     lanelet::ConstLanelet right_lane;
-    if (RouteHandler::getInstance().getRightLaneletWithinRoute(current_lane, &right_lane)) {
-      right_lanes = RouteHandler::getInstance().getLaneletSequence(right_lane, current_pose_.pose, backward_path_length,
-                                                                   forward_path_length);
+    if (route_handler_ptr_->getRightLaneletWithinRoute(current_lane, &right_lane)) {
+      right_lanes = route_handler_ptr_->getLaneletSequence(right_lane, current_pose_.pose, backward_path_length,
+                                                           forward_path_length);
     }
 
     lanelet::ConstLanelet left_lane;
-    if (RouteHandler::getInstance().getLeftLaneletWithinRoute(current_lane, &left_lane)) {
-      left_lanes = RouteHandler::getInstance().getLaneletSequence(left_lane, current_pose_.pose, backward_path_length,
-                                                                  forward_path_length);
+    if (route_handler_ptr_->getLeftLaneletWithinRoute(current_lane, &left_lane)) {
+      left_lanes = route_handler_ptr_->getLaneletSequence(left_lane, current_pose_.pose, backward_path_length,
+                                                          forward_path_length);
     }
   }
 
@@ -87,7 +79,7 @@ void BlockedByObstacleState::update() {
 
   // update lane_follow_path
   {
-    status_.lane_follow_path = RouteHandler::getInstance().getReferencePath(
+    status_.lane_follow_path = route_handler_ptr_->getReferencePath(
         current_lanes_, current_pose_.pose, backward_path_length, forward_path_length, minimum_lane_change_length);
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
   }
@@ -106,7 +98,7 @@ void BlockedByObstacleState::update() {
   status_.lane_change_lane_ids.clear();
   found_safe_path_ = false;
   if (!right_lanes.empty()) {
-    const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+    const auto lane_change_path = route_handler_ptr_->getLaneChangePath(
         current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
         forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
     status_.lane_change_lane_ids = util::getIds(right_lanes);
@@ -116,7 +108,7 @@ void BlockedByObstacleState::update() {
     }
   }
   if (!left_lanes.empty()) {
-    const auto lane_change_path = RouteHandler::getInstance().getLaneChangePath(
+    const auto lane_change_path = route_handler_ptr_->getLaneChangePath(
         current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
         forward_path_length, lane_change_prepare_duration, lane_changing_duration, minimum_lane_change_length);
     status_.lane_change_lane_ids = util::getIds(left_lanes);
@@ -154,9 +146,10 @@ State BlockedByObstacleState::getNextState() const {
   }
   return State::BLOCKED_BY_OBSTACLE;
 }
+
 bool BlockedByObstacleState::isOutOfCurrentLanes() const {
   lanelet::ConstLanelet closest_lane;
-  if (!RouteHandler::getInstance().getClosestLaneletWithinRoute(current_pose_.pose, &closest_lane)) {
+  if (!route_handler_ptr_->getClosestLaneletWithinRoute(current_pose_.pose, &closest_lane)) {
     ROS_ERROR("failed to find closest lanelet within route!!!");
     return true;
   }
@@ -173,9 +166,9 @@ bool BlockedByObstacleState::isLaneBlocked() const {
   constexpr double max_check_distance = 100;
   double static_obj_velocity_thresh = ros_parameters_.static_obstacle_velocity_thresh;
   const double lane_changeable_distance_left =
-      RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
+      route_handler_ptr_->getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::LEFT);
   const double lane_changeable_distance_right =
-      RouteHandler::getInstance().getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::RIGHT);
+      route_handler_ptr_->getLaneChangeableDistance(current_pose_.pose, LaneChangeDirection::RIGHT);
   const double lane_changeable_distance = std::max(lane_changeable_distance_left, lane_changeable_distance_right);
   const double check_distance = std::min(max_check_distance, lane_changeable_distance);
   const auto polygon = lanelet::utils::getPolygonFromArcLength(current_lanes_, arc.length, arc.length + check_distance);
@@ -213,7 +206,7 @@ bool BlockedByObstacleState::hasEnoughDistance() const {
       lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
   const double minimum_lane_change_length = ros_parameters_.minimum_lane_change_length;
   lane_change_total_distance = std::max(lane_change_total_distance, minimum_lane_change_length * 2);
-  const auto target_lanes = RouteHandler::getInstance().getLaneletsFromIds(status_.lane_change_lane_ids);
+  const auto target_lanes = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
 
   if (target_lanes.empty()) {
     return false;

@@ -34,7 +34,7 @@ namespace lane_change_planner {
 
 class StateMachine {
  public:
-  StateMachine();
+  StateMachine(const std::shared_ptr<DataManager>& data_manager_ptr, const std::shared_ptr<RouteHandler>& route_handler_ptr);
   void init();
   void init(const autoware_planning_msgs::Route& route);
   void updateState();
@@ -42,9 +42,9 @@ class StateMachine {
   Status getStatus() const;
 
  private:
-  autoware_planning_msgs::PathWithLaneId path_;
   std::unique_ptr<StateBase> state_obj_ptr_;
-  ros::NodeHandle pnh_;
+  std::shared_ptr<DataManager> data_manager_ptr_;
+  std::shared_ptr<RouteHandler> route_handler_ptr_;
   ros::Publisher path_marker_publisher_;
 };
 }  // namespace lane_change_planner
