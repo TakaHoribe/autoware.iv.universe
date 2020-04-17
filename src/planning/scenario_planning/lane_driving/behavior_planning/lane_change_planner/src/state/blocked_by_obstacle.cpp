@@ -24,15 +24,15 @@
 #include <lanelet2_extension/utility/utilities.h>
 
 namespace lane_change_planner {
+BlockedByObstacleState::BlockedByObstacleState(const Status& status,
+                                               const std::shared_ptr<DataManager>& data_manager_ptr,
+                                               const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+
 State BlockedByObstacleState::getCurrentState() const { return State::BLOCKED_BY_OBSTACLE; }
 
-void BlockedByObstacleState::entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-                                   const std::shared_ptr<RouteHandler>& route_handler_ptr) {
-  data_manager_ptr_ = data_manager_ptr;
-  route_handler_ptr_ = route_handler_ptr;
-  status_ = status;
+void BlockedByObstacleState::entry() {
   ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
-
   lane_change_approved_ = false;
   force_lane_change_ = false;
   found_safe_path_ = false;

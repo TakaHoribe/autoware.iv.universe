@@ -46,14 +46,15 @@ struct Status {
 
 class StateBase {
  protected:
+  StateBase(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+             const std::shared_ptr<RouteHandler>& route_handler_ptr);
   Status status_;
   LaneChangerParameters ros_parameters_;
   std::shared_ptr<DataManager> data_manager_ptr_;
   std::shared_ptr<RouteHandler> route_handler_ptr_;
 
  public:
-  virtual void entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-                     const std::shared_ptr<RouteHandler>& route_handler_ptr) = 0;
+  virtual void entry() = 0;
   virtual void update() = 0;
   virtual State getNextState() const = 0;
   virtual State getCurrentState() const = 0;

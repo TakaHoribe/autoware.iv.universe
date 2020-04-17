@@ -49,11 +49,11 @@ class BlockedByObstacleState : public StateBase {
                             const autoware_planning_msgs::PathWithLaneId& path) const;
 
  public:
-  BlockedByObstacleState() = default;
+  BlockedByObstacleState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+             const std::shared_ptr<RouteHandler>& route_handler_ptr);
 
   // override virtual functions
-  void entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr) override;
+  void entry() override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;

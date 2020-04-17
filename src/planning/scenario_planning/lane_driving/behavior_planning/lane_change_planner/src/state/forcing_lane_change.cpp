@@ -20,15 +20,15 @@
 #include <lane_change_planner/utilities.h>
 
 namespace lane_change_planner {
+ForcingLaneChangeState::ForcingLaneChangeState(const Status& status,
+                                               const std::shared_ptr<DataManager>& data_manager_ptr,
+                                               const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+
 State ForcingLaneChangeState::getCurrentState() const { return State::FORCING_LANE_CHANGE; }
 
-void ForcingLaneChangeState::entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-                                   const std::shared_ptr<RouteHandler>& route_handler_ptr) {
-  data_manager_ptr_ = data_manager_ptr;
-  route_handler_ptr_ = route_handler_ptr;
-  status_ = status;
+void ForcingLaneChangeState::entry() {
   ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
-
   original_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
   target_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
 }

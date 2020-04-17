@@ -17,10 +17,13 @@
 #include <lane_change_planner/state/aborting_lane_change.h>
 
 namespace lane_change_planner {
+AbortingLaneChangeState::AbortingLaneChangeState(const Status& status,
+                                                 const std::shared_ptr<DataManager>& data_manager_ptr,
+                                                 const std::shared_ptr<RouteHandler>& route_handler_ptr)
+    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
 State AbortingLaneChangeState::getCurrentState() const { return State::ABORTING_LANE_CHANGE; }
 
-void AbortingLaneChangeState::entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-                                    const std::shared_ptr<RouteHandler>& route_handler_ptr) {}
+void AbortingLaneChangeState::entry() {}
 
 autoware_planning_msgs::PathWithLaneId AbortingLaneChangeState::getPath() const { return status_.lane_follow_path; }
 

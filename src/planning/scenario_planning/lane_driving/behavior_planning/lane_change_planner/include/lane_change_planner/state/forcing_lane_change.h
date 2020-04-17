@@ -38,10 +38,10 @@ class ForcingLaneChangeState : public StateBase {
   lanelet::ConstLanelets target_lanes_;
 
  public:
-  ForcingLaneChangeState() = default;
+  ForcingLaneChangeState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
+             const std::shared_ptr<RouteHandler>& route_handler_ptr);
   // override virtual functions
-  void entry(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr) override;
+  void entry() override;
   void update() override;
   State getNextState() const override;
   State getCurrentState() const override;
