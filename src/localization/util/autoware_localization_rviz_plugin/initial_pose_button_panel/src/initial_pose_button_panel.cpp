@@ -102,7 +102,7 @@ void InitialPoseButtonPanel::pushInitialzeButton() {
   initialize_button_->setEnabled(false);
 
   status_label_->setStyleSheet("QLabel { background-color : dodgerblue;}");
-  status_label_->setText("FOOOOOOOOOOOOOOOOOOOOOOOO");
+  status_label_->setText("Initialzing...");
 
   std::thread thread([this] {
     autoware_localization_srvs::PoseWithCovarianceStamped srv;
