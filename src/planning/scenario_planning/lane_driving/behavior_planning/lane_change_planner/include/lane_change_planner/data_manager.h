@@ -53,9 +53,8 @@ class SelfPoseLinstener {
 };
 
 struct BoolStamped {
-  BoolStamped(bool data) { data = data; }
-  BoolStamped() { data = false; }
-  bool data;
+  explicit BoolStamped(bool in_data):data(in_data){}
+  bool data = false;
   ros::Time stamp;
 };
 
