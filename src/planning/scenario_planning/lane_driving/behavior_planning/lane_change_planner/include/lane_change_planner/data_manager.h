@@ -84,7 +84,7 @@ class DataManager {
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
 
  public:
-  explicit DataManager();
+  DataManager();
   ~DataManager() = default;
 
   // callbacks

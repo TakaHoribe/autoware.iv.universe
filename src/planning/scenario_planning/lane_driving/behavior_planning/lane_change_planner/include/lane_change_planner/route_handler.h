@@ -35,7 +35,7 @@ enum class LaneChangeDirection { NONE, LEFT, RIGHT };
 
 class RouteHandler {
  public:
-  explicit RouteHandler();
+  RouteHandler();
   ~RouteHandler() = default;
 
  private:
