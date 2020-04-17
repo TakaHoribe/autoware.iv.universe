@@ -46,8 +46,8 @@ void RingOutlierFilterNodelet::filter(
     return;
   }
   std::vector<pcl::PointCloud<pcl::PointXYZIRADT>> pcl_input_ring_array;
-  pcl_input_ring_array.resize(32);  // TODO
-  for (const auto & p : pcl_input->points) {
+  pcl_input_ring_array.resize(128);  // TODO
+  for (const auto& p : pcl_input->points) {
     pcl_input_ring_array.at(p.ring).push_back(p);
   }
 
