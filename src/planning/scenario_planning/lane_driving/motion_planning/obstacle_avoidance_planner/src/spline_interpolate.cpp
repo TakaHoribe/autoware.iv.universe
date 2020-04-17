@@ -17,7 +17,7 @@
 #include <iostream>
 #include <vector>
 
-#include "eb_path_planner/spline_interpolate.h"
+#include "obstacle_avoidance_planner/spline_interpolate.h"
 
 namespace spline {
 

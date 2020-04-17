@@ -34,31 +34,32 @@ include_directories(
 add_compile_options(-std=c++14)
 
 
-add_executable(eb_path_planner_node
-  src/eb_path_planner/util.cpp
-  src/eb_path_planner/spline_interpolate.cpp
-  src/eb_path_planner/eb_path_smoother.cpp
-  src/eb_path_planner/modify_reference_path.cpp
-  src/eb_path_planner/node.cpp
-  src/eb_path_planner/main.cpp)
+add_executable(obstacle_avoidance_planner_node
+  src/util.cpp
+  src/debug.cpp
+  src/spline_interpolate.cpp
+  src/eb_path_optimizer.cpp
+  src/process_cv.cpp
+  src/node.cpp
+  src/main.cpp)
 
-add_dependencies(eb_path_planner_node
+add_dependencies(obstacle_avoidance_planner_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
 
-target_include_directories(eb_path_planner_node
+target_include_directories(obstacle_avoidance_planner_node
   PUBLIC
     ${Opencv_INCLUDE_DIRS}
 )
 
-target_link_libraries(eb_path_planner_node
+target_link_libraries(obstacle_avoidance_planner_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
 
 install(
   TARGETS
-    eb_path_planner_node
+    obstacle_avoidance_planner_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -66,6 +67,14 @@ install(
 
 install(
   DIRECTORY
+    config
     launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(
+  DIRECTORY
+    scripts
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  USE_SOURCE_PERMISSIONS
 )
