@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ACCEL_MAP_CONVERTER_BRAKE_MAP_H
-#define ACCEL_MAP_CONVERTER_BRAKE_MAP_H
+#ifndef RAW_VEHICLE_CMD_CONVERTER_ACCEL_MAP_H
+#define RAW_VEHICLE_CMD_CONVERTER_ACCEL_MAP_H
 
 #include <algorithm>
 #include <iostream>
@@ -24,23 +24,22 @@
 
 #include <ros/ros.h>
 
-#include "accel_map_converter/csv_loader.h"
-#include "accel_map_converter/interpolate.h"
+#include "raw_vehicle_cmd_converter/csv_loader.h"
+#include "raw_vehicle_cmd_converter/interpolate.h"
 
-class BrakeMap {
+class AccelMap {
  public:
-  BrakeMap();
-  ~BrakeMap();
+  AccelMap();
+  ~AccelMap();
 
-  bool readBrakeMapFromCSV(std::string csv_path);
-  bool getBrake(double acc, double vel, double& brake);
+  bool readAccelMapFromCSV(std::string csv_path);
+  bool getThrottle(double acc, double vel, double& throttle);
 
  private:
   std::string vehicle_name_;
   std::vector<double> vel_index_;
-  std::vector<double> brake_index_;
-  std::vector<double> brake_index_rev_;
-  std::vector<std::vector<double>> brake_map_;
+  std::vector<double> throttle_index_;
+  std::vector<std::vector<double>> accel_map_;
 };
 
 #endif

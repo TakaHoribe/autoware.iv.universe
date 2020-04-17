@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ACCEL_MAP_CONVERTER_CSV_LOADER_H
-#define ACCEL_MAP_CONVERTER_CSV_LOADER_H
+#ifndef RAW_VEHICLE_CMD_CONVERTER_CSV_LOADER_H
+#define RAW_VEHICLE_CMD_CONVERTER_CSV_LOADER_H
 
 #include <fstream>
 #include <iostream>

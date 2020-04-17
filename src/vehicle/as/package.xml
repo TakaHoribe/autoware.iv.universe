@@ -21,5 +21,4 @@
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
 
-  <exec_depend>accel_map_converter</exec_depend>
 </package>

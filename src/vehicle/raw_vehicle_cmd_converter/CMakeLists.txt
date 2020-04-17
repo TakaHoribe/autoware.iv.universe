@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(accel_map_converter)
+project(raw_vehicle_cmd_converter)
 add_compile_options(-std=c++11)
 
 find_package(
@@ -30,16 +30,16 @@ add_library(accel_map_converter
 target_link_libraries(accel_map_converter ${catkin_LIBRARIES})
 add_dependencies(accel_map_converter ${catkin_EXPORTED_TARGETS})
 
-add_executable(accel_map_converter_node
+add_executable(raw_vehicle_cmd_converter_node
   src/node.cpp
   src/main.cpp
 )
-add_dependencies(accel_map_converter_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(accel_map_converter_node ${catkin_LIBRARIES} accel_map_converter)
+add_dependencies(raw_vehicle_cmd_converter_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(raw_vehicle_cmd_converter_node ${catkin_LIBRARIES} accel_map_converter)
 
 install(TARGETS
-  accel_map_converter
-  accel_map_converter_node
+    accel_map_converter
+    raw_vehicle_cmd_converter_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

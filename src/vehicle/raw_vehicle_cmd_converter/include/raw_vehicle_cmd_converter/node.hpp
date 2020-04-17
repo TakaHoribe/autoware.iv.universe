@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VEHICLE_ACCEL_MAP_CONVERTER_INCLUDE_ACCEL_MAP_CONVERTER_NODE_HPP_
-#define VEHICLE_ACCEL_MAP_CONVERTER_INCLUDE_ACCEL_MAP_CONVERTER_NODE_HPP_
+#ifndef VEHICLE_RAW_VEHICLE_CMD_CONVERTER_INCLUDE_RAW_VEHICLE_CMD_CONVERTER_NODE_HPP_
+#define VEHICLE_RAW_VEHICLE_CMD_CONVERTER_INCLUDE_RAW_VEHICLE_CMD_CONVERTER_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -28,8 +28,8 @@
 #include <autoware_vehicle_msgs/VehicleCommand.h>
 #include <autoware_vehicle_msgs/RawVehicleCommand.h>
 
-#include <accel_map_converter/accel_map.h>
-#include <accel_map_converter/brake_map.h>
+#include <raw_vehicle_cmd_converter/accel_map.h>
+#include <raw_vehicle_cmd_converter/brake_map.h>
 
 class AccelMapConverter {
  public:
@@ -57,4 +57,4 @@ class AccelMapConverter {
                          double* desired_brake);
 };
 
-#endif  // VEHICLE_ACCEL_MAP_CONVERTER_INCLUDE_ACCEL_MAP_CONVERTER_NODE_HPP_
+#endif  // VEHICLE_RAW_VEHICLE_CMD_CONVERTER_INCLUDE_RAW_VEHICLE_CMD_CONVERTER_NODE_HPP_

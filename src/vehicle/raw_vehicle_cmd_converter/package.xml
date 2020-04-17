@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>accel_map_converter</name>
+  <name>raw_vehicle_cmd_converter</name>
   <version>0.1.0</version>
-  <description>The accel_map_converter package</description>
+  <description>The raw_vehicle_cmd_converter package</description>
   <maintainer email="horibe.takamasa@gmail.com">Horibe Takamasa</maintainer>
+  <author email="mkuri8m@gmail.com">Makoto Kurihara</author>
   <author email="horibe.takamasa@gmail.com">Horibe Takamasa</author>
   <license>Apache 2</license>
 
