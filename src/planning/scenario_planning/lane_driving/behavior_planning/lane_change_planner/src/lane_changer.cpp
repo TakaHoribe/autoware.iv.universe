@@ -29,7 +29,6 @@ void LaneChanger::init() {
   // data_manager
   data_manager_ptr_ = std::make_shared<DataManager>();
   route_handler_ptr_ = std::make_shared<RouteHandler>();
-  points_subscriber_ = pnh_.subscribe("input/points", 1, &DataManager::pointcloudCallback, &(*data_manager_ptr_));
   velocity_subscriber_ = pnh_.subscribe("input/velocity", 1, &DataManager::velocityCallback, &(*data_manager_ptr_));
   perception_subscriber_ =
       pnh_.subscribe("input/perception", 1, &DataManager::perceptionCallback, &(*data_manager_ptr_));

@@ -65,11 +65,7 @@ class DataManager {
    * Cache
    */
   autoware_perception_msgs::DynamicObjectArray::ConstPtr perception_ptr_;
-  sensor_msgs::PointCloud2::ConstPtr pointcloud_ptr_;
   geometry_msgs::TwistStamped::ConstPtr vehicle_velocity_ptr_;
-  lanelet::LaneletMapPtr lanelet_map_ptr_;
-  lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
-  lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   BoolStamped lane_change_approval_;
   BoolStamped force_lane_change_;
   geometry_msgs::PoseStamped self_pose_;
@@ -89,16 +85,13 @@ class DataManager {
 
   // callbacks
   void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_perception_msg);
-  void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud_msg);
   void velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg);
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg);
   void setLaneChangerParameters(const LaneChangerParameters& parameters);
   void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
   void forceLaneChangeSignalCallback(const std_msgs::Bool& input_approval_msg);
 
   // getters
   autoware_perception_msgs::DynamicObjectArray::ConstPtr getDynamicObjects();
-  sensor_msgs::PointCloud2::ConstPtr getNoGroundPointcloud();
   geometry_msgs::PoseStamped getCurrentSelfPose();
   geometry_msgs::TwistStamped::ConstPtr getCurrentSelfVelocity();
   LaneChangerParameters getLaneChangerParameters();

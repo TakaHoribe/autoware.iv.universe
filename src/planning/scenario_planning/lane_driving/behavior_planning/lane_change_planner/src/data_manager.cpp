@@ -26,17 +26,8 @@ void DataManager::perceptionCallback(const autoware_perception_msgs::DynamicObje
   perception_ptr_ = input_perception_msg_ptr;
 }
 
-void DataManager::pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud_msg_ptr) {
-  pointcloud_ptr_ = input_pointcloud_msg_ptr;
-}
-
 void DataManager::velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg_ptr) {
   vehicle_velocity_ptr_ = input_twist_msg_ptr;
-}
-
-void DataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg) {
-  lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
-  lanelet::utils::conversion::fromBinMsg(input_map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
 }
 
 void DataManager::laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg) {
@@ -57,8 +48,6 @@ void DataManager::setLaneChangerParameters(const LaneChangerParameters& paramete
 autoware_perception_msgs::DynamicObjectArray::ConstPtr DataManager::getDynamicObjects() {
   return perception_ptr_;
 }
-
-sensor_msgs::PointCloud2::ConstPtr DataManager::getNoGroundPointcloud() { return pointcloud_ptr_; }
 
 geometry_msgs::TwistStamped::ConstPtr DataManager::getCurrentSelfVelocity() {
   return vehicle_velocity_ptr_;
