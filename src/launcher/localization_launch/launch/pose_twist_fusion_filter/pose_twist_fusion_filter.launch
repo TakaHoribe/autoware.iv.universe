@@ -3,6 +3,7 @@
   <include file="$(find ekf_localizer)/launch/ekf_localizer.launch">
     <arg name="enable_yaw_bias_estimation" default="False"/>
     <arg name="use_pose_with_covariance" default="True"/>
+    <arg name="use_twist_with_covariance" default="True"/>
     <arg name="tf_rate" default="50.0"/>
     <arg name="twist_rate" default="25.0"/>
     <arg name="input_initial_pose_name" default="/initialpose3d"/>
