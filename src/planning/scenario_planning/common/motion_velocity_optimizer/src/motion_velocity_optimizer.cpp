@@ -413,10 +413,10 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(7 * N - 1, 7 * N - 1);  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(5 * N + 1 + 2*(N - 1), 4 * N + 1);  // the matrix size depends on constraint numbers.
 
-  std::vector<double> lower_bound(7 * N - 1, 0.0);
-  std::vector<double> upper_bound(7 * N - 1, 0.0);
+  std::vector<double> lower_bound(5 * N + 1 + 2*(N - 1), 0.0);
+  std::vector<double> upper_bound(5 * N + 1 + 2*(N - 1), 0.0);
 
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 1, 4 * N + 1);
   std::vector<double> q(4 * N + 1, 0.0);
@@ -552,6 +552,7 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     upper_bound[i + N - 1] = 0;
   }
 
+  
   // constraint for soft constraint
   for (unsigned int i = 5 * N - 1; i < 6 * N - 1; ++i) {
     const unsigned int id = i - (5 * N - 1) + 2 * N;
