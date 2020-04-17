@@ -498,7 +498,7 @@ Visualization Manager:
               Shaft Length: 0.6000000238418579
               Shaft Radius: 0.30000001192092896
               Shape: Arrow
-              Topic: /localization/pose_estimator/ndt_pose_with_covariance
+              Topic: /localization/pose_estimator/pose_with_covariance
               Unreliable: false
               Value: true
             - Buffer Size: 200
@@ -509,7 +509,7 @@ Visualization Manager:
                 Value: true
                 Width: 0.10000000149011612
               Name: PoseHistory
-              Topic: /localization/pose_estimator/ndt_pose
+              Topic: /localization/pose_estimator/pose
               Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: true

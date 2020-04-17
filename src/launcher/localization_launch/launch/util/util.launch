@@ -7,7 +7,7 @@
   <arg name="output_downsample_sensor_points_topic" default="downsample/pointcloud" doc="Sensor points topic"/>
 
   <!-- frame_ids -->
-  <arg name="base_frame" default="base_link" doc="Location of output results (ndt_pose, ndt_pose_with_covariance)" />
+  <arg name="base_frame" default="base_link" doc="Vehicle reference frame" />
 
   <!-- pose_initializer -->
   <include file="$(find pose_initializer)/launch/pose_initializer.launch">
