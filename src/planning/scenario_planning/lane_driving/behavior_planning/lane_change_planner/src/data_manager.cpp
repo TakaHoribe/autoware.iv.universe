@@ -65,12 +65,7 @@ geometry_msgs::TwistStamped::ConstPtr DataManager::getCurrentSelfVelocity() {
 }
 
 geometry_msgs::PoseStamped DataManager::getCurrentSelfPose() {
-  std_msgs::Header header;
-  header.frame_id = "map";
-  header.stamp = ros::Time(0);
-  self_pose_listener_ptr_->getSelfPose(self_pose_.pose, header);
-  self_pose_.header = header;
-
+  self_pose_listener_ptr_->getSelfPose(self_pose_);
   return self_pose_;
 }
 
@@ -80,9 +75,9 @@ bool DataManager::getLaneChangeApproval() {
   constexpr double timeout = 0.5;
   if (ros::Time::now() - lane_change_approval_.stamp > ros::Duration(timeout)) {
     return false;
-  } else {
-    return lane_change_approval_.data;
   }
+
+  return lane_change_approval_.data;
 }
 
 bool DataManager::getForceLaneChangeSignal() {
@@ -113,17 +108,20 @@ bool SelfPoseLinstener::isSelfPoseReady() {
   return tf_buffer_.canTransform("map", "base_link", ros::Time(0), ros::Duration(0.1));
 }
 
-bool SelfPoseLinstener::getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header) {
+bool SelfPoseLinstener::getSelfPose(geometry_msgs::PoseStamped& self_pose) {
   try {
     geometry_msgs::TransformStamped transform;
-    transform = tf_buffer_.lookupTransform(header.frame_id, "base_link", header.stamp, ros::Duration(0.1));
-    self_pose.position.x = transform.transform.translation.x;
-    self_pose.position.y = transform.transform.translation.y;
-    self_pose.position.z = transform.transform.translation.z;
-    self_pose.orientation.x = transform.transform.rotation.x;
-    self_pose.orientation.y = transform.transform.rotation.y;
-    self_pose.orientation.z = transform.transform.rotation.z;
-    self_pose.orientation.w = transform.transform.rotation.w;
+    std::string map_frame = "map";
+    transform = tf_buffer_.lookupTransform(map_frame, "base_link", ros::Time(0), ros::Duration(0.1));
+    self_pose.pose.position.x = transform.transform.translation.x;
+    self_pose.pose.position.y = transform.transform.translation.y;
+    self_pose.pose.position.z = transform.transform.translation.z;
+    self_pose.pose.orientation.x = transform.transform.rotation.x;
+    self_pose.pose.orientation.y = transform.transform.rotation.y;
+    self_pose.pose.orientation.z = transform.transform.rotation.z;
+    self_pose.pose.orientation.w = transform.transform.rotation.w;
+    self_pose.header.stamp = ros::Time::now();
+    self_pose.header.frame_id = map_frame;
     return true;
   } catch (tf2::TransformException& ex) {
     ROS_ERROR_STREAM_THROTTLE(1, "failed to find self pose :" << ex.what());

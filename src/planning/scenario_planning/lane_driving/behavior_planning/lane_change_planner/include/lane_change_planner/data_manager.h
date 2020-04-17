@@ -44,7 +44,7 @@ namespace lane_change_planner {
 class SelfPoseLinstener {
  public:
   SelfPoseLinstener();
-  bool getSelfPose(geometry_msgs::Pose& self_pose, const std_msgs::Header& header);
+  bool getSelfPose(geometry_msgs::PoseStamped& self_pose);
   bool isSelfPoseReady();
 
  private:
