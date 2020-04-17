@@ -22,16 +22,16 @@ DataManager::DataManager() : is_parameter_set_(false), lane_change_approval_(fal
   self_pose_listener_ptr_ = std::make_shared<SelfPoseLinstener>();
 }
 
-void DataManager::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray& input_perception_msg) {
-  perception_ptr_ = std::make_shared<autoware_perception_msgs::DynamicObjectArray>(input_perception_msg);
+void DataManager::perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_perception_msg_ptr) {
+  perception_ptr_ = input_perception_msg_ptr;
 }
 
-void DataManager::pointcloudCallback(const sensor_msgs::PointCloud2& input_pointcloud_msg) {
-  pointcloud_ptr_ = std::make_shared<sensor_msgs::PointCloud2>(input_pointcloud_msg);
+void DataManager::pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& input_pointcloud_msg_ptr) {
+  pointcloud_ptr_ = input_pointcloud_msg_ptr;
 }
 
-void DataManager::velocityCallback(const geometry_msgs::TwistStamped& input_twist_msg) {
-  vehicle_velocity_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(input_twist_msg);
+void DataManager::velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg_ptr) {
+  vehicle_velocity_ptr_ = input_twist_msg_ptr;
 }
 
 void DataManager::mapCallback(const autoware_lanelet2_msgs::MapBin& input_map_msg) {
@@ -54,13 +54,13 @@ void DataManager::setLaneChangerParameters(const LaneChangerParameters& paramete
   parameters_ = parameters;
 }
 
-std::shared_ptr<autoware_perception_msgs::DynamicObjectArray const> DataManager::getDynamicObjects() {
+autoware_perception_msgs::DynamicObjectArray::ConstPtr DataManager::getDynamicObjects() {
   return perception_ptr_;
 }
 
-std::shared_ptr<sensor_msgs::PointCloud2 const> DataManager::getNoGroundPointcloud() { return pointcloud_ptr_; }
+sensor_msgs::PointCloud2::ConstPtr DataManager::getNoGroundPointcloud() { return pointcloud_ptr_; }
 
-std::shared_ptr<geometry_msgs::TwistStamped const> DataManager::getCurrentSelfVelocity() {
+geometry_msgs::TwistStamped::ConstPtr DataManager::getCurrentSelfVelocity() {
   return vehicle_velocity_ptr_;
 }
 
