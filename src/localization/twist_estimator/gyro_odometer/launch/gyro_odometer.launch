@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="input_vehicle_twist_topic" default="/vehicle/status/twist" doc="" />
-  <arg name="input_imu_topic" default="/sensing/imu/imu_raw" doc="" />
+  <arg name="input_imu_topic" default="/sensing/imu/imu_data" doc="" />
 
   <arg name="output_twist_topic" default="gyro_twist" doc="" />
   
