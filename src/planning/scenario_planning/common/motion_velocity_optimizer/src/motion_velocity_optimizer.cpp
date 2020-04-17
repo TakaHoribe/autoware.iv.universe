@@ -413,10 +413,10 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3 * N + 1 + 2 * (N - 1), 3 * N + 1 + 2 *(N - 1));  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(7 * N - 1, 7 * N - 1);  // the matrix size depends on constraint numbers.
 
-  std::vector<double> lower_bound(3 * N + 1 + 2 * (N - 1), 0.0);
-  std::vector<double> upper_bound(3 * N + 1 + 2 * (N - 1), 0.0);
+  std::vector<double> lower_bound(7 * N - 1, 0.0);
+  std::vector<double> upper_bound(7 * N - 1, 0.0);
 
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 1, 4 * N + 1);
   std::vector<double> q(4 * N + 1, 0.0);
@@ -456,16 +456,25 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
   for (unsigned int i = 4*N; i < 4*N + (N-1); ++i) { // jerk
     q[i] = smooth_weight;
   }
-  #endif
-  {
-    q[4*N] = smooth_weight;
-  }
+
   for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
     P(i, i) += over_v_weight;
   }
 
   for (unsigned int i = 3 * N; i < 4 * N; ++i) {  // over acceleration cost
     P(i, i) += over_a_weight;
+  }
+  #endif
+  {
+    q[4*N] = smooth_weight;
+  }
+
+  for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
+    q[i] = over_v_weight;
+  }
+
+  for (unsigned int i = 3 * N; i < 4 * N; ++i) {  // over acceleration cost
+    q[i] = over_a_weight;
   }
 
   #if 0
@@ -541,6 +550,18 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     A(i + N - 1, ip) = -1;
     lower_bound[i + N - 1] = - OSQP_INFTY;
     upper_bound[i + N - 1] = 0;
+  }
+
+  // constraint for soft constraint
+  for (unsigned int i = 5 * N - 1; i < 6 * N - 1; ++i) {
+    const unsigned int id = i - (5 * N - 1) + 2 * N;
+    const unsigned int is = i - (5 * N - 1) + 3 * N;
+    A(i, id) = 1;
+    A(i + N, is) = 1;
+    lower_bound[i] = 0;
+    upper_bound[i] = OSQP_INFTY;
+    lower_bound[i + N] = 0;
+    upper_bound[i + N] = OSQP_INFTY;
   }
 
   #if 0 // temporary: don't consider max jerk constraints
