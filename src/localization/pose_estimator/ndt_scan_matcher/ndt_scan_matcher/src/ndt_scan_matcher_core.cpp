@@ -364,8 +364,21 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   result_pose_stamped_msg.header.frame_id = map_frame_;
   result_pose_stamped_msg.pose = result_pose_msg;
 
+  geometry_msgs::PoseWithCovarianceStamped result_pose_with_cov_msg;
+  result_pose_with_cov_msg.header.stamp = sensor_ros_time;
+  result_pose_with_cov_msg.header.frame_id = map_frame_;
+  result_pose_with_cov_msg.pose.pose = result_pose_msg;
+  //TODO temporary value
+  result_pose_with_cov_msg.pose.covariance[0] = 0.025;
+  result_pose_with_cov_msg.pose.covariance[1 * 6 + 1] = 0.025;
+  result_pose_with_cov_msg.pose.covariance[2 * 6 + 2] = 0.025;
+  result_pose_with_cov_msg.pose.covariance[3 * 6 + 3] = 0.000625;
+  result_pose_with_cov_msg.pose.covariance[4 * 6 + 4] = 0.000625;
+  result_pose_with_cov_msg.pose.covariance[5 * 6 + 5] = 0.000625;
+
   if (is_converged) {
     ndt_pose_pub_.publish(result_pose_stamped_msg);
+    ndt_pose_with_covariance_pub_.publish(result_pose_with_cov_msg);
   }
 
   publishTF(map_frame_, ndt_base_frame_, result_pose_stamped_msg);
@@ -377,12 +390,6 @@ void NDTScanMatcher::callbackSensorPoints(const sensor_msgs::PointCloud2::ConstP
   sensor_points_mapTF_msg.header.stamp = sensor_ros_time;
   sensor_points_mapTF_msg.header.frame_id = map_frame_;
   sensor_aligned_pose_pub_.publish(sensor_points_mapTF_msg);
-
-  geometry_msgs::PoseWithCovarianceStamped result_pose_with_cov_msg;
-  result_pose_with_cov_msg.header.stamp = sensor_ros_time;
-  result_pose_with_cov_msg.header.frame_id = map_frame_;
-  result_pose_with_cov_msg.pose.pose = result_pose_msg;
-  ndt_pose_with_covariance_pub_.publish(result_pose_with_cov_msg);
 
   initial_pose_with_covariance_pub_.publish(initial_pose_cov_msg);
 

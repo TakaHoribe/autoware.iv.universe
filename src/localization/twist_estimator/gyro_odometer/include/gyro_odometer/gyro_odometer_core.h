@@ -24,8 +24,8 @@
 
 #include <std_msgs/Float32.h>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <sensor_msgs/Imu.h>
 
 class GyroOdometer {
@@ -45,6 +45,7 @@ class GyroOdometer {
   ros::Subscriber imu_sub_;
 
   ros::Publisher twist_pub_;
+  ros::Publisher twist_with_covariance_pub_;
   ros::Publisher linear_x_pub_;
   ros::Publisher angular_z_pub_;
 
