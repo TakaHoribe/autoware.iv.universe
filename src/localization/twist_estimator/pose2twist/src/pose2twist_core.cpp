@@ -20,7 +20,9 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-Pose2Twist::Pose2Twist(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_(nh), private_nh_(private_nh) {
+Pose2Twist::Pose2Twist(ros::NodeHandle nh, ros::NodeHandle private_nh)
+: nh_(nh), private_nh_(private_nh)
+{
   pose_sub_ = nh_.subscribe("pose", 100, &Pose2Twist::callbackPose, this);
 
   twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
@@ -30,7 +32,8 @@ Pose2Twist::Pose2Twist(ros::NodeHandle nh, ros::NodeHandle private_nh) : nh_(nh)
 
 Pose2Twist::~Pose2Twist() {}
 
-double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
+double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
+{
   double diff_rad = lhs_rad - rhs_rad;
   if (diff_rad > M_PI) {
     diff_rad = diff_rad - 2 * M_PI;
@@ -41,17 +44,19 @@ double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
 }
 
 // x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose& pose) {
+geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose & pose)
+{
   geometry_msgs::Vector3 rpy;
   tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
   return rpy;
 }
 
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped& pose) { return getRPY(pose.pose); }
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped & pose) { return getRPY(pose.pose); }
 
-geometry_msgs::TwistStamped calcTwist(const geometry_msgs::PoseStamped& pose_a,
-                                      const geometry_msgs::PoseStamped& pose_b) {
+geometry_msgs::TwistStamped calcTwist(
+  const geometry_msgs::PoseStamped & pose_a, const geometry_msgs::PoseStamped & pose_b)
+{
   const double dt = (pose_b.header.stamp - pose_a.header.stamp).toSec();
 
   if (dt == 0) {
@@ -76,7 +81,8 @@ geometry_msgs::TwistStamped calcTwist(const geometry_msgs::PoseStamped& pose_a,
   geometry_msgs::TwistStamped twist;
   twist.header = pose_b.header;
   twist.twist.linear.x =
-      std::sqrt(std::pow(diff_xyz.x, 2.0) + std::pow(diff_xyz.y, 2.0) + std::pow(diff_xyz.z, 2.0)) / dt;
+    std::sqrt(std::pow(diff_xyz.x, 2.0) + std::pow(diff_xyz.y, 2.0) + std::pow(diff_xyz.z, 2.0)) /
+    dt;
   twist.twist.linear.y = 0;
   twist.twist.linear.z = 0;
   twist.twist.angular.x = diff_rpy.x / dt;
@@ -86,7 +92,8 @@ geometry_msgs::TwistStamped calcTwist(const geometry_msgs::PoseStamped& pose_a,
   return twist;
 }
 
-void Pose2Twist::callbackPose(const geometry_msgs::PoseStamped::ConstPtr& pose_msg_ptr) {
+void Pose2Twist::callbackPose(const geometry_msgs::PoseStamped::ConstPtr & pose_msg_ptr)
+{
   // TODO check time stamp diff
   // TODO check suddenly move
   // TODO apply low pass filter

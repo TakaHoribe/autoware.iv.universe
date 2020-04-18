@@ -20,22 +20,27 @@
 #include "pointcloud_preprocessor/CompareMapFilterConfig.h"
 #include "pointcloud_preprocessor/filter.h"
 
-namespace pointcloud_preprocessor {
-class VoxelBasedCompareMapFilterNodelet : public pointcloud_preprocessor::Filter {
- protected:
-  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::CompareMapFilterConfig> > srv_;
-  virtual void filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices, PointCloud2& output);
+namespace pointcloud_preprocessor
+{
+class VoxelBasedCompareMapFilterNodelet : public pointcloud_preprocessor::Filter
+{
+protected:
+  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::CompareMapFilterConfig> >
+    srv_;
+  virtual void filter(
+    const PointCloud2::ConstPtr & input, const IndicesPtr & indices, PointCloud2 & output);
   virtual void subscribe();
   virtual void unsubscribe();
 
-  bool child_init(ros::NodeHandle& nh, bool& has_service);
-  void config_callback(pointcloud_preprocessor::CompareMapFilterConfig& config, uint32_t level);
-  void input_target_callback(const PointCloudConstPtr& map);
-  bool is_in_voxel(const pcl::PointXYZ& src_point, const pcl::PointXYZ& target_point, const double distance_threshold,
-                   const PointCloudPtr& map,
-                   /* Can not add const in PCL specification */ pcl::VoxelGrid<pcl::PointXYZ>& voxel) const;
+  bool child_init(ros::NodeHandle & nh, bool & has_service);
+  void config_callback(pointcloud_preprocessor::CompareMapFilterConfig & config, uint32_t level);
+  void input_target_callback(const PointCloudConstPtr & map);
+  bool is_in_voxel(
+    const pcl::PointXYZ & src_point, const pcl::PointXYZ & target_point,
+    const double distance_threshold, const PointCloudPtr & map,
+    /* Can not add const in PCL specification */ pcl::VoxelGrid<pcl::PointXYZ> & voxel) const;
 
- private:
+private:
   // pcl::SegmentDifferences<pcl::PointXYZ> impl_;
   ros::Subscriber sub_map_;
   PointCloudPtr voxel_map_ptr_;
@@ -43,7 +48,7 @@ class VoxelBasedCompareMapFilterNodelet : public pointcloud_preprocessor::Filter
   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_;
   bool set_map_in_voxel_grid_;
 
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 }  // namespace pointcloud_preprocessor

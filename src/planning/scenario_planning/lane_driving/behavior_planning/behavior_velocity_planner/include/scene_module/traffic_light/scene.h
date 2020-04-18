@@ -36,47 +36,53 @@
 
 #include <scene_module/scene_module_interface.h>
 
-class TrafficLightModule : public SceneModuleInterface {
- public:
+class TrafficLightModule : public SceneModuleInterface
+{
+public:
   enum class State { APPROARCH, GO_OUT };
 
-  struct DebugData {
+  struct DebugData
+  {
     double base_link2front;
-    std::vector<
-        std::tuple<std::shared_ptr<const lanelet::TrafficLight>, autoware_perception_msgs::TrafficLightState>>
-        tl_state;  // TODO: replace tuple with struct
+    std::vector<std::tuple<
+      std::shared_ptr<const lanelet::TrafficLight>, autoware_perception_msgs::TrafficLightState>>
+      tl_state;  // TODO: replace tuple with struct
     std::vector<geometry_msgs::Pose> stop_poses;
     std::vector<geometry_msgs::Pose> judge_poses;
   };
 
- public:
-  TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem);
+public:
+  TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem);
 
-  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
- private:
-  bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
-                                     const Eigen::Vector2d& base_point, const double backward_length,
-                                     Eigen::Vector2d& output_point);
+private:
+  bool getBackwordPointFromBasePoint(
+    const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
+    const Eigen::Vector2d & base_point, const double backward_length,
+    Eigen::Vector2d & output_point);
 
   bool insertTargetVelocityPoint(
-      const autoware_planning_msgs::PathWithLaneId& input,
-      const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
-      const double& margin, const double& velocity, autoware_planning_msgs::PathWithLaneId& output);
+    const autoware_planning_msgs::PathWithLaneId & input,
+    const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
+      stop_line,
+    const double & margin, const double & velocity,
+    autoware_planning_msgs::PathWithLaneId & output);
 
   bool getHighestConfidenceTrafficLightState(
-      lanelet::ConstLineStringsOrPolygons3d& traffic_lights,
-      autoware_perception_msgs::TrafficLightState& highest_confidence_tl_state);
+    lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
+    autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state);
 
   bool createTargetPoint(
-      const autoware_planning_msgs::PathWithLaneId& input,
-      const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
-      const double& margin, size_t& target_point_idx, Eigen::Vector2d& target_point);
+    const autoware_planning_msgs::PathWithLaneId & input,
+    const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
+      stop_line,
+    const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point);
 
   // Key Feature
-  const lanelet::TrafficLight& traffic_light_reg_elem_;
+  const lanelet::TrafficLight & traffic_light_reg_elem_;
 
   // State
   State state_;

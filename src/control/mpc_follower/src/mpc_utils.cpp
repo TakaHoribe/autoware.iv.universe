@@ -16,13 +16,15 @@
 
 #include "mpc_follower/mpc_utils.h"
 
-geometry_msgs::Quaternion MPCUtils::getQuaternionFromYaw(const double& yaw) {
+geometry_msgs::Quaternion MPCUtils::getQuaternionFromYaw(const double & yaw)
+{
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
   return tf2::toMsg(q);
 }
 
-void MPCUtils::convertEulerAngleToMonotonic(std::vector<double>* a) {
+void MPCUtils::convertEulerAngleToMonotonic(std::vector<double> * a)
+{
   if (!a) {
     return;
   }
@@ -32,38 +34,47 @@ void MPCUtils::convertEulerAngleToMonotonic(std::vector<double>* a) {
   }
 }
 
-double MPCUtils::normalizeRadian(const double angle) {
+double MPCUtils::normalizeRadian(const double angle)
+{
   double n_angle = std::fmod(angle, 2 * M_PI);
   n_angle = n_angle > M_PI ? n_angle - 2 * M_PI : n_angle < -M_PI ? 2 * M_PI + n_angle : n_angle;
   return n_angle;
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::PoseStamped& p0, const geometry_msgs::PoseStamped& p1) {
+double MPCUtils::calcDist2d(
+  const geometry_msgs::PoseStamped & p0, const geometry_msgs::PoseStamped & p1)
+{
   return calcDist2d(p0.pose.position, p1.pose.position);
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::Pose& p0, const geometry_msgs::Pose& p1) {
+double MPCUtils::calcDist2d(const geometry_msgs::Pose & p0, const geometry_msgs::Pose & p1)
+{
   return calcDist2d(p0.position, p1.position);
 }
 
-double MPCUtils::calcDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
+double MPCUtils::calcDist2d(const geometry_msgs::Point & p0, const geometry_msgs::Point & p1)
+{
   return std::hypot(p0.x - p1.x, p0.y - p1.y);
 }
 
-double MPCUtils::calcSquaredDist2d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
+double MPCUtils::calcSquaredDist2d(const geometry_msgs::Point & p0, const geometry_msgs::Point & p1)
+{
   double dx = p1.x - p0.x;
   double dy = p1.y - p0.y;
   return dx * dx + dy * dy;
 }
 
-double MPCUtils::calcDist3d(const geometry_msgs::Point& p0, const geometry_msgs::Point& p1) {
+double MPCUtils::calcDist3d(const geometry_msgs::Point & p0, const geometry_msgs::Point & p1)
+{
   double dx = p1.x - p0.x;
   double dy = p1.y - p0.y;
   double dz = p1.z - p0.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-double MPCUtils::calcLateralError(const geometry_msgs::Pose& ego_pose, const geometry_msgs::Pose& ref_pose) {
+double MPCUtils::calcLateralError(
+  const geometry_msgs::Pose & ego_pose, const geometry_msgs::Pose & ref_pose)
+{
   const double err_x = ego_pose.position.x - ref_pose.position.x;
   const double err_y = ego_pose.position.y - ref_pose.position.y;
   const double ref_yaw = tf2::getYaw(ref_pose.orientation);
@@ -71,7 +82,9 @@ double MPCUtils::calcLateralError(const geometry_msgs::Pose& ego_pose, const geo
   return lat_err;
 }
 
-void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory& trajectory, std::vector<double>* arclength) {
+void MPCUtils::calcMPCTrajectoryArclength(
+  const MPCTrajectory & trajectory, std::vector<double> * arclength)
+{
   double dist = 0.0;
   arclength->clear();
   arclength->push_back(dist);
@@ -83,8 +96,9 @@ void MPCUtils::calcMPCTrajectoryArclength(const MPCTrajectory& trajectory, std::
   }
 }
 
-bool MPCUtils::resampleMPCTrajectoryByDistance(const MPCTrajectory& input, const double resample_interval_dist,
-                                               MPCTrajectory* output) {
+bool MPCUtils::resampleMPCTrajectoryByDistance(
+  const MPCTrajectory & input, const double resample_interval_dist, MPCTrajectory * output)
+{
   if (!output) {
     return false;
   }
@@ -111,13 +125,15 @@ bool MPCUtils::resampleMPCTrajectoryByDistance(const MPCTrajectory& input, const
 
   LinearInterpolate linear_interp;
   SplineInterpolate spline_interp;
-  if (!spline_interp.interpolate(input_arclength, input.x, output_arclength, output->x) ||
-      !spline_interp.interpolate(input_arclength, input.y, output_arclength, output->y) ||
-      !spline_interp.interpolate(input_arclength, input.z, output_arclength, output->z) ||
-      !spline_interp.interpolate(input_arclength, input_yaw, output_arclength, output->yaw) ||
-      !linear_interp.interpolate(input_arclength, input.vx, output_arclength, output->vx) ||
-      !spline_interp.interpolate(input_arclength, input.k, output_arclength, output->k) ||
-      !linear_interp.interpolate(input_arclength, input.relative_time, output_arclength, output->relative_time)) {
+  if (
+    !spline_interp.interpolate(input_arclength, input.x, output_arclength, output->x) ||
+    !spline_interp.interpolate(input_arclength, input.y, output_arclength, output->y) ||
+    !spline_interp.interpolate(input_arclength, input.z, output_arclength, output->z) ||
+    !spline_interp.interpolate(input_arclength, input_yaw, output_arclength, output->yaw) ||
+    !linear_interp.interpolate(input_arclength, input.vx, output_arclength, output->vx) ||
+    !spline_interp.interpolate(input_arclength, input.k, output_arclength, output->k) ||
+    !linear_interp.interpolate(
+      input_arclength, input.relative_time, output_arclength, output->relative_time)) {
     std::cerr << "linearInterpMPCTrajectory error!" << std::endl;
     return false;
   }
@@ -125,8 +141,10 @@ bool MPCUtils::resampleMPCTrajectoryByDistance(const MPCTrajectory& input, const
   return true;
 }
 
-bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double>& in_index, const MPCTrajectory& in_traj,
-                                         const std::vector<double>& out_index, MPCTrajectory* out_traj) {
+bool MPCUtils::linearInterpMPCTrajectory(
+  const std::vector<double> & in_index, const MPCTrajectory & in_traj,
+  const std::vector<double> & out_index, MPCTrajectory * out_traj)
+{
   if (!out_traj) {
     return false;
   }
@@ -140,13 +158,15 @@ bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double>& in_index, co
   MPCUtils::convertEulerAngleToMonotonic(&in_traj_yaw);
 
   LinearInterpolate linear_interp;
-  if (!linear_interp.interpolate(in_index, in_traj.x, out_index, out_traj->x) ||
-      !linear_interp.interpolate(in_index, in_traj.y, out_index, out_traj->y) ||
-      !linear_interp.interpolate(in_index, in_traj.z, out_index, out_traj->z) ||
-      !linear_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj->yaw) ||
-      !linear_interp.interpolate(in_index, in_traj.vx, out_index, out_traj->vx) ||
-      !linear_interp.interpolate(in_index, in_traj.k, out_index, out_traj->k) ||
-      !linear_interp.interpolate(in_index, in_traj.relative_time, out_index, out_traj->relative_time)) {
+  if (
+    !linear_interp.interpolate(in_index, in_traj.x, out_index, out_traj->x) ||
+    !linear_interp.interpolate(in_index, in_traj.y, out_index, out_traj->y) ||
+    !linear_interp.interpolate(in_index, in_traj.z, out_index, out_traj->z) ||
+    !linear_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj->yaw) ||
+    !linear_interp.interpolate(in_index, in_traj.vx, out_index, out_traj->vx) ||
+    !linear_interp.interpolate(in_index, in_traj.k, out_index, out_traj->k) ||
+    !linear_interp.interpolate(
+      in_index, in_traj.relative_time, out_index, out_traj->relative_time)) {
     std::cerr << "linearInterpMPCTrajectory error!" << std::endl;
     return false;
   }
@@ -159,8 +179,10 @@ bool MPCUtils::linearInterpMPCTrajectory(const std::vector<double>& in_index, co
   return true;
 }
 
-bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double>& in_index, const MPCTrajectory& in_traj,
-                                         const std::vector<double>& out_index, MPCTrajectory* out_traj) {
+bool MPCUtils::splineInterpMPCTrajectory(
+  const std::vector<double> & in_index, const MPCTrajectory & in_traj,
+  const std::vector<double> & out_index, MPCTrajectory * out_traj)
+{
   if (!out_traj) {
     return false;
   }
@@ -174,12 +196,13 @@ bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double>& in_index, co
 
   out_traj->clear();
   SplineInterpolate spline_interp;
-  if (!spline_interp.interpolate(in_index, in_traj.x, out_index, out_traj->x) ||
-      !spline_interp.interpolate(in_index, in_traj.y, out_index, out_traj->y) ||
-      !spline_interp.interpolate(in_index, in_traj.z, out_index, out_traj->z) ||
-      !spline_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj->yaw) ||
-      !spline_interp.interpolate(in_index, in_traj.vx, out_index, out_traj->vx) ||
-      !spline_interp.interpolate(in_index, in_traj.k, out_index, out_traj->k)) {
+  if (
+    !spline_interp.interpolate(in_index, in_traj.x, out_index, out_traj->x) ||
+    !spline_interp.interpolate(in_index, in_traj.y, out_index, out_traj->y) ||
+    !spline_interp.interpolate(in_index, in_traj.z, out_index, out_traj->z) ||
+    !spline_interp.interpolate(in_index, in_traj_yaw, out_index, out_traj->yaw) ||
+    !spline_interp.interpolate(in_index, in_traj.vx, out_index, out_traj->vx) ||
+    !spline_interp.interpolate(in_index, in_traj.k, out_index, out_traj->k)) {
     std::cerr << "splineInterpMPCTrajectory error!" << std::endl;
     return false;
   }
@@ -195,7 +218,8 @@ bool MPCUtils::splineInterpMPCTrajectory(const std::vector<double>& in_index, co
   return true;
 }
 
-void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory* traj) {
+void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory * traj)
+{
   if (traj->yaw.size() == 0) return;
 
   for (unsigned int i = 1; i < traj->yaw.size() - 1; ++i) {
@@ -209,7 +233,8 @@ void MPCUtils::calcTrajectoryYawFromXY(MPCTrajectory* traj) {
   }
 }
 
-bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajectory* traj) {
+bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajectory * traj)
+{
   if (!traj) {
     return false;
   }
@@ -230,7 +255,8 @@ bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajector
     p2.y = traj->y[i];
     p3.y = traj->y[i + L];
     double den = std::max(calcDist2d(p1, p2) * calcDist2d(p2, p3) * calcDist2d(p3, p1), 0.0001);
-    const double curvature = 2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / den;
+    const double curvature =
+      2.0 * ((p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x)) / den;
     traj->k.at(i) = curvature;
   }
 
@@ -242,7 +268,9 @@ bool MPCUtils::calcTrajectoryCurvature(int curvature_smoothing_num, MPCTrajector
   return true;
 }
 
-bool MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory& input, MPCTrajectory* output) {
+bool MPCUtils::convertToMPCTrajectory(
+  const autoware_planning_msgs::Trajectory & input, MPCTrajectory * output)
+{
   if (!output) {
     return false;
   }
@@ -263,7 +291,8 @@ bool MPCUtils::convertToMPCTrajectory(const autoware_planning_msgs::Trajectory& 
   return true;
 }
 
-bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory* traj) {
+bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory * traj)
+{
   if (!traj) {
     return false;
   }
@@ -283,8 +312,10 @@ bool MPCUtils::calcMPCTrajectoryTime(MPCTrajectory* traj) {
   return true;
 }
 
-void MPCUtils::dynamicSmoothingVelocity(const int start_idx, const double start_vel, const double acc_lim,
-                                        const double tau, MPCTrajectory* traj) {
+void MPCUtils::dynamicSmoothingVelocity(
+  const int start_idx, const double start_vel, const double acc_lim, const double tau,
+  MPCTrajectory * traj)
+{
   const double ep = 1.0E-3;
   double curr_v = start_vel;
   std::vector<double> smoothed_vel;
@@ -294,7 +325,8 @@ void MPCUtils::dynamicSmoothingVelocity(const int start_idx, const double start_
   int traj_size = static_cast<int>(traj->size());
 
   for (int i = start_idx + 1; i < traj_size; ++i) {
-    const double ds = std::hypot(traj->x.at(i) - traj->x.at(i - 1), traj->y.at(i) - traj->y.at(i - 1));
+    const double ds =
+      std::hypot(traj->x.at(i) - traj->x.at(i - 1), traj->y.at(i) - traj->y.at(i - 1));
     const double dt = ds / std::max(std::fabs(curr_v), ep);
     const double a = tau / std::max(tau + dt, ep);
     const double updated_v = a * curr_v + (1.0 - a) * traj->vx.at(i);
@@ -305,7 +337,8 @@ void MPCUtils::dynamicSmoothingVelocity(const int start_idx, const double start_
   calcMPCTrajectoryTime(traj);
 }
 
-int MPCUtils::calcNearestIndex(const MPCTrajectory& traj, const geometry_msgs::Pose& self_pose) {
+int MPCUtils::calcNearestIndex(const MPCTrajectory & traj, const geometry_msgs::Pose & self_pose)
+{
   if (traj.size() == 0) {
     return -1;
   }
@@ -329,14 +362,17 @@ int MPCUtils::calcNearestIndex(const MPCTrajectory& traj, const geometry_msgs::P
   }
   return nearest_idx;
 }
-bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory& traj, const geometry_msgs::Pose& self_pose,
-                                     geometry_msgs::Pose* nearest_pose, int* nearest_index, double* nearest_time) {
+bool MPCUtils::calcNearestPoseInterp(
+  const MPCTrajectory & traj, const geometry_msgs::Pose & self_pose,
+  geometry_msgs::Pose * nearest_pose, int * nearest_index, double * nearest_time)
+{
   if (traj.size() == 0 || !nearest_pose || !nearest_index || !nearest_time) {
     return false;
   }
   int nearest_idx = calcNearestIndex(traj, self_pose);
   if (nearest_idx == -1) {
-    ROS_WARN_DELAYED_THROTTLE(3.0, "[calcNearestPoseInterp] fail to get nearest. traj.size = %d", (int)traj.size());
+    ROS_WARN_DELAYED_THROTTLE(
+      3.0, "[calcNearestPoseInterp] fail to get nearest. traj.size = %d", (int)traj.size());
     return false;
   }
 
@@ -352,7 +388,7 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory& traj, const geometry_m
     return true;
   }
 
-  auto calcSquaredDist = [](const geometry_msgs::Pose& p, const MPCTrajectory& t, int idx) {
+  auto calcSquaredDist = [](const geometry_msgs::Pose & p, const MPCTrajectory & t, int idx) {
     const double dx = p.position.x - t.x[idx];
     const double dy = p.position.y - t.y[idx];
     return dx * dx + dy * dy;
@@ -382,17 +418,22 @@ bool MPCUtils::calcNearestPoseInterp(const MPCTrajectory& traj, const geometry_m
 
   /* linear interpolation */
   const double alpha = std::max(std::min(0.5 * (c_sq - a_sq + b_sq) / c_sq, 1.0), 0.0);
-  nearest_pose->position.x = alpha * traj.x[nearest_idx] + (1 - alpha) * traj.x[second_nearest_index];
-  nearest_pose->position.y = alpha * traj.y[nearest_idx] + (1 - alpha) * traj.y[second_nearest_index];
+  nearest_pose->position.x =
+    alpha * traj.x[nearest_idx] + (1 - alpha) * traj.x[second_nearest_index];
+  nearest_pose->position.y =
+    alpha * traj.y[nearest_idx] + (1 - alpha) * traj.y[second_nearest_index];
   double tmp_yaw_err = normalizeRadian(traj.yaw[nearest_idx] - traj.yaw[second_nearest_index]);
   const double nearest_yaw = normalizeRadian(traj.yaw[second_nearest_index] + alpha * tmp_yaw_err);
   nearest_pose->orientation = getQuaternionFromYaw(nearest_yaw);
-  *nearest_time = alpha * traj.relative_time[nearest_idx] + (1 - alpha) * traj.relative_time[second_nearest_index];
+  *nearest_time = alpha * traj.relative_time[nearest_idx] +
+                  (1 - alpha) * traj.relative_time[second_nearest_index];
   return true;
 }
 
-visualization_msgs::MarkerArray MPCUtils::convertTrajToMarker(const MPCTrajectory& traj, std::string ns, double r,
-                                                              double g, double b, double z, std::string& frame_id) {
+visualization_msgs::MarkerArray MPCUtils::convertTrajToMarker(
+  const MPCTrajectory & traj, std::string ns, double r, double g, double b, double z,
+  std::string & frame_id)
+{
   visualization_msgs::MarkerArray markers;
 
   // generate line

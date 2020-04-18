@@ -20,15 +20,16 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-namespace {
-
+namespace
+{
 using DebugData = StopLineModule::DebugData;
 
-visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
+visualization_msgs::MarkerArray createMarkers(const DebugData & debug_data)
+{
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
-                                    tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
+  tf2::Transform tf_base_link2front(
+    tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
 
   // Stop VirtualWall
   for (size_t j = 0; j < debug_data.stop_poses.size(); ++j) {
@@ -85,7 +86,8 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
 
 }  // namespace
 
-visualization_msgs::MarkerArray StopLineModule::createDebugMarkerArray() {
+visualization_msgs::MarkerArray StopLineModule::createDebugMarkerArray()
+{
   visualization_msgs::MarkerArray debug_marker_array;
 
   appendMarkerArray(createMarkers(debug_data_), &debug_marker_array);

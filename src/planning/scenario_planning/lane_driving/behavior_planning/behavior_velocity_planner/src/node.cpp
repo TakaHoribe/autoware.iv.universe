@@ -33,16 +33,19 @@
 #include <scene_module/stop_line/manager.h>
 #include <scene_module/traffic_light/manager.h>
 
-namespace {
+namespace
+{
 template <class T>
-T getParam(const ros::NodeHandle& nh, const std::string& key, const T& default_value) {
+T getParam(const ros::NodeHandle & nh, const std::string & key, const T & default_value)
+{
   T value;
   nh.param<T>(key, value, default_value);
   return value;
 }
 
 template <class T>
-T waitForParam(const ros::NodeHandle& nh, const std::string& key) {
+T waitForParam(const ros::NodeHandle & nh, const std::string & key)
+{
   T value;
 
   ros::Rate rate(1.0);
@@ -59,20 +62,22 @@ T waitForParam(const ros::NodeHandle& nh, const std::string& key) {
   return {};
 }
 
-std::shared_ptr<geometry_msgs::TransformStamped> getTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
-                                                              const std::string& to,
-                                                              const ros::Time& time = ros::Time(0),
-                                                              const ros::Duration& duration = ros::Duration(0.1)) {
+std::shared_ptr<geometry_msgs::TransformStamped> getTransform(
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to,
+  const ros::Time & time = ros::Time(0), const ros::Duration & duration = ros::Duration(0.1))
+{
   try {
-    return std::make_shared<geometry_msgs::TransformStamped>(tf_buffer.lookupTransform(from, to, time, duration));
-  } catch (tf2::TransformException& ex) {
+    return std::make_shared<geometry_msgs::TransformStamped>(
+      tf_buffer.lookupTransform(from, to, time, duration));
+  } catch (tf2::TransformException & ex) {
     return {};
   }
 }
 
-geometry_msgs::TransformStamped waitForTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
-                                                 const std::string& to, const ros::Time& time = ros::Time(0),
-                                                 const ros::Duration& duration = ros::Duration(0.1)) {
+geometry_msgs::TransformStamped waitForTransform(
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to,
+  const ros::Time & time = ros::Time(0), const ros::Duration & duration = ros::Duration(0.1))
+{
   ros::Rate rate(1.0);
   while (ros::ok()) {
     const auto transform = getTransform(tf_buffer, from, to, time, duration);
@@ -80,13 +85,15 @@ geometry_msgs::TransformStamped waitForTransform(const tf2_ros::Buffer& tf_buffe
       return *transform;
     }
 
-    ROS_INFO("waiting for transform from `%s` to `%s` ... (time = %f, now = %f)", from.c_str(), to.c_str(),
-             time.toSec(), ros::Time::now().toSec());
+    ROS_INFO(
+      "waiting for transform from `%s` to `%s` ... (time = %f, now = %f)", from.c_str(), to.c_str(),
+      time.toSec(), ros::Time::now().toSec());
     rate.sleep();
   }
 }
 
-geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped& transform) {
+geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped & transform)
+{
   geometry_msgs::PoseStamped pose;
   pose.header = transform.header;
   pose.pose.position.x = transform.transform.translation.x;
@@ -96,30 +103,34 @@ geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped&
   return pose;
 }
 
-autoware_planning_msgs::Path to_path(const autoware_planning_msgs::PathWithLaneId& path_with_id) {
+autoware_planning_msgs::Path to_path(const autoware_planning_msgs::PathWithLaneId & path_with_id)
+{
   autoware_planning_msgs::Path path;
-  for (const auto& path_point : path_with_id.points) {
+  for (const auto & path_point : path_with_id.points) {
     path.points.push_back(path_point.point);
   }
   return path;
 }
 }  // namespace
 
-BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_) {
+BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
+: nh_(), pnh_("~"), tf_listener_(tf_buffer_)
+{
   // Trigger Subscriber
   trigger_sub_path_with_lane_id_ =
-      pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorVelocityPlannerNode::onTrigger, this);
+    pnh_.subscribe("input/path_with_lane_id", 1, &BehaviorVelocityPlannerNode::onTrigger, this);
 
   // Subscribers
-  sub_dynamic_objects_ =
-      pnh_.subscribe("input/dynamic_objects", 1, &BehaviorVelocityPlannerNode::onDynamicObjects, this);
-  sub_no_ground_pointcloud_ =
-      pnh_.subscribe("input/no_ground_pointcloud", 1, &BehaviorVelocityPlannerNode::onNoGroundPointCloud, this);
-  sub_vehicle_velocity_ =
-      pnh_.subscribe("input/vehicle_velocity", 1, &BehaviorVelocityPlannerNode::onVehicleVelocity, this);
-  sub_lanelet_map_ = pnh_.subscribe("input/vector_map", 10, &BehaviorVelocityPlannerNode::onLaneletMap, this);
-  sub_traffic_light_states_ =
-      pnh_.subscribe("input/traffic_light_states", 10, &BehaviorVelocityPlannerNode::onTrafficLightStates, this);
+  sub_dynamic_objects_ = pnh_.subscribe(
+    "input/dynamic_objects", 1, &BehaviorVelocityPlannerNode::onDynamicObjects, this);
+  sub_no_ground_pointcloud_ = pnh_.subscribe(
+    "input/no_ground_pointcloud", 1, &BehaviorVelocityPlannerNode::onNoGroundPointCloud, this);
+  sub_vehicle_velocity_ = pnh_.subscribe(
+    "input/vehicle_velocity", 1, &BehaviorVelocityPlannerNode::onVehicleVelocity, this);
+  sub_lanelet_map_ =
+    pnh_.subscribe("input/vector_map", 10, &BehaviorVelocityPlannerNode::onLaneletMap, this);
+  sub_traffic_light_states_ = pnh_.subscribe(
+    "input/traffic_light_states", 10, &BehaviorVelocityPlannerNode::onTrafficLightStates, this);
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Path>("output/path", 1);
@@ -134,8 +145,9 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
   planner_data_.front_overhang = waitForParam<double>(pnh_, "/vehicle_info/front_overhang");
   planner_data_.vehicle_width = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   // Additional Vehicle Parameters
-  pnh_.param("max_accel", planner_data_.max_stop_acceleration_threshold_,
-             -5.0);  // TODO read min_acc in velocity_controller_param.yaml?
+  pnh_.param(
+    "max_accel", planner_data_.max_stop_acceleration_threshold_,
+    -5.0);  // TODO read min_acc in velocity_controller_param.yaml?
   // TODO(Kenji Miyake): get from additional vehicle_info?
   planner_data_.base_link2front = planner_data_.front_overhang + planner_data_.wheel_base;
 
@@ -152,12 +164,14 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode() : nh_(), pnh_("~"), t
     planner_manager_.launchSceneModule(std::make_shared<BlindSpotModuleManager>());
 }
 
-geometry_msgs::PoseStamped BehaviorVelocityPlannerNode::getCurrentPose() {
+geometry_msgs::PoseStamped BehaviorVelocityPlannerNode::getCurrentPose()
+{
   return transform2pose(waitForTransform(tf_buffer_, "map", "base_link"));
 }
 
-bool BehaviorVelocityPlannerNode::isDataReady() {
-  const auto& d = planner_data_;
+bool BehaviorVelocityPlannerNode::isDataReady()
+{
+  const auto & d = planner_data_;
 
   // from tf
   if (d.current_pose.header.frame_id == "") return false;
@@ -171,12 +185,17 @@ bool BehaviorVelocityPlannerNode::isDataReady() {
   return true;
 }
 
-void BehaviorVelocityPlannerNode::onDynamicObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg) {
+void BehaviorVelocityPlannerNode::onDynamicObjects(
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr & msg)
+{
   planner_data_.dynamic_objects = msg;
 }
 
-void BehaviorVelocityPlannerNode::onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-  const auto transform = getTransform(tf_buffer_, "map", msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));
+void BehaviorVelocityPlannerNode::onNoGroundPointCloud(
+  const sensor_msgs::PointCloud2::ConstPtr & msg)
+{
+  const auto transform =
+    getTransform(tf_buffer_, "map", msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));
   if (!transform) {
     ROS_WARN("no transform found for no_ground_pointcloud");
     return;
@@ -193,15 +212,18 @@ void BehaviorVelocityPlannerNode::onNoGroundPointCloud(const sensor_msgs::PointC
   planner_data_.no_ground_pointcloud = no_ground_pointcloud;
 }
 
-void BehaviorVelocityPlannerNode::onVehicleVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+void BehaviorVelocityPlannerNode::onVehicleVelocity(
+  const geometry_msgs::TwistStamped::ConstPtr & msg)
+{
   planner_data_.current_velocity = msg;
 }
 
-void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg) {
+void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr & msg)
+{
   // Load map
   planner_data_.lanelet_map = std::make_shared<lanelet::LaneletMap>();
-  lanelet::utils::conversion::fromBinMsg(*msg, planner_data_.lanelet_map, &planner_data_.traffic_rules,
-                                         &planner_data_.routing_graph);
+  lanelet::utils::conversion::fromBinMsg(
+    *msg, planner_data_.lanelet_map, &planner_data_.traffic_rules, &planner_data_.routing_graph);
 
   // Build graph
   {
@@ -212,11 +234,15 @@ void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::Map
     using lanelet::routing::RoutingGraphContainer;
     using lanelet::traffic_rules::TrafficRulesFactory;
 
-    const auto traffic_rules = TrafficRulesFactory::create(Locations::Germany, Participants::Vehicle);
-    const auto pedestrian_rules = TrafficRulesFactory::create(Locations::Germany, Participants::Pedestrian);
+    const auto traffic_rules =
+      TrafficRulesFactory::create(Locations::Germany, Participants::Vehicle);
+    const auto pedestrian_rules =
+      TrafficRulesFactory::create(Locations::Germany, Participants::Pedestrian);
 
-    RoutingGraphConstPtr vehicle_graph = RoutingGraph::build(*planner_data_.lanelet_map, *traffic_rules);
-    RoutingGraphConstPtr pedestrian_graph = RoutingGraph::build(*planner_data_.lanelet_map, *pedestrian_rules);
+    RoutingGraphConstPtr vehicle_graph =
+      RoutingGraph::build(*planner_data_.lanelet_map, *traffic_rules);
+    RoutingGraphConstPtr pedestrian_graph =
+      RoutingGraph::build(*planner_data_.lanelet_map, *pedestrian_rules);
     RoutingGraphContainer overall_graphs({vehicle_graph, pedestrian_graph});
 
     planner_data_.overall_graphs = std::make_shared<const RoutingGraphContainer>(overall_graphs);
@@ -224,13 +250,16 @@ void BehaviorVelocityPlannerNode::onLaneletMap(const autoware_lanelet2_msgs::Map
 }
 
 void BehaviorVelocityPlannerNode::onTrafficLightStates(
-    const autoware_perception_msgs::TrafficLightStateArray::ConstPtr& msg) {
-  for (const auto& state : msg->states) {
+  const autoware_perception_msgs::TrafficLightStateArray::ConstPtr & msg)
+{
+  for (const auto & state : msg->states) {
     planner_data_.traffic_light_id_map_[state.id] = {msg->header, state};
   }
 }
 
-void BehaviorVelocityPlannerNode::onTrigger(const autoware_planning_msgs::PathWithLaneId& input_path_msg) {
+void BehaviorVelocityPlannerNode::onTrigger(
+  const autoware_planning_msgs::PathWithLaneId & input_path_msg)
+{
   // Check ready
   planner_data_.current_pose = getCurrentPose();
   if (!isDataReady()) {
@@ -238,8 +267,8 @@ void BehaviorVelocityPlannerNode::onTrigger(const autoware_planning_msgs::PathWi
   }
 
   // Plan path velocity
-  const auto velocity_planned_path =
-      planner_manager_.planPathVelocity(std::make_shared<const PlannerData>(planner_data_), input_path_msg);
+  const auto velocity_planned_path = planner_manager_.planPathVelocity(
+    std::make_shared<const PlannerData>(planner_data_), input_path_msg);
 
   // screening
   const auto filtered_path = filterLitterPathPoint(to_path(velocity_planned_path));
@@ -261,8 +290,9 @@ void BehaviorVelocityPlannerNode::onTrigger(const autoware_planning_msgs::PathWi
   return;
 };
 
-void BehaviorVelocityPlannerNode::publishDebugMarker(const autoware_planning_msgs::Path& path,
-                                                     const ros::Publisher& pub) {
+void BehaviorVelocityPlannerNode::publishDebugMarker(
+  const autoware_planning_msgs::Path & path, const ros::Publisher & pub)
+{
   if (pub.getNumSubscribers() < 1) return;
 
   visualization_msgs::MarkerArray output_msg;

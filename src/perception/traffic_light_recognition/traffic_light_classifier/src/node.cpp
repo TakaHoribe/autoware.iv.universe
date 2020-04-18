@@ -16,26 +16,31 @@
 #include "traffic_light_classifier/node.hpp"
 #include <iostream>
 
-namespace traffic_light {
+namespace traffic_light
+{
 TrafficLightClassifierNode::TrafficLightClassifierNode()
-    : nh_(""),
-      pnh_("~"),
-      image_transport_(pnh_),
-      image_sub_(image_transport_, "input/image", 1),
-      roi_sub_(pnh_, "input/rois", 1),
-      sync_(SyncPolicy(10), image_sub_, roi_sub_),
-      approximate_sync_(ApproximateSyncPolicy(10), image_sub_, roi_sub_) {
+: nh_(""),
+  pnh_("~"),
+  image_transport_(pnh_),
+  image_sub_(image_transport_, "input/image", 1),
+  roi_sub_(pnh_, "input/rois", 1),
+  sync_(SyncPolicy(10), image_sub_, roi_sub_),
+  approximate_sync_(ApproximateSyncPolicy(10), image_sub_, roi_sub_)
+{
   pnh_.param<bool>("approximate_sync", is_approximate_sync_, false);
   if (is_approximate_sync_) {
-    approximate_sync_.registerCallback(boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
+    approximate_sync_.registerCallback(
+      boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
   } else {
-    sync_.registerCallback(boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
+    sync_.registerCallback(
+      boost::bind(&TrafficLightClassifierNode::imageRoiCallback, this, _1, _2));
   }
-  tl_states_pub_ =
-      pnh_.advertise<autoware_perception_msgs::TrafficLightStateArray>("output/traffic_light_states", 1);
+  tl_states_pub_ = pnh_.advertise<autoware_perception_msgs::TrafficLightStateArray>(
+    "output/traffic_light_states", 1);
 
   int classifier_type;
-  pnh_.param<int>("classifier_type", classifier_type, TrafficLightClassifierNode::ClassifierType::HSVFilter);
+  pnh_.param<int>(
+    "classifier_type", classifier_type, TrafficLightClassifierNode::ClassifierType::HSVFilter);
   if (classifier_type == TrafficLightClassifierNode::ClassifierType::HSVFilter) {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
   } else if (classifier_type == TrafficLightClassifierNode::ClassifierType::CNN) {
@@ -44,20 +49,22 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
 }
 
 void TrafficLightClassifierNode::imageRoiCallback(
-    const sensor_msgs::ImageConstPtr& input_image_msg,
-    const autoware_perception_msgs::TrafficLightRoiArrayConstPtr& input_rois_msg) {
+  const sensor_msgs::ImageConstPtr & input_image_msg,
+  const autoware_perception_msgs::TrafficLightRoiArrayConstPtr & input_rois_msg)
+{
   cv_bridge::CvImagePtr cv_ptr;
   try {
     cv_ptr = cv_bridge::toCvCopy(input_image_msg, sensor_msgs::image_encodings::BGR8);
-  } catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception & e) {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", input_image_msg->encoding.c_str());
   }
 
   autoware_perception_msgs::TrafficLightStateArray output_msg;
 
   for (size_t i = 0; i < input_rois_msg->rois.size(); ++i) {
-    const sensor_msgs::RegionOfInterest& roi = input_rois_msg->rois.at(i).roi;
-    cv::Mat cliped_image(cv_ptr->image, cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
+    const sensor_msgs::RegionOfInterest & roi = input_rois_msg->rois.at(i).roi;
+    cv::Mat cliped_image(
+      cv_ptr->image, cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
 
     std::vector<autoware_perception_msgs::LampState> lamp_states;
 

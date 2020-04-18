@@ -34,29 +34,34 @@
 
 #include "gnss_poser/gnss_stat.h"
 
-namespace GNSSPoser {
-
-class GNSSPoser {
- public:
+namespace GNSSPoser
+{
+class GNSSPoser
+{
+public:
   GNSSPoser(ros::NodeHandle nh, ros::NodeHandle private_nh);
 
- private:
-  void callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr& nav_sat_fix_msg_ptr);
-  void callbackNavPVT(const ublox_msgs::NavPVT::ConstPtr& msg);
+private:
+  void callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr & nav_sat_fix_msg_ptr);
+  void callbackNavPVT(const ublox_msgs::NavPVT::ConstPtr & msg);
 
-  bool isFixed(const sensor_msgs::NavSatStatus& nav_sat_status_msg);
-  bool canGetCovariance(const sensor_msgs::NavSatFix& nav_sat_fix_msg);
-  GNSSStat convert(const sensor_msgs::NavSatFix& nav_sat_fix_msg, CoordinateSystem coordinate_system);
-  geometry_msgs::Point getPosition(const GNSSStat& gnss_stat);
-  geometry_msgs::Point getMedianPosition(const boost::circular_buffer<geometry_msgs::Point>& position_buffer);
+  bool isFixed(const sensor_msgs::NavSatStatus & nav_sat_status_msg);
+  bool canGetCovariance(const sensor_msgs::NavSatFix & nav_sat_fix_msg);
+  GNSSStat convert(
+    const sensor_msgs::NavSatFix & nav_sat_fix_msg, CoordinateSystem coordinate_system);
+  geometry_msgs::Point getPosition(const GNSSStat & gnss_stat);
+  geometry_msgs::Point getMedianPosition(
+    const boost::circular_buffer<geometry_msgs::Point> & position_buffer);
   geometry_msgs::Quaternion getQuaternionByHeading(const int heading);
-  geometry_msgs::Quaternion getQuaternionByPositionDiffence(const geometry_msgs::Point& point,
-                                                            const geometry_msgs::Point& prev_point);
+  geometry_msgs::Quaternion getQuaternionByPositionDiffence(
+    const geometry_msgs::Point & point, const geometry_msgs::Point & prev_point);
 
-  bool getTransform(const std::string& target_frame, const std::string& source_frame,
-                    const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr);
-  void publishTF(const std::string& frame_id, const std::string& child_frame_id,
-                 const geometry_msgs::PoseStamped& pose_msg);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr);
+  void publishTF(
+    const std::string & frame_id, const std::string & child_frame_id,
+    const geometry_msgs::PoseStamped & pose_msg);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

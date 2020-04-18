@@ -34,18 +34,19 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/stop_line/scene.h>
 #include <scene_module/scene_module_interface.h>
+#include <scene_module/stop_line/scene.h>
 
-class StopLineModuleManager : public SceneModuleManagerInterface {
- public:
+class StopLineModuleManager : public SceneModuleManagerInterface
+{
+public:
   StopLineModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char* getModuleName() override { return "stop_line"; }
+  const char * getModuleName() override { return "stop_line"; }
 
- private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) override;
+  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId & path) override;
 };

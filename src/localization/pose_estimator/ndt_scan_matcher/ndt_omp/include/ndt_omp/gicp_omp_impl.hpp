@@ -48,8 +48,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::setInputCloud(
-    const typename ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::PointCloudSourceConstPtr&
-        cloud) {
+  const typename ndt_omp::GeneralizedIterativeClosestPoint<
+    PointSource, PointTarget>::PointCloudSourceConstPtr & cloud)
+{
   setInputSource(cloud);
 }
 
@@ -57,13 +58,15 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::setInp
 template <typename PointSource, typename PointTarget>
 template <typename PointT>
 void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeCovariances(
-    typename pcl::PointCloud<PointT>::ConstPtr cloud, const typename pcl::search::KdTree<PointT>::ConstPtr kdtree,
-    MatricesVector& cloud_covariances) {
+  typename pcl::PointCloud<PointT>::ConstPtr cloud,
+  const typename pcl::search::KdTree<PointT>::ConstPtr kdtree, MatricesVector & cloud_covariances)
+{
   if (k_correspondences_ > int(cloud->size())) {
     PCL_ERROR(
-        "[ndt_omp::GeneralizedIterativeClosestPoint::computeCovariances] Number or points in cloud (%lu) is less than "
-        "k_correspondences_ (%lu)!\n",
-        cloud->size(), k_correspondences_);
+      "[ndt_omp::GeneralizedIterativeClosestPoint::computeCovariances] Number or points in cloud "
+      "(%lu) is less than "
+      "k_correspondences_ (%lu)!\n",
+      cloud->size(), k_correspondences_);
     return;
   }
 
@@ -75,12 +78,12 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::comput
 
 #pragma omp parallel for
   for (int i = 0; i < cloud->size(); i++) {
-    auto& nn_indecies = nn_indecies_array[omp_get_thread_num()];
-    auto& nn_dist_sq = nn_dist_sq_array[omp_get_thread_num()];
+    auto & nn_indecies = nn_indecies_array[omp_get_thread_num()];
+    auto & nn_dist_sq = nn_dist_sq_array[omp_get_thread_num()];
 
-    const PointT& query_point = cloud->at(i);
+    const PointT & query_point = cloud->at(i);
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
-    Eigen::Matrix3d& cov = cloud_covariances[i];
+    Eigen::Matrix3d & cov = cloud_covariances[i];
     // Zero out the cov and mean
     cov.setZero();
 
@@ -89,7 +92,7 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::comput
 
     // Find the covariance matrix
     for (int j = 0; j < k_correspondences_; j++) {
-      const PointT& pt = (*cloud)[nn_indecies[j]];
+      const PointT & pt = (*cloud)[nn_indecies[j]];
 
       mean[0] += pt.x;
       mean[1] += pt.y;
@@ -131,9 +134,9 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::comput
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeRDerivative(const Vector6d& x,
-                                                                                            const Eigen::Matrix3d& R,
-                                                                                            Vector6d& g) const {
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeRDerivative(
+  const Vector6d & x, const Eigen::Matrix3d & R, Vector6d & g) const
+{
   Eigen::Matrix3d dR_dPhi;
   Eigen::Matrix3d dR_dTheta;
   Eigen::Matrix3d dR_dPsi;
@@ -187,15 +190,20 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::comput
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estimateRigidTransformationBFGS(
-    const PointCloudSource& cloud_src, const std::vector<int>& indices_src, const PointCloudTarget& cloud_tgt,
-    const std::vector<int>& indices_tgt, Eigen::Matrix4f& transformation_matrix) {
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::
+  estimateRigidTransformationBFGS(
+    const PointCloudSource & cloud_src, const std::vector<int> & indices_src,
+    const PointCloudTarget & cloud_tgt, const std::vector<int> & indices_tgt,
+    Eigen::Matrix4f & transformation_matrix)
+{
   if (indices_src.size() < 4)  // need at least 4 samples
   {
-    PCL_THROW_EXCEPTION(pcl::NotEnoughPointsException,
-                        "[ndt_omp::GeneralizedIterativeClosestPoint::estimateRigidTransformationBFGS] Need at least 4 "
-                        "points to estimate a transform! Source and target have "
-                            << indices_src.size() << " points!");
+    PCL_THROW_EXCEPTION(
+      pcl::NotEnoughPointsException,
+      "[ndt_omp::GeneralizedIterativeClosestPoint::estimateRigidTransformationBFGS] Need at least "
+      "4 "
+      "points to estimate a transform! Source and target have "
+        << indices_src.size() << " points!");
     return;
   }
   // Set the initial solution
@@ -235,22 +243,26 @@ void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estima
     }
     result = bfgs.testGradient(gradient_tol);
   } while (result == BFGSSpace::Running && inner_iterations_ < max_inner_iterations_);
-  if (result == BFGSSpace::NoProgress || result == BFGSSpace::Success || inner_iterations_ == max_inner_iterations_) {
+  if (
+    result == BFGSSpace::NoProgress || result == BFGSSpace::Success ||
+    inner_iterations_ == max_inner_iterations_) {
     PCL_DEBUG("[pcl::registration::TransformationEstimationBFGS::estimateRigidTransformation]");
     PCL_DEBUG("BFGS solver finished with exit code %i \n", result);
     transformation_matrix.setIdentity();
     applyState(transformation_matrix, x);
   } else
     PCL_THROW_EXCEPTION(
-        pcl::SolverDidntConvergeException,
-        "[pcl::" << getClassName()
-                 << "::TransformationEstimationBFGS::estimateRigidTransformation] BFGS solver didn't converge!");
+      pcl::SolverDidntConvergeException,
+      "[pcl::" << getClassName()
+               << "::TransformationEstimationBFGS::estimateRigidTransformation] BFGS solver didn't "
+                  "converge!");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline double ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::
-operator()(const Vector6d& x) {
+inline double ndt_omp::GeneralizedIterativeClosestPoint<
+  PointSource, PointTarget>::OptimizationFunctorWithIndices::operator()(const Vector6d & x)
+{
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
   double f = 0;
@@ -259,9 +271,11 @@ operator()(const Vector6d& x) {
 #pragma omp parallel for
   for (int i = 0; i < m; ++i) {
     // The last coordinate, p_src[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_src = gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_src =
+      gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
     // The last coordinate, p_tgt[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_tgt = gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_tgt =
+      gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
     Eigen::Vector4f pp(transformation_matrix * p_src);
     // Estimate the distance (cost function)
     // The last coordiante is still guaranteed to be set to 1.0
@@ -281,13 +295,16 @@ operator()(const Vector6d& x) {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::df(
-    const Vector6d& x, Vector6d& g) {
+inline void ndt_omp::GeneralizedIterativeClosestPoint<
+  PointSource, PointTarget>::OptimizationFunctorWithIndices::df(const Vector6d & x, Vector6d & g)
+{
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
   // Eigen::Vector3d g_t = g.head<3> ();
-  std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> R_array(omp_get_max_threads());
-  std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> g_array(omp_get_max_threads());
+  std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> R_array(
+    omp_get_max_threads());
+  std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> g_array(
+    omp_get_max_threads());
 
   for (int i = 0; i < R_array.size(); i++) {
     R_array[i].setZero();
@@ -298,9 +315,11 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 #pragma omp parallel for
   for (int i = 0; i < m; ++i) {
     // The last coordinate, p_src[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_src = gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_src =
+      gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
     // The last coordinate, p_tgt[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_tgt = gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_tgt =
+      gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
 
     Eigen::Vector4f pp(transformation_matrix * p_src);
     // The last coordiante is still guaranteed to be set to 1.0
@@ -336,8 +355,9 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::OptimizationFunctorWithIndices::fdf(
-    const Vector6d& x, double& f, Vector6d& g) {
+inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::
+  OptimizationFunctorWithIndices::fdf(const Vector6d & x, double & f, Vector6d & g)
+{
   Eigen::Matrix4f transformation_matrix = gicp_->base_transformation_;
   gicp_->applyState(transformation_matrix, x);
   f = 0;
@@ -346,9 +366,11 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
   const int m = static_cast<const int>(gicp_->tmp_idx_src_->size());
   for (int i = 0; i < m; ++i) {
     // The last coordinate, p_src[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_src = gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_src =
+      gicp_->tmp_src_->points[(*gicp_->tmp_idx_src_)[i]].getVector4fMap();
     // The last coordinate, p_tgt[3] is guaranteed to be set to 1.0 in registration.hpp
-    pcl::Vector4fMapConst p_tgt = gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
+    pcl::Vector4fMapConst p_tgt =
+      gicp_->tmp_tgt_->points[(*gicp_->tmp_idx_tgt_)[i]].getVector4fMap();
     Eigen::Vector4f pp(transformation_matrix * p_src);
     // The last coordiante is still guaranteed to be set to 1.0
     Eigen::Vector3d res(pp[0] - p_tgt[0], pp[1] - p_tgt[1], pp[2] - p_tgt[2]);
@@ -372,8 +394,10 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
-inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTransformation(
-    PointCloudSource& output, const Eigen::Matrix4f& guess) {
+inline void
+ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTransformation(
+  PointCloudSource & output, const Eigen::Matrix4f & guess)
+{
   pcl::IterativeClosestPoint<PointSource, PointTarget>::initComputeReciprocal();
   using namespace std;
   // Difference between consecutive transforms
@@ -400,10 +424,10 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 
   std::vector<std::vector<int>> nn_indices_array(omp_get_max_threads());
   std::vector<std::vector<float>> nn_dists_array(omp_get_max_threads());
-  for (auto& nn_indices : nn_indices_array) {
+  for (auto & nn_indices : nn_indices_array) {
     nn_indices.resize(1);
   }
-  for (auto& nn_dists : nn_dists_array) {
+  for (auto & nn_dists : nn_dists_array) {
     nn_dists.resize(1);
   }
 
@@ -417,14 +441,15 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
     Eigen::Matrix4d transform_R = Eigen::Matrix4d::Zero();
     for (size_t i = 0; i < 4; i++)
       for (size_t j = 0; j < 4; j++)
-        for (size_t k = 0; k < 4; k++) transform_R(i, j) += double(transformation_(i, k)) * double(guess(k, j));
+        for (size_t k = 0; k < 4; k++)
+          transform_R(i, j) += double(transformation_(i, k)) * double(guess(k, j));
 
     const Eigen::Matrix3d R = transform_R.topLeftCorner<3, 3>();
 
 #pragma omp parallel for
     for (int i = 0; i < N; i++) {
-      auto& nn_indices = nn_indices_array[omp_get_thread_num()];
-      auto& nn_dists = nn_dists_array[omp_get_thread_num()];
+      auto & nn_indices = nn_indices_array[omp_get_thread_num()];
+      auto & nn_dists = nn_dists_array[omp_get_thread_num()];
 
       PointSource query = output[i];
       query.getVector4fMap() = guess * query.getVector4fMap();
@@ -432,17 +457,18 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 
       if (!searchForNeighbors(query, nn_indices, nn_dists)) {
         PCL_ERROR(
-            "[pcl::%s::computeTransformation] Unable to find a nearest neighbor in the target dataset for point %d in "
-            "the source!\n",
-            getClassName().c_str(), (*indices_)[i]);
+          "[pcl::%s::computeTransformation] Unable to find a nearest neighbor in the target "
+          "dataset for point %d in "
+          "the source!\n",
+          getClassName().c_str(), (*indices_)[i]);
         continue;
       }
 
       // Check if the distance to the nearest neighbor is smaller than the user imposed threshold
       if (nn_dists[0] < dist_threshold) {
-        const Eigen::Matrix3d& C1 = (*input_covariances_)[i];
-        const Eigen::Matrix3d& C2 = (*target_covariances_)[nn_indices[0]];
-        Eigen::Matrix3d& M = mahalanobis_[i];
+        const Eigen::Matrix3d & C1 = (*input_covariances_)[i];
+        const Eigen::Matrix3d & C2 = (*target_covariances_)[nn_indices[0]];
+        Eigen::Matrix3d & M = mahalanobis_[i];
         // M = R*C1
         M = R * C1;
         // temp = M*R' + C2 = R*C1*R' + C2
@@ -462,7 +488,8 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
     previous_transformation_ = transformation_;
     // optimization right here
     try {
-      rigid_transformation_estimation_(output, source_indices, *target_, target_indices, transformation_);
+      rigid_transformation_estimation_(
+        output, source_indices, *target_, target_indices, transformation_);
       /* compute the delta from this iteration */
       delta = 0.;
       for (int k = 0; k < 4; k++) {
@@ -476,8 +503,10 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
           if (c_delta > delta) delta = c_delta;
         }
       }
-    } catch (pcl::PCLException& e) {
-      PCL_DEBUG("[pcl::%s::computeTransformation] Optimization issue %s\n", getClassName().c_str(), e.what());
+    } catch (pcl::PCLException & e) {
+      PCL_DEBUG(
+        "[pcl::%s::computeTransformation] Optimization issue %s\n", getClassName().c_str(),
+        e.what());
       break;
     }
     nr_iterations_++;
@@ -486,10 +515,11 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
       converged_ = true;
       previous_transformation_ = transformation_;
       PCL_DEBUG(
-          "[pcl::%s::computeTransformation] Convergence reached. Number of iterations: %d out of %d. Transformation "
-          "difference: %f\n",
-          getClassName().c_str(), nr_iterations_, max_iterations_,
-          (transformation_ - previous_transformation_).array().abs().sum());
+        "[pcl::%s::computeTransformation] Convergence reached. Number of iterations: %d out of %d. "
+        "Transformation "
+        "difference: %f\n",
+        getClassName().c_str(), nr_iterations_, max_iterations_,
+        (transformation_ - previous_transformation_).array().abs().sum());
     } else
       PCL_DEBUG("[pcl::%s::computeTransformation] Convergence failed\n", getClassName().c_str());
   }
@@ -497,7 +527,8 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
   // final_transformation_.block<3,3> (0,0) = (transformation_.block<3,3> (0,0)) * (guess.block<3,3> (0,0));
   // final_transformation_.block <3, 1> (0, 3) = transformation_.block <3, 1> (0, 3) + guess.rightCols<1>.block <3, 1>
   // (0, 3);
-  final_transformation_.topLeftCorner(3, 3) = previous_transformation_.topLeftCorner(3, 3) * guess.topLeftCorner(3, 3);
+  final_transformation_.topLeftCorner(3, 3) =
+    previous_transformation_.topLeftCorner(3, 3) * guess.topLeftCorner(3, 3);
   final_transformation_(0, 3) = previous_transformation_(0, 3) + guess(0, 3);
   final_transformation_(1, 3) = previous_transformation_(1, 3) + guess(1, 3);
   final_transformation_(2, 3) = previous_transformation_(2, 3) + guess(2, 3);
@@ -507,15 +538,17 @@ inline void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>:
 }
 
 template <typename PointSource, typename PointTarget>
-void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::applyState(Eigen::Matrix4f& t,
-                                                                                    const Vector6d& x) const {
+void ndt_omp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::applyState(
+  Eigen::Matrix4f & t, const Vector6d & x) const
+{
   // !!! CAUTION Stanford GICP uses the Z Y X euler angles convention
   Eigen::Matrix3f R;
   R = Eigen::AngleAxisf(static_cast<float>(x[5]), Eigen::Vector3f::UnitZ()) *
       Eigen::AngleAxisf(static_cast<float>(x[4]), Eigen::Vector3f::UnitY()) *
       Eigen::AngleAxisf(static_cast<float>(x[3]), Eigen::Vector3f::UnitX());
   t.topLeftCorner<3, 3>().matrix() = R * t.topLeftCorner<3, 3>().matrix();
-  Eigen::Vector4f T(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]), 0.0f);
+  Eigen::Vector4f T(
+    static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]), 0.0f);
   t.col(3) += T;
 }
 

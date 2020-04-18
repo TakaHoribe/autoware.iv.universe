@@ -23,14 +23,15 @@
 #include <string>
 #include <vector>
 
-class CSVLoader {
- public:
+class CSVLoader
+{
+public:
   CSVLoader(std::string csv_path);
   ~CSVLoader();
 
-  bool readCSV(std::vector<std::vector<std::string>>& result, const char delim = ',');
+  bool readCSV(std::vector<std::vector<std::string>> & result, const char delim = ',');
 
- private:
+private:
   std::string csv_path_;
 };
 

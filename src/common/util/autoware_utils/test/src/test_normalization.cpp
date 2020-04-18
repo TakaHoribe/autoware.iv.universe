@@ -18,7 +18,8 @@
 
 #include <autoware_utils/normalization.h>
 
-TEST(normalization, normalizeDegree) {
+TEST(normalization, normalizeDegree)
+{
   using autoware_utils::normalizeDegree;
 
   // -180 <= deg < 180
@@ -50,7 +51,8 @@ TEST(normalization, normalizeDegree) {
   }
 }
 
-TEST(normalization, normalizeRadian) {
+TEST(normalization, normalizeRadian)
+{
   using autoware_utils::normalizeRadian;
 
   // -M_PI <= deg < M_PI

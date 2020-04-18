@@ -32,15 +32,16 @@
 
 #include <Eigen/Core>
 
-bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
-                                autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                                bool& orientation_output) {
+bool BoundingBoxModel::estimate(
+  const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
+  geometry_msgs::Pose & pose_output, bool & orientation_output)
+{
   // calc centroid point for height(z)
   pcl::PointXYZ centroid;
   centroid.x = 0;
   centroid.y = 0;
   centroid.z = 0;
-  for (const auto& pcl_point : cluster) {
+  for (const auto & pcl_point : cluster) {
     centroid.x += pcl_point.x;
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;
@@ -74,7 +75,7 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
     e_2 << -std::sin(theta), std::cos(theta);  // col.4, Algo.2
     std::vector<double> C_1;                   // col.5, Algo.2
     std::vector<double> C_2;                   // col.6, Algo.2
-    for (const auto& point : cluster) {
+    for (const auto & point : cluster) {
       C_1.push_back(point.x * e_1.x() + point.y * e_1.y());
       C_2.push_back(point.x * e_2.x() + point.y * e_2.y());
     }
@@ -97,7 +98,7 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
   e_2_star << -std::sin(theta_star), std::cos(theta_star);
   std::vector<double> C_1_star;  // col.11, Algo.2
   std::vector<double> C_2_star;  // col.11, Algo.2
-  for (const auto& point : cluster) {
+  for (const auto & point : cluster) {
     C_1_star.push_back(point.x * e_1_star.x() + point.y * e_1_star.y());
     C_2_star.push_back(point.x * e_2_star.x() + point.y * e_2_star.y());
   }
@@ -308,7 +309,9 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
 //   return beta;
 // }
 
-double BoundingBoxModel::calcClosenessCriterion(const std::vector<double>& C_1, const std::vector<double>& C_2) {
+double BoundingBoxModel::calcClosenessCriterion(
+  const std::vector<double> & C_1, const std::vector<double> & C_2)
+{
   // Paper : Algo.4 Closeness Criterion
   const double min_c_1 = *std::min_element(C_1.begin(), C_1.end());  // col.2, Algo.4
   const double max_c_1 = *std::max_element(C_1.begin(), C_1.end());  // col.2, Algo.4
@@ -316,13 +319,13 @@ double BoundingBoxModel::calcClosenessCriterion(const std::vector<double>& C_1, 
   const double max_c_2 = *std::max_element(C_2.begin(), C_2.end());  // col.3, Algo.4
 
   std::vector<double> D_1;  // col.4, Algo.4
-  for (const auto& c_1_element : C_1) {
+  for (const auto & c_1_element : C_1) {
     const double v = std::min(max_c_1 - c_1_element, c_1_element - min_c_1);
     D_1.push_back(std::fabs(v));
   }
 
   std::vector<double> D_2;  // col.5, Algo.4
-  for (const auto& c_2_element : C_2) {
+  for (const auto & c_2_element : C_2) {
     const double v = std::min(max_c_2 - c_2_element, c_2_element - min_c_2);
     D_2.push_back(std::fabs(v));
   }

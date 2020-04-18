@@ -32,33 +32,38 @@
 
 #include "freespace_planner/freespace_planner.h"
 
-namespace {
-
-bool isActive(const autoware_planning_msgs::Scenario::ConstPtr& scenario) {
+namespace
+{
+bool isActive(const autoware_planning_msgs::Scenario::ConstPtr & scenario)
+{
   if (!scenario) {
     return false;
   }
 
-  const auto& s = scenario->activating_scenarios;
-  if (std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) != std::end(s)) {
+  const auto & s = scenario->activating_scenarios;
+  if (
+    std::find(std::begin(s), std::end(s), autoware_planning_msgs::Scenario::Parking) !=
+    std::end(s)) {
     return true;
   }
 
   return false;
 }
 
-geometry_msgs::PoseArray trajectory2posearray(const autoware_planning_msgs::Trajectory& trajectory) {
+geometry_msgs::PoseArray trajectory2posearray(const autoware_planning_msgs::Trajectory & trajectory)
+{
   geometry_msgs::PoseArray pose_array;
   pose_array.header = trajectory.header;
 
-  for (const auto& point : trajectory.points) {
+  for (const auto & point : trajectory.points) {
     pose_array.poses.push_back(point.pose);
   }
 
   return pose_array;
 }
 
-std::vector<size_t> getReversingIndices(const autoware_planning_msgs::Trajectory& trajectory) {
+std::vector<size_t> getReversingIndices(const autoware_planning_msgs::Trajectory & trajectory)
+{
   std::vector<size_t> indices;
 
   for (size_t i = 0; i < trajectory.points.size() - 1; ++i) {
@@ -70,8 +75,10 @@ std::vector<size_t> getReversingIndices(const autoware_planning_msgs::Trajectory
   return indices;
 }
 
-size_t getNextTargetIndex(const size_t trajectory_size, const std::vector<size_t>& reversing_indices,
-                          const size_t current_target_index) {
+size_t getNextTargetIndex(
+  const size_t trajectory_size, const std::vector<size_t> & reversing_indices,
+  const size_t current_target_index)
+{
   if (!reversing_indices.empty()) {
     for (const auto reversing_index : reversing_indices) {
       if (reversing_index > current_target_index) {
@@ -83,8 +90,10 @@ size_t getNextTargetIndex(const size_t trajectory_size, const std::vector<size_t
   return trajectory_size - 1;
 }
 
-autoware_planning_msgs::Trajectory getPartialTrajectory(const autoware_planning_msgs::Trajectory& trajectory,
-                                                        const size_t start_index, const size_t end_index) {
+autoware_planning_msgs::Trajectory getPartialTrajectory(
+  const autoware_planning_msgs::Trajectory & trajectory, const size_t start_index,
+  const size_t end_index)
+{
   autoware_planning_msgs::Trajectory partial_trajectory;
   partial_trajectory.header = trajectory.header;
   partial_trajectory.header.stamp = ros::Time::now();
@@ -96,46 +105,56 @@ autoware_planning_msgs::Trajectory getPartialTrajectory(const autoware_planning_
 
   // Modify velocity at start/end point
   if (partial_trajectory.points.size() >= 2) {
-    partial_trajectory.points.front().twist.linear.x = partial_trajectory.points.at(1).twist.linear.x;
+    partial_trajectory.points.front().twist.linear.x =
+      partial_trajectory.points.at(1).twist.linear.x;
   }
   partial_trajectory.points.back().twist.linear.x = 0;
 
   return partial_trajectory;
 }
 
-double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+double calcDistance2d(const geometry_msgs::Point & p1, const geometry_msgs::Point & p2)
+{
   return std::hypot(p1.x - p2.x, p1.y - p2.y);
 }
 
-double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+double calcDistance2d(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
+{
   return calcDistance2d(p1.position, p2.position);
 }
 
-std::vector<double> calcDistances2d(const autoware_planning_msgs::Trajectory& trajectory,
-                                    const geometry_msgs::Pose& pose) {
+std::vector<double> calcDistances2d(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose)
+{
   std::vector<double> distances;
   distances.reserve(trajectory.points.size());
 
-  std::transform(std::begin(trajectory.points), std::end(trajectory.points), std::back_inserter(distances),
-                 [&](const auto& point) { return calcDistance2d(point.pose.position, pose.position); });
+  std::transform(
+    std::begin(trajectory.points), std::end(trajectory.points), std::back_inserter(distances),
+    [&](const auto & point) { return calcDistance2d(point.pose.position, pose.position); });
 
   return distances;
 }
 
-double calcDistance2d(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
+double calcDistance2d(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose)
+{
   const auto distances = calcDistances2d(trajectory, pose);
   const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
   return *min_itr;
 }
 
-geometry_msgs::Pose transformPose(const geometry_msgs::Pose& pose, const geometry_msgs::TransformStamped& transform) {
+geometry_msgs::Pose transformPose(
+  const geometry_msgs::Pose & pose, const geometry_msgs::TransformStamped & transform)
+{
   geometry_msgs::Pose transformed_pose;
   tf2::doTransform(pose, transformed_pose, transform);
 
   return transformed_pose;
 }
 
-geometry_msgs::PoseStamped tf2pose(const geometry_msgs::TransformStamped& tf) {
+geometry_msgs::PoseStamped tf2pose(const geometry_msgs::TransformStamped & tf)
+{
   geometry_msgs::PoseStamped pose;
 
   pose.header = tf.header;
@@ -147,12 +166,14 @@ geometry_msgs::PoseStamped tf2pose(const geometry_msgs::TransformStamped& tf) {
   return pose;
 }
 
-autoware_planning_msgs::Trajectory createTrajectory(const geometry_msgs::PoseStamped& current_pose,
-                                                    const AstarWaypoints& astar_waypoints, const double& velocity) {
+autoware_planning_msgs::Trajectory createTrajectory(
+  const geometry_msgs::PoseStamped & current_pose, const AstarWaypoints & astar_waypoints,
+  const double & velocity)
+{
   autoware_planning_msgs::Trajectory trajectory;
   trajectory.header = astar_waypoints.header;
 
-  for (const auto& awp : astar_waypoints.waypoints) {
+  for (const auto & awp : astar_waypoints.waypoints) {
     autoware_planning_msgs::TrajectoryPoint point;
 
     point.pose = awp.pose.pose;
@@ -172,7 +193,9 @@ autoware_planning_msgs::Trajectory createTrajectory(const geometry_msgs::PoseSta
   return trajectory;
 }
 
-autoware_planning_msgs::Trajectory createStopTrajectory(const geometry_msgs::PoseStamped& current_pose) {
+autoware_planning_msgs::Trajectory createStopTrajectory(
+  const geometry_msgs::PoseStamped & current_pose)
+{
   AstarWaypoints waypoints;
   AstarWaypoint waypoint;
 
@@ -186,15 +209,19 @@ autoware_planning_msgs::Trajectory createStopTrajectory(const geometry_msgs::Pos
   return createTrajectory(current_pose, waypoints, 0.0);
 }
 
-size_t findNearestIndex(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose) {
+size_t findNearestIndex(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose)
+{
   const auto distances = calcDistances2d(trajectory, pose);
   const auto min_itr = std::min_element(std::begin(distances), std::end(distances));
   return std::distance(std::begin(distances), min_itr);
 }
 
-bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
-               const double th_stopped_velocity_mps) {
-  for (const auto& twist : twist_buffer) {
+bool isStopped(
+  const std::deque<geometry_msgs::TwistStamped::ConstPtr> & twist_buffer,
+  const double th_stopped_velocity_mps)
+{
+  for (const auto & twist : twist_buffer) {
     if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
       return false;
     }
@@ -204,7 +231,8 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 
 }  // namespace
 
-AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
+AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_)
+{
   // NodeParam
   {
     private_nh_.param<double>("waypoints_velocity", node_param_.waypoints_velocity, 5.0);
@@ -212,8 +240,10 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
     private_nh_.param<double>("th_arrived_distance_m", node_param_.th_arrived_distance_m, 1.0);
     private_nh_.param<double>("th_stopped_time_sec", node_param_.th_stopped_time_sec, 1.0);
     private_nh_.param<double>("th_stopped_velocity_mps", node_param_.th_stopped_velocity_mps, 0.01);
-    private_nh_.param<double>("th_course_out_distance_m", node_param_.th_course_out_distance_m, 3.0);
-    private_nh_.param<bool>("replan_when_obstacle_found", node_param_.replan_when_obstacle_found, true);
+    private_nh_.param<double>(
+      "th_course_out_distance_m", node_param_.th_course_out_distance_m, 3.0);
+    private_nh_.param<bool>(
+      "replan_when_obstacle_found", node_param_.replan_when_obstacle_found, true);
     private_nh_.param<bool>("replan_when_course_out", node_param_.replan_when_course_out, true);
   }
 
@@ -241,31 +271,36 @@ AstarNavi::AstarNavi() : nh_(), private_nh_("~"), tf_listener_(tf_buffer_) {
 
     // costmap configs
     private_nh_.param<int>("obstacle_threshold", astar_param_.obstacle_threshold, 100);
-    private_nh_.param<double>("distance_heuristic_weight", astar_param_.distance_heuristic_weight, 1.0);
+    private_nh_.param<double>(
+      "distance_heuristic_weight", astar_param_.distance_heuristic_weight, 1.0);
   }
 
   // Subscribers
   {
     route_sub_ = private_nh_.subscribe("input/route", 1, &AstarNavi::onRoute, this);
-    occupancy_grid_sub_ = private_nh_.subscribe("input/occupancy_grid", 1, &AstarNavi::onOccupancyGrid, this);
+    occupancy_grid_sub_ =
+      private_nh_.subscribe("input/occupancy_grid", 1, &AstarNavi::onOccupancyGrid, this);
     scenario_sub_ = private_nh_.subscribe("input/scenario", 1, &AstarNavi::onScenario, this);
     twist_sub_ = private_nh_.subscribe("input/twist", 100, &AstarNavi::onTwist, this);
   }
 
   // Publishers
   {
-    trajectory_pub_ = private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
+    trajectory_pub_ =
+      private_nh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1, true);
 
-    debug_pose_array_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1, true);
+    debug_pose_array_pub_ =
+      private_nh_.advertise<geometry_msgs::PoseArray>("debug/pose_array", 1, true);
 
     debug_partial_pose_array_pub_ =
-        private_nh_.advertise<geometry_msgs::PoseArray>("debug/partial_pose_array", 1, true);
+      private_nh_.advertise<geometry_msgs::PoseArray>("debug/partial_pose_array", 1, true);
   }
 
   timer_ = private_nh_.createTimer(ros::Rate(node_param_.update_rate), &AstarNavi::onTimer, this);
 }
 
-void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
+void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr & msg)
+{
   route_ = msg;
 
   goal_pose_.header = msg->header;
@@ -274,11 +309,18 @@ void AstarNavi::onRoute(const autoware_planning_msgs::Route::ConstPtr& msg) {
   reset();
 }
 
-void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg) { occupancy_grid_ = msg; }
+void AstarNavi::onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr & msg)
+{
+  occupancy_grid_ = msg;
+}
 
-void AstarNavi::onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg) { scenario_ = msg; }
+void AstarNavi::onScenario(const autoware_planning_msgs::Scenario::ConstPtr & msg)
+{
+  scenario_ = msg;
+}
 
-void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg)
+{
   twist_ = msg;
 
   twist_buffer_.push_back(msg);
@@ -295,7 +337,8 @@ void AstarNavi::onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   }
 }
 
-bool AstarNavi::isPlanRequired() {
+bool AstarNavi::isPlanRequired()
+{
   if (trajectory_.points.empty()) {
     return true;
   }
@@ -307,7 +350,8 @@ bool AstarNavi::isPlanRequired() {
     const auto nearest_index = findNearestIndex(trajectory_, current_pose_.pose);
     const auto forward_trajectory = getPartialTrajectory(trajectory_, nearest_index, target_index_);
 
-    const bool is_obstacle_found = astar_->hasObstacleOnTrajectory(trajectory2posearray(forward_trajectory));
+    const bool is_obstacle_found =
+      astar_->hasObstacleOnTrajectory(trajectory2posearray(forward_trajectory));
     if (is_obstacle_found) {
       ROS_INFO("Found obstacle");
       return true;
@@ -315,7 +359,8 @@ bool AstarNavi::isPlanRequired() {
   }
 
   if (node_param_.replan_when_course_out) {
-    const bool is_course_out = calcDistance2d(trajectory_, current_pose_.pose) > node_param_.th_course_out_distance_m;
+    const bool is_course_out =
+      calcDistance2d(trajectory_, current_pose_.pose) > node_param_.th_course_out_distance_m;
     if (is_course_out) {
       ROS_INFO("Course out");
       return true;
@@ -325,14 +370,17 @@ bool AstarNavi::isPlanRequired() {
   return false;
 }
 
-void AstarNavi::updateTargetIndex() {
+void AstarNavi::updateTargetIndex()
+{
   const auto is_near_target =
-      calcDistance2d(trajectory_.points.at(target_index_).pose, current_pose_.pose) < node_param_.th_arrived_distance_m;
+    calcDistance2d(trajectory_.points.at(target_index_).pose, current_pose_.pose) <
+    node_param_.th_arrived_distance_m;
 
   const auto is_stopped = isStopped(twist_buffer_, node_param_.th_stopped_velocity_mps);
 
   if (is_near_target && is_stopped) {
-    const auto new_target_index = getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
+    const auto new_target_index =
+      getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
 
     if (new_target_index == target_index_) {
       // Finished publishing all partial trajectories
@@ -342,12 +390,14 @@ void AstarNavi::updateTargetIndex() {
     } else {
       // Switch to next partial trajectory
       prev_target_index_ = target_index_;
-      target_index_ = getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
+      target_index_ =
+        getNextTargetIndex(trajectory_.points.size(), reversing_indices_, target_index_);
     }
   }
 }
 
-void AstarNavi::onTimer(const ros::TimerEvent& event) {
+void AstarNavi::onTimer(const ros::TimerEvent & event)
+{
   // Check all inputs are ready
   if (!occupancy_grid_ || !route_ || !scenario_ || !twist_) {
     return;
@@ -363,7 +413,7 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   }
 
   // Get current pose
-  constexpr const char* vehicle_frame = "base_link";
+  constexpr const char * vehicle_frame = "base_link";
   current_pose_ = tf2pose(getTransform(occupancy_grid_->header.frame_id, vehicle_frame));
   if (current_pose_.header.frame_id == "") {
     return;
@@ -397,7 +447,8 @@ void AstarNavi::onTimer(const ros::TimerEvent& event) {
   debug_partial_pose_array_pub_.publish(trajectory2posearray(partial_trajectory_));
 }
 
-void AstarNavi::planTrajectory() {
+void AstarNavi::planTrajectory()
+{
   // Extend robot shape
   RobotShape extended_robot_shape = astar_param_.robot_shape;
   constexpr double margin = 1.0;
@@ -411,11 +462,12 @@ void AstarNavi::planTrajectory() {
   astar_->initializeNodes(*occupancy_grid_);
 
   // Calculate poses in costmap frame
-  const auto current_pose_in_costmap_frame =
-      transformPose(current_pose_.pose, getTransform(occupancy_grid_->header.frame_id, current_pose_.header.frame_id));
+  const auto current_pose_in_costmap_frame = transformPose(
+    current_pose_.pose,
+    getTransform(occupancy_grid_->header.frame_id, current_pose_.header.frame_id));
 
-  const auto goal_pose_in_costmap_frame =
-      transformPose(goal_pose_.pose, getTransform(occupancy_grid_->header.frame_id, goal_pose_.header.frame_id));
+  const auto goal_pose_in_costmap_frame = transformPose(
+    goal_pose_.pose, getTransform(occupancy_grid_->header.frame_id, goal_pose_.header.frame_id));
 
   // execute astar search
   const ros::WallTime start = ros::WallTime::now();
@@ -426,10 +478,12 @@ void AstarNavi::planTrajectory() {
 
   if (result) {
     ROS_INFO("Found goal!");
-    trajectory_ = createTrajectory(current_pose_, astar_->getWaypoints(), node_param_.waypoints_velocity);
+    trajectory_ =
+      createTrajectory(current_pose_, astar_->getWaypoints(), node_param_.waypoints_velocity);
     reversing_indices_ = getReversingIndices(trajectory_);
     prev_target_index_ = 0;
-    target_index_ = getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
+    target_index_ =
+      getNextTargetIndex(trajectory_.points.size(), reversing_indices_, prev_target_index_);
 
   } else {
     ROS_INFO("Can't find goal...");
@@ -437,14 +491,17 @@ void AstarNavi::planTrajectory() {
   }
 }
 
-void AstarNavi::reset() {
+void AstarNavi::reset()
+{
   trajectory_ = {};
   partial_trajectory_ = {};
   is_completed_ = false;
   private_nh_.setParam("is_completed", false);
 }
 
-geometry_msgs::TransformStamped AstarNavi::getTransform(const std::string& from, const std::string& to) {
+geometry_msgs::TransformStamped AstarNavi::getTransform(
+  const std::string & from, const std::string & to)
+{
   geometry_msgs::TransformStamped tf;
   try {
     tf = tf_buffer_.lookupTransform(from, to, ros::Time(0), ros::Duration(1.0));

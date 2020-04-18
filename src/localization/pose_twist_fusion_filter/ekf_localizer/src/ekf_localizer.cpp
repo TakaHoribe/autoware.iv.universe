@@ -22,7 +22,8 @@
 #define DEBUG_PRINT_MAT(X) { if (show_debug_info_) { std::cout << #X << ": " << X << std::endl; } }
 
 // clang-format on
-EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bias, vx, wz */) {
+EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bias, vx, wz */)
+{
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("predict_frequency", ekf_rate_, double(50.0));
   ekf_dt_ = 1.0 / std::max(ekf_rate_, 0.1);
@@ -34,7 +35,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   /* pose measurement */
   pnh_.param("pose_additional_delay", pose_additional_delay_, double(0.0));
   pnh_.param("pose_measure_uncertainty_time", pose_measure_uncertainty_time_, double(0.01));
-  pnh_.param("pose_rate", pose_rate_, double(10.0));               // used for covariance calculation
+  pnh_.param("pose_rate", pose_rate_, double(10.0));  // used for covariance calculation
   pnh_.param("pose_gate_dist", pose_gate_dist_, double(10000.0));  // Mahalanobis limit
   pnh_.param("pose_stddev_x", pose_stddev_x_, double(0.05));
   pnh_.param("pose_stddev_y", pose_stddev_y_, double(0.05));
@@ -43,7 +44,7 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
 
   /* twist measurement */
   pnh_.param("twist_additional_delay", twist_additional_delay_, double(0.0));
-  pnh_.param("twist_rate", twist_rate_, double(10.0));               // used for covariance calculation
+  pnh_.param("twist_rate", twist_rate_, double(10.0));  // used for covariance calculation
   pnh_.param("twist_gate_dist", twist_gate_dist_, double(10000.0));  // Mahalanobis limit
   pnh_.param("twist_stddev_vx", twist_stddev_vx_, double(0.2));
   pnh_.param("twist_stddev_wz", twist_stddev_wz_, double(0.03));
@@ -70,17 +71,21 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   timer_control_ = nh_.createTimer(ros::Duration(ekf_dt_), &EKFLocalizer::timerCallback, this);
   timer_tf_ = nh_.createTimer(ros::Duration(1.0 / tf_rate_), &EKFLocalizer::timerTFCallback, this);
   pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose", 1);
-  pub_pose_cov_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
+  pub_pose_cov_ =
+    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
-  pub_twist_cov_ = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
+  pub_twist_cov_ =
+    nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
   pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
   pub_pose_no_yawbias_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose_without_yawbias", 1);
-  pub_pose_cov_no_yawbias_ =
-      nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance_without_yawbias", 1);
+  pub_pose_cov_no_yawbias_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+    "ekf_pose_with_covariance_without_yawbias", 1);
   sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
-  sub_pose_with_cov_ = nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
+  sub_pose_with_cov_ =
+    nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
   sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
-  sub_twist_with_cov_ = nh_.subscribe("in_twist_with_covariance", 1, &EKFLocalizer::callbackTwistWithCovariance, this);
+  sub_twist_with_cov_ =
+    nh_.subscribe("in_twist_with_covariance", 1, &EKFLocalizer::callbackTwistWithCovariance, this);
   sub_twist_ = nh_.subscribe("in_twist", 1, &EKFLocalizer::callbackTwist, this);
 
   dim_x_ex_ = dim_x_ * extend_state_step_;
@@ -97,7 +102,8 @@ EKFLocalizer::~EKFLocalizer(){};
 /*
  * timerCallback
  */
-void EKFLocalizer::timerCallback(const ros::TimerEvent& e) {
+void EKFLocalizer::timerCallback(const ros::TimerEvent & e)
+{
   DEBUG_INFO("========================= timer called =========================");
 
   /* predict model in EKF */
@@ -105,7 +111,8 @@ void EKFLocalizer::timerCallback(const ros::TimerEvent& e) {
   DEBUG_INFO("------------------------- start prediction -------------------------");
   predictKinematicsModel();
   double elapsed =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count();
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
+      .count();
   DEBUG_INFO("[EKF] predictKinematicsModel calculation time = %f [ms]", elapsed * 1.0e-6);
   DEBUG_INFO("------------------------- end prediction -------------------------\n");
 
@@ -114,7 +121,9 @@ void EKFLocalizer::timerCallback(const ros::TimerEvent& e) {
     DEBUG_INFO("------------------------- start Pose -------------------------");
     start = std::chrono::system_clock::now();
     measurementUpdatePose(*current_pose_ptr_);
-    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count();
+    elapsed =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
+        .count();
     DEBUG_INFO("[EKF] measurementUpdatePose calculation time = %f [ms]", elapsed * 1.0e-6);
     DEBUG_INFO("------------------------- end Pose -------------------------\n");
   }
@@ -124,7 +133,9 @@ void EKFLocalizer::timerCallback(const ros::TimerEvent& e) {
     DEBUG_INFO("------------------------- start twist -------------------------");
     start = std::chrono::system_clock::now();
     measurementUpdateTwist(*current_twist_ptr_);
-    elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count();
+    elapsed =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
+        .count();
     DEBUG_INFO("[EKF] measurementUpdateTwist calculation time = %f [ms]", elapsed * 1.0e-6);
     DEBUG_INFO("------------------------- end twist -------------------------\n");
   }
@@ -136,7 +147,8 @@ void EKFLocalizer::timerCallback(const ros::TimerEvent& e) {
   publishEstimateResult();
 }
 
-void EKFLocalizer::showCurrentX() {
+void EKFLocalizer::showCurrentX()
+{
   if (show_debug_info_) {
     Eigen::MatrixXd X(dim_x_, 1);
     ekf_.getLatestX(X);
@@ -147,7 +159,8 @@ void EKFLocalizer::showCurrentX() {
 /*
  * setCurrentResult
  */
-void EKFLocalizer::setCurrentResult() {
+void EKFLocalizer::setCurrentResult()
+{
   current_ekf_pose_.header.frame_id = pose_frame_id_;
   current_ekf_pose_.header.stamp = ros::Time::now();
   current_ekf_pose_.pose.position.x = ekf_.getXelement(IDX::X);
@@ -168,7 +181,8 @@ void EKFLocalizer::setCurrentResult() {
   current_ekf_pose_.pose.orientation = createQuaternionFromRPY(roll, pitch, yaw);
 
   current_ekf_pose_no_yawbias_ = current_ekf_pose_;
-  current_ekf_pose_no_yawbias_.pose.orientation = createQuaternionFromRPY(roll, pitch, ekf_.getXelement(IDX::YAW));
+  current_ekf_pose_no_yawbias_.pose.orientation =
+    createQuaternionFromRPY(roll, pitch, ekf_.getXelement(IDX::YAW));
 
   current_ekf_twist_.header.frame_id = "base_link";
   current_ekf_twist_.header.stamp = ros::Time::now();
@@ -179,7 +193,8 @@ void EKFLocalizer::setCurrentResult() {
 /*
  * timerTFCallback
  */
-void EKFLocalizer::timerTFCallback(const ros::TimerEvent& e) {
+void EKFLocalizer::timerTFCallback(const ros::TimerEvent & e)
+{
   if (current_ekf_pose_.header.frame_id == "") return;
 
   geometry_msgs::TransformStamped transformStamped;
@@ -201,8 +216,9 @@ void EKFLocalizer::timerTFCallback(const ros::TimerEvent& e) {
 /*
  * getTransformFromTF
  */
-bool EKFLocalizer::getTransformFromTF(std::string parent_frame, std::string child_frame,
-                                      geometry_msgs::TransformStamped& transform) {
+bool EKFLocalizer::getTransformFromTF(
+  std::string parent_frame, std::string child_frame, geometry_msgs::TransformStamped & transform)
+{
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
   ros::Duration(0.1).sleep();
@@ -213,7 +229,7 @@ bool EKFLocalizer::getTransformFromTF(std::string parent_frame, std::string chil
     try {
       transform = tf_buffer.lookupTransform(parent_frame, child_frame, ros::Time(0));
       return true;
-    } catch (tf2::TransformException& ex) {
+    } catch (tf2::TransformException & ex) {
       ROS_WARN("%s", ex.what());
       ros::Duration(0.1).sleep();
     }
@@ -224,11 +240,13 @@ bool EKFLocalizer::getTransformFromTF(std::string parent_frame, std::string chil
 /*
  * callbackInitialPose
  */
-void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped& initialpose) {
+void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped & initialpose)
+{
   geometry_msgs::TransformStamped transform;
   if (!getTransformFromTF(pose_frame_id_, initialpose.header.frame_id, transform)) {
-    ROS_ERROR("[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
-              initialpose.header.frame_id.c_str());
+    ROS_ERROR(
+      "[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
+      initialpose.header.frame_id.c_str());
   };
 
   Eigen::MatrixXd X(dim_x_, 1);
@@ -238,8 +256,10 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
 
   X(IDX::X) = initialpose.pose.pose.position.x + transform.transform.translation.x;
   X(IDX::Y) = initialpose.pose.pose.position.y + transform.transform.translation.y;
-  current_ekf_pose_.pose.position.z = initialpose.pose.pose.position.z + transform.transform.translation.z;
-  X(IDX::YAW) = tf2::getYaw(initialpose.pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
+  current_ekf_pose_.pose.position.z =
+    initialpose.pose.pose.position.z + transform.transform.translation.z;
+  X(IDX::YAW) =
+    tf2::getYaw(initialpose.pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
   X(IDX::YAWB) = 0.0;
   X(IDX::VX) = 0.0;
   X(IDX::WZ) = 0.0;
@@ -259,7 +279,8 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
 /*
  * callbackPose
  */
-void EKFLocalizer::callbackPose(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+void EKFLocalizer::callbackPose(const geometry_msgs::PoseStamped::ConstPtr & msg)
+{
   if (!use_pose_with_covariance_) {
     current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(*msg);
   }
@@ -268,7 +289,9 @@ void EKFLocalizer::callbackPose(const geometry_msgs::PoseStamped::ConstPtr& msg)
 /*
  * callbackPoseWithCovariance
  */
-void EKFLocalizer::callbackPoseWithCovariance(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+void EKFLocalizer::callbackPoseWithCovariance(
+  const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg)
+{
   if (use_pose_with_covariance_) {
     geometry_msgs::PoseStamped pose;
     pose.header = msg->header;
@@ -281,7 +304,8 @@ void EKFLocalizer::callbackPoseWithCovariance(const geometry_msgs::PoseWithCovar
 /*
  * callbackTwist
  */
-void EKFLocalizer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+void EKFLocalizer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & msg)
+{
   if (!use_twist_with_covariance_) {
     current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
   }
@@ -290,7 +314,9 @@ void EKFLocalizer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& ms
 /*
  * callbackTwistWithCovariance
  */
-void EKFLocalizer::callbackTwistWithCovariance(const geometry_msgs::TwistWithCovarianceStamped::ConstPtr& msg) {
+void EKFLocalizer::callbackTwistWithCovariance(
+  const geometry_msgs::TwistWithCovarianceStamped::ConstPtr & msg)
+{
   if (use_twist_with_covariance_) {
     geometry_msgs::TwistStamped twist;
     twist.header = msg->header;
@@ -303,7 +329,8 @@ void EKFLocalizer::callbackTwistWithCovariance(const geometry_msgs::TwistWithCov
 /*
  * initEKF
  */
-void EKFLocalizer::initEKF() {
+void EKFLocalizer::initEKF()
+{
   Eigen::MatrixXd X = Eigen::MatrixXd::Zero(dim_x_, 1);
   Eigen::MatrixXd P = Eigen::MatrixXd::Identity(dim_x_, dim_x_) * 1.0E15;  // for x & y
   P(IDX::YAW, IDX::YAW) = 50.0;                                            // for yaw
@@ -317,7 +344,8 @@ void EKFLocalizer::initEKF() {
 /*
  * predictKinematicsModel
  */
-void EKFLocalizer::predictKinematicsModel() {
+void EKFLocalizer::predictKinematicsModel()
+{
   /*  == Nonlinear model ==
    *
    * x_{k+1}   = x_k + vx_k * cos(yaw_k + b_k) * dt
@@ -396,10 +424,12 @@ void EKFLocalizer::predictKinematicsModel() {
 /*
  * measurementUpdatePose
  */
-void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped& pose) {
+void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose)
+{
   if (pose.header.frame_id != pose_frame_id_) {
-    ROS_WARN_DELAYED_THROTTLE(2, "pose frame_id is %s, but pose_frame is set as %s. They must be same.",
-                              pose.header.frame_id.c_str(), pose_frame_id_.c_str());
+    ROS_WARN_DELAYED_THROTTLE(
+      2, "pose frame_id is %s, but pose_frame is set as %s. They must be same.",
+      pose.header.frame_id.c_str(), pose_frame_id_.c_str());
   }
   Eigen::MatrixXd X_curr(dim_x_, 1);  // curent state
   ekf_.getLatestX(X_curr);
@@ -412,14 +442,16 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped& pose)
   double delay_time = (t_curr - pose.header.stamp).toSec() + pose_additional_delay_;
   if (delay_time < 0.0) {
     delay_time = 0.0;
-    ROS_WARN_DELAYED_THROTTLE(1.0, "Pose time stamp is inappropriate, set delay to 0[s]. delay = %f", delay_time);
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0, "Pose time stamp is inappropriate, set delay to 0[s]. delay = %f", delay_time);
   }
   int delay_step = std::roundf(delay_time / ekf_dt_);
   if (delay_step > extend_state_step_ - 1) {
-    ROS_WARN_DELAYED_THROTTLE(1.0,
-                              "Pose delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
-                              "extend_state_step * ekf_dt : %f [s]",
-                              delay_time, extend_state_step_ * ekf_dt_);
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0,
+      "Pose delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
+      "extend_state_step * ekf_dt : %f [s]",
+      delay_time, extend_state_step_ * ekf_dt_);
     return;
   }
   DEBUG_INFO("delay_time: %f [s]", delay_time);
@@ -436,20 +468,23 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped& pose)
   y << pose.pose.position.x, pose.pose.position.y, yaw;
 
   if (isnan(y.array()).any() || isinf(y.array()).any()) {
-    ROS_WARN("[EKF] pose measurement matrix includes NaN of Inf. ignore update. check pose message.");
+    ROS_WARN(
+      "[EKF] pose measurement matrix includes NaN of Inf. ignore update. check pose message.");
     return;
   }
 
   /* Gate */
   Eigen::MatrixXd y_ekf(dim_y, 1);
-  y_ekf << ekf_.getXelement(delay_step * dim_x_ + IDX::X), ekf_.getXelement(delay_step * dim_x_ + IDX::Y), ekf_yaw;
+  y_ekf << ekf_.getXelement(delay_step * dim_x_ + IDX::X),
+    ekf_.getXelement(delay_step * dim_x_ + IDX::Y), ekf_yaw;
   Eigen::MatrixXd P_curr, P_y;
   ekf_.getLatestP(P_curr);
   P_y = P_curr.block(0, 0, dim_y, dim_y);
   if (!mahalanobisGate(pose_gate_dist_, y_ekf, y, P_y)) {
-    ROS_WARN_DELAYED_THROTTLE(2.0,
-                              "[EKF] Pose measurement update, mahalanobis distance is over limit. ignore "
-                              "measurement data.");
+    ROS_WARN_DELAYED_THROTTLE(
+      2.0,
+      "[EKF] Pose measurement update, mahalanobis distance is over limit. ignore "
+      "measurement data.");
     return;
   }
 
@@ -503,7 +538,8 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped& pose)
 /*
  * measurementUpdateTwist
  */
-void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twist) {
+void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & twist)
+{
   if (twist.header.frame_id != "base_link") {
     ROS_WARN_DELAYED_THROTTLE(2.0, "twist frame_id must be base_link");
   }
@@ -518,16 +554,17 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
   /* Calculate delay step */
   double delay_time = (t_curr - twist.header.stamp).toSec() + twist_additional_delay_;
   if (delay_time < 0.0) {
-    ROS_WARN_DELAYED_THROTTLE(1.0, "Twist time stamp is inappropriate (delay = %f [s]), set delay to 0[s].",
-                              delay_time);
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0, "Twist time stamp is inappropriate (delay = %f [s]), set delay to 0[s].", delay_time);
     delay_time = 0.0;
   }
   int delay_step = std::roundf(delay_time / ekf_dt_);
   if (delay_step > extend_state_step_ - 1) {
-    ROS_WARN_DELAYED_THROTTLE(1.0,
-                              "Twist delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
-                              "extend_state_step * ekf_dt : %f [s]",
-                              delay_time, extend_state_step_ * ekf_dt_);
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0,
+      "Twist delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
+      "extend_state_step * ekf_dt : %f [s]",
+      delay_time, extend_state_step_ * ekf_dt_);
     return;
   }
   DEBUG_INFO("delay_time: %f [s]", delay_time);
@@ -537,20 +574,23 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
   y << twist.twist.linear.x, twist.twist.angular.z;
 
   if (isnan(y.array()).any() || isinf(y.array()).any()) {
-    ROS_WARN("[EKF] twist measurement matrix includes NaN of Inf. ignore update. check twist message.");
+    ROS_WARN(
+      "[EKF] twist measurement matrix includes NaN of Inf. ignore update. check twist message.");
     return;
   }
 
   /* Gate */
   Eigen::MatrixXd y_ekf(dim_y, 1);
-  y_ekf << ekf_.getXelement(delay_step * dim_x_ + IDX::VX), ekf_.getXelement(delay_step * dim_x_ + IDX::WZ);
+  y_ekf << ekf_.getXelement(delay_step * dim_x_ + IDX::VX),
+    ekf_.getXelement(delay_step * dim_x_ + IDX::WZ);
   Eigen::MatrixXd P_curr, P_y;
   ekf_.getLatestP(P_curr);
   P_y = P_curr.block(4, 4, dim_y, dim_y);
   if (!mahalanobisGate(twist_gate_dist_, y_ekf, y, P_y)) {
-    ROS_WARN_DELAYED_THROTTLE(2.0,
-                              "[EKF] Twist measurement update, mahalanobis distance is over limit. ignore "
-                              "measurement data.");
+    ROS_WARN_DELAYED_THROTTLE(
+      2.0,
+      "[EKF] Twist measurement update, mahalanobis distance is over limit. ignore "
+      "measurement data.");
     return;
   }
 
@@ -590,10 +630,14 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
 /*
  * mahalanobisGate
  */
-bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd& x, const Eigen::MatrixXd& obj_x,
-                                   const Eigen::MatrixXd& cov) const {
+bool EKFLocalizer::mahalanobisGate(
+  const double & dist_max, const Eigen::MatrixXd & x, const Eigen::MatrixXd & obj_x,
+  const Eigen::MatrixXd & cov) const
+{
   Eigen::MatrixXd mahalanobis_squared = (x - obj_x).transpose() * cov.inverse() * (x - obj_x);
-  DEBUG_INFO("measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)), dist_max);
+  DEBUG_INFO(
+    "measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)),
+    dist_max);
   if (mahalanobis_squared(0) > dist_max * dist_max) {
     return false;
   }
@@ -604,7 +648,8 @@ bool EKFLocalizer::mahalanobisGate(const double& dist_max, const Eigen::MatrixXd
 /*
  * createQuaternionFromRPY
  */
-geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const {
+geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const
+{
   tf2::Quaternion q;
   q.setRPY(r, p, y);
   return tf2::toMsg(q);
@@ -613,7 +658,8 @@ geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double
 /*
  * publishEstimateResult
  */
-void EKFLocalizer::publishEstimateResult() {
+void EKFLocalizer::publishEstimateResult()
+{
   ros::Time current_time = ros::Time::now();
   Eigen::MatrixXd X(dim_x_, 1);
   Eigen::MatrixXd P(dim_x_, dim_x_);
@@ -674,7 +720,8 @@ void EKFLocalizer::publishEstimateResult() {
   /* debug publish */
   double RAD2DEG = 180.0 / 3.141592;
   double pose_yaw = 0.0;
-  if (current_pose_ptr_ != nullptr) pose_yaw = tf2::getYaw(current_pose_ptr_->pose.orientation) * RAD2DEG;
+  if (current_pose_ptr_ != nullptr)
+    pose_yaw = tf2::getYaw(current_pose_ptr_->pose.orientation) * RAD2DEG;
 
   std_msgs::Float64MultiArray msg;
   msg.data.push_back(X(IDX::YAW) * RAD2DEG);   // [0] ekf yaw angle
@@ -683,4 +730,7 @@ void EKFLocalizer::publishEstimateResult() {
   pub_debug_.publish(msg);
 }
 
-double EKFLocalizer::normalizeYaw(const double& yaw) const { return std::atan2(std::sin(yaw), std::cos(yaw)); }
+double EKFLocalizer::normalizeYaw(const double & yaw) const
+{
+  return std::atan2(std::sin(yaw), std::cos(yaw));
+}

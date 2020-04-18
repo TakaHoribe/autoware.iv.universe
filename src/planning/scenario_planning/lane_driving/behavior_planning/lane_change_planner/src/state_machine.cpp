@@ -24,20 +24,27 @@
 
 #include <visualization_msgs/Marker.h>
 
-namespace lane_change_planner {
-StateMachine::StateMachine(const std::shared_ptr<DataManager>& data_manager_ptr,
-                           const std::shared_ptr<RouteHandler>& route_handler_ptr)
-    : data_manager_ptr_(data_manager_ptr), route_handler_ptr_(route_handler_ptr) {}
+namespace lane_change_planner
+{
+StateMachine::StateMachine(
+  const std::shared_ptr<DataManager> & data_manager_ptr,
+  const std::shared_ptr<RouteHandler> & route_handler_ptr)
+: data_manager_ptr_(data_manager_ptr), route_handler_ptr_(route_handler_ptr)
+{
+}
 
-void StateMachine::init() {
+void StateMachine::init()
+{
   Status empty_status;
-  state_obj_ptr_ = std::make_unique<FollowingLaneState>(empty_status, data_manager_ptr_, route_handler_ptr_);
+  state_obj_ptr_ =
+    std::make_unique<FollowingLaneState>(empty_status, data_manager_ptr_, route_handler_ptr_);
   state_obj_ptr_->entry();
 }
 
-void StateMachine::init(const autoware_planning_msgs::Route& route) { init(); }
+void StateMachine::init(const autoware_planning_msgs::Route & route) { init(); }
 
-void StateMachine::updateState() {
+void StateMachine::updateState()
+{
   // update state status
   state_obj_ptr_->update();
   State current_state = state_obj_ptr_->getCurrentState();
@@ -49,23 +56,24 @@ void StateMachine::updateState() {
     const auto previous_status = state_obj_ptr_->getStatus();
     switch (next_state) {
       case State::FOLLOWING_LANE:
-        state_obj_ptr_ = std::make_unique<FollowingLaneState>(previous_status, data_manager_ptr_, route_handler_ptr_);
+        state_obj_ptr_ = std::make_unique<FollowingLaneState>(
+          previous_status, data_manager_ptr_, route_handler_ptr_);
         break;
       case State::EXECUTING_LANE_CHANGE:
-        state_obj_ptr_ =
-            std::make_unique<ExecutingLaneChangeState>(previous_status, data_manager_ptr_, route_handler_ptr_);
+        state_obj_ptr_ = std::make_unique<ExecutingLaneChangeState>(
+          previous_status, data_manager_ptr_, route_handler_ptr_);
         break;
       case State::ABORTING_LANE_CHANGE:
-        state_obj_ptr_ =
-            std::make_unique<AbortingLaneChangeState>(previous_status, data_manager_ptr_, route_handler_ptr_);
+        state_obj_ptr_ = std::make_unique<AbortingLaneChangeState>(
+          previous_status, data_manager_ptr_, route_handler_ptr_);
         break;
       case State::FORCING_LANE_CHANGE:
-        state_obj_ptr_ =
-            std::make_unique<ForcingLaneChangeState>(previous_status, data_manager_ptr_, route_handler_ptr_);
+        state_obj_ptr_ = std::make_unique<ForcingLaneChangeState>(
+          previous_status, data_manager_ptr_, route_handler_ptr_);
         break;
       case State::BLOCKED_BY_OBSTACLE:
-        state_obj_ptr_ =
-            std::make_unique<BlockedByObstacleState>(previous_status, data_manager_ptr_, route_handler_ptr_);
+        state_obj_ptr_ = std::make_unique<BlockedByObstacleState>(
+          previous_status, data_manager_ptr_, route_handler_ptr_);
         break;
     }
     state_obj_ptr_->entry();
@@ -73,7 +81,10 @@ void StateMachine::updateState() {
   }
 }
 
-autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const { return state_obj_ptr_->getPath(); }
+autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const
+{
+  return state_obj_ptr_->getPath();
+}
 
 Status StateMachine::getStatus() const { return state_obj_ptr_->getStatus(); }
 

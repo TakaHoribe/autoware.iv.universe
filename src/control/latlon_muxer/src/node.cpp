@@ -30,13 +30,18 @@
 
 #include "latlon_muxer/node.hpp"
 
-LatLonMuxer::LatLonMuxer() : nh_(""), pnh_("~") {
-  control_cmd_pub_ = pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_cmd", 1, true);
-  lat_control_cmd_sub_ = pnh_.subscribe("input/lateral/control_cmd", 1, &LatLonMuxer::latCtrlCmdCallback, this);
-  lon_control_cmd_sub_ = pnh_.subscribe("input/longitudinal/control_cmd", 1, &LatLonMuxer::lonCtrlCmdCallback, this);
+LatLonMuxer::LatLonMuxer() : nh_(""), pnh_("~")
+{
+  control_cmd_pub_ =
+    pnh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_cmd", 1, true);
+  lat_control_cmd_sub_ =
+    pnh_.subscribe("input/lateral/control_cmd", 1, &LatLonMuxer::latCtrlCmdCallback, this);
+  lon_control_cmd_sub_ =
+    pnh_.subscribe("input/longitudinal/control_cmd", 1, &LatLonMuxer::lonCtrlCmdCallback, this);
 }
 
-void LatLonMuxer::publishCmd() {
+void LatLonMuxer::publishCmd()
+{
   if (!lat_cmd_ || !lon_cmd_) {
     return;
   }
@@ -52,12 +57,16 @@ void LatLonMuxer::publishCmd() {
   control_cmd_pub_.publish(out);
 }
 
-void LatLonMuxer::latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr input_msg) {
+void LatLonMuxer::latCtrlCmdCallback(
+  const autoware_control_msgs::ControlCommandStamped::ConstPtr input_msg)
+{
   lat_cmd_ = std::make_shared<autoware_control_msgs::ControlCommandStamped>(*input_msg);
   publishCmd();
 }
 
-void LatLonMuxer::lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr input_msg) {
+void LatLonMuxer::lonCtrlCmdCallback(
+  const autoware_control_msgs::ControlCommandStamped::ConstPtr input_msg)
+{
   lon_cmd_ = std::make_shared<autoware_control_msgs::ControlCommandStamped>(*input_msg);
   publishCmd();
 }

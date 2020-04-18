@@ -43,5 +43,7 @@
 #include "ndt_pcl_modified/ndt.h"
 
 template class PCL_EXPORTS pcl::NormalDistributionsTransformModified<pcl::PointXYZ, pcl::PointXYZ>;
-template class PCL_EXPORTS pcl::NormalDistributionsTransformModified<pcl::PointXYZI, pcl::PointXYZI>;
-template class PCL_EXPORTS pcl::NormalDistributionsTransformModified<pcl::PointXYZRGB, pcl::PointXYZRGB>;
+template class PCL_EXPORTS
+  pcl::NormalDistributionsTransformModified<pcl::PointXYZI, pcl::PointXYZI>;
+template class PCL_EXPORTS
+  pcl::NormalDistributionsTransformModified<pcl::PointXYZRGB, pcl::PointXYZRGB>;

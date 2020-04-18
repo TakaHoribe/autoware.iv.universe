@@ -17,15 +17,18 @@
 
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics_no_delay.h"
 
-KinematicsBicycleModelNoDelay::KinematicsBicycleModelNoDelay(const double& wheelbase, const double& steer_lim)
-    : VehicleModelInterface(/* dim_x */ 2, /* dim_u */ 1, /* dim_y */ 2) {
+KinematicsBicycleModelNoDelay::KinematicsBicycleModelNoDelay(
+  const double & wheelbase, const double & steer_lim)
+: VehicleModelInterface(/* dim_x */ 2, /* dim_u */ 1, /* dim_y */ 2)
+{
   wheelbase_ = wheelbase;
   steer_lim_ = steer_lim;
 }
 
-void KinematicsBicycleModelNoDelay::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd,
-                                                            Eigen::MatrixXd& Cd, Eigen::MatrixXd& Wd,
-                                                            const double& dt) {
+void KinematicsBicycleModelNoDelay::calculateDiscreteMatrix(
+  Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+  const double & dt)
+{
   auto sign = [](double x) { return (x > 0.0) - (x < 0.0); };
 
   /* Linearize delta around delta_r (referece delta) */
@@ -46,6 +49,7 @@ void KinematicsBicycleModelNoDelay::calculateDiscreteMatrix(Eigen::MatrixXd& Ad,
   Wd *= dt;
 }
 
-void KinematicsBicycleModelNoDelay::calculateReferenceInput(Eigen::MatrixXd& Uref) {
+void KinematicsBicycleModelNoDelay::calculateReferenceInput(Eigen::MatrixXd & Uref)
+{
   Uref(0, 0) = std::atan(wheelbase_ * curvature_);
 }

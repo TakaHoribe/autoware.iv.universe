@@ -5,35 +5,32 @@
  *  $Id$
  */
 
-#include <ros/ros.h>
-#include <pluginlib/class_list_macros.h>
 #include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
+#include <ros/ros.h>
 
 #include "velodyne_pointcloud/interpolate.h"
 
 namespace velodyne_pointcloud
 {
-  class InterpolateNodelet: public nodelet::Nodelet
-  {
-  public:
+class InterpolateNodelet : public nodelet::Nodelet
+{
+public:
+  InterpolateNodelet() {}
+  ~InterpolateNodelet() {}
 
-    InterpolateNodelet() {}
-    ~InterpolateNodelet() {}
+private:
+  virtual void onInit();
+  boost::shared_ptr<Interpolate> interpolate_;
+};
 
-  private:
+/** @brief Nodelet initialization. */
+void InterpolateNodelet::onInit()
+{
+  interpolate_.reset(new Interpolate(getNodeHandle(), getPrivateNodeHandle()));
+}
 
-    virtual void onInit();
-    boost::shared_ptr<Interpolate> interpolate_;
-  };
-
-  /** @brief Nodelet initialization. */
-  void InterpolateNodelet::onInit()
-  {
-    interpolate_.reset(new Interpolate(getNodeHandle(), getPrivateNodeHandle()));
-  }
-
-} // namespace velodyne_pointcloud
-
+}  // namespace velodyne_pointcloud
 
 // Register this plugin with pluginlib.  Names must match nodelets.xml.
 //

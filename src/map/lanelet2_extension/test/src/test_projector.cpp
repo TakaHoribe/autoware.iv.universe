@@ -21,13 +21,15 @@
 
 #include <lanelet2_extension/projection/mgrs_projector.h>
 
-class TestSuite : public ::testing::Test {
- public:
+class TestSuite : public ::testing::Test
+{
+public:
   TestSuite() {}
   ~TestSuite() {}
 };
 
-TEST(TestSuite, ForwardProjection) {
+TEST(TestSuite, ForwardProjection)
+{
   lanelet::projection::MGRSProjector projector;
   // lat/lon in Tokyo
   lanelet::GPSPoint gps_point;
@@ -37,7 +39,8 @@ TEST(TestSuite, ForwardProjection) {
   lanelet::BasicPoint3d mgrs_point = projector.forward(gps_point);
 
   // projected z value should not change
-  ASSERT_DOUBLE_EQ(mgrs_point.z(), gps_point.ele) << "Forward projected z value should be " << gps_point.ele;
+  ASSERT_DOUBLE_EQ(mgrs_point.z(), gps_point.ele)
+    << "Forward projected z value should be " << gps_point.ele;
 
   // https://www.movable-type.co.uk/scripts/latlong-utm-mgrs.html
   // round the projected value to mm since the above reference only gives value
@@ -50,7 +53,8 @@ TEST(TestSuite, ForwardProjection) {
   ASSERT_DOUBLE_EQ(rounded_y_mm, 46063.748) << "Forward projected y value should be " << 46063.748;
 }
 
-TEST(TestSuite, ReverseProjection) {
+TEST(TestSuite, ReverseProjection)
+{
   lanelet::projection::MGRSProjector projector;
   lanelet::BasicPoint3d mgrs_point;
   mgrs_point.x() = 94946.0;
@@ -61,18 +65,22 @@ TEST(TestSuite, ReverseProjection) {
   lanelet::GPSPoint gps_point = projector.reverse(mgrs_point);
 
   // projected z value should not change
-  ASSERT_DOUBLE_EQ(gps_point.ele, mgrs_point.z()) << "Reverse projected z value should be " << mgrs_point.z();
+  ASSERT_DOUBLE_EQ(gps_point.ele, mgrs_point.z())
+    << "Reverse projected z value should be " << mgrs_point.z();
 
   // https://www.movable-type.co.uk/scripts/latlong-utm-mgrs.html
   // round the projected value since the above reference only gives value up to
   // precision of 1e-8
   double rounded_lat = round(gps_point.lat * 1e8) / 1e8;
-  ASSERT_DOUBLE_EQ(rounded_lat, 35.65282525) << "Reverse projected latitude value should be " << 35.65282525;
+  ASSERT_DOUBLE_EQ(rounded_lat, 35.65282525)
+    << "Reverse projected latitude value should be " << 35.65282525;
   double rounded_lon = round(gps_point.lon * 1e8) / 1e8;
-  ASSERT_DOUBLE_EQ(rounded_lon, 139.83947721) << "Reverse projected longitude value should be " << 139.83947721;
+  ASSERT_DOUBLE_EQ(rounded_lon, 139.83947721)
+    << "Reverse projected longitude value should be " << 139.83947721;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

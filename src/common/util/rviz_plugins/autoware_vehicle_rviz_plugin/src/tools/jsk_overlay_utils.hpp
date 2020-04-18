@@ -60,37 +60,40 @@
 
 #include <ros/ros.h>
 
-namespace jsk_rviz_plugins {
+namespace jsk_rviz_plugins
+{
 class OverlayObject;
 
-class ScopedPixelBuffer {
- public:
+class ScopedPixelBuffer
+{
+public:
   ScopedPixelBuffer(Ogre::HardwarePixelBufferSharedPtr pixel_buffer);
   virtual ~ScopedPixelBuffer();
   virtual Ogre::HardwarePixelBufferSharedPtr getPixelBuffer();
   virtual QImage getQImage(unsigned int width, unsigned int height);
-  virtual QImage getQImage(OverlayObject& overlay);
-  virtual QImage getQImage(unsigned int width, unsigned int height, QColor& bg_color);
-  virtual QImage getQImage(OverlayObject& overlay, QColor& bg_color);
+  virtual QImage getQImage(OverlayObject & overlay);
+  virtual QImage getQImage(unsigned int width, unsigned int height, QColor & bg_color);
+  virtual QImage getQImage(OverlayObject & overlay, QColor & bg_color);
 
- protected:
+protected:
   Ogre::HardwarePixelBufferSharedPtr pixel_buffer_;
 
- private:
+private:
 };
 
 // this is a class for put overlay object on rviz 3D panel.
 // This class suppose to be instantiated in onInitialize method
 // of rviz::Display class.
-class OverlayObject {
- public:
+class OverlayObject
+{
+public:
 #if ROS_VERSION_MINIMUM(1, 12, 0)
   typedef std::shared_ptr<OverlayObject> Ptr;
 #else
   typedef boost::shared_ptr<OverlayObject> Ptr;
 #endif
 
-  OverlayObject(const std::string& name);
+  OverlayObject(const std::string & name);
   virtual ~OverlayObject();
 
   virtual std::string getName();
@@ -105,14 +108,14 @@ class OverlayObject {
   virtual unsigned int getTextureWidth();
   virtual unsigned int getTextureHeight();
 
- protected:
+protected:
   const std::string name_;
-  Ogre::Overlay* overlay_;
-  Ogre::PanelOverlayElement* panel_;
+  Ogre::Overlay * overlay_;
+  Ogre::PanelOverlayElement * panel_;
   Ogre::MaterialPtr panel_material_;
   Ogre::TexturePtr texture_;
 
- private:
+private:
 };
 
 // Ogre::Overlay* createOverlay(std::string name);

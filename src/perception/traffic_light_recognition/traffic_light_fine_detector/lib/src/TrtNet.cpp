@@ -46,8 +46,9 @@ static Tn::Logger gLogger;
     return (ret);                                                         \
   } while (0)
 
-inline void* safeCudaMalloc(size_t memSize) {
-  void* deviceMem;
+inline void * safeCudaMalloc(size_t memSize)
+{
+  void * deviceMem;
   CUDA_CHECK(cudaMalloc(&deviceMem, memSize));
   if (deviceMem == nullptr) {
     std::cerr << "Out of memory" << std::endl;
@@ -56,11 +57,13 @@ inline void* safeCudaMalloc(size_t memSize) {
   return deviceMem;
 }
 
-inline int64_t volume(const nvinfer1::Dims& d) {
+inline int64_t volume(const nvinfer1::Dims & d)
+{
   return std::accumulate(d.d, d.d + d.nbDims, 1, std::multiplies<int64_t>());
 }
 
-inline unsigned int getElementSize(nvinfer1::DataType t) {
+inline unsigned int getElementSize(nvinfer1::DataType t)
+{
   switch (t) {
     case nvinfer1::DataType::kINT32:
       return 4;
@@ -75,29 +78,34 @@ inline unsigned int getElementSize(nvinfer1::DataType t) {
   return 0;
 }
 
-namespace Tn {
-trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float>>& calibratorData, RUN_MODE mode,
-               bool readCache, const std::string& dataPath)
-    : mTrtContext(nullptr),
-      mTrtEngine(nullptr),
-      mTrtRunTime(nullptr),
-      mTrtRunMode(mode),
-      mTrtInputCount(0),
-      mTrtIterationTime(0) {
-  IHostMemory* trtModelStream{nullptr};
+namespace Tn
+{
+trtNet::trtNet(
+  const std::string & onnxmodel, const std::vector<std::vector<float>> & calibratorData,
+  RUN_MODE mode, bool readCache, const std::string & dataPath)
+: mTrtContext(nullptr),
+  mTrtEngine(nullptr),
+  mTrtRunTime(nullptr),
+  mTrtRunMode(mode),
+  mTrtInputCount(0),
+  mTrtIterationTime(0)
+{
+  IHostMemory * trtModelStream{nullptr};
 
   const int maxBatchSize = 1;
 
-  Int8EntropyCalibrator* calibrator = nullptr;
+  Int8EntropyCalibrator * calibrator = nullptr;
   if (calibratorData.size() > 0 && mode == RUN_MODE::INT8) {
     auto endPos = onnxmodel.find_last_of(".");
     auto beginPos = onnxmodel.find_last_of('/') + 1;
     std::string calibratorName = onnxmodel.substr(beginPos, endPos - beginPos);
     std::cout << "create calibrator,Named:" << calibratorName << std::endl;
-    calibrator = new Int8EntropyCalibrator(maxBatchSize, calibratorData, dataPath + calibratorName, readCache);
+    calibrator =
+      new Int8EntropyCalibrator(maxBatchSize, calibratorData, dataPath + calibratorName, readCache);
   }
 
-  ICudaEngine* tmpEngine = loadModelAndCreateEngine(onnxmodel.c_str(), maxBatchSize, calibrator, trtModelStream);
+  ICudaEngine * tmpEngine =
+    loadModelAndCreateEngine(onnxmodel.c_str(), maxBatchSize, calibrator, trtModelStream);
   assert(tmpEngine != nullptr);
   assert(trtModelStream != nullptr);
   if (calibrator) {
@@ -117,13 +125,14 @@ trtNet::trtNet(const std::string& onnxmodel, const std::vector<std::vector<float
   InitEngine();
 }
 
-trtNet::trtNet(const std::string& engineFile)
-    : mTrtContext(nullptr),
-      mTrtEngine(nullptr),
-      mTrtRunTime(nullptr),
-      mTrtRunMode(RUN_MODE::FLOAT32),
-      mTrtInputCount(0),
-      mTrtIterationTime(0) {
+trtNet::trtNet(const std::string & engineFile)
+: mTrtContext(nullptr),
+  mTrtEngine(nullptr),
+  mTrtRunTime(nullptr),
+  mTrtRunMode(RUN_MODE::FLOAT32),
+  mTrtInputCount(0),
+  mTrtIterationTime(0)
+{
   using namespace std;
   fstream file;
   file.open(engineFile, ios::binary | ios::in);
@@ -149,7 +158,8 @@ trtNet::trtNet(const std::string& engineFile)
   // std::cerr << "finised deserializing " << std::endl;
 }
 
-void trtNet::InitEngine() {
+void trtNet::InitEngine()
+{
   const int maxBatchSize = 1;
   mTrtContext = mTrtEngine->createExecutionContext();
   assert(mTrtContext != nullptr);
@@ -172,14 +182,17 @@ void trtNet::InitEngine() {
   CUDA_CHECK(cudaStreamCreate(&mTrtCudaStream));
 }
 
-nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* onnxFile, int maxBatchSize,
-                                                        IInt8Calibrator* calibrator, IHostMemory*& trtModelStream) {
+nvinfer1::ICudaEngine * trtNet::loadModelAndCreateEngine(
+  const char * onnxFile, int maxBatchSize, IInt8Calibrator * calibrator,
+  IHostMemory *& trtModelStream)
+{
   // Create the builder
-  IBuilder* builder = createInferBuilder(gLogger);
+  IBuilder * builder = createInferBuilder(gLogger);
 
   // Parse the model to populate the network, then set the outputs.
-  const auto explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-  INetworkDefinition* network = builder->createNetworkV2(explicitBatch);
+  const auto explicitBatch =
+    1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+  INetworkDefinition * network = builder->createNetworkV2(explicitBatch);
   auto parser = nvonnxparser::createParser(*network, gLogger);
 
   std::cout << "Begin parsing model..." << std::endl;
@@ -191,17 +204,19 @@ nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* onnxFile, in
   builder->setMaxWorkspaceSize(1 << 30);  // 1G
   if (mTrtRunMode == RUN_MODE::INT8) {
     std::cout << "setInt8Mode" << std::endl;
-    if (!builder->platformHasFastInt8()) std::cout << "Notice: the platform do not has fast for int8" << std::endl;
+    if (!builder->platformHasFastInt8())
+      std::cout << "Notice: the platform do not has fast for int8" << std::endl;
     builder->setInt8Mode(true);
     builder->setInt8Calibrator(calibrator);
   } else if (mTrtRunMode == RUN_MODE::FLOAT16) {
     std::cout << "setFp16Mode" << std::endl;
-    if (!builder->platformHasFastFp16()) std::cout << "Notice: the platform do not has fast for fp16" << std::endl;
+    if (!builder->platformHasFastFp16())
+      std::cout << "Notice: the platform do not has fast for fp16" << std::endl;
     builder->setFp16Mode(true);
   }
 
   std::cout << "Begin building engine..." << std::endl;
-  ICudaEngine* engine = builder->buildCudaEngine(*network);
+  ICudaEngine * engine = builder->buildCudaEngine(*network);
   if (!engine) RETURN_AND_LOG(nullptr, ERROR, "Unable to create engine");
   std::cout << "End building engine..." << std::endl;
 
@@ -216,14 +231,16 @@ nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* onnxFile, in
   return engine;
 }
 
-void trtNet::doInference(const void* inputData, void* outputData) {
+void trtNet::doInference(const void * inputData, void * outputData)
+{
   static const int batchSize = 1;
   assert(mTrtInputCount == 1);
 
   // DMA the input to the GPU,  execute the batch asynchronously, and DMA it back:
   int inputIndex = 0;
-  CUDA_CHECK(cudaMemcpyAsync(mTrtCudaBuffer[inputIndex], inputData, mTrtBindBufferSize[inputIndex],
-                             cudaMemcpyHostToDevice, mTrtCudaStream));
+  CUDA_CHECK(cudaMemcpyAsync(
+    mTrtCudaBuffer[inputIndex], inputData, mTrtBindBufferSize[inputIndex], cudaMemcpyHostToDevice,
+    mTrtCudaStream));
   auto t_start = std::chrono::high_resolution_clock::now();
   mTrtContext->execute(batchSize, &mTrtCudaBuffer[inputIndex]);
   auto t_end = std::chrono::high_resolution_clock::now();
@@ -233,8 +250,9 @@ void trtNet::doInference(const void* inputData, void* outputData) {
 
   for (size_t bindingIdx = mTrtInputCount; bindingIdx < mTrtBindBufferSize.size(); ++bindingIdx) {
     auto size = mTrtBindBufferSize[bindingIdx];
-    CUDA_CHECK(cudaMemcpyAsync(outputData, mTrtCudaBuffer[bindingIdx], size, cudaMemcpyDeviceToHost, mTrtCudaStream));
-    outputData = (char*)outputData + size;
+    CUDA_CHECK(cudaMemcpyAsync(
+      outputData, mTrtCudaBuffer[bindingIdx], size, cudaMemcpyDeviceToHost, mTrtCudaStream));
+    outputData = (char *)outputData + size;
   }
 
   mTrtIterationTime++;

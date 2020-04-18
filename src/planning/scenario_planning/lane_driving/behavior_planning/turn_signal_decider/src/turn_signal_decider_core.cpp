@@ -18,19 +18,24 @@
 using autoware_planning_msgs::PathWithLaneId;
 using autoware_vehicle_msgs::TurnSignal;
 
-namespace {
-double getDistance3d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+namespace
+{
+double getDistance3d(const geometry_msgs::Point & p1, const geometry_msgs::Point & p2)
+{
   return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2) + std::pow(p1.z - p2.z, 2));
 }
 }  // namespace
 
-namespace turn_signal_decider {
-TurnSignalDecider::TurnSignalDecider() : pnh_("~") {
+namespace turn_signal_decider
+{
+TurnSignalDecider::TurnSignalDecider() : pnh_("~")
+{
   // setup data manager
   constexpr double vehicle_pose_update_period = 0.1;
-  vehicle_pose_timer_ =
-      pnh_.createTimer(ros::Duration(vehicle_pose_update_period), &DataManager::onVehiclePoseUpdate, &data_);
-  path_subscriber_ = pnh_.subscribe("input/path_with_lane_id", 1, &DataManager::onPathWithLaneId, &data_);
+  vehicle_pose_timer_ = pnh_.createTimer(
+    ros::Duration(vehicle_pose_update_period), &DataManager::onVehiclePoseUpdate, &data_);
+  path_subscriber_ =
+    pnh_.subscribe("input/path_with_lane_id", 1, &DataManager::onPathWithLaneId, &data_);
   map_subscriber_ = pnh_.subscribe("input/vector_map", 1, &DataManager::onLaneletMap, &data_);
 
   // get ROS parameters
@@ -40,10 +45,12 @@ TurnSignalDecider::TurnSignalDecider() : pnh_("~") {
   // set publishers
   turn_signal_publisher_ = pnh_.advertise<TurnSignal>("output/turn_signal_cmd", 1, false);
   constexpr double timer_period = 0.1;
-  turn_signal_timer_ = pnh_.createTimer(ros::Duration(timer_period), &TurnSignalDecider::onTurnSignalTimer, this);
+  turn_signal_timer_ =
+    pnh_.createTimer(ros::Duration(timer_period), &TurnSignalDecider::onTurnSignalTimer, this);
 }
 
-void TurnSignalDecider::onTurnSignalTimer(const ros::TimerEvent& event) {
+void TurnSignalDecider::onTurnSignalTimer(const ros::TimerEvent & event)
+{
   // wait for mandatory topics
   if (!data_.isDataReady()) {
     return;
@@ -52,7 +59,8 @@ void TurnSignalDecider::onTurnSignalTimer(const ros::TimerEvent& event) {
   // setup
   const auto path = data_.getPath();
   FrenetCoordinate3d vehicle_pose_frenet;
-  if (!convertToFrenetCoordinate3d(path, data_.getVehiclePoseStamped().pose.position, &vehicle_pose_frenet)) {
+  if (!convertToFrenetCoordinate3d(
+        path, data_.getVehiclePoseStamped().pose.position, &vehicle_pose_frenet)) {
     ROS_ERROR_THROTTLE(5, "failed to convert vehicle pose into frenet coordinate");
     return;
   }
@@ -79,13 +87,14 @@ void TurnSignalDecider::onTurnSignalTimer(const ros::TimerEvent& event) {
   turn_signal_publisher_.publish(turn_signal);
 }
 
-lanelet::routing::RelationType TurnSignalDecider::getRelation(const lanelet::ConstLanelet& prev_lane,
-                                                              const lanelet::ConstLanelet& next_lane) const {
+lanelet::routing::RelationType TurnSignalDecider::getRelation(
+  const lanelet::ConstLanelet & prev_lane, const lanelet::ConstLanelet & next_lane) const
+{
   const auto routing_graph_ptr = data_.getRoutingGraphPtr();
   if (prev_lane == next_lane) {
     return lanelet::routing::RelationType::None;
   }
-  const auto& relation = routing_graph_ptr->routingRelation(prev_lane, next_lane);
+  const auto & relation = routing_graph_ptr->routingRelation(prev_lane, next_lane);
   if (relation) {
     return relation.get();
   }
@@ -94,16 +103,17 @@ lanelet::routing::RelationType TurnSignalDecider::getRelation(const lanelet::Con
   const auto shortest_path = routing_graph_ptr->shortestPath(prev_lane, next_lane);
   if (shortest_path) {
     auto prev_llt = shortest_path->front();
-    for (const auto& llt : shortest_path.get()) {
+    for (const auto & llt : shortest_path.get()) {
       if (prev_llt == llt) {
         continue;
       }
-      const auto& relation = routing_graph_ptr->routingRelation(prev_llt, llt);
+      const auto & relation = routing_graph_ptr->routingRelation(prev_llt, llt);
       if (!relation) {
         continue;
       }
-      if (relation.get() == lanelet::routing::RelationType::Left ||
-          relation.get() == lanelet::routing::RelationType::Right) {
+      if (
+        relation.get() == lanelet::routing::RelationType::Left ||
+        relation.get() == lanelet::routing::RelationType::Right) {
         return relation.get();
       }
       prev_llt = llt;
@@ -113,8 +123,10 @@ lanelet::routing::RelationType TurnSignalDecider::getRelation(const lanelet::Con
   return lanelet::routing::RelationType::None;
 }
 
-bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetCoordinate3d& vehicle_pose_frenet,
-                                       TurnSignal* signal_state_ptr, double* distance_ptr) const {
+bool TurnSignalDecider::isChangingLane(
+  const PathWithLaneId & path, const FrenetCoordinate3d & vehicle_pose_frenet,
+  TurnSignal * signal_state_ptr, double * distance_ptr) const
+{
   if (signal_state_ptr == nullptr || distance_ptr == nullptr) {
     ROS_ERROR("Given argument is nullptr.");
     return false;
@@ -127,20 +139,21 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
 
   auto prev_point = path.points.front();
   auto prev_lane_id = path.points.front().lane_ids.front();
-  for (const auto& path_point : path.points) {
-    accumulated_distance += getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
+  for (const auto & path_point : path.points) {
+    accumulated_distance +=
+      getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
     prev_point = path_point;
     const double distance_from_vehicle = accumulated_distance - vehicle_pose_frenet.length;
     if (distance_from_vehicle < 0) {
       continue;
     }
-    for (const auto& lane_id : path_point.lane_ids) {
+    for (const auto & lane_id : path_point.lane_ids) {
       if (lane_id == prev_lane_id) {
         continue;
       }
 
-      const auto& prev_lane = data_.getLaneFromId(prev_lane_id);
-      const auto& lane = data_.getLaneFromId(lane_id);
+      const auto & prev_lane = data_.getLaneFromId(prev_lane_id);
+      const auto & lane = data_.getLaneFromId(lane_id);
       prev_lane_id = lane_id;
 
       // check lane change relation
@@ -164,8 +177,10 @@ bool TurnSignalDecider::isChangingLane(const PathWithLaneId& path, const FrenetC
   return false;
 }
 
-bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordinate3d& vehicle_pose_frenet,
-                                  TurnSignal* signal_state_ptr, double* distance_ptr) const {
+bool TurnSignalDecider::isTurning(
+  const PathWithLaneId & path, const FrenetCoordinate3d & vehicle_pose_frenet,
+  TurnSignal * signal_state_ptr, double * distance_ptr) const
+{
   if (signal_state_ptr == nullptr || distance_ptr == nullptr) {
     ROS_ERROR("Given argument is nullptr.");
     return false;
@@ -178,20 +193,21 @@ bool TurnSignalDecider::isTurning(const PathWithLaneId& path, const FrenetCoordi
 
   auto prev_point = path.points.front();
   auto prev_lane_id = lanelet::InvalId;
-  for (const auto& path_point : path.points) {
-    accumulated_distance += getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
+  for (const auto & path_point : path.points) {
+    accumulated_distance +=
+      getDistance3d(prev_point.point.pose.position, path_point.point.pose.position);
     prev_point = path_point;
     const double distance_from_vehicle = accumulated_distance - vehicle_pose_frenet.length;
     if (distance_from_vehicle < 0) {
       continue;
     }
-    for (const auto& lane_id : path_point.lane_ids) {
+    for (const auto & lane_id : path_point.lane_ids) {
       if (lane_id == prev_lane_id) {
         continue;
       }
       prev_lane_id = lane_id;
 
-      const auto& lane = data_.getLaneFromId(lane_id);
+      const auto & lane = data_.getLaneFromId(lane_id);
       if (lane.attributeOr("turn_direction", std::string("none")) == "left") {
         signal_state_ptr->data = TurnSignal::LEFT;
         *distance_ptr = distance_from_vehicle;

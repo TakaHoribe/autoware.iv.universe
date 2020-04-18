@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-namespace velodyne_pointcloud {
-
+namespace velodyne_pointcloud
+{
 /** \brief correction values for a single laser
  *
  * Correction values for a single laser (as provided by db.xml from
@@ -27,7 +27,8 @@ namespace velodyne_pointcloud {
  */
 
 /** \brief Correction information for a single laser. */
-struct LaserCorrection {
+struct LaserCorrection
+{
   /** parameters in db.xml */
   float rot_correction;
   float vert_correction;
@@ -52,8 +53,9 @@ struct LaserCorrection {
 };
 
 /** \brief Calibration information for the entire device. */
-class Calibration {
- public:
+class Calibration
+{
+public:
   float distance_resolution_m;
   std::map<int, LaserCorrection> laser_corrections_map;
   std::vector<LaserCorrection> laser_corrections;
@@ -61,14 +63,18 @@ class Calibration {
   bool initialized;
   bool ros_info;
 
- public:
-  Calibration(bool info = true) : distance_resolution_m(0.002f), initialized(false), ros_info(info) {}
-  Calibration(const std::string& calibration_file, bool info = true) : distance_resolution_m(0.002f), ros_info(info) {
+public:
+  Calibration(bool info = true) : distance_resolution_m(0.002f), initialized(false), ros_info(info)
+  {
+  }
+  Calibration(const std::string & calibration_file, bool info = true)
+  : distance_resolution_m(0.002f), ros_info(info)
+  {
     read(calibration_file);
   }
 
-  void read(const std::string& calibration_file);
-  void write(const std::string& calibration_file);
+  void read(const std::string & calibration_file);
+  void write(const std::string & calibration_file);
 };
 
 }  // namespace velodyne_pointcloud

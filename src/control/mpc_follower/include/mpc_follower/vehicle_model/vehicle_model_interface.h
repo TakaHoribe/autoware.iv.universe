@@ -28,15 +28,16 @@
  * @class vehicle model class
  * @brief calculate model-related values
  */
-class VehicleModelInterface {
- protected:
+class VehicleModelInterface
+{
+protected:
   const int dim_x_;   //!< @brief dimension of state x
   const int dim_u_;   //!< @brief dimension of input u
   const int dim_y_;   //!< @brief dimension of output y
   double velocity_;   //!< @brief vehicle velocity
   double curvature_;  //!< @brief curvature on the linearized point on path
 
- public:
+public:
   /**
    * @brief constructor
    * @param [in] dim_x dimension of state x
@@ -67,13 +68,13 @@ class VehicleModelInterface {
    * @brief set velocity
    * @param [in] vehicle velocity
    */
-  void setVelocity(const double& velocity);
+  void setVelocity(const double & velocity);
 
   /**
    * @brief set curvature
    * @param [in] curvature curvature on the linearized point on path
    */
-  void setCurvature(const double& curvature);
+  void setCurvature(const double & curvature);
 
   /**
    * @brief calculate discrete model matrix of x_k+1 = Ad * xk + Bd * uk + Wd, yk = Cd * xk
@@ -83,12 +84,13 @@ class VehicleModelInterface {
    * @param [out] Wd coefficient matrix
    * @param [in] dt Discretization time
    */
-  virtual void calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Cd,
-                                       Eigen::MatrixXd& Wd, const double& dt) = 0;
+  virtual void calculateDiscreteMatrix(
+    Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+    const double & dt) = 0;
 
   /**
    * @brief calculate reference input
    * @param [out] reference input
    */
-  virtual void calculateReferenceInput(Eigen::MatrixXd& Uref) = 0;
+  virtual void calculateReferenceInput(Eigen::MatrixXd & Uref) = 0;
 };

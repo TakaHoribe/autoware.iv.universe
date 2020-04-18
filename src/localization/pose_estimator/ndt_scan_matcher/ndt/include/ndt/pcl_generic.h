@@ -25,14 +25,16 @@
 #include <pcl/registration/ndt.h>
 
 template <class PointSource, class PointTarget>
-class NormalDistributionsTransformPCLGeneric : public NormalDistributionsTransformBase<PointSource, PointTarget> {
- public:
+class NormalDistributionsTransformPCLGeneric
+: public NormalDistributionsTransformBase<PointSource, PointTarget>
+{
+public:
   NormalDistributionsTransformPCLGeneric();
   ~NormalDistributionsTransformPCLGeneric() = default;
 
-  void align(pcl::PointCloud<PointSource>& output, const Eigen::Matrix4f& guess) override;
-  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) override;
-  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) override;
+  void align(pcl::PointCloud<PointSource> & output, const Eigen::Matrix4f & guess) override;
+  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr) override;
+  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr) override;
 
   void setMaximumIterations(int max_iter) override;
   void setResolution(float res) override;
@@ -55,7 +57,7 @@ class NormalDistributionsTransformPCLGeneric : public NormalDistributionsTransfo
 
   boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const override;
 
- private:
+private:
   boost::shared_ptr<pcl::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
 };
 

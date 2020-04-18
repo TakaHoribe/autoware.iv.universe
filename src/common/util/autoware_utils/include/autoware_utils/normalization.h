@@ -20,9 +20,10 @@
 
 #include <autoware_utils/constants.h>
 
-namespace autoware_utils {
-
-constexpr double normalizeDegree(const double deg, const double min_deg = -180) {
+namespace autoware_utils
+{
+constexpr double normalizeDegree(const double deg, const double min_deg = -180)
+{
   const auto max_deg = min_deg + 360.0;
 
   const auto value = std::fmod(deg, 360.0);
@@ -32,7 +33,8 @@ constexpr double normalizeDegree(const double deg, const double min_deg = -180) 
     return value - std::copysign(360.0, value);
 }
 
-constexpr double normalizeRadian(const double rad, const double min_rad = -pi) {
+constexpr double normalizeRadian(const double rad, const double min_rad = -pi)
+{
   const auto max_rad = min_rad + 2 * pi;
 
   const auto value = std::fmod(rad, 2 * pi);

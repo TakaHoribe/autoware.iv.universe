@@ -32,7 +32,8 @@
 #include <string>
 #include <vector>
 
-static std::vector<double> vec_diff(const std::vector<double>& input) {
+static std::vector<double> vec_diff(const std::vector<double> & input)
+{
   std::vector<double> output;
   for (unsigned int i = 1; i < input.size(); i++) {
     output.push_back(input[i] - input[i - 1]);
@@ -40,7 +41,8 @@ static std::vector<double> vec_diff(const std::vector<double>& input) {
   return output;
 }
 
-static std::vector<double> cum_sum(const std::vector<double>& input) {
+static std::vector<double> cum_sum(const std::vector<double> & input)
+{
   std::vector<double> output;
   double temp = 0;
   for (unsigned int i = 0; i < input.size(); i++) {
@@ -50,8 +52,9 @@ static std::vector<double> cum_sum(const std::vector<double>& input) {
   return output;
 }
 
-class Spline {
- public:
+class Spline
+{
+public:
   std::vector<double> x;
   std::vector<double> y;
   int nx;
@@ -64,12 +67,13 @@ class Spline {
 
   Spline(){};
   // d_i * (x-x_i)^3 + c_i * (x-x_i)^2 + b_i * (x-x_i) + a_i
-  Spline(const std::vector<double>& x_, const std::vector<double>& y_)
-      : x(x_), y(y_), nx(x_.size()), h(vec_diff(x_)), a(y_) {
+  Spline(const std::vector<double> & x_, const std::vector<double> & y_)
+  : x(x_), y(y_), nx(x_.size()), h(vec_diff(x_)), a(y_)
+  {
     Eigen::MatrixXd A = calc_A();
     Eigen::VectorXd B = calc_B();
     Eigen::VectorXd c_eigen = A.colPivHouseholderQr().solve(B);
-    double* c_pointer = c_eigen.data();
+    double * c_pointer = c_eigen.data();
     c.assign(c_pointer, c_pointer + c_eigen.rows());
 
     for (int i = 0; i < nx - 1; i++) {
@@ -78,7 +82,8 @@ class Spline {
     }
   };
 
-  double calc(double t) {
+  double calc(double t)
+  {
     if (t < x.front() || t > x.back()) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -89,7 +94,8 @@ class Spline {
     return a[seg_id] + b[seg_id] * dx + c[seg_id] * dx * dx + d[seg_id] * dx * dx * dx;
   }
 
-  double calc(double t, double s) {
+  double calc(double t, double s)
+  {
     if (t < 0 || t > s) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -100,7 +106,8 @@ class Spline {
     return a[seg_id] + b[seg_id] * dx + c[seg_id] * dx * dx + d[seg_id] * dx * dx * dx;
   }
 
-  double calc_d(double t) {
+  double calc_d(double t)
+  {
     if (t < x.front() || t > x.back()) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -111,7 +118,8 @@ class Spline {
     return b[seg_id] + 2 * c[seg_id] * dx + 3 * d[seg_id] * dx * dx;
   }
 
-  double calc_d(double t, double s) {
+  double calc_d(double t, double s)
+  {
     if (t < 0 || t > s) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -122,7 +130,8 @@ class Spline {
     return b[seg_id] + 2 * c[seg_id] * dx + 3 * d[seg_id] * dx * dx;
   }
 
-  double calc_dd(double t) {
+  double calc_dd(double t)
+  {
     if (t < x.front() || t > x.back()) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -133,7 +142,8 @@ class Spline {
     return 2 * c[seg_id] + 6 * d[seg_id] * dx;
   }
 
-  double calc_dd(double t, double s) {
+  double calc_dd(double t, double s)
+  {
     if (t < 0.0 || t > s) {
       std::cout << "Dangerous" << std::endl;
       std::cout << t << std::endl;
@@ -144,8 +154,9 @@ class Spline {
     return 2 * c[seg_id] + 6 * d[seg_id] * dx;
   }
 
- private:
-  Eigen::MatrixXd calc_A() {
+private:
+  Eigen::MatrixXd calc_A()
+  {
     Eigen::MatrixXd A = Eigen::MatrixXd::Zero(nx, nx);
     A(0, 0) = 1;
     for (int i = 0; i < nx - 1; i++) {
@@ -160,7 +171,8 @@ class Spline {
     A(nx - 1, nx - 1) = 1.0;
     return A;
   };
-  Eigen::VectorXd calc_B() {
+  Eigen::VectorXd calc_B()
+  {
     Eigen::VectorXd B = Eigen::VectorXd::Zero(nx);
     for (int i = 0; i < nx - 2; i++) {
       B(i + 1) = 3.0 * (a[i + 2] - a[i + 1]) / h[i + 1] - 3.0 * (a[i + 1] - a[i]) / h[i];
@@ -168,7 +180,8 @@ class Spline {
     return B;
   };
 
-  int bisect(double t, int start, int end) {
+  int bisect(double t, int start, int end)
+  {
     int mid = (start + end) / 2;
     if (t == x[mid] || end - start <= 1) {
       return mid;
@@ -180,26 +193,30 @@ class Spline {
   }
 };
 
-class Spline2D {
- public:
+class Spline2D
+{
+public:
   Spline sx;
   Spline sy;
   std::vector<double> s;
 
-  Spline2D(const std::vector<double>& x, const std::vector<double>& y) {
+  Spline2D(const std::vector<double> & x, const std::vector<double> & y)
+  {
     s = calc_s(x, y);
     sx = Spline(s, x);
     sy = Spline(s, y);
     max_s_value_ = *std::max_element(s.begin(), s.end());
   };
 
-  std::array<double, 2> calc_position(double s_t) {
+  std::array<double, 2> calc_position(double s_t)
+  {
     double x = sx.calc(s_t, max_s_value_);
     double y = sy.calc(s_t, max_s_value_);
     return {{x, y}};
   };
 
-  double calc_curvature(double s_t) {
+  double calc_curvature(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double ddx = sx.calc_dd(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
@@ -207,14 +224,16 @@ class Spline2D {
     return (ddy * dx - ddx * dy) / (dx * dx + dy * dy);
   };
 
-  double calc_yaw(double s_t) {
+  double calc_yaw(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
     return std::atan2(dy, dx);
   };
 
- private:
-  std::vector<double> calc_s(const std::vector<double>& x, const std::vector<double>& y) {
+private:
+  std::vector<double> calc_s(const std::vector<double> & x, const std::vector<double> & y)
+  {
     std::vector<double> ds;
     std::vector<double> out_s{0};
     std::vector<double> dx = vec_diff(x);
@@ -231,14 +250,17 @@ class Spline2D {
   double max_s_value_;
 };
 
-class Spline3D {
- public:
+class Spline3D
+{
+public:
   Spline sx;
   Spline sy;
   Spline sv;
   std::vector<double> s;
 
-  Spline3D(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& v) {
+  Spline3D(
+    const std::vector<double> & x, const std::vector<double> & y, const std::vector<double> & v)
+  {
     s = calc_s(x, y);
     sx = Spline(s, x);
     sy = Spline(s, y);
@@ -246,14 +268,16 @@ class Spline3D {
     max_s_value_ = *std::max_element(s.begin(), s.end());
   };
 
-  std::array<double, 3> calc_trajectory_point(double s_t) {
+  std::array<double, 3> calc_trajectory_point(double s_t)
+  {
     double x = sx.calc(s_t, max_s_value_);
     double y = sy.calc(s_t, max_s_value_);
     double v = sv.calc(s_t, max_s_value_);
     return {{x, y, v}};
   };
 
-  double calc_curvature(double s_t) {
+  double calc_curvature(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double ddx = sx.calc_dd(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
@@ -261,14 +285,16 @@ class Spline3D {
     return (ddy * dx - ddx * dy) / (dx * dx + dy * dy);
   };
 
-  double calc_yaw(double s_t) {
+  double calc_yaw(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
     return std::atan2(dy, dx);
   };
 
- private:
-  std::vector<double> calc_s(const std::vector<double>& x, const std::vector<double>& y) {
+private:
+  std::vector<double> calc_s(const std::vector<double> & x, const std::vector<double> & y)
+  {
     std::vector<double> ds;
     std::vector<double> out_s{0};
     std::vector<double> dx = vec_diff(x);
@@ -285,16 +311,19 @@ class Spline3D {
   double max_s_value_;
 };
 
-class Spline4D {
- public:
+class Spline4D
+{
+public:
   Spline sx;
   Spline sy;
   Spline sz;
   Spline sv;
   std::vector<double> s;
 
-  Spline4D(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z,
-           const std::vector<double>& v) {
+  Spline4D(
+    const std::vector<double> & x, const std::vector<double> & y, const std::vector<double> & z,
+    const std::vector<double> & v)
+  {
     s = calc_s(x, y);
     sx = Spline(s, x);
     sy = Spline(s, y);
@@ -303,7 +332,8 @@ class Spline4D {
     max_s_value_ = *std::max_element(s.begin(), s.end());
   };
 
-  std::array<double, 4> calc_trajectory_point(double s_t) {
+  std::array<double, 4> calc_trajectory_point(double s_t)
+  {
     double x = sx.calc(s_t, max_s_value_);
     double y = sy.calc(s_t, max_s_value_);
     double z = sz.calc(s_t, max_s_value_);
@@ -311,7 +341,8 @@ class Spline4D {
     return {{x, y, z, v}};
   };
 
-  double calc_curvature(double s_t) {
+  double calc_curvature(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double ddx = sx.calc_dd(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
@@ -319,14 +350,16 @@ class Spline4D {
     return (ddy * dx - ddx * dy) / (dx * dx + dy * dy);
   };
 
-  double calc_yaw(double s_t) {
+  double calc_yaw(double s_t)
+  {
     double dx = sx.calc_d(s_t, max_s_value_);
     double dy = sy.calc_d(s_t, max_s_value_);
     return std::atan2(dy, dx);
   };
 
- private:
-  std::vector<double> calc_s(const std::vector<double>& x, const std::vector<double>& y) {
+private:
+  std::vector<double> calc_s(const std::vector<double> & x, const std::vector<double> & y)
+  {
     std::vector<double> ds;
     std::vector<double> out_s{0};
     std::vector<double> dx = vec_diff(x);

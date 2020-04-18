@@ -36,15 +36,16 @@
 #include <scene_module/scene_module_interface.h>
 #include <scene_module/traffic_light/scene.h>
 
-class TrafficLightModuleManager : public SceneModuleManagerInterface {
- public:
+class TrafficLightModuleManager : public SceneModuleManagerInterface
+{
+public:
   TrafficLightModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char* getModuleName() override { return "traffic_light"; }
+  const char * getModuleName() override { return "traffic_light"; }
 
- private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) override;
+  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId & path) override;
 };

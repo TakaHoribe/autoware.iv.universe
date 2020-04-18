@@ -48,21 +48,28 @@
 #include "ndt/pcl_generic.h"
 #include "ndt/pcl_modified.h"
 
-class NDTScanMatcher {
+class NDTScanMatcher
+{
   using PointSource = pcl::PointXYZ;
   using PointTarget = pcl::PointXYZ;
 
   // TODO move file
-  struct OMPParams {
+  struct OMPParams
+  {
     OMPParams() : search_method(ndt_omp::NeighborSearchMethod::KDTREE), num_threads(1){};
     ndt_omp::NeighborSearchMethod search_method;
     int num_threads;
   };
 
-  struct Particle {
-    Particle(const geometry_msgs::Pose& a_initial_pose, const geometry_msgs::Pose& a_result_pose, const double a_score,
-             const int a_iteration)
-        : initial_pose(a_initial_pose), result_pose(a_result_pose), score(a_score), iteration(a_iteration){};
+  struct Particle
+  {
+    Particle(
+      const geometry_msgs::Pose & a_initial_pose, const geometry_msgs::Pose & a_result_pose,
+      const double a_score, const int a_iteration)
+    : initial_pose(a_initial_pose),
+      result_pose(a_result_pose),
+      score(a_score),
+      iteration(a_iteration){};
     geometry_msgs::Pose initial_pose;
     geometry_msgs::Pose result_pose;
     double score;
@@ -71,32 +78,38 @@ class NDTScanMatcher {
 
   enum class NDTImplementType { PCL_GENERIC = 0, PCL_MODIFIED = 1, OMP = 2 };
 
- public:
+public:
   NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~NDTScanMatcher();
 
- private:
-  bool serviceNDTAlign(autoware_localization_srvs::PoseWithCovarianceStamped::Request& req,
-                       autoware_localization_srvs::PoseWithCovarianceStamped::Response& res);
+private:
+  bool serviceNDTAlign(
+    autoware_localization_srvs::PoseWithCovarianceStamped::Request & req,
+    autoware_localization_srvs::PoseWithCovarianceStamped::Response & res);
 
-  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr& pointcloud2_msg_ptr);
-  void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr& pointcloud2_msg_ptr);
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose_conv_msg_ptr);
+  void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr & pointcloud2_msg_ptr);
+  void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr & pointcloud2_msg_ptr);
+  void callbackInitialPose(
+    const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & pose_conv_msg_ptr);
 
   geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(
-      const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>>& ndt_ptr,
-      const geometry_msgs::PoseWithCovarianceStamped& initial_pose_with_cov);
+    const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> & ndt_ptr,
+    const geometry_msgs::PoseWithCovarianceStamped & initial_pose_with_cov);
 
   void updateTransforms();
 
-  void publishTF(const std::string& frame_id, const std::string& child_frame_id,
-                 const geometry_msgs::PoseStamped& pose_msg);
-  bool getTransform(const std::string& target_frame, const std::string& source_frame,
-                    const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr, const ros::Time& time_stamp);
-  bool getTransform(const std::string& target_frame, const std::string& source_frame,
-                    const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr);
+  void publishTF(
+    const std::string & frame_id, const std::string & child_frame_id,
+    const geometry_msgs::PoseStamped & pose_msg);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr,
+    const ros::Time & time_stamp);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr);
 
-  void publishMarkerForDebug(const Particle& particle_array, const size_t i);
+  void publishMarkerForDebug(const Particle & particle_array, const size_t i);
 
   void timerDiagnostic();
 
@@ -136,7 +149,8 @@ class NDTScanMatcher {
   std::string map_frame_;
   double converged_param_transform_probability_;
 
-  std::deque<boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped>> initial_pose_msg_ptr_array_;
+  std::deque<boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped>>
+    initial_pose_msg_ptr_array_;
   std::mutex ndt_map_mtx_;
 
   OMPParams omp_params_;

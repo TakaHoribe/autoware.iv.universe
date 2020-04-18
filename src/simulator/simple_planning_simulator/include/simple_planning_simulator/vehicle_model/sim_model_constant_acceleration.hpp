@@ -34,8 +34,9 @@
  * @class simple_planning_simulator constant acceleration twist model
  * @brief calculate velocity & angular-velocity with constant acceleration
  */
-class SimModelConstantAccelTwist : public SimModelInterface {
- public:
+class SimModelConstantAccelTwist : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -50,7 +51,7 @@ class SimModelConstantAccelTwist : public SimModelInterface {
    */
   ~SimModelConstantAccelTwist() = default;
 
- private:
+private:
   enum IDX {
     X = 0,
     Y,
@@ -102,14 +103,14 @@ class SimModelConstantAccelTwist : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with constant acceleration
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
 #endif

@@ -25,8 +25,10 @@ double SimModelIdealTwist::getYaw() { return state_(IDX::YAW); };
 double SimModelIdealTwist::getVx() { return input_(IDX_U::VX_DES); };
 double SimModelIdealTwist::getWz() { return input_(IDX_U::WZ_DES); };
 double SimModelIdealTwist::getSteer() { return 0.0; };
-void SimModelIdealTwist::update(const double& dt) { updateRungeKutta(dt, input_); }
-Eigen::VectorXd SimModelIdealTwist::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) {
+void SimModelIdealTwist::update(const double & dt) { updateRungeKutta(dt, input_); }
+Eigen::VectorXd SimModelIdealTwist::calcModel(
+  const Eigen::VectorXd & state, const Eigen::VectorXd & input)
+{
   const double yaw = state(IDX::YAW);
   const double vx = input(IDX_U::VX_DES);
   const double wz = input(IDX_U::WZ_DES);
@@ -40,16 +42,21 @@ Eigen::VectorXd SimModelIdealTwist::calcModel(const Eigen::VectorXd& state, cons
 };
 
 SimModelIdealSteer::SimModelIdealSteer(double wheelbase)
-    : SimModelInterface(3 /* dim x */, 2 /* dim u */), wheelbase_(wheelbase){};
+: SimModelInterface(3 /* dim x */, 2 /* dim u */), wheelbase_(wheelbase){};
 
 double SimModelIdealSteer::getX() { return state_(IDX::X); };
 double SimModelIdealSteer::getY() { return state_(IDX::Y); };
 double SimModelIdealSteer::getYaw() { return state_(IDX::YAW); };
 double SimModelIdealSteer::getVx() { return input_(IDX_U::VX_DES); };
-double SimModelIdealSteer::getWz() { return input_(IDX_U::VX_DES) * std::tan(input_(IDX_U::STEER_DES)) / wheelbase_; };
+double SimModelIdealSteer::getWz()
+{
+  return input_(IDX_U::VX_DES) * std::tan(input_(IDX_U::STEER_DES)) / wheelbase_;
+};
 double SimModelIdealSteer::getSteer() { return input_(IDX_U::STEER_DES); };
-void SimModelIdealSteer::update(const double& dt) { updateRungeKutta(dt, input_); }
-Eigen::VectorXd SimModelIdealSteer::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) {
+void SimModelIdealSteer::update(const double & dt) { updateRungeKutta(dt, input_); }
+Eigen::VectorXd SimModelIdealSteer::calcModel(
+  const Eigen::VectorXd & state, const Eigen::VectorXd & input)
+{
   const double yaw = state(IDX::YAW);
   const double vx = input(IDX_U::VX_DES);
   const double steer = input(IDX_U::STEER_DES);
@@ -63,22 +70,28 @@ Eigen::VectorXd SimModelIdealSteer::calcModel(const Eigen::VectorXd& state, cons
 };
 
 SimModelIdealAccel::SimModelIdealAccel(double wheelbase)
-    : SimModelInterface(4 /* dim x */, 2 /* dim u */), wheelbase_(wheelbase){};
+: SimModelInterface(4 /* dim x */, 2 /* dim u */), wheelbase_(wheelbase){};
 
 double SimModelIdealAccel::getX() { return state_(IDX::X); };
 double SimModelIdealAccel::getY() { return state_(IDX::Y); };
 double SimModelIdealAccel::getYaw() { return state_(IDX::YAW); };
 double SimModelIdealAccel::getVx() { return state_(IDX::VX); };
-double SimModelIdealAccel::getWz() { return state_(IDX::VX) * std::tan(input_(IDX_U::STEER_DES)) / wheelbase_; };
+double SimModelIdealAccel::getWz()
+{
+  return state_(IDX::VX) * std::tan(input_(IDX_U::STEER_DES)) / wheelbase_;
+};
 double SimModelIdealAccel::getSteer() { return input_(IDX_U::STEER_DES); };
-void SimModelIdealAccel::update(const double& dt) {
+void SimModelIdealAccel::update(const double & dt)
+{
   updateRungeKutta(dt, input_);
   if (state_(IDX::VX) < 0) {
     state_(IDX::VX) = 0;
   }
 }
 
-Eigen::VectorXd SimModelIdealAccel::calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) {
+Eigen::VectorXd SimModelIdealAccel::calcModel(
+  const Eigen::VectorXd & state, const Eigen::VectorXd & input)
+{
   const double vx = state(IDX::VX);
   const double yaw = state(IDX::YAW);
   const double ax = input(IDX_U::AX_DES);

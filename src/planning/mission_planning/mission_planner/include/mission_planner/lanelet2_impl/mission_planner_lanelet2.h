@@ -36,12 +36,14 @@
 
 using RouteSections = std::vector<autoware_planning_msgs::RouteSection>;
 
-namespace mission_planner {
-class MissionPlannerLanelet2 : public MissionPlanner {
- public:
+namespace mission_planner
+{
+class MissionPlannerLanelet2 : public MissionPlanner
+{
+public:
   MissionPlannerLanelet2();
 
- private:
+private:
   bool is_graph_ready_;
 
   lanelet::LaneletMapPtr lanelet_map_ptr_;
@@ -50,21 +52,23 @@ class MissionPlannerLanelet2 : public MissionPlanner {
 
   ros::Subscriber map_subscriber_;
 
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& msg);
+  void mapCallback(const autoware_lanelet2_msgs::MapBin & msg);
   bool isGoalValid() const;
 
   // virtual functions
   bool isRoutingGraphReady() const;
   autoware_planning_msgs::Route planRoute();
-  void visualizeRoute(const autoware_planning_msgs::Route& route) const;
+  void visualizeRoute(const autoware_planning_msgs::Route & route) const;
 
   // routing
-  bool planPathBetweenCheckpoints(const geometry_msgs::PoseStamped& start_checkpoint,
-                                  const geometry_msgs::PoseStamped& goal_checkpoint,
-                                  lanelet::ConstLanelets* path_lanelets_ptr) const;
-  lanelet::ConstLanelets getMainLanelets(const lanelet::ConstLanelets& path_lanelets,
-                                         const RouteHandler& lanelet_sequence_finder);
-  RouteSections createRouteSections(const lanelet::ConstLanelets& main_path, const RouteHandler& route_handler);
+  bool planPathBetweenCheckpoints(
+    const geometry_msgs::PoseStamped & start_checkpoint,
+    const geometry_msgs::PoseStamped & goal_checkpoint,
+    lanelet::ConstLanelets * path_lanelets_ptr) const;
+  lanelet::ConstLanelets getMainLanelets(
+    const lanelet::ConstLanelets & path_lanelets, const RouteHandler & lanelet_sequence_finder);
+  RouteSections createRouteSections(
+    const lanelet::ConstLanelets & main_path, const RouteHandler & route_handler);
 };
 }  // namespace mission_planner
 

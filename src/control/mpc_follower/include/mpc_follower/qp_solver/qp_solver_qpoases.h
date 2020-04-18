@@ -32,13 +32,14 @@
 
 #include "mpc_follower/qp_solver/qp_solver_interface.h"
 
-class QPSolverQpoasesHotstart : public QPSolverInterface {
- private:
+class QPSolverQpoasesHotstart : public QPSolverInterface
+{
+private:
   bool is_solver_initialized_;  //!< @brief flag to check initialization
   const int max_iter_;          //!< @brief max iteration number
   qpOASES::SQProblem solver_;   //!< @brief solver for QP
 
- public:
+public:
   /**
    * @brief constructor
    * @param max_iter max iteration for QP
@@ -62,7 +63,8 @@ class QPSolverQpoasesHotstart : public QPSolverInterface {
    * @param [out] U optimal variable vector
    * @return bool to check the problem is solved
    */
-  bool solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
-             const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
-             const Eigen::VectorXd& ubA, Eigen::VectorXd& U) override;
+  bool solve(
+    const Eigen::MatrixXd & Hmat, const Eigen::MatrixXd & fvec, const Eigen::MatrixXd & A,
+    const Eigen::VectorXd & lb, const Eigen::VectorXd & ub, const Eigen::VectorXd & lbA,
+    const Eigen::VectorXd & ubA, Eigen::VectorXd & U) override;
 };

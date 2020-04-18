@@ -16,9 +16,11 @@
 
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_dynamics.h"
 
-DynamicsBicycleModel::DynamicsBicycleModel(double& wheelbase, double& mass_fl, double& mass_fr, double& mass_rl,
-                                           double& mass_rr, double& cf, double& cr)
-    : VehicleModelInterface(/* dim_x */ 4, /* dim_u */ 1, /* dim_y */ 2) {
+DynamicsBicycleModel::DynamicsBicycleModel(
+  double & wheelbase, double & mass_fl, double & mass_fr, double & mass_rl, double & mass_rr,
+  double & cf, double & cr)
+: VehicleModelInterface(/* dim_x */ 4, /* dim_u */ 1, /* dim_y */ 2)
+{
   wheelbase_ = wheelbase;
 
   const double mass_front = mass_fl + mass_fr;
@@ -32,8 +34,10 @@ DynamicsBicycleModel::DynamicsBicycleModel(double& wheelbase, double& mass_fl, d
   cr_ = cr;
 }
 
-void DynamicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Cd,
-                                                   Eigen::MatrixXd& Wd, const double& dt) {
+void DynamicsBicycleModel::calculateDiscreteMatrix(
+  Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+  const double & dt)
+{
   /*
    * x[k+1] = Ad*x[k] + Bd*u + Wd
    */
@@ -75,7 +79,8 @@ void DynamicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::M
   Cd(1, 2) = 1.0;
 }
 
-void DynamicsBicycleModel::calculateReferenceInput(Eigen::MatrixXd& Uref) {
+void DynamicsBicycleModel::calculateReferenceInput(Eigen::MatrixXd & Uref)
+{
   const double vel = std::max(velocity_, 0.01);
   const double Kv = lr_ * mass_ / (2 * cf_ * wheelbase_) - lf_ * mass_ / (2 * cr_ * wheelbase_);
   Uref(0, 0) = wheelbase_ * curvature_ + Kv * vel * vel * curvature_;

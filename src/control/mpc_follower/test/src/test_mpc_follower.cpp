@@ -27,9 +27,11 @@
 #include "mpc_follower/mpc_follower_core.h"
 #include "mpc_follower/mpc_utils.h"
 
-class TestSuite : public ::testing::Test {
- public:
-  TestSuite() : nh_(""), pnh_("~") {
+class TestSuite : public ::testing::Test
+{
+public:
+  TestSuite() : nh_(""), pnh_("~")
+  {
     pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("current_pose", 1);
     pub_vs_ = nh_.advertise<autoware_msgs::VehicleStatus>("vehicle_status", 1);
     pub_lane_ = nh_.advertise<autoware_msgs::Lane>("base_waypoints", 1);
@@ -49,10 +51,11 @@ class TestSuite : public ::testing::Test {
   double spin_duration_;
   int spin_loopnum_;
 
-  void callbackTwistRaw(const geometry_msgs::TwistStamped& twist) { twist_raw_ = twist; }
-  void callbackCtrlCmd(const autoware_msgs::ControlCommandStamped& cmd) { ctrl_cmd_ = cmd; }
+  void callbackTwistRaw(const geometry_msgs::TwistStamped & twist) { twist_raw_ = twist; }
+  void callbackCtrlCmd(const autoware_msgs::ControlCommandStamped & cmd) { ctrl_cmd_ = cmd; }
 
-  void publishEstimateTwist() {
+  void publishEstimateTwist()
+  {
     geometry_msgs::TwistStamped twist;
     twist.header.frame_id = "base_link";
     for (int i = 0; i < spin_loopnum_; ++i) {
@@ -63,8 +66,10 @@ class TestSuite : public ::testing::Test {
     }
   }
 
-  void publishMsgs(geometry_msgs::PoseStamped& pose, autoware_msgs::VehicleStatus& vs, double wp_vx, double wp_wz,
-                   double wp_dt, double wp_x_ini, double wp_y_ini, double wp_yaw_ini) {
+  void publishMsgs(
+    geometry_msgs::PoseStamped & pose, autoware_msgs::VehicleStatus & vs, double wp_vx,
+    double wp_wz, double wp_dt, double wp_x_ini, double wp_y_ini, double wp_yaw_ini)
+  {
     double x = wp_x_ini;
     double y = wp_y_ini;
     double yaw = wp_yaw_ini;
@@ -95,11 +100,13 @@ class TestSuite : public ::testing::Test {
     }
   }
 
-  void testTurningLeft() {
+  void testTurningLeft()
+  {
     MPCFollower mpc_follower;
 
     geometry_msgs::PoseStamped current_pose;
-    current_pose.pose.position.y = 1.0;  // vehicle position is on the RIGHT side of the path -> turning LEFT
+    current_pose.pose.position.y =
+      1.0;  // vehicle position is on the RIGHT side of the path -> turning LEFT
     current_pose.pose.orientation.w = 1.0;
 
     autoware_msgs::VehicleStatus vs;
@@ -116,14 +123,17 @@ class TestSuite : public ::testing::Test {
 
     ASSERT_EQ(true, twist_raw_.twist.linear.x > 0.1) << "going forward";
     ASSERT_EQ(true, ctrl_cmd_.cmd.linear_velocity > 0.1) << "going forward";
-    ASSERT_LT(ctrl_cmd_.cmd.steering_angle, 0.0) << "vehicle is turning left, negative steering is expected";
+    ASSERT_LT(ctrl_cmd_.cmd.steering_angle, 0.0)
+      << "vehicle is turning left, negative steering is expected";
   }
 
-  void testTurningRight() {
+  void testTurningRight()
+  {
     MPCFollower mpc_follower;
 
     geometry_msgs::PoseStamped current_pose;
-    current_pose.pose.position.y = -1.0;  // vehicle position is on the LEFT side of the path -> turning RIGHT
+    current_pose.pose.position.y =
+      -1.0;  // vehicle position is on the LEFT side of the path -> turning RIGHT
     current_pose.pose.orientation.w = 1.0;
 
     autoware_msgs::VehicleStatus vs;
@@ -140,11 +150,13 @@ class TestSuite : public ::testing::Test {
 
     ASSERT_GT(twist_raw_.twist.linear.x, 0.1) << "going forward";
     ASSERT_GT(ctrl_cmd_.cmd.linear_velocity, 0.1) << "going forward";
-    ASSERT_GT(ctrl_cmd_.cmd.steering_angle, 0.0) << "vehicle is turning right, positive steering is expected";
+    ASSERT_GT(ctrl_cmd_.cmd.steering_angle, 0.0)
+      << "vehicle is turning right, positive steering is expected";
   }
 };
 
-TEST_F(TestSuite, TestMPCFollower) {
+TEST_F(TestSuite, TestMPCFollower)
+{
   /* TestMPCFollowerInvalidPath */
   {
     MPCFollower mpc_follower;
@@ -176,10 +188,14 @@ TEST_F(TestSuite, TestMPCFollower) {
       ros::Duration(spin_duration_).sleep();
     }
 
-    ASSERT_TRUE(std::isfinite(twist_raw_.twist.linear.x)) << "expected keepping old path and publish finite values";
-    ASSERT_TRUE(std::isfinite(twist_raw_.twist.angular.z)) << "expected keepping old path and publish finite values";
-    ASSERT_TRUE(std::isfinite(ctrl_cmd_.cmd.linear_velocity)) << "expected keepping old path and publish finite values";
-    ASSERT_TRUE(std::isfinite(ctrl_cmd_.cmd.steering_angle)) << "expected keepping old path and publish finite values";
+    ASSERT_TRUE(std::isfinite(twist_raw_.twist.linear.x))
+      << "expected keepping old path and publish finite values";
+    ASSERT_TRUE(std::isfinite(twist_raw_.twist.angular.z))
+      << "expected keepping old path and publish finite values";
+    ASSERT_TRUE(std::isfinite(ctrl_cmd_.cmd.linear_velocity))
+      << "expected keepping old path and publish finite values";
+    ASSERT_TRUE(std::isfinite(ctrl_cmd_.cmd.steering_angle))
+      << "expected keepping old path and publish finite values";
   }
 
   /*  == TestMPCFollowerInvalidPose == */
@@ -212,14 +228,17 @@ TEST_F(TestSuite, TestMPCFollower) {
     current_pose.pose.position.y = NAN;
     vs.speed = 0.0;
     publishMsgs(current_pose, vs, vx, wz, dt, x, y, yaw);
-    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x) << "emergency stop, zero speed command is expected";
-    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity) << "emergency stop, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x)
+      << "emergency stop, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity)
+      << "emergency stop, zero speed command is expected";
   }
 
   /* == TestMPCFollowerInvalidVehicleStatus == */
   {
-    pnh_.setParam("vehicle_model_type",
-                  "kinematics");  // set as default. kinematics_no_delay & dynamics does not use vehicle status.
+    pnh_.setParam(
+      "vehicle_model_type",
+      "kinematics");  // set as default. kinematics_no_delay & dynamics does not use vehicle status.
     pnh_.setParam("qp_solver_type", "unconstraint_fast");
 
     MPCFollower mpc_follower;
@@ -250,8 +269,10 @@ TEST_F(TestSuite, TestMPCFollower) {
     current_pose.pose.position.y = 1.0;
     vs.angle = NAN;
     publishMsgs(current_pose, vs, vx, wz, dt, x, y, yaw);
-    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x) << "emergency stop, zero speed command is expected";
-    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity) << "emergency stop, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x)
+      << "emergency stop, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity)
+      << "emergency stop, zero speed command is expected";
   }
 
   /* == TestMPCFollowerNoMessageCase == */
@@ -261,10 +282,14 @@ TEST_F(TestSuite, TestMPCFollower) {
       ros::spinOnce();
       ros::Duration(spin_duration_).sleep();
     }
-    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x) << "no messages published, zero speed command is expected";
-    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.angular.z) << "no messages published, zero speed command is expected";
-    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity) << "no messages published, zero speed command is expected";
-    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.steering_angle) << "no messages published, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.linear.x)
+      << "no messages published, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, twist_raw_.twist.angular.z)
+      << "no messages published, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.linear_velocity)
+      << "no messages published, zero speed command is expected";
+    ASSERT_DOUBLE_EQ(0.0, ctrl_cmd_.cmd.steering_angle)
+      << "no messages published, zero speed command is expected";
   }
 
   /* == TestMPCFollowerAlgorithmOptions == */
@@ -293,7 +318,8 @@ TEST_F(TestSuite, TestMPCFollower) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

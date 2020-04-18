@@ -17,26 +17,28 @@
 #ifndef SPLINE_INTERPOLATE_H_
 #define SPLINE_INTERPOLATE_H_
 
-namespace spline {
-
-class SplineInterpolate {
+namespace spline
+{
+class SplineInterpolate
+{
   bool initialized_;
   std::vector<double> a_;  //!< @brief temporal vector for calculation
   std::vector<double> b_;  //!< @brief temporal vector for calculation
   std::vector<double> c_;  //!< @brief temporal vector for calculation
   std::vector<double> d_;  //!< @brief temporal vector for calculation
 
- public:
+public:
   SplineInterpolate();
-  SplineInterpolate(const std::vector<double>& x);
-  void generateSpline(const std::vector<double>& x);
-  double getValue(const double& s);
-  bool interpolate(const std::vector<double>& base_index, const std::vector<double>& base_value,
-                   const std::vector<double>& return_index, std::vector<double>& return_value);
-  void getValueVector(const std::vector<double>& s_v, std::vector<double>& value_v);
+  SplineInterpolate(const std::vector<double> & x);
+  void generateSpline(const std::vector<double> & x);
+  double getValue(const double & s);
+  bool interpolate(
+    const std::vector<double> & base_index, const std::vector<double> & base_value,
+    const std::vector<double> & return_index, std::vector<double> & return_value);
+  void getValueVector(const std::vector<double> & s_v, std::vector<double> & value_v);
 };
 
-std::vector<double> calcEuclidDist(const std::vector<double>& x, const std::vector<double>& y);
+std::vector<double> calcEuclidDist(const std::vector<double> & x, const std::vector<double> & y);
 
 }  // namespace spline
 

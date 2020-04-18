@@ -19,10 +19,14 @@ namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point>;
 
-StopLineModule::StopLineModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line)
-    : SceneModuleInterface(module_id), stop_line_(stop_line), state_(State::APPROARCH) {}
+StopLineModule::StopLineModule(
+  const int64_t module_id, const lanelet::ConstLineString3d & stop_line)
+: SceneModuleInterface(module_id), stop_line_(stop_line), state_(State::APPROARCH)
+{
+}
 
-bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
+{
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
 
@@ -33,8 +37,9 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* 
   if (state_ == State::APPROARCH) {
     for (size_t i = 0; i < path->points.size() - 1; ++i) {
       bg::model::linestring<Point> line = {
-          {path->points.at(i).point.pose.position.x, path->points.at(i).point.pose.position.y},
-          {path->points.at(i + 1).point.pose.position.x, path->points.at(i + 1).point.pose.position.y}};
+        {path->points.at(i).point.pose.position.x, path->points.at(i).point.pose.position.y},
+        {path->points.at(i + 1).point.pose.position.x,
+         path->points.at(i + 1).point.pose.position.y}};
       std::vector<Point> collision_points;
       bg::intersection(stop_line, line, collision_points);
       if (collision_points.empty()) continue;
@@ -54,15 +59,18 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* 
           insert_stop_point_idx = j + 1;
           break;
         }
-        point1 << path->points.at(j).point.pose.position.x, path->points.at(j).point.pose.position.y;
-        point2 << path->points.at(j - 1).point.pose.position.x, path->points.at(j - 1).point.pose.position.y;
+        point1 << path->points.at(j).point.pose.position.x,
+          path->points.at(j).point.pose.position.y;
+        point2 << path->points.at(j - 1).point.pose.position.x,
+          path->points.at(j - 1).point.pose.position.y;
         length_sum += (point2 - point1).norm();
       }
 
       // create stop point
       autoware_planning_msgs::PathPointWithLaneId stop_point_with_lane_id;
       getBackwordPointFromBasePoint(point2, point1, point2, length_sum - stop_length, stop_point);
-      stop_point_with_lane_id = path->points.at(std::max(static_cast<int>(insert_stop_point_idx - 1), 0));
+      stop_point_with_lane_id =
+        path->points.at(std::max(static_cast<int>(insert_stop_point_idx - 1), 0));
       stop_point_with_lane_id.point.pose.position.x = stop_point.x();
       stop_point_with_lane_id.point.pose.position.y = stop_point.y();
       stop_point_with_lane_id.point.twist.linear.x = 0.0;
@@ -90,10 +98,10 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* 
   }
 }
 
-bool StopLineModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
-                                                        const Eigen::Vector2d& line_point2,
-                                                        const Eigen::Vector2d& base_point, const double backward_length,
-                                                        Eigen::Vector2d& output_point) {
+bool StopLineModule::getBackwordPointFromBasePoint(
+  const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
+  const Eigen::Vector2d & base_point, const double backward_length, Eigen::Vector2d & output_point)
+{
   Eigen::Vector2d line_vec = line_point2 - line_point1;
   Eigen::Vector2d backward_vec = backward_length * line_vec.normalized();
   output_point = base_point + backward_vec;

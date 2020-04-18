@@ -35,31 +35,34 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRules.h>
 
-struct Input {
+struct Input
+{
   ros::Subscriber sub_trajectory;
   autoware_planning_msgs::Trajectory::ConstPtr buf_trajectory;
 };
 
-struct Output {
+struct Output
+{
   ros::Publisher pub_scenario;
   ros::Publisher pub_trajectory;
 };
 
-class ScenarioSelectorNode {
- public:
+class ScenarioSelectorNode
+{
+public:
   ScenarioSelectorNode();
 
-  void onMap(const autoware_lanelet2_msgs::MapBin& msg);
-  void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
-  void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void onMap(const autoware_lanelet2_msgs::MapBin & msg);
+  void onRoute(const autoware_planning_msgs::Route::ConstPtr & msg);
+  void onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
 
-  void onTimer(const ros::TimerEvent& event);
+  void onTimer(const ros::TimerEvent & event);
 
   autoware_planning_msgs::Scenario selectScenario();
   std::string selectScenarioByPosition();
-  Input getScenarioInput(const std::string& scenario);
+  Input getScenarioInput(const std::string & scenario);
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 

@@ -47,7 +47,8 @@
 
 #include "pure_pursuit/pure_pursuit.h"
 
-struct Param {
+struct Param
+{
   // Global Parameters
   double wheel_base;
 
@@ -60,21 +61,24 @@ struct Param {
   double reverse_min_lookahead_distance;  // min_lookahead_distance in reverse gear
 };
 
-struct TargetValues {
+struct TargetValues
+{
   double kappa;
   double velocity;
   double acceleration;
 };
 
-struct DebugData {
+struct DebugData
+{
   geometry_msgs::Point next_target;
 };
 
-class PurePursuitNode {
- public:
+class PurePursuitNode
+{
+public:
   PurePursuitNode();
 
- private:
+private:
   // Node Handle
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -88,8 +92,8 @@ class PurePursuitNode {
 
   bool isDataReady() const;
 
-  void onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg);
-  void onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg);
+  void onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr & msg);
 
   // TF
   tf2_ros::Buffer tf_buffer_;
@@ -99,7 +103,7 @@ class PurePursuitNode {
   // Publisher
   ros::Publisher pub_ctrl_cmd_;
 
-  void publishCommand(const TargetValues& targets) const;
+  void publishCommand(const TargetValues & targets) const;
 
   // Debug Publisher
   ros::Publisher pub_debug_marker_;
@@ -108,7 +112,7 @@ class PurePursuitNode {
 
   // Timer
   ros::Timer timer_;
-  void onTimer(const ros::TimerEvent& event);
+  void onTimer(const ros::TimerEvent & event);
 
   // Parameter
   Param param_;

@@ -39,11 +39,12 @@
 #include "config.h"
 #include "state_machine.h"
 
-class AutowareStateMonitorNode {
- public:
+class AutowareStateMonitorNode
+{
+public:
   AutowareStateMonitorNode();
 
- private:
+private:
   // NodeHandle
   ros::NodeHandle nh_{""};
   ros::NodeHandle private_nh_{"~"};
@@ -73,15 +74,15 @@ class AutowareStateMonitorNode {
   ros::Subscriber sub_route_;
   ros::Subscriber sub_twist_;
 
-  void onAutowareEngage(const std_msgs::Bool::ConstPtr& msg);
-  void onVehicleEngage(const std_msgs::Bool::ConstPtr& msg);
-  void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
-  void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void onAutowareEngage(const std_msgs::Bool::ConstPtr & msg);
+  void onVehicleEngage(const std_msgs::Bool::ConstPtr & msg);
+  void onRoute(const autoware_planning_msgs::Route::ConstPtr & msg);
+  void onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
 
   // Topic Buffer
-  void onTopic(const topic_tools::ShapeShifter::ConstPtr& msg, const std::string& topic_name);
-  void registerTopicCallback(const std::string& topic_name);
-  void registerTopicCallbacks(const std::vector<TopicConfig>& topic_configs);
+  void onTopic(const topic_tools::ShapeShifter::ConstPtr & msg, const std::string & topic_name);
+  void registerTopicCallback(const std::string & topic_name);
+  void registerTopicCallbacks(const std::vector<TopicConfig> & topic_configs);
 
   std::map<std::string, ros::Subscriber> sub_topic_map_;
   std::map<std::string, std::deque<ros::Time>> topic_received_time_buffer_;
@@ -93,7 +94,7 @@ class AutowareStateMonitorNode {
   void setDisengage();
 
   // Timer
-  void onTimer(const ros::TimerEvent& event);
+  void onTimer(const ros::TimerEvent & event);
   ros::Timer timer_;
 
   // Stats

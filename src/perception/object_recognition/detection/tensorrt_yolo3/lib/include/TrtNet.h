@@ -34,23 +34,28 @@
 #include "PluginFactory.h"
 #include "Utils.h"
 
-namespace Tn {
+namespace Tn
+{
 enum class RUN_MODE { FLOAT32 = 0, FLOAT16 = 1, INT8 = 2 };
 
-class trtNet {
- public:
+class trtNet
+{
+public:
   // Load from caffe model
-  trtNet(const std::string& prototxt, const std::string& caffeModel, const std::vector<std::string>& outputNodesName,
-         const std::vector<std::vector<float>>& calibratorData, RUN_MODE mode = RUN_MODE::FLOAT32);
+  trtNet(
+    const std::string & prototxt, const std::string & caffeModel,
+    const std::vector<std::string> & outputNodesName,
+    const std::vector<std::vector<float>> & calibratorData, RUN_MODE mode = RUN_MODE::FLOAT32);
 
   // Load from engine file
-  explicit trtNet(const std::string& engineFile);
+  explicit trtNet(const std::string & engineFile);
 
-  ~trtNet() {
+  ~trtNet()
+  {
     // Release the stream and the buffers
     cudaStreamSynchronize(mTrtCudaStream);
     cudaStreamDestroy(mTrtCudaStream);
-    for (auto& item : mTrtCudaBuffer) cudaFree(item);
+    for (auto & item : mTrtCudaBuffer) cudaFree(item);
 
     mTrtPluginFactory.destroyPlugin();
 
@@ -59,9 +64,10 @@ class trtNet {
     if (!mTrtEngine) mTrtEngine->destroy();
   };
 
-  void saveEngine(std::string fileName) {
+  void saveEngine(std::string fileName)
+  {
     if (mTrtEngine) {
-      nvinfer1::IHostMemory* data = mTrtEngine->serialize();
+      nvinfer1::IHostMemory * data = mTrtEngine->serialize();
       std::ofstream file;
       file.open(fileName, std::ios::binary | std::ios::out);
       if (!file.is_open()) {
@@ -69,42 +75,45 @@ class trtNet {
         return;
       }
 
-      file.write((const char*)data->data(), data->size());
+      file.write((const char *)data->data(), data->size());
       file.close();
     }
   };
 
-  void doInference(const void* inputData, void* outputData);
+  void doInference(const void * inputData, void * outputData);
 
-  inline size_t getInputSize() {
-    return std::accumulate(mTrtBindBufferSize.begin(), mTrtBindBufferSize.begin() + mTrtInputCount, 0);
+  inline size_t getInputSize()
+  {
+    return std::accumulate(
+      mTrtBindBufferSize.begin(), mTrtBindBufferSize.begin() + mTrtInputCount, 0);
   };
 
-  inline size_t getOutputSize() {
-    return std::accumulate(mTrtBindBufferSize.begin() + mTrtInputCount, mTrtBindBufferSize.end(), 0);
+  inline size_t getOutputSize()
+  {
+    return std::accumulate(
+      mTrtBindBufferSize.begin() + mTrtInputCount, mTrtBindBufferSize.end(), 0);
   };
 
   void printTime() { mTrtProfiler.printLayerTimes(mTrtIterationTime); }
 
- private:
-  nvinfer1::ICudaEngine* loadModelAndCreateEngine(const char* deployFile, const char* modelFile, int maxBatchSize,
-                                                  nvcaffeparser1::ICaffeParser* parser,
-                                                  nvcaffeparser1::IPluginFactory* pluginFactory,
-                                                  nvinfer1::IInt8Calibrator* calibrator,
-                                                  nvinfer1::IHostMemory*& trtModelStream,
-                                                  const std::vector<std::string>& outputNodesName);
+private:
+  nvinfer1::ICudaEngine * loadModelAndCreateEngine(
+    const char * deployFile, const char * modelFile, int maxBatchSize,
+    nvcaffeparser1::ICaffeParser * parser, nvcaffeparser1::IPluginFactory * pluginFactory,
+    nvinfer1::IInt8Calibrator * calibrator, nvinfer1::IHostMemory *& trtModelStream,
+    const std::vector<std::string> & outputNodesName);
 
   void InitEngine();
 
-  nvinfer1::IExecutionContext* mTrtContext;
-  nvinfer1::ICudaEngine* mTrtEngine;
-  nvinfer1::IRuntime* mTrtRunTime;
+  nvinfer1::IExecutionContext * mTrtContext;
+  nvinfer1::ICudaEngine * mTrtEngine;
+  nvinfer1::IRuntime * mTrtRunTime;
   PluginFactory mTrtPluginFactory;
   cudaStream_t mTrtCudaStream;
   Profiler mTrtProfiler;
   RUN_MODE mTrtRunMode;
 
-  std::vector<void*> mTrtCudaBuffer;
+  std::vector<void *> mTrtCudaBuffer;
   std::vector<int64_t> mTrtBindBufferSize;
   int mTrtInputCount;
   int mTrtIterationTime;

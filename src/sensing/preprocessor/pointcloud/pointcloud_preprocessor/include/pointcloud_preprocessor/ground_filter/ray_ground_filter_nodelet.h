@@ -68,11 +68,14 @@
 #include "pointcloud_preprocessor/filter.h"
 #include "pointcloud_preprocessor/ground_filter/gencolors.hpp"
 
-namespace pointcloud_preprocessor {
-class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
+namespace pointcloud_preprocessor
+{
+class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter
+{
   typedef pcl::PointXYZ PointType_;
 
-  struct PointXYZRTColor {
+  struct PointXYZRTColor
+  {
     pcl::PointXYZ point;
 
     size_t ring;  // ring number if available
@@ -91,20 +94,22 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
   };
   typedef std::vector<PointXYZRTColor> PointCloudXYZRTColor;
 
- protected:
-  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::RayGroundFilterConfig>> srv_;
+protected:
+  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::RayGroundFilterConfig>>
+    srv_;
 
-  void filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices, PointCloud2& output) override;
+  void filter(
+    const PointCloud2::ConstPtr & input, const IndicesPtr & indices, PointCloud2 & output) override;
 
   void subscribe() override;
 
   void unsubscribe() override;
 
-  bool child_init(ros::NodeHandle& nh, bool& has_service) override;
+  bool child_init(ros::NodeHandle & nh, bool & has_service) override;
 
-  void config_callback(pointcloud_preprocessor::RayGroundFilterConfig& config, uint32_t level);
+  void config_callback(pointcloud_preprocessor::RayGroundFilterConfig & config, uint32_t level);
 
- private:
+private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
@@ -113,8 +118,10 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
   double local_max_slope_;              // degrees
   double radial_divider_angle_;         // distance in rads between dividers
   double concentric_divider_distance_;  // distance in meters between concentric divisions
-  double min_height_threshold_;         // minimum height threshold regardless the slope, useful for close points
-  double reclass_distance_threshold_;   // distance between points at which re classification will occur
+  double
+    min_height_threshold_;  // minimum height threshold regardless the slope, useful for close points
+  double
+    reclass_distance_threshold_;  // distance between points at which re classification will occur
 
   size_t radial_dividers_num_;
   size_t concentric_dividers_num_;
@@ -127,9 +134,10 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
   const size_t min_icp_points_ = 10;  // min num points to allow icp to start
 
   std::vector<cv::Scalar> colors_;
-  const size_t color_num_ = 10;                          // different number of color to generate
-  pcl::PointCloud<PointType_>::Ptr previous_cloud_ptr_;  // holds the previous groundless result of ground
-                                                         // classification
+  const size_t color_num_ = 10;  // different number of color to generate
+  pcl::PointCloud<PointType_>::Ptr
+    previous_cloud_ptr_;  // holds the previous groundless result of ground
+                          // classification
 
   /*!
    * Output transformed PointCloud from in_cloud_ptr->header.frame_id to in_target_frame
@@ -139,8 +147,9 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
    * @retval true transform successed
    * @retval false transform faild
    */
-  bool TransformPointCloud(const std::string& in_target_frame, const sensor_msgs::PointCloud2::ConstPtr& in_cloud_ptr,
-                           const sensor_msgs::PointCloud2::Ptr& out_cloud_ptr);
+  bool TransformPointCloud(
+    const std::string & in_target_frame, const sensor_msgs::PointCloud2::ConstPtr & in_cloud_ptr,
+    const sensor_msgs::PointCloud2::Ptr & out_cloud_ptr);
 
   /*!
    *
@@ -149,10 +158,10 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
    * @param[out] out_radial_divided_indices Indices of the points in the original cloud for each radial segment
    * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
    */
-  void ConvertXYZIToRTZColor(const pcl::PointCloud<PointType_>::Ptr in_cloud,
-                             PointCloudXYZRTColor& out_organized_points,
-                             std::vector<pcl::PointIndices>& out_radial_divided_indices,
-                             std::vector<PointCloudXYZRTColor>& out_radial_ordered_clouds);
+  void ConvertXYZIToRTZColor(
+    const pcl::PointCloud<PointType_>::Ptr in_cloud, PointCloudXYZRTColor & out_organized_points,
+    std::vector<pcl::PointIndices> & out_radial_divided_indices,
+    std::vector<PointCloudXYZRTColor> & out_radial_ordered_clouds);
 
   /*!
    * Classifies Points in the PointCoud as Ground and Not Ground
@@ -160,8 +169,9 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
    * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
    * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
    */
-  void ClassifyPointCloud(std::vector<PointCloudXYZRTColor>& in_radial_ordered_clouds,
-                          pcl::PointIndices& out_ground_indices, pcl::PointIndices& out_no_ground_indices);
+  void ClassifyPointCloud(
+    std::vector<PointCloudXYZRTColor> & in_radial_ordered_clouds,
+    pcl::PointIndices & out_ground_indices, pcl::PointIndices & out_no_ground_indices);
 
   /*!
    * Returns the resulting complementary PointCloud, one with the points kept and the other removed as indicated
@@ -171,11 +181,12 @@ class RayGroundFilterNodelet : public pointcloud_preprocessor::Filter {
    * @param out_only_indices_cloud_ptr Resulting PointCloud with the indices kept
    * @param out_removed_indices_cloud_ptr Resulting PointCloud with the indices removed
    */
-  void ExtractPointsIndices(const pcl::PointCloud<PointType_>::Ptr in_cloud_ptr, const pcl::PointIndices& in_indices,
-                            pcl::PointCloud<PointType_>::Ptr out_only_indices_cloud_ptr,
-                            pcl::PointCloud<PointType_>::Ptr out_removed_indices_cloud_ptr);
+  void ExtractPointsIndices(
+    const pcl::PointCloud<PointType_>::Ptr in_cloud_ptr, const pcl::PointIndices & in_indices,
+    pcl::PointCloud<PointType_>::Ptr out_only_indices_cloud_ptr,
+    pcl::PointCloud<PointType_>::Ptr out_removed_indices_cloud_ptr);
 
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   RayGroundFilterNodelet();
 };

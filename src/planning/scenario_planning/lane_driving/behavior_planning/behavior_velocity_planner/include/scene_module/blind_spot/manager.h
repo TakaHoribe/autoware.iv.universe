@@ -39,15 +39,16 @@
 #include <scene_module/blind_spot/scene.h>
 #include <scene_module/scene_module_interface.h>
 
-class BlindSpotModuleManager : public SceneModuleManagerInterface {
- public:
+class BlindSpotModuleManager : public SceneModuleManagerInterface
+{
+public:
   BlindSpotModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char* getModuleName() override { return "blind_spot"; }
+  const char * getModuleName() override { return "blind_spot"; }
 
- private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) override;
+  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId & path) override;
 };

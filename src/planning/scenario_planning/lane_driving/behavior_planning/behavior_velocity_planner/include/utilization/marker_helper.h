@@ -17,7 +17,8 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-inline geometry_msgs::Point createMarkerPosition(double x, double y, double z) {
+inline geometry_msgs::Point createMarkerPosition(double x, double y, double z)
+{
   geometry_msgs::Point point;
 
   point.x = x;
@@ -27,7 +28,8 @@ inline geometry_msgs::Point createMarkerPosition(double x, double y, double z) {
   return point;
 }
 
-inline geometry_msgs::Quaternion createMarkerOrientation(double x, double y, double z, double w) {
+inline geometry_msgs::Quaternion createMarkerOrientation(double x, double y, double z, double w)
+{
   geometry_msgs::Quaternion quaternion;
 
   quaternion.x = x;
@@ -38,7 +40,8 @@ inline geometry_msgs::Quaternion createMarkerOrientation(double x, double y, dou
   return quaternion;
 }
 
-inline geometry_msgs::Vector3 createMarkerScale(double x, double y, double z) {
+inline geometry_msgs::Vector3 createMarkerScale(double x, double y, double z)
+{
   geometry_msgs::Vector3 scale;
 
   scale.x = x;
@@ -48,7 +51,8 @@ inline geometry_msgs::Vector3 createMarkerScale(double x, double y, double z) {
   return scale;
 }
 
-inline std_msgs::ColorRGBA createMarkerColor(float r, float g, float b, float a) {
+inline std_msgs::ColorRGBA createMarkerColor(float r, float g, float b, float a)
+{
   std_msgs::ColorRGBA color;
 
   color.r = r;
@@ -59,8 +63,10 @@ inline std_msgs::ColorRGBA createMarkerColor(float r, float g, float b, float a)
   return color;
 }
 
-inline visualization_msgs::Marker createDefaultMarker(const char* frame_id, const char* ns, const int32_t id,
-                                                      const int32_t type, const std_msgs::ColorRGBA& color) {
+inline visualization_msgs::Marker createDefaultMarker(
+  const char * frame_id, const char * ns, const int32_t id, const int32_t type,
+  const std_msgs::ColorRGBA & color)
+{
   visualization_msgs::Marker marker;
 
   marker.header.frame_id = frame_id;
@@ -80,9 +86,11 @@ inline visualization_msgs::Marker createDefaultMarker(const char* frame_id, cons
   return marker;
 }
 
-inline void appendMarkerArray(const visualization_msgs::MarkerArray& additional_marker_array,
-                              visualization_msgs::MarkerArray* marker_array) {
-  for (const auto& marker : additional_marker_array.markers) {
+inline void appendMarkerArray(
+  const visualization_msgs::MarkerArray & additional_marker_array,
+  visualization_msgs::MarkerArray * marker_array)
+{
+  for (const auto & marker : additional_marker_array.markers) {
     marker_array->markers.push_back(marker);
   }
 }

@@ -30,8 +30,10 @@
 
 #include "vehicle_cmd_gate/vehicle_cmd_gate.h"
 
-VehicleCmdGate::VehicleCmdGate() : nh_(""), pnh_("~"), is_engaged_(false) {
-  vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommand>("output/vehicle_cmd", 1, true);
+VehicleCmdGate::VehicleCmdGate() : nh_(""), pnh_("~"), is_engaged_(false)
+{
+  vehicle_cmd_pub_ =
+    pnh_.advertise<autoware_vehicle_msgs::VehicleCommand>("output/vehicle_cmd", 1, true);
   control_cmd_sub_ = pnh_.subscribe("input/control_cmd", 1, &VehicleCmdGate::ctrlCmdCallback, this);
   engage_sub_ = pnh_.subscribe("input/engage", 1, &VehicleCmdGate::engageCallback, this);
 
@@ -52,7 +54,8 @@ VehicleCmdGate::VehicleCmdGate() : nh_(""), pnh_("~"), is_engaged_(false) {
 
 void VehicleCmdGate::engageCallback(const std_msgs::Bool msg) { is_engaged_ = msg.data; }
 
-double VehicleCmdGate::getDt() {
+double VehicleCmdGate::getDt()
+{
   double dt = 0.0;
   if (!prev_time_) {
     prev_time_ = std::make_shared<ros::Time>(ros::Time::now());
@@ -64,7 +67,8 @@ double VehicleCmdGate::getDt() {
   return dt;
 }
 
-void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped& input_msg) {
+void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped & input_msg)
+{
   autoware_vehicle_msgs::VehicleCommand cmd;
   cmd.header = input_msg.header;
 
@@ -86,8 +90,8 @@ void VehicleCmdGate::ctrlCmdCallback(const autoware_control_msgs::ControlCommand
   filter.limitLateralWithLatAcc(dt, cmd.control);
   filter.limitLateralWithLatJerk(dt, cmd.control);
 
-  cmd.shift.data =
-      cmd.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  cmd.shift.data = cmd.control.velocity >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE
+                                               : autoware_vehicle_msgs::Shift::REVERSE;
 
   /* publish vehicle cmd */
   vehicle_cmd_pub_.publish(cmd);

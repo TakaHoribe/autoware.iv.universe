@@ -18,7 +18,8 @@
 
 #include "pose_initializer/pose_initializer_core.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "pose_initializer");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");

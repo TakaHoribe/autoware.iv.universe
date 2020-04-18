@@ -18,8 +18,10 @@
 
 #include "cluster_data_association/utils/utils.hpp"
 
-namespace utils {
-double getArea(const autoware_perception_msgs::Shape& shape) {
+namespace utils
+{
+double getArea(const autoware_perception_msgs::Shape & shape)
+{
   double area = 0.0;
   if (shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX) {
     area = getRectangleArea(shape.dimensions);
@@ -31,21 +33,26 @@ double getArea(const autoware_perception_msgs::Shape& shape) {
   return area;
 }
 
-double getPolygonArea(const geometry_msgs::Polygon& footprint) {
+double getPolygonArea(const geometry_msgs::Polygon & footprint)
+{
   double area = 0.0;
 
   for (int i = 0; i < (int)footprint.points.size(); ++i) {
     int j = (i + 1) % (int)footprint.points.size();
-    area += 0.5 *
-            (footprint.points.at(i).x * footprint.points.at(j).y - footprint.points.at(j).x * footprint.points.at(i).y);
+    area += 0.5 * (footprint.points.at(i).x * footprint.points.at(j).y -
+                   footprint.points.at(j).x * footprint.points.at(i).y);
   }
 
   return area;
 }
 
-double getRectangleArea(const geometry_msgs::Vector3& dimensions) { return double(dimensions.x * dimensions.y); }
+double getRectangleArea(const geometry_msgs::Vector3 & dimensions)
+{
+  return double(dimensions.x * dimensions.y);
+}
 
-double getCircleArea(const geometry_msgs::Vector3& dimensions) {
+double getCircleArea(const geometry_msgs::Vector3 & dimensions)
+{
   return double((dimensions.x / 2.0) * (dimensions.x / 2.0) * M_PI);
 }
 }  // namespace utils

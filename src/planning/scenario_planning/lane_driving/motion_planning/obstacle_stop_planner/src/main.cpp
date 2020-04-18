@@ -17,7 +17,8 @@
 #include <ros/ros.h>
 #include <obstacle_stop_planner/node.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "obstacle_stop_planner_node");
 
   motion_planning::ObstacleStopPlannerNode node;

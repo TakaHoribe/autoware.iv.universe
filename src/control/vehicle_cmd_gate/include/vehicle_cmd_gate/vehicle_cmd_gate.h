@@ -26,13 +26,14 @@
 #include "autoware_vehicle_msgs/VehicleCommand.h"
 #include "vehicle_cmd_gate/vehicle_cmd_filter.h"
 
-class VehicleCmdGate {
- public:
+class VehicleCmdGate
+{
+public:
   VehicleCmdGate();
   ~VehicleCmdGate() = default;
 
- private:
-  void ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped& msg);
+private:
+  void ctrlCmdCallback(const autoware_control_msgs::ControlCommandStamped & msg);
   void engageCallback(const std_msgs::Bool msg);
 
   double getDt();

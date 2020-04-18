@@ -33,8 +33,9 @@
 #include "multi_object_tracker/data_association/data_association.hpp"
 #include "multi_object_tracker/tracker/model/tracker_base.hpp"
 
-class MultiObjectTrackerNode {
- private:  // ros
+class MultiObjectTrackerNode
+{
+private:  // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
@@ -43,14 +44,15 @@ class MultiObjectTrackerNode {
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
-  void measurementCallback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_objects_msg);
-  void publishTimerCallback(const ros::TimerEvent& e);
+  void measurementCallback(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_objects_msg);
+  void publishTimerCallback(const ros::TimerEvent & e);
 
   std::string world_frame_id_;  // tracking frame
   std::list<std::shared_ptr<Tracker>> list_tracker_;
   DataAssociation data_association_;
 
- public:
+public:
   MultiObjectTrackerNode();
 
   ~MultiObjectTrackerNode(){};

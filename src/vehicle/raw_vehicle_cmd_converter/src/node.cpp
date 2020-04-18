@@ -16,10 +16,12 @@
 
 #include "raw_vehicle_cmd_converter/node.hpp"
 
-AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~") {
+AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~")
+{
   pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::RawVehicleCommand>("/vehicle/raw_vehicle_cmd", 1);
   sub_cmd_ = nh_.subscribe("/control/vehicle_cmd", 1, &AccelMapConverter::callbackVehicleCmd, this);
-  sub_velocity_ = nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
+  sub_velocity_ =
+    nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
 
   pnh_.param<double>("max_throttle", max_throttle_, 0.2);
   pnh_.param<double>("max_brake", max_brake_, 0.8);
@@ -39,18 +41,23 @@ AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~") {
   }
 }
 
-void AccelMapConverter::callbackVelocity(const geometry_msgs::TwistStampedConstPtr msg) {
+void AccelMapConverter::callbackVelocity(const geometry_msgs::TwistStampedConstPtr msg)
+{
   current_velocity_ptr_ = std::make_shared<double>(msg->twist.linear.x);
 }
 
-void AccelMapConverter::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr) {
+void AccelMapConverter::callbackVehicleCmd(
+  const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr)
+{
   if (!current_velocity_ptr_ || !acc_map_initialized_) {
     return;
   }
 
   double desired_throttle = 0.0;
   double desired_brake = 0.0;
-  calculateAccelMap(*current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle, &desired_brake);
+  calculateAccelMap(
+    *current_velocity_ptr_, vehicle_cmd_ptr->control.acceleration, &desired_throttle,
+    &desired_brake);
 
   autoware_vehicle_msgs::RawVehicleCommand output;
   output.header = vehicle_cmd_ptr->header;
@@ -64,8 +71,10 @@ void AccelMapConverter::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleC
   pub_cmd_.publish(output);
 }
 
-void AccelMapConverter::calculateAccelMap(const double current_velocity, const double desired_acc,
-                                          double* desired_throttle, double* desired_brake) {
+void AccelMapConverter::calculateAccelMap(
+  const double current_velocity, const double desired_acc, double * desired_throttle,
+  double * desired_brake)
+{
   // throttle mode
   if (!accel_map_.getThrottle(desired_acc, std::abs(current_velocity), *desired_throttle)) {
     // brake mode

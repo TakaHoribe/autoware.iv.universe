@@ -42,17 +42,18 @@
 #include "rviz/properties/tf_frame_property.h"
 #include "rviz/properties/vector_property.h"
 
-namespace rviz {
-
+namespace rviz
+{
 /**
  * \class PolarGridDisplay
  * \brief Displays a grid in either the XY, YZ, or XZ plane.
  *
  * For more information see Grid
  */
-class PolarGridDisplay : public Display {
+class PolarGridDisplay : public Display
+{
   Q_OBJECT
- public:
+public:
   PolarGridDisplay();
   virtual ~PolarGridDisplay();
 
@@ -61,24 +62,24 @@ class PolarGridDisplay : public Display {
   virtual void update(float dt, float ros_dt);
   void reset() override;
 
- private Q_SLOTS:
+private Q_SLOTS:
   void updatePlane();
 
- private:
-  Ogre::ManualObject* rings_manual_object_;
-  Ogre::ManualObject* wave_manual_object_;
+private:
+  Ogre::ManualObject * rings_manual_object_;
+  Ogre::ManualObject * wave_manual_object_;
   float wave_range_;
 
-  TfFrameProperty* frame_property_;
-  FloatProperty* d_range_property_;
-  FloatProperty* max_range_property_;
-  FloatProperty* max_alpha_property_;
-  FloatProperty* min_alpha_property_;
-  ColorProperty* color_property_;
-  FloatProperty* wave_velocity_property_;
-  ColorProperty* wave_color_property_;
-  FloatProperty* max_wave_alpha_property_;
-  FloatProperty* min_wave_alpha_property_;
+  TfFrameProperty * frame_property_;
+  FloatProperty * d_range_property_;
+  FloatProperty * max_range_property_;
+  FloatProperty * max_alpha_property_;
+  FloatProperty * min_alpha_property_;
+  ColorProperty * color_property_;
+  FloatProperty * wave_velocity_property_;
+  ColorProperty * wave_color_property_;
+  FloatProperty * max_wave_alpha_property_;
+  FloatProperty * min_wave_alpha_property_;
 };
 
 }  // namespace rviz

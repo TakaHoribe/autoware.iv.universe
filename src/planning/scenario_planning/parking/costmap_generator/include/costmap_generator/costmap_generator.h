@@ -69,11 +69,12 @@
 #include <costmap_generator/points_to_costmap.h>
 #include <lanelet2_extension/utility/message_conversion.h>
 
-class CostmapGenerator {
- public:
+class CostmapGenerator
+{
+public:
   CostmapGenerator();
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
@@ -128,59 +129,63 @@ class CostmapGenerator {
 
   autoware_planning_msgs::Scenario::ConstPtr scenario_;
 
-  struct LayerName {
-    static constexpr const char* objects = "objects";
-    static constexpr const char* points = "points";
-    static constexpr const char* wayarea = "wayarea";
-    static constexpr const char* combined = "combined";
+  struct LayerName
+  {
+    static constexpr const char * objects = "objects";
+    static constexpr const char * points = "points";
+    static constexpr const char * wayarea = "wayarea";
+    static constexpr const char * combined = "combined";
   };
 
   /// \brief wait for lanelet2 map to load and build routing graph
   void initLaneletMap();
 
   /// \brief callback for loading landlet2 map
-  void onLaneletMapBin(const autoware_lanelet2_msgs::MapBin& msg);
+  void onLaneletMapBin(const autoware_lanelet2_msgs::MapBin & msg);
 
   /// \brief callback for DynamicObjectArray
   /// \param[in] in_objects input DynamicObjectArray usually from prediction or perception
   /// component
-  void onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg);
+  void onObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr & msg);
 
   /// \brief callback for sensor_msgs::PointCloud2
   /// \param[in] in_points input sensot_msgs::PointCloud2. Assuming groud-fitered pointcloud
   /// by default
-  void onPoints(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  void onPoints(const sensor_msgs::PointCloud2::ConstPtr & msg);
 
-  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg);
+  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr & msg);
 
-  void onTimer(const ros::TimerEvent& event);
+  void onTimer(const ros::TimerEvent & event);
 
   /// \brief initialize gridmap parameters based on rosparam
   void initGridmap();
 
   /// \brief publish ros msg: grid_map::GridMap, and nav_msgs::OccupancyGrid
   /// \param[in] gridmap with calculated cost
-  void publishCostmap(const grid_map::GridMap& costmap);
+  void publishCostmap(const grid_map::GridMap & costmap);
 
   /// \brief set area_points from lanelet polygons
   /// \param [in] input lanelet_map
   /// \param [out] calculated area_points of lanelet polygons
-  void loadRoadAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
-                                   std::vector<std::vector<geometry_msgs::Point>>* area_points);
+  void loadRoadAreasFromLaneletMap(
+    const lanelet::LaneletMapPtr lanelet_map,
+    std::vector<std::vector<geometry_msgs::Point>> * area_points);
 
   /// \brief set area_points from parking-area polygons
   /// \param [in] input lanelet_map
   /// \param [out] calculated area_points of lanelet polygons
-  void loadParkingAreasFromLaneletMap(const lanelet::LaneletMapPtr lanelet_map,
-                                      std::vector<std::vector<geometry_msgs::Point>>* area_points);
+  void loadParkingAreasFromLaneletMap(
+    const lanelet::LaneletMapPtr lanelet_map,
+    std::vector<std::vector<geometry_msgs::Point>> * area_points);
 
   /// \brief calculate cost from pointcloud data
   /// \param[in] in_points: subscribed pointcloud data
-  grid_map::Matrix generatePointsCostmap(const pcl::PointCloud<pcl::PointXYZ>::Ptr& in_points);
+  grid_map::Matrix generatePointsCostmap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & in_points);
 
   /// \brief calculate cost from DynamicObjectArray
   /// \param[in] in_objects: subscribed DynamicObjectArray
-  grid_map::Matrix generateObjectsCostmap(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects);
+  grid_map::Matrix generateObjectsCostmap(
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr & in_objects);
 
   /// \brief calculate cost from lanelet2 map
   grid_map::Matrix generateWayAreaCostmap();

@@ -37,30 +37,32 @@
 #include "rviz/default_plugin/tools/pose_tool.h"
 #endif
 
-namespace rviz {
+namespace rviz
+{
 class Arrow;
 class DisplayContext;
 class StringProperty;
 class FloatProperty;
 
-class DeleteAllObjectsTool : public PoseTool {
+class DeleteAllObjectsTool : public PoseTool
+{
   Q_OBJECT
- public:
+public:
   DeleteAllObjectsTool();
   virtual ~DeleteAllObjectsTool() {}
   virtual void onInitialize();
 
- protected:
+protected:
   virtual void onPoseSet(double x, double y, double theta);
 
- private Q_SLOTS:
+private Q_SLOTS:
   void updateTopic();
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::Publisher dummy_object_info_pub_;
 
-  StringProperty* topic_property_;
+  StringProperty * topic_property_;
 };
 
 }  // namespace rviz

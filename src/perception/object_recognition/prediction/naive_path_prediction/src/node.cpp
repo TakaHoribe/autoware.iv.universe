@@ -24,12 +24,15 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 
-NaivePathPredictionNode::NaivePathPredictionNode() : nh_(""), pnh_("~") {
+NaivePathPredictionNode::NaivePathPredictionNode() : nh_(""), pnh_("~")
+{
   sub_ = nh_.subscribe("input", 1, &NaivePathPredictionNode::callback, this);
   pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("output", 1, true);
 }
 
-void NaivePathPredictionNode::callback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_msg) {
+void NaivePathPredictionNode::callback(
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr & input_msg)
+{
   autoware_perception_msgs::DynamicObjectArray output_msg = *input_msg;
 
   for (size_t i = 0; i < output_msg.objects.size(); ++i) {
@@ -42,8 +45,10 @@ void NaivePathPredictionNode::callback(const autoware_perception_msgs::DynamicOb
       pose_cov_stamped.header.stamp = output_msg.header.stamp + ros::Duration(dt);
       geometry_msgs::Pose object_frame_pose;
       geometry_msgs::Pose world_frame_pose;
-      object_frame_pose.position.x = output_msg.objects.at(i).state.twist_covariance.twist.linear.x * dt;
-      object_frame_pose.position.y = output_msg.objects.at(i).state.twist_covariance.twist.linear.y * dt;
+      object_frame_pose.position.x =
+        output_msg.objects.at(i).state.twist_covariance.twist.linear.x * dt;
+      object_frame_pose.position.y =
+        output_msg.objects.at(i).state.twist_covariance.twist.linear.y * dt;
       tf2::Transform tf_object2future;
       tf2::Transform tf_world2object;
       tf2::Transform tf_world2future;
@@ -64,7 +69,8 @@ void NaivePathPredictionNode::callback(const autoware_perception_msgs::DynamicOb
   return;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "naive_path_prediction_node");
   NaivePathPredictionNode node;
   ros::spin();

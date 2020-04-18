@@ -27,26 +27,33 @@
 #include "obstacle_avoidance_planner/process_cv.h"
 
 visualization_msgs::MarkerArray getDebugVisualizationMarker(
-    const std::vector<geometry_msgs::Point>& interpolated_points,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    const std::vector<geometry_msgs::Point>& straight_points, const std::vector<geometry_msgs::Pose>& fixed_points,
-    const std::vector<geometry_msgs::Pose>& non_fixed_points, const std::vector<ConstrainRectangle>& constrain_ranges) {
-  const auto points_marker_array =
-      getDebugPointsMarkers(interpolated_points, optimized_points, straight_points, fixed_points, non_fixed_points);
+  const std::vector<geometry_msgs::Point> & interpolated_points,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & optimized_points,
+  const std::vector<geometry_msgs::Point> & straight_points,
+  const std::vector<geometry_msgs::Pose> & fixed_points,
+  const std::vector<geometry_msgs::Pose> & non_fixed_points,
+  const std::vector<ConstrainRectangle> & constrain_ranges)
+{
+  const auto points_marker_array = getDebugPointsMarkers(
+    interpolated_points, optimized_points, straight_points, fixed_points, non_fixed_points);
   const auto constrain_marker_array = getDebugConstrainMarkers(constrain_ranges);
   visualization_msgs::MarkerArray vis_marker_array;
-  vis_marker_array.markers.insert(vis_marker_array.markers.end(), points_marker_array.markers.begin(),
-                                  points_marker_array.markers.end());
-  vis_marker_array.markers.insert(vis_marker_array.markers.end(), constrain_marker_array.markers.begin(),
-                                  constrain_marker_array.markers.end());
+  vis_marker_array.markers.insert(
+    vis_marker_array.markers.end(), points_marker_array.markers.begin(),
+    points_marker_array.markers.end());
+  vis_marker_array.markers.insert(
+    vis_marker_array.markers.end(), constrain_marker_array.markers.begin(),
+    constrain_marker_array.markers.end());
   return vis_marker_array;
 }
 
 visualization_msgs::MarkerArray getDebugPointsMarkers(
-    const std::vector<geometry_msgs::Point>& interpolated_points,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    const std::vector<geometry_msgs::Point>& straight_points, const std::vector<geometry_msgs::Pose>& fixed_points,
-    const std::vector<geometry_msgs::Pose>& non_fixed_points) {
+  const std::vector<geometry_msgs::Point> & interpolated_points,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & optimized_points,
+  const std::vector<geometry_msgs::Point> & straight_points,
+  const std::vector<geometry_msgs::Pose> & fixed_points,
+  const std::vector<geometry_msgs::Pose> & non_fixed_points)
+{
   visualization_msgs::MarkerArray marker_array;
   int unique_id = 0;
 
@@ -66,7 +73,7 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   interpolated_points_marker.color.r = 1.0f;
   interpolated_points_marker.color.a = 0.99;
   unique_id++;
-  for (const auto& point : interpolated_points) {
+  for (const auto & point : interpolated_points) {
     interpolated_points_marker.points.push_back(point);
   }
   if (!interpolated_points_marker.points.empty()) {
@@ -89,7 +96,7 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   optimized_points_marker.color.g = 1.0f;
   optimized_points_marker.color.a = 0.99;
   unique_id++;
-  for (const auto& point : optimized_points) {
+  for (const auto & point : optimized_points) {
     optimized_points_marker.points.push_back(point.pose.position);
   }
   if (!optimized_points_marker.points.empty()) {
@@ -153,7 +160,7 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   straight_points_marker.color.g = 1.0f;
   straight_points_marker.color.a = 0.99;
   unique_id++;
-  for (const auto& point : straight_points) {
+  for (const auto & point : straight_points) {
     straight_points_marker.points.push_back(point);
   }
   if (!straight_points_marker.points.empty()) {
@@ -176,7 +183,7 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   fixed_marker.color.r = 1.0f;
   fixed_marker.color.a = 0.999;
   unique_id++;
-  for (const auto& point : fixed_points) {
+  for (const auto & point : fixed_points) {
     fixed_marker.points.push_back(point.position);
   }
   marker_array.markers.push_back(fixed_marker);
@@ -196,7 +203,7 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   non_fixed_marker.color.g = 1.0f;
   non_fixed_marker.color.a = 0.99;
   unique_id++;
-  for (const auto& point : non_fixed_points) {
+  for (const auto & point : non_fixed_points) {
     non_fixed_marker.points.push_back(point.position);
   }
   if (!non_fixed_marker.points.empty()) {
@@ -205,7 +212,9 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   return marker_array;
 }
 
-visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<ConstrainRectangle>& constrain_ranges) {
+visualization_msgs::MarkerArray getDebugConstrainMarkers(
+  const std::vector<ConstrainRectangle> & constrain_ranges)
+{
   visualization_msgs::MarkerArray marker_array;
   int unique_id = 0;
   for (int i = 0; i < constrain_ranges.size(); i++) {
@@ -250,7 +259,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<Const
     constrain_range_text_marker.color.r = 1.0f;
     constrain_range_text_marker.color.a = 0.99;
     constrain_range_text_marker.text = std::to_string(i) + std::string(" x ") +
-                                       std::to_string(constrain_range_text_marker.pose.position.x) + std::string("y ") +
+                                       std::to_string(constrain_range_text_marker.pose.position.x) +
+                                       std::string("y ") +
                                        std::to_string(constrain_range_text_marker.pose.position.y);
     unique_id++;
     marker_array.markers.push_back(constrain_range_text_marker);
@@ -258,7 +268,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<Const
     constrain_range_text_marker.id = unique_id;
     constrain_range_text_marker.pose.position = constrain_ranges[i].top_right;
     constrain_range_text_marker.text = std::to_string(i) + std::string(" x ") +
-                                       std::to_string(constrain_range_text_marker.pose.position.x) + std::string("y ") +
+                                       std::to_string(constrain_range_text_marker.pose.position.x) +
+                                       std::string("y ") +
                                        std::to_string(constrain_range_text_marker.pose.position.y);
     unique_id++;
     marker_array.markers.push_back(constrain_range_text_marker);
@@ -266,7 +277,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<Const
     constrain_range_text_marker.id = unique_id;
     constrain_range_text_marker.pose.position = constrain_ranges[i].bottom_left;
     constrain_range_text_marker.text = std::to_string(i) + std::string(" x ") +
-                                       std::to_string(constrain_range_text_marker.pose.position.x) + std::string("y ") +
+                                       std::to_string(constrain_range_text_marker.pose.position.x) +
+                                       std::string("y ") +
                                        std::to_string(constrain_range_text_marker.pose.position.y);
     unique_id++;
     marker_array.markers.push_back(constrain_range_text_marker);
@@ -274,7 +286,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<Const
     constrain_range_text_marker.id = unique_id;
     constrain_range_text_marker.pose.position = constrain_ranges[i].bottom_right;
     constrain_range_text_marker.text = std::to_string(i) + std::string(" x ") +
-                                       std::to_string(constrain_range_text_marker.pose.position.x) + std::string("y ") +
+                                       std::to_string(constrain_range_text_marker.pose.position.x) +
+                                       std::string("y ") +
                                        std::to_string(constrain_range_text_marker.pose.position.y);
     unique_id++;
     marker_array.markers.push_back(constrain_range_text_marker);
@@ -282,12 +295,14 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<Const
   return marker_array;
 }
 
-nav_msgs::OccupancyGrid getDebugCostmap(const cv::Mat& clearance_map, const nav_msgs::OccupancyGrid& occupancy_grid) {
+nav_msgs::OccupancyGrid getDebugCostmap(
+  const cv::Mat & clearance_map, const nav_msgs::OccupancyGrid & occupancy_grid)
+{
   cv::Mat tmp;
   clearance_map.copyTo(tmp);
   cv::normalize(tmp, tmp, 0, 255, cv::NORM_MINMAX, CV_8UC1);
   nav_msgs::OccupancyGrid clearance_map_in_og = occupancy_grid;
-  tmp.forEach<unsigned char>([&](const unsigned char& value, const int* position) -> void {
+  tmp.forEach<unsigned char>([&](const unsigned char & value, const int * position) -> void {
     process_cv::putOccupancyGridValue(clearance_map_in_og, position[0], position[1], value);
   });
   return clearance_map_in_og;

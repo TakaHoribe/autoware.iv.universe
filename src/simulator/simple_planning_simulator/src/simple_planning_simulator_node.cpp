@@ -16,7 +16,8 @@
 
 #include "simple_planning_simulator/simple_planning_simulator_core.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "simple_planning_simulator");
   Simulator obj;
   ros::spin();

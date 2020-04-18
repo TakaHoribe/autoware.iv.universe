@@ -28,9 +28,11 @@
 
 #include <memory>
 
-namespace lane_change_planner {
-class ExecutingLaneChangeState : public StateBase {
- private:
+namespace lane_change_planner
+{
+class ExecutingLaneChangeState : public StateBase
+{
+private:
   geometry_msgs::PoseStamped current_pose_;
   geometry_msgs::TwistStamped::ConstPtr current_twist_;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects_;
@@ -43,9 +45,10 @@ class ExecutingLaneChangeState : public StateBase {
   bool isTargetLaneStillClear() const;
   bool hasFinishedLaneChange() const;
 
- public:
-  ExecutingLaneChangeState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr);
+public:
+  ExecutingLaneChangeState(
+    const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
 
   // override virtual functions
   void entry() override;

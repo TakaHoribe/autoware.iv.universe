@@ -60,9 +60,10 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace pointcloud_preprocessor {
-
-void PointCloudConcatenateDataSynchronizerNodelet::onInit() {
+namespace pointcloud_preprocessor
+{
+void PointCloudConcatenateDataSynchronizerNodelet::onInit()
+{
   nodelet_topic_tools::NodeletLazy::onInit();
 
   // ---[ Mandatory parameters
@@ -93,15 +94,18 @@ void PointCloudConcatenateDataSynchronizerNodelet::onInit() {
   // Output
   pub_output_ = advertise<PointCloud2>(*pnh_, "output", maximum_queue_size_);
   pub_concat_num_ = advertise<std_msgs::Int32>(*pnh_, "concat_num", 10);
-  pub_not_subscribed_topic_name_ = advertise<std_msgs::String>(*pnh_, "not_subscribed_topic_name", 10);
+  pub_not_subscribed_topic_name_ =
+    advertise<std_msgs::String>(*pnh_, "not_subscribed_topic_name", 10);
 
   onInitPostProcess();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloudConcatenateDataSynchronizerNodelet::subscribe() {
+void PointCloudConcatenateDataSynchronizerNodelet::subscribe()
+{
   ROS_INFO_STREAM("Subscribing to " << input_topics_.size() << " user given topics as inputs:");
-  for (int d = 0; d < input_topics_.size(); ++d) ROS_INFO_STREAM(" - " << (std::string)(input_topics_[d]));
+  for (int d = 0; d < input_topics_.size(); ++d)
+    ROS_INFO_STREAM(" - " << (std::string)(input_topics_[d]));
 
   // Subscribe to the filters
   filters_.resize(input_topics_.size());
@@ -113,19 +117,24 @@ void PointCloudConcatenateDataSynchronizerNodelet::subscribe() {
 
     filters_[d].reset(new ros::Subscriber());
     *filters_[d] = pnh_->subscribe<sensor_msgs::PointCloud2>(
-        (std::string)(input_topics_[d]), maximum_queue_size_,
-        bind(&PointCloudConcatenateDataSynchronizerNodelet::cloud_callback, this, _1, (std::string)(input_topics_[d])));
+      (std::string)(input_topics_[d]), maximum_queue_size_,
+      bind(
+        &PointCloudConcatenateDataSynchronizerNodelet::cloud_callback, this, _1,
+        (std::string)(input_topics_[d])));
   }
 
   sub_twist_ = pnh_->subscribe<geometry_msgs::TwistStamped>(
-      "/vehicle/status/twist", 100, bind(&PointCloudConcatenateDataSynchronizerNodelet::twist_callback, this, _1));
-  timer_ = pnh_->createTimer(ros::Duration(timeout_sec_), &PointCloudConcatenateDataSynchronizerNodelet::timer_callback,
-                             this, true);
+    "/vehicle/status/twist", 100,
+    bind(&PointCloudConcatenateDataSynchronizerNodelet::twist_callback, this, _1));
+  timer_ = pnh_->createTimer(
+    ros::Duration(timeout_sec_), &PointCloudConcatenateDataSynchronizerNodelet::timer_callback,
+    this, true);
   timer_.stop();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloudConcatenateDataSynchronizerNodelet::unsubscribe() {
+void PointCloudConcatenateDataSynchronizerNodelet::unsubscribe()
+{
   for (size_t d = 0; d < filters_.size(); ++d) {
     filters_[d]->shutdown();
   }
@@ -133,14 +142,16 @@ void PointCloudConcatenateDataSynchronizerNodelet::unsubscribe() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloudConcatenateDataSynchronizerNodelet::transformPointCloud(const PointCloud2::ConstPtr& in,
-                                                                       PointCloud2::Ptr& out) {
+void PointCloudConcatenateDataSynchronizerNodelet::transformPointCloud(
+  const PointCloud2::ConstPtr & in, PointCloud2::Ptr & out)
+{
   // Transform the point clouds into the specified output frame
   if (output_frame_ != in->header.frame_id) {
     // TODO use TF2
     if (!pcl_ros::transformPointCloud(output_frame_, *in, *out, tf_)) {
-      NODELET_ERROR("[%s::transformPointCloud] Error converting first input dataset from %s to %s.", getName().c_str(),
-                    in->header.frame_id.c_str(), output_frame_.c_str());
+      NODELET_ERROR(
+        "[%s::transformPointCloud] Error converting first input dataset from %s to %s.",
+        getName().c_str(), in->header.frame_id.c_str(), output_frame_.c_str());
       return;
     }
   } else {
@@ -148,9 +159,9 @@ void PointCloudConcatenateDataSynchronizerNodelet::transformPointCloud(const Poi
   }
 }
 
-void PointCloudConcatenateDataSynchronizerNodelet::combineClouds(const PointCloud2::ConstPtr& in1,
-                                                                 const PointCloud2::ConstPtr& in2,
-                                                                 PointCloud2::Ptr& out) {
+void PointCloudConcatenateDataSynchronizerNodelet::combineClouds(
+  const PointCloud2::ConstPtr & in1, const PointCloud2::ConstPtr & in2, PointCloud2::Ptr & out)
+{
   if (twist_ptr_queue_.empty()) {
     pcl::concatenatePointCloud(*in1, *in2, *out);
     out->header.stamp = std::min(in1->header.stamp, in2->header.stamp);
@@ -159,25 +170,34 @@ void PointCloudConcatenateDataSynchronizerNodelet::combineClouds(const PointClou
 
   const auto old_stamp = std::min(in1->header.stamp, in2->header.stamp);
   auto old_twist_ptr_it = std::lower_bound(
-      std::begin(twist_ptr_queue_), std::end(twist_ptr_queue_), old_stamp,
-      [](const geometry_msgs::TwistStamped::ConstPtr& x_ptr, ros::Time t) { return x_ptr->header.stamp < t; });
-  old_twist_ptr_it = old_twist_ptr_it == twist_ptr_queue_.end() ? (twist_ptr_queue_.end() - 1) : old_twist_ptr_it;
+    std::begin(twist_ptr_queue_), std::end(twist_ptr_queue_), old_stamp,
+    [](const geometry_msgs::TwistStamped::ConstPtr & x_ptr, ros::Time t) {
+      return x_ptr->header.stamp < t;
+    });
+  old_twist_ptr_it =
+    old_twist_ptr_it == twist_ptr_queue_.end() ? (twist_ptr_queue_.end() - 1) : old_twist_ptr_it;
 
   const auto new_stamp = std::max(in1->header.stamp, in2->header.stamp);
   auto new_twist_ptr_it = std::lower_bound(
-      std::begin(twist_ptr_queue_), std::end(twist_ptr_queue_), new_stamp,
-      [](const geometry_msgs::TwistStamped::ConstPtr& x_ptr, ros::Time t) { return x_ptr->header.stamp < t; });
-  new_twist_ptr_it = new_twist_ptr_it == twist_ptr_queue_.end() ? (twist_ptr_queue_.end() - 1) : new_twist_ptr_it;
+    std::begin(twist_ptr_queue_), std::end(twist_ptr_queue_), new_stamp,
+    [](const geometry_msgs::TwistStamped::ConstPtr & x_ptr, ros::Time t) {
+      return x_ptr->header.stamp < t;
+    });
+  new_twist_ptr_it =
+    new_twist_ptr_it == twist_ptr_queue_.end() ? (twist_ptr_queue_.end() - 1) : new_twist_ptr_it;
 
   auto prev_time = old_stamp;
   double x = 0.0, y = 0.0, yaw = 0.0;
   for (auto twist_ptr_it = old_twist_ptr_it; twist_ptr_it != new_twist_ptr_it + 1; ++twist_ptr_it) {
-    const double dt = (twist_ptr_it != new_twist_ptr_it) ? ((*twist_ptr_it)->header.stamp - prev_time).toSec()
-                                                         : (new_stamp - prev_time).toSec();
+    const double dt = (twist_ptr_it != new_twist_ptr_it)
+                        ? ((*twist_ptr_it)->header.stamp - prev_time).toSec()
+                        : (new_stamp - prev_time).toSec();
 
     if (std::fabs(dt) > 0.1) {
       ROS_WARN_STREAM_THROTTLE(
-          10, "Time difference is too large. Cloud not interpolate. Please comfirm twist topic and timestamp");
+        10,
+        "Time difference is too large. Cloud not interpolate. Please comfirm twist topic and "
+        "timestamp");
       break;
     }
 
@@ -208,20 +228,21 @@ void PointCloudConcatenateDataSynchronizerNodelet::combineClouds(const PointClou
   }
 }
 
-void PointCloudConcatenateDataSynchronizerNodelet::publish() {
+void PointCloudConcatenateDataSynchronizerNodelet::publish()
+{
   sensor_msgs::PointCloud2::Ptr concat_cloud_ptr_ = nullptr;
   std::string not_subscribed_topic_name = "";
   size_t concat_num = 0;
 
-  for (const auto& e : cloud_stdmap_) {
+  for (const auto & e : cloud_stdmap_) {
     if (e.second != nullptr) {
       sensor_msgs::PointCloud2::Ptr transed_cloud_ptr(new sensor_msgs::PointCloud2());
       transformPointCloud(e.second, transed_cloud_ptr);
       if (concat_cloud_ptr_ == nullptr) {
         concat_cloud_ptr_ = transed_cloud_ptr;
       } else {
-        PointCloudConcatenateDataSynchronizerNodelet::combineClouds(concat_cloud_ptr_, transed_cloud_ptr,
-                                                                    concat_cloud_ptr_);
+        PointCloudConcatenateDataSynchronizerNodelet::combineClouds(
+          concat_cloud_ptr_, transed_cloud_ptr, concat_cloud_ptr_);
       }
       ++concat_num;
 
@@ -234,7 +255,8 @@ void PointCloudConcatenateDataSynchronizerNodelet::publish() {
     }
   }
   if (!not_subscribed_topic_name.empty()) {
-    ROS_WARN_STREAM_THROTTLE(1, "Skipped " << not_subscribed_topic_name << ". Please confirm topic.");
+    ROS_WARN_STREAM_THROTTLE(
+      1, "Skipped " << not_subscribed_topic_name << ". Please confirm topic.");
   }
 
   pub_output_.publish(*concat_cloud_ptr_);
@@ -248,18 +270,22 @@ void PointCloudConcatenateDataSynchronizerNodelet::publish() {
   pub_not_subscribed_topic_name_.publish(not_subscribed_topic_name_msg);
 
   cloud_stdmap_ = cloud_stdmap_tmp_;
-  std::for_each(std::begin(cloud_stdmap_tmp_), std::end(cloud_stdmap_tmp_), [](auto& e) { e.second = nullptr; });
+  std::for_each(std::begin(cloud_stdmap_tmp_), std::end(cloud_stdmap_tmp_), [](auto & e) {
+    e.second = nullptr;
+  });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PointCloudConcatenateDataSynchronizerNodelet::cloud_callback(const sensor_msgs::PointCloud2::ConstPtr& input_ptr,
-                                                                  const std::string& topic_name) {
+void PointCloudConcatenateDataSynchronizerNodelet::cloud_callback(
+  const sensor_msgs::PointCloud2::ConstPtr & input_ptr, const std::string & topic_name)
+{
   std::lock_guard<std::mutex> lock(mutex_);
 
   const bool is_already_subscribed_this = (cloud_stdmap_[topic_name] != nullptr);
-  const bool is_already_subscribed_tmp = std::any_of(std::begin(cloud_stdmap_tmp_), std::end(cloud_stdmap_tmp_),
-                                                     [](const auto& e) { return e.second != nullptr; });
+  const bool is_already_subscribed_tmp = std::any_of(
+    std::begin(cloud_stdmap_tmp_), std::end(cloud_stdmap_tmp_),
+    [](const auto & e) { return e.second != nullptr; });
 
   static ros::Time timer_start_time;
   if (is_already_subscribed_this) {
@@ -278,11 +304,12 @@ void PointCloudConcatenateDataSynchronizerNodelet::cloud_callback(const sensor_m
     }
 
     cloud_stdmap_[topic_name] = input_ptr;
-    const bool is_subscribed_all = std::all_of(std::begin(cloud_stdmap_), std::end(cloud_stdmap_),
-                                               [](const auto& e) { return e.second != nullptr; });
+    const bool is_subscribed_all = std::all_of(
+      std::begin(cloud_stdmap_), std::end(cloud_stdmap_),
+      [](const auto & e) { return e.second != nullptr; });
 
     if (is_subscribed_all) {
-      for (const auto& e : cloud_stdmap_tmp_) {
+      for (const auto & e : cloud_stdmap_tmp_) {
         if (e.second != nullptr) {
           cloud_stdmap_[e.first] = e.second;
         }
@@ -294,7 +321,8 @@ void PointCloudConcatenateDataSynchronizerNodelet::cloud_callback(const sensor_m
   }
 }
 
-void PointCloudConcatenateDataSynchronizerNodelet::timer_callback(const ros::TimerEvent&) {
+void PointCloudConcatenateDataSynchronizerNodelet::timer_callback(const ros::TimerEvent &)
+{
   // ROS_WARN("TimeOut. Please confirm PointCloud topic");
 
   std::lock_guard<std::mutex> lock(mutex_);
@@ -302,7 +330,9 @@ void PointCloudConcatenateDataSynchronizerNodelet::timer_callback(const ros::Tim
   publish();
 }
 
-void PointCloudConcatenateDataSynchronizerNodelet::twist_callback(const geometry_msgs::TwistStamped::ConstPtr& input) {
+void PointCloudConcatenateDataSynchronizerNodelet::twist_callback(
+  const geometry_msgs::TwistStamped::ConstPtr & input)
+{
   // if rosbag restart, clear buffer
   if (!twist_ptr_queue_.empty()) {
     if (twist_ptr_queue_.front()->header.stamp > input->header.stamp) {
@@ -322,4 +352,5 @@ void PointCloudConcatenateDataSynchronizerNodelet::twist_callback(const geometry
 
 }  // namespace pointcloud_preprocessor
 
-PLUGINLIB_EXPORT_CLASS(pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(
+  pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerNodelet, nodelet::Nodelet);

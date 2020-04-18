@@ -47,15 +47,16 @@
 #include "map_based_prediction.h"
 #include "map_based_prediction_ros.h"
 
-bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::DynamicObject& object,
-                                               const lanelet::LaneletMapPtr& lanelet_map_ptr_,
-                                               std::vector<lanelet::Lanelet>& closest_lanelets,
-                                               std::string uuid_string) {
+bool MapBasedPredictionROS::getClosestLanelets(
+  const autoware_perception_msgs::DynamicObject & object,
+  const lanelet::LaneletMapPtr & lanelet_map_ptr_, std::vector<lanelet::Lanelet> & closest_lanelets,
+  std::string uuid_string)
+{
   std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
-  lanelet::BasicPoint2d search_point(object.state.pose_covariance.pose.position.x,
-                                     object.state.pose_covariance.pose.position.y);
+  lanelet::BasicPoint2d search_point(
+    object.state.pose_covariance.pose.position.x, object.state.pose_covariance.pose.position.y);
   std::vector<std::pair<double, lanelet::Lanelet>> nearest_lanelets =
-      lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 10);
+    lanelet::geometry::findNearest(lanelet_map_ptr_->laneletLayer, search_point, 10);
   std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
   std::chrono::nanoseconds time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   debug_accumulated_time_ += time.count() / (1000.0 * 1000.0);
@@ -70,7 +71,7 @@ bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::D
     double min_delta_yaw = 999999999;
     const double max_dist_for_searching_lanelet = 3;
     lanelet::Lanelet target_closest_lanelet;
-    for (const auto& lanelet : nearest_lanelets) {
+    for (const auto & lanelet : nearest_lanelets) {
       double object_yaw = 0;
       if (object.state.orientation_reliable) {
         object_yaw = tf2::getYaw(object.state.pose_covariance.pose.orientation);
@@ -95,11 +96,14 @@ bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::D
       if (lanelet.second.centerline().size() <= 1) {
         continue;
       }
-      double lane_yaw = lanelet::utils::getLaneletAngle(lanelet.second, object.state.pose_covariance.pose.position);
+      double lane_yaw =
+        lanelet::utils::getLaneletAngle(lanelet.second, object.state.pose_covariance.pose.position);
       double delta_yaw = object_yaw - lane_yaw;
       double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
       double abs_norm_delta = std::fabs(normalized_delta_yaw);
-      if (lanelet.first < max_dist_for_searching_lanelet && abs_norm_delta < max_delta_yaw_threshold) {
+      if (
+        lanelet.first < max_dist_for_searching_lanelet &&
+        abs_norm_delta < max_delta_yaw_threshold) {
         target_closest_lanelet = lanelet.second;
         is_found_target_closest_lanelet = true;
         closest_lanelets.push_back(target_closest_lanelet);
@@ -113,8 +117,8 @@ bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::D
     const double max_delta_yaw_threshold = M_PI / 4.;
     const double max_dist_for_searching_lanelet = 3;
     lanelet::Lanelet target_closest_lanelet;
-    for (const auto& laneid : uuid2laneids_.at(uuid_string)) {
-      for (const auto& lanelet : nearest_lanelets) {
+    for (const auto & laneid : uuid2laneids_.at(uuid_string)) {
+      for (const auto & lanelet : nearest_lanelets) {
         if (laneid != lanelet.second.id()) {
           continue;
         }
@@ -142,11 +146,14 @@ bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::D
         if (lanelet.second.centerline().size() <= 1) {
           continue;
         }
-        double lane_yaw = lanelet::utils::getLaneletAngle(lanelet.second, object.state.pose_covariance.pose.position);
+        double lane_yaw = lanelet::utils::getLaneletAngle(
+          lanelet.second, object.state.pose_covariance.pose.position);
         double delta_yaw = object_yaw - lane_yaw;
         double normalized_delta_yaw = std::atan2(std::sin(delta_yaw), std::cos(delta_yaw));
         double abs_norm_delta = std::fabs(normalized_delta_yaw);
-        if (lanelet.first < max_dist_for_searching_lanelet && abs_norm_delta < max_delta_yaw_threshold) {
+        if (
+          lanelet.first < max_dist_for_searching_lanelet &&
+          abs_norm_delta < max_delta_yaw_threshold) {
           target_closest_lanelet = lanelet.second;
           is_found_target_closest_lanelet = true;
           closest_lanelets.push_back(target_closest_lanelet);
@@ -161,33 +168,39 @@ bool MapBasedPredictionROS::getClosestLanelets(const autoware_perception_msgs::D
   return false;
 }
 
-double calculateDistance(const geometry_msgs::Point& point1, const geometry_msgs::Point& point2) {
+double calculateDistance(const geometry_msgs::Point & point1, const geometry_msgs::Point & point2)
+{
   double dx = point1.x - point2.x;
   double dy = point1.y - point2.y;
   double distance = std::sqrt(dx * dx + dy * dy);
   return distance;
 }
 
-MapBasedPredictionROS::MapBasedPredictionROS() : pnh_("~"), interpolating_resolution_(0.5) {
+MapBasedPredictionROS::MapBasedPredictionROS() : pnh_("~"), interpolating_resolution_(0.5)
+{
   tf_buffer_ptr_ = std::make_shared<tf2_ros::Buffer>();
   tf_listener_ptr_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_ptr_);
   pnh_.param<bool>("map_based_prediction/has_subscribed_map", has_subscribed_map_, false);
   pnh_.param<double>("prediction_time_horizon", prediction_time_horizon_, 10.0);
   pnh_.param<double>("prediction_sampling_delta_time", prediction_sampling_delta_time_, 0.5);
-  map_based_prediction_ = std::make_shared<MapBasedPrediction>(interpolating_resolution_, prediction_time_horizon_,
-                                                               prediction_sampling_delta_time_);
+  map_based_prediction_ = std::make_shared<MapBasedPrediction>(
+    interpolating_resolution_, prediction_time_horizon_, prediction_sampling_delta_time_);
 }
 
-void MapBasedPredictionROS::createROSPubSub() {
+void MapBasedPredictionROS::createROSPubSub()
+{
   sub_objects_ = nh_.subscribe<autoware_perception_msgs::DynamicObjectArray>(
-      "/perception/object_recognition/tracking/objects", 1, &MapBasedPredictionROS::objectsCallback, this);
+    "/perception/object_recognition/tracking/objects", 1, &MapBasedPredictionROS::objectsCallback,
+    this);
   sub_map_ = nh_.subscribe("/vector_map", 10, &MapBasedPredictionROS::mapCallback, this);
 
   pub_objects_ = nh_.advertise<autoware_perception_msgs::DynamicObjectArray>("objects", 1);
   pub_markers_ = nh_.advertise<visualization_msgs::MarkerArray>("objects_path_markers", 1);
 }
 
-void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::DynamicObjectArrayConstPtr& in_objects) {
+void MapBasedPredictionROS::objectsCallback(
+  const autoware_perception_msgs::DynamicObjectArrayConstPtr & in_objects)
+{
   debug_accumulated_time_ = 0.0;
   std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
@@ -199,16 +212,19 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
   geometry_msgs::TransformStamped map2world_transform;
   geometry_msgs::TransformStamped debug_map2lidar_transform;
   try {
-    world2map_transform = tf_buffer_ptr_->lookupTransform("map",                        // target
-                                                          in_objects->header.frame_id,  // src
-                                                          in_objects->header.stamp, ros::Duration(0.1));
-    map2world_transform = tf_buffer_ptr_->lookupTransform(in_objects->header.frame_id,  // target
-                                                          "map",                        // src
-                                                          in_objects->header.stamp, ros::Duration(0.1));
-    debug_map2lidar_transform = tf_buffer_ptr_->lookupTransform("base_link",  // target
-                                                                "map",        // src
-                                                                ros::Time(), ros::Duration(0.1));
-  } catch (tf2::TransformException& ex) {
+    world2map_transform = tf_buffer_ptr_->lookupTransform(
+      "map",                        // target
+      in_objects->header.frame_id,  // src
+      in_objects->header.stamp, ros::Duration(0.1));
+    map2world_transform = tf_buffer_ptr_->lookupTransform(
+      in_objects->header.frame_id,  // target
+      "map",                        // src
+      in_objects->header.stamp, ros::Duration(0.1));
+    debug_map2lidar_transform = tf_buffer_ptr_->lookupTransform(
+      "base_link",  // target
+      "map",        // src
+      ros::Time(), ros::Duration(0.1));
+  } catch (tf2::TransformException & ex) {
     return;
   }
 
@@ -217,7 +233,7 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
   DynamicObjectWithLanesArray prediction_input;
   prediction_input.header = in_objects->header;
 
-  for (const auto& object : in_objects->objects) {
+  for (const auto & object : in_objects->objects) {
     DynamicObjectWithLanes tmp_object;
     tmp_object.object = object;
     if (in_objects->header.frame_id != "map") {
@@ -226,9 +242,10 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
       tmp_object.object.state.pose_covariance.pose = pose_in_map;
     }
 
-    if (object.semantic.type != autoware_perception_msgs::Semantic::CAR &&
-        object.semantic.type != autoware_perception_msgs::Semantic::BUS &&
-        object.semantic.type != autoware_perception_msgs::Semantic::TRUCK) {
+    if (
+      object.semantic.type != autoware_perception_msgs::Semantic::CAR &&
+      object.semantic.type != autoware_perception_msgs::Semantic::BUS &&
+      object.semantic.type != autoware_perception_msgs::Semantic::TRUCK) {
       tmp_objects_whitout_map.objects.push_back(tmp_object.object);
       continue;
     }
@@ -242,21 +259,23 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
     std::string uuid_string = unique_id::toHexString(object.id);
     if (!getClosestLanelets(tmp_object.object, lanelet_map_ptr_, start_lanelets, uuid_string)) {
       geometry_msgs::Point debug_point;
-      tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position, debug_point, debug_map2lidar_transform);
+      tf2::doTransform(
+        tmp_object.object.state.pose_covariance.pose.position, debug_point,
+        debug_map2lidar_transform);
       tmp_objects_whitout_map.objects.push_back(object);
       continue;
     }
 
     // lanelet vector
     std::vector<lanelet::ConstLanelet> valid_lanelets;
-    for (const auto& start_lanelet : start_lanelets) {
+    for (const auto & start_lanelet : start_lanelets) {
       lanelet::ConstLanelets prev_lanelets = routing_graph_ptr_->previous(start_lanelet);
       bool is_skip = false;
-      for (const auto& valid_lanelet : valid_lanelets) {
+      for (const auto & valid_lanelet : valid_lanelets) {
         if (valid_lanelet.id() == start_lanelet.id()) {
           is_skip = true;
         }
-        for (const auto& prev_lanelet : prev_lanelets) {
+        for (const auto & prev_lanelet : prev_lanelets) {
           if (valid_lanelet.id() == prev_lanelet.id()) {
             is_skip = true;
           }
@@ -269,7 +288,7 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
     }
 
     lanelet::routing::LaneletPaths paths;
-    for (const auto& start_lanelet : valid_lanelets) {
+    for (const auto & start_lanelet : valid_lanelets) {
       lanelet::ConstLanelet origin_lanelet;
       origin_lanelet = start_lanelet;
 
@@ -288,12 +307,12 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
       double delta_sampling_meters = 20;
       for (double minimum_dist_for_route_search = 100; minimum_dist_for_route_search >= 20;
            minimum_dist_for_route_search -= delta_sampling_meters) {
-        lanelet::routing::LaneletPaths tmp_paths =
-            routing_graph_ptr_->possiblePaths(origin_lanelet, minimum_dist_for_route_search, 0, false);
-        for (const auto& tmp_path : tmp_paths) {
+        lanelet::routing::LaneletPaths tmp_paths = routing_graph_ptr_->possiblePaths(
+          origin_lanelet, minimum_dist_for_route_search, 0, false);
+        for (const auto & tmp_path : tmp_paths) {
           bool already_searched = false;
-          for (const auto& path : center_paths) {
-            for (const auto& llt : path) {
+          for (const auto & path : center_paths) {
+            for (const auto & llt : path) {
               if (tmp_path.back().id() == llt.id()) {
                 already_searched = true;
               }
@@ -310,14 +329,16 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
     }
     if (paths.size() == 0) {
       geometry_msgs::Point debug_point;
-      tf2::doTransform(tmp_object.object.state.pose_covariance.pose.position, debug_point, debug_map2lidar_transform);
+      tf2::doTransform(
+        tmp_object.object.state.pose_covariance.pose.position, debug_point,
+        debug_map2lidar_transform);
       tmp_objects_whitout_map.objects.push_back(object);
       continue;
     }
 
     std::vector<int> lanelet_ids;
-    for (const auto& lanelets : paths) {
-      for (const auto& lanelet : lanelets) {
+    for (const auto & lanelets : paths) {
+      for (const auto & lanelet : lanelets) {
         lanelet_ids.push_back(lanelet.id());
       }
     }
@@ -327,9 +348,9 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
       uuid2laneids_.emplace(uid_string, lanelet_ids);
     } else {
       // add if not yet having lanelet_id
-      for (const auto& current_uid : lanelet_ids) {
+      for (const auto & current_uid : lanelet_ids) {
         bool is_redundant = false;
-        for (const auto& chached_uid : uuid2laneids_.at(uid_string)) {
+        for (const auto & chached_uid : uuid2laneids_.at(uid_string)) {
           if (chached_uid == current_uid) {
             is_redundant = true;
             break;
@@ -344,13 +365,13 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
     }
 
     std::vector<std::vector<geometry_msgs::Pose>> tmp_paths;
-    for (const auto& path : paths) {
+    for (const auto & path : paths) {
       std::vector<geometry_msgs::Pose> tmp_path;
       if (!path.empty()) {
         lanelet::ConstLanelets prev_lanelets = routing_graph_ptr_->previous(path.front());
         if (!prev_lanelets.empty()) {
           lanelet::ConstLanelet prev_lanelet = prev_lanelets.front();
-          for (const auto& point : prev_lanelet.centerline()) {
+          for (const auto & point : prev_lanelet.centerline()) {
             geometry_msgs::Pose tmp_pose;
             tmp_pose.position.x = point.x();
             tmp_pose.position.y = point.y();
@@ -359,8 +380,8 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
           }
         }
       }
-      for (const auto& lanelet : path) {
-        for (const auto& point : lanelet.centerline()) {
+      for (const auto & lanelet : path) {
+        for (const auto & point : lanelet.centerline()) {
           geometry_msgs::Pose tmp_pose;
           tmp_pose.position.x = point.x();
           tmp_pose.position.y = point.y();
@@ -387,13 +408,16 @@ void MapBasedPredictionROS::objectsCallback(const autoware_perception_msgs::Dyna
 
   std::vector<autoware_perception_msgs::DynamicObject> out_objects_without_map;
   map_based_prediction_->doLinearPrediction(tmp_objects_whitout_map, out_objects_without_map);
-  output.objects.insert(output.objects.begin(), out_objects_without_map.begin(), out_objects_without_map.end());
+  output.objects.insert(
+    output.objects.begin(), out_objects_without_map.begin(), out_objects_without_map.end());
   pub_objects_.publish(output);
 }
 
-void MapBasedPredictionROS::mapCallback(const autoware_lanelet2_msgs::MapBin& msg) {
+void MapBasedPredictionROS::mapCallback(const autoware_lanelet2_msgs::MapBin & msg)
+{
   ROS_INFO("Start loading lanelet");
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
-  lanelet::utils::conversion::fromBinMsg(msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
+  lanelet::utils::conversion::fromBinMsg(
+    msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
   ROS_INFO("Map is loaded");
 }

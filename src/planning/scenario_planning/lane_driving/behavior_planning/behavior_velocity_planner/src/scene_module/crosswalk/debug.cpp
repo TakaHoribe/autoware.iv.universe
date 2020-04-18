@@ -18,15 +18,16 @@
 #include "utilization/marker_helper.h"
 #include "utilization/util.h"
 
-namespace {
-
+namespace
+{
 using DebugData = CrosswalkModule::DebugData;
 
-visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
+visualization_msgs::MarkerArray createMarkers(const DebugData & debug_data)
+{
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
-                                    tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
+  tf2::Transform tf_base_link2front(
+    tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(debug_data.base_link2front, 0.0, 0.0));
 
   // Crosswalk polygons
   for (size_t i = 0; i < debug_data.crosswalk_polygons.size(); ++i) {
@@ -399,7 +400,8 @@ visualization_msgs::MarkerArray createMarkers(const DebugData& debug_data) {
 
 }  // namespace
 
-visualization_msgs::MarkerArray CrosswalkModule::createDebugMarkerArray() {
+visualization_msgs::MarkerArray CrosswalkModule::createDebugMarkerArray()
+{
   visualization_msgs::MarkerArray debug_marker_array;
 
   appendMarkerArray(createMarkers(debug_data_), &debug_marker_array);

@@ -20,64 +20,76 @@
 
 #include <Eigen/Core>
 
-namespace autoware_planning_msgs {
+namespace autoware_planning_msgs
+{
 ROS_DECLARE_MESSAGE(PathPoint);
 ROS_DECLARE_MESSAGE(TrajectoryPoint);
 }  // namespace autoware_planning_msgs
 
-namespace util {
+namespace util
+{
 template <typename T>
-geometry_msgs::Point transformToRelativeCoordinate2D(const T& point, const geometry_msgs::Pose& origin);
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const T & point, const geometry_msgs::Pose & origin);
 
-geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin);
+geometry_msgs::Point transformToAbsoluteCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin);
 
-double calculate2DDistance(const geometry_msgs::Point& a, const geometry_msgs::Point& b);
+double calculate2DDistance(const geometry_msgs::Point & a, const geometry_msgs::Point & b);
 
-double calculateSquaredDistance(const geometry_msgs::Point& a, const geometry_msgs::Point& b);
+double calculateSquaredDistance(const geometry_msgs::Point & a, const geometry_msgs::Point & b);
 
-double getYawFromPoints(const geometry_msgs::Point& a, const geometry_msgs::Point& a_root);
+double getYawFromPoints(const geometry_msgs::Point & a, const geometry_msgs::Point & a_root);
 
 double normalizeRadian(const double angle);
 
-geometry_msgs::Quaternion getQuaternionFromPoints(const geometry_msgs::Point& a, const geometry_msgs::Point& a_root);
+geometry_msgs::Quaternion getQuaternionFromPoints(
+  const geometry_msgs::Point & a, const geometry_msgs::Point & a_root);
 
 template <typename T>
-geometry_msgs::Point transformMapToImage(const T& map_point, const nav_msgs::MapMetaData& occupancy_grid_info);
+geometry_msgs::Point transformMapToImage(
+  const T & map_point, const nav_msgs::MapMetaData & occupancy_grid_info);
 
-std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(const geometry_msgs::Point& map_point,
-                                                             const nav_msgs::MapMetaData& occupancy_grid_info);
+std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(
+  const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info);
 
-bool transformMapToImage(const geometry_msgs::Point& map_point, const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& image_point);
+bool transformMapToImage(
+  const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info,
+  geometry_msgs::Point & image_point);
 
-bool interpolate2DPoints(const std::vector<double>& x, const std::vector<double>& y, const double resolution,
-                         std::vector<geometry_msgs::Point>& interpolated_points);
+bool interpolate2DPoints(
+  const std::vector<double> & x, const std::vector<double> & y, const double resolution,
+  std::vector<geometry_msgs::Point> & interpolated_points);
 
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geometry_msgs::Pose>& first_points,
-                                                        const std::vector<geometry_msgs::Pose>& second_points,
-                                                        const double delta_arc_length);
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const std::vector<geometry_msgs::Pose> & first_points,
+  const std::vector<geometry_msgs::Pose> & second_points, const double delta_arc_length);
 
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geometry_msgs::Pose>& points,
-                                                        const double delta_arc_length);
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const std::vector<geometry_msgs::Pose> & points, const double delta_arc_length);
 
 template <typename T>
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const T& points, const double delta_arc_length);
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const T & points, const double delta_arc_length);
 
 template <typename T>
-int getNearestIdx(const T& points, const geometry_msgs::Pose& pose, const int default_idx,
-                  const double delta_yaw_threshold);
+int getNearestIdx(
+  const T & points, const geometry_msgs::Pose & pose, const int default_idx,
+  const double delta_yaw_threshold);
 
-int getNearestIdx(const std::vector<geometry_msgs::Point>& points, const geometry_msgs::Pose& pose,
-                  const int default_idx, const double delta_yaw_threshold);
+int getNearestIdx(
+  const std::vector<geometry_msgs::Point> & points, const geometry_msgs::Pose & pose,
+  const int default_idx, const double delta_yaw_threshold);
 
-int getNearestIdx(const std::vector<autoware_planning_msgs::PathPoint>& points, const geometry_msgs::Pose& pose,
-                  const int default_idx);
+int getNearestIdx(
+  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Pose & pose,
+  const int default_idx);
 
 std::vector<autoware_planning_msgs::TrajectoryPoint> convertPathToTrajectory(
-    const std::vector<autoware_planning_msgs::PathPoint>& path_points);
+  const std::vector<autoware_planning_msgs::PathPoint> & path_points);
 
-struct Rectangle {
+struct Rectangle
+{
   int min_x_idx = 0;
   int min_y_idx = 0;
   int max_x_idx = 0;
@@ -85,11 +97,12 @@ struct Rectangle {
   int area = 0;
 };
 
-std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<int>>& input);
+std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<int>> & input);
 
-Rectangle getLargestRectancleInRow(const std::vector<int>& histo, const int curret_row, const int row_size);
+Rectangle getLargestRectancleInRow(
+  const std::vector<int> & histo, const int curret_row, const int row_size);
 
-Rectangle getLargestRectangle(const std::vector<std::vector<int>>& input);
+Rectangle getLargestRectangle(const std::vector<std::vector<int>> & input);
 }  // namespace util
 
 #endif

@@ -24,33 +24,38 @@
 
 #include <velodyne_pointcloud/point_types.h>
 
-namespace velodyne_pointcloud {
+namespace velodyne_pointcloud
+{
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractValidPoints(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud, const double min_range,
-    const double max_range);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const double min_range, const double max_range);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidPoints(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidNearPoints(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud,
-    const std::vector<float>& invalid_intensity_array, const size_t num_lasers);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const std::vector<float> & invalid_intensity_array, const size_t num_lasers);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidNearPointsFiltered(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud,
-    const std::vector<float>& invalid_intensity_array, const size_t num_lasers, const size_t points_size_threshold);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const std::vector<float> & invalid_intensity_array, const size_t num_lasers,
+  const size_t points_size_threshold);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr interpolate(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud,
-    const std::deque<geometry_msgs::TwistStamped>& twist_queue, const tf2::Transform& tf2_base_link_to_sensor);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const std::deque<geometry_msgs::TwistStamped> & twist_queue,
+  const tf2::Transform & tf2_base_link_to_sensor);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr sortRingNumber(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud, const size_t num_lasers);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const size_t num_lasers);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr sortZeroIndex(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud, const size_t num_lasers);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud,
+  const size_t num_lasers);
 
 pcl::PointCloud<velodyne_pointcloud::PointXYZIR>::Ptr convert(
-    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& input_pointcloud);
+  const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & input_pointcloud);
 
 }  // namespace velodyne_pointcloud

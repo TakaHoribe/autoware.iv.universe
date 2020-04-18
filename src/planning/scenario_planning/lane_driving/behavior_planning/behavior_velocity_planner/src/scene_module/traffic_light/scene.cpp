@@ -24,10 +24,16 @@ using Point = bg::model::d2::point_xy<double>;
 using Line = bg::model::linestring<Point>;
 using Polygon = bg::model::polygon<Point, false>;
 
-TrafficLightModule::TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight& traffic_light_reg_elem)
-    : SceneModuleInterface(module_id), traffic_light_reg_elem_(traffic_light_reg_elem), state_(State::APPROARCH) {}
+TrafficLightModule::TrafficLightModule(
+  const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem)
+: SceneModuleInterface(module_id),
+  traffic_light_reg_elem_(traffic_light_reg_elem),
+  state_(State::APPROARCH)
+{
+}
 
-bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
+{
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
 
@@ -41,8 +47,8 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
 
   const double stop_border_distance_threshold =
-      (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-      (2.0 * max_stop_acceleration_threshold_);
+    (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
+    (2.0 * max_stop_acceleration_threshold_);
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // check state
@@ -56,23 +62,28 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       {
         Eigen::Vector2d judge_point;
         size_t judge_point_idx;
-        if (!createTargetPoint(input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) continue;
-        const double sq_dist =
-            (judge_point.x() - self_pose.pose.position.x) * (judge_point.x() - self_pose.pose.position.x) +
-            (judge_point.y() - self_pose.pose.position.y) * (judge_point.y() - self_pose.pose.position.y);
+        if (!createTargetPoint(
+              input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point))
+          continue;
+        const double sq_dist = (judge_point.x() - self_pose.pose.position.x) *
+                                 (judge_point.x() - self_pose.pose.position.x) +
+                               (judge_point.y() - self_pose.pose.position.y) *
+                                 (judge_point.y() - self_pose.pose.position.y);
         const double range = 5.0;
         if (sq_dist < range * range) {
           double yaw;
           if (judge_point_idx == 0)
-            yaw = std::atan2(input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
-                             input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
+            yaw = std::atan2(
+              input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
+              input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
           else
-            yaw = std::atan2(judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
-                             judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
+            yaw = std::atan2(
+              judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
+              judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
           tf2::Quaternion quat;
           quat.setRPY(0, 0, yaw);
-          tf2::Transform tf_map2judge_pose(quat,
-                                           tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
+          tf2::Transform tf_map2judge_pose(
+            quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
           tf2::Transform tf_map2self_pose;
           tf2::Transform tf_judge_pose2self_pose;
           tf2::fromMsg(self_pose.pose, tf_map2self_pose);
@@ -91,24 +102,31 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
       // search traffic light state
       autoware_perception_msgs::TrafficLightState highest_confidence_tl_state;
-      if (!getHighestConfidenceTrafficLightState(traffic_lights, highest_confidence_tl_state)) continue;
+      if (!getHighestConfidenceTrafficLightState(traffic_lights, highest_confidence_tl_state))
+        continue;
       // check stop border distance
       Eigen::Vector2d stop_line_point;
       size_t stop_line_point_idx;
-      if (!createTargetPoint(input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) continue;
+      if (!createTargetPoint(
+            input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point))
+        continue;
       Eigen::Vector2d self_point;
       self_point << self_pose.pose.position.x, self_pose.pose.position.y;
-      const double sq_dist = (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
-                             (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
+      const double sq_dist =
+        (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
+        (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
       if (sq_dist < stop_border_distance_threshold * stop_border_distance_threshold) {
-        ROS_WARN_THROTTLE(1.0,
-                          "[traffic_light] state is red. this vehicle are passing too fast to stop "
-                          "at the stop line");
+        ROS_WARN_THROTTLE(
+          1.0,
+          "[traffic_light] state is red. this vehicle are passing too fast to stop "
+          "at the stop line");
         return true;
       }
 
       // if state is red, insert stop point into path
-      if (highest_confidence_tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::RED) {
+      if (
+        highest_confidence_tl_state.lamp_states.front().type ==
+        autoware_perception_msgs::LampState::RED) {
         if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
           continue;
         }
@@ -122,12 +140,13 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 }
 
 bool TrafficLightModule::getHighestConfidenceTrafficLightState(
-    lanelet::ConstLineStringsOrPolygons3d& traffic_lights,
-    autoware_perception_msgs::TrafficLightState& highest_confidence_tl_state) {
+  lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
+  autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state)
+{
   // search traffic light state
   bool found = false;
   double highest_confidence = 0.0;
-  for (const auto& traffic_light : traffic_lights) {
+  for (const auto & traffic_light : traffic_lights) {
     // traffic ligth must be linestrings
     if (!traffic_light.isLineString()) {
       continue;
@@ -143,8 +162,9 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     if (!((ros::Time::now() - header.stamp).toSec() < tl_state_timeout_)) {
       continue;
     }
-    if (tl_state.lamp_states.empty() ||
-        tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::UNKNOWN) {
+    if (
+      tl_state.lamp_states.empty() ||
+      tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::UNKNOWN) {
       continue;
     }
 
@@ -162,16 +182,20 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
 }
 
 bool TrafficLightModule::insertTargetVelocityPoint(
-    const autoware_planning_msgs::PathWithLaneId& input,
-    const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
-    const double& margin, const double& velocity, autoware_planning_msgs::PathWithLaneId& output) {
+  const autoware_planning_msgs::PathWithLaneId & input,
+  const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
+    stop_line,
+  const double & margin, const double & velocity, autoware_planning_msgs::PathWithLaneId & output)
+{
   // create target point
   Eigen::Vector2d target_point;
   size_t insert_target_point_idx;
   autoware_planning_msgs::PathPointWithLaneId target_point_with_lane_id;
 
-  if (!createTargetPoint(input, stop_line, margin, insert_target_point_idx, target_point)) return false;
-  target_point_with_lane_id = output.points.at(std::max(static_cast<int>(insert_target_point_idx - 1), 0));
+  if (!createTargetPoint(input, stop_line, margin, insert_target_point_idx, target_point))
+    return false;
+  target_point_with_lane_id =
+    output.points.at(std::max(static_cast<int>(insert_target_point_idx - 1), 0));
   target_point_with_lane_id.point.pose.position.x = target_point.x();
   target_point_with_lane_id.point.pose.position.y = target_point.y();
   target_point_with_lane_id.point.twist.linear.x = velocity;
@@ -182,7 +206,8 @@ bool TrafficLightModule::insertTargetVelocityPoint(
 
   // insert 0 velocity after target point
   for (size_t j = insert_target_point_idx; j < output.points.size(); ++j)
-    output.points.at(j).point.twist.linear.x = std::min(velocity, output.points.at(j).point.twist.linear.x);
+    output.points.at(j).point.twist.linear.x =
+      std::min(velocity, output.points.at(j).point.twist.linear.x);
   // -- debug code --
   if (velocity == 0.0) debug_data_.stop_poses.push_back(target_point_with_lane_id.point.pose);
   // ----------------
@@ -190,12 +215,15 @@ bool TrafficLightModule::insertTargetVelocityPoint(
 }
 
 bool TrafficLightModule::createTargetPoint(
-    const autoware_planning_msgs::PathWithLaneId& input,
-    const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>>& stop_line,
-    const double& margin, size_t& target_point_idx, Eigen::Vector2d& target_point) {
+  const autoware_planning_msgs::PathWithLaneId & input,
+  const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
+    stop_line,
+  const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point)
+{
   for (size_t i = 0; i < input.points.size() - 1; ++i) {
-    Line path_line = {{input.points.at(i).point.pose.position.x, input.points.at(i).point.pose.position.y},
-                      {input.points.at(i + 1).point.pose.position.x, input.points.at(i + 1).point.pose.position.y}};
+    Line path_line = {
+      {input.points.at(i).point.pose.position.x, input.points.at(i).point.pose.position.y},
+      {input.points.at(i + 1).point.pose.position.x, input.points.at(i + 1).point.pose.position.y}};
     std::vector<Point> collision_points;
     bg::intersection(stop_line, path_line, collision_points);
 
@@ -205,9 +233,9 @@ bool TrafficLightModule::createTargetPoint(
     Point nearest_collision_point;
     double min_dist;
     for (size_t j = 0; j < collision_points.size(); ++j) {
-      double dist =
-          bg::distance(Point(input.points.at(i).point.pose.position.x, input.points.at(i).point.pose.position.y),
-                       collision_points.at(j));
+      double dist = bg::distance(
+        Point(input.points.at(i).point.pose.position.x, input.points.at(i).point.pose.position.y),
+        collision_points.at(j));
       if (j == 0 || dist < min_dist) {
         min_dist = dist;
         nearest_collision_point = collision_points.at(j);
@@ -230,35 +258,41 @@ bool TrafficLightModule::createTargetPoint(
           target_point_idx = j + 1;
           break;
         }
-        point1 << input.points.at(j).point.pose.position.x, input.points.at(j).point.pose.position.y;
-        point2 << input.points.at(j - 1).point.pose.position.x, input.points.at(j - 1).point.pose.position.y;
+        point1 << input.points.at(j).point.pose.position.x,
+          input.points.at(j).point.pose.position.y;
+        point2 << input.points.at(j - 1).point.pose.position.x,
+          input.points.at(j - 1).point.pose.position.y;
         length_sum += (point2 - point1).norm();
       }
     } else {
       point1 << nearest_collision_point.x(), nearest_collision_point.y();
-      point2 << input.points.at(i + 1).point.pose.position.x, input.points.at(i + 1).point.pose.position.y;
+      point2 << input.points.at(i + 1).point.pose.position.x,
+        input.points.at(i + 1).point.pose.position.y;
       length_sum -= (point2 - point1).norm();
       for (size_t j = i + 1; j < input.points.size() - 1; ++j) {
         if (length_sum < target_length) {
           target_point_idx = j;
           break;
         }
-        point1 << input.points.at(j).point.pose.position.x, input.points.at(j).point.pose.position.y;
-        point2 << input.points.at(j + 1).point.pose.position.x, input.points.at(j + 1).point.pose.position.y;
+        point1 << input.points.at(j).point.pose.position.x,
+          input.points.at(j).point.pose.position.y;
+        point2 << input.points.at(j + 1).point.pose.position.x,
+          input.points.at(j + 1).point.pose.position.y;
         length_sum -= (point2 - point1).norm();
       }
     }
     // create target point
-    getBackwordPointFromBasePoint(point2, point1, point2, std::fabs(length_sum - target_length), target_point);
+    getBackwordPointFromBasePoint(
+      point2, point1, point2, std::fabs(length_sum - target_length), target_point);
     return true;
   }
   return false;
 }
 
-bool TrafficLightModule::getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1,
-                                                       const Eigen::Vector2d& line_point2,
-                                                       const Eigen::Vector2d& base_point, const double backward_length,
-                                                       Eigen::Vector2d& output_point) {
+bool TrafficLightModule::getBackwordPointFromBasePoint(
+  const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
+  const Eigen::Vector2d & base_point, const double backward_length, Eigen::Vector2d & output_point)
+{
   Eigen::Vector2d line_vec = line_point2 - line_point1;
   Eigen::Vector2d backward_vec = backward_length * line_vec.normalized();
   output_point = base_point + backward_vec;

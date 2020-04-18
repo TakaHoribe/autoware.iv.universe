@@ -21,11 +21,12 @@
 
 #include "shape_estimation/model_interface.hpp"
 
-class BoundingBoxModel : public ShapeEstimationModelInterface {
- private:
-  double calcClosenessCriterion(const std::vector<double>& C_1, const std::vector<double>& C_2);
+class BoundingBoxModel : public ShapeEstimationModelInterface
+{
+private:
+  double calcClosenessCriterion(const std::vector<double> & C_1, const std::vector<double> & C_2);
 
- public:
+public:
   BoundingBoxModel(){};
 
   ~BoundingBoxModel(){};
@@ -33,6 +34,7 @@ class BoundingBoxModel : public ShapeEstimationModelInterface {
   /*
    * minimum cluster size is 2.
    */
-  bool estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, autoware_perception_msgs::Shape& shape_output,
-                geometry_msgs::Pose& pose_output, bool& orientation_output) override;
+  bool estimate(
+    const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
+    geometry_msgs::Pose & pose_output, bool & orientation_output) override;
 };

@@ -20,7 +20,8 @@
 #include <ros/ros.h>
 #include "shape_estimation/node.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "shape_estimator");
   ShapeEstimationNode node;
   ros::spin();
