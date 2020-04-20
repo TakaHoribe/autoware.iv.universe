@@ -40,6 +40,10 @@ Note that the computer need to be connected to Internet to download neural netwo
 $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 - sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
+2. play rosbag
+```
+$ rosbag play --clock [rosbag file] -r 0.2
+```
 - sample rosbag is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ltuRryNn3EUBCZiS88Wnj54632JVeIVz/view?usp=sharing).
   - Velodyne 128 (Top)
   - Velodyne 16 (Right)
@@ -51,6 +55,8 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
     - Removed due to privacy concerns
     - Cannot run traffic light recognition
     - Decreased accuracy of object detection
+ 
+`-r 0.2` means a 20% playback speed. Since it takes time for automatic initial position estimation, we recommend about 0.2.
 
 ### Planning Simulator
 1. launch Autoware
