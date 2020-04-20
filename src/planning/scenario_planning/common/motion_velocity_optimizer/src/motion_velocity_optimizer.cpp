@@ -656,7 +656,7 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(
   constexpr double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
   vpu::calcTrajectoryArclength(input, in_arclength);
-  for (double s = 0; s < in_arclength.back(); s += points_interval) {
+  for (double s = 0; s <= in_arclength.back(); s += points_interval) {
     out_arclength.push_back(s);
   }
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
