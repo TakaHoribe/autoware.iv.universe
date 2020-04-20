@@ -5,7 +5,7 @@
   <group ns="lidar">
 
     <group ns="top">
-      <include file="$(find sensing_launch)/launch/velodyne_VLP32C.launch">
+      <include file="$(find sensing_launch)/launch/velodyne_VLS128.launch">
         <arg name="sensor_frame" default="velodyne_top" />
         <arg name="device_ip" value="192.168.1.201"/>
         <arg name="port" value="2368"/>

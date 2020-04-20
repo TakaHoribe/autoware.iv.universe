@@ -1,5 +1,5 @@
 <launch>
-  <arg name="model" default="model_64" />
+  <arg name="model" default="model_128" />
 
   <arg if="$(eval model=='model_16')" name="trained_engine_file" default="$(find lidar_apollo_instance_segmentation)/data/vlp-16.engine" />
   <arg if="$(eval model=='model_16')" name="trained_prototxt_file" default="$(find lidar_apollo_instance_segmentation)/data/vlp-16.prototxt" />
