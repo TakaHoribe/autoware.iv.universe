@@ -56,15 +56,24 @@ Note that the computer need to be connected to Internet to download neural netwo
 
 ### Quick Start
 #### Rosbag
-1. launch Autoware
+1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
+
+2. Download sample rosbag from [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
+3. Launch Autoware
 ```
 $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
-- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
-2. play rosbag
+4. Play rosbag
 ```
 $ rosbag play --clock [rosbag file] -r 0.2
 ```
+
+##### Note
+- sample map : © 2020 TierIV inc.
+- rosbag : © 2020 TierIV inc.
+  - Image data are removed due to privacy concerns.
+    - Cannot run traffic light recognition
+    - Decreased accuracy of object detection
 
 #### Planning Simulator
 1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
@@ -78,7 +87,10 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 5. Push engage button.
 [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
 
-### Details
+##### Note
+- sample map : © 2020 TierIV inc.
+
+### Tutorial in detail
 See [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc/simulation.md). for more information. 
 
 # References
@@ -92,3 +104,4 @@ See [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc
 - [Robustness of localization](https://youtu.be/ydPxWB2jVnM)
 
 ## Credits
+- [Neural Network Weight Files](https://github.com/tier4/Autoware-T4B/blob/master/Credits.md)

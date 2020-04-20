@@ -9,6 +9,23 @@ Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4
 1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
 2. Download sample rosbag from [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
 
+
+|Sensor  |Topic name  |
+|---|---|
+| Velodyne 128 (Top) | /sensing/velodyne/top/velodyne_packets |
+| Velodyne 16 (Right) | /sensing/velodyne/right/velodyne_packets |
+| Velodyne 16 (Left) | /sensing/velodyne/left/velodyne_packets |
+| IMU (Tamagawa TAG300) | /sensing/imu/tamagawa/imu_raw |
+| GNSS (Ublox F9P) | /sensing/gnss/ublox/fix_velocity |
+|| /sensing/gnss/ublox/nav_sat_fix |
+|| /sensing/gnss/ublox/navpvt |
+| CAN data | /vehicle/status/control_mode |
+|| /vehicle/status/shift |
+|| /vehicle/status/steering |
+|| /vehicle/status/twist |
+| ~~Camera x 7~~ | ~~/sensing/camera/camera[]/image_raw~~ |
+Note: Image data are removed due to privacy concerns.
+
 3. Launch Autoware with rosbag mode.
 ```
 $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
@@ -18,7 +35,13 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 $ rosbag play --clock -r 0.2　sample.bag
 ```
 
+
+
 ![rosbag_sim](https://user-images.githubusercontent.com/10920881/79726334-9381b000-8325-11ea-9ac6-ebbb29b11f14.png)
+
+##### Note
+- sample map : © 2020 TierIV inc.
+- rosbag : © 2020 TierIV inc.
 
 
 ## How to use Planning Simulator
@@ -54,3 +77,6 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
   * Can adjust obstacles' infomation including velocity, position/orientation error and etc, via `Tool Properties` in rviz.
   * Can delete all the objects by using `Delte All Objects` in rviz.
 ![dummy](https://user-images.githubusercontent.com/10920881/79742437-c9cb2980-833d-11ea-8ad7-7c3ed1a96540.png)
+
+##### Note
+- sample map : © 2020 TierIV inc.
