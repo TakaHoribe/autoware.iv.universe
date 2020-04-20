@@ -2,10 +2,15 @@
 
 ![autoware](https://user-images.githubusercontent.com/8327598/69472442-cca50b00-0ded-11ea-9da0-9e2302aa1061.png)
 
+# What's this
+
+This is the source code of the feasibility study for Autoware architecture proposal.
+
+> **WARNING**: This source is solely for demonstrating an architecture proposal. It should not be used to drive cars. 
 
 # How to setup
 
-## Requirement
+## Requirements
 
 ### Hardware
  - x86 CPU (8 or more cores)
@@ -19,78 +24,77 @@
 If cuda or tensorRT is already installed, it is recommended to remove it.
 
 ## Autoware setup
-1. setup ROS, CUDA 10.2, cuDNN7, TensorRT7, 
+1. Clone this repository
 ```
-./setup_ubuntu18.04.sh
+$ git clone https://github.com/tier4/AutowareArchitectureProposal.git
+cd AutowareArchitectureProposal/
 ```
-2. source build
+2. Run the setup script
 ```
-catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
+$ ./setup_ubuntu18.04.sh
+```
+In this step, the following software are installed.
+Please confirm their licenses before using them.
+
+- [osqp](https://github.com/oxfordcontrol/osqp/blob/master/LICENSE)
+- [ROS Melodic](https://github.com/ros/ros/blob/noetic-devel/LICENSE)
+- [CUDA 10.2](https://docs.nvidia.com/cuda/eula/index.html)
+- [cuDNN 7](https://docs.nvidia.com/deeplearning/sdk/cudnn-sla/index.html)
+- [TensorRT 7](https://docs.nvidia.com/deeplearning/sdk/tensorrt-sla/index.html)
+
+3. Build the source
+```
+$ catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 Note that the computer need to be connected to Internet to download neural network weight files.
 
-# How to Run
+# How to run
 
 ## Simulator
 ![sim](https://user-images.githubusercontent.com/8327598/79709776-0bd47b00-82fe-11ea-872e-d94ef25bc3bf.png)
 
-### Rosbag
-1. launch Autoware
+
+### Quick Start
+#### Rosbag
+1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
+
+2. Download sample rosbag from [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
+3. Launch Autoware
 ```
 $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
-- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
-2. play rosbag
+4. Play rosbag
 ```
 $ rosbag play --clock [rosbag file] -r 0.2
 ```
-- sample rosbag is [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
-  - Velodyne 128 (Top)
-  - Velodyne 16 (Right)
-  - Velodyne 16 (Left)
-  - IMU (Tamagawa TAG300)
-  - GNSS (Ublox F9P)
-  - CAN data
-  - ~~Camera x 7~~
-    - Removed due to privacy concerns
+
+##### Note
+- sample map : © 2020 TierIV inc.
+- rosbag : © 2020 TierIV inc.
+  - Image data are removed due to privacy concerns.
     - Cannot run traffic light recognition
     - Decreased accuracy of object detection
- 
-`-r 0.2` means a 20% playback speed. Since it takes time for automatic initial position estimation, we recommend about 0.2.
 
-### Planning Simulator
-1. launch Autoware
+#### Planning Simulator
+1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
+
+2. Launch Autoware
 ```
 $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
-- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/197kgRfSomZzaSbRrjWTx614le2qN-oxx/view?usp=sharing).
-2. set initial pose
-3. set goal pose
-4. push engage button.
+3. Set initial pose
+4. Set goal pose
+5. Push engage button.
 [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
-5. (optional) [webviz](https://webviz.io/app/)
 
-## Real Car
+##### Note
+- sample map : © 2020 TierIV inc.
 
-### Prepare map
-you need to prepare maps.
-- lanelet2 map
-- pointcloud map
+### Tutorial in detail
+See [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc/simulation.md). for more information. 
 
-### Setup hardware configuretion
-TODO
-
-### Run Autoware
-1. launch Autoware
-```
-$ roslaunch autoware_launch autoware.launch map_path:=[path]
-```
-2. set goal pose
-3. push engage button.
-[autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
-4. (optional) [webviz](https://webviz.io/app/)
-
-# Videos
+# References
+## Videos
 - [Scenario demo](https://youtu.be/kn2bIU_g0oY)
 - [Obstacle avoidance in the same lane](https://youtu.be/s_4fBDixFJc)
 - [Obstacle avoidance by lane change](https://youtu.be/SCIceXW9sqM)
@@ -99,3 +103,5 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path]
 - [360° FOV perception(Camera Lidar Fuison)](https://youtu.be/whzx-2RkVBA)
 - [Robustness of localization](https://youtu.be/ydPxWB2jVnM)
 
+## Credits
+- [Neural Network Weight Files](https://github.com/tier4/Autoware-T4B/blob/master/Credits.md)
