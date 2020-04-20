@@ -36,5 +36,5 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 3. Play sample rosbag.
 ```
-$ rosbag play --clock -r 0.2
+$ rosbag play --clock -r 0.2　
 ```
