@@ -47,12 +47,6 @@ add_executable(pacmod_interface
 target_link_libraries(pacmod_interface ${catkin_LIBRARIES})
 add_dependencies(pacmod_interface ${catkin_EXPORTED_TARGETS})
 
-
-# add_executable(pacmod_sim_interface src/pacmod_sim_interface/pacmod_sim_interface.cpp)
-# target_link_libraries(pacmod_sim_interface ${catkin_LIBRARIES})
-# add_dependencies(pacmod_sim_interface ${catkin_EXPORTED_TARGETS})
-
-
 install(TARGETS ssc_interface
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
