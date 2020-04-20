@@ -7,7 +7,7 @@ Autoware provides 2 types of simulations.Rosbag is used for testing/validation f
 Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4B#autoware-setup).
 
 1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
-2. Download sample rosbag from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ltuRryNn3EUBCZiS88Wnj54632JVeIVz/view?usp=sharing).
+2. Download sample rosbag from [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
 
 3. Launch Autoware with rosbag mode.
 ```
