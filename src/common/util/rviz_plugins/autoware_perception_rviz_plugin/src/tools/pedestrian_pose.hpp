@@ -37,36 +37,38 @@
 #include "rviz/default_plugin/tools/pose_tool.h"
 #endif
 
-namespace rviz {
+namespace rviz
+{
 class Arrow;
 class DisplayContext;
 class StringProperty;
 class FloatProperty;
 
-class PedestrianInitialPoseTool : public PoseTool {
+class PedestrianInitialPoseTool : public PoseTool
+{
   Q_OBJECT
- public:
+public:
   PedestrianInitialPoseTool();
   virtual ~PedestrianInitialPoseTool() {}
   virtual void onInitialize();
 
- protected:
+protected:
   virtual void onPoseSet(double x, double y, double theta);
 
- private Q_SLOTS:
+private Q_SLOTS:
   void updateTopic();
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::Publisher dummy_object_info_pub_;
 
-  StringProperty* topic_property_;
-  FloatProperty* std_dev_x_;
-  FloatProperty* std_dev_y_;
-  FloatProperty* std_dev_z_;
-  FloatProperty* std_dev_theta_;
-  FloatProperty* position_z_;
-  FloatProperty* velocity_;
+  StringProperty * topic_property_;
+  FloatProperty * std_dev_x_;
+  FloatProperty * std_dev_y_;
+  FloatProperty * std_dev_z_;
+  FloatProperty * std_dev_theta_;
+  FloatProperty * position_z_;
+  FloatProperty * velocity_;
 };
 
 }  // namespace rviz

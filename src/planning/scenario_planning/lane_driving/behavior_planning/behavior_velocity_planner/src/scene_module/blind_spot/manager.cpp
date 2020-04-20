@@ -17,13 +17,14 @@
 
 #include "utilization/util.h"
 
-namespace {
-
-std::vector<lanelet::ConstLanelet> getLaneletsOnPath(const autoware_planning_msgs::PathWithLaneId& path,
-                                                     const lanelet::LaneletMapPtr lanelet_map) {
+namespace
+{
+std::vector<lanelet::ConstLanelet> getLaneletsOnPath(
+  const autoware_planning_msgs::PathWithLaneId & path, const lanelet::LaneletMapPtr lanelet_map)
+{
   std::vector<lanelet::ConstLanelet> lanelets;
 
-  for (const auto& p : path.points) {
+  for (const auto & p : path.points) {
     const auto lane_id = p.lane_ids.at(0);
     lanelets.push_back(lanelet_map->laneletLayer.get(lane_id));
   }
@@ -31,10 +32,11 @@ std::vector<lanelet::ConstLanelet> getLaneletsOnPath(const autoware_planning_msg
   return lanelets;
 }
 
-std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneId& path) {
+std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneId & path)
+{
   std::set<int64_t> lane_id_set;
 
-  for (const auto& p : path.points) {
+  for (const auto & p : path.points) {
     const auto lane_id = p.lane_ids.at(0);
     lane_id_set.insert(lane_id);
   }
@@ -44,8 +46,9 @@ std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneI
 
 }  // namespace
 
-void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) {
-  for (const auto& ll : getLaneletsOnPath(path, planner_data_->lanelet_map)) {
+void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId & path)
+{
+  for (const auto & ll : getLaneletsOnPath(path, planner_data_->lanelet_map)) {
     const auto lane_id = ll.id();
     const auto module_id = lane_id;
 
@@ -63,11 +66,13 @@ void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::Path
   }
 }
 
-std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> BlindSpotModuleManager::getModuleExpiredFunction(
-    const autoware_planning_msgs::PathWithLaneId& path) {
+std::function<bool(const std::shared_ptr<SceneModuleInterface> &)>
+BlindSpotModuleManager::getModuleExpiredFunction(
+  const autoware_planning_msgs::PathWithLaneId & path)
+{
   const auto lane_id_set = getLaneIdSetOnPath(path);
 
-  return [lane_id_set](const std::shared_ptr<SceneModuleInterface>& scene_module) {
+  return [lane_id_set](const std::shared_ptr<SceneModuleInterface> & scene_module) {
     return lane_id_set.count(scene_module->getModuleId()) == 0;
   };
 }

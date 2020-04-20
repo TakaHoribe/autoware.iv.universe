@@ -16,12 +16,14 @@
 
 #include "pose_history_display.hpp"
 
-namespace rviz_plugins {
-
-PoseHistory::PoseHistory() {
-  const char* topic_type = ros::message_traits::datatype<geometry_msgs::PoseStamped>();
-  const char* topic_desc = "Name of topic to display";
-  property_topic_ = new rviz::RosTopicProperty("Topic", "", topic_type, topic_desc, this, SLOT(updateTopic()));
+namespace rviz_plugins
+{
+PoseHistory::PoseHistory()
+{
+  const char * topic_type = ros::message_traits::datatype<geometry_msgs::PoseStamped>();
+  const char * topic_desc = "Name of topic to display";
+  property_topic_ =
+    new rviz::RosTopicProperty("Topic", "", topic_type, topic_desc, this, SLOT(updateTopic()));
   property_buffer_size_ = new rviz::IntProperty("Buffer Size", 100, "", this);
   property_line_view_ = new rviz::BoolProperty("Line", true, "", this);
   property_line_width_ = new rviz::FloatProperty("Width", 0.1, "", property_line_view_);
@@ -32,17 +34,22 @@ PoseHistory::PoseHistory() {
   property_line_width_->setMin(0.0);
 }
 
-PoseHistory::~PoseHistory() {
+PoseHistory::~PoseHistory()
+{
   // Properties are deleted by Qt
 }
 
-void PoseHistory::onInitialize() { lines_.reset(new rviz::BillboardLine(scene_manager_, scene_node_)); }
+void PoseHistory::onInitialize()
+{
+  lines_.reset(new rviz::BillboardLine(scene_manager_, scene_node_));
+}
 
 void PoseHistory::onEnable() { subscribe(); }
 
 void PoseHistory::onDisable() { unsubscribe(); }
 
-void PoseHistory::update(float wall_dt, float ros_dt) {
+void PoseHistory::update(float wall_dt, float ros_dt)
+{
   if (!history_.empty()) {
     lines_->clear();
     if (property_line_view_->getBool()) {
@@ -51,26 +58,30 @@ void PoseHistory::update(float wall_dt, float ros_dt) {
   }
 }
 
-void PoseHistory::updateTopic() {
+void PoseHistory::updateTopic()
+{
   unsubscribe();
   subscribe();
 }
 
-void PoseHistory::subscribe() {
+void PoseHistory::subscribe()
+{
   auto topic_name = property_topic_->getTopicStd();
   if (1 < topic_name.length()) {
     sub_ = nh_.subscribe(topic_name, 10, &PoseHistory::onMessage, this);
   }
 }
 
-void PoseHistory::unsubscribe() {
+void PoseHistory::unsubscribe()
+{
   sub_.shutdown();
 
   history_.clear();
   lines_->clear();
 }
 
-void PoseHistory::onMessage(const geometry_msgs::PoseStamped& message) {
+void PoseHistory::onMessage(const geometry_msgs::PoseStamped & message)
+{
   if (target_frame_ != message.header.frame_id) {
     history_.clear();
     target_frame_ = message.header.frame_id;
@@ -80,14 +91,16 @@ void PoseHistory::onMessage(const geometry_msgs::PoseStamped& message) {
   updateHistory();
 }
 
-void PoseHistory::updateHistory() {
+void PoseHistory::updateHistory()
+{
   int buffer_size = property_buffer_size_->getInt();
   while (buffer_size < history_.size()) {
     history_.pop_front();
   }
 }
 
-void PoseHistory::updateLines() {
+void PoseHistory::updateLines()
+{
   QColor color = property_line_color_->getColor();
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
@@ -107,7 +120,7 @@ void PoseHistory::updateLines() {
   lines_->setOrientation(orientation);
   lines_->setColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
 
-  for (const auto& message : history_) {
+  for (const auto & message : history_) {
     Ogre::Vector3 point;
     point.x = message.pose.position.x;
     point.y = message.pose.position.y;

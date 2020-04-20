@@ -71,7 +71,8 @@ int raw_data;
 
 sensor_msgs::Imu imu_msg;
 
-int serial_setup(const char* device) {
+int serial_setup(const char * device)
+{
   int fd = open(device, O_RDWR);
   // fcntl(fd, F_SETFL, 0);
   // tcgetattr(fd, &conf_tio);
@@ -99,26 +100,30 @@ int serial_setup(const char* device) {
   return fd;
 }
 
-void receive_ver_req(const std_msgs::Int32::ConstPtr& msg) {
+void receive_ver_req(const std_msgs::Int32::ConstPtr & msg)
+{
   char ver_req[] = "$TSC,VER*29\x0d\x0a";
   int ver_req_data = write(fd, ver_req, sizeof(ver_req));
   ROS_INFO("Send Version Request:%s", ver_req);
 }
 
-void receive_offset_cancel_req(const std_msgs::Int32::ConstPtr& msg) {
+void receive_offset_cancel_req(const std_msgs::Int32::ConstPtr & msg)
+{
   char offset_cancel_req[32];
   sprintf(offset_cancel_req, "$TSC,OFC,%d\x0d\x0a", msg->data);
   int offset_cancel_req_data = write(fd, offset_cancel_req, sizeof(offset_cancel_req));
   ROS_INFO("Send Offset Cancel Request:%s", offset_cancel_req);
 }
 
-void receive_heading_reset_req(const std_msgs::Int32::ConstPtr& msg) {
+void receive_heading_reset_req(const std_msgs::Int32::ConstPtr & msg)
+{
   char heading_reset_req[] = "$TSC,HRST*29\x0d\x0a";
   int heading_reset_req_data = write(fd, heading_reset_req, sizeof(heading_reset_req));
   ROS_INFO("Send Heading reset Request:%s", heading_reset_req);
 }
 
-void shutdown_cmd(int sig) {
+void shutdown_cmd(int sig)
+{
   tcsetattr(fd, TCSANOW, &old_conf_tio);  // Revert to previous settings
   close(fd);
   ROS_INFO("Port closed");
@@ -292,7 +297,8 @@ void shutdown_cmd(int sig) {
 #include <boost/asio.hpp>
 using namespace boost::asio;
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "tag_serial_driver", ros::init_options::NoSigintHandler);
   ros::NodeHandle n;
   ros::Publisher pub = n.advertise<sensor_msgs::Imu>("imu/data_raw", 1000);
@@ -332,7 +338,8 @@ int main(int argc, char** argv) {
 
     boost::asio::streambuf response;
     boost::asio::read_until(serial_port, response, "\n");
-    std::string rbuf(boost::asio::buffers_begin(response.data()), boost::asio::buffers_end(response.data()));
+    std::string rbuf(
+      boost::asio::buffers_begin(response.data()), boost::asio::buffers_end(response.data()));
 
     length = rbuf.size();
     size_t len = response.size();
@@ -345,11 +352,14 @@ int main(int argc, char** argv) {
 
         counter = ((rbuf[11] << 8) & 0x0000FF00) | (rbuf[12] & 0x000000FF);
         raw_data = ((((rbuf[15] << 8) & 0xFFFFFF00) | (rbuf[16] & 0x000000FF)));
-        imu_msg.angular_velocity.x = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        imu_msg.angular_velocity.x =
+          raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
         raw_data = ((((rbuf[17] << 8) & 0xFFFFFF00) | (rbuf[18] & 0x000000FF)));
-        imu_msg.angular_velocity.y = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        imu_msg.angular_velocity.y =
+          raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
         raw_data = ((((rbuf[19] << 8) & 0xFFFFFF00) | (rbuf[20] & 0x000000FF)));
-        imu_msg.angular_velocity.z = raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        imu_msg.angular_velocity.z =
+          raw_data * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
         raw_data = ((((rbuf[21] << 8) & 0xFFFFFF00) | (rbuf[22] & 0x000000FF)));
         imu_msg.linear_acceleration.x = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
         raw_data = ((((rbuf[23] << 8) & 0xFFFFFF00) | (rbuf[24] & 0x000000FF)));

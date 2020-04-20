@@ -24,11 +24,12 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <unordered_map>
 
-namespace euclidean_cluster {
-
+namespace euclidean_cluster
+{
 VoxelGridBasedEuclideanClusterNodelet::VoxelGridBasedEuclideanClusterNodelet() {}
 
-void VoxelGridBasedEuclideanClusterNodelet::onInit() {
+void VoxelGridBasedEuclideanClusterNodelet::onInit()
+{
   private_nh_ = getPrivateNodeHandle();
 
   private_nh_.param<std::string>("target_frame", target_frame_, "base_link");
@@ -39,13 +40,17 @@ void VoxelGridBasedEuclideanClusterNodelet::onInit() {
   private_nh_.param<int>("min_points_number_per_voxel", min_points_number_per_voxel_, 3);
 
   nh_ = getNodeHandle();
-  pointcloud_sub_ = private_nh_.subscribe("input", 1, &VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback, this);
+  pointcloud_sub_ = private_nh_.subscribe(
+    "input", 1, &VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback, this);
 
-  cluster_pub_ = private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
+  cluster_pub_ =
+    private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
   debug_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("debug/clusters", 1);
 }
 
-void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& input_msg) {
+void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(
+  const sensor_msgs::PointCloud2ConstPtr & input_msg)
+{
   // convert ros to pcl
   pcl::PointCloud<pcl::PointXYZ>::Ptr raw_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*input_msg, *raw_pointcloud_ptr);
@@ -100,22 +105,27 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
   v_cluster.resize(cluster_idx);
   for (size_t i = 0; i < raw_pointcloud_ptr->points.size(); ++i) {
     const int index = voxel_grid_.getCentroidIndexAt(voxel_grid_.getGridCoordinates(
-        raw_pointcloud_ptr->points.at(i).x, raw_pointcloud_ptr->points.at(i).y, raw_pointcloud_ptr->points.at(i).z));
-    if (map.find(index) != map.end()) v_cluster.at(map[index]).points.push_back(raw_pointcloud_ptr->points.at(i));
+      raw_pointcloud_ptr->points.at(i).x, raw_pointcloud_ptr->points.at(i).y,
+      raw_pointcloud_ptr->points.at(i).z));
+    if (map.find(index) != map.end())
+      v_cluster.at(map[index]).points.push_back(raw_pointcloud_ptr->points.at(i));
   }
 
   // build output msg
   {
     autoware_perception_msgs::DynamicObjectWithFeatureArray output;
     output.header = input_msg->header;
-    for (std::vector<pcl::PointCloud<pcl::PointXYZ>>::const_iterator cluster_itr = v_cluster.begin();
+    for (std::vector<pcl::PointCloud<pcl::PointXYZ>>::const_iterator cluster_itr =
+           v_cluster.begin();
          cluster_itr != v_cluster.end(); ++cluster_itr) {
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
       for (pcl::PointCloud<pcl::PointXYZ>::const_iterator point_itr = cluster_itr->points.begin();
            point_itr != cluster_itr->points.end(); ++point_itr) {
         cloud_cluster->points.push_back(*point_itr);
       }
-      if (min_cluster_size_ <= cloud_cluster->points.size() && cloud_cluster->points.size() <= max_cluster_size_)
+      if (
+        min_cluster_size_ <= cloud_cluster->points.size() &&
+        cloud_cluster->points.size() <= max_cluster_size_)
         continue;
       cloud_cluster->width = cloud_cluster->points.size();
       cloud_cluster->height = 1;
@@ -137,7 +147,8 @@ void VoxelGridBasedEuclideanClusterNodelet::pointcloudCallback(const sensor_msgs
 
     int i = 0;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZI>);
-    for (std::vector<pcl::PointCloud<pcl::PointXYZ>>::const_iterator cluster_itr = v_cluster.begin();
+    for (std::vector<pcl::PointCloud<pcl::PointXYZ>>::const_iterator cluster_itr =
+           v_cluster.begin();
          cluster_itr != v_cluster.end(); ++cluster_itr) {
       for (pcl::PointCloud<pcl::PointXYZ>::const_iterator point_itr = cluster_itr->points.begin();
            point_itr != cluster_itr->points.end(); ++point_itr) {

@@ -16,21 +16,24 @@
 
 #include "velocity_controller_mathutils.h"
 
-namespace vcutils {
-
-double calcDistance2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+namespace vcutils
+{
+double calcDistance2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
+{
   const double dx = p1.position.x - p2.position.x;
   const double dy = p1.position.y - p2.position.y;
   return std::sqrt(dx * dx + dy * dy);
 };
 
-double calcDistSquared2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+double calcDistSquared2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
+{
   const double dx = p1.position.x - p2.position.x;
   const double dy = p1.position.y - p2.position.y;
   return dx * dx + dy * dy;
 };
 
-double normalizeEulerAngle(double euler) {
+double normalizeEulerAngle(double euler)
+{
   double res = euler;
   while (res > M_PI) {
     res -= (2 * M_PI);
@@ -42,8 +45,10 @@ double normalizeEulerAngle(double euler) {
   return res;
 };
 
-bool calcClosestWithThr(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose,
-                        const double angle_thr, const double dist_thr, int32_t& closest_idx) {
+bool calcClosestWithThr(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
+  const double angle_thr, const double dist_thr, int32_t & closest_idx)
+{
   double dist_squared_min = std::numeric_limits<double>::max();
   closest_idx = -1;
 
@@ -68,8 +73,9 @@ bool calcClosestWithThr(const autoware_planning_msgs::Trajectory& trajectory, co
   return (closest_idx >= 0) ? true : false;
 };
 
-geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin) {
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin)
+{
   // translation
   geometry_msgs::Point trans_p;
   trans_p.x = point.x - origin.position.x;

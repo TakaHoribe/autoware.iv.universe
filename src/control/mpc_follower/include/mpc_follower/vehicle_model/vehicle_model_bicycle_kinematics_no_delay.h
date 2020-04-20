@@ -53,14 +53,15 @@
  * @class vehicle model class of bicycle kinematics without steering delay
  * @brief calculate model-related values
  */
-class KinematicsBicycleModelNoDelay : public VehicleModelInterface {
- public:
+class KinematicsBicycleModelNoDelay : public VehicleModelInterface
+{
+public:
   /**
    * @brief constructor with parameter initialization
    * @param [in] wheelbase wheelbase length [m]
    * @param [in] steer_lim steering angle limit [rad]
    */
-  KinematicsBicycleModelNoDelay(const double& wheelbase, const double& steer_lim);
+  KinematicsBicycleModelNoDelay(const double & wheelbase, const double & steer_lim);
 
   /**
    * @brief destructor
@@ -75,16 +76,17 @@ class KinematicsBicycleModelNoDelay : public VehicleModelInterface {
    * @param [out] Wd coefficient matrix
    * @param [in] dt Discretization time
    */
-  void calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Cd, Eigen::MatrixXd& Wd,
-                               const double& dt) override;
+  void calculateDiscreteMatrix(
+    Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+    const double & dt) override;
 
   /**
    * @brief calculate reference input
    * @param [out] reference input
    */
-  void calculateReferenceInput(Eigen::MatrixXd& Uref) override;
+  void calculateReferenceInput(Eigen::MatrixXd & Uref) override;
 
- private:
+private:
   double wheelbase_;  //!< @brief wheelbase length [m]
   double steer_lim_;  //!< @brief steering angle limit [rad]
 };

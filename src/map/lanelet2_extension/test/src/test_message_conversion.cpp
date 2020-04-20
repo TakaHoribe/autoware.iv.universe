@@ -27,9 +27,11 @@ using lanelet::Point3d;
 using lanelet::utils::getId;
 using lanelet::utils::conversion::toGeomMsgPt;
 
-class TestSuite : public ::testing::Test {
- public:
-  TestSuite() : single_lanelet_map_ptr(new lanelet::LaneletMap()) {
+class TestSuite : public ::testing::Test
+{
+public:
+  TestSuite() : single_lanelet_map_ptr(new lanelet::LaneletMap())
+  {
     Point3d p1, p2, p3, p4, p5, p6, p7;
     LineString3d traffic_light_base, traffic_light_bulbs, stop_line;
 
@@ -49,10 +51,11 @@ class TestSuite : public ::testing::Test {
   ~TestSuite() {}
   lanelet::LaneletMapPtr single_lanelet_map_ptr;
 
- private:
+private:
 };
 
-TEST_F(TestSuite, BinMsgConversion) {
+TEST_F(TestSuite, BinMsgConversion)
+{
   autoware_lanelet2_msgs::MapBin bin_msg;
   lanelet::LaneletMapPtr regenerated_map(new lanelet::LaneletMap);
 
@@ -65,10 +68,12 @@ TEST_F(TestSuite, BinMsgConversion) {
   auto original_lanelet = lanelet::utils::query::laneletLayer(single_lanelet_map_ptr);
   auto regenerated_lanelet = lanelet::utils::query::laneletLayer(regenerated_map);
 
-  ASSERT_EQ(original_lanelet.front().id(), regenerated_lanelet.front().id()) << "regerated map has different id";
+  ASSERT_EQ(original_lanelet.front().id(), regenerated_lanelet.front().id())
+    << "regerated map has different id";
 }
 
-TEST_F(TestSuite, ToGeomMsgPt) {
+TEST_F(TestSuite, ToGeomMsgPt)
+{
   Point3d lanelet_pt(getId(), -0.1, 0.2, 3.0);
 
   geometry_msgs::Point32 geom_pt32;
@@ -78,55 +83,80 @@ TEST_F(TestSuite, ToGeomMsgPt) {
 
   geometry_msgs::Point geom_pt;
   toGeomMsgPt(geom_pt32, &geom_pt);
-  ASSERT_FLOAT_EQ(geom_pt32.x, geom_pt.x) << " converted value is different from original geometry_msgs::Point";
-  ASSERT_FLOAT_EQ(geom_pt32.y, geom_pt.y) << " converted value is different from original geometry_msgs::Point";
-  ASSERT_FLOAT_EQ(geom_pt32.z, geom_pt.z) << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.x, geom_pt.x)
+    << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.y, geom_pt.y)
+    << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.z, geom_pt.z)
+    << " converted value is different from original geometry_msgs::Point";
 
   geom_pt = toGeomMsgPt(geom_pt32);
-  ASSERT_FLOAT_EQ(geom_pt32.x, geom_pt.x) << " converted value is different from original geometry_msgs::Point";
-  ASSERT_FLOAT_EQ(geom_pt32.y, geom_pt.y) << " converted value is different from original geometry_msgs::Point";
-  ASSERT_FLOAT_EQ(geom_pt32.z, geom_pt.z) << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.x, geom_pt.x)
+    << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.y, geom_pt.y)
+    << " converted value is different from original geometry_msgs::Point";
+  ASSERT_FLOAT_EQ(geom_pt32.z, geom_pt.z)
+    << " converted value is different from original geometry_msgs::Point";
 
   toGeomMsgPt(lanelet_pt.basicPoint(), &geom_pt);
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().x(), geom_pt.x) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().y(), geom_pt.y) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().z(), geom_pt.z) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().x(), geom_pt.x)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().y(), geom_pt.y)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().z(), geom_pt.z)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
 
   geom_pt = toGeomMsgPt(lanelet_pt.basicPoint());
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().x(), geom_pt.x) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().y(), geom_pt.y) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
-  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().z(), geom_pt.z) << " converted value is different from original "
-                                                              "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().x(), geom_pt.x)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().y(), geom_pt.y)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
+  ASSERT_DOUBLE_EQ(lanelet_pt.basicPoint().z(), geom_pt.z)
+    << " converted value is different from original "
+       "lanelet::basicPoint";
 
   toGeomMsgPt(lanelet_pt, &geom_pt);
-  ASSERT_DOUBLE_EQ(lanelet_pt.x(), geom_pt.x) << " converted value is different from original lanelet::Point3d";
-  ASSERT_DOUBLE_EQ(lanelet_pt.y(), geom_pt.y) << " converted value is different from original lanelet::Point3d";
-  ASSERT_DOUBLE_EQ(lanelet_pt.z(), geom_pt.z) << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.x(), geom_pt.x)
+    << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.y(), geom_pt.y)
+    << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.z(), geom_pt.z)
+    << " converted value is different from original lanelet::Point3d";
 
   geom_pt = toGeomMsgPt(lanelet_pt);
-  ASSERT_DOUBLE_EQ(lanelet_pt.x(), geom_pt.x) << " converted value is different from original lanelet::Point3d";
-  ASSERT_DOUBLE_EQ(lanelet_pt.y(), geom_pt.y) << " converted value is different from original lanelet::Point3d";
-  ASSERT_DOUBLE_EQ(lanelet_pt.z(), geom_pt.z) << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.x(), geom_pt.x)
+    << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.y(), geom_pt.y)
+    << " converted value is different from original lanelet::Point3d";
+  ASSERT_DOUBLE_EQ(lanelet_pt.z(), geom_pt.z)
+    << " converted value is different from original lanelet::Point3d";
 
   lanelet::ConstPoint2d point_2d = lanelet::utils::to2D(lanelet_pt);
 
   toGeomMsgPt(point_2d, &geom_pt);
-  ASSERT_DOUBLE_EQ(point_2d.x(), geom_pt.x) << " converted value is different from original lanelet::Point2d";
-  ASSERT_DOUBLE_EQ(point_2d.y(), geom_pt.y) << " converted value is different from original lanelet::Point2d";
-  ASSERT_DOUBLE_EQ(0.0, geom_pt.z) << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(point_2d.x(), geom_pt.x)
+    << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(point_2d.y(), geom_pt.y)
+    << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(0.0, geom_pt.z)
+    << " converted value is different from original lanelet::Point2d";
 
   geom_pt = toGeomMsgPt(point_2d);
-  ASSERT_DOUBLE_EQ(point_2d.x(), geom_pt.x) << " converted value is different from original lanelet::Point2d";
-  ASSERT_DOUBLE_EQ(point_2d.y(), geom_pt.y) << " converted value is different from original lanelet::Point2d";
-  ASSERT_DOUBLE_EQ(0.0, geom_pt.z) << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(point_2d.x(), geom_pt.x)
+    << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(point_2d.y(), geom_pt.y)
+    << " converted value is different from original lanelet::Point2d";
+  ASSERT_DOUBLE_EQ(0.0, geom_pt.z)
+    << " converted value is different from original lanelet::Point2d";
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

@@ -28,11 +28,12 @@
 #include <behavior_velocity_planner/planner_data.h>
 #include <behavior_velocity_planner/planner_manager.h>
 
-class BehaviorVelocityPlannerNode {
- public:
+class BehaviorVelocityPlannerNode
+{
+public:
   BehaviorVelocityPlannerNode();
 
- private:
+private:
   // node handle
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -49,18 +50,18 @@ class BehaviorVelocityPlannerNode {
   ros::Subscriber sub_traffic_light_states_;
   ros::Subscriber sub_lanelet_map_;
 
-  void onTrigger(const autoware_planning_msgs::PathWithLaneId& input_path_msg);
-  void onDynamicObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& msg);
-  void onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
-  void onVehicleVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
-  void onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr& msg);
-  void onTrafficLightStates(const autoware_perception_msgs::TrafficLightStateArray::ConstPtr& msg);
+  void onTrigger(const autoware_planning_msgs::PathWithLaneId & input_path_msg);
+  void onDynamicObjects(const autoware_perception_msgs::DynamicObjectArray::ConstPtr & msg);
+  void onNoGroundPointCloud(const sensor_msgs::PointCloud2::ConstPtr & msg);
+  void onVehicleVelocity(const geometry_msgs::TwistStamped::ConstPtr & msg);
+  void onLaneletMap(const autoware_lanelet2_msgs::MapBin::ConstPtr & msg);
+  void onTrafficLightStates(const autoware_perception_msgs::TrafficLightStateArray::ConstPtr & msg);
 
   // publisher
   ros::Publisher path_pub_;
   ros::Publisher debug_viz_pub_;
 
-  void publishDebugMarker(const autoware_planning_msgs::Path& path, const ros::Publisher& pub);
+  void publishDebugMarker(const autoware_planning_msgs::Path & path, const ros::Publisher & pub);
 
   //  parameter
   double forward_path_length_;

@@ -21,16 +21,17 @@
 #include <ros/ros.h>
 #include "autoware_perception_msgs/DynamicObjectArray.h"
 
-class NaivePathPredictionNode {
- private:  // ros
+class NaivePathPredictionNode
+{
+private:  // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
   ros::Subscriber sub_;
 
-  void callback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_msg);
+  void callback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr & input_msg);
 
- public:
+public:
   NaivePathPredictionNode();
 
   ~NaivePathPredictionNode(){};

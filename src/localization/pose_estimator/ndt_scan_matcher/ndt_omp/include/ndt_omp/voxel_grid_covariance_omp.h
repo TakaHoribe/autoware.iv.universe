@@ -45,7 +45,8 @@
 #include <map>
 #include <unordered_map>
 
-namespace ndt_omp {
+namespace ndt_omp
+{
 /** \brief A searchable voxel strucure containing the mean and covariance of the data.
  * \note For more information please see
  * <b>Magnusson, M. (2009). The Three-Dimensional Normal-Distributions Transform —
@@ -54,8 +55,9 @@ namespace ndt_omp {
  * \author Brian Okorn (Space and Naval Warfare Systems Center Pacific)
  */
 template <typename PointT>
-class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
- protected:
+class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
+{
+protected:
   using pcl::VoxelGrid<PointT>::filter_name_;
   using pcl::VoxelGrid<PointT>::getClassName;
   using pcl::VoxelGrid<PointT>::input_;
@@ -80,25 +82,28 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   typedef typename PointCloud::Ptr PointCloudPtr;
   typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
- public:
+public:
   typedef boost::shared_ptr<pcl::VoxelGrid<PointT> > Ptr;
   typedef boost::shared_ptr<const pcl::VoxelGrid<PointT> > ConstPtr;
 
   /** \brief Simple structure to hold a centroid, covarince and the number of points in a leaf.
    * Inverse covariance, eigen vectors and engen values are precomputed. */
-  struct Leaf {
+  struct Leaf
+  {
     /** \brief Constructor.
      * Sets \ref nr_points, \ref icov_, \ref mean_ and \ref evals_ to 0 and \ref cov_ and \ref evecs_ to the identity
      * matrix
      */
     Leaf()
-        : nr_points(0),
-          mean_(Eigen::Vector3d::Zero()),
-          centroid(),
-          cov_(Eigen::Matrix3d::Identity()),
-          icov_(Eigen::Matrix3d::Zero()),
-          evecs_(Eigen::Matrix3d::Identity()),
-          evals_(Eigen::Vector3d::Zero()) {}
+    : nr_points(0),
+      mean_(Eigen::Vector3d::Zero()),
+      centroid(),
+      cov_(Eigen::Matrix3d::Identity()),
+      icov_(Eigen::Matrix3d::Zero()),
+      evecs_(Eigen::Matrix3d::Identity()),
+      evals_(Eigen::Vector3d::Zero())
+    {
+    }
 
     /** \brief Get the voxel covariance.
      * \return covariance matrix
@@ -157,25 +162,26 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   };
 
   /** \brief Pointer to VoxelGridCovariance leaf structure */
-  typedef Leaf* LeafPtr;
+  typedef Leaf * LeafPtr;
 
   /** \brief Const pointer to VoxelGridCovariance leaf structure */
-  typedef const Leaf* LeafConstPtr;
+  typedef const Leaf * LeafConstPtr;
 
   typedef std::map<size_t, Leaf> Map;
 
- public:
+public:
   /** \brief Constructor.
    * Sets \ref leaf_size_ to 0 and \ref searchable_ to false.
    */
   VoxelGridCovariance()
-      : searchable_(true),
-        min_points_per_voxel_(6),
-        min_covar_eigvalue_mult_(0.01),
-        leaves_(),
-        voxel_centroids_(),
-        voxel_centroids_leaf_indices_(),
-        kdtree_() {
+  : searchable_(true),
+    min_points_per_voxel_(6),
+    min_covar_eigvalue_mult_(0.01),
+    leaves_(),
+    voxel_centroids_(),
+    voxel_centroids_leaf_indices_(),
+    kdtree_()
+  {
     downsample_all_data_ = false;
     save_leaf_layout_ = false;
     leaf_size_.setZero();
@@ -187,12 +193,14 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   /** \brief Set the minimum number of points required for a cell to be used (must be 3 or greater for covariance
    * calculation). \param[in] min_points_per_voxel the minimum number of points for required for a voxel to be used
    */
-  inline void setMinPointPerVoxel(int min_points_per_voxel) {
+  inline void setMinPointPerVoxel(int min_points_per_voxel)
+  {
     if (min_points_per_voxel > 2) {
       min_points_per_voxel_ = min_points_per_voxel;
     } else {
-      PCL_WARN("%s: Covariance calculation requires at least 3 points, setting Min Point per Voxel to 3 ",
-               this->getClassName().c_str());
+      PCL_WARN(
+        "%s: Covariance calculation requires at least 3 points, setting Min Point per Voxel to 3 ",
+        this->getClassName().c_str());
       min_points_per_voxel_ = 3;
     }
   }
@@ -205,7 +213,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   /** \brief Set the minimum allowable ratio between eigenvalues to prevent singular covariance matrices.
    * \param[in] min_covar_eigvalue_mult the minimum allowable ratio between eigenvalues
    */
-  inline void setCovEigValueInflationRatio(double min_covar_eigvalue_mult) {
+  inline void setCovEigValueInflationRatio(double min_covar_eigvalue_mult)
+  {
     min_covar_eigvalue_mult_ = min_covar_eigvalue_mult;
   }
 
@@ -218,7 +227,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[out] output cloud containing centroids of voxels containing a sufficient number of points
    * \param[in] searchable flag if voxel structure is searchable, if true then kdtree is built
    */
-  inline void filter(PointCloud& output, bool searchable = false) {
+  inline void filter(PointCloud & output, bool searchable = false)
+  {
     searchable_ = searchable;
     applyFilter(output);
 
@@ -233,7 +243,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   /** \brief Initializes voxel structure.
    * \param[in] searchable flag if voxel structure is searchable, if true then kdtree is built
    */
-  inline void filter(bool searchable = false) {
+  inline void filter(bool searchable = false)
+  {
     searchable_ = searchable;
     voxel_centroids_ = PointCloudPtr(new PointCloud);
     applyFilter(*voxel_centroids_);
@@ -248,7 +259,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[in] index the index of the leaf structure node
    * \return const pointer to leaf structure
    */
-  inline LeafConstPtr getLeaf(int index) {
+  inline LeafConstPtr getLeaf(int index)
+  {
     auto leaf_iter = leaves_.find(index);
     if (leaf_iter != leaves_.end()) {
       LeafConstPtr ret(&(leaf_iter->second));
@@ -261,7 +273,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[in] p the point to get the leaf structure at
    * \return const pointer to leaf structure
    */
-  inline LeafConstPtr getLeaf(PointT& p) {
+  inline LeafConstPtr getLeaf(PointT & p)
+  {
     // Generate index associated with p
     int ijk0 = static_cast<int>(floor(p.x * inverse_leaf_size_[0]) - min_b_[0]);
     int ijk1 = static_cast<int>(floor(p.y * inverse_leaf_size_[1]) - min_b_[1]);
@@ -284,7 +297,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[in] p the point to get the leaf structure at
    * \return const pointer to leaf structure
    */
-  inline LeafConstPtr getLeaf(Eigen::Vector3f& p) {
+  inline LeafConstPtr getLeaf(Eigen::Vector3f & p)
+  {
     // Generate index associated with p
     int ijk0 = static_cast<int>(floor(p[0] * inverse_leaf_size_[0]) - min_b_[0]);
     int ijk1 = static_cast<int>(floor(p[1] * inverse_leaf_size_[1]) - min_b_[1]);
@@ -309,16 +323,20 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[out] neighbors
    * \return number of neighbors found
    */
-  int getNeighborhoodAtPoint(const Eigen::MatrixXi&, const PointT& reference_point,
-                             std::vector<LeafConstPtr>& neighbors) const;
-  int getNeighborhoodAtPoint(const PointT& reference_point, std::vector<LeafConstPtr>& neighbors) const;
-  int getNeighborhoodAtPoint7(const PointT& reference_point, std::vector<LeafConstPtr>& neighbors) const;
-  int getNeighborhoodAtPoint1(const PointT& reference_point, std::vector<LeafConstPtr>& neighbors) const;
+  int getNeighborhoodAtPoint(
+    const Eigen::MatrixXi &, const PointT & reference_point,
+    std::vector<LeafConstPtr> & neighbors) const;
+  int getNeighborhoodAtPoint(
+    const PointT & reference_point, std::vector<LeafConstPtr> & neighbors) const;
+  int getNeighborhoodAtPoint7(
+    const PointT & reference_point, std::vector<LeafConstPtr> & neighbors) const;
+  int getNeighborhoodAtPoint1(
+    const PointT & reference_point, std::vector<LeafConstPtr> & neighbors) const;
 
   /** \brief Get the leaf structure map
    * \return a map contataining all leaves
    */
-  inline const Map& getLeaves() { return leaves_; }
+  inline const Map & getLeaves() { return leaves_; }
 
   /** \brief Get a pointcloud containing the voxel centroids
    * \note Only voxels containing a sufficient number of points are used.
@@ -329,7 +347,7 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
   /** \brief Get a cloud to visualize each voxels normal distribution.
    * \param[out] cell_cloud a cloud created by sampling the normal distributions of each voxel
    */
-  void getDisplayCloud(pcl::PointCloud<pcl::PointXYZ>& cell_cloud);
+  void getDisplayCloud(pcl::PointCloud<pcl::PointXYZ> & cell_cloud);
 
   /** \brief Search for the k-nearest occupied voxels for the given query point.
    * \note Only voxels containing a sufficient number of points are used.
@@ -339,8 +357,10 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[out] k_sqr_distances the resultant squared distances to the neighboring points
    * \return number of neighbors found
    */
-  int nearestKSearch(const PointT& point, int k, std::vector<LeafConstPtr>& k_leaves,
-                     std::vector<float>& k_sqr_distances) {
+  int nearestKSearch(
+    const PointT & point, int k, std::vector<LeafConstPtr> & k_leaves,
+    std::vector<float> & k_sqr_distances)
+  {
     k_leaves.clear();
 
     // Check if kdtree has been built
@@ -370,8 +390,10 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[out] k_sqr_distances the resultant squared distances to the neighboring points
    * \return number of neighbors found
    */
-  inline int nearestKSearch(const PointCloud& cloud, int index, int k, std::vector<LeafConstPtr>& k_leaves,
-                            std::vector<float>& k_sqr_distances) {
+  inline int nearestKSearch(
+    const PointCloud & cloud, int index, int k, std::vector<LeafConstPtr> & k_leaves,
+    std::vector<float> & k_sqr_distances)
+  {
     if (index >= static_cast<int>(cloud.points.size()) || index < 0) return (0);
     return (nearestKSearch(cloud.points[index], k, k_leaves, k_sqr_distances));
   }
@@ -385,8 +407,10 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[in] max_nn
    * \return number of neighbors found
    */
-  int radiusSearch(const PointT& point, double radius, std::vector<LeafConstPtr>& k_leaves,
-                   std::vector<float>& k_sqr_distances, unsigned int max_nn = 0) const {
+  int radiusSearch(
+    const PointT & point, double radius, std::vector<LeafConstPtr> & k_leaves,
+    std::vector<float> & k_sqr_distances, unsigned int max_nn = 0) const
+  {
     k_leaves.clear();
 
     // Check if kdtree has been built
@@ -422,17 +446,19 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT> {
    * \param[in] max_nn
    * \return number of neighbors found
    */
-  inline int radiusSearch(const PointCloud& cloud, int index, double radius, std::vector<LeafConstPtr>& k_leaves,
-                          std::vector<float>& k_sqr_distances, unsigned int max_nn = 0) const {
+  inline int radiusSearch(
+    const PointCloud & cloud, int index, double radius, std::vector<LeafConstPtr> & k_leaves,
+    std::vector<float> & k_sqr_distances, unsigned int max_nn = 0) const
+  {
     if (index >= static_cast<int>(cloud.points.size()) || index < 0) return (0);
     return (radiusSearch(cloud.points[index], radius, k_leaves, k_sqr_distances, max_nn));
   }
 
- protected:
+protected:
   /** \brief Filter cloud and initializes voxel structure.
    * \param[out] output cloud containing centroids of voxels containing a sufficient number of points
    */
-  void applyFilter(PointCloud& output);
+  void applyFilter(PointCloud & output);
 
   /** \brief Flag to determine if voxel structure is searchable. */
   bool searchable_;

@@ -27,15 +27,18 @@
 #include <memory>
 #include <string>
 
-namespace traffic_light {
-class TrafficLightRoiImageSaver {
- public:
+namespace traffic_light
+{
+class TrafficLightRoiImageSaver
+{
+public:
   TrafficLightRoiImageSaver();
   virtual ~TrafficLightRoiImageSaver();
 
- private:
-  void imageRoiCallback(const sensor_msgs::ImageConstPtr& input_image_msg,
-                        const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr& input_tl_roi_msg);
+private:
+  void imageRoiCallback(
+    const sensor_msgs::ImageConstPtr & input_image_msg,
+    const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr & input_tl_roi_msg);
 
   ros::NodeHandle nh_, pnh_;
   image_transport::ImageTransport image_transport_;
@@ -44,9 +47,9 @@ class TrafficLightRoiImageSaver {
   image_transport::Publisher image_pub_;
   std::string save_dir_;
   std::shared_ptr<ros::Rate> save_rate_ptr_;
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
-                                                          autoware_perception_msgs::TrafficLightRoiArray>
-      SyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+    sensor_msgs::Image, autoware_perception_msgs::TrafficLightRoiArray>
+    SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Sync;
   Sync sync_;
 };

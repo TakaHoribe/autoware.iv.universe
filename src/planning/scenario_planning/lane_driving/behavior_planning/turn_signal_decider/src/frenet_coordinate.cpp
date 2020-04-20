@@ -16,30 +16,39 @@
 #include <turn_signal_decider/frenet_coordinate.h>
 #include <Eigen/Dense>
 
-namespace {
-Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt) {
+namespace
+{
+Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt)
+{
   return Eigen::Vector3d(geom_pt.x, geom_pt.y, geom_pt.z);
 }
 
-std::vector<geometry_msgs::Point> convertToPointArray(const autoware_planning_msgs::PathWithLaneId& path) {
+std::vector<geometry_msgs::Point> convertToPointArray(
+  const autoware_planning_msgs::PathWithLaneId & path)
+{
   std::vector<geometry_msgs::Point> point_array;
-  for (const auto& pt : path.points) {
+  for (const auto & pt : path.points) {
     point_array.push_back(pt.point.pose.position);
   }
   return point_array;
 }
 }  // namespace
 
-namespace turn_signal_decider {
-bool convertToFrenetCoordinate3d(const autoware_planning_msgs::PathWithLaneId& path,
-                                 const geometry_msgs::Point& search_point_geom, FrenetCoordinate3d* frenet_coordinate) {
+namespace turn_signal_decider
+{
+bool convertToFrenetCoordinate3d(
+  const autoware_planning_msgs::PathWithLaneId & path,
+  const geometry_msgs::Point & search_point_geom, FrenetCoordinate3d * frenet_coordinate)
+{
   const auto linestring = convertToPointArray(path);
   return convertToFrenetCoordinate3d(linestring, search_point_geom, frenet_coordinate);
 }
 
 // returns false when search point is off the linestring
-bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linestring,
-                                 const geometry_msgs::Point& search_point_geom, FrenetCoordinate3d* frenet_coordinate) {
+bool convertToFrenetCoordinate3d(
+  const std::vector<geometry_msgs::Point> & linestring,
+  const geometry_msgs::Point & search_point_geom, FrenetCoordinate3d * frenet_coordinate)
+{
   if (linestring.empty()) {
     return false;
   }
@@ -79,7 +88,7 @@ bool convertToFrenetCoordinate3d(const std::vector<geometry_msgs::Point>& linest
   {
     auto prev_geom_pt = linestring.front();
     double accumulated_length = 0;
-    for (const auto& geom_pt : linestring) {
+    for (const auto & geom_pt : linestring) {
       const auto start_pt = convertToEigenPt(prev_geom_pt);
       const auto end_pt = convertToEigenPt(geom_pt);
 

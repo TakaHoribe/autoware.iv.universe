@@ -39,17 +39,19 @@
 #include "pid.h"
 #include "velocity_controller_mathutils.h"
 
-struct CtrlCmd {
+struct CtrlCmd
+{
   double vel;
   double acc;
 };
 
-class VelocityController {
- public:
+class VelocityController
+{
+public:
   VelocityController();
   ~VelocityController() = default;
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Subscriber sub_current_vel_;
@@ -90,7 +92,8 @@ class VelocityController {
   double emergency_overshoot_dist_;
 
   // smooth stop
-  struct SmoothStopParam {
+  struct SmoothStopParam
+  {
     double exit_ego_speed;
     double entry_ego_speed;
     double exit_target_speed;
@@ -161,14 +164,14 @@ class VelocityController {
   Lpf1d lpf_vel_error_;
 
   // methods
-  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
-  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr& msg);
-  void callbackTimerControl(const ros::TimerEvent& event);
+  void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr & msg);
+  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr & msg);
+  void callbackTimerControl(const ros::TimerEvent & event);
 
   bool updateCurrentPose(const double timeout_sec);
-  bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped& ps);
+  bool getCurretPoseFromTF(const double timeout_sec, geometry_msgs::PoseStamped & ps);
 
-  double getPitch(const geometry_msgs::Quaternion& quaternion) const;
+  double getPitch(const geometry_msgs::Quaternion & quaternion) const;
   double getDt();
   enum Shift getCurrentShift(const double target_velocity) const;
 
@@ -185,18 +188,21 @@ class VelocityController {
   /* calc control command */
   CtrlCmd calcCtrlCmd();
   void publishCtrlCmd(const double vel, const double acc);
-  double calcInterpolatedTargetVelocity(const autoware_planning_msgs::Trajectory& traj,
-                                        const geometry_msgs::PoseStamped& curr_pose, const double current_vel,
-                                        const int closest) const;
+  double calcInterpolatedTargetVelocity(
+    const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::PoseStamped & curr_pose,
+    const double current_vel, const int closest) const;
   double calcSmoothStopAcc();
-  double calcFilteredAcc(const double raw_acc, const double pitch, const double dt, const Shift shift) const;
-  double applyVelocityFeedback(const double target_acc, const double target_vel, const double dt,
-                               const double current_vel);
+  double calcFilteredAcc(
+    const double raw_acc, const double pitch, const double dt, const Shift shift) const;
+  double applyVelocityFeedback(
+    const double target_acc, const double target_vel, const double dt, const double current_vel);
   double applyLimitFilter(const double input_val, const double max_val, const double min_val) const;
-  double applyRateFilter(const double input_val, const double prev_val, const double dt, const double max_val,
-                         const double min_val) const;
+  double applyRateFilter(
+    const double input_val, const double prev_val, const double dt, const double max_val,
+    const double min_val) const;
   double applySlopeCompensation(const double acc, const double pitch, const Shift shift) const;
-  double calcStopDistance(const autoware_planning_msgs::Trajectory& trajectory, const int closest) const;
+  double calcStopDistance(
+    const autoware_planning_msgs::Trajectory & trajectory, const int closest) const;
 
   /* Debug */
   mutable std_msgs::Float32MultiArray debug_values_;
@@ -228,9 +234,10 @@ class VelocityController {
   };
   static constexpr unsigned int num_debug_values_ = 24;
 
-  void writeDebugValues(const double dt, const double current_velocity, const double target_vel,
-                        const double target_acc, const Shift shift, const double pitch,
-                        const int32_t closest_waypoint_index);
+  void writeDebugValues(
+    const double dt, const double current_velocity, const double target_vel,
+    const double target_acc, const Shift shift, const double pitch,
+    const int32_t closest_waypoint_index);
 };
 
 #endif

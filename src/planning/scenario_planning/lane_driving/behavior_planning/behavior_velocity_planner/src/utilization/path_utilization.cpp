@@ -24,7 +24,9 @@
 
 #include "utilization/interpolation/cubic_spline.hpp"
 
-autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path& path, const double length) {
+autoware_planning_msgs::Path interpolatePath(
+  const autoware_planning_msgs::Path & path, const double length)
+{
   autoware_planning_msgs::Path interpolated_path;
 
   std::vector<double> x;
@@ -32,8 +34,10 @@ autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path&
   std::vector<double> z;
   std::vector<double> v;
   if (200 < path.points.size())
-    ROS_WARN("because path size is too large, calculation cost is high. size is %d.", (int)path.points.size());
-  for (const auto& path_point : path.points) {
+    ROS_WARN(
+      "because path size is too large, calculation cost is high. size is %d.",
+      (int)path.points.size());
+  for (const auto & path_point : path.points) {
     x.push_back(path_point.pose.position.x);
     y.push_back(path_point.pose.position.y);
     z.push_back(path_point.pose.position.z);
@@ -48,24 +52,27 @@ autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path&
   int reference_velocity_idx = 0;
   double reference_velocity;
   const double interpolation_interval = 1.0;
-  for (s_t = interpolation_interval; s_t < std::min(length, spline_ptr->s.back()); s_t += interpolation_interval) {
-    while (reference_velocity_idx < spline_ptr->s.size() && spline_ptr->s.at(reference_velocity_idx) < s_t) {
+  for (s_t = interpolation_interval; s_t < std::min(length, spline_ptr->s.back());
+       s_t += interpolation_interval) {
+    while (reference_velocity_idx < spline_ptr->s.size() &&
+           spline_ptr->s.at(reference_velocity_idx) < s_t) {
       ++reference_velocity_idx;
     }
-    reference_velocity =
-        spline_ptr->calc_trajectory_point(spline_ptr->s.at(std::max(0, reference_velocity_idx - 1)))[3];
+    reference_velocity = spline_ptr->calc_trajectory_point(
+      spline_ptr->s.at(std::max(0, reference_velocity_idx - 1)))[3];
 
     // insert check point before interpolated point
     while (checkpoint_idx < spline_ptr->s.size() && spline_ptr->s.at(checkpoint_idx) < s_t) {
       autoware_planning_msgs::PathPoint path_point;
-      std::array<double, 4> state = spline_ptr->calc_trajectory_point(spline_ptr->s.at(checkpoint_idx));
+      std::array<double, 4> state =
+        spline_ptr->calc_trajectory_point(spline_ptr->s.at(checkpoint_idx));
       path_point.pose.position.x = state[0];
       path_point.pose.position.y = state[1];
       path_point.pose.position.z = state[2];
       path_point.twist.linear.x = state[3];
       try {
         path_point.type = path.points.at(checkpoint_idx).type;
-      } catch (std::out_of_range& ex) {
+      } catch (std::out_of_range & ex) {
         ROS_ERROR_STREAM("failed to find correct checkpoint to refere point type " << ex.what());
       }
       const double yaw = spline_ptr->calc_yaw(s_t);
@@ -93,7 +100,8 @@ autoware_planning_msgs::Path interpolatePath(const autoware_planning_msgs::Path&
   return interpolated_path;
 }
 
-autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs::Path& path) {
+autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs::Path & path)
+{
   autoware_planning_msgs::Path filtered_path;
 
   const double epsilon = 0.01;
@@ -101,8 +109,10 @@ autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs:
   for (size_t i = 0; i < path.points.size(); ++i) {
     double dist;
     if (i != 0) {
-      const double x = path.points.at(i).pose.position.x - path.points.at(latest_id).pose.position.x;
-      const double y = path.points.at(i).pose.position.y - path.points.at(latest_id).pose.position.y;
+      const double x =
+        path.points.at(i).pose.position.x - path.points.at(latest_id).pose.position.x;
+      const double y =
+        path.points.at(i).pose.position.y - path.points.at(latest_id).pose.position.y;
       dist = std::sqrt(x * x + y * y);
     }
     if (epsilon < dist || i == 0 /*init*/) {
@@ -110,13 +120,14 @@ autoware_planning_msgs::Path filterLitterPathPoint(const autoware_planning_msgs:
       filtered_path.points.push_back(path.points.at(latest_id));
     } else {
       filtered_path.points.back().twist.linear.x =
-          std::min(filtered_path.points.back().twist.linear.x, path.points.at(i).twist.linear.x);
+        std::min(filtered_path.points.back().twist.linear.x, path.points.at(i).twist.linear.x);
     }
   }
 
   return filtered_path;
 }
-autoware_planning_msgs::Path filterStopPathPoint(const autoware_planning_msgs::Path& path) {
+autoware_planning_msgs::Path filterStopPathPoint(const autoware_planning_msgs::Path & path)
+{
   autoware_planning_msgs::Path filtered_path = path;
   bool found_stop = false;
   for (size_t i = 0; i < filtered_path.points.size(); ++i) {

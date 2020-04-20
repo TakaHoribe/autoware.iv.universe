@@ -34,15 +34,16 @@
 #include <scene_module/intersection/scene.h>
 #include <scene_module/scene_module_interface.h>
 
-class IntersectionModuleManager : public SceneModuleManagerInterface {
- public:
+class IntersectionModuleManager : public SceneModuleManagerInterface
+{
+public:
   IntersectionModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char* getModuleName() override { return "intersection"; }
+  const char * getModuleName() override { return "intersection"; }
 
- private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) override;
+  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId & path) override;
 };

@@ -30,18 +30,22 @@
 
 #include <velodyne_pointcloud/pointcloudXYZIRADT.h>
 
-namespace velodyne_pointcloud {
-class Interpolate {
- public:
+namespace velodyne_pointcloud
+{
+class Interpolate
+{
+public:
   Interpolate(ros::NodeHandle node, ros::NodeHandle private_nh);
   ~Interpolate() {}
 
- private:
-  void callback(velodyne_pointcloud::CloudNodeConfig& config, uint32_t level);
-  void processPoints(const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr& points_xyziradt);
-  void processTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg);
-  bool getTransform(const std::string& target_frame, const std::string& source_frame,
-                    tf2::Transform* tf2_transform_ptr);
+private:
+  void callback(velodyne_pointcloud::CloudNodeConfig & config, uint32_t level);
+  void processPoints(
+    const pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::ConstPtr & points_xyziradt);
+  void processTwist(const geometry_msgs::TwistStamped::ConstPtr & twist_msg);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    tf2::Transform * tf2_transform_ptr);
 
   ros::Subscriber velodyne_points_ex_sub_;
   ros::Subscriber twist_sub_;

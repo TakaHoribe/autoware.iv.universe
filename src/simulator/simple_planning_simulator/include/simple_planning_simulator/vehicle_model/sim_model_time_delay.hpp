@@ -36,8 +36,9 @@
  * @class simple_planning_simulator time delay twist model
  * @brief calculate time delay twist dynamics
  */
-class SimModelTimeDelayTwist : public SimModelInterface {
- public:
+class SimModelTimeDelayTwist : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -50,15 +51,16 @@ class SimModelTimeDelayTwist : public SimModelInterface {
    * @param [in] wx_delay time delay for angular-velocity command [s]
    * @param [in] wz_time_constant time constant for 1D model of angular-velocity dynamics
    */
-  SimModelTimeDelayTwist(double vx_lim, double angvel_lim, double vx_rate_lim, double wz_rate_lim, double dt,
-                         double vx_delay, double vx_time_constant, double wz_delay, double wz_time_constant);
+  SimModelTimeDelayTwist(
+    double vx_lim, double angvel_lim, double vx_rate_lim, double wz_rate_lim, double dt,
+    double vx_delay, double vx_time_constant, double wz_delay, double wz_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelayTwist() = default;
 
- private:
+private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
   enum IDX {
@@ -83,13 +85,14 @@ class SimModelTimeDelayTwist : public SimModelInterface {
   const double vx_delay_;              //!< @brief time delay for velocity command [s]
   const double vx_time_constant_;      //!< @brief time constant for 1D model of velocity dynamics
   const double wz_delay_;              //!< @brief time delay for angular-velocity command [s]
-  const double wz_time_constant_;      //!< @brief time constant for 1D model of angular-velocity dynamics
+  const double
+    wz_time_constant_;  //!< @brief time constant for 1D model of angular-velocity dynamics
 
   /**
    * @brief set queue buffer for input command
    * @param [in] dt delta time
    */
-  void initializeInputQueue(const double& dt);
+  void initializeInputQueue(const double & dt);
 
   /**
    * @brief get vehicle position x
@@ -125,18 +128,19 @@ class SimModelTimeDelayTwist : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with time delay twist model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
-class SimModelTimeDelaySteer : public SimModelInterface {
- public:
+class SimModelTimeDelaySteer : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -150,16 +154,17 @@ class SimModelTimeDelaySteer : public SimModelInterface {
    * @param [in] steer_delay time delay for steering command [s]
    * @param [in] steer_time_constant time constant for 1D model of steering dynamics
    */
-  SimModelTimeDelaySteer(double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim, double wheelbase,
-                         double dt, double vx_delay, double vx_time_constant, double steer_delay,
-                         double steer_time_constant);
+  SimModelTimeDelaySteer(
+    double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim, double wheelbase,
+    double dt, double vx_delay, double vx_time_constant, double steer_delay,
+    double steer_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelaySteer() = default;
 
- private:
+private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
   enum IDX {
@@ -183,15 +188,15 @@ class SimModelTimeDelaySteer : public SimModelInterface {
   std::deque<double> vx_input_queue_;     //!< @brief buffer for velocity command
   std::deque<double> steer_input_queue_;  //!< @brief buffer for steering command
   const double vx_delay_;                 //!< @brief time delay for velocity command [s]
-  const double vx_time_constant_;         //!< @brief time constant for 1D model of velocity dynamics
-  const double steer_delay_;              //!< @brief time delay for steering command [s]
-  const double steer_time_constant_;      //!< @brief time constant for 1D model of steering dynamics
+  const double vx_time_constant_;     //!< @brief time constant for 1D model of velocity dynamics
+  const double steer_delay_;          //!< @brief time delay for steering command [s]
+  const double steer_time_constant_;  //!< @brief time constant for 1D model of steering dynamics
 
   /**
    * @brief set queue buffer for input command
    * @param [in] dt delta time
    */
-  void initializeInputQueue(const double& dt);
+  void initializeInputQueue(const double & dt);
 
   /**
    * @brief get vehicle position x
@@ -227,18 +232,19 @@ class SimModelTimeDelaySteer : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with time delay steering model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
-class SimModelTimeDelaySteerAccel : public SimModelInterface {
- public:
+class SimModelTimeDelaySteerAccel : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] vx_lim velocity limit [m/s]
@@ -252,16 +258,17 @@ class SimModelTimeDelaySteerAccel : public SimModelInterface {
    * @param [in] steer_delay time delay for steering command [s]
    * @param [in] steer_time_constant time constant for 1D model of steering dynamics
    */
-  SimModelTimeDelaySteerAccel(double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim,
-                              double wheelbase, double dt, double acc_delay, double acc_time_constant,
-                              double steer_delay, double steer_time_constant);
+  SimModelTimeDelaySteerAccel(
+    double vx_lim, double steer_lim, double vx_rate_lim, double steer_rate_lim, double wheelbase,
+    double dt, double acc_delay, double acc_time_constant, double steer_delay,
+    double steer_time_constant);
 
   /**
    * @brief default destructor
    */
   ~SimModelTimeDelaySteerAccel() = default;
 
- private:
+private:
   const double MIN_TIME_CONSTANT;  //!< @brief minimum time constant
 
   enum IDX {
@@ -289,13 +296,13 @@ class SimModelTimeDelaySteerAccel : public SimModelInterface {
   const double acc_delay_;                //!< @brief time delay for accel command [s]
   const double acc_time_constant_;        //!< @brief time constant for 1D model of accel dynamics
   const double steer_delay_;              //!< @brief time delay for steering command [s]
-  const double steer_time_constant_;      //!< @brief time constant for 1D model of steering dynamics
+  const double steer_time_constant_;  //!< @brief time constant for 1D model of steering dynamics
 
   /**
    * @brief set queue buffer for input command
    * @param [in] dt delta time
    */
-  void initializeInputQueue(const double& dt);
+  void initializeInputQueue(const double & dt);
 
   /**
    * @brief get vehicle position x
@@ -331,14 +338,14 @@ class SimModelTimeDelaySteerAccel : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with time delay steering model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
 #endif

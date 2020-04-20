@@ -21,10 +21,11 @@
 #include <rviz/uniform_string_stream.h>
 #include <QPainter>
 
-namespace rviz_plugins {
-
-std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::gradation(const QColor& color_min, const QColor& color_max,
-                                                                   const double ratio) {
+namespace rviz_plugins
+{
+std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::gradation(
+  const QColor & color_min, const QColor & color_max, const double ratio)
+{
   std::unique_ptr<Ogre::ColourValue> color_ptr(new Ogre::ColourValue);
   color_ptr->g = color_max.greenF() * ratio + color_min.greenF() * (1.0 - ratio);
   color_ptr->r = color_max.redF() * ratio + color_min.redF() * (1.0 - ratio);
@@ -33,8 +34,9 @@ std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::gradation(const QColor&
   return color_ptr;
 }
 
-std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::setColorDependsOnVelocity(const double vel_max,
-                                                                                   const double cmd_vel) {
+std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::setColorDependsOnVelocity(
+  const double vel_max, const double cmd_vel)
+{
   const double cmd_vel_abs = std::fabs(cmd_vel);
   const double vel_min = 0.0;
 
@@ -55,32 +57,40 @@ std::unique_ptr<Ogre::ColourValue> SteeringAngleDisplay::setColorDependsOnVeloci
 }
 
 SteeringAngleDisplay::SteeringAngleDisplay()
-    : handle_image_(std::string(ros::package::getPath("autoware_vehicle_rviz_plugin") + "/images/handle.png").c_str()) {
-  property_text_color_ = new rviz::ColorProperty("Text Color", QColor(25, 255, 240), "text color", this,
-                                                 SLOT(updateVisualization()), this);
-  property_left_ =
-      new rviz::IntProperty("Left", 128, "Left of the plotter window", this, SLOT(updateVisualization()), this);
+: handle_image_(
+    std::string(ros::package::getPath("autoware_vehicle_rviz_plugin") + "/images/handle.png")
+      .c_str())
+{
+  property_text_color_ = new rviz::ColorProperty(
+    "Text Color", QColor(25, 255, 240), "text color", this, SLOT(updateVisualization()), this);
+  property_left_ = new rviz::IntProperty(
+    "Left", 128, "Left of the plotter window", this, SLOT(updateVisualization()), this);
   property_left_->setMin(0);
-  property_top_ = new rviz::IntProperty("Top", 128, "Top of the plotter window", this, SLOT(updateVisualization()));
+  property_top_ = new rviz::IntProperty(
+    "Top", 128, "Top of the plotter window", this, SLOT(updateVisualization()));
   property_top_->setMin(0);
 
-  property_length_ =
-      new rviz::IntProperty("Length", 256, "Length of the plotter window", this, SLOT(updateVisualization()), this);
+  property_length_ = new rviz::IntProperty(
+    "Length", 256, "Length of the plotter window", this, SLOT(updateVisualization()), this);
   property_length_->setMin(10);
-  property_value_height_offset_ = new rviz::IntProperty("Value height offset", 0, "Height offset of the plotter window",
-                                                        this, SLOT(updateVisualization()));
-  property_handle_angle_scale_ = new rviz::FloatProperty("Scale", 3.0, "Scale is steering andle to handle angle ", this,
-                                                         SLOT(updateVisualization()), this);
+  property_value_height_offset_ = new rviz::IntProperty(
+    "Value height offset", 0, "Height offset of the plotter window", this,
+    SLOT(updateVisualization()));
+  property_handle_angle_scale_ = new rviz::FloatProperty(
+    "Scale", 3.0, "Scale is steering andle to handle angle ", this, SLOT(updateVisualization()),
+    this);
   property_handle_angle_scale_->setMin(0.1);
 }
 
-SteeringAngleDisplay::~SteeringAngleDisplay() {
+SteeringAngleDisplay::~SteeringAngleDisplay()
+{
   if (initialized()) {
     overlay_->hide();
   }
 }
 
-void SteeringAngleDisplay::onInitialize() {
+void SteeringAngleDisplay::onInitialize()
+{
   MFDClass::onInitialize();
   static int count = 0;
   rviz::UniformStringStream ss;
@@ -106,18 +116,21 @@ void SteeringAngleDisplay::onInitialize() {
   // }
 }
 
-void SteeringAngleDisplay::onEnable() {
+void SteeringAngleDisplay::onEnable()
+{
   subscribe();
   overlay_->show();
 }
 
-void SteeringAngleDisplay::onDisable() {
+void SteeringAngleDisplay::onDisable()
+{
   unsubscribe();
   reset();
   overlay_->hide();
 }
 
-void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::SteeringConstPtr& msg_ptr) {
+void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::SteeringConstPtr & msg_ptr)
+{
   if (!isEnabled()) {
     return;
   }
@@ -141,16 +154,19 @@ void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::SteeringC
   int h = overlay_->getTextureHeight();
 
   QMatrix rotation_matrix;
-  rotation_matrix.rotate(std::round(property_handle_angle_scale_->getFloat() * (msg_ptr->data / M_PI) * -180.0));
+  rotation_matrix.rotate(
+    std::round(property_handle_angle_scale_->getFloat() * (msg_ptr->data / M_PI) * -180.0));
   // else
   // rotation_matrix.rotate((property_handle_angle_scale_->getFloat() * (msg_ptr->data / M_PI) * -180.0));
   int handle_image_width = handle_image_.width(), handle_image_height = handle_image_.height();
   QPixmap rotate_handle_image;
   rotate_handle_image = handle_image_.transformed(rotation_matrix);
-  rotate_handle_image = rotate_handle_image.copy((rotate_handle_image.width() - handle_image_width) / 2,
-                                                 (rotate_handle_image.height() - handle_image_height) / 2,
-                                                 handle_image_width, handle_image_height);
-  painter.drawPixmap(0, 0, property_length_->getInt(), property_length_->getInt(), rotate_handle_image);
+  rotate_handle_image = rotate_handle_image.copy(
+    (rotate_handle_image.width() - handle_image_width) / 2,
+    (rotate_handle_image.height() - handle_image_height) / 2, handle_image_width,
+    handle_image_height);
+  painter.drawPixmap(
+    0, 0, property_length_->getInt(), property_length_->getInt(), rotate_handle_image);
 
   QFont font = painter.font();
   font.setPointSize(std::max(int(double(w) / 15.0), 1));
@@ -158,15 +174,17 @@ void SteeringAngleDisplay::processMessage(const autoware_vehicle_msgs::SteeringC
   painter.setFont(font);
   std::ostringstream steering_angle_ss;
   steering_angle_ss << std::fixed << std::setprecision(1) << msg_ptr->data * 180.0 / M_PI << "deg";
-  painter.drawText(0, std::min(property_value_height_offset_->getInt(), h - 1), w,
-                   std::max(h - property_value_height_offset_->getInt(), 1), Qt::AlignCenter | Qt::AlignVCenter,
-                   steering_angle_ss.str().c_str());
+  painter.drawText(
+    0, std::min(property_value_height_offset_->getInt(), h - 1), w,
+    std::max(h - property_value_height_offset_->getInt(), 1), Qt::AlignCenter | Qt::AlignVCenter,
+    steering_angle_ss.str().c_str());
 
   painter.end();
   last_msg_ptr_ = msg_ptr;
 }
 
-void SteeringAngleDisplay::updateVisualization() {
+void SteeringAngleDisplay::updateVisualization()
+{
   overlay_->updateTextureSize(property_length_->getInt(), property_length_->getInt());
   overlay_->setPosition(property_left_->getInt(), property_top_->getInt());
   overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());

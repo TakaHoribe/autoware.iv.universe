@@ -20,30 +20,36 @@
 #include "pointcloud_preprocessor/RingOutlierFilterConfig.h"
 #include "pointcloud_preprocessor/filter.h"
 
-namespace pointcloud_preprocessor {
-class RingOutlierFilterNodelet : public pointcloud_preprocessor::Filter {
- protected:
-  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::RingOutlierFilterConfig> > srv_;
-  virtual void filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices, PointCloud2& output);
+namespace pointcloud_preprocessor
+{
+class RingOutlierFilterNodelet : public pointcloud_preprocessor::Filter
+{
+protected:
+  boost::shared_ptr<dynamic_reconfigure::Server<pointcloud_preprocessor::RingOutlierFilterConfig> >
+    srv_;
+  virtual void filter(
+    const PointCloud2::ConstPtr & input, const IndicesPtr & indices, PointCloud2 & output);
   virtual void subscribe();
   virtual void unsubscribe();
 
-  bool child_init(ros::NodeHandle& nh, bool& has_service);
-  void config_callback(pointcloud_preprocessor::RingOutlierFilterConfig& config, uint32_t level);
+  bool child_init(ros::NodeHandle & nh, bool & has_service);
+  void config_callback(pointcloud_preprocessor::RingOutlierFilterConfig & config, uint32_t level);
 
- private:
+private:
   double distance_ratio_;
   double object_length_threshold_;
   int num_points_threshold_;
 
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }  // namespace pointcloud_preprocessor
 
-namespace pcl {
-struct PointXYZIRADT {
+namespace pcl
+{
+struct PointXYZIRADT
+{
   PCL_ADD_POINT4D;
   float intensity;
   uint16_t ring;
@@ -55,5 +61,6 @@ struct PointXYZIRADT {
 };  // namespace pcl
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
-    pcl::PointXYZIRADT, (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring, ring)(
-                            float, azimuth, azimuth)(float, distance, distance)(double, time_stamp, time_stamp))
+  pcl::PointXYZIRADT,
+  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring, ring)(
+    float, azimuth, azimuth)(float, distance, distance)(double, time_stamp, time_stamp))

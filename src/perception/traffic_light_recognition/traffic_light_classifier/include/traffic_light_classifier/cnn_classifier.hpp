@@ -19,8 +19,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_transport/image_transport.h>
-#include <ros/ros.h>
 #include <ros/package.h>
+#include <ros/ros.h>
 #include <traffic_light_classifier/HSVFilterConfig.h>
 #include <traffic_light_classifier/classifier_interface.hpp>
 
@@ -30,26 +30,30 @@
 
 #include <trt_common.h>
 
-namespace traffic_light {
-class CNNClassifier : public ClassifierInterface {
- public:
+namespace traffic_light
+{
+class CNNClassifier : public ClassifierInterface
+{
+public:
   CNNClassifier();
   ~CNNClassifier(){};
 
-  bool getLampState(const cv::Mat& input_image, std::vector<autoware_perception_msgs::LampState>& states) override;
+  bool getLampState(
+    const cv::Mat & input_image,
+    std::vector<autoware_perception_msgs::LampState> & states) override;
 
- private:
-  void parametersCallback(traffic_light_classifier::HSVFilterConfig& config, uint32_t level);
-  void preProcess(cv::Mat & image, float *tensor, bool normalize=true);
-  bool postProcess(float* output_data_host,
-                   std::vector<autoware_perception_msgs::LampState>& states);
-  bool readLabelfile(std::string filepath, std::vector<std::string>& labels);
-  void calcSoftmax(float *data, std::vector<float>& probs, int num_output);
-  std::vector<size_t> argsort(float *tensor, int num_output);
-  void outputDebugImage(cv::Mat& debug_image,
-                        const std::vector<autoware_perception_msgs::LampState>& states);
+private:
+  void parametersCallback(traffic_light_classifier::HSVFilterConfig & config, uint32_t level);
+  void preProcess(cv::Mat & image, float * tensor, bool normalize = true);
+  bool postProcess(
+    float * output_data_host, std::vector<autoware_perception_msgs::LampState> & states);
+  bool readLabelfile(std::string filepath, std::vector<std::string> & labels);
+  void calcSoftmax(float * data, std::vector<float> & probs, int num_output);
+  std::vector<size_t> argsort(float * tensor, int num_output);
+  void outputDebugImage(
+    cv::Mat & debug_image, const std::vector<autoware_perception_msgs::LampState> & states);
 
- private:
+private:
   std::map<int, std::string> state2label_{
     {autoware_perception_msgs::LampState::RED, "stop"},
     {autoware_perception_msgs::LampState::YELLOW, "warning"},
@@ -69,4 +73,4 @@ class CNNClassifier : public ClassifierInterface {
   int input_w_;
 };
 
-} // namespace traffic_light
+}  // namespace traffic_light

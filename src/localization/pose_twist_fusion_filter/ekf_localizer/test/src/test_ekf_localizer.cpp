@@ -24,9 +24,11 @@
 
 #include "ekf_localizer/ekf_localizer.h"
 
-class EKFLocalizerTestSuite : public ::testing::Test {
- public:
-  EKFLocalizerTestSuite() : nh_(""), pnh_("~") {
+class EKFLocalizerTestSuite : public ::testing::Test
+{
+public:
+  EKFLocalizerTestSuite() : nh_(""), pnh_("~")
+  {
     sub_twist = nh_.subscribe("/ekf_twist", 1, &EKFLocalizerTestSuite::callbackTwist, this);
     sub_pose = nh_.subscribe("/ekf_pose", 1, &EKFLocalizerTestSuite::callbackPose, this);
     tiemr_ = nh_.createTimer(ros::Duration(0.1), &EKFLocalizerTestSuite::timerCallback, this);
@@ -46,7 +48,8 @@ class EKFLocalizerTestSuite : public ::testing::Test {
   std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;
   std::shared_ptr<geometry_msgs::TwistStamped> current_twist_ptr_;
 
-  void timerCallback(const ros::TimerEvent& e) {
+  void timerCallback(const ros::TimerEvent & e)
+  {
     /* !!! this should be defined before sendTransform() !!! */
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped sended;
@@ -69,21 +72,25 @@ class EKFLocalizerTestSuite : public ::testing::Test {
     br.sendTransform(sended);
   };
 
-  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr& pose) {
+  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr & pose)
+  {
     current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(*pose);
   }
 
-  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist) {
+  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & twist)
+  {
     current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*twist);
   }
 
-  void resetCurrentPoseAndTwist() {
+  void resetCurrentPoseAndTwist()
+  {
     current_pose_ptr_ = nullptr;
     current_twist_ptr_ = nullptr;
   }
 };
 
-TEST_F(EKFLocalizerTestSuite, measurementUpdatePose) {
+TEST_F(EKFLocalizerTestSuite, measurementUpdatePose)
+{
   EKFLocalizer ekf_;
 
   ros::Publisher pub_pose = nh_.advertise<geometry_msgs::PoseStamped>("/in_pose", 1);
@@ -114,7 +121,8 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdatePose) {
   double ekf_x = current_pose_ptr_->pose.position.x;
   bool is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
-  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1) << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
+  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1)
+    << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
 
   /* test for invalid value */
   in_pose.pose.position.x = NAN;  // check for invalid values
@@ -130,7 +138,8 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdatePose) {
   resetCurrentPoseAndTwist();
 }
 
-TEST_F(EKFLocalizerTestSuite, measurementUpdateTwist) {
+TEST_F(EKFLocalizerTestSuite, measurementUpdateTwist)
+{
   EKFLocalizer ekf_;
 
   ros::Publisher pub_twist = nh_.advertise<geometry_msgs::TwistStamped>("/in_twist", 1);
@@ -153,7 +162,8 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdateTwist) {
   double ekf_vx = current_twist_ptr_->twist.linear.x;
   bool is_succeeded = !(std::isnan(ekf_vx) || std::isinf(ekf_vx));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
-  ASSERT_TRUE(std::fabs(ekf_vx - vx) < 0.1) << "ekf vel x: " << ekf_vx << ", should be close to " << vx;
+  ASSERT_TRUE(std::fabs(ekf_vx - vx) < 0.1)
+    << "ekf vel x: " << ekf_vx << ", should be close to " << vx;
 
   /* test for invalid value */
   in_twist.twist.linear.x = NAN;  // check for invalid values
@@ -171,12 +181,14 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdateTwist) {
   resetCurrentPoseAndTwist();
 }
 
-TEST_F(EKFLocalizerTestSuite, measurementUpdatePoseWithCovariance) {
+TEST_F(EKFLocalizerTestSuite, measurementUpdatePoseWithCovariance)
+{
   pnh_.setParam("use_pose_with_covariance", true);
   ros::Duration(0.2).sleep();
   EKFLocalizer ekf_;
 
-  ros::Publisher pub_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/in_pose_with_covariance", 1);
+  ros::Publisher pub_pose =
+    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/in_pose_with_covariance", 1);
   geometry_msgs::PoseWithCovarianceStamped in_pose;
   in_pose.header.frame_id = "world";
   in_pose.pose.pose.position.x = 1.0;
@@ -207,7 +219,8 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdatePoseWithCovariance) {
   double ekf_x = current_pose_ptr_->pose.position.x;
   bool is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
-  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1) << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
+  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1)
+    << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
 
   /* test for invalid value */
   in_pose.pose.pose.position.x = NAN;  // check for invalid values
@@ -223,10 +236,12 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdatePoseWithCovariance) {
   resetCurrentPoseAndTwist();
 }
 
-TEST_F(EKFLocalizerTestSuite, measurementUpdateTwistWithCovariance) {
+TEST_F(EKFLocalizerTestSuite, measurementUpdateTwistWithCovariance)
+{
   EKFLocalizer ekf_;
 
-  ros::Publisher pub_twist = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("/in_twist_with_covariance", 1);
+  ros::Publisher pub_twist =
+    nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("/in_twist_with_covariance", 1);
   geometry_msgs::TwistWithCovarianceStamped in_twist;
   in_twist.header.frame_id = "base_link";
 
@@ -265,7 +280,8 @@ TEST_F(EKFLocalizerTestSuite, measurementUpdateTwistWithCovariance) {
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "EKFLocalizerTestSuite");
 

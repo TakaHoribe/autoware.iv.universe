@@ -32,8 +32,9 @@
 #include <random>
 #include <tuple>
 
-class DummyPerceptionPublisherNode {
- private:
+class DummyPerceptionPublisherNode
+{
+private:
   ros::NodeHandle nh_, pnh_;
   ros::Publisher pointcloud_pub_;
   ros::Publisher dynamic_object_pub_;
@@ -46,14 +47,15 @@ class DummyPerceptionPublisherNode {
   double detection_successful_rate_;
   bool enable_ray_tracing_;
   std::mt19937 random_generator_;
-  void timerCallback(const ros::TimerEvent&);
-  void createObjectPointcloud(const double length, const double width, const double height, const double std_dev_x,
-                              const double std_dev_y, const double std_dev_z,
-                              const tf2::Transform& tf_base_link2moved_object,
-                              pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud_ptr);
-  void objectCallback(const dummy_perception_publisher::Object::ConstPtr& msg);
+  void timerCallback(const ros::TimerEvent &);
+  void createObjectPointcloud(
+    const double length, const double width, const double height, const double std_dev_x,
+    const double std_dev_y, const double std_dev_z,
+    const tf2::Transform & tf_base_link2moved_object,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr & pointcloud_ptr);
+  void objectCallback(const dummy_perception_publisher::Object::ConstPtr & msg);
 
- public:
+public:
   DummyPerceptionPublisherNode();
   ~DummyPerceptionPublisherNode(){};
 };

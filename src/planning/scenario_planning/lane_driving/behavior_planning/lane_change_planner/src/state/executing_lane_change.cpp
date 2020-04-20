@@ -20,15 +20,19 @@
 #include <lane_change_planner/state/executing_lane_change.h>
 #include <lane_change_planner/utilities.h>
 
-namespace lane_change_planner {
-ExecutingLaneChangeState::ExecutingLaneChangeState(const Status& status,
-                                                   const std::shared_ptr<DataManager>& data_manager_ptr,
-                                                   const std::shared_ptr<RouteHandler>& route_handler_ptr)
-    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+namespace lane_change_planner
+{
+ExecutingLaneChangeState::ExecutingLaneChangeState(
+  const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+  const std::shared_ptr<RouteHandler> & route_handler_ptr)
+: StateBase(status, data_manager_ptr, route_handler_ptr)
+{
+}
 
 State ExecutingLaneChangeState::getCurrentState() const { return State::EXECUTING_LANE_CHANGE; }
 
-void ExecutingLaneChangeState::entry() {
+void ExecutingLaneChangeState::entry()
+{
   ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
 
   original_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
@@ -37,9 +41,13 @@ void ExecutingLaneChangeState::entry() {
   status_.lane_change_ready = false;
 }
 
-autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const { return status_.lane_change_path; }
+autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const
+{
+  return status_.lane_change_path;
+}
 
-void ExecutingLaneChangeState::update() {
+void ExecutingLaneChangeState::update()
+{
   current_twist_ = data_manager_ptr_->getCurrentSelfVelocity();
   current_pose_ = data_manager_ptr_->getCurrentSelfPose();
   dynamic_objects_ = data_manager_ptr_->getDynamicObjects();
@@ -54,11 +62,12 @@ void ExecutingLaneChangeState::update() {
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
     status_.lane_change_path.drivable_area =
-        util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
+      util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
   }
 }
 
-State ExecutingLaneChangeState::getNextState() const {
+State ExecutingLaneChangeState::getNextState() const
+{
   if (isStillOnOriginalLane() && !isTargetLaneStillClear()) {
     return State::FOLLOWING_LANE;
   }
@@ -69,9 +78,11 @@ State ExecutingLaneChangeState::getNextState() const {
   return State::EXECUTING_LANE_CHANGE;
 }
 
-bool ExecutingLaneChangeState::isStillOnOriginalLane() const {
-  lanelet::BasicPoint2d vehicle_pose2d(current_pose_.pose.position.x, current_pose_.pose.position.y);
-  for (const auto& llt : original_lanes_) {
+bool ExecutingLaneChangeState::isStillOnOriginalLane() const
+{
+  lanelet::BasicPoint2d vehicle_pose2d(
+    current_pose_.pose.position.x, current_pose_.pose.position.y);
+  for (const auto & llt : original_lanes_) {
     double distance = lanelet::geometry::distance2d(llt.polygon2d().basicPolygon(), vehicle_pose2d);
     if (distance < std::numeric_limits<double>::epsilon()) {
       return true;
@@ -80,17 +91,19 @@ bool ExecutingLaneChangeState::isStillOnOriginalLane() const {
   return false;
 }
 
-bool ExecutingLaneChangeState::isTargetLaneStillClear() const {
+bool ExecutingLaneChangeState::isTargetLaneStillClear() const
+{
   if (!ros_parameters_.enable_abort_lane_change) {
     return true;
   }
   // do not check current lanes
-  return state_machine::common_functions::isLaneChangePathSafe(status_.lane_change_path, original_lanes_, target_lanes_,
-                                                               dynamic_objects_, current_pose_.pose,
-                                                               current_twist_->twist, ros_parameters_, false);
+  return state_machine::common_functions::isLaneChangePathSafe(
+    status_.lane_change_path, original_lanes_, target_lanes_, dynamic_objects_, current_pose_.pose,
+    current_twist_->twist, ros_parameters_, false);
 }
 
-bool ExecutingLaneChangeState::hasFinishedLaneChange() const {
+bool ExecutingLaneChangeState::hasFinishedLaneChange() const
+{
   static ros::Time start_time = ros::Time::now();
 
   if (route_handler_ptr_->isInTargetLane(current_pose_, target_lanes_)) {

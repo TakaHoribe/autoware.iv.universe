@@ -18,7 +18,8 @@
 
 #include "ndt_scan_matcher/ndt_scan_matcher_core.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "ndt_scan_matcher");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");

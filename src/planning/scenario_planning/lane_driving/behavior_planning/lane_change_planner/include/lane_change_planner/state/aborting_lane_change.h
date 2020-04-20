@@ -19,15 +19,18 @@
 
 #include <lane_change_planner/state/state_base_class.h>
 
-namespace lane_change_planner {
-class AbortingLaneChangeState : public StateBase {
- private:
+namespace lane_change_planner
+{
+class AbortingLaneChangeState : public StateBase
+{
+private:
   // State transition conditions
   bool hasReturnedToOriginalLane() const;
 
- public:
-  AbortingLaneChangeState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr);
+public:
+  AbortingLaneChangeState(
+    const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
 
   // override virtual functions
   void entry() override;

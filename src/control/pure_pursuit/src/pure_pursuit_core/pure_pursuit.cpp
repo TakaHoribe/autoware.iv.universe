@@ -32,18 +32,21 @@
 #include "pure_pursuit/pure_pursuit.h"
 #include "pure_pursuit/util/planning_utils.h"
 
-namespace planning_utils {
-
-bool PurePursuit::isDataReady() {
+namespace planning_utils
+{
+bool PurePursuit::isDataReady()
+{
   if (!curr_wps_ptr_) return false;
   if (!curr_pose_ptr_) return false;
   return true;
 }
 
-std::pair<bool, double> PurePursuit::run() {
+std::pair<bool, double> PurePursuit::run()
+{
   if (!isDataReady()) return std::make_pair(false, std::numeric_limits<double>::quiet_NaN());
 
-  auto clst_pair = findClosestIdxWithDistAngThr(*curr_wps_ptr_, *curr_pose_ptr_, clst_thr_dist_, clst_thr_ang_);
+  auto clst_pair =
+    findClosestIdxWithDistAngThr(*curr_wps_ptr_, *curr_pose_ptr_, clst_thr_dist_, clst_thr_ang_);
 
   if (!clst_pair.first) {
     ROS_WARN("cannot find, curr_bool: %d, clst_idx: %d", clst_pair.first, clst_pair.second);
@@ -81,13 +84,15 @@ std::pair<bool, double> PurePursuit::run() {
 }
 
 // linear interpolation of next target
-std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_wp_idx) {
+std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_wp_idx)
+{
   constexpr double ERROR2 = 1e-5;  // 0.00001
-  const geometry_msgs::Point& vec_end = curr_wps_ptr_->at(next_wp_idx).position;
-  const geometry_msgs::Point& vec_start = curr_wps_ptr_->at(next_wp_idx - 1).position;
-  const geometry_msgs::Pose& curr_pose = *curr_pose_ptr_;
+  const geometry_msgs::Point & vec_end = curr_wps_ptr_->at(next_wp_idx).position;
+  const geometry_msgs::Point & vec_start = curr_wps_ptr_->at(next_wp_idx - 1).position;
+  const geometry_msgs::Pose & curr_pose = *curr_pose_ptr_;
 
-  Eigen::Vector3d vec_a((vec_end.x - vec_start.x), (vec_end.y - vec_start.y), (vec_end.z - vec_start.z));
+  Eigen::Vector3d vec_a(
+    (vec_end.x - vec_start.x), (vec_end.y - vec_start.y), (vec_end.z - vec_start.z));
 
   if (vec_a.norm() < ERROR2) {
     ROS_ERROR("waypoint interval is almost 0");
@@ -105,7 +110,8 @@ std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_w
   /* calculate the position of the foot of a perpendicular line */
   Eigen::Vector2d uva2d(vec_a.x(), vec_a.y());
   uva2d.normalize();
-  Eigen::Rotation2Dd rot = (lateral_error > 0) ? Eigen::Rotation2Dd(-M_PI / 2.0) : Eigen::Rotation2Dd(M_PI / 2.0);
+  Eigen::Rotation2Dd rot =
+    (lateral_error > 0) ? Eigen::Rotation2Dd(-M_PI / 2.0) : Eigen::Rotation2Dd(M_PI / 2.0);
   Eigen::Vector2d uva2d_rot = rot * uva2d;
 
   geometry_msgs::Point h;
@@ -128,7 +134,8 @@ std::pair<bool, geometry_msgs::Point> PurePursuit::lerpNextTarget(int32_t next_w
   }
 }
 
-int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
+int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx)
+{
   // if waypoints are not given, do nothing.
   if (curr_wps_ptr_->empty() || search_start_idx == -1) return -1;
 
@@ -143,7 +150,8 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
     const auto gld = planning_utils::getLaneDirection(*curr_wps_ptr_, 0.05);
     if (gld == 0) {
       // if waypoint is not in front of ego, skip
-      auto ret = planning_utils::transformToRelativeCoordinate2D(curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
+      auto ret = planning_utils::transformToRelativeCoordinate2D(
+        curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
       if (ret.x < 0) {
         continue;
       }
@@ -151,7 +159,8 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
       // waypoint direction is backward
 
       // if waypoint is in front of ego, skip
-      auto ret = planning_utils::transformToRelativeCoordinate2D(curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
+      auto ret = planning_utils::transformToRelativeCoordinate2D(
+        curr_wps_ptr_->at(i).position, *curr_pose_ptr_);
       if (ret.x > 0) {
         continue;
       }
@@ -159,8 +168,8 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
       return -1;
     }
 
-    const geometry_msgs::Point& curr_motion_point = curr_wps_ptr_->at(i).position;
-    const geometry_msgs::Point& curr_pose_point = curr_pose_ptr_->position;
+    const geometry_msgs::Point & curr_motion_point = curr_wps_ptr_->at(i).position;
+    const geometry_msgs::Point & curr_pose_point = curr_pose_ptr_->position;
     // if there exists an effective waypoint
     const double ds = calcDistSquared2D(curr_motion_point, curr_pose_point);
     if (ds > std::pow(lookahead_distance_, 2)) return i;
@@ -170,12 +179,14 @@ int32_t PurePursuit::findNextPointIdx(int32_t search_start_idx) {
   return -1;
 }
 
-void PurePursuit::setCurrentPose(const geometry_msgs::Pose& msg) {
+void PurePursuit::setCurrentPose(const geometry_msgs::Pose & msg)
+{
   curr_pose_ptr_ = std::make_shared<geometry_msgs::Pose>();
   *curr_pose_ptr_ = msg;
 }
 
-void PurePursuit::setWaypoints(const std::vector<geometry_msgs::Pose>& msg) {
+void PurePursuit::setWaypoints(const std::vector<geometry_msgs::Pose> & msg)
+{
   curr_wps_ptr_ = std::make_shared<std::vector<geometry_msgs::Pose>>();
   *curr_wps_ptr_ = msg;
 }

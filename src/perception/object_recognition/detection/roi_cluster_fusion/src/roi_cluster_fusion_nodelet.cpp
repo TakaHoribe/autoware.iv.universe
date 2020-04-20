@@ -39,11 +39,12 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-namespace roi_cluster_fusion {
-
+namespace roi_cluster_fusion
+{
 RoiClusterFusionNodelet::RoiClusterFusionNodelet() {}
 
-void RoiClusterFusionNodelet::onInit() {
+void RoiClusterFusionNodelet::onInit()
+{
   nh_ = getNodeHandle();
   private_nh_ = getPrivateNodeHandle();
 
@@ -64,85 +65,91 @@ void RoiClusterFusionNodelet::onInit() {
   tf_listener_ptr_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
   cluster_sub_.subscribe(nh_, "clusters", 1);
   for (int id = 0; id < rois_number_; ++id) {
-    v_camera_info_sub_.push_back(std::make_shared<ros::Subscriber>(nh_.subscribe<sensor_msgs::CameraInfo>(
+    v_camera_info_sub_.push_back(
+      std::make_shared<ros::Subscriber>(nh_.subscribe<sensor_msgs::CameraInfo>(
         "camera_info" + std::to_string(id), 1,
         boost::bind(&RoiClusterFusionNodelet::cameraInfoCallback, this, _1, id))));
   }
   v_roi_sub_.resize(rois_number_);
   for (int id = 0; id < (int)v_roi_sub_.size(); ++id) {
-    v_roi_sub_.at(id) =
-        std::make_shared<message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray>>();
+    v_roi_sub_.at(id) = std::make_shared<
+      message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray>>();
     v_roi_sub_.at(id)->subscribe(nh_, "rois" + std::to_string(id), 1);
   }
   // add dummy callback to enable passthrough filter
   v_roi_sub_.at(0)->registerCallback(bind(&RoiClusterFusionNodelet::dummyCallback, this, _1));
   switch (rois_number_) {
     case 1:
-      sync_ptr_ = std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), passthrough_, passthrough_,
-                                         passthrough_, passthrough_, passthrough_, passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), passthrough_, passthrough_, passthrough_,
+        passthrough_, passthrough_, passthrough_, passthrough_);
       break;
     case 2:
-      sync_ptr_ =
-          std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), passthrough_,
-                                 passthrough_, passthrough_, passthrough_, passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), passthrough_,
+        passthrough_, passthrough_, passthrough_, passthrough_, passthrough_);
       break;
     case 3:
-      sync_ptr_ =
-          std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
-                                 passthrough_, passthrough_, passthrough_, passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        passthrough_, passthrough_, passthrough_, passthrough_, passthrough_);
       break;
     case 4:
-      sync_ptr_ =
-          std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
-                                 *v_roi_sub_.at(3), passthrough_, passthrough_, passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        *v_roi_sub_.at(3), passthrough_, passthrough_, passthrough_, passthrough_);
       break;
     case 5:
-      sync_ptr_ =
-          std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
-                                 *v_roi_sub_.at(3), *v_roi_sub_.at(4), passthrough_, passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        *v_roi_sub_.at(3), *v_roi_sub_.at(4), passthrough_, passthrough_, passthrough_);
       break;
     case 6:
-      sync_ptr_ =
-          std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
-                                 *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5), passthrough_, passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5), passthrough_, passthrough_);
       break;
     case 7:
-      sync_ptr_ = std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1),
-                                         *v_roi_sub_.at(2), *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5),
-                                         *v_roi_sub_.at(6), passthrough_);
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5), *v_roi_sub_.at(6), passthrough_);
       break;
     case 8:
-      sync_ptr_ = std::make_shared<Sync>(SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1),
-                                         *v_roi_sub_.at(2), *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5),
-                                         *v_roi_sub_.at(6), *v_roi_sub_.at(7));
+      sync_ptr_ = std::make_shared<Sync>(
+        SyncPolicy(10), cluster_sub_, *v_roi_sub_.at(0), *v_roi_sub_.at(1), *v_roi_sub_.at(2),
+        *v_roi_sub_.at(3), *v_roi_sub_.at(4), *v_roi_sub_.at(5), *v_roi_sub_.at(6),
+        *v_roi_sub_.at(7));
       break;
     default:
       return;
   }
   // sync_ptr_->registerCallback(boost::bind(&RoiClusterFusionNodelet::fusionCallback, this, _1, _2, _3, _4, _5, _6, _7,
   // _8, _9));
-  sync_ptr_->registerCallback(std::bind(&RoiClusterFusionNodelet::fusionCallback, this, std::placeholders::_1,
-                                        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-                                        std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
-                                        std::placeholders::_8, std::placeholders::_9));
-  labeled_cluster_pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 10);
+  sync_ptr_->registerCallback(std::bind(
+    &RoiClusterFusionNodelet::fusionCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6,
+    std::placeholders::_7, std::placeholders::_8, std::placeholders::_9));
+  labeled_cluster_pub_ =
+    nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("labeled_clusters", 10);
 }
 
-void RoiClusterFusionNodelet::cameraInfoCallback(const sensor_msgs::CameraInfoConstPtr& input_camera_info_msg,
-                                                 const int id) {
+void RoiClusterFusionNodelet::cameraInfoCallback(
+  const sensor_msgs::CameraInfoConstPtr & input_camera_info_msg, const int id)
+{
   m_camera_info_[id] = *input_camera_info_msg;
 }
 
 void RoiClusterFusionNodelet::fusionCallback(
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_cluster_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi0_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi1_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi2_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi3_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi4_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi5_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi6_msg,
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_roi7_msg) {
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_cluster_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi0_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi1_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi2_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi3_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi4_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi5_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi6_msg,
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_roi7_msg)
+{
   // Guard
   if (labeled_cluster_pub_.getNumSubscribers() < 1) return;
 
@@ -159,16 +166,18 @@ void RoiClusterFusionNodelet::fusionCallback(
 
     // intrinsic
     Eigen::Matrix3d intrinsic;
-    intrinsic << m_camera_info_.at(id).K.at(0), m_camera_info_.at(id).K.at(1), m_camera_info_.at(id).K.at(2),
-        m_camera_info_.at(id).K.at(3), m_camera_info_.at(id).K.at(4), m_camera_info_.at(id).K.at(5),
-        m_camera_info_.at(id).K.at(6), m_camera_info_.at(id).K.at(7), m_camera_info_.at(id).K.at(8);
+    intrinsic << m_camera_info_.at(id).K.at(0), m_camera_info_.at(id).K.at(1),
+      m_camera_info_.at(id).K.at(2), m_camera_info_.at(id).K.at(3), m_camera_info_.at(id).K.at(4),
+      m_camera_info_.at(id).K.at(5), m_camera_info_.at(id).K.at(6), m_camera_info_.at(id).K.at(7),
+      m_camera_info_.at(id).K.at(8);
 
     // get transform from cluster frame id to camera optical frame id
     geometry_msgs::TransformStamped transform_stamped;
     try {
-      transform_stamped = tf_buffer_.lookupTransform(/*target*/ m_camera_info_.at(id).header.frame_id,
-                                                     /*src*/ input_cluster_msg->header.frame_id, ros::Time(0));
-    } catch (tf2::TransformException& ex) {
+      transform_stamped = tf_buffer_.lookupTransform(
+        /*target*/ m_camera_info_.at(id).header.frame_id,
+        /*src*/ input_cluster_msg->header.frame_id, ros::Time(0));
+    } catch (tf2::TransformException & ex) {
       ROS_WARN("%s", ex.what());
       return;
     }
@@ -179,8 +188,9 @@ void RoiClusterFusionNodelet::fusionCallback(
       if (input_cluster_msg->feature_objects.at(i).feature.cluster.data.empty()) continue;
 
       sensor_msgs::PointCloud2 transformed_cluster;
-      tf2::doTransform(input_cluster_msg->feature_objects.at(i).feature.cluster, transformed_cluster,
-                       transform_stamped);
+      tf2::doTransform(
+        input_cluster_msg->feature_objects.at(i).feature.cluster, transformed_cluster,
+        transform_stamped);
 
       // for reduce calc cost
       // Eigen::Vector3d centroid_point;
@@ -198,18 +208,20 @@ void RoiClusterFusionNodelet::fusionCallback(
 
       std::vector<Eigen::Vector2d> projected_points;
       projected_points.reserve(transformed_cluster.data.size());
-      int min_x(m_camera_info_.at(id).width), min_y(m_camera_info_.at(id).height), max_x(0), max_y(0);
+      int min_x(m_camera_info_.at(id).width), min_y(m_camera_info_.at(id).height), max_x(0),
+        max_y(0);
       for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(transformed_cluster, "x"),
            iter_y(transformed_cluster, "y"), iter_z(transformed_cluster, "z");
            iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
         if (*iter_z <= 0.0) continue;
         Eigen::Vector3d projected_point = intrinsic * Eigen::Vector3d(*iter_x, *iter_y, *iter_z);
-        Eigen::Vector2d normalized_projected_point =
-            Eigen::Vector2d(projected_point.x() / projected_point.z(), projected_point.y() / projected_point.z());
-        if (0 <= (int)normalized_projected_point.x() &&
-            (int)normalized_projected_point.x() <= (int)m_camera_info_.at(id).width - 1 &&
-            0 <= (int)normalized_projected_point.y() &&
-            (int)normalized_projected_point.y() <= (int)m_camera_info_.at(id).height - 1) {
+        Eigen::Vector2d normalized_projected_point = Eigen::Vector2d(
+          projected_point.x() / projected_point.z(), projected_point.y() / projected_point.z());
+        if (
+          0 <= (int)normalized_projected_point.x() &&
+          (int)normalized_projected_point.x() <= (int)m_camera_info_.at(id).width - 1 &&
+          0 <= (int)normalized_projected_point.y() &&
+          (int)normalized_projected_point.y() <= (int)m_camera_info_.at(id).height - 1) {
           min_x = std::min((int)normalized_projected_point.x(), min_x);
           min_y = std::min((int)normalized_projected_point.y(), min_y);
           max_x = std::max((int)normalized_projected_point.x(), max_x);
@@ -252,17 +264,26 @@ void RoiClusterFusionNodelet::fusionCallback(
       for (auto m_cluster_roi_itr = m_cluster_roi.begin(); m_cluster_roi_itr != m_cluster_roi.end();
            ++m_cluster_roi_itr) {
         double iou(0.0), iou_x(0.0), iou_y(0.0);
-        if (use_iou_) iou = calcIoU(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
-        if (use_iou_x_) iou_x = calcIoUX(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
-        if (use_iou_y_) iou_y = calcIoUY(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
+        if (use_iou_)
+          iou =
+            calcIoU(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
+        if (use_iou_x_)
+          iou_x =
+            calcIoUX(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
+        if (use_iou_y_)
+          iou_y =
+            calcIoUY(m_cluster_roi_itr->second, input_roi_msg->feature_objects.at(i).feature.roi);
         if (max_iou < iou + iou_x + iou_y) {
           index = m_cluster_roi_itr->first;
           max_iou = iou + iou_x + iou_y;
         }
       }
-      if (iou_threshold_ < max_iou && output_msg.feature_objects.at(index).object.semantic.confidence <=
-                                          input_roi_msg->feature_objects.at(i).object.semantic.confidence)
-        output_msg.feature_objects.at(index).object.semantic = input_roi_msg->feature_objects.at(i).object.semantic;
+      if (
+        iou_threshold_ < max_iou &&
+        output_msg.feature_objects.at(index).object.semantic.confidence <=
+          input_roi_msg->feature_objects.at(i).object.semantic.confidence)
+        output_msg.feature_objects.at(index).object.semantic =
+          input_roi_msg->feature_objects.at(i).object.semantic;
     }
 
 #if 0
@@ -548,8 +569,9 @@ void RoiClusterFusionNodelet::fusionCallback(
 #endif
 }
 
-double RoiClusterFusionNodelet::calcIoU(const sensor_msgs::RegionOfInterest& roi_1,
-                                        const sensor_msgs::RegionOfInterest& roi_2) {
+double RoiClusterFusionNodelet::calcIoU(
+  const sensor_msgs::RegionOfInterest & roi_1, const sensor_msgs::RegionOfInterest & roi_2)
+{
   double s_1, s_2;
   s_1 = (double)roi_1.width * (double)roi_1.height;
   s_2 = (double)roi_2.width * (double)roi_2.height;
@@ -558,16 +580,19 @@ double RoiClusterFusionNodelet::calcIoU(const sensor_msgs::RegionOfInterest& roi
   double overlap_max_x, overlap_max_y, overlap_min_x, overlap_min_y;
   overlap_min_x = roi_1.x_offset < roi_2.x_offset ? roi_2.x_offset : roi_1.x_offset;
   overlap_min_y = roi_1.y_offset < roi_2.y_offset ? roi_2.y_offset : roi_1.y_offset;
-  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width ? roi_1.x_offset + roi_1.width
-                                                                              : roi_2.x_offset + roi_2.width;
-  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height ? roi_1.y_offset + roi_1.height
-                                                                                : roi_2.y_offset + roi_2.height;
+  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width
+                    ? roi_1.x_offset + roi_1.width
+                    : roi_2.x_offset + roi_2.width;
+  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height
+                    ? roi_1.y_offset + roi_1.height
+                    : roi_2.y_offset + roi_2.height;
   overlap_s = (overlap_max_x - overlap_min_x) * (overlap_max_y - overlap_min_y);
   if (overlap_max_x < overlap_min_x || overlap_max_y < overlap_min_y) return 0.0;
   return overlap_s / (s_1 + s_2 - overlap_s);
 }
-double RoiClusterFusionNodelet::calcIoUX(const sensor_msgs::RegionOfInterest& roi_1,
-                                         const sensor_msgs::RegionOfInterest& roi_2) {
+double RoiClusterFusionNodelet::calcIoUX(
+  const sensor_msgs::RegionOfInterest & roi_1, const sensor_msgs::RegionOfInterest & roi_2)
+{
   double s_1, s_2;
   s_1 = (double)roi_1.width;
   s_2 = (double)roi_2.width;
@@ -575,16 +600,19 @@ double RoiClusterFusionNodelet::calcIoUX(const sensor_msgs::RegionOfInterest& ro
   double overlap_max_x, overlap_max_y, overlap_min_x, overlap_min_y;
   overlap_min_x = roi_1.x_offset < roi_2.x_offset ? roi_2.x_offset : roi_1.x_offset;
   overlap_min_y = roi_1.y_offset < roi_2.y_offset ? roi_2.y_offset : roi_1.y_offset;
-  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width ? roi_1.x_offset + roi_1.width
-                                                                              : roi_2.x_offset + roi_2.width;
-  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height ? roi_1.y_offset + roi_1.height
-                                                                                : roi_2.y_offset + roi_2.height;
+  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width
+                    ? roi_1.x_offset + roi_1.width
+                    : roi_2.x_offset + roi_2.width;
+  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height
+                    ? roi_1.y_offset + roi_1.height
+                    : roi_2.y_offset + roi_2.height;
   overlap_s = (overlap_max_x - overlap_min_x);
   if (overlap_max_x < overlap_min_x || overlap_max_y < overlap_min_y) return 0.0;
   return overlap_s / (s_1 + s_2 - overlap_s);
 }
-double RoiClusterFusionNodelet::calcIoUY(const sensor_msgs::RegionOfInterest& roi_1,
-                                         const sensor_msgs::RegionOfInterest& roi_2) {
+double RoiClusterFusionNodelet::calcIoUY(
+  const sensor_msgs::RegionOfInterest & roi_1, const sensor_msgs::RegionOfInterest & roi_2)
+{
   double s_1, s_2;
   s_1 = (double)roi_1.height;
   s_2 = (double)roi_2.height;
@@ -592,10 +620,12 @@ double RoiClusterFusionNodelet::calcIoUY(const sensor_msgs::RegionOfInterest& ro
   double overlap_max_x, overlap_max_y, overlap_min_x, overlap_min_y;
   overlap_min_x = roi_1.x_offset < roi_2.x_offset ? roi_2.x_offset : roi_1.x_offset;
   overlap_min_y = roi_1.y_offset < roi_2.y_offset ? roi_2.y_offset : roi_1.y_offset;
-  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width ? roi_1.x_offset + roi_1.width
-                                                                              : roi_2.x_offset + roi_2.width;
-  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height ? roi_1.y_offset + roi_1.height
-                                                                                : roi_2.y_offset + roi_2.height;
+  overlap_max_x = roi_1.x_offset + roi_1.width < roi_2.x_offset + roi_2.width
+                    ? roi_1.x_offset + roi_1.width
+                    : roi_2.x_offset + roi_2.width;
+  overlap_max_y = roi_1.y_offset + roi_1.height < roi_2.y_offset + roi_2.height
+                    ? roi_1.y_offset + roi_1.height
+                    : roi_2.y_offset + roi_2.height;
   overlap_s = (overlap_max_y - overlap_min_y);
   if (overlap_max_x < overlap_min_x || overlap_max_y < overlap_min_y) return 0.0;
   return overlap_s / (s_1 + s_2 - overlap_s);

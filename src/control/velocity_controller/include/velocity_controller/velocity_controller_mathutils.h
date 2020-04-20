@@ -24,15 +24,16 @@
 #include <tf2/utils.h>
 #include "autoware_planning_msgs/Trajectory.h"
 
-namespace vcutils {
-
-double calcDistance2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2);
-double calcDistSquared2D(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2);
+namespace vcutils
+{
+double calcDistance2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
+double calcDistSquared2D(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2);
 double normalizeEulerAngle(double euler);
-bool calcClosestWithThr(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose,
-                        const double angle_thr, const double dist_thr, int32_t& closest_idx);
-geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin);
+bool calcClosestWithThr(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
+  const double angle_thr, const double dist_thr, int32_t & closest_idx);
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin);
 }  // namespace vcutils
 
 #endif

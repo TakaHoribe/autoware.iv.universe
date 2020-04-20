@@ -17,16 +17,19 @@
 #include "mpc_follower/vehicle_model/vehicle_model_bicycle_kinematics.h"
 #include <iostream>
 
-KinematicsBicycleModel::KinematicsBicycleModel(const double& wheelbase, const double& steer_lim,
-                                               const double& steer_tau)
-    : VehicleModelInterface(/* dim_x */ 3, /* dim_u */ 1, /* dim_y */ 2) {
+KinematicsBicycleModel::KinematicsBicycleModel(
+  const double & wheelbase, const double & steer_lim, const double & steer_tau)
+: VehicleModelInterface(/* dim_x */ 3, /* dim_u */ 1, /* dim_y */ 2)
+{
   wheelbase_ = wheelbase;
   steer_lim_ = steer_lim;
   steer_tau_ = steer_tau;
 }
 
-void KinematicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Cd,
-                                                     Eigen::MatrixXd& Wd, const double& dt) {
+void KinematicsBicycleModel::calculateDiscreteMatrix(
+  Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+  const double & dt)
+{
   auto sign = [](double x) { return (x > 0.0) - (x < 0.0); };
 
   /* Linearize delta around delta_r (referece delta) */
@@ -36,7 +39,8 @@ void KinematicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen:
   double velocity = velocity_;
   if (abs(velocity_) < 1e-04) velocity = 1e-04 * (velocity_ >= 0 ? 1 : -1);
 
-  Ad << 0.0, velocity, 0.0, 0.0, 0.0, velocity / wheelbase_ * cos_delta_r_squared_inv, 0.0, 0.0, -1.0 / steer_tau_;
+  Ad << 0.0, velocity, 0.0, 0.0, 0.0, velocity / wheelbase_ * cos_delta_r_squared_inv, 0.0, 0.0,
+    -1.0 / steer_tau_;
   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(dim_x_, dim_x_);
   Ad = (I - dt * 0.5 * Ad).inverse() * (I + dt * 0.5 * Ad);  // bilinear discretization
 
@@ -45,10 +49,14 @@ void KinematicsBicycleModel::calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen:
 
   Cd << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0;
 
-  Wd << 0.0, -velocity * curvature_ + velocity / wheelbase_ * (tan(delta_r) - delta_r * cos_delta_r_squared_inv), 0.0;
+  Wd << 0.0,
+    -velocity * curvature_ +
+      velocity / wheelbase_ * (tan(delta_r) - delta_r * cos_delta_r_squared_inv),
+    0.0;
   Wd *= dt;
 }
 
-void KinematicsBicycleModel::calculateReferenceInput(Eigen::MatrixXd& Uref) {
+void KinematicsBicycleModel::calculateReferenceInput(Eigen::MatrixXd & Uref)
+{
   Uref(0, 0) = std::atan(wheelbase_ * curvature_);
 }

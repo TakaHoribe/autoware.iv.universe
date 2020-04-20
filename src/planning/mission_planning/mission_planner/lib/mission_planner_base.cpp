@@ -24,19 +24,24 @@
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/visualization/visualization.h>
 
-namespace mission_planner {
-MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_) {
+namespace mission_planner
+{
+MissionPlanner::MissionPlanner() : pnh_("~"), tf_listener_(tf_buffer_)
+{
   pnh_.param<std::string>("map_frame", map_frame_, "map");
   pnh_.param<std::string>("base_link_frame", base_link_frame_, "base_link");
 
   goal_subscriber_ = pnh_.subscribe("input/goal_pose", 10, &MissionPlanner::goalPoseCallback, this);
-  checkpoint_subscriber_ = pnh_.subscribe("input/checkpoint", 10, &MissionPlanner::checkpointCallback, this);
+  checkpoint_subscriber_ =
+    pnh_.subscribe("input/checkpoint", 10, &MissionPlanner::checkpointCallback, this);
 
   route_publisher_ = pnh_.advertise<autoware_planning_msgs::Route>("output/route", 1, true);
-  marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/route_marker", 1, true);
+  marker_publisher_ =
+    pnh_.advertise<visualization_msgs::MarkerArray>("debug/route_marker", 1, true);
 }
 
-bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose) {
+bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped * ego_vehicle_pose)
+{
   geometry_msgs::PoseStamped base_link_origin;
   base_link_origin.header.frame_id = base_link_frame_;
   base_link_origin.pose.position.x = 0;
@@ -51,20 +56,23 @@ bool MissionPlanner::getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_p
   return transformPose(base_link_origin, ego_vehicle_pose, map_frame_);
 }
 
-bool MissionPlanner::transformPose(const geometry_msgs::PoseStamped& input_pose,
-                                   geometry_msgs::PoseStamped* output_pose, const std::string target_frame) {
+bool MissionPlanner::transformPose(
+  const geometry_msgs::PoseStamped & input_pose, geometry_msgs::PoseStamped * output_pose,
+  const std::string target_frame)
+{
   geometry_msgs::TransformStamped transform;
   try {
     transform = tf_buffer_.lookupTransform(target_frame, input_pose.header.frame_id, ros::Time(0));
     tf2::doTransform(input_pose, *output_pose, transform);
     return true;
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException & ex) {
     ROS_WARN("%s", ex.what());
     return false;
   }
 }
 
-void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg_ptr) {
+void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr & goal_msg_ptr)
+{
   // set start pose
   if (!getEgoVehiclePose(&start_pose_)) {
     ROS_ERROR("Failed to get ego vehicle pose in map frame. Aborting mission planning");
@@ -90,7 +98,9 @@ void MissionPlanner::goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& 
   publishRoute(route);
 }  // namespace mission_planner
 
-void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr& checkpoint_msg_ptr) {
+void MissionPlanner::checkpointCallback(
+  const geometry_msgs::PoseStampedConstPtr & checkpoint_msg_ptr)
+{
   if (checkpoints_.size() < 2) {
     ROS_ERROR("You must set start and goal before setting checkpoints. Aborting mission planning");
     return;
@@ -109,7 +119,8 @@ void MissionPlanner::checkpointCallback(const geometry_msgs::PoseStampedConstPtr
   publishRoute(route);
 }
 
-void MissionPlanner::publishRoute(const autoware_planning_msgs::Route& route) const {
+void MissionPlanner::publishRoute(const autoware_planning_msgs::Route & route) const
+{
   if (!route.route_sections.empty()) {
     ROS_INFO("Route successfuly planned. Publishing...");
     route_publisher_.publish(route);

@@ -26,8 +26,9 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/transform_listener.h"
 
-class MapCorrectorNode {
- private:  // ros
+class MapCorrectorNode
+{
+private:  // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Subscriber sub_;
@@ -37,10 +38,10 @@ class MapCorrectorNode {
   bool use_rad_filter_;
   double rad_threshold_;
 
- public:
+public:
   MapCorrectorNode();
 
   ~MapCorrectorNode(){};
 
-  bool correct(autoware_perception_msgs::DynamicObjectWithFeatureArray& input_msg);
+  bool correct(autoware_perception_msgs::DynamicObjectWithFeatureArray & input_msg);
 };

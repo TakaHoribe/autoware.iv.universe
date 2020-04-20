@@ -28,15 +28,18 @@
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <sensor_msgs/Imu.h>
 
-class GyroOdometer {
- public:
+class GyroOdometer
+{
+public:
   GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~GyroOdometer();
 
- private:
-  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr);
-  void callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr);
-  bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
+private:
+  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & twist_msg_ptr);
+  void callbackImu(const sensor_msgs::Imu::ConstPtr & imu_msg_ptr);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

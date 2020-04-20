@@ -38,12 +38,14 @@
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 // TODO(Kenji Miyake): Add msg
-struct TrafficLightStateStamped {
+struct TrafficLightStateStamped
+{
   std_msgs::Header header;
   autoware_perception_msgs::TrafficLightState traffic_light_state;
 };
 
-struct PlannerData {
+struct PlannerData
+{
   // tf
   geometry_msgs::PoseStamped current_pose;
 
@@ -68,12 +70,14 @@ struct PlannerData {
   // additional parameters
   double max_stop_acceleration_threshold_;
 
-  bool isVehicleStopping() const {
+  bool isVehicleStopping() const
+  {
     if (!current_velocity) return false;
     return current_velocity->twist.linear.x < 0.1;
   }
 
-  std::shared_ptr<TrafficLightStateStamped> getTrafficLightState(const int id) const {
+  std::shared_ptr<TrafficLightStateStamped> getTrafficLightState(const int id) const
+  {
     if (traffic_light_id_map_.count(id) == 0) {
       return {};
     }

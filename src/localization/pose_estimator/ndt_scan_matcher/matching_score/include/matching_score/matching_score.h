@@ -20,7 +20,8 @@
 #include <pcl/search/kdtree.h>
 
 template <class PointType>
-struct PointWithDistance {
+struct PointWithDistance
+{
   PointWithDistance() : distance(0.0){};
 
   PointType point;
@@ -28,13 +29,15 @@ struct PointWithDistance {
 };
 
 template <class PointType>
-class MatchingScore {
- public:
+class MatchingScore
+{
+public:
   MatchingScore();
   ~MatchingScore() = default;
-  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointType> const>& pointcloud_ptr);
-  void setSearchMethodTarget(const boost::shared_ptr<pcl::search::KdTree<PointType>>& tree_ptr);
-  double calcMatchingScore(const boost::shared_ptr<pcl::PointCloud<PointType> const>& pointcloud_ptr);
+  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointType> const> & pointcloud_ptr);
+  void setSearchMethodTarget(const boost::shared_ptr<pcl::search::KdTree<PointType>> & tree_ptr);
+  double calcMatchingScore(
+    const boost::shared_ptr<pcl::PointCloud<PointType> const> & pointcloud_ptr);
 
   void setFermikT(const double fermi_kT) { fermi_kT_ = fermi_kT; }
 
@@ -44,11 +47,14 @@ class MatchingScore {
 
   double getFermiMu() const { return fermi_mu_; }
 
-  std::vector<PointWithDistance<PointType>> getPointWithDistanceArray() const { return point_with_distance_array_; }
+  std::vector<PointWithDistance<PointType>> getPointWithDistanceArray() const
+  {
+    return point_with_distance_array_;
+  }
 
- private:
+private:
   std::vector<PointWithDistance<PointType>> convertPointWithDistance(
-      const boost::shared_ptr<pcl::PointCloud<PointType> const>& pointcloud_ptr);
+    const boost::shared_ptr<pcl::PointCloud<PointType> const> & pointcloud_ptr);
   double calcFermiDistributionFunction(const double x, const double kT, const double mu);
   boost::shared_ptr<pcl::search::KdTree<PointType>> tree_ptr_;
   std::vector<PointWithDistance<PointType>> point_with_distance_array_;

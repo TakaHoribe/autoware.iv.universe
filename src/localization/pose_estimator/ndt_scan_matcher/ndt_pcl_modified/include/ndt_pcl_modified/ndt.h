@@ -59,24 +59,31 @@
 #include <pcl/registration/ndt.h>
 #include <unsupported/Eigen/NonLinearOptimization>
 
-namespace pcl {
+namespace pcl
+{
 template <typename PointSource, typename PointTarget>
-class NormalDistributionsTransformModified : public NormalDistributionsTransform<PointSource, PointTarget> {
- protected:
+class NormalDistributionsTransformModified
+: public NormalDistributionsTransform<PointSource, PointTarget>
+{
+protected:
   typedef typename Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
 
- public:
-  virtual void computeTransformation(PointCloudSource& output, const Eigen::Matrix4f& guess) override;
+public:
+  virtual void computeTransformation(
+    PointCloudSource & output, const Eigen::Matrix4f & guess) override;
 
   inline const Eigen::Matrix<double, 6, 6> getHessian() const { return hessian_; }
 
-  inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const { return transformation_array_; }
+  inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const
+  {
+    return transformation_array_;
+  }
 
- protected:
-  virtual double computeStepLengthMT(const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix<double, 6, 1>& step_dir,
-                                     double step_init, double step_max, double step_min, double& score,
-                                     Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-                                     PointCloudSource& trans_cloud);
+protected:
+  virtual double computeStepLengthMT(
+    const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix<double, 6, 1> & step_dir, double step_init,
+    double step_max, double step_min, double & score, Eigen::Matrix<double, 6, 1> & score_gradient,
+    Eigen::Matrix<double, 6, 6> & hessian, PointCloudSource & trans_cloud);
 
   using Registration<PointSource, PointTarget>::input_;
   using Registration<PointSource, PointTarget>::target_;
@@ -101,7 +108,7 @@ class NormalDistributionsTransformModified : public NormalDistributionsTransform
   Eigen::Matrix<double, 6, 6> hessian_;
   std::vector<Eigen::Matrix4f> transformation_array_;
 
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 

@@ -45,14 +45,13 @@
  * limitations under the License.
  *****************************************************************************/
 
-
 #ifndef CLUSTER2D_H
 #define CLUSTER2D_H
 
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "disjoint_set.h"
 #include "util.h"
@@ -71,7 +70,8 @@ enum MetaType {
   MAX_META_TYPE
 };
 
-struct Obstacle {
+struct Obstacle
+{
   std::vector<int> grids;
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr;
   float score;
@@ -79,35 +79,37 @@ struct Obstacle {
   MetaType meta_type;
   std::vector<float> meta_type_probs;
 
-  Obstacle() : score(0.0), height(-5.0), meta_type(META_UNKNOWN) {
+  Obstacle() : score(0.0), height(-5.0), meta_type(META_UNKNOWN)
+  {
     cloud_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
     meta_type_probs.assign(MAX_META_TYPE, 0.0);
   }
 };
 
-class Cluster2D {
- public:
+class Cluster2D
+{
+public:
   Cluster2D(const int rows, const int cols, const float range);
 
   ~Cluster2D(){};
 
-  void cluster(const std::shared_ptr<float> &inferred_data,
-               const pcl::PointCloud<pcl::PointXYZI>::Ptr &pc_ptr,
-               const pcl::PointIndices &valid_indices, float objectness_thresh,
-               bool use_all_grids_for_clustering);
+  void cluster(
+    const std::shared_ptr<float> & inferred_data,
+    const pcl::PointCloud<pcl::PointXYZI>::Ptr & pc_ptr, const pcl::PointIndices & valid_indices,
+    float objectness_thresh, bool use_all_grids_for_clustering);
 
-  void filter(const std::shared_ptr<float> &inferred_data);
-  void classify(const std::shared_ptr<float> &inferred_data);
+  void filter(const std::shared_ptr<float> & inferred_data);
+  void classify(const std::shared_ptr<float> & inferred_data);
 
-  void getObjects(const float confidence_thresh, const float height_thresh,
-                  const int min_pts_num,
-                  autoware_perception_msgs::DynamicObjectWithFeatureArray &objects,
-                  const std_msgs::Header &in_header);
+  void getObjects(
+    const float confidence_thresh, const float height_thresh, const int min_pts_num,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray & objects,
+    const std_msgs::Header & in_header);
 
   autoware_perception_msgs::DynamicObjectWithFeature obstacleToObject(
-      const Obstacle &in_obstacle, const std_msgs::Header &in_header);
+    const Obstacle & in_obstacle, const std_msgs::Header & in_header);
 
- private:
+private:
   int rows_;
   int cols_;
   int siz_;
@@ -120,11 +122,12 @@ class Cluster2D {
   std::vector<int> id_img_;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pc_ptr_;
-  const std::vector<int> *valid_indices_in_pc_ = nullptr;
+  const std::vector<int> * valid_indices_in_pc_ = nullptr;
 
-  struct Node {
-    Node *center_node;
-    Node *parent;
+  struct Node
+  {
+    Node * center_node;
+    Node * parent;
     char node_rank;
     char traversed;
     bool is_center;
@@ -132,7 +135,8 @@ class Cluster2D {
     int point_num;
     int obstacle_id;
 
-    Node() {
+    Node()
+    {
       center_node = nullptr;
       parent = nullptr;
       node_rank = 0;
@@ -144,9 +148,7 @@ class Cluster2D {
     }
   };
 
-  inline bool IsValidRowCol(int row, int col) const {
-    return IsValidRow(row) && IsValidCol(col);
-  }
+  inline bool IsValidRowCol(int row, int col) const { return IsValidRow(row) && IsValidCol(col); }
 
   inline bool IsValidRow(int row) const { return row >= 0 && row < rows_; }
 
@@ -154,7 +156,7 @@ class Cluster2D {
 
   inline int RowCol2Grid(int row, int col) const { return row * cols_ + col; }
 
-  void traverse(Node *x);
+  void traverse(Node * x);
 };
 
 #endif  // CLUSTER_2D_H

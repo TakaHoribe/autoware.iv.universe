@@ -17,11 +17,15 @@
 #include "mpc_follower/qp_solver/qp_solver_qpoases.h"
 
 QPSolverQpoasesHotstart::QPSolverQpoasesHotstart(const int max_iter)
-    : is_solver_initialized_(false), max_iter_(max_iter) {}
+: is_solver_initialized_(false), max_iter_(max_iter)
+{
+}
 
-bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
-                                    const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
-                                    const Eigen::VectorXd& ubA, Eigen::VectorXd& U) {
+bool QPSolverQpoasesHotstart::solve(
+  const Eigen::MatrixXd & Hmat, const Eigen::MatrixXd & fvec, const Eigen::MatrixXd & A,
+  const Eigen::VectorXd & lb, const Eigen::VectorXd & ub, const Eigen::VectorXd & lbA,
+  const Eigen::VectorXd & ubA, Eigen::VectorXd & U)
+{
   int max_iter = max_iter_;  // redeclaration to give a non-const value to solver
 
   const int kNumOfMatrixElements = Hmat.rows() * Hmat.cols();
@@ -55,12 +59,14 @@ bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::Ma
     upper_bound[i] = ub[i];
   }
 
-  solver_.setPrintLevel(qpOASES::PL_NONE);  // options: PL_DEBUG_ITER, PL_TABULAR, PL_NONE, PL_LOW, PL_MEDIUM, PL_HIGH
+  solver_.setPrintLevel(
+    qpOASES::PL_NONE);  // options: PL_DEBUG_ITER, PL_TABULAR, PL_NONE, PL_LOW, PL_MEDIUM, PL_HIGH
 
   if (!is_solver_initialized_) {
     solver_ = qpOASES::SQProblem(kNumOfOffsetRows, kNumOfOffsetRows);
-    auto ret = solver_.init(h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound, upper_bound,
-                            max_iter);
+    auto ret = solver_.init(
+      h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound, upper_bound,
+      max_iter);
     if (ret != qpOASES::SUCCESSFUL_RETURN) {
       std::cerr << "[QPOASES] not successfully solved in init()" << std::endl;
       return false;
@@ -68,8 +74,9 @@ bool QPSolverQpoasesHotstart::solve(const Eigen::MatrixXd& Hmat, const Eigen::Ma
 
     is_solver_initialized_ = true;
   } else {
-    auto ret = solver_.hotstart(h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound,
-                                upper_bound, max_iter);
+    auto ret = solver_.hotstart(
+      h_matrix, g_matrix, a_constraint_matirx, lower_bound, upper_bound, lower_bound, upper_bound,
+      max_iter);
     if (ret != qpOASES::SUCCESSFUL_RETURN) {
       std::cerr << "[QPOASES] not successfully solved in hotstart()" << std::endl;
       return false;

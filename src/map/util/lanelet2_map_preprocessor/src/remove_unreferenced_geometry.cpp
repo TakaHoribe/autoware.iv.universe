@@ -29,19 +29,22 @@
 #include <unordered_set>
 #include <vector>
 
-void printUsage() {
+void printUsage()
+{
   std::cerr << "Please set following private parameters:" << std::endl
             << "llt_map_path" << std::endl
             << "output_path" << std::endl;
 }
 
-bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                    lanelet::Projector& projector) {
+bool loadLaneletMap(
+  const std::string & llt_map_path, lanelet::LaneletMapPtr & lanelet_map_ptr,
+  lanelet::Projector & projector)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet_map_ptr = lanelet::load(llt_map_path, "autoware_osm_handler", projector, &errors);
 
-  for (const auto& error : errors) {
+  for (const auto & error : errors) {
     ROS_ERROR_STREAM(error);
   }
   if (!errors.empty()) {
@@ -51,11 +54,13 @@ bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lan
   return true;
 }
 
-bool exists(std::unordered_set<lanelet::Id>& set, lanelet::Id element) {
+bool exists(std::unordered_set<lanelet::Id> & set, lanelet::Id element)
+{
   return std::find(set.begin(), set.end(), element) != set.end();
 }
 
-lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   lanelet::Points3d points;
   for (const lanelet::Point3d pt : lanelet_map_ptr->pointLayer) {
     points.push_back(pt);
@@ -63,7 +68,8 @@ lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map
   return points;
 }
 
-lanelet::LineStrings3d convertLineLayerToLineStrings(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+lanelet::LineStrings3d convertLineLayerToLineStrings(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   lanelet::LineStrings3d lines;
   for (const lanelet::LineString3d line : lanelet_map_ptr->lineStringLayer) {
     lines.push_back(line);
@@ -71,7 +77,8 @@ lanelet::LineStrings3d convertLineLayerToLineStrings(lanelet::LaneletMapPtr& lan
   return lines;
 }
 
-void removeUnreferencedGeometry(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+void removeUnreferencedGeometry(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   lanelet::LaneletMapPtr new_map(new lanelet::LaneletMap);
   for (auto llt : lanelet_map_ptr->laneletLayer) {
     new_map->add(llt);
@@ -79,7 +86,8 @@ void removeUnreferencedGeometry(lanelet::LaneletMapPtr& lanelet_map_ptr) {
   lanelet_map_ptr = new_map;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "remove_unreferenced_geometry");
   ros::NodeHandle pnh("~");
 

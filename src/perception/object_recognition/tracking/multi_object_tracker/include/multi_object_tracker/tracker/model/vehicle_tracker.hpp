@@ -20,8 +20,9 @@
 #include "autoware_perception_msgs/DynamicObject.h"
 #include "tracker_base.hpp"
 
-class VehicleTracker : public Tracker {
- private:
+class VehicleTracker : public Tracker
+{
+private:
   autoware_perception_msgs::DynamicObject object_;
   double filtered_yaw_;
   double yaw_filter_gain_;
@@ -43,11 +44,13 @@ class VehicleTracker : public Tracker {
   ros::Time last_update_time_;
   ros::Time last_measurement_time_;
 
- public:
-  VehicleTracker(const ros::Time& time, const autoware_perception_msgs::DynamicObject& object);
+public:
+  VehicleTracker(const ros::Time & time, const autoware_perception_msgs::DynamicObject & object);
 
-  bool predict(const ros::Time& time) override;
-  bool measure(const autoware_perception_msgs::DynamicObject& object, const ros::Time& time) override;
-  bool getEstimatedDynamicObject(const ros::Time& time, autoware_perception_msgs::DynamicObject& object) override;
+  bool predict(const ros::Time & time) override;
+  bool measure(
+    const autoware_perception_msgs::DynamicObject & object, const ros::Time & time) override;
+  bool getEstimatedDynamicObject(
+    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) override;
   virtual ~VehicleTracker(){};
 };

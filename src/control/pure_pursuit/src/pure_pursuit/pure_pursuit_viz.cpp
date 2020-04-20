@@ -35,10 +35,11 @@
 #include "pure_pursuit/util/marker_helper.h"
 #include "pure_pursuit/util/planning_utils.h"
 
-namespace {
-
-std::vector<geometry_msgs::Point> generateTrajectoryCircle(const geometry_msgs::Point& target,
-                                                           const geometry_msgs::Pose& current_pose) {
+namespace
+{
+std::vector<geometry_msgs::Point> generateTrajectoryCircle(
+  const geometry_msgs::Point & target, const geometry_msgs::Pose & current_pose)
+{
   constexpr double theta_range = M_PI / 10;
   constexpr double step_rad = 0.005;
 
@@ -59,19 +60,23 @@ std::vector<geometry_msgs::Point> generateTrajectoryCircle(const geometry_msgs::
 
 }  // namespace
 
-visualization_msgs::Marker createNextTargetMarker(const geometry_msgs::Point& next_target) {
-  auto marker = createDefaultMarker("map", "next_target", 0, visualization_msgs::Marker::SPHERE,
-                                    createMarkerScale(0.3, 0.3, 0.3), createMarkerColor(0.0, 1.0, 0.0, 1.0));
+visualization_msgs::Marker createNextTargetMarker(const geometry_msgs::Point & next_target)
+{
+  auto marker = createDefaultMarker(
+    "map", "next_target", 0, visualization_msgs::Marker::SPHERE, createMarkerScale(0.3, 0.3, 0.3),
+    createMarkerColor(0.0, 1.0, 0.0, 1.0));
 
   marker.pose.position = next_target;
 
   return marker;
 }
 
-visualization_msgs::Marker createTrajectoryCircleMarker(const geometry_msgs::Point& target,
-                                                        const geometry_msgs::Pose& current_pose) {
-  auto marker = createDefaultMarker("map", "trajectory_circle", 0, visualization_msgs::Marker::LINE_STRIP,
-                                    createMarkerScale(0.05, 0, 0), createMarkerColor(1.0, 1.0, 1.0, 1.0));
+visualization_msgs::Marker createTrajectoryCircleMarker(
+  const geometry_msgs::Point & target, const geometry_msgs::Pose & current_pose)
+{
+  auto marker = createDefaultMarker(
+    "map", "trajectory_circle", 0, visualization_msgs::Marker::LINE_STRIP,
+    createMarkerScale(0.05, 0, 0), createMarkerColor(1.0, 1.0, 1.0, 1.0));
 
   const auto trajectory_circle = generateTrajectoryCircle(target, current_pose);
   for (auto p : trajectory_circle) {

@@ -29,7 +29,7 @@
 #include <ros/ros.h>
 #include "velodyne_driver/driver.h"
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "velodyne_node");
   ros::NodeHandle node;
@@ -39,10 +39,9 @@ int main(int argc, char** argv)
   velodyne_driver::VelodyneDriver dvr(node, private_nh);
 
   // loop until shut down or end of file
-  while(ros::ok() && dvr.poll())
-    {
-      ros::spinOnce();
-    }
+  while (ros::ok() && dvr.poll()) {
+    ros::spinOnce();
+  }
 
   return 0;
 }

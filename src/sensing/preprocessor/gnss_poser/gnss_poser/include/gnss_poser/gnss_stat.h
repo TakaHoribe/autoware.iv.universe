@@ -15,25 +15,28 @@
  */
 #pragma once
 
-namespace GNSSPoser {
-
+namespace GNSSPoser
+{
 enum class CoordinateSystem {
   UTM = 0,
   MGRS = 1,
   PLANE = 2,
 };
 
-struct GNSSStat {
+struct GNSSStat
+{
   GNSSStat()
-      : coordinate_system(CoordinateSystem::MGRS),
-        northup(true),
-        zone(0),
-        x(0),
-        y(0),
-        z(0),
-        latitude(0),
-        longitude(0),
-        altitude(0) {}
+  : coordinate_system(CoordinateSystem::MGRS),
+    northup(true),
+    zone(0),
+    x(0),
+    y(0),
+    z(0),
+    latitude(0),
+    longitude(0),
+    altitude(0)
+  {
+  }
 
   CoordinateSystem coordinate_system;
   bool northup;

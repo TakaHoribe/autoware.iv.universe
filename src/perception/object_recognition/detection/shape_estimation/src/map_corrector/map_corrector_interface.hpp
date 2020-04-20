@@ -24,13 +24,15 @@
 #include "geometry_msgs/TransformStamped.h"
 #include "shape_estimation/vector_map.hpp"
 
-class MapCorrectorInterface {
- public:
+class MapCorrectorInterface
+{
+public:
   MapCorrectorInterface(){};
 
   virtual ~MapCorrectorInterface(){};
 
-  virtual bool correct(const VectorMap& vector_map, const geometry_msgs::TransformStamped& transform_stamped,
-                       autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                       bool& orientaion_output) = 0;
+  virtual bool correct(
+    const VectorMap & vector_map, const geometry_msgs::TransformStamped & transform_stamped,
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientaion_output) = 0;
 };

@@ -16,17 +16,20 @@
 
 #include <ros/ros.h>
 
-struct VehicleInfo {
+struct VehicleInfo
+{
   VehicleInfo()
-      : wheel_radius(0.0),
-        wheel_width(0.0),
-        wheel_base(0.0),
-        wheel_tread(0.0),
-        front_overhang(0.0),
-        rear_overhang(0.0),
-        left_overhang(0.0),
-        right_overhang(0.0),
-        vehicle_height(0.0) {}
+  : wheel_radius(0.0),
+    wheel_width(0.0),
+    wheel_base(0.0),
+    wheel_tread(0.0),
+    front_overhang(0.0),
+    rear_overhang(0.0),
+    left_overhang(0.0),
+    right_overhang(0.0),
+    vehicle_height(0.0)
+  {
+  }
 
   double wheel_radius;
   double wheel_width;
@@ -39,16 +42,19 @@ struct VehicleInfo {
   double vehicle_height;
 };
 
-struct AdditionalVehicleInfo {
+struct AdditionalVehicleInfo
+{
   AdditionalVehicleInfo()
-      : vehicle_length(0.0),
-        vehicle_width(0.0),
-        min_longitudinal_offset(0.0),
-        max_longitudinal_offset(0.0),
-        min_lateral_offset(0.0),
-        max_lateral_offset(0.0),
-        min_height_offset(0.0),
-        max_height_offset(0.0) {}
+  : vehicle_length(0.0),
+    vehicle_width(0.0),
+    min_longitudinal_offset(0.0),
+    max_longitudinal_offset(0.0),
+    min_lateral_offset(0.0),
+    max_lateral_offset(0.0),
+    min_height_offset(0.0),
+    max_height_offset(0.0)
+  {
+  }
 
   double vehicle_length;
   double vehicle_width;
@@ -60,7 +66,8 @@ struct AdditionalVehicleInfo {
   double max_height_offset;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "additional_vehicle_info_generator");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
@@ -87,15 +94,16 @@ int main(int argc, char** argv) {
   ROS_INFO("vehicle_height: %lf", vehicle_info.vehicle_height);
 
   AdditionalVehicleInfo add_vehicle_info;
-  add_vehicle_info.vehicle_length = vehicle_info.front_overhang + vehicle_info.wheel_base + vehicle_info.rear_overhang;
-  add_vehicle_info.vehicle_width =
-      vehicle_info.wheel_tread + vehicle_info.wheel_width + vehicle_info.left_overhang + vehicle_info.right_overhang;
+  add_vehicle_info.vehicle_length =
+    vehicle_info.front_overhang + vehicle_info.wheel_base + vehicle_info.rear_overhang;
+  add_vehicle_info.vehicle_width = vehicle_info.wheel_tread + vehicle_info.wheel_width +
+                                   vehicle_info.left_overhang + vehicle_info.right_overhang;
   add_vehicle_info.min_longitudinal_offset = -vehicle_info.rear_overhang;
   add_vehicle_info.max_longitudinal_offset = vehicle_info.front_overhang + vehicle_info.wheel_base;
   add_vehicle_info.min_lateral_offset =
-      -((vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.right_overhang);
+    -((vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.right_overhang);
   add_vehicle_info.max_lateral_offset =
-      (vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.left_overhang;
+    (vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.left_overhang;
   add_vehicle_info.min_height_offset = 0.0;
   add_vehicle_info.max_height_offset = vehicle_info.vehicle_height;
 

@@ -17,7 +17,8 @@
 #include <ros/ros.h>
 #include <raw_vehicle_cmd_converter/node.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "raw_vehicle_cmd_converter_node");
 
   AccelMapConverter node;

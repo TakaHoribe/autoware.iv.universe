@@ -17,7 +17,8 @@
 #include <lane_change_planner/lane_changer.h>
 #include <ros/ros.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "lane_change_planner_node");
 
   lane_change_planner::LaneChanger lane_changer;

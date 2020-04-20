@@ -19,23 +19,29 @@
 #include <visualization_msgs/MarkerArray.h>
 
 std_msgs::ColorRGBA toRainbow(double ratio);
-visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
-                                           const std::string& ns, const double radius);
+visualization_msgs::Marker convertToMarker(
+  const autoware_perception_msgs::PredictedPath & path, const int id, const std::string & ns,
+  const double radius);
 
-namespace lane_change_planner {
+namespace lane_change_planner
+{
 LaneChanger::LaneChanger() : pnh_("~") { init(); }
 
-void LaneChanger::init() {
+void LaneChanger::init()
+{
   // data_manager
   data_manager_ptr_ = std::make_shared<DataManager>();
   route_handler_ptr_ = std::make_shared<RouteHandler>();
-  velocity_subscriber_ = pnh_.subscribe("input/velocity", 1, &DataManager::velocityCallback, &(*data_manager_ptr_));
+  velocity_subscriber_ =
+    pnh_.subscribe("input/velocity", 1, &DataManager::velocityCallback, &(*data_manager_ptr_));
   perception_subscriber_ =
-      pnh_.subscribe("input/perception", 1, &DataManager::perceptionCallback, &(*data_manager_ptr_));
-  lane_change_approval_subscriber_ =
-      pnh_.subscribe("input/lane_change_approval", 1, &DataManager::laneChangeApprovalCallback, &(*data_manager_ptr_));
-  force_lane_change_subscriber_ =
-      pnh_.subscribe("input/force_lane_change", 1, &DataManager::forceLaneChangeSignalCallback, &(*data_manager_ptr_));
+    pnh_.subscribe("input/perception", 1, &DataManager::perceptionCallback, &(*data_manager_ptr_));
+  lane_change_approval_subscriber_ = pnh_.subscribe(
+    "input/lane_change_approval", 1, &DataManager::laneChangeApprovalCallback,
+    &(*data_manager_ptr_));
+  force_lane_change_subscriber_ = pnh_.subscribe(
+    "input/force_lane_change", 1, &DataManager::forceLaneChangeSignalCallback,
+    &(*data_manager_ptr_));
 
   // ROS parameters
   LaneChangerParameters parameters;
@@ -58,27 +64,34 @@ void LaneChanger::init() {
   data_manager_ptr_->setLaneChangerParameters(parameters);
 
   // route_handler
-  vector_map_subscriber_ = pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &(*route_handler_ptr_));
-  route_subscriber_ = pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &(*route_handler_ptr_));
+  vector_map_subscriber_ =
+    pnh_.subscribe("input/vector_map", 1, &RouteHandler::mapCallback, &(*route_handler_ptr_));
+  route_subscriber_ =
+    pnh_.subscribe("input/route", 1, &RouteHandler::routeCallback, &(*route_handler_ptr_));
 
   // publisher
-  path_publisher_ = pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
-  path_marker_publisher_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
+  path_publisher_ =
+    pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
+  path_marker_publisher_ =
+    pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
   drivable_area_publisher_ = pnh_.advertise<nav_msgs::OccupancyGrid>("debug/drivable_area", 1);
   lane_change_ready_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_ready", 1);
-  lane_change_available_publisher_ = pnh_.advertise<std_msgs::Bool>("output/lane_change_available", 1);
+  lane_change_available_publisher_ =
+    pnh_.advertise<std_msgs::Bool>("output/lane_change_available", 1);
 
   waitForData();
 
   // set state_machine
   state_machine_ptr_ = std::make_shared<StateMachine>(data_manager_ptr_, route_handler_ptr_);
   state_machine_ptr_->init();
-  route_init_subscriber_ = pnh_.subscribe("input/route", 1, &StateMachine::init, &(*state_machine_ptr_));
+  route_init_subscriber_ =
+    pnh_.subscribe("input/route", 1, &StateMachine::init, &(*state_machine_ptr_));
   // Start timer. This must be done after all data (e.g. vehicle pose, velocity) are ready.
   timer_ = pnh_.createTimer(ros::Duration(0.1), &LaneChanger::run, this);
 }
 
-void LaneChanger::waitForData() {
+void LaneChanger::waitForData()
+{
   // wait until mandatory data is ready
   while (!route_handler_ptr_->isHandlerReady() && ros::ok()) {
     ROS_WARN_THROTTLE(5, "waiting for route to be ready");
@@ -92,7 +105,8 @@ void LaneChanger::waitForData() {
   }
 }
 
-void LaneChanger::run(const ros::TimerEvent& event) {
+void LaneChanger::run(const ros::TimerEvent & event)
+{
   state_machine_ptr_->updateState();
   const auto path = state_machine_ptr_->getPath();
 
@@ -131,11 +145,13 @@ void LaneChanger::run(const ros::TimerEvent& event) {
   lane_change_available_publisher_.publish(lane_change_available_msg);
 }
 
-void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path) {
+void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId & path)
+{
   drivable_area_publisher_.publish(path.drivable_area);
 }
 
-void LaneChanger::publishDebugMarkers() {
+void LaneChanger::publishDebugMarkers()
+{
   const auto current_pose = data_manager_ptr_->getCurrentSelfPose();
   const auto current_twist = data_manager_ptr_->getCurrentSelfVelocity();
   const auto dynamic_objects = data_manager_ptr_->getDynamicObjects();
@@ -148,42 +164,43 @@ void LaneChanger::publishDebugMarkers() {
 
   visualization_msgs::MarkerArray debug_markers;
   // get ego vehicle path marker
-  const auto& status = state_machine_ptr_->getStatus();
+  const auto & status = state_machine_ptr_->getStatus();
   if (!status.lane_change_path.points.empty()) {
-    const auto& vehicle_predicted_path =
-        util::convertToPredictedPath(status.lane_change_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path =
-        util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
+    const auto & vehicle_predicted_path = util::convertToPredictedPath(
+      status.lane_change_path, current_twist->twist, current_pose.pose);
+    const auto & resampled_path =
+      util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
     radius = std::max(radius, min_radius);
-    const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_change_path", radius);
+    const auto & marker = convertToMarker(resampled_path, 1, "ego_lane_change_path", radius);
     debug_markers.markers.push_back(marker);
   }
 
   if (!status.lane_follow_path.points.empty()) {
-    const auto& vehicle_predicted_path =
-        util::convertToPredictedPath(status.lane_follow_path, current_twist->twist, current_pose.pose);
-    const auto& resampled_path =
-        util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
+    const auto & vehicle_predicted_path = util::convertToPredictedPath(
+      status.lane_follow_path, current_twist->twist, current_pose.pose);
+    const auto & resampled_path =
+      util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
     double radius = util::l2Norm(current_twist->twist.linear) * stop_time;
     radius = std::max(radius, min_radius);
-    const auto& marker = convertToMarker(resampled_path, 1, "ego_lane_follow_path", radius);
+    const auto & marker = convertToMarker(resampled_path, 1, "ego_lane_follow_path", radius);
     debug_markers.markers.push_back(marker);
   }
 
   // get obstacle path marker
   {
-    const auto& target_lanes = route_handler_ptr_->getLaneChangeTarget(current_pose.pose);
+    const auto & target_lanes = route_handler_ptr_->getLaneChangeTarget(current_pose.pose);
     auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
-    for (const auto& i : object_indices) {
-      const auto& obj = dynamic_objects->objects.at(i);
-      for (const auto& obj_path : obj.state.predicted_paths) {
-        const auto& resampled_path = util::resamplePredictedPath(obj_path, time_resolution, prediction_duration);
+    for (const auto & i : object_indices) {
+      const auto & obj = dynamic_objects->objects.at(i);
+      for (const auto & obj_path : obj.state.predicted_paths) {
+        const auto & resampled_path =
+          util::resamplePredictedPath(obj_path, time_resolution, prediction_duration);
         double radius = util::l2Norm(obj.state.twist_covariance.twist.linear) * stop_time;
         radius = std::max(radius, min_radius);
-        const auto& marker = convertToMarker(resampled_path, i, "object_predicted_path", radius);
+        const auto & marker = convertToMarker(resampled_path, i, "object_predicted_path", radius);
         debug_markers.markers.push_back(marker);
       }
     }
@@ -193,7 +210,8 @@ void LaneChanger::publishDebugMarkers() {
 
 }  // namespace lane_change_planner
 
-std_msgs::ColorRGBA toRainbow(double ratio) {
+std_msgs::ColorRGBA toRainbow(double ratio)
+{
   // we want to normalize ratio so that it fits in to 6 regions
   // where each region is 256 units long
   int normalized = int(ratio * 256 * 6);
@@ -243,8 +261,10 @@ std_msgs::ColorRGBA toRainbow(double ratio) {
   return color;
 }
 
-visualization_msgs::Marker convertToMarker(const autoware_perception_msgs::PredictedPath& path, const int id,
-                                           const std::string& ns, const double radius) {
+visualization_msgs::Marker convertToMarker(
+  const autoware_perception_msgs::PredictedPath & path, const int id, const std::string & ns,
+  const double radius)
+{
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();

@@ -18,15 +18,19 @@
 // namespace {
 // convertPose2Transform
 // }
-namespace motion_planning {
+namespace motion_planning
+{
 ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode(const double base_link2front)
-    : nh_(), pnh_("~"), base_link2front_(base_link2front) {
+: nh_(), pnh_("~"), base_link2front_(base_link2front)
+{
   debug_viz_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/marker", 1);
 }
 
-void ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<cv::Point2d>& polygon, const double z) {
+void ObstacleStopPlannerDebugNode::pushPolygon(
+  const std::vector<cv::Point2d> & polygon, const double z)
+{
   std::vector<Eigen::Vector3d> eigen_polygon;
-  for (const auto& point : polygon) {
+  for (const auto & point : polygon) {
     Eigen::Vector3d eigen_point;
     eigen_point << point.x, point.y, z;
     eigen_polygon.push_back(eigen_point);
@@ -34,13 +38,16 @@ void ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<cv::Point2d>& p
   pushPolygon(eigen_polygon);
 }
 
-void ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<Eigen::Vector3d>& polygon) {
+void ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<Eigen::Vector3d> & polygon)
+{
   if (!polygon.empty()) polygons_.push_back(polygon);
 }
 
-void ObstacleStopPlannerDebugNode::pushCollisionPolygon(const std::vector<cv::Point2d>& polygon, const double z) {
+void ObstacleStopPlannerDebugNode::pushCollisionPolygon(
+  const std::vector<cv::Point2d> & polygon, const double z)
+{
   std::vector<Eigen::Vector3d> eigen_polygon;
-  for (const auto& point : polygon) {
+  for (const auto & point : polygon) {
     Eigen::Vector3d eigen_point;
     eigen_point << point.x, point.y, z;
     eigen_polygon.push_back(eigen_point);
@@ -48,19 +55,25 @@ void ObstacleStopPlannerDebugNode::pushCollisionPolygon(const std::vector<cv::Po
   pushCollisionPolygon(eigen_polygon);
 }
 
-void ObstacleStopPlannerDebugNode::pushCollisionPolygon(const std::vector<Eigen::Vector3d>& polygon) {
+void ObstacleStopPlannerDebugNode::pushCollisionPolygon(
+  const std::vector<Eigen::Vector3d> & polygon)
+{
   if (!polygon.empty()) collision_polygons_.push_back(polygon);
 }
 
-void ObstacleStopPlannerDebugNode::pushStopPose(const geometry_msgs::Pose& stop_pose) {
+void ObstacleStopPlannerDebugNode::pushStopPose(const geometry_msgs::Pose & stop_pose)
+{
   stop_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(stop_pose);
 }
 
-void ObstacleStopPlannerDebugNode::pushStopObstaclePoint(const geometry_msgs::Point& stop_obstacle_point) {
+void ObstacleStopPlannerDebugNode::pushStopObstaclePoint(
+  const geometry_msgs::Point & stop_obstacle_point)
+{
   stop_obstacle_point_ptr_ = std::make_shared<geometry_msgs::Point>(stop_obstacle_point);
 }
 
-void ObstacleStopPlannerDebugNode::pushStopObstaclePoint(const pcl::PointXYZ& stop_obstacle_point) {
+void ObstacleStopPlannerDebugNode::pushStopObstaclePoint(const pcl::PointXYZ & stop_obstacle_point)
+{
   geometry_msgs::Point ros_point;
   ros_point.x = stop_obstacle_point.x;
   ros_point.y = stop_obstacle_point.y;
@@ -68,10 +81,12 @@ void ObstacleStopPlannerDebugNode::pushStopObstaclePoint(const pcl::PointXYZ& st
   pushStopObstaclePoint(ros_point);
 }
 
-void ObstacleStopPlannerDebugNode::publish() {
+void ObstacleStopPlannerDebugNode::publish()
+{
   visualization_msgs::MarkerArray msg;
   ros::Time current_time = ros::Time::now();
-  tf2::Transform tf_base_link2front(tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front_, 0.0, 0.0));
+  tf2::Transform tf_base_link2front(
+    tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front_, 0.0, 0.0));
 
   // polygon
   if (!polygons_.empty()) {

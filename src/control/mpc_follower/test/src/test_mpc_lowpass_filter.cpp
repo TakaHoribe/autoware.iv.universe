@@ -21,13 +21,15 @@
 
 #include "mpc_follower/lowpass_filter.h"
 
-class TestSuite : public ::testing::Test {
- public:
+class TestSuite : public ::testing::Test
+{
+public:
   TestSuite() {}
   ~TestSuite() {}
 };
 
-TEST_F(TestSuite, TestButterworthFilter) {
+TEST_F(TestSuite, TestButterworthFilter)
+{
   double dt = 0.01;  // sampling time [s]
   double fc = 5.0;   // cutoff [hz]
   Butterworth2dFilter butter(dt, fc);
@@ -55,18 +57,19 @@ TEST_F(TestSuite, TestButterworthFilter) {
 
   // these values does not match perfectly due to discretization algorithm.
   ASSERT_NEAR(a1, a1_matlab, std::fabs(a1_matlab * 0.1) /* error limit*/)
-      << "a1 value differs more than 10% with matlab, check equation";
+    << "a1 value differs more than 10% with matlab, check equation";
   ASSERT_NEAR(a2, a2_matlab, std::fabs(a2_matlab * 0.1) /* error limit*/)
-      << "a2 value differs more than 10% with matlab, check equation";
+    << "a2 value differs more than 10% with matlab, check equation";
   ASSERT_NEAR(b0, b0_matlab, std::fabs(b0_matlab * 0.1) /* error limit*/)
-      << "b0 value differs more than 10% with matlab, check equation";
+    << "b0 value differs more than 10% with matlab, check equation";
   ASSERT_NEAR(b1, b1_matlab, std::fabs(b1_matlab * 0.1) /* error limit*/)
-      << "b1 value differs more than 10% with matlab, check equation";
+    << "b1 value differs more than 10% with matlab, check equation";
   ASSERT_NEAR(b2, b2_matlab, std::fabs(b2_matlab * 0.1) /* error limit*/)
-      << "b2 value differs more than 10% with matlab, check equation";
+    << "b2 value differs more than 10% with matlab, check equation";
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

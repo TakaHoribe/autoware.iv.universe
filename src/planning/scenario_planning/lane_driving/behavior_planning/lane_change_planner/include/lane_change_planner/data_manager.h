@@ -40,26 +40,30 @@
 // other
 #include <memory>
 
-namespace lane_change_planner {
-class SelfPoseLinstener {
- public:
+namespace lane_change_planner
+{
+class SelfPoseLinstener
+{
+public:
   SelfPoseLinstener();
-  bool getSelfPose(geometry_msgs::PoseStamped& self_pose);
+  bool getSelfPose(geometry_msgs::PoseStamped & self_pose);
   bool isSelfPoseReady();
 
- private:
+private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 };
 
-struct BoolStamped {
-  explicit BoolStamped(bool in_data):data(in_data){}
+struct BoolStamped
+{
+  explicit BoolStamped(bool in_data) : data(in_data) {}
   bool data = false;
   ros::Time stamp;
 };
 
-class DataManager {
- private:
+class DataManager
+{
+private:
   /*
    * Cache
    */
@@ -78,16 +82,17 @@ class DataManager {
    */
   std::shared_ptr<SelfPoseLinstener> self_pose_listener_ptr_;
 
- public:
+public:
   DataManager();
   ~DataManager() = default;
 
   // callbacks
-  void perceptionCallback(const autoware_perception_msgs::DynamicObjectArray::ConstPtr& input_perception_msg);
-  void velocityCallback(const geometry_msgs::TwistStamped::ConstPtr& input_twist_msg);
-  void setLaneChangerParameters(const LaneChangerParameters& parameters);
-  void laneChangeApprovalCallback(const std_msgs::Bool& input_approval_msg);
-  void forceLaneChangeSignalCallback(const std_msgs::Bool& input_approval_msg);
+  void perceptionCallback(
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr & input_perception_msg);
+  void velocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_twist_msg);
+  void setLaneChangerParameters(const LaneChangerParameters & parameters);
+  void laneChangeApprovalCallback(const std_msgs::Bool & input_approval_msg);
+  void forceLaneChangeSignalCallback(const std_msgs::Bool & input_approval_msg);
 
   // getters
   autoware_perception_msgs::DynamicObjectArray::ConstPtr getDynamicObjects();

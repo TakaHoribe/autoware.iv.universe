@@ -17,36 +17,52 @@
 #include <motion_velocity_optimizer/interpolate.h>
 #include <motion_velocity_optimizer/motion_velocity_optimizer_utils.hpp>
 
-namespace vpu {
-double square(const double& a) { return a * a; }
-double calcSquaredDist2d(const geometry_msgs::Point& a, const geometry_msgs::Point& b) {
+namespace vpu
+{
+double square(const double & a) { return a * a; }
+double calcSquaredDist2d(const geometry_msgs::Point & a, const geometry_msgs::Point & b)
+{
   return square(a.x - b.x) + square(a.y - b.y);
 }
-double calcSquaredDist2d(const geometry_msgs::Pose& a, const geometry_msgs::Pose& b) {
+double calcSquaredDist2d(const geometry_msgs::Pose & a, const geometry_msgs::Pose & b)
+{
   return square(a.position.x - b.position.x) + square(a.position.y - b.position.y);
 }
-double calcSquaredDist2d(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b) {
-  return square(a.pose.position.x - b.pose.position.x) + square(a.pose.position.y - b.pose.position.y);
+double calcSquaredDist2d(const geometry_msgs::PoseStamped & a, const geometry_msgs::PoseStamped & b)
+{
+  return square(a.pose.position.x - b.pose.position.x) +
+         square(a.pose.position.y - b.pose.position.y);
 }
-double calcSquaredDist2d(const autoware_planning_msgs::TrajectoryPoint& a,
-                         const autoware_planning_msgs::TrajectoryPoint& b) {
-  return square(a.pose.position.x - b.pose.position.x) + square(a.pose.position.y - b.pose.position.y);
-}
-
-double calcDist2d(const geometry_msgs::Point& a, const geometry_msgs::Point& b) {
-  return std::sqrt(calcSquaredDist2d(a, b));
-}
-double calcDist2d(const geometry_msgs::Pose& a, const geometry_msgs::Pose& b) {
-  return std::sqrt(calcSquaredDist2d(a, b));
-}
-double calcDist2d(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b) {
-  return std::sqrt(calcSquaredDist2d(a, b));
-}
-double calcDist2d(const autoware_planning_msgs::TrajectoryPoint& a, const autoware_planning_msgs::TrajectoryPoint& b) {
-  return std::sqrt(calcSquaredDist2d(a, b));
+double calcSquaredDist2d(
+  const autoware_planning_msgs::TrajectoryPoint & a,
+  const autoware_planning_msgs::TrajectoryPoint & b)
+{
+  return square(a.pose.position.x - b.pose.position.x) +
+         square(a.pose.position.y - b.pose.position.y);
 }
 
-int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const geometry_msgs::Point& point) {
+double calcDist2d(const geometry_msgs::Point & a, const geometry_msgs::Point & b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(const geometry_msgs::Pose & a, const geometry_msgs::Pose & b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(const geometry_msgs::PoseStamped & a, const geometry_msgs::PoseStamped & b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+double calcDist2d(
+  const autoware_planning_msgs::TrajectoryPoint & a,
+  const autoware_planning_msgs::TrajectoryPoint & b)
+{
+  return std::sqrt(calcSquaredDist2d(a, b));
+}
+
+int calcClosestWaypoint(
+  const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::Point & point)
+{
   double dist_squared_min = std::numeric_limits<double>::max();
   int idx_min = -1;
 
@@ -62,8 +78,10 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& traj, const ge
   return idx_min;
 }
 
-int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, const geometry_msgs::Pose& pose,
-                        const double delta_yaw_threshold) {
+int calcClosestWaypoint(
+  const autoware_planning_msgs::Trajectory & trajectory, const geometry_msgs::Pose & pose,
+  const double delta_yaw_threshold)
+{
   double dist_squared_min = std::numeric_limits<double>::max();
   int idx_min = -1;
 
@@ -83,9 +101,11 @@ int calcClosestWaypoint(const autoware_planning_msgs::Trajectory& trajectory, co
   return idx_min;
 }
 
-bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory& trajectory, const int index,
-                            const double& ahead_length, const double& behind_length,
-                            autoware_planning_msgs::Trajectory& extracted_base_trajectory) {
+bool extractPathAroundIndex(
+  const autoware_planning_msgs::Trajectory & trajectory, const int index,
+  const double & ahead_length, const double & behind_length,
+  autoware_planning_msgs::Trajectory & extracted_base_trajectory)
+{
   if (trajectory.points.size() == 0 || (int)trajectory.points.size() - 1 < index || index < 0) {
     return false;
   }
@@ -123,11 +143,15 @@ bool extractPathAroundIndex(const autoware_planning_msgs::Trajectory& trajectory
   return true;
 }
 
-double calcLengthOnWaypoints(const autoware_planning_msgs::Trajectory& path, const int idx1, const int idx2) {
+double calcLengthOnWaypoints(
+  const autoware_planning_msgs::Trajectory & path, const int idx1, const int idx2)
+{
   if (idx1 == idx2)  // zero distance
     return 0.0;
 
-  if (idx1 < 0 || idx2 < 0 || (int)path.points.size() - 1 < idx1 || (int)path.points.size() - 1 < idx2) {
+  if (
+    idx1 < 0 || idx2 < 0 || (int)path.points.size() - 1 < idx1 ||
+    (int)path.points.size() - 1 < idx2) {
     std::cerr << "vpu::calcLengthOnWaypoints(): invalid index" << std::endl;
     return 0.0;
   }
@@ -141,7 +165,9 @@ double calcLengthOnWaypoints(const autoware_planning_msgs::Trajectory& path, con
   return dist_sum;
 }
 
-void calcTrajectoryArclength(const autoware_planning_msgs::Trajectory& trajectory, std::vector<double>& arclength) {
+void calcTrajectoryArclength(
+  const autoware_planning_msgs::Trajectory & trajectory, std::vector<double> & arclength)
+{
   double dist = 0.0;
   arclength.clear();
   arclength.push_back(dist);
@@ -153,8 +179,9 @@ void calcTrajectoryArclength(const autoware_planning_msgs::Trajectory& trajector
   }
 }
 
-void calcTrajectoryIntervalDistance(const autoware_planning_msgs::Trajectory& trajectory,
-                                    std::vector<double>& intervals) {
+void calcTrajectoryIntervalDistance(
+  const autoware_planning_msgs::Trajectory & trajectory, std::vector<double> & intervals)
+{
   intervals.clear();
   for (unsigned int i = 1; i < trajectory.points.size(); ++i) {
     const autoware_planning_msgs::TrajectoryPoint tp = trajectory.points.at(i);
@@ -164,35 +191,42 @@ void calcTrajectoryIntervalDistance(const autoware_planning_msgs::Trajectory& tr
   }
 }
 
-void setZeroVelocity(autoware_planning_msgs::Trajectory& trajectory) {
-  for (auto& tp : trajectory.points) {
+void setZeroVelocity(autoware_planning_msgs::Trajectory & trajectory)
+{
+  for (auto & tp : trajectory.points) {
     tp.twist.linear.x = 0.0;
   }
   return;
 }
 
-void mininumVelocityFilter(const double& min_vel, autoware_planning_msgs::Trajectory& trajectory) {
-  for (auto& tp : trajectory.points) {
+void mininumVelocityFilter(const double & min_vel, autoware_planning_msgs::Trajectory & trajectory)
+{
+  for (auto & tp : trajectory.points) {
     if (tp.twist.linear.x < min_vel) tp.twist.linear.x = min_vel;
   }
 }
 
-void maximumVelocityFilter(const double& max_vel, autoware_planning_msgs::Trajectory& trajectory) {
+void maximumVelocityFilter(const double & max_vel, autoware_planning_msgs::Trajectory & trajectory)
+{
   const double abs_max_vel = std::fabs(max_vel);
-  for (auto& tp : trajectory.points) {
+  for (auto & tp : trajectory.points) {
     if (tp.twist.linear.x > abs_max_vel)
       tp.twist.linear.x = abs_max_vel;
     else if (tp.twist.linear.x < -abs_max_vel)
       tp.twist.linear.x = -abs_max_vel;
   }
 }
-void multiplyConstantToTrajectoryVelocity(const double& scalar, autoware_planning_msgs::Trajectory& trajectory) {
-  for (auto& tp : trajectory.points) {
+void multiplyConstantToTrajectoryVelocity(
+  const double & scalar, autoware_planning_msgs::Trajectory & trajectory)
+{
+  for (auto & tp : trajectory.points) {
     tp.twist.linear.x *= scalar;
   }
 }
 
-void insertZeroVelocityAfterIdx(const int& stop_idx, autoware_planning_msgs::Trajectory& trajectory) {
+void insertZeroVelocityAfterIdx(
+  const int & stop_idx, autoware_planning_msgs::Trajectory & trajectory)
+{
   if (stop_idx < 0) return;
 
   for (int i = stop_idx; i < (int)trajectory.points.size(); ++i) {
@@ -200,11 +234,13 @@ void insertZeroVelocityAfterIdx(const int& stop_idx, autoware_planning_msgs::Tra
   }
 }
 
-double getVx(const autoware_planning_msgs::Trajectory& trajectory, const int& i) {
+double getVx(const autoware_planning_msgs::Trajectory & trajectory, const int & i)
+{
   return trajectory.points.at(i).twist.linear.x;
 }
 
-bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory& trajectory, int& idx) {
+bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory & trajectory, int & idx)
+{
   for (unsigned int i = 0; i < trajectory.points.size(); ++i) {
     if (std::fabs(vpu::getVx(trajectory, i)) < 1.0E-3) {
       idx = i;
@@ -214,12 +250,16 @@ bool searchZeroVelocityIdx(const autoware_planning_msgs::Trajectory& trajectory,
   return false;
 }
 
-bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory& trajectory,
-                                        const unsigned int& idx_dist, std::vector<double>& k_arr) {
+bool calcTrajectoryCurvatureFrom3Points(
+  const autoware_planning_msgs::Trajectory & trajectory, const unsigned int & idx_dist,
+  std::vector<double> & k_arr)
+{
   k_arr.clear();
   if (trajectory.points.size() < 2 * idx_dist + 1) {
-    ROS_DEBUG("[calcTrajectoryCurvatureFrom3Points] cannot calc curvature idx_dist = %d, trajectory.size() = %lu",
-              idx_dist, trajectory.points.size());
+    ROS_DEBUG(
+      "[calcTrajectoryCurvatureFrom3Points] cannot calc curvature idx_dist = %d, trajectory.size() "
+      "= %lu",
+      idx_dist, trajectory.points.size());
     for (unsigned int i = 0; i < trajectory.points.size(); ++i) {
       k_arr.push_back(0.0);
     }
@@ -254,7 +294,8 @@ bool calcTrajectoryCurvatureFrom3Points(const autoware_planning_msgs::Trajectory
   return true;
 }
 
-double normalizeRadian(const double _angle) {
+double normalizeRadian(const double _angle)
+{
   double n_angle = std::fmod(_angle, 2 * M_PI);
   n_angle = n_angle > M_PI ? n_angle - 2 * M_PI : n_angle < -M_PI ? 2 * M_PI + n_angle : n_angle;
 
@@ -263,24 +304,28 @@ double normalizeRadian(const double _angle) {
   return n_angle;
 }
 
-void convertEulerAngleToMonotonic(std::vector<double>& a) {
+void convertEulerAngleToMonotonic(std::vector<double> & a)
+{
   for (unsigned int i = 1; i < a.size(); ++i) {
     const double da = a[i] - a[i - 1];
     a[i] = a[i - 1] + normalizeRadian(da);
   }
 }
 
-geometry_msgs::Quaternion getQuaternionFromYaw(double yaw) {
+geometry_msgs::Quaternion getQuaternionFromYaw(double yaw)
+{
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
   return tf2::toMsg(q);
 }
 
-bool linearInterpTrajectory(const std::vector<double>& base_index,
-                            const autoware_planning_msgs::Trajectory& base_trajectory,
-                            const std::vector<double>& out_index, autoware_planning_msgs::Trajectory& out_trajectory) {
+bool linearInterpTrajectory(
+  const std::vector<double> & base_index,
+  const autoware_planning_msgs::Trajectory & base_trajectory, const std::vector<double> & out_index,
+  autoware_planning_msgs::Trajectory & out_trajectory)
+{
   std::vector<double> px, py, pz, pyaw, tlx, taz, alx, aaz;
-  for (const auto& p : base_trajectory.points) {
+  for (const auto & p : base_trajectory.points) {
     px.push_back(p.pose.position.x);
     py.push_back(p.pose.position.y);
     pz.push_back(p.pose.position.z);
@@ -295,14 +340,15 @@ bool linearInterpTrajectory(const std::vector<double>& base_index,
 
   std::vector<double> px_p, py_p, pz_p, pyaw_p, tlx_p, taz_p, alx_p, aaz_p;
 
-  if (!LinearInterpolate::interpolate(base_index, px, out_index, px_p) ||
-      !LinearInterpolate::interpolate(base_index, py, out_index, py_p) ||
-      !LinearInterpolate::interpolate(base_index, pz, out_index, pz_p) ||
-      !LinearInterpolate::interpolate(base_index, pyaw, out_index, pyaw_p) ||
-      !LinearInterpolate::interpolate(base_index, tlx, out_index, tlx_p) ||
-      !LinearInterpolate::interpolate(base_index, taz, out_index, taz_p) ||
-      !LinearInterpolate::interpolate(base_index, alx, out_index, alx_p) ||
-      !LinearInterpolate::interpolate(base_index, aaz, out_index, aaz_p)) {
+  if (
+    !LinearInterpolate::interpolate(base_index, px, out_index, px_p) ||
+    !LinearInterpolate::interpolate(base_index, py, out_index, py_p) ||
+    !LinearInterpolate::interpolate(base_index, pz, out_index, pz_p) ||
+    !LinearInterpolate::interpolate(base_index, pyaw, out_index, pyaw_p) ||
+    !LinearInterpolate::interpolate(base_index, tlx, out_index, tlx_p) ||
+    !LinearInterpolate::interpolate(base_index, taz, out_index, taz_p) ||
+    !LinearInterpolate::interpolate(base_index, alx, out_index, alx_p) ||
+    !LinearInterpolate::interpolate(base_index, aaz, out_index, aaz_p)) {
     ROS_WARN("[linearInterpTrajectory] interpolation error!!");
     return false;
   }

@@ -17,7 +17,7 @@
 #include "velodyne_pointcloud/colors.h"
 
 /** Main node entry point. */
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "colors_node");
   ros::NodeHandle node;

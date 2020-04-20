@@ -31,21 +31,25 @@ using lanelet::Point3d;
 using lanelet::Points3d;
 using lanelet::utils::getId;
 
-namespace {
+namespace
+{
 template <typename T>
-std::vector<T> convertToVector(T item) {
+std::vector<T> convertToVector(T item)
+{
   std::vector<T> vector = {item};
   return vector;
 }
 }  // namespace
 
-class TestSuite : public ::testing::Test {
- public:
+class TestSuite : public ::testing::Test
+{
+public:
   TestSuite() {}
   ~TestSuite() {}
 };
 
-TEST(TestSuite, FactoryConstructsTrafficLight) {
+TEST(TestSuite, FactoryConstructsTrafficLight)
+{
   Point3d p1, p2, p3, p4, p5, p6, p7;
   LineStringOrPolygon3d traffic_light_base;
   LineString3d traffic_light_bulbs, stop_line;
@@ -68,17 +72,18 @@ TEST(TestSuite, FactoryConstructsTrafficLight) {
   traffic_light_bulbs = LineString3d(getId(), bulbs);
   stop_line = LineString3d(getId(), stop);
 
-  auto tl = lanelet::autoware::AutowareTrafficLight::make(getId(), lanelet::AttributeMap(),
-                                                          convertToVector(traffic_light_base), stop_line,
-                                                          convertToVector(traffic_light_bulbs));
+  auto tl = lanelet::autoware::AutowareTrafficLight::make(
+    getId(), lanelet::AttributeMap(), convertToVector(traffic_light_base), stop_line,
+    convertToVector(traffic_light_bulbs));
 
   auto factoryTl = lanelet::RegulatoryElementFactory::create(
-      tl->attribute(lanelet::AttributeName::Subtype).value(),
-      std::const_pointer_cast<lanelet::RegulatoryElementData>(tl->constData()));
+    tl->attribute(lanelet::AttributeName::Subtype).value(),
+    std::const_pointer_cast<lanelet::RegulatoryElementData>(tl->constData()));
   EXPECT_TRUE(!!std::dynamic_pointer_cast<lanelet::TrafficLight>(factoryTl));
 }
 
-TEST(TestSuite, TrafficLightWorksAsExpected) {  // NOLINT
+TEST(TestSuite, TrafficLightWorksAsExpected)
+{  // NOLINT
   Point3d p1, p2, p3, p4, p5, p6, p7;
   LineStringOrPolygon3d traffic_light_base, traffic_light_base2;
   LineString3d traffic_light_bulbs, traffic_light_bulbs2, stop_line;
@@ -103,9 +108,9 @@ TEST(TestSuite, TrafficLightWorksAsExpected) {  // NOLINT
   traffic_light_bulbs2 = {LineString3d(getId(), bulbs)};
   stop_line = LineString3d(getId(), stop);
 
-  auto tl = lanelet::autoware::AutowareTrafficLight::make(getId(), lanelet::AttributeMap(),
-                                                          convertToVector(traffic_light_base), stop_line,
-                                                          convertToVector(traffic_light_bulbs));
+  auto tl = lanelet::autoware::AutowareTrafficLight::make(
+    getId(), lanelet::AttributeMap(), convertToVector(traffic_light_base), stop_line,
+    convertToVector(traffic_light_bulbs));
   tl->setStopLine(stop_line);
   EXPECT_EQ(stop_line, tl->stopLine());
   tl->addTrafficLight(traffic_light_base2);
@@ -116,7 +121,8 @@ TEST(TestSuite, TrafficLightWorksAsExpected) {  // NOLINT
   EXPECT_EQ(1ul, tl->lightBulbs().size());
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

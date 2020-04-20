@@ -46,15 +46,16 @@
 #include <scene_module/crosswalk/scene.h>
 #include <scene_module/scene_module_interface.h>
 
-class CrosswalkModuleManager : public SceneModuleManagerInterface {
- public:
+class CrosswalkModuleManager : public SceneModuleManagerInterface
+{
+public:
   CrosswalkModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char* getModuleName() override { return "crosswalk"; }
+  const char * getModuleName() override { return "crosswalk"; }
 
- private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) override;
+private:
+  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) override;
+  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
+    const autoware_planning_msgs::PathWithLaneId & path) override;
 };

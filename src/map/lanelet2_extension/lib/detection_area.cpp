@@ -24,11 +24,15 @@
 #include <algorithm>
 #include <vector>
 
-namespace lanelet {
-namespace autoware {
-namespace {
+namespace lanelet
+{
+namespace autoware
+{
+namespace
+{
 template <typename T>
-bool findAndErase(const T& primitive, RuleParameters* member) {
+bool findAndErase(const T & primitive, RuleParameters * member)
+{
   if (member == nullptr) {
     std::cerr << __FUNCTION__ << ": member is null pointer";
     return false;
@@ -42,8 +46,9 @@ bool findAndErase(const T& primitive, RuleParameters* member) {
 }
 
 template <typename T>
-RuleParameters toRuleParameters(const std::vector<T>& primitives) {
-  auto cast_func = [](const auto& elem) { return static_cast<RuleParameter>(elem); };
+RuleParameters toRuleParameters(const std::vector<T> & primitives)
+{
+  auto cast_func = [](const auto & elem) { return static_cast<RuleParameter>(elem); };
   return utils::transform(primitives, cast_func);
 }
 
@@ -54,14 +59,15 @@ RuleParameters toRuleParameters(const std::vector<T>& primitives) {
 //   return utils::transform(primitives, cast_func);
 // }
 
-Polygons3d getPoly(const RuleParameterMap& paramsMap, RoleName role) {
+Polygons3d getPoly(const RuleParameterMap & paramsMap, RoleName role)
+{
   auto params = paramsMap.find(role);
   if (params == paramsMap.end()) {
     return {};
   }
 
   Polygons3d result;
-  for (auto& param : params->second) {
+  for (auto & param : params->second) {
     auto p = boost::get<Polygon3d>(&param);
     if (p != nullptr) {
       result.push_back(*p);
@@ -70,13 +76,16 @@ Polygons3d getPoly(const RuleParameterMap& paramsMap, RoleName role) {
   return result;
 }
 
-ConstPolygons3d getConstPoly(const RuleParameterMap& params, RoleName role) {
-  auto cast_func = [](auto& poly) { return static_cast<ConstPolygon3d>(poly); };
+ConstPolygons3d getConstPoly(const RuleParameterMap & params, RoleName role)
+{
+  auto cast_func = [](auto & poly) { return static_cast<ConstPolygon3d>(poly); };
   return utils::transform(getPoly(params, role), cast_func);
 }
 
-RegulatoryElementDataPtr constructDetectionAreaData(Id id, const AttributeMap& attributes,
-                                                    const Polygons3d& detectionAreas, const LineString3d& stopLine) {
+RegulatoryElementDataPtr constructDetectionAreaData(
+  Id id, const AttributeMap & attributes, const Polygons3d & detectionAreas,
+  const LineString3d & stopLine)
+{
   RuleParameterMap rpm = {{RoleNameString::Refers, toRuleParameters(detectionAreas)}};
 
   RuleParameters rule_parameters = {stopLine};
@@ -89,7 +98,8 @@ RegulatoryElementDataPtr constructDetectionAreaData(Id id, const AttributeMap& a
 }
 }  // namespace
 
-DetectionArea::DetectionArea(const RegulatoryElementDataPtr& data) : RegulatoryElement(data) {
+DetectionArea::DetectionArea(const RegulatoryElementDataPtr & data) : RegulatoryElement(data)
+{
   if (getConstPoly(data->parameters, RoleName::Refers).empty()) {
     throw InvalidInputError("No detection area defined!");
   }
@@ -98,28 +108,43 @@ DetectionArea::DetectionArea(const RegulatoryElementDataPtr& data) : RegulatoryE
   }
 }
 
-DetectionArea::DetectionArea(Id id, const AttributeMap& attributes, const Polygons3d& detectionAreas,
-                             const LineString3d& stopLine)
-    : DetectionArea(constructDetectionAreaData(id, attributes, detectionAreas, stopLine)) {}
+DetectionArea::DetectionArea(
+  Id id, const AttributeMap & attributes, const Polygons3d & detectionAreas,
+  const LineString3d & stopLine)
+: DetectionArea(constructDetectionAreaData(id, attributes, detectionAreas, stopLine))
+{
+}
 
-ConstPolygons3d DetectionArea::detectionAreas() const { return getConstPoly(parameters(), RoleName::Refers); }
+ConstPolygons3d DetectionArea::detectionAreas() const
+{
+  return getConstPoly(parameters(), RoleName::Refers);
+}
 Polygons3d DetectionArea::detectionAreas() { return getPoly(parameters(), RoleName::Refers); }
 
-void DetectionArea::addDetectionArea(const Polygon3d& primitive) {
+void DetectionArea::addDetectionArea(const Polygon3d & primitive)
+{
   parameters()["detection_area"].emplace_back(primitive);
 }
 
-bool DetectionArea::removeDetectionArea(const Polygon3d& primitive) {
+bool DetectionArea::removeDetectionArea(const Polygon3d & primitive)
+{
   return findAndErase(primitive, &parameters().find("detection_area")->second);
 }
 
-ConstLineString3d DetectionArea::stopLine() const {
+ConstLineString3d DetectionArea::stopLine() const
+{
   return getParameters<ConstLineString3d>(RoleName::RefLine).front();
 }
 
-LineString3d DetectionArea::stopLine() { return getParameters<LineString3d>(RoleName::RefLine).front(); }
+LineString3d DetectionArea::stopLine()
+{
+  return getParameters<LineString3d>(RoleName::RefLine).front();
+}
 
-void DetectionArea::setStopLine(const LineString3d& stopLine) { parameters()[RoleName::RefLine] = {stopLine}; }
+void DetectionArea::setStopLine(const LineString3d & stopLine)
+{
+  parameters()[RoleName::RefLine] = {stopLine};
+}
 
 void DetectionArea::removeStopLine() { parameters()[RoleName::RefLine] = {}; }
 

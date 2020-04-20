@@ -27,15 +27,16 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "autoware_perception_msgs/Shape.h"
 
-bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
-                               autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                               bool& orientation_output) {
+bool ConvexHullModel::estimate(
+  const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
+  geometry_msgs::Pose & pose_output, bool & orientation_output)
+{
   // calc centroid point for convex hull height(z)
   pcl::PointXYZ centroid;
   centroid.x = 0;
   centroid.y = 0;
   centroid.z = 0;
-  for (const auto& pcl_point : cluster) {
+  for (const auto & pcl_point : cluster) {
     centroid.x += pcl_point.x;
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;
@@ -55,7 +56,8 @@ bool ConvexHullModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
   std::vector<cv::Point> v_pointcloud;
   std::vector<cv::Point> v_polygon_points;
   for (size_t i = 0; i < cluster.size(); ++i) {
-    v_pointcloud.push_back(cv::Point((cluster.at(i).x - centroid.x) * 1000.0, (cluster.at(i).y - centroid.y) * 1000.0));
+    v_pointcloud.push_back(
+      cv::Point((cluster.at(i).x - centroid.x) * 1000.0, (cluster.at(i).y - centroid.y) * 1000.0));
   }
   cv::convexHull(v_pointcloud, v_polygon_points);
 

@@ -21,14 +21,17 @@
 #include <turn_signal_decider/data_manager.h>
 #include <turn_signal_decider/frenet_coordinate.h>
 
-namespace turn_signal_decider {
-struct TurnSignalParameters {
+namespace turn_signal_decider
+{
+struct TurnSignalParameters
+{
   double lane_change_search_distance;  // TODO: change this to time based threshold
   double intersection_search_distance;
 };
 
-class TurnSignalDecider {
- private:
+class TurnSignalDecider
+{
+private:
   // ROS variables
   ros::NodeHandle pnh_;
   ros::Subscriber path_subscriber_;
@@ -42,19 +45,23 @@ class TurnSignalDecider {
   TurnSignalParameters parameters_;
 
   // callbacks
-  void onTurnSignalTimer(const ros::TimerEvent& event);
+  void onTurnSignalTimer(const ros::TimerEvent & event);
 
   // turn signal factors
-  bool isChangingLane(const autoware_planning_msgs::PathWithLaneId& path, const FrenetCoordinate3d& vehicle_pose_frenet,
-                      autoware_vehicle_msgs::TurnSignal* signal_state_ptr, double* distance_ptr) const;
-  bool isTurning(const autoware_planning_msgs::PathWithLaneId& path, const FrenetCoordinate3d& vehicle_pose_frenet,
-                 autoware_vehicle_msgs::TurnSignal* signal_state_ptr, double* distance_ptr) const;
+  bool isChangingLane(
+    const autoware_planning_msgs::PathWithLaneId & path,
+    const FrenetCoordinate3d & vehicle_pose_frenet,
+    autoware_vehicle_msgs::TurnSignal * signal_state_ptr, double * distance_ptr) const;
+  bool isTurning(
+    const autoware_planning_msgs::PathWithLaneId & path,
+    const FrenetCoordinate3d & vehicle_pose_frenet,
+    autoware_vehicle_msgs::TurnSignal * signal_state_ptr, double * distance_ptr) const;
 
   // other
-  lanelet::routing::RelationType getRelation(const lanelet::ConstLanelet& prev_lane,
-                                             const lanelet::ConstLanelet& next_lane) const;
+  lanelet::routing::RelationType getRelation(
+    const lanelet::ConstLanelet & prev_lane, const lanelet::ConstLanelet & next_lane) const;
 
- public:
+public:
   TurnSignalDecider();
 };
 }  // namespace turn_signal_decider

@@ -21,18 +21,20 @@
 
 #include "map_corrector_interface.hpp"
 
-class VehicleMapCorrector : public MapCorrectorInterface {
- private:
+class VehicleMapCorrector : public MapCorrectorInterface
+{
+private:
   double rad_threshold_;
   bool use_rad_filter_;
 
- public:
+public:
   VehicleMapCorrector(const bool use_rad_filter, const double rad_threshold = M_PI_2 / 2.0)
-      : use_rad_filter_(use_rad_filter), rad_threshold_(rad_threshold){};
+  : use_rad_filter_(use_rad_filter), rad_threshold_(rad_threshold){};
 
   ~VehicleMapCorrector(){};
 
-  bool correct(const VectorMap& vector_map, const geometry_msgs::TransformStamped& transform_stamped,
-               autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-               bool& orientaion_output) override;
+  bool correct(
+    const VectorMap & vector_map, const geometry_msgs::TransformStamped & transform_stamped,
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientaion_output) override;
 };

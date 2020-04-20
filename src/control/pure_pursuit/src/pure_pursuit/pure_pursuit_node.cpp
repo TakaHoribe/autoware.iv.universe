@@ -35,10 +35,11 @@
 #include "pure_pursuit/util/planning_utils.h"
 #include "pure_pursuit/util/tf_utils.h"
 
-namespace {
-
-autoware_control_msgs::ControlCommand createControlCommand(const double kappa, const double velocity,
-                                                           const double acceleration, const double wheel_base) {
+namespace
+{
+autoware_control_msgs::ControlCommand createControlCommand(
+  const double kappa, const double velocity, const double acceleration, const double wheel_base)
+{
   autoware_control_msgs::ControlCommand cmd;
   cmd.velocity = velocity;
   cmd.acceleration = acceleration;
@@ -46,15 +47,17 @@ autoware_control_msgs::ControlCommand createControlCommand(const double kappa, c
   return cmd;
 }
 
-double calcLookaheadDistance(const double velocity, const double lookahead_distance_ratio,
-                             const double min_lookahead_distance) {
+double calcLookaheadDistance(
+  const double velocity, const double lookahead_distance_ratio, const double min_lookahead_distance)
+{
   const double lookahead_distance = lookahead_distance_ratio * std::abs(velocity);
   return std::max(lookahead_distance, min_lookahead_distance);
 }
 
 }  // namespace
 
-PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_) {
+PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_buffer_)
+{
   pure_pursuit_ = std::make_unique<planning_utils::PurePursuit>();
 
   // Global Parameters
@@ -66,14 +69,18 @@ PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_
   // Algorithm Parameters
   private_nh_.param<double>("lookahead_distance_ratio", param_.lookahead_distance_ratio, 2.2);
   private_nh_.param<double>("min_lookahead_distance", param_.min_lookahead_distance, 2.5);
-  private_nh_.param<double>("reverse_min_lookahead_distance", param_.reverse_min_lookahead_distance, 7.0);
+  private_nh_.param<double>(
+    "reverse_min_lookahead_distance", param_.reverse_min_lookahead_distance, 7.0);
 
   // Subscribers
-  sub_trajectory_ = private_nh_.subscribe("input/reference_trajectory", 1, &PurePursuitNode::onTrajectory, this);
-  sub_current_velocity_ = private_nh_.subscribe("input/current_velocity", 1, &PurePursuitNode::onCurrentVelocity, this);
+  sub_trajectory_ =
+    private_nh_.subscribe("input/reference_trajectory", 1, &PurePursuitNode::onTrajectory, this);
+  sub_current_velocity_ =
+    private_nh_.subscribe("input/current_velocity", 1, &PurePursuitNode::onCurrentVelocity, this);
 
   // Publishers
-  pub_ctrl_cmd_ = private_nh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
+  pub_ctrl_cmd_ =
+    private_nh_.advertise<autoware_control_msgs::ControlCommandStamped>("output/control_raw", 1);
 
   // Debug Publishers
   pub_debug_marker_ = private_nh_.advertise<visualization_msgs::MarkerArray>("debug/marker", 0);
@@ -85,7 +92,8 @@ PurePursuitNode::PurePursuitNode() : nh_(""), private_nh_("~"), tf_listener_(tf_
   tf_utils::waitForTransform(tf_buffer_, "map", "base_link");
 }
 
-bool PurePursuitNode::isDataReady() const {
+bool PurePursuitNode::isDataReady() const
+{
   if (!current_velocity_) {
     ROS_WARN_THROTTLE(5.0, "waiting for current_velocity...");
     return false;
@@ -104,11 +112,18 @@ bool PurePursuitNode::isDataReady() const {
   return true;
 }
 
-void PurePursuitNode::onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) { current_velocity_ = msg; }
+void PurePursuitNode::onCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr & msg)
+{
+  current_velocity_ = msg;
+}
 
-void PurePursuitNode::onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr& msg) { trajectory_ = msg; }
+void PurePursuitNode::onTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr & msg)
+{
+  trajectory_ = msg;
+}
 
-void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
+void PurePursuitNode::onTimer(const ros::TimerEvent & event)
+{
   current_pose_ = tf_utils::getCurrentPose(tf_buffer_);
 
   if (!isDataReady()) {
@@ -126,23 +141,28 @@ void PurePursuitNode::onTimer(const ros::TimerEvent& event) {
   }
 }
 
-void PurePursuitNode::publishCommand(const TargetValues& targets) const {
+void PurePursuitNode::publishCommand(const TargetValues & targets) const
+{
   autoware_control_msgs::ControlCommandStamped cmd;
   cmd.header.stamp = ros::Time::now();
-  cmd.control = createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
+  cmd.control =
+    createControlCommand(targets.kappa, targets.velocity, targets.acceleration, param_.wheel_base);
   pub_ctrl_cmd_.publish(cmd);
 }
 
-void PurePursuitNode::publishDebugMarker() const {
+void PurePursuitNode::publishDebugMarker() const
+{
   visualization_msgs::MarkerArray marker_array;
 
   marker_array.markers.push_back(createNextTargetMarker(debug_data_.next_target));
-  marker_array.markers.push_back(createTrajectoryCircleMarker(debug_data_.next_target, current_pose_->pose));
+  marker_array.markers.push_back(
+    createTrajectoryCircleMarker(debug_data_.next_target, current_pose_->pose));
 
   pub_debug_marker_.publish(marker_array);
 }
 
-boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
+boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const
+{
   // Calculate target point for velocity/acceleration
   const auto target_point = calcTargetPoint();
   if (!target_point) {
@@ -155,9 +175,9 @@ boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
   // Calculate lookahead ditance
   const bool is_reverse = (target_vel < 0);
   const double min_lookahead_distance =
-      is_reverse ? param_.reverse_min_lookahead_distance : param_.min_lookahead_distance;
-  const double lookahead_distance =
-      calcLookaheadDistance(current_velocity_->twist.linear.x, param_.lookahead_distance_ratio, min_lookahead_distance);
+    is_reverse ? param_.reverse_min_lookahead_distance : param_.min_lookahead_distance;
+  const double lookahead_distance = calcLookaheadDistance(
+    current_velocity_->twist.linear.x, param_.lookahead_distance_ratio, min_lookahead_distance);
 
   // Set PurePursuit data
   pure_pursuit_->setCurrentPose(current_pose_->pose);
@@ -178,9 +198,10 @@ boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const {
   return TargetValues{kappa, target_vel, target_acc};
 }
 
-boost::optional<autoware_planning_msgs::TrajectoryPoint> PurePursuitNode::calcTargetPoint() const {
+boost::optional<autoware_planning_msgs::TrajectoryPoint> PurePursuitNode::calcTargetPoint() const
+{
   const auto closest_idx_result = planning_utils::findClosestIdxWithDistAngThr(
-      planning_utils::extractPoses(*trajectory_), current_pose_->pose, 3.0, M_PI_4);
+    planning_utils::extractPoses(*trajectory_), current_pose_->pose, 3.0, M_PI_4);
 
   if (!closest_idx_result.first) {
     ROS_ERROR("cannot find closest waypoint");

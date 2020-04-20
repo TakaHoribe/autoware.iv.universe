@@ -33,26 +33,29 @@
 
 #include <scene_module/scene_module_interface.h>
 
-class StopLineModule : public SceneModuleInterface {
- public:
+class StopLineModule : public SceneModuleInterface
+{
+public:
   enum class State { APPROARCH, STOP, START };
 
-  struct DebugData {
+  struct DebugData
+  {
     double base_link2front;
     std::vector<geometry_msgs::Pose> stop_poses;
   };
 
- public:
-  StopLineModule(const int64_t module_id, const lanelet::ConstLineString3d& stop_line);
+public:
+  StopLineModule(const int64_t module_id, const lanelet::ConstLineString3d & stop_line);
 
-  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) override;
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
- private:
-  bool getBackwordPointFromBasePoint(const Eigen::Vector2d& line_point1, const Eigen::Vector2d& line_point2,
-                                     const Eigen::Vector2d& base_point, const double backward_length,
-                                     Eigen::Vector2d& output_point);
+private:
+  bool getBackwordPointFromBasePoint(
+    const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
+    const Eigen::Vector2d & base_point, const double backward_length,
+    Eigen::Vector2d & output_point);
 
   lanelet::ConstLineString3d stop_line_;
   State state_;

@@ -40,18 +40,20 @@
 
 #include <geometry_msgs/Pose.h>
 
-namespace planning_utils {
-
-class PurePursuit {
- public:
+namespace planning_utils
+{
+class PurePursuit
+{
+public:
   PurePursuit() : lookahead_distance_(0.0), clst_thr_dist_(3.0), clst_thr_ang_(M_PI / 4) {}
   ~PurePursuit() = default;
 
   // setter
-  void setCurrentPose(const geometry_msgs::Pose& msg);
-  void setWaypoints(const std::vector<geometry_msgs::Pose>& msg);
+  void setCurrentPose(const geometry_msgs::Pose & msg);
+  void setWaypoints(const std::vector<geometry_msgs::Pose> & msg);
   void setLookaheadDistance(double ld) { lookahead_distance_ = ld; }
-  void setClosestThreshold(double clst_thr_dist, double clst_thr_ang) {
+  void setClosestThreshold(double clst_thr_dist, double clst_thr_ang)
+  {
     clst_thr_dist_ = clst_thr_dist;
     clst_thr_ang_ = clst_thr_ang;
   }
@@ -63,7 +65,7 @@ class PurePursuit {
   bool isDataReady();
   std::pair<bool, double> run();  // calculate curvature
 
- private:
+private:
   // variables for debug
   geometry_msgs::Point loc_next_wp_;
   geometry_msgs::Point loc_next_tgt_;

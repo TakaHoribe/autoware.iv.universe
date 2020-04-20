@@ -22,11 +22,13 @@
 #include <vector>
 #include "osqp.h"
 
-namespace osqp {
+namespace osqp
+{
 struct CSC_Matrix;
 }
 
-namespace osqp {
+namespace osqp
+{
 /**
  * Implementation of a native C++ interface for the OSQP solver.
  *
@@ -64,14 +66,15 @@ namespace osqp {
  *
  * Ref: https://osqp.org/docs/solver/index.html
  */
-class OSQPInterface {
- private:
+class OSQPInterface
+{
+private:
   /*****************************
    * OSQP WORKSPACE STRUCTURES
    *****************************/
-  OSQPWorkspace* work;
-  OSQPSettings* settings;
-  OSQPData* data;
+  OSQPWorkspace * work;
+  OSQPSettings * settings;
+  OSQPData * data;
   // Number of parameters to optimize
   c_int param_n;
 
@@ -85,23 +88,23 @@ class OSQPInterface {
    * DATA CONVERSION FUNCTIONS
    *****************************/
   // Converts problem input matrices to CSC matrix structs.
-  CSC_Matrix transformP(const Eigen::MatrixXd& P, int* nonzeros);
-  CSC_Matrix transformA(const Eigen::MatrixXd& A);
+  CSC_Matrix transformP(const Eigen::MatrixXd & P, int * nonzeros);
+  CSC_Matrix transformA(const Eigen::MatrixXd & A);
   // Converts problem input vectors to dynamic arrays.
-  double* transformQ(const std::vector<double>& q);
-  double* transformL(const std::vector<double>& l);
-  double* transformU(const std::vector<double>& u);
+  double * transformQ(const std::vector<double> & q);
+  double * transformL(const std::vector<double> & l);
+  double * transformU(const std::vector<double> & u);
   // Converts an Eigen matrix into a CSC matrix struct.
   CSC_Matrix convEigenMatrixToCSCMatrix(const Eigen::MatrixXd A);
   // Converts an Eigen vector matrix into a dynamic array.
-  double* convEigenVecToDynFloatArray(const Eigen::MatrixXd x);
+  double * convEigenVecToDynFloatArray(const Eigen::MatrixXd x);
 
   // Exitflag
   c_int exitflag;
 
   inline bool isEqual(double x, double y);
 
- public:
+public:
   // Returns a flag for asserting interface condition (Healthy condition: 0).
   c_int getExitFlag(void);
 
@@ -132,8 +135,9 @@ class OSQPInterface {
   //   l: (m) vector defining the lower bound problem constraint.
   //   u: (m) vector defining the upper bound problem constraint.
   //   eps_abs: Absolute convergence tolerance.
-  OSQPInterface(const Eigen::MatrixXd& P, const Eigen::MatrixXd& A, const std::vector<double>& q,
-                const std::vector<double>& l, const std::vector<double>& u, const c_float eps_abs);
+  OSQPInterface(
+    const Eigen::MatrixXd & P, const Eigen::MatrixXd & A, const std::vector<double> & q,
+    const std::vector<double> & l, const std::vector<double> & u, const c_float eps_abs);
 
   // For freeing dynamic memory used by OSQP's data object.
   ~OSQPInterface();
@@ -177,10 +181,9 @@ class OSQPInterface {
   //        std::vector<float> param = std::get<0>(result);
   //        double x_0 = param[0];
   //        double x_1 = param[1];
-  std::tuple<std::vector<double>, std::vector<double>, int> optimize(const Eigen::MatrixXd& P, const Eigen::MatrixXd& A,
-                                                                     const std::vector<double>& q,
-                                                                     const std::vector<double>& l,
-                                                                     const std::vector<double>& u);
+  std::tuple<std::vector<double>, std::vector<double>, int> optimize(
+    const Eigen::MatrixXd & P, const Eigen::MatrixXd & A, const std::vector<double> & q,
+    const std::vector<double> & l, const std::vector<double> & u);
 
   /**************************
    * DATA-RELATED FUNCTIONS
@@ -194,8 +197,9 @@ class OSQPInterface {
   //   q: (n) vector defining the linear cost of the problem.
   //   l: (m) vector defining the lower bound problem constraint.
   //   u: (m) vector defining the upper bound problem constraint.
-  c_int initializeProblem(const Eigen::MatrixXd& P, const Eigen::MatrixXd& A, const std::vector<double>& q,
-                          const std::vector<double>& l, const std::vector<double>& u);
+  c_int initializeProblem(
+    const Eigen::MatrixXd & P, const Eigen::MatrixXd & A, const std::vector<double> & q,
+    const std::vector<double> & l, const std::vector<double> & u);
 
   // Updates problem parameters while keeping solution in memory.
   //
@@ -205,12 +209,12 @@ class OSQPInterface {
   //   q_new: (n) vector defining the linear cost of the problem.
   //   l_new: (m) vector defining the lower bound problem constraint.
   //   u_new: (m) vector defining the upper bound problem constraint.
-  void updateP(const Eigen::MatrixXd& P_new);
-  void updateA(const Eigen::MatrixXd& A_new);
-  void updateQ(const std::vector<double>& q_new);
-  void updateL(const std::vector<double>& l_new);
-  void updateU(const std::vector<double>& u_new);
-  void updateBounds(const std::vector<double>& l_new, const std::vector<double>& u_new);
+  void updateP(const Eigen::MatrixXd & P_new);
+  void updateA(const Eigen::MatrixXd & A_new);
+  void updateQ(const std::vector<double> & q_new);
+  void updateL(const std::vector<double> & l_new);
+  void updateU(const std::vector<double> & u_new);
+  void updateBounds(const std::vector<double> & l_new, const std::vector<double> & u_new);
   void updateEpsAbs(const double eps_abs);
   void updateEpsRel(const double eps_rel);
   void updateMaxIter(const int iter);

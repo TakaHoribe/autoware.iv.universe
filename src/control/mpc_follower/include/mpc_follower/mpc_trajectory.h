@@ -22,8 +22,9 @@
  * @class trajectory class for mpc follower
  * @brief calculate control command to follow reference waypoints
  */
-class MPCTrajectory {
- public:
+class MPCTrajectory
+{
+public:
   std::vector<double> x;              //!< @brief x position x vector
   std::vector<double> y;              //!< @brief y position y vector
   std::vector<double> z;              //!< @brief z position z vector
@@ -35,8 +36,9 @@ class MPCTrajectory {
   /**
    * @brief push_back for all values
    */
-  void push_back(const double& xp, const double& yp, const double& zp, const double& yawp, const double& vxp,
-                 const double& kp, const double& tp);
+  void push_back(
+    const double & xp, const double & yp, const double & zp, const double & yawp,
+    const double & vxp, const double & kp, const double & tp);
   /**
    * @brief clear for all values
    */

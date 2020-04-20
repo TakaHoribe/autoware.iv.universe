@@ -17,7 +17,8 @@
 
 #include <autoware_state_monitor/autoware_state_monitor_node.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "autoware_state_monitor");
 
   AutowareStateMonitorNode node;
