@@ -37,7 +37,7 @@ bool AccelMap::readAccelMapFromCSV(std::string csv_path)
   }
   vehicle_name_ = table[0][0];
   for (unsigned int i = 1; i < table[0].size(); i++) {
-    vel_index_.push_back(std::stod(table[0][i]) * 1000 / 60 / 60);  // km/h => m/s
+    vel_index_.push_back(std::stod(table[0][i]));
   }
 
   for (unsigned int i = 1; i < table.size(); i++) {
