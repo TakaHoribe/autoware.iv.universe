@@ -40,17 +40,16 @@ enum class MGRSPrecision {
 // OrthometricHeight:height above geoid
 double EllipsoidHeight2OrthometricHeight(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
 {
-  // double OrthometricHeight;
-  // try{
-  //   GeographicLib::Geoid egm2008("egm2008-1");
-  //   OrthometricHeight = egm2008.ConvertHeight(nav_sat_fix_msg.latitude, nav_sat_fix_msg.longitude,
-  //   nav_sat_fix_msg.altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
-  // }
-  // catch(const GeographicLib::GeographicErr err){
-  //   ROS_ERROR_STREAM("Failed to convert Height from Ellipsoid to Orthometric" << err.what());
-  // }
-  // return OrthometricHeight;
-  return nav_sat_fix_msg.altitude;
+  double OrthometricHeight;
+  try{
+    GeographicLib::Geoid egm2008("egm2008-1");
+    OrthometricHeight = egm2008.ConvertHeight(nav_sat_fix_msg.latitude, nav_sat_fix_msg.longitude,
+    nav_sat_fix_msg.altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
+  }
+  catch(const GeographicLib::GeographicErr err){
+    ROS_ERROR_STREAM("Failed to convert Height from Ellipsoid to Orthometric" << err.what());
+  }
+  return OrthometricHeight;
 }
 
 GNSSStat NavSatFix2UTM(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
