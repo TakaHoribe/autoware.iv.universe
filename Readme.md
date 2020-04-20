@@ -91,7 +91,7 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 - sample map : © 2020 TierIV inc.
 
 ### Tutorial in detail
-See [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc/simulation.md). for more information. 
+See [here](https://github.com/tier4/Autoware-T4B/blob/master/docs/SimulationTurorial.md). for more information. 
 
 # References
 ## Videos
@@ -104,4 +104,4 @@ See [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc
 - [Robustness of localization](https://youtu.be/ydPxWB2jVnM)
 
 ## Credits
-- [Neural Network Weight Files](https://github.com/tier4/Autoware-T4B/blob/master/Credits.md)
+- [Neural Network Weight Files](https://github.com/tier4/Autoware-T4B/blob/master/docs/Credits.md)
