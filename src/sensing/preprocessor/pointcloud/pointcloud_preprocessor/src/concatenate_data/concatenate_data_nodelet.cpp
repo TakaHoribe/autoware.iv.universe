@@ -124,7 +124,7 @@ void PointCloudConcatenateDataSynchronizerNodelet::subscribe()
   }
 
   sub_twist_ = pnh_->subscribe<geometry_msgs::TwistStamped>(
-    "/vehicle/status/twist", 100,
+    "/localization/twist", 100,
     bind(&PointCloudConcatenateDataSynchronizerNodelet::twist_callback, this, _1));
   timer_ = pnh_->createTimer(
     ros::Duration(timeout_sec_), &PointCloudConcatenateDataSynchronizerNodelet::timer_callback,

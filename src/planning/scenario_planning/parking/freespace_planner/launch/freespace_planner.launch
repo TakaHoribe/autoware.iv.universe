@@ -2,7 +2,7 @@
   <arg name="input_route" />
   <arg name="input_occupancy_grid" />
   <arg name="input_scenario" />
-  <arg name="input_twist" default="/vehicle/status/twist" />
+  <arg name="input_twist" default="/localization/twist" />
   <arg name="output_trajectory" />
   <arg name="is_completed" />
 

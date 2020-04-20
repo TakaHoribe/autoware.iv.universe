@@ -1,7 +1,7 @@
 <launch>
   <node pkg="pure_pursuit" type="pure_pursuit" name="pure_pursuit" output="screen">
     <remap from="~input/reference_trajectory" to="/planning/scenario_planning/trajectory"/>
-    <remap from="~input/current_velocity" to="/vehicle/status/twist"/>
+    <remap from="~input/current_velocity" to="/localization/twist"/>
     <remap from="~output/control_raw" to="lateral/control_cmd"/>
 
     <!-- Node Parameters -->

@@ -30,7 +30,7 @@ Interpolate::Interpolate(ros::NodeHandle node, ros::NodeHandle private_nh)
 
   // subscribe
   twist_sub_ = node.subscribe(
-    "/vehicle/status/twist", 10, &Interpolate::processTwist, (Interpolate *)this,
+    "/localization/twist", 10, &Interpolate::processTwist, (Interpolate *)this,
     ros::TransportHints().tcpNoDelay(true));
   velodyne_points_ex_sub_ = node.subscribe(
     "velodyne_points_ex", 10, &Interpolate::processPoints, (Interpolate *)this,
