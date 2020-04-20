@@ -1,5 +1,5 @@
 # Simulation in Autoware
-Autoware provides 2 types of simulations.Rosbag is used for testing/validation for `Sensing`, `Localization` and `Perception` stacks. Planning Simulator is mainly used for testing/validation for `Planning` stack by simulating traffic rules, interaction with dynamic objects or control command to vehicle.
+Autoware provides 2 types of simulations.Rosbag is used for testing/validation for `Sensing`, `Localization` and `Perception` stacks. Planning Simulator is mainly used for testing/validation for `Planning` stack by simulating traffic rules, interaction with dynamic objects and control command to vehicle.
 ![sim](https://user-images.githubusercontent.com/8327598/79709776-0bd47b00-82fe-11ea-872e-d94ef25bc3bf.png)
 
 
