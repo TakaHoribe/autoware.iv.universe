@@ -91,7 +91,7 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 - sample map : © 2020 TierIV inc.
 
 ### Tutorial in detail
-See [here](https://github.com/tier4/Autoware-T4B/blob/master/docs/SimulationTurorial.md). for more information. 
+See [here](https://github.com/tier4/Autoware-T4B/blob/master/docs/SimulationTutorial.md). for more information. 
 
 # References
 ## Videos
