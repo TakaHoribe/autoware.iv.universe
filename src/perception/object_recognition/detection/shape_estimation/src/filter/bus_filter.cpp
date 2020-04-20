@@ -19,8 +19,10 @@
 
 #include "bus_filter.hpp"
 
-bool BusFilter::filter(const autoware_perception_msgs::Shape& shape, const geometry_msgs::Pose& pose,
-                       const bool& orientaion) {
+bool BusFilter::filter(
+  const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
+  const bool & orientaion)
+{
   double x = shape.dimensions.x;
   double y = shape.dimensions.y;
   double s = x * y;

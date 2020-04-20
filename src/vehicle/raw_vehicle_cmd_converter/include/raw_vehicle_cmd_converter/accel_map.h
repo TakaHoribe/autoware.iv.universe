@@ -27,15 +27,16 @@
 #include "raw_vehicle_cmd_converter/csv_loader.h"
 #include "raw_vehicle_cmd_converter/interpolate.h"
 
-class AccelMap {
- public:
+class AccelMap
+{
+public:
   AccelMap();
   ~AccelMap();
 
   bool readAccelMapFromCSV(std::string csv_path);
-  bool getThrottle(double acc, double vel, double& throttle);
+  bool getThrottle(double acc, double vel, double & throttle);
 
- private:
+private:
   std::string vehicle_name_;
   std::vector<double> vel_index_;
   std::vector<double> throttle_index_;

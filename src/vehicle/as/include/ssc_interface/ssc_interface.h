@@ -50,19 +50,20 @@
 
 static const std::string BASE_FRAME_ID = "base_link";
 
-class SSCInterface {
- public:
+class SSCInterface
+{
+public:
   SSCInterface();
   ~SSCInterface();
 
   void run();
 
- private:
+private:
   typedef message_filters::sync_policies::ApproximateTime<
-      automotive_platform_msgs::VelocityAccel, automotive_platform_msgs::CurvatureFeedback,
-      automotive_platform_msgs::ThrottleFeedback, automotive_platform_msgs::BrakeFeedback,
-      automotive_platform_msgs::GearFeedback, pacmod_msgs::WheelSpeedRpt, pacmod_msgs::SystemRptFloat>
-      SSCFeedbacksSyncPolicy;
+    automotive_platform_msgs::VelocityAccel, automotive_platform_msgs::CurvatureFeedback,
+    automotive_platform_msgs::ThrottleFeedback, automotive_platform_msgs::BrakeFeedback,
+    automotive_platform_msgs::GearFeedback, pacmod_msgs::WheelSpeedRpt, pacmod_msgs::SystemRptFloat>
+    SSCFeedbacksSyncPolicy;
 
   // handle
   ros::NodeHandle nh_;
@@ -73,14 +74,15 @@ class SSCInterface {
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_sub_;
   ros::Subscriber module_states_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::VelocityAccel>* velocity_accel_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::CurvatureFeedback>* curvature_feedback_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::ThrottleFeedback>* throttle_feedback_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::BrakeFeedback>* brake_feedback_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::GearFeedback>* gear_feedback_sub_;
-  message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>* wheel_speed_sub_;
-  message_filters::Subscriber<pacmod_msgs::SystemRptFloat>* steering_wheel_sub_;
-  message_filters::Synchronizer<SSCFeedbacksSyncPolicy>* ssc_feedbacks_sync_;
+  message_filters::Subscriber<automotive_platform_msgs::VelocityAccel> * velocity_accel_sub_;
+  message_filters::Subscriber<automotive_platform_msgs::CurvatureFeedback> *
+    curvature_feedback_sub_;
+  message_filters::Subscriber<automotive_platform_msgs::ThrottleFeedback> * throttle_feedback_sub_;
+  message_filters::Subscriber<automotive_platform_msgs::BrakeFeedback> * brake_feedback_sub_;
+  message_filters::Subscriber<automotive_platform_msgs::GearFeedback> * gear_feedback_sub_;
+  message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt> * wheel_speed_sub_;
+  message_filters::Subscriber<pacmod_msgs::SystemRptFloat> * steering_wheel_sub_;
+  message_filters::Synchronizer<SSCFeedbacksSyncPolicy> * ssc_feedbacks_sync_;
 
   // publishers
   ros::Publisher steer_mode_pub_;
@@ -103,10 +105,10 @@ class SSCInterface {
   double deceleration_limit_;  // [m/s^2]
   double max_curvature_rate_;  // [rad/m/s]
 
-  bool use_rear_wheel_speed_;                    // instead of 'as/velocity_accel'
-  bool use_adaptive_gear_ratio_;                 // for more accurate steering angle (gr = theta_sw / theta_s)
-  double tire_radius_;                           // [m] (NOTE: used by 'use_rear_wheel_speed' mode)
-  double ssc_gear_ratio_;                        // gr = const (NOTE: used by 'use_adaptive_gear_ratio' mode)
+  bool use_rear_wheel_speed_;     // instead of 'as/velocity_accel'
+  bool use_adaptive_gear_ratio_;  // for more accurate steering angle (gr = theta_sw / theta_s)
+  double tire_radius_;            // [m] (NOTE: used by 'use_rear_wheel_speed' mode)
+  double ssc_gear_ratio_;         // gr = const (NOTE: used by 'use_adaptive_gear_ratio' mode)
   double agr_coef_a_, agr_coef_b_, agr_coef_c_;  // gr = a + b * speed^2 + c * theta_sw
   double steering_offset_;                       // [rad] def: measured = truth + offset
 
@@ -127,20 +129,21 @@ class SSCInterface {
   autoware_vehicle_msgs::VehicleCommand vehicle_cmd_;
   autoware_vehicle_msgs::TurnSignal turn_signal_cmd_;
   automotive_navigation_msgs::ModuleState module_states_;
-  ros::Rate* rate_;
+  ros::Rate * rate_;
 
   // callbacks
-  void callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr& msg);
-  void callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr& msg);
-  void callbackFromEngage(const std_msgs::BoolConstPtr& msg);
-  void callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr& msg);
-  void callbackFromSSCFeedbacks(const automotive_platform_msgs::VelocityAccelConstPtr& msg_velocity,
-                                const automotive_platform_msgs::CurvatureFeedbackConstPtr& msg_curvature,
-                                const automotive_platform_msgs::ThrottleFeedbackConstPtr& msg_throttle,
-                                const automotive_platform_msgs::BrakeFeedbackConstPtr& msg_brake,
-                                const automotive_platform_msgs::GearFeedbackConstPtr& msg_gear,
-                                const pacmod_msgs::WheelSpeedRptConstPtr& msg_wheel_speed,
-                                const pacmod_msgs::SystemRptFloatConstPtr& msg_steering_wheel);
+  void callbackFromVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg);
+  void callbackFromTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr & msg);
+  void callbackFromEngage(const std_msgs::BoolConstPtr & msg);
+  void callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr & msg);
+  void callbackFromSSCFeedbacks(
+    const automotive_platform_msgs::VelocityAccelConstPtr & msg_velocity,
+    const automotive_platform_msgs::CurvatureFeedbackConstPtr & msg_curvature,
+    const automotive_platform_msgs::ThrottleFeedbackConstPtr & msg_throttle,
+    const automotive_platform_msgs::BrakeFeedbackConstPtr & msg_brake,
+    const automotive_platform_msgs::GearFeedbackConstPtr & msg_gear,
+    const pacmod_msgs::WheelSpeedRptConstPtr & msg_wheel_speed,
+    const pacmod_msgs::SystemRptFloatConstPtr & msg_steering_wheel);
   // functions
   void publishCommand();
 };

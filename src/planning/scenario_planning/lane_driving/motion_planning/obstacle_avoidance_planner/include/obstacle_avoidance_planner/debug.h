@@ -19,18 +19,23 @@
 class ConstrainRectangle;
 
 visualization_msgs::MarkerArray getDebugVisualizationMarker(
-    const std::vector<geometry_msgs::Point>& interpolated_points,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    const std::vector<geometry_msgs::Point>& straight_points, const std::vector<geometry_msgs::Pose>& fixed_points,
-    const std::vector<geometry_msgs::Pose>& non_fixed_points, const std::vector<ConstrainRectangle>& constrain_ranges);
+  const std::vector<geometry_msgs::Point> & interpolated_points,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & optimized_points,
+  const std::vector<geometry_msgs::Point> & straight_points,
+  const std::vector<geometry_msgs::Pose> & fixed_points,
+  const std::vector<geometry_msgs::Pose> & non_fixed_points,
+  const std::vector<ConstrainRectangle> & constrain_ranges);
 
 visualization_msgs::MarkerArray getDebugPointsMarkers(
-    const std::vector<geometry_msgs::Point>& interpolated_points,
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>& optimized_points,
-    const std::vector<geometry_msgs::Point>& straight_points, const std::vector<geometry_msgs::Pose>& fixed_points,
-    const std::vector<geometry_msgs::Pose>& non_fixed_points);
+  const std::vector<geometry_msgs::Point> & interpolated_points,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & optimized_points,
+  const std::vector<geometry_msgs::Point> & straight_points,
+  const std::vector<geometry_msgs::Pose> & fixed_points,
+  const std::vector<geometry_msgs::Pose> & non_fixed_points);
 
-visualization_msgs::MarkerArray getDebugConstrainMarkers(const std::vector<ConstrainRectangle>& constrain_ranges);
+visualization_msgs::MarkerArray getDebugConstrainMarkers(
+  const std::vector<ConstrainRectangle> & constrain_ranges);
 
-nav_msgs::OccupancyGrid getDebugCostmap(const cv::Mat& clearance_map, const nav_msgs::OccupancyGrid& occupancy_grid);
+nav_msgs::OccupancyGrid getDebugCostmap(
+  const cv::Mat & clearance_map, const nav_msgs::OccupancyGrid & occupancy_grid);
 #endif

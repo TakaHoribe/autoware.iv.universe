@@ -18,7 +18,8 @@
 
 #include "gyro_odometer/gyro_odometer_core.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "gyro_odometer");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");

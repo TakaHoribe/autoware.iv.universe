@@ -21,29 +21,34 @@
 #include <rviz/uniform_string_stream.h>
 #include <QPainter>
 
-namespace rviz_plugins {
-TurnSignalDisplay::TurnSignalDisplay() {
-  property_left_ =
-      new rviz::IntProperty("Left", 128, "Left of the plotter window", this, SLOT(updateVisualization()), this);
+namespace rviz_plugins
+{
+TurnSignalDisplay::TurnSignalDisplay()
+{
+  property_left_ = new rviz::IntProperty(
+    "Left", 128, "Left of the plotter window", this, SLOT(updateVisualization()), this);
   property_left_->setMin(0);
-  property_top_ = new rviz::IntProperty("Top", 128, "Top of the plotter window", this, SLOT(updateVisualization()));
+  property_top_ = new rviz::IntProperty(
+    "Top", 128, "Top of the plotter window", this, SLOT(updateVisualization()));
   property_top_->setMin(0);
 
-  property_width_ =
-      new rviz::IntProperty("Width", 256, "Width of the plotter window", this, SLOT(updateVisualization()), this);
+  property_width_ = new rviz::IntProperty(
+    "Width", 256, "Width of the plotter window", this, SLOT(updateVisualization()), this);
   property_width_->setMin(10);
-  property_height_ =
-      new rviz::IntProperty("Height", 256, "Width of the plotter window", this, SLOT(updateVisualization()), this);
+  property_height_ = new rviz::IntProperty(
+    "Height", 256, "Width of the plotter window", this, SLOT(updateVisualization()), this);
   property_height_->setMin(10);
 }
 
-TurnSignalDisplay::~TurnSignalDisplay() {
+TurnSignalDisplay::~TurnSignalDisplay()
+{
   if (initialized()) {
     overlay_->hide();
   }
 }
 
-void TurnSignalDisplay::onInitialize() {
+void TurnSignalDisplay::onInitialize()
+{
   MFDClass::onInitialize();
   static int count = 0;
   rviz::UniformStringStream ss;
@@ -57,18 +62,21 @@ void TurnSignalDisplay::onInitialize() {
   overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());
 }
 
-void TurnSignalDisplay::onEnable() {
+void TurnSignalDisplay::onEnable()
+{
   subscribe();
   overlay_->show();
 }
 
-void TurnSignalDisplay::onDisable() {
+void TurnSignalDisplay::onDisable()
+{
   unsubscribe();
   reset();
   overlay_->hide();
 }
 
-void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalConstPtr& msg_ptr) {
+void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalConstPtr & msg_ptr)
+{
   if (!isEnabled()) {
     return;
   }
@@ -92,7 +100,7 @@ void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalCo
   QColor white_color(Qt::white);
   white_color.setAlpha(255);
   if (msg_ptr->data == autoware_vehicle_msgs::TurnSignal::RIGHT) {
-    QPointF* line = new QPointF[7];
+    QPointF * line = new QPointF[7];
     painter.setPen(QPen(white_color, int(2), Qt::DotLine));
     line[0].setX((double)w * 0.0 / 5.0);
     line[0].setY((double)h * 1.0 / 2.0);
@@ -127,7 +135,7 @@ void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalCo
     line[6].setY((double)h * 4.0 / 5.0);
     painter.drawPolygon(line, 7);
   } else if (msg_ptr->data == autoware_vehicle_msgs::TurnSignal::LEFT) {
-    QPointF* line = new QPointF[7];
+    QPointF * line = new QPointF[7];
     painter.setPen(QPen(white_color, int(2), Qt::DotLine));
     line[0].setX((double)w * 5.0 / 5.0);
     line[0].setY((double)h * 1.0 / 2.0);
@@ -164,7 +172,7 @@ void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalCo
   } else if (msg_ptr->data == autoware_vehicle_msgs::TurnSignal::HAZARD) {
     painter.setBrush(QBrush(Qt::white, Qt::SolidPattern));
     painter.setPen(QPen(white_color, int(2), Qt::SolidLine));
-    QPointF* line = new QPointF[7];
+    QPointF * line = new QPointF[7];
     line[0].setX((double)w * 5.0 / 5.0);
     line[0].setY((double)h * 1.0 / 2.0);
     line[1].setX((double)w * 4.0 / 5.0);
@@ -197,7 +205,7 @@ void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalCo
     painter.drawPolygon(line, 7);
   } else {
     painter.setPen(QPen(white_color, int(2), Qt::DotLine));
-    QPointF* line = new QPointF[7];
+    QPointF * line = new QPointF[7];
     line[0].setX((double)w * 5.0 / 5.0);
     line[0].setY((double)h * 1.0 / 2.0);
     line[1].setX((double)w * 4.0 / 5.0);
@@ -233,7 +241,8 @@ void TurnSignalDisplay::processMessage(const autoware_vehicle_msgs::TurnSignalCo
   last_msg_ptr_ = msg_ptr;
 }
 
-void TurnSignalDisplay::updateVisualization() {
+void TurnSignalDisplay::updateVisualization()
+{
   overlay_->updateTextureSize(property_width_->getInt(), property_height_->getInt());
   overlay_->setPosition(property_left_->getInt(), property_top_->getInt());
   overlay_->setDimensions(overlay_->getTextureWidth(), overlay_->getTextureHeight());

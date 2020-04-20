@@ -16,8 +16,8 @@
 #include <scene_module/intersection/scene.h>
 
 #include <lanelet2_core/geometry/Polygon.h>
-#include <lanelet2_extension/utility/utilities.h>
 #include <lanelet2_core/primitives/BasicRegulatoryElements.h>
+#include <lanelet2_extension/utility/utilities.h>
 
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
@@ -25,19 +25,22 @@
 namespace bg = boost::geometry;
 
 IntersectionModule::IntersectionModule(const int64_t module_id, const int64_t lane_id)
-    : SceneModuleInterface(module_id), lane_id_(lane_id) {
+: SceneModuleInterface(module_id), lane_id_(lane_id)
+{
   state_machine_.setMarginTime(2.0);  // [sec]
 }
 
-bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
+{
   debug_data_ = {};
 
   const auto input_path = *path;
   debug_data_.path_raw = input_path;
 
   State current_state = state_machine_.getState();
-  ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d",
-                 static_cast<int>(current_state));
+  ROS_DEBUG_COND(
+    show_debug_info_, "[IntersectionModule]: run: state_machine_.getState() = %d",
+    static_cast<int>(current_state));
 
   /* get current pose */
   geometry_msgs::PoseStamped current_pose = planner_data_->current_pose;
@@ -61,15 +64,17 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   }
 
   if (stop_line_idx_ <= 0 || judge_line_idx_ <= 0) {
-    ROS_INFO_COND(show_debug_info_,
-                  "[IntersectionModule::run] the stop line or judge line is at path[0], ignore "
-                  "planning. Maybe it is far behind the current position.");
+    ROS_INFO_COND(
+      show_debug_info_,
+      "[IntersectionModule::run] the stop line or judge line is at path[0], ignore "
+      "planning. Maybe it is far behind the current position.");
     return true;
   }
 
   if (current_state == State::STOP) {
     // visualize virtual_wall at vehicle front position
-    debug_data_.virtual_wall_pose = getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
+    debug_data_.virtual_wall_pose =
+      getAheadPose(stop_line_idx_, planner_data_->base_link2front, *path);
   }
   debug_data_.stop_point_pose = path->points.at(stop_line_idx_).point.pose;
   debug_data_.judge_point_pose = path->points.at(judge_line_idx_).point.pose;
@@ -79,11 +84,12 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   setVelocityFrom(judge_line_idx_, approaching_speed_to_stopline_, path);
 
   if (current_state == State::GO) {
-    geometry_msgs::Pose p =
-        planning_utils::transformRelCoordinate2D(current_pose.pose, path->points.at(judge_line_idx_).point.pose);
+    geometry_msgs::Pose p = planning_utils::transformRelCoordinate2D(
+      current_pose.pose, path->points.at(judge_line_idx_).point.pose);
     // current_pose is ahead of judge_line
     if (p.position.x > 0.0) {
-      ROS_INFO_COND(show_debug_info_, "[IntersectionModule::run] no plan needed. skip collision check.");
+      ROS_INFO_COND(
+        show_debug_info_, "[IntersectionModule::run] no plan needed. skip collision check.");
       return true;  // no plan needed.
     }
   }
@@ -96,10 +102,14 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   std::vector<lanelet::ConstLanelet> objective_lanelets;
   getObjectiveLanelets(lanelet_map_ptr, routing_graph_ptr, lane_id_, &objective_lanelets);
   debug_data_.intersection_detection_lanelets = objective_lanelets;
-  ROS_DEBUG_COND(show_debug_info_, "[IntersectionModuleManager::run()] lane_id_ = %ld, objective_lanelets.size() = %lu",
-                 lane_id_, objective_lanelets.size());
+  ROS_DEBUG_COND(
+    show_debug_info_,
+    "[IntersectionModuleManager::run()] lane_id_ = %ld, objective_lanelets.size() = %lu", lane_id_,
+    objective_lanelets.size());
   if (objective_lanelets.empty()) {
-    ROS_DEBUG_COND(show_debug_info_, "[IntersectionModule::run]: detection area number is zero. skip computation.");
+    ROS_DEBUG_COND(
+      show_debug_info_,
+      "[IntersectionModule::run]: detection area number is zero. skip computation.");
     return true;
   }
 
@@ -122,13 +132,14 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   return true;
 }
 
-bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const double judge_line_dist,
-                                        autoware_planning_msgs::PathWithLaneId* path, int* stop_line_idx,
-                                        int* judge_line_idx) {
+bool IntersectionModule::setStopLineIdx(
+  const int current_pose_closest, const double judge_line_dist,
+  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx)
+{
   // TEMP: return first assigned_lane_id point's index
   *stop_line_idx = -1;
   for (size_t i = 0; i < path->points.size(); ++i) {
-    for (const auto& id : path->points.at(i).lane_ids) {
+    for (const auto & id : path->points.at(i).lane_ids) {
       if (id == lane_id_) {
         *stop_line_idx = i;
       }
@@ -139,8 +150,8 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
 
   if (*stop_line_idx == -1) {
     ROS_ERROR(
-        "[IntersectionModule::setStopLineIdx]: cannot set the stop line. something wrong. please "
-        "check code. ");
+      "[IntersectionModule::setStopLineIdx]: cannot set the stop line. something wrong. please "
+      "check code. ");
     return false;  // cannot find stop line.
   }
 
@@ -175,16 +186,18 @@ bool IntersectionModule::setStopLineIdx(const int current_pose_closest, const do
   }
   if (*judge_line_idx == -1) {
     ROS_DEBUG(
-        "[IntersectionModule::setStopLineIdx]: cannot set the stop judgement line. path is too "
-        "short, or "
-        "the vehicle is already ahead of the stop line. stop_line_id = %d",
-        *stop_line_idx);
+      "[IntersectionModule::setStopLineIdx]: cannot set the stop judgement line. path is too "
+      "short, or "
+      "the vehicle is already ahead of the stop line. stop_line_id = %d",
+      *stop_line_idx);
   }
   return true;
 }
 
-geometry_msgs::Pose IntersectionModule::getAheadPose(const size_t start_idx, const double ahead_dist,
-                                                     const autoware_planning_msgs::PathWithLaneId& path) const {
+geometry_msgs::Pose IntersectionModule::getAheadPose(
+  const size_t start_idx, const double ahead_dist,
+  const autoware_planning_msgs::PathWithLaneId & path) const
+{
   if (path.points.size() == 0) {
     return geometry_msgs::Pose{};
   }
@@ -214,37 +227,42 @@ geometry_msgs::Pose IntersectionModule::getAheadPose(const size_t start_idx, con
   return path.points.back().point.pose;
 }
 
-bool IntersectionModule::setVelocityFrom(const size_t idx, const double vel,
-                                         autoware_planning_msgs::PathWithLaneId* input) {
+bool IntersectionModule::setVelocityFrom(
+  const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId * input)
+{
   for (size_t i = idx; i < input->points.size(); ++i) {
-    input->points.at(i).point.twist.linear.x = std::min(vel, input->points.at(i).point.twist.linear.x);
+    input->points.at(i).point.twist.linear.x =
+      std::min(vel, input->points.at(i).point.twist.linear.x);
   }
 }
 
-bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanelet_map_ptr,
-                                              lanelet::routing::RoutingGraphConstPtr routing_graph_ptr,
-                                              const int lane_id,
-                                              std::vector<lanelet::ConstLanelet>* objective_lanelets) {
-  lanelet::ConstLanelet assigned_lanelet = lanelet_map_ptr->laneletLayer.get(lane_id);  // current assigned lanelets
+bool IntersectionModule::getObjectiveLanelets(
+  lanelet::LaneletMapConstPtr lanelet_map_ptr,
+  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, const int lane_id,
+  std::vector<lanelet::ConstLanelet> * objective_lanelets)
+{
+  lanelet::ConstLanelet assigned_lanelet =
+    lanelet_map_ptr->laneletLayer.get(lane_id);  // current assigned lanelets
 
   // get conflicting lanes on assigned lanelet
-  const auto conflicting_lanelets = lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+  const auto conflicting_lanelets =
+    lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
   auto candidate_lanelets = conflicting_lanelets;
 
   // get previous lanelet of conflicting lanelets
-  for (const auto& conflicting_lanelet : conflicting_lanelets) {
+  for (const auto & conflicting_lanelet : conflicting_lanelets) {
     lanelet::ConstLanelets previous_lanelets = routing_graph_ptr->previous(conflicting_lanelet);
-    for (const auto& previous_lanelet : previous_lanelets) {
+    for (const auto & previous_lanelet : previous_lanelets) {
       candidate_lanelets.push_back(previous_lanelet);
     }
   }
 
   // get lanelets that must be ignored
   std::vector<lanelet::ConstLanelet> exclude_lanelets;
-  for (const auto& previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
+  for (const auto & previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
     exclude_lanelets.push_back(previous_lanelet);
 
-    for (const auto& following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
+    for (const auto & following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
       if (lanelet::utils::contains(exclude_lanelets, following_lanelet)) {
         continue;
       }
@@ -253,17 +271,17 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   }
 
   const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
-  for (const auto& right_of_way : right_of_ways) {
-    for (const auto& yield_lanelets : right_of_way->yieldLanelets()) {
+  for (const auto & right_of_way : right_of_ways) {
+    for (const auto & yield_lanelets : right_of_way->yieldLanelets()) {
       exclude_lanelets.push_back(yield_lanelets);
-      for (const auto& previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
+      for (const auto & previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
         exclude_lanelets.push_back(previous_lanelet);
       }
     }
   }
 
   // Filter candidates
-  for (const auto& candidate_lanelet : candidate_lanelets) {
+  for (const auto & candidate_lanelet : candidate_lanelets) {
     if (lanelet::utils::contains(exclude_lanelets, candidate_lanelet)) {
       continue;
     }
@@ -274,10 +292,11 @@ bool IntersectionModule::getObjectiveLanelets(lanelet::LaneletMapConstPtr lanele
   return true;
 }
 
-bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLaneId& path,
-                                        const std::vector<lanelet::ConstLanelet>& objective_lanelets,
-                                        const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
-                                        const double path_width) {
+bool IntersectionModule::checkCollision(
+  const autoware_planning_msgs::PathWithLaneId & path,
+  const std::vector<lanelet::ConstLanelet> & objective_lanelets,
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const double path_width)
+{
   /* generates side edge line */
   autoware_planning_msgs::PathWithLaneId path_r;  // right side edge line
   autoware_planning_msgs::PathWithLaneId path_l;  // left side edge line
@@ -287,13 +306,14 @@ bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLa
   debug_data_.path_left_edge = path_l;
 
   /* check collision for each objects and lanelets area */
-  for (const auto& objective_lanelet : objective_lanelets) {
-    for (const auto& object : objects_ptr->objects) {
+  for (const auto & objective_lanelet : objective_lanelets) {
+    for (const auto & object : objects_ptr->objects) {
       const auto object_pose = object.state.pose_covariance.pose;
 
       // TODO(Kenji Miyake): Map Matching of objects
 
-      const auto is_in_objective_lanelet = bg::within(to_bg2d(object_pose.position), objective_lanelet.polygon2d());
+      const auto is_in_objective_lanelet =
+        bg::within(to_bg2d(object_pose.position), objective_lanelet.polygon2d());
       if (!is_in_objective_lanelet) {
         continue;
       }
@@ -304,8 +324,9 @@ bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLa
         continue;
       }
 
-      const auto is_in_path =
-          bg::within(to_bg2d(object_pose.position), lines2polygon(to_bg2d(path_l.points), to_bg2d(path_r.points)));
+      const auto is_in_path = bg::within(
+        to_bg2d(object_pose.position),
+        lines2polygon(to_bg2d(path_l.points), to_bg2d(path_r.points)));
       if (is_in_path) {
         // TODO(Kenji Miyake): check direction?
         continue;
@@ -318,8 +339,10 @@ bool IntersectionModule::checkCollision(const autoware_planning_msgs::PathWithLa
   return false;
 }
 
-bool IntersectionModule::checkPathCollision(const autoware_planning_msgs::PathWithLaneId& path,
-                                            const autoware_perception_msgs::DynamicObject& object) {
+bool IntersectionModule::checkPathCollision(
+  const autoware_planning_msgs::PathWithLaneId & path,
+  const autoware_perception_msgs::DynamicObject & object)
+{
   for (const auto object_path : object.state.predicted_paths) {
     if (bg::intersects(to_bg2d(path.points), to_bg2d(object_path.path))) {
       return true;
@@ -329,9 +352,10 @@ bool IntersectionModule::checkPathCollision(const autoware_planning_msgs::PathWi
   return false;
 }
 
-bool IntersectionModule::generateEdgeLine(const autoware_planning_msgs::PathWithLaneId& path, const double path_width,
-                                          autoware_planning_msgs::PathWithLaneId* path_r,
-                                          autoware_planning_msgs::PathWithLaneId* path_l) {
+bool IntersectionModule::generateEdgeLine(
+  const autoware_planning_msgs::PathWithLaneId & path, const double path_width,
+  autoware_planning_msgs::PathWithLaneId * path_r, autoware_planning_msgs::PathWithLaneId * path_l)
+{
   *path_r = path;
   *path_l = path;
   for (int i = 0; i < path.points.size(); ++i) {
@@ -343,7 +367,8 @@ bool IntersectionModule::generateEdgeLine(const autoware_planning_msgs::PathWith
   }
 }
 
-void IntersectionModule::StateMachine::setStateWithMarginTime(State state) {
+void IntersectionModule::StateMachine::setStateWithMarginTime(State state)
+{
   /* same state request */
   if (state_ == state) {
     start_time_ = nullptr;  // reset timer
@@ -374,8 +399,8 @@ void IntersectionModule::StateMachine::setStateWithMarginTime(State state) {
   }
 
   ROS_ERROR(
-      "[StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
-      "request.");
+    "[StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
+    "request.");
   return;
 }
 

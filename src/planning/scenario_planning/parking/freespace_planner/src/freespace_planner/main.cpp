@@ -32,7 +32,8 @@
 
 #include "freespace_planner/freespace_planner.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "freespace_planner");
 
   AstarNavi node;

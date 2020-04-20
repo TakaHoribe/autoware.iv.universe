@@ -31,14 +31,15 @@
  * @class simple_planning_simulator vehicle model class
  * @brief calculate vehicle dynamics
  */
-class SimModelInterface {
- protected:
+class SimModelInterface
+{
+protected:
   const int dim_x_;        //!< @brief dimension of state x
   const int dim_u_;        //!< @brief dimension of input u
   Eigen::VectorXd state_;  //!< @brief vehicle state vector
   Eigen::VectorXd input_;  //!< @brief vehicle input vector
 
- public:
+public:
   /**
    * @brief constructor
    * @param [in] dim_x dimension of state x
@@ -55,45 +56,45 @@ class SimModelInterface {
    * @brief get state vector of model
    * @param [out] state state vector
    */
-  void getState(Eigen::VectorXd& state);
+  void getState(Eigen::VectorXd & state);
 
   /**
    * @brief get input vector of model
    * @param [out] input input vector
    */
-  void getInput(Eigen::VectorXd& input);
+  void getInput(Eigen::VectorXd & input);
 
   /**
    * @brief set state vector of model
    * @param [in] state state vector
    */
-  void setState(const Eigen::VectorXd& state);
+  void setState(const Eigen::VectorXd & state);
 
   /**
    * @brief set input vector of model
    * @param [in] input input vector
    */
-  void setInput(const Eigen::VectorXd& input);
+  void setInput(const Eigen::VectorXd & input);
 
   /**
    * @brief update vehicle states with Runge-Kutta methods
    * @param [in] dt delta time [s]
    * @param [in] input vehicle input
    */
-  void updateRungeKutta(const double& dt, const Eigen::VectorXd& input);
+  void updateRungeKutta(const double & dt, const Eigen::VectorXd & input);
 
   /**
    * @brief update vehicle states with Euler methods
    * @param [in] dt delta time [s]
    * @param [in] input vehicle input
    */
-  void updateEuler(const double& dt, const Eigen::VectorXd& input);
+  void updateEuler(const double & dt, const Eigen::VectorXd & input);
 
   /**
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  virtual void update(const double& dt) = 0;
+  virtual void update(const double & dt) = 0;
 
   /**
    * @brief get vehicle position x
@@ -130,7 +131,8 @@ class SimModelInterface {
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  virtual Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) = 0;
+  virtual Eigen::VectorXd calcModel(
+    const Eigen::VectorXd & state, const Eigen::VectorXd & input) = 0;
 };
 
 #endif

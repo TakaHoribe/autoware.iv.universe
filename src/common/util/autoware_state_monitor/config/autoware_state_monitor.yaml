@@ -15,7 +15,7 @@ topic_configs:
     warn_rate: 5.0
 
   - module: "sensing"
-    name: "/vehicle/status/velocity"
+    name: "/vehicle/status/twist"
     timeout: 1.0
     warn_rate: 5.0
 

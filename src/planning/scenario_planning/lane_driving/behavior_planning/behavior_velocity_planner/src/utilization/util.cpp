@@ -18,9 +18,10 @@
 
 #include "utilization/util.h"
 
-namespace planning_utils {
-
-double normalizeEulerAngle(double euler) {
+namespace planning_utils
+{
+double normalizeEulerAngle(double euler)
+{
   double res = euler;
   while (res > M_PI) {
     res -= (2.0 * M_PI);
@@ -32,14 +33,18 @@ double normalizeEulerAngle(double euler) {
   return res;
 }
 
-geometry_msgs::Quaternion getQuaternionFromYaw(double yaw) {
+geometry_msgs::Quaternion getQuaternionFromYaw(double yaw)
+{
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
   return tf2::toMsg(q);
 }
 
 template <class T>
-bool calcClosestIndex(const T& path, const geometry_msgs::Pose& pose, int& closest, double dist_thr, double angle_thr) {
+bool calcClosestIndex(
+  const T & path, const geometry_msgs::Pose & pose, int & closest, double dist_thr,
+  double angle_thr)
+{
   double dist_squared_min = std::numeric_limits<double>::max();
   double yaw_pose = tf2::getYaw(pose.orientation);
   closest = -1;
@@ -65,17 +70,19 @@ bool calcClosestIndex(const T& path, const geometry_msgs::Pose& pose, int& close
   return closest == -1 ? false : true;
 }
 
-template bool calcClosestIndex<autoware_planning_msgs::Trajectory>(const autoware_planning_msgs::Trajectory& path,
-                                                                   const geometry_msgs::Pose& pose, int& closest,
-                                                                   double dist_thr, double angle_thr);
+template bool calcClosestIndex<autoware_planning_msgs::Trajectory>(
+  const autoware_planning_msgs::Trajectory & path, const geometry_msgs::Pose & pose, int & closest,
+  double dist_thr, double angle_thr);
 template bool calcClosestIndex<autoware_planning_msgs::PathWithLaneId>(
-    const autoware_planning_msgs::PathWithLaneId& path, const geometry_msgs::Pose& pose, int& closest, double dist_thr,
-    double angle_thr);
-template bool calcClosestIndex<autoware_planning_msgs::Path>(const autoware_planning_msgs::Path& path,
-                                                             const geometry_msgs::Pose& pose, int& closest,
-                                                             double dist_thr, double angle_thr);
+  const autoware_planning_msgs::PathWithLaneId & path, const geometry_msgs::Pose & pose,
+  int & closest, double dist_thr, double angle_thr);
+template bool calcClosestIndex<autoware_planning_msgs::Path>(
+  const autoware_planning_msgs::Path & path, const geometry_msgs::Pose & pose, int & closest,
+  double dist_thr, double angle_thr);
 
-geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose& target, const geometry_msgs::Pose& origin) {
+geometry_msgs::Pose transformRelCoordinate2D(
+  const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin)
+{
   // translation
   geometry_msgs::Point trans_p;
   trans_p.x = target.position.x - origin.position.x;
@@ -93,7 +100,9 @@ geometry_msgs::Pose transformRelCoordinate2D(const geometry_msgs::Pose& target, 
   return res;
 }
 
-geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose& relative, const geometry_msgs::Pose& origin) {
+geometry_msgs::Pose transformAbsCoordinate2D(
+  const geometry_msgs::Pose & relative, const geometry_msgs::Pose & origin)
+{
   // rotation
   geometry_msgs::Point rot_p;
   double yaw = tf2::getYaw(origin.orientation);
@@ -110,7 +119,8 @@ geometry_msgs::Pose transformAbsCoordinate2D(const geometry_msgs::Pose& relative
   return absolute;
 }
 
-double calcJudgeLineDist(double velocity, double max_accel, double margin)  // TODO: also consider jerk
+double calcJudgeLineDist(
+  double velocity, double max_accel, double margin)  // TODO: also consider jerk
 {
   double judge_line_dist = (velocity * velocity) / (2.0 * (-max_accel)) + margin;
   return judge_line_dist;

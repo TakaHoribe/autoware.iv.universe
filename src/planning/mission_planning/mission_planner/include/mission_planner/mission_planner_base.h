@@ -30,9 +30,11 @@
 #include <string>
 #include <vector>
 
-namespace mission_planner {
-class MissionPlanner {
- protected:
+namespace mission_planner
+{
+class MissionPlanner
+{
+protected:
   MissionPlanner();
 
   geometry_msgs::PoseStamped goal_pose_;
@@ -48,10 +50,10 @@ class MissionPlanner {
 
   virtual bool isRoutingGraphReady() const = 0;
   virtual autoware_planning_msgs::Route planRoute() = 0;
-  virtual void visualizeRoute(const autoware_planning_msgs::Route& route) const = 0;
-  virtual void publishRoute(const autoware_planning_msgs::Route& route) const;
+  virtual void visualizeRoute(const autoware_planning_msgs::Route & route) const = 0;
+  virtual void publishRoute(const autoware_planning_msgs::Route & route) const;
 
- private:
+private:
   ros::Publisher route_publisher_;
   ros::Subscriber goal_subscriber_;
   ros::Subscriber checkpoint_subscriber_;
@@ -59,11 +61,12 @@ class MissionPlanner {
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
-  bool getEgoVehiclePose(geometry_msgs::PoseStamped* ego_vehicle_pose);
-  void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& goal_msg_ptr);
-  void checkpointCallback(const geometry_msgs::PoseStampedConstPtr& checkpoint_msg_ptr);
-  bool transformPose(const geometry_msgs::PoseStamped& input_pose, geometry_msgs::PoseStamped* output_pose,
-                     const std::string target_frame);
+  bool getEgoVehiclePose(geometry_msgs::PoseStamped * ego_vehicle_pose);
+  void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr & goal_msg_ptr);
+  void checkpointCallback(const geometry_msgs::PoseStampedConstPtr & checkpoint_msg_ptr);
+  bool transformPose(
+    const geometry_msgs::PoseStamped & input_pose, geometry_msgs::PoseStamped * output_pose,
+    const std::string target_frame);
 };
 
 }  // namespace mission_planner

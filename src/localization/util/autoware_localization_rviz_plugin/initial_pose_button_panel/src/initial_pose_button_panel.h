@@ -43,29 +43,31 @@
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
 
-namespace autoware_localization_rviz_plugin {
-class InitialPoseButtonPanel : public rviz::Panel {
+namespace autoware_localization_rviz_plugin
+{
+class InitialPoseButtonPanel : public rviz::Panel
+{
   Q_OBJECT
- public:
-  InitialPoseButtonPanel(QWidget* parent = 0);
-  void callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
+public:
+  InitialPoseButtonPanel(QWidget * parent = 0);
+  void callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg);
 
- public Q_SLOTS:
+public Q_SLOTS:
   void editTopic();
   void pushInitialzeButton();
 
- protected:
+protected:
   ros::NodeHandle nh_;
   ros::Subscriber pose_cov_sub_;
 
   ros::ServiceClient client_;
 
-  QLabel* topic_label_;
-  QLineEdit* topic_edit_;
-  QPushButton* initialize_button_;
-  QLabel* status_label_;
+  QLabel * topic_label_;
+  QLineEdit * topic_edit_;
+  QPushButton * initialize_button_;
+  QLabel * status_label_;
 
-  rviz::RosTopicProperty* property_topic_;
+  rviz::RosTopicProperty * property_topic_;
 
   geometry_msgs::PoseWithCovarianceStamped pose_cov_msg_;
 };

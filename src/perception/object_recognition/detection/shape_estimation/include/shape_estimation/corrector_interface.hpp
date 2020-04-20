@@ -22,12 +22,14 @@
 #include "autoware_perception_msgs/Shape.h"
 #include "geometry_msgs/Pose.h"
 
-class ShapeEstimationCorrectorInterface {
- public:
+class ShapeEstimationCorrectorInterface
+{
+public:
   ShapeEstimationCorrectorInterface(){};
 
   virtual ~ShapeEstimationCorrectorInterface(){};
 
-  virtual bool correct(autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                       bool& orientaion_output) = 0;
+  virtual bool correct(
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientaion_output) = 0;
 };

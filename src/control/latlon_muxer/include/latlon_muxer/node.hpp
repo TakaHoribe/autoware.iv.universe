@@ -22,12 +22,13 @@
 #include <autoware_control_msgs/ControlCommandStamped.h>
 #include <ros/ros.h>
 
-class LatLonMuxer {
- public:
+class LatLonMuxer
+{
+public:
   LatLonMuxer();
   ~LatLonMuxer() = default;
 
- private:
+private:
   void latCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr msg);
   void lonCtrlCmdCallback(const autoware_control_msgs::ControlCommandStamped::ConstPtr msg);
   void publishCmd();

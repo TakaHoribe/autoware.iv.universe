@@ -18,7 +18,9 @@
 
 TimeDelayKalmanFilter::TimeDelayKalmanFilter() {}
 
-void TimeDelayKalmanFilter::init(const Eigen::MatrixXd& x, const Eigen::MatrixXd& P0, const int max_delay_step) {
+void TimeDelayKalmanFilter::init(
+  const Eigen::MatrixXd & x, const Eigen::MatrixXd & P0, const int max_delay_step)
+{
   max_delay_step_ = max_delay_step;
   dim_x_ = x.rows();
   dim_x_ex_ = dim_x_ * max_delay_step;
@@ -32,11 +34,12 @@ void TimeDelayKalmanFilter::init(const Eigen::MatrixXd& x, const Eigen::MatrixXd
   }
 };
 
-void TimeDelayKalmanFilter::getLatestX(Eigen::MatrixXd& x) { x = x_.block(0, 0, dim_x_, 1); };
-void TimeDelayKalmanFilter::getLatestP(Eigen::MatrixXd& P) { P = P_.block(0, 0, dim_x_, dim_x_); };
+void TimeDelayKalmanFilter::getLatestX(Eigen::MatrixXd & x) { x = x_.block(0, 0, dim_x_, 1); };
+void TimeDelayKalmanFilter::getLatestP(Eigen::MatrixXd & P) { P = P_.block(0, 0, dim_x_, dim_x_); };
 
-bool TimeDelayKalmanFilter::predictWithDelay(const Eigen::MatrixXd& x_next, const Eigen::MatrixXd& A,
-                                             const Eigen::MatrixXd& Q) {
+bool TimeDelayKalmanFilter::predictWithDelay(
+  const Eigen::MatrixXd & x_next, const Eigen::MatrixXd & A, const Eigen::MatrixXd & Q)
+{
   /*
    * time delay model:
    *
@@ -70,8 +73,10 @@ bool TimeDelayKalmanFilter::predictWithDelay(const Eigen::MatrixXd& x_next, cons
   return true;
 };
 
-bool TimeDelayKalmanFilter::updateWithDelay(const Eigen::MatrixXd& y, const Eigen::MatrixXd& C,
-                                            const Eigen::MatrixXd& R, const int delay_step) {
+bool TimeDelayKalmanFilter::updateWithDelay(
+  const Eigen::MatrixXd & y, const Eigen::MatrixXd & C, const Eigen::MatrixXd & R,
+  const int delay_step)
+{
   if (delay_step >= max_delay_step_) {
     std::cerr << "delay step is larger than max_delay_step. ignore update." << std::endl;
     return false;

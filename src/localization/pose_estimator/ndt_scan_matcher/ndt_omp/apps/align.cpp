@@ -38,9 +38,11 @@
 #include <ndt_omp/ndt_omp.h>
 
 // align point clouds and measure processing time
-pcl::PointCloud<pcl::PointXYZ>::Ptr align(pcl::Registration<pcl::PointXYZ, pcl::PointXYZ>::Ptr registration,
-                                          const pcl::PointCloud<pcl::PointXYZ>::Ptr& target_cloud,
-                                          const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cloud) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr align(
+  pcl::Registration<pcl::PointXYZ, pcl::PointXYZ>::Ptr registration,
+  const pcl::PointCloud<pcl::PointXYZ>::Ptr & target_cloud,
+  const pcl::PointCloud<pcl::PointXYZ>::Ptr & source_cloud)
+{
   registration->setInputTarget(target_cloud);
   registration->setInputSource(source_cloud);
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZ>());
@@ -60,7 +62,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr align(pcl::Registration<pcl::PointXYZ, pcl::
   return aligned;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   if (argc != 3) {
     std::cout << "usage: align target.pcd source.pcd" << std::endl;
     return 0;
@@ -100,21 +103,22 @@ int main(int argc, char** argv) {
   // benchmark
   std::cout << "--- pcl::NDT ---" << std::endl;
   pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt(
-      new pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
+    new pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
   ndt->setResolution(1.0);
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align(ndt, target_cloud, source_cloud);
 
   std::vector<int> num_threads = {1, omp_get_max_threads()};
   std::vector<std::pair<std::string, ndt_omp::NeighborSearchMethod>> search_methods = {
-      {"KDTREE", ndt_omp::KDTREE}, {"DIRECT7", ndt_omp::DIRECT7}, {"DIRECT1", ndt_omp::DIRECT1}};
+    {"KDTREE", ndt_omp::KDTREE}, {"DIRECT7", ndt_omp::DIRECT7}, {"DIRECT1", ndt_omp::DIRECT1}};
 
   ndt_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt_omp(
-      new ndt_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
+    new ndt_omp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
   ndt_omp->setResolution(1.0);
 
   for (int n : num_threads) {
-    for (const auto& search_method : search_methods) {
-      std::cout << "--- ndt_omp::NDT (" << search_method.first << ", " << n << " threads) ---" << std::endl;
+    for (const auto & search_method : search_methods) {
+      std::cout << "--- ndt_omp::NDT (" << search_method.first << ", " << n << " threads) ---"
+                << std::endl;
       ndt_omp->setNumThreads(n);
       ndt_omp->setNeighborhoodSearchMethod(search_method.second);
       aligned = align(ndt_omp, target_cloud, source_cloud);
@@ -123,9 +127,12 @@ int main(int argc, char** argv) {
 
   // visulization
   pcl::visualization::PCLVisualizer vis("vis");
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> target_handler(target_cloud, 255.0, 0.0, 0.0);
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> source_handler(source_cloud, 0.0, 255.0, 0.0);
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> aligned_handler(aligned, 0.0, 0.0, 255.0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> target_handler(
+    target_cloud, 255.0, 0.0, 0.0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> source_handler(
+    source_cloud, 0.0, 255.0, 0.0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> aligned_handler(
+    aligned, 0.0, 0.0, 255.0);
   vis.addPointCloud(target_cloud, target_handler, "target");
   vis.addPointCloud(source_cloud, source_handler, "source");
   vis.addPointCloud(aligned, aligned_handler, "aligned");

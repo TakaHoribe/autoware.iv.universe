@@ -16,9 +16,10 @@
 
 #include "pure_pursuit/util/planning_utils.h"
 
-namespace planning_utils {
-
-double calcCurvature(const geometry_msgs::Point& target, const geometry_msgs::Pose& current_pose) {
+namespace planning_utils
+{
+double calcCurvature(const geometry_msgs::Point & target, const geometry_msgs::Pose & current_pose)
+{
   constexpr double KAPPA_MAX = 1e9;
   const double radius = calcRadius(target, current_pose);
 
@@ -29,13 +30,15 @@ double calcCurvature(const geometry_msgs::Point& target, const geometry_msgs::Po
   }
 }
 
-double calcDistance2D(const geometry_msgs::Point& p, const geometry_msgs::Point& q) {
+double calcDistance2D(const geometry_msgs::Point & p, const geometry_msgs::Point & q)
+{
   const double dx = p.x - q.x;
   const double dy = p.y - q.y;
   return sqrt(dx * dx + dy * dy);
 }
 
-double calcDistSquared2D(const geometry_msgs::Point& p, const geometry_msgs::Point& q) {
+double calcDistSquared2D(const geometry_msgs::Point & p, const geometry_msgs::Point & q)
+{
   const double dx = p.x - q.x;
   const double dy = p.y - q.y;
   return (dx * dx + dy * dy);
@@ -47,8 +50,10 @@ double calcDistSquared2D(const geometry_msgs::Point& p, const geometry_msgs::Poi
  *
  * lateral_error = a_vec x b_vec / |a_vec|
  *        = (a_x * b_y - a_y * b_x) / |a_vec| */
-double calcLateralError2D(const geometry_msgs::Point& line_s, const geometry_msgs::Point& line_e,
-                          const geometry_msgs::Point& point) {
+double calcLateralError2D(
+  const geometry_msgs::Point & line_s, const geometry_msgs::Point & line_e,
+  const geometry_msgs::Point & point)
+{
   tf2::Vector3 a_vec((line_e.x - line_s.x), (line_e.y - line_s.y), 0.0);
   tf2::Vector3 b_vec((point.x - line_s.x), (point.y - line_s.y), 0.0);
 
@@ -56,7 +61,8 @@ double calcLateralError2D(const geometry_msgs::Point& line_s, const geometry_msg
   return lat_err;
 }
 
-double calcRadius(const geometry_msgs::Point& target, const geometry_msgs::Pose& current_pose) {
+double calcRadius(const geometry_msgs::Point & target, const geometry_msgs::Pose & current_pose)
+{
   constexpr double RADIUS_MAX = 1e9;
   const double denominator = 2 * transformToRelativeCoordinate2D(target, current_pose).y;
   const double numerator = calcDistSquared2D(target, current_pose.position);
@@ -67,12 +73,16 @@ double calcRadius(const geometry_msgs::Point& target, const geometry_msgs::Pose&
     return RADIUS_MAX;
 }
 
-double convertCurvatureToSteeringAngle(double wheel_base, double kappa) { return atan(wheel_base * kappa); }
+double convertCurvatureToSteeringAngle(double wheel_base, double kappa)
+{
+  return atan(wheel_base * kappa);
+}
 
-std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Trajectory& trajectory) {
+std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Trajectory & trajectory)
+{
   std::vector<geometry_msgs::Pose> poses;
 
-  for (const auto& p : trajectory.points) {
+  for (const auto & p : trajectory.points) {
     poses.push_back(p.pose);
   }
 
@@ -80,9 +90,10 @@ std::vector<geometry_msgs::Pose> extractPoses(const autoware_planning_msgs::Traj
 }
 
 // get closest point index from current pose
-std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry_msgs::Pose>& poses,
-                                                      const geometry_msgs::Pose& current_pose, double th_dist,
-                                                      double th_yaw) {
+std::pair<bool, int32_t> findClosestIdxWithDistAngThr(
+  const std::vector<geometry_msgs::Pose> & poses, const geometry_msgs::Pose & current_pose,
+  double th_dist, double th_yaw)
+{
   double dist_squared_min = std::numeric_limits<double>::max();
   int32_t idx_min = -1;
 
@@ -108,7 +119,8 @@ std::pair<bool, int32_t> findClosestIdxWithDistAngThr(const std::vector<geometry
   return (idx_min >= 0) ? std::make_pair(true, idx_min) : std::make_pair(false, idx_min);
 }
 
-int8_t getLaneDirection(const std::vector<geometry_msgs::Pose>& poses, double th_dist) {
+int8_t getLaneDirection(const std::vector<geometry_msgs::Pose> & poses, double th_dist)
+{
   if (poses.size() < 2) {
     ROS_ERROR("size of waypoints is smaller than 2");
     return 2;
@@ -136,18 +148,22 @@ int8_t getLaneDirection(const std::vector<geometry_msgs::Pose>& poses, double th
   return 2;
 }
 
-bool isDirectionForward(const geometry_msgs::Pose& prev, const geometry_msgs::Pose& next) {
+bool isDirectionForward(const geometry_msgs::Pose & prev, const geometry_msgs::Pose & next)
+{
   return (transformToRelativeCoordinate2D(next.position, prev).x > 0.0) ? true : false;
 }
 
-bool isDirectionForward(const geometry_msgs::Pose& prev, const geometry_msgs::Point& next) {
+bool isDirectionForward(const geometry_msgs::Pose & prev, const geometry_msgs::Point & next)
+{
   return transformToRelativeCoordinate2D(next, prev).x > 0.0;
 }
 
 template <>
-bool isInPolygon(const std::vector<geometry_msgs::Point>& polygon, const geometry_msgs::Point& point) {
+bool isInPolygon(
+  const std::vector<geometry_msgs::Point> & polygon, const geometry_msgs::Point & point)
+{
   std::vector<tf2::Vector3> polygon_conv;
-  for (const auto& el : polygon) polygon_conv.emplace_back(el.x, el.y, el.z);
+  for (const auto & el : polygon) polygon_conv.emplace_back(el.x, el.y, el.z);
 
   tf2::Vector3 point_conv = tf2::Vector3(point.x, point.y, point.z);
 
@@ -156,7 +172,8 @@ bool isInPolygon(const std::vector<geometry_msgs::Point>& polygon, const geometr
 
 double kmph2mps(const double velocity_kmph) { return (velocity_kmph * 1000) / (60 * 60); }
 
-double normalizeEulerAngle(const double euler) {
+double normalizeEulerAngle(const double euler)
+{
   double res = euler;
   while (res > M_PI) {
     res -= (2 * M_PI);
@@ -171,8 +188,9 @@ double normalizeEulerAngle(const double euler) {
 // ref: http://www.mech.tohoku-gakuin.ac.jp/rde/contents/course/robotics/coordtrans.html
 // (pu, pv): retative, (px, py): absolute, (ox, oy): origin
 // (px, py) = rot * (pu, pv) + (ox, oy)
-geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin) {
+geometry_msgs::Point transformToAbsoluteCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin)
+{
   // rotation
   geometry_msgs::Point rot_p;
   double yaw = tf2::getYaw(origin.orientation);
@@ -191,8 +209,9 @@ geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point&
 // ref: http://www.mech.tohoku-gakuin.ac.jp/rde/contents/course/robotics/coordtrans.html
 // (pu, pv): retative, (px, py): absolute, (ox, oy): origin
 // (pu, pv) = rot^-1 * {(px, py) - (ox, oy)}
-geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin) {
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin)
+{
   // translation
   geometry_msgs::Point trans_p;
   trans_p.x = point.x - origin.position.x;
@@ -209,7 +228,8 @@ geometry_msgs::Point transformToRelativeCoordinate2D(const geometry_msgs::Point&
   return res;
 }
 
-geometry_msgs::Quaternion getQuaternionFromYaw(const double _yaw) {
+geometry_msgs::Quaternion getQuaternionFromYaw(const double _yaw)
+{
   tf2::Quaternion q;
   q.setRPY(0, 0, _yaw);
   return tf2::toMsg(q);

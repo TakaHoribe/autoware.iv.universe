@@ -27,19 +27,25 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-namespace traffic_light {
-class ColorClassifier : public ClassifierInterface {
- public:
+namespace traffic_light
+{
+class ColorClassifier : public ClassifierInterface
+{
+public:
   ColorClassifier();
   ~ColorClassifier(){};
 
-  bool getLampState(const cv::Mat& input_image, std::vector<autoware_perception_msgs::LampState>& states) override;
+  bool getLampState(
+    const cv::Mat & input_image,
+    std::vector<autoware_perception_msgs::LampState> & states) override;
 
- private:
-  bool filterHSV(const cv::Mat& input_image, cv::Mat& green_image, cv::Mat& yellow_image, cv::Mat& red_image);
-  void parametersCallback(traffic_light_classifier::HSVFilterConfig& config, uint32_t level);
+private:
+  bool filterHSV(
+    const cv::Mat & input_image, cv::Mat & green_image, cv::Mat & yellow_image,
+    cv::Mat & red_image);
+  void parametersCallback(traffic_light_classifier::HSVFilterConfig & config, uint32_t level);
 
- private:
+private:
   enum HSV {
     Hue = 0,
     Sat = 1,

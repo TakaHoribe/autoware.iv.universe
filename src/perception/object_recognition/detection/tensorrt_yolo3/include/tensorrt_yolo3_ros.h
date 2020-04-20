@@ -30,8 +30,9 @@
 #include "TrtNet.h"
 #include "data_reader.h"
 
-class TensorrtYoloROS {
- private:
+class TensorrtYoloROS
+{
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Subscriber sub_image_;
@@ -40,13 +41,14 @@ class TensorrtYoloROS {
 
   std::unique_ptr<Tn::trtNet> net_ptr_;
 
-  void imageCallback(const sensor_msgs::Image::ConstPtr& in_image);
-  std::vector<float> prepareImage(cv::Mat& in_img);
-  std::vector<Tn::Bbox> postProcessImg(std::vector<Yolo::Detection>& detections, const int classes, cv::Mat& img,
-                                       autoware_perception_msgs::DynamicObjectWithFeatureArray& out_objects);
-  void doNms(std::vector<Yolo::Detection>& detections, int classes, float nmsThresh);
+  void imageCallback(const sensor_msgs::Image::ConstPtr & in_image);
+  std::vector<float> prepareImage(cv::Mat & in_img);
+  std::vector<Tn::Bbox> postProcessImg(
+    std::vector<Yolo::Detection> & detections, const int classes, cv::Mat & img,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray & out_objects);
+  void doNms(std::vector<Yolo::Detection> & detections, int classes, float nmsThresh);
   /* data */
- public:
+public:
   TensorrtYoloROS(/* args */);
   ~TensorrtYoloROS();
 

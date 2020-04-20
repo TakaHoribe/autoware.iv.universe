@@ -37,35 +37,37 @@
 #include <rviz/default_plugin/tools/pose_tool.h>
 #endif
 
-namespace rviz {
+namespace rviz
+{
 class Arrow;
 class DisplayContext;
 class StringProperty;
 class FloatProperty;
 
-class MissionCheckpointTool : public PoseTool {
+class MissionCheckpointTool : public PoseTool
+{
   Q_OBJECT
- public:
+public:
   MissionCheckpointTool();
   virtual ~MissionCheckpointTool() {}
   virtual void onInitialize();
 
- protected:
+protected:
   virtual void onPoseSet(double x, double y, double theta);
 
- private Q_SLOTS:
+private Q_SLOTS:
   void updateTopic();
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::Publisher pose_pub_;
 
-  StringProperty* pose_topic_property_;
-  StringProperty* twist_topic_property_;
-  FloatProperty* std_dev_x_;
-  FloatProperty* std_dev_y_;
-  FloatProperty* std_dev_theta_;
-  FloatProperty* position_z_;
+  StringProperty * pose_topic_property_;
+  StringProperty * twist_topic_property_;
+  FloatProperty * std_dev_x_;
+  FloatProperty * std_dev_y_;
+  FloatProperty * std_dev_theta_;
+  FloatProperty * position_z_;
 };
 
 }  // namespace rviz

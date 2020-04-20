@@ -24,7 +24,8 @@
 #include <ros/ros.h>
 #include <memory>
 
-namespace lane_change_planner {
+namespace lane_change_planner
+{
 // enum State{
 //   WAITING_LANE_CHANGE,
 //   EXECUTING_LANE_CHANGE,
@@ -32,16 +33,19 @@ namespace lane_change_planner {
 //   FORCING_LANE_CHANGE,
 // };
 
-class StateMachine {
- public:
-  StateMachine(const std::shared_ptr<DataManager>& data_manager_ptr, const std::shared_ptr<RouteHandler>& route_handler_ptr);
+class StateMachine
+{
+public:
+  StateMachine(
+    const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
   void init();
-  void init(const autoware_planning_msgs::Route& route);
+  void init(const autoware_planning_msgs::Route & route);
   void updateState();
   autoware_planning_msgs::PathWithLaneId getPath() const;
   Status getStatus() const;
 
- private:
+private:
   std::unique_ptr<StateBase> state_obj_ptr_;
   std::shared_ptr<DataManager> data_manager_ptr_;
   std::shared_ptr<RouteHandler> route_handler_ptr_;

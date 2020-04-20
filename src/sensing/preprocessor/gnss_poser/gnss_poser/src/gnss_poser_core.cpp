@@ -34,19 +34,20 @@
 
 #include "gnss_poser/convert.h"
 
-namespace GNSSPoser {
-
+namespace GNSSPoser
+{
 GNSSPoser::GNSSPoser(ros::NodeHandle nh, ros::NodeHandle private_nh)
-    : nh_(nh),
-      private_nh_(private_nh),
-      tf2_listener_(tf2_buffer_),
-      coordinate_system_(CoordinateSystem::MGRS),
-      base_frame_("base_link"),
-      gnss_frame_("gnss"),
-      gnss_base_frame_("gnss_base_link"),
-      map_frame_("map"),
-      use_ublox_receiver_(false),
-      plane_zone_(9) {
+: nh_(nh),
+  private_nh_(private_nh),
+  tf2_listener_(tf2_buffer_),
+  coordinate_system_(CoordinateSystem::MGRS),
+  base_frame_("base_link"),
+  gnss_frame_("gnss"),
+  gnss_base_frame_("gnss_base_link"),
+  map_frame_("map"),
+  use_ublox_receiver_(false),
+  plane_zone_(9)
+{
   int coordinate_system = static_cast<int>(coordinate_system_);
   private_nh_.getParam("coordinate_system", coordinate_system);
   coordinate_system_ = static_cast<CoordinateSystem>(coordinate_system);
@@ -70,7 +71,8 @@ GNSSPoser::GNSSPoser(ros::NodeHandle nh, ros::NodeHandle private_nh)
   fixed_pub_ = nh_.advertise<std_msgs::Bool>("gnss_fixed", 10);
 }
 
-void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr& nav_sat_fix_msg_ptr) {
+void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr & nav_sat_fix_msg_ptr)
+{
   // check fixed topic
   const bool is_fixed = isFixed(nav_sat_fix_msg_ptr->status);
 
@@ -130,11 +132,11 @@ void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr& nav_sa
   gnss_base_pose_cov_msg.header = gnss_base_pose_msg.header;
   gnss_base_pose_cov_msg.pose.pose = gnss_base_pose_msg.pose;
   gnss_base_pose_cov_msg.pose.covariance[6 * 0 + 0] =
-      canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[0] : 10.0;
+    canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[0] : 10.0;
   gnss_base_pose_cov_msg.pose.covariance[6 * 1 + 1] =
-      canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[4] : 10.0;
+    canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[4] : 10.0;
   gnss_base_pose_cov_msg.pose.covariance[6 * 2 + 2] =
-      canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[8] : 10.0;
+    canGetCovariance(*nav_sat_fix_msg_ptr) ? nav_sat_fix_msg_ptr->position_covariance[8] : 10.0;
   gnss_base_pose_cov_msg.pose.covariance[6 * 3 + 3] = 0.1;
   gnss_base_pose_cov_msg.pose.covariance[6 * 4 + 4] = 0.1;
   gnss_base_pose_cov_msg.pose.covariance[6 * 5 + 5] = 1.0;
@@ -144,19 +146,24 @@ void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr& nav_sa
   publishTF(map_frame_, gnss_base_frame_, gnss_base_pose_msg);
 }
 
-void GNSSPoser::callbackNavPVT(const ublox_msgs::NavPVT::ConstPtr& nav_pvt_msg_ptr) {
+void GNSSPoser::callbackNavPVT(const ublox_msgs::NavPVT::ConstPtr & nav_pvt_msg_ptr)
+{
   nav_pvt_msg_ptr_ = nav_pvt_msg_ptr;
 }
 
-bool GNSSPoser::isFixed(const sensor_msgs::NavSatStatus& nav_sat_status_msg) {
+bool GNSSPoser::isFixed(const sensor_msgs::NavSatStatus & nav_sat_status_msg)
+{
   return nav_sat_status_msg.status >= sensor_msgs::NavSatStatus::STATUS_FIX;
 }
 
-bool GNSSPoser::canGetCovariance(const sensor_msgs::NavSatFix& nav_sat_fix_msg) {
+bool GNSSPoser::canGetCovariance(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
+{
   return nav_sat_fix_msg.position_covariance_type > sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 }
 
-GNSSStat GNSSPoser::convert(const sensor_msgs::NavSatFix& nav_sat_fix_msg, CoordinateSystem coordinate_system) {
+GNSSStat GNSSPoser::convert(
+  const sensor_msgs::NavSatFix & nav_sat_fix_msg, CoordinateSystem coordinate_system)
+{
   GNSSStat gnss_stat;
   if (coordinate_system == CoordinateSystem::UTM) {
     gnss_stat = NavSatFix2UTM(nav_sat_fix_msg);
@@ -170,7 +177,8 @@ GNSSStat GNSSPoser::convert(const sensor_msgs::NavSatFix& nav_sat_fix_msg, Coord
   return gnss_stat;
 }
 
-geometry_msgs::Point GNSSPoser::getPosition(const GNSSStat& gnss_stat) {
+geometry_msgs::Point GNSSPoser::getPosition(const GNSSStat & gnss_stat)
+{
   geometry_msgs::Point point;
   point.x = gnss_stat.x;
   point.y = gnss_stat.y;
@@ -178,19 +186,22 @@ geometry_msgs::Point GNSSPoser::getPosition(const GNSSStat& gnss_stat) {
   return point;
 }
 
-geometry_msgs::Point GNSSPoser::getMedianPosition(const boost::circular_buffer<geometry_msgs::Point>& position_buffer) {
+geometry_msgs::Point GNSSPoser::getMedianPosition(
+  const boost::circular_buffer<geometry_msgs::Point> & position_buffer)
+{
   auto getMedian = [](std::vector<double> array) {
     std::sort(std::begin(array), std::end(array));
     const size_t median_index = array.size() / 2;
-    double median =
-        (array.size() % 2) ? (array.at(median_index)) : ((array.at(median_index) + array.at(median_index - 1)) / 2);
+    double median = (array.size() % 2)
+                      ? (array.at(median_index))
+                      : ((array.at(median_index) + array.at(median_index - 1)) / 2);
     return median;
   };
 
   std::vector<double> array_x;
   std::vector<double> array_y;
   std::vector<double> array_z;
-  for (const auto& position : position_buffer) {
+  for (const auto & position : position_buffer) {
     array_x.push_back(position.x);
     array_y.push_back(position.y);
     array_z.push_back(position.z);
@@ -203,7 +214,8 @@ geometry_msgs::Point GNSSPoser::getMedianPosition(const boost::circular_buffer<g
   return median_point;
 }
 
-geometry_msgs::Quaternion GNSSPoser::getQuaternionByHeading(const int heading) {
+geometry_msgs::Quaternion GNSSPoser::getQuaternionByHeading(const int heading)
+{
   int heading_conv = 0;
   // convert heading[0(North)~360] to yaw[-M_PI(West)~M_PI]
   if (heading >= 0 && heading <= 27000000) {
@@ -219,16 +231,19 @@ geometry_msgs::Quaternion GNSSPoser::getQuaternionByHeading(const int heading) {
   return tf2::toMsg(quta);
 }
 
-geometry_msgs::Quaternion GNSSPoser::getQuaternionByPositionDiffence(const geometry_msgs::Point& point,
-                                                                     const geometry_msgs::Point& prev_point) {
+geometry_msgs::Quaternion GNSSPoser::getQuaternionByPositionDiffence(
+  const geometry_msgs::Point & point, const geometry_msgs::Point & prev_point)
+{
   const double yaw = std::atan2(point.y - prev_point.y, point.x - prev_point.x);
   tf2::Quaternion quta;
   quta.setRPY(0, 0, yaw);
   return tf2::toMsg(quta);
 }
 
-bool GNSSPoser::getTransform(const std::string& target_frame, const std::string& source_frame,
-                             const geometry_msgs::TransformStamped::Ptr& transform_stamped_ptr) {
+bool GNSSPoser::getTransform(
+  const std::string & target_frame, const std::string & source_frame,
+  const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr)
+{
   if (target_frame == source_frame) {
     transform_stamped_ptr->header.stamp = ros::Time::now();
     transform_stamped_ptr->header.frame_id = target_frame;
@@ -244,10 +259,12 @@ bool GNSSPoser::getTransform(const std::string& target_frame, const std::string&
   }
 
   try {
-    *transform_stamped_ptr = tf2_buffer_.lookupTransform(target_frame, source_frame, ros::Time(0), ros::Duration(0.0));
-  } catch (tf2::TransformException& ex) {
+    *transform_stamped_ptr =
+      tf2_buffer_.lookupTransform(target_frame, source_frame, ros::Time(0), ros::Duration(0.0));
+  } catch (tf2::TransformException & ex) {
     ROS_WARN_STREAM_THROTTLE(1, ex.what());
-    ROS_WARN_STREAM_THROTTLE(1, "Please publish TF " << target_frame.c_str() << " to " << source_frame.c_str());
+    ROS_WARN_STREAM_THROTTLE(
+      1, "Please publish TF " << target_frame.c_str() << " to " << source_frame.c_str());
 
     transform_stamped_ptr->header.stamp = ros::Time::now();
     transform_stamped_ptr->header.frame_id = target_frame;
@@ -264,8 +281,10 @@ bool GNSSPoser::getTransform(const std::string& target_frame, const std::string&
   return true;
 }
 
-void GNSSPoser::publishTF(const std::string& frame_id, const std::string& child_frame_id,
-                          const geometry_msgs::PoseStamped& pose_msg) {
+void GNSSPoser::publishTF(
+  const std::string & frame_id, const std::string & child_frame_id,
+  const geometry_msgs::PoseStamped & pose_msg)
+{
   geometry_msgs::TransformStamped transform_stamped;
   transform_stamped.header.frame_id = frame_id;
   transform_stamped.child_frame_id = child_frame_id;

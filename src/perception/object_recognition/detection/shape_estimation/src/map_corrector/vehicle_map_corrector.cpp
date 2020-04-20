@@ -27,9 +27,11 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool VehicleMapCorrector::correct(const VectorMap& vector_map, const geometry_msgs::TransformStamped& transform_stamped,
-                                  autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                                  bool& orientaion_output) {
+bool VehicleMapCorrector::correct(
+  const VectorMap & vector_map, const geometry_msgs::TransformStamped & transform_stamped,
+  autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+  bool & orientaion_output)
+{
   geometry_msgs::Point point;
   tf2::doTransform(pose_output.position, point, transform_stamped);
   double map_coord_vector_yaw;
@@ -52,10 +54,12 @@ bool VehicleMapCorrector::correct(const VectorMap& vector_map, const geometry_ms
     if (shape_output.dimensions.x < shape_output.dimensions.y) {
       double input_yaw_90_rotated = input_yaw + M_PI_2;
       double input_yaw_270_rotated = input_yaw + M_PI_2 * 3.0;
-      double diff_90(
-          std::atan2(std::sin(vector_map_yaw - input_yaw_90_rotated), std::cos(vector_map_yaw - input_yaw_90_rotated)));
-      double diff_270(std::atan2(std::sin(vector_map_yaw - input_yaw_270_rotated),
-                                 std::cos(vector_map_yaw - input_yaw_270_rotated)));
+      double diff_90(std::atan2(
+        std::sin(vector_map_yaw - input_yaw_90_rotated),
+        std::cos(vector_map_yaw - input_yaw_90_rotated)));
+      double diff_270(std::atan2(
+        std::sin(vector_map_yaw - input_yaw_270_rotated),
+        std::cos(vector_map_yaw - input_yaw_270_rotated)));
       if (rad_threshold_ < std::min(std::fabs(diff_90), std::fabs(diff_270))) return false;
       if (std::fabs(diff_90) < std::fabs(diff_270)) {
         corrected_yaw = input_yaw_90_rotated;
@@ -68,10 +72,12 @@ bool VehicleMapCorrector::correct(const VectorMap& vector_map, const geometry_ms
     } else {
       double input_yaw_0_rotated = input_yaw;
       double input_yaw_180_rotated = input_yaw + M_PI_2 * 2.0;
-      double diff_0(
-          std::atan2(std::sin(vector_map_yaw - input_yaw_0_rotated), std::cos(vector_map_yaw - input_yaw_0_rotated)));
-      double diff_180(std::atan2(std::sin(vector_map_yaw - input_yaw_180_rotated),
-                                 std::cos(vector_map_yaw - input_yaw_180_rotated)));
+      double diff_0(std::atan2(
+        std::sin(vector_map_yaw - input_yaw_0_rotated),
+        std::cos(vector_map_yaw - input_yaw_0_rotated)));
+      double diff_180(std::atan2(
+        std::sin(vector_map_yaw - input_yaw_180_rotated),
+        std::cos(vector_map_yaw - input_yaw_180_rotated)));
       if (rad_threshold_ < std::min(std::fabs(diff_0), std::fabs(diff_180))) return false;
       if (std::fabs(diff_0) < std::fabs(diff_180)) {
         corrected_yaw = input_yaw_0_rotated;

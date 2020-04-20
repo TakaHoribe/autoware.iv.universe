@@ -51,8 +51,9 @@
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 #include "simple_planning_simulator/vehicle_model/sim_model_time_delay.hpp"
 
-class Simulator {
- public:
+class Simulator
+{
+public:
   /**
    * @brief constructor
    */
@@ -63,7 +64,7 @@ class Simulator {
    */
   // ~Simulator() = default;
 
- private:
+private:
   /* ros system */
   ros::NodeHandle nh_;        //!< @brief ros node handle
   ros::NodeHandle pnh_;       //!< @brief private ros node handle
@@ -85,20 +86,24 @@ class Simulator {
   tf2_ros::TransformBroadcaster tf_broadcaster_;  //!< @brief tf broadcaster
 
   /* received & published topics */
-  geometry_msgs::Pose current_pose_;    //!< @brief current vehicle position ang angle with pose message class
-  geometry_msgs::Twist current_twist_;  //!< @brief current vehicle velocity with twist message class
+  geometry_msgs::Pose
+    current_pose_;  //!< @brief current vehicle position ang angle with pose message class
+  geometry_msgs::Twist
+    current_twist_;  //!< @brief current vehicle velocity with twist message class
   std::shared_ptr<autoware_vehicle_msgs::VehicleCommand>
-      current_vehicle_cmd_ptr_;                                                 //!< @brief latest received vehicle_cmd
-  std::shared_ptr<autoware_planning_msgs::Trajectory> current_trajectory_ptr_;  //!< @brief latest received trajectory
-  double closest_pos_z_;  //!< @brief z position on closest trajectory
+    current_vehicle_cmd_ptr_;  //!< @brief latest received vehicle_cmd
+  std::shared_ptr<autoware_planning_msgs::Trajectory>
+    current_trajectory_ptr_;  //!< @brief latest received trajectory
+  double closest_pos_z_;      //!< @brief z position on closest trajectory
 
   /* frame_id */
-  std::string simulation_frame_id_;  //!< @brief vehicle frame id simulated by simple_planning_simulator
-  std::string map_frame_id_;         //!< @brief map frame_id
+  std::string
+    simulation_frame_id_;     //!< @brief vehicle frame id simulated by simple_planning_simulator
+  std::string map_frame_id_;  //!< @brief map frame_id
 
   /* simple_planning_simulator parameters */
-  double loop_rate_;                //!< @brief frequency to calculate vehicle model & pubish result
-  double wheelbase_;                //!< @brief wheelbase length to convert angular-velocity & steering
+  double loop_rate_;  //!< @brief frequency to calculate vehicle model & pubish result
+  double wheelbase_;  //!< @brief wheelbase length to convert angular-velocity & steering
   double sim_steering_gear_ratio_;  //!< @brief for steering wheel angle calcultion
 
   /* flags */
@@ -119,36 +124,41 @@ class Simulator {
     DELAY_FORKLIFT_RLS = 6,
     IDEAL_ACCEL = 7,
     DELAY_STEER_ACC = 8,
-  } vehicle_model_type_;                                  //!< @brief vehicle model type to decide the model dynamics
+  } vehicle_model_type_;  //!< @brief vehicle model type to decide the model dynamics
   std::shared_ptr<SimModelInterface> vehicle_model_ptr_;  //!< @brief vehicle model pointer
 
   /* to generate measurement noise */
-  std::shared_ptr<std::mt19937> rand_engine_ptr_;                     //!< @brief random engine for measurement noise
-  std::shared_ptr<std::normal_distribution<>> pos_norm_dist_ptr_;     //!< @brief Gaussian noise for position
-  std::shared_ptr<std::normal_distribution<>> vel_norm_dist_ptr_;     //!< @brief Gaussian noise for velocity
-  std::shared_ptr<std::normal_distribution<>> rpy_norm_dist_ptr_;     //!< @brief Gaussian noise for roll-pitch-yaw
-  std::shared_ptr<std::normal_distribution<>> angvel_norm_dist_ptr_;  //!< @brief Gaussian noise for angular velocity
-  std::shared_ptr<std::normal_distribution<>> steer_norm_dist_ptr_;   //!< @brief Gaussian noise for steering angle
+  std::shared_ptr<std::mt19937> rand_engine_ptr_;  //!< @brief random engine for measurement noise
+  std::shared_ptr<std::normal_distribution<>>
+    pos_norm_dist_ptr_;  //!< @brief Gaussian noise for position
+  std::shared_ptr<std::normal_distribution<>>
+    vel_norm_dist_ptr_;  //!< @brief Gaussian noise for velocity
+  std::shared_ptr<std::normal_distribution<>>
+    rpy_norm_dist_ptr_;  //!< @brief Gaussian noise for roll-pitch-yaw
+  std::shared_ptr<std::normal_distribution<>>
+    angvel_norm_dist_ptr_;  //!< @brief Gaussian noise for angular velocity
+  std::shared_ptr<std::normal_distribution<>>
+    steer_norm_dist_ptr_;  //!< @brief Gaussian noise for steering angle
 
   /**
    * @brief set current_vehicle_cmd_ptr_ with received message
    */
-  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr& msg);
+  void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg);
 
   /**
    * @brief set current_trajectory_ptr_ with received message
    */
-  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr& msg);
+  void callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr & msg);
 
   /**
    * @brief set initial pose for simulation with received message
    */
-  void callbackInitialPoseWithCov(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+  void callbackInitialPoseWithCov(const geometry_msgs::PoseWithCovarianceStampedConstPtr & msg);
 
   /**
    * @brief set initial pose with received message
    */
-  void callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr& msg);
+  void callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr & msg);
 
   /**
    * @brief get transform from two frame_ids
@@ -156,48 +166,50 @@ class Simulator {
    * @param [in] child frame id
    * @param [out] transform transform from parent frame to child frame
    */
-  void getTransformFromTF(const std::string parent_frame, const std::string child_frame,
-                          geometry_msgs::TransformStamped& transform);
+  void getTransformFromTF(
+    const std::string parent_frame, const std::string child_frame,
+    geometry_msgs::TransformStamped & transform);
 
   /**
    * @brief timer callback for simulation with loop_rate
    */
-  void timerCallbackSimulation(const ros::TimerEvent& e);
+  void timerCallbackSimulation(const ros::TimerEvent & e);
 
   /**
    * @brief set initial state of simulated vehicle
    * @param [in] pose initial position and orientation
    * @param [in] twist initial velocity and angular velocity
    */
-  void setInitialState(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist);
+  void setInitialState(const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist);
 
   /**
    * @brief set initial state of simulated vehicle with pose transformation based on frame_id
    * @param [in] pose initial position and orientation with header
    * @param [in] twist initial velocity and angular velocity
    */
-  void setInitialStateWithPoseTransform(const geometry_msgs::PoseStamped& pose, const geometry_msgs::Twist& twist);
+  void setInitialStateWithPoseTransform(
+    const geometry_msgs::PoseStamped & pose, const geometry_msgs::Twist & twist);
 
   /**
    * @brief set initial state of simulated vehicle with pose transformation based on frame_id
    * @param [in] pose initial position and orientation with header
    * @param [in] twist initial velocity and angular velocity
    */
-  void setInitialStateWithPoseTransform(const geometry_msgs::PoseWithCovarianceStamped& pose,
-                                        const geometry_msgs::Twist& twist);
+  void setInitialStateWithPoseTransform(
+    const geometry_msgs::PoseWithCovarianceStamped & pose, const geometry_msgs::Twist & twist);
 
   /**
    * @brief publish pose and twist
    * @param [in] pose pose to be published
    * @param [in] twist twist to be published
    */
-  void publishPoseTwist(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist);
+  void publishPoseTwist(const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist);
 
   /**
    * @brief publish tf
    * @param [in] pose pose used for tf
    */
-  void publishTF(const geometry_msgs::Pose& pose);
+  void publishTF(const geometry_msgs::Pose & pose);
 
   /**
    * @brief update closest pose to calculate pos_z
@@ -210,7 +222,8 @@ class Simulator {
    * @param [in] pitch pitch angle [rad]
    * @param [in] yaw yaw angle [rad]
    */
-  geometry_msgs::Quaternion getQuaternionFromRPY(const double& roll, const double& pitch, const double& yaw);
+  geometry_msgs::Quaternion getQuaternionFromRPY(
+    const double & roll, const double & pitch, const double & yaw);
 };
 
 #endif

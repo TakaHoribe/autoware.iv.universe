@@ -35,8 +35,9 @@
  * @class simple_planning_simulator ideal twist model
  * @brief calculate ideal twist dynamics
  */
-class SimModelIdealTwist : public SimModelInterface {
- public:
+class SimModelIdealTwist : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    */
@@ -47,7 +48,7 @@ class SimModelIdealTwist : public SimModelInterface {
    */
   ~SimModelIdealTwist() = default;
 
- private:
+private:
   enum IDX {
     X = 0,
     Y,
@@ -92,22 +93,23 @@ class SimModelIdealTwist : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with ideal twist model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
 /**
  * @class simple_planning_simulator ideal steering model
  * @brief calculate ideal steering dynamics
  */
-class SimModelIdealSteer : public SimModelInterface {
- public:
+class SimModelIdealSteer : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] wheelbase vehicle wheelbase length [m]
@@ -119,7 +121,7 @@ class SimModelIdealSteer : public SimModelInterface {
    */
   ~SimModelIdealSteer() = default;
 
- private:
+private:
   enum IDX {
     X = 0,
     Y,
@@ -166,22 +168,23 @@ class SimModelIdealSteer : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with ideal steering model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
 /**
  * @class wf_simulator ideal acceleration and steering model
  * @brief calculate ideal steering dynamics
  */
-class SimModelIdealAccel : public SimModelInterface {
- public:
+class SimModelIdealAccel : public SimModelInterface
+{
+public:
   /**
    * @brief constructor
    * @param [in] wheelbase vehicle wheelbase length [m]
@@ -193,7 +196,7 @@ class SimModelIdealAccel : public SimModelInterface {
    */
   ~SimModelIdealAccel() = default;
 
- private:
+private:
   enum IDX {
     X = 0,
     Y,
@@ -241,14 +244,14 @@ class SimModelIdealAccel : public SimModelInterface {
    * @brief update vehicle states
    * @param [in] dt delta time [s]
    */
-  void update(const double& dt) override;
+  void update(const double & dt) override;
 
   /**
    * @brief calculate derivative of states with ideal steering model
    * @param [in] state current model state
    * @param [in] input input vector to model
    */
-  Eigen::VectorXd calcModel(const Eigen::VectorXd& state, const Eigen::VectorXd& input) override;
+  Eigen::VectorXd calcModel(const Eigen::VectorXd & state, const Eigen::VectorXd & input) override;
 };
 
 #endif

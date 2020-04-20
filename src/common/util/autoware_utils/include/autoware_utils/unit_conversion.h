@@ -18,8 +18,8 @@
 
 #include <autoware_utils/constants.h>
 
-namespace autoware_utils {
-
+namespace autoware_utils
+{
 constexpr double deg2rad(const double deg) { return deg * pi / 180.0; }
 constexpr double rad2deg(const double rad) { return rad * 180.0 / pi; }
 

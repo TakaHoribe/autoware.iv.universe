@@ -15,16 +15,19 @@
  */
 
 #include "lidar_apollo_instance_segmentation/debugger.h"
-#include <sensor_msgs/PointCloud2.h>
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/PointCloud2.h>
 
-Debugger::Debugger() : nh_(""), pnh_("~") {
+Debugger::Debugger() : nh_(""), pnh_("~")
+{
   instance_pointcloud_pub_ =
-      pnh_.advertise<sensor_msgs::PointCloud2>("debug/instance_pointcloud", 1);
+    pnh_.advertise<sensor_msgs::PointCloud2>("debug/instance_pointcloud", 1);
 }
 
-void Debugger::publishColoredPointCloud(const autoware_perception_msgs::DynamicObjectWithFeatureArray& input) {
+void Debugger::publishColoredPointCloud(
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray & input)
+{
   pcl::PointCloud<pcl::PointXYZRGB> colored_pointcloud;
   for (size_t i = 0; i < input.feature_objects.size(); i++) {
     pcl::PointCloud<pcl::PointXYZI> object_pointcloud;

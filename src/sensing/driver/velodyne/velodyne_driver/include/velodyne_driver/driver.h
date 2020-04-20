@@ -24,26 +24,28 @@
 #include <velodyne_driver/VelodyneNodeConfig.h>
 #include <velodyne_driver/input.h>
 
-namespace velodyne_driver {
-
-class VelodyneDriver {
- public:
+namespace velodyne_driver
+{
+class VelodyneDriver
+{
+public:
   VelodyneDriver(ros::NodeHandle node, ros::NodeHandle private_nh);
   ~VelodyneDriver() {}
 
   bool poll(void);
 
- private:
+private:
   /// Callback for dynamic reconfigure
-  void callback(velodyne_driver::VelodyneNodeConfig& config, uint32_t level);
+  void callback(velodyne_driver::VelodyneNodeConfig & config, uint32_t level);
   /// Callback for diagnostics update for lost communication with vlp
-  void diagTimerCallback(const ros::TimerEvent& event);
+  void diagTimerCallback(const ros::TimerEvent & event);
 
   /// Pointer to dynamic reconfigure service srv_
   boost::shared_ptr<dynamic_reconfigure::Server<velodyne_driver::VelodyneNodeConfig> > srv_;
 
   // configuration parameters
-  struct {
+  struct
+  {
     std::string frame_id;  ///< tf frame ID
     std::string model;     ///< device model name
     int npackets;          ///< number of packets to collect

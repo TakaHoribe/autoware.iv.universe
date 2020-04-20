@@ -19,8 +19,8 @@
 
 // ROS
 #include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <tf2_ros/transform_listener.h>
 
 // Autoware
 #include <autoware_lanelet2_msgs/MapBin.h>
@@ -39,9 +39,11 @@
 
 #include <memory>
 
-namespace lane_change_planner {
-class LaneChanger {
- private:
+namespace lane_change_planner
+{
+class LaneChanger
+{
+private:
   ros::Timer timer_;
 
   ros::Publisher path_publisher_;
@@ -67,12 +69,12 @@ class LaneChanger {
   std::shared_ptr<RouteHandler> route_handler_ptr_;
   // PathExtender path_extender_;
 
-  void run(const ros::TimerEvent& event);
+  void run(const ros::TimerEvent & event);
   void publishDebugMarkers();
-  void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId& path);
+  void publishDrivableArea(const autoware_planning_msgs::PathWithLaneId & path);
   void waitForData();
 
- public:
+public:
   LaneChanger();
   void init();
 };

@@ -26,25 +26,28 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-PedestrianTracker::PedestrianTracker(const ros::Time& time, const autoware_perception_msgs::DynamicObject& object)
-    : Tracker(time, object.semantic.type),
-      filtered_posx_(object.state.pose_covariance.pose.position.x),
-      filtered_posy_(object.state.pose_covariance.pose.position.y),
-      pos_filter_gain_(0.2),
-      filtered_vx_(0.0),
-      filtered_vy_(0.0),
-      v_filter_gain_(0.6),
-      area_filter_gain_(0.8),
-      last_measurement_posx_(object.state.pose_covariance.pose.position.x),
-      last_measurement_posy_(object.state.pose_covariance.pose.position.y),
-      last_update_time_(time),
-      last_measurement_time_(time) {
+PedestrianTracker::PedestrianTracker(
+  const ros::Time & time, const autoware_perception_msgs::DynamicObject & object)
+: Tracker(time, object.semantic.type),
+  filtered_posx_(object.state.pose_covariance.pose.position.x),
+  filtered_posy_(object.state.pose_covariance.pose.position.y),
+  pos_filter_gain_(0.2),
+  filtered_vx_(0.0),
+  filtered_vy_(0.0),
+  v_filter_gain_(0.6),
+  area_filter_gain_(0.8),
+  last_measurement_posx_(object.state.pose_covariance.pose.position.x),
+  last_measurement_posy_(object.state.pose_covariance.pose.position.y),
+  last_update_time_(time),
+  last_measurement_time_(time)
+{
   object_ = object;
   // area
   filtered_area_ = utils::getArea(object.shape);
 }
 
-bool PedestrianTracker::predict(const ros::Time& time) {
+bool PedestrianTracker::predict(const ros::Time & time)
+{
   double dt = (time - last_update_time_).toSec();
   if (dt < 0.0) dt = 0.0;
   filtered_posx_ += filtered_vx_ * dt;
@@ -52,7 +55,9 @@ bool PedestrianTracker::predict(const ros::Time& time) {
   last_update_time_ = time;
   return true;
 }
-bool PedestrianTracker::measure(const autoware_perception_msgs::DynamicObject& object, const ros::Time& time) {
+bool PedestrianTracker::measure(
+  const autoware_perception_msgs::DynamicObject & object, const ros::Time & time)
+{
   int type = object.semantic.type;
   bool is_changed_unknown_object = false;
   if (type == autoware_perception_msgs::Semantic::UNKNOWN) {
@@ -63,33 +68,44 @@ bool PedestrianTracker::measure(const autoware_perception_msgs::DynamicObject& o
   setType(type);
 
   // area
-  filtered_area_ = area_filter_gain_ * filtered_area_ + (1.0 - area_filter_gain_) * utils::getArea(object.shape);
+  filtered_area_ =
+    area_filter_gain_ * filtered_area_ + (1.0 - area_filter_gain_) * utils::getArea(object.shape);
 
   // vx,vy
   double dt = (time - last_measurement_time_).toSec();
   last_measurement_time_ = time;
   last_update_time_ = time;
   if (0.0 < dt) {
-    double current_vel = std::sqrt((object.state.pose_covariance.pose.position.x - last_measurement_posx_) *
-                                       (object.state.pose_covariance.pose.position.x - last_measurement_posx_) +
-                                   (object.state.pose_covariance.pose.position.y - last_measurement_posy_) *
-                                       (object.state.pose_covariance.pose.position.y - last_measurement_posy_));
+    double current_vel = std::sqrt(
+      (object.state.pose_covariance.pose.position.x - last_measurement_posx_) *
+        (object.state.pose_covariance.pose.position.x - last_measurement_posx_) +
+      (object.state.pose_covariance.pose.position.y - last_measurement_posy_) *
+        (object.state.pose_covariance.pose.position.y - last_measurement_posy_));
     const double max_vel = 15.0; /* [m/s]*/
-    const double vel_scale = current_vel < 0.01 ? 1.0 : std::min(max_vel, current_vel) / current_vel;
+    const double vel_scale =
+      current_vel < 0.01 ? 1.0 : std::min(max_vel, current_vel) / current_vel;
     if (is_changed_unknown_object) {
       filtered_vx_ =
-          0.9 * filtered_vx_ +
-          (1.0 - 0.9) * ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
+        0.9 * filtered_vx_ +
+        (1.0 - 0.9) *
+          ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) *
+          vel_scale;
       filtered_vy_ =
-          0.9 * filtered_vy_ +
-          (1.0 - 0.9) * ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
+        0.9 * filtered_vy_ +
+        (1.0 - 0.9) *
+          ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) *
+          vel_scale;
     } else {
-      filtered_vx_ = v_filter_gain_ * filtered_vx_ +
-                     (1.0 - v_filter_gain_) *
-                         ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) * vel_scale;
-      filtered_vy_ = v_filter_gain_ * filtered_vy_ +
-                     (1.0 - v_filter_gain_) *
-                         ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) * vel_scale;
+      filtered_vx_ =
+        v_filter_gain_ * filtered_vx_ +
+        (1.0 - v_filter_gain_) *
+          ((object.state.pose_covariance.pose.position.x - last_measurement_posx_) / dt) *
+          vel_scale;
+      filtered_vy_ =
+        v_filter_gain_ * filtered_vy_ +
+        (1.0 - v_filter_gain_) *
+          ((object.state.pose_covariance.pose.position.y - last_measurement_posy_) / dt) *
+          vel_scale;
       v_filter_gain_ = std::min(0.9, v_filter_gain_ + 0.05);
     }
   }
@@ -99,17 +115,18 @@ bool PedestrianTracker::measure(const autoware_perception_msgs::DynamicObject& o
   // filtered_posy_ = object.state.pose_covariance.pose.position.y;
   last_measurement_posx_ = object.state.pose_covariance.pose.position.x;
   last_measurement_posy_ = object.state.pose_covariance.pose.position.y;
-  filtered_posx_ =
-      pos_filter_gain_ * filtered_posx_ + (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.x;
-  filtered_posy_ =
-      pos_filter_gain_ * filtered_posy_ + (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.y;
+  filtered_posx_ = pos_filter_gain_ * filtered_posx_ +
+                   (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.x;
+  filtered_posy_ = pos_filter_gain_ * filtered_posy_ +
+                   (1.0 - pos_filter_gain_) * object.state.pose_covariance.pose.position.y;
   pos_filter_gain_ = std::min(0.8, pos_filter_gain_ + 0.05);
 
   return true;
 }
 
-bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time& time,
-                                                  autoware_perception_msgs::DynamicObject& object) {
+bool PedestrianTracker::getEstimatedDynamicObject(
+  const ros::Time & time, autoware_perception_msgs::DynamicObject & object)
+{
   object = object_;
   object.id = unique_id::toMsg(getUUID());
   object.semantic.type = getType();
@@ -127,8 +144,10 @@ bool PedestrianTracker::getEstimatedDynamicObject(const ros::Time& time,
   tf2::Quaternion quaternion;
   tf2::fromMsg(object.state.pose_covariance.pose.orientation, quaternion);
   tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
-  object.state.twist_covariance.twist.linear.x = filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
-  object.state.twist_covariance.twist.linear.y = filtered_vx_ * std::sin(-yaw) + filtered_vy_ * std::cos(-yaw);
+  object.state.twist_covariance.twist.linear.x =
+    filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
+  object.state.twist_covariance.twist.linear.y =
+    filtered_vx_ * std::sin(-yaw) + filtered_vy_ * std::cos(-yaw);
 
   object.state.twist_reliable = true;
 

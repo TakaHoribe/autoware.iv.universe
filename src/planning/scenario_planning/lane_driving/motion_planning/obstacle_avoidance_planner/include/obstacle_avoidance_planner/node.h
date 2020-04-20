@@ -16,35 +16,42 @@
 #ifndef NODE_H
 #define NODE_H
 
-namespace cv {
+namespace cv
+{
 class Mat;
 }
 
-namespace tf2_ros {
+namespace tf2_ros
+{
 class Buffer;
 class TransformListener;
 }  // namespace tf2_ros
 
-namespace std_msgs {
+namespace std_msgs
+{
 ROS_DECLARE_MESSAGE(Bool);
 }
 
-namespace autoware_system_msgs {
+namespace autoware_system_msgs
+{
 ROS_DECLARE_MESSAGE(AutowareState);
 }
 
-namespace autoware_planning_msgs {
+namespace autoware_planning_msgs
+{
 ROS_DECLARE_MESSAGE(PathPoint);
 ROS_DECLARE_MESSAGE(Path);
 ROS_DECLARE_MESSAGE(TrajectoryPoint);
 ROS_DECLARE_MESSAGE(Trajectory);
 }  // namespace autoware_planning_msgs
 
-namespace autoware_perception_msgs {
+namespace autoware_perception_msgs
+{
 ROS_DECLARE_MESSAGE(DynamicObjectArray);
 }  // namespace autoware_perception_msgs
 
-namespace geometry_msgs {
+namespace geometry_msgs
+{
 ROS_DECLARE_MESSAGE(Pose);
 ROS_DECLARE_MESSAGE(Point);
 }  // namespace geometry_msgs
@@ -55,8 +62,9 @@ struct QPParam;
 struct TrajectoryParam;
 struct ConstrainParam;
 
-class ObstacleAvoidancePlanner {
- private:
+class ObstacleAvoidancePlanner
+{
+private:
   bool is_publishing_clearance_map_;
   bool is_showing_debug_info_;
   bool enable_avoidance_;
@@ -99,43 +107,48 @@ class ObstacleAvoidancePlanner {
   ros::Subscriber is_avoidance_sub_;
 
   // callback functions
-  void pathCallback(const autoware_planning_msgs::Path& msg);
-  void objectsCallback(const autoware_perception_msgs ::DynamicObjectArray& msg);
-  void stateCallback(const autoware_system_msgs::AutowareState& msg);
-  void enableAvoidanceCallback(const std_msgs::Bool& msg);
+  void pathCallback(const autoware_planning_msgs::Path & msg);
+  void objectsCallback(const autoware_perception_msgs ::DynamicObjectArray & msg);
+  void stateCallback(const autoware_system_msgs::AutowareState & msg);
+  void enableAvoidanceCallback(const std_msgs::Bool & msg);
 
   void initialize();
 
   std::vector<autoware_planning_msgs::TrajectoryPoint> generatePostProcessedTrajectory(
-      const geometry_msgs::Pose& ego_pose, const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::vector<autoware_planning_msgs::TrajectoryPoint>& merged_optimized_points);
+    const geometry_msgs::Pose & ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint> & path_points,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint> & merged_optimized_points);
 
-  bool needReplan(const geometry_msgs::Pose& ego_pose, const std::unique_ptr<geometry_msgs::Pose>& prev_ego_pose,
-                  const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                  const std::unique_ptr<ros::Time>& previous_replanned_time,
-                  const std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>>& prev_path_points,
-                  std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>>& prev_optimized_path);
+  bool needReplan(
+    const geometry_msgs::Pose & ego_pose,
+    const std::unique_ptr<geometry_msgs::Pose> & prev_ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint> & path_points,
+    const std::unique_ptr<ros::Time> & previous_replanned_time,
+    const std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>> & prev_path_points,
+    std::unique_ptr<std::vector<autoware_planning_msgs::TrajectoryPoint>> & prev_optimized_path);
 
   std::vector<autoware_planning_msgs::TrajectoryPoint> generateOptimizedTrajectory(
-      const geometry_msgs::Pose& ego_pose, const autoware_planning_msgs::Path& input_path);
+    const geometry_msgs::Pose & ego_pose, const autoware_planning_msgs::Path & input_path);
 
   std::unique_ptr<geometry_msgs::Pose> getCurrentEgoPose();
 
-  bool isPathShapeChanged(const geometry_msgs::Pose& ego_pose,
-                          const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-                          const std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>>& prev_path_points);
+  bool isPathShapeChanged(
+    const geometry_msgs::Pose & ego_pose,
+    const std::vector<autoware_planning_msgs::PathPoint> & path_points,
+    const std::unique_ptr<std::vector<autoware_planning_msgs::PathPoint>> & prev_path_points);
 
-  autoware_planning_msgs::Trajectory generateTrajectory(const autoware_planning_msgs::Path& in_path);
+  autoware_planning_msgs::Trajectory generateTrajectory(
+    const autoware_planning_msgs::Path & in_path);
 
   std::vector<autoware_planning_msgs::TrajectoryPoint> convertPointsToTrajectory(
-      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::vector<geometry_msgs::Point>& interpolated_points);
+    const std::vector<autoware_planning_msgs::PathPoint> & path_points,
+    const std::vector<geometry_msgs::Point> & interpolated_points);
 
   std::shared_ptr<geometry_msgs::Point> getExtendedPoint(
-      const std::vector<autoware_planning_msgs::PathPoint>& path_points,
-      const std::vector<geometry_msgs::Point>& interpolated_points);
+    const std::vector<autoware_planning_msgs::PathPoint> & path_points,
+    const std::vector<geometry_msgs::Point> & interpolated_points);
 
- public:
+public:
   ObstacleAvoidancePlanner();
   ~ObstacleAvoidancePlanner();
 };

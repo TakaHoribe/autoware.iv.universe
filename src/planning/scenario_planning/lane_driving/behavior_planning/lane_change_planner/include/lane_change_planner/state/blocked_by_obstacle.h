@@ -24,9 +24,11 @@
 #include <lanelet2_core/primitives/Primitive.h>
 #include <memory>
 
-namespace lane_change_planner {
-class BlockedByObstacleState : public StateBase {
- private:
+namespace lane_change_planner
+{
+class BlockedByObstacleState : public StateBase
+{
+private:
   geometry_msgs::PoseStamped current_pose_;
   geometry_msgs::TwistStamped::ConstPtr current_twist_;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr dynamic_objects_;
@@ -45,12 +47,14 @@ class BlockedByObstacleState : public StateBase {
   bool isLaneChangeAvailable() const;
   bool isLaneChangeReady() const;
   bool laneChangeForcedByOperator() const;
-  bool isLaneChangePathSafe(const lanelet::ConstLanelets& target_lanes,
-                            const autoware_planning_msgs::PathWithLaneId& path) const;
+  bool isLaneChangePathSafe(
+    const lanelet::ConstLanelets & target_lanes,
+    const autoware_planning_msgs::PathWithLaneId & path) const;
 
- public:
-  BlockedByObstacleState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr);
+public:
+  BlockedByObstacleState(
+    const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
 
   // override virtual functions
   void entry() override;

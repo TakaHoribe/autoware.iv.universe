@@ -34,13 +34,16 @@
 
 #include <scene_module/scene_module_interface.h>
 
-class BehaviorVelocityPlannerManager {
- public:
-  void launchSceneModule(const std::shared_ptr<SceneModuleManagerInterface>& scene_module_manager_ptr);
+class BehaviorVelocityPlannerManager
+{
+public:
+  void launchSceneModule(
+    const std::shared_ptr<SceneModuleManagerInterface> & scene_module_manager_ptr);
 
-  autoware_planning_msgs::PathWithLaneId planPathVelocity(const std::shared_ptr<const PlannerData>& planner_data,
-                                                          const autoware_planning_msgs::PathWithLaneId& input_path_msg);
+  autoware_planning_msgs::PathWithLaneId planPathVelocity(
+    const std::shared_ptr<const PlannerData> & planner_data,
+    const autoware_planning_msgs::PathWithLaneId & input_path_msg);
 
- private:
+private:
   std::vector<std::shared_ptr<SceneModuleManagerInterface>> scene_manager_ptrs_;
 };

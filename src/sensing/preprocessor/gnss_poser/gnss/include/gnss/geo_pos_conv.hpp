@@ -19,8 +19,9 @@
 
 #include <math.h>
 
-class geo_pos_conv {
- private:
+class geo_pos_conv
+{
+private:
   double m_x;  // m
   double m_y;  // m
   double m_z;  // m
@@ -32,7 +33,7 @@ class geo_pos_conv {
   double m_PLato;  // plane lat
   double m_PLo;    // plane lon
 
- public:
+public:
   geo_pos_conv();
   double x() const;
   double y() const;

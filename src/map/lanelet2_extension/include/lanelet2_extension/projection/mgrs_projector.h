@@ -26,10 +26,13 @@
 
 #include <string>
 
-namespace lanelet {
-namespace projection {
-class MGRSProjector : public Projector {
- public:
+namespace lanelet
+{
+namespace projection
+{
+class MGRSProjector : public Projector
+{
+public:
   explicit MGRSProjector(Origin origin = Origin({0.0, 0.0}));  // NOLINT
 
   /**
@@ -37,7 +40,7 @@ class MGRSProjector : public Projector {
    * @param  gps [point with latitude longitude information]
    * @return     [projected point in MGRS coordinate]
    */
-  BasicPoint3d forward(const GPSPoint& gps) const override;
+  BasicPoint3d forward(const GPSPoint & gps) const override;
 
   /**
    * [MGRSProjector::forward projects gpgs lat/lon to MGRS xyz coordinate]
@@ -46,7 +49,7 @@ class MGRSProjector : public Projector {
    * 4=10m, 5=1m]
    * @return           [projected point in MGRS coordinate]
    */
-  BasicPoint3d forward(const GPSPoint& gps, const int precision) const;
+  BasicPoint3d forward(const GPSPoint & gps, const int precision) const;
 
   /**
    * [MGRSProjector::reverse projects point within MGRS 100km grid into gps
@@ -54,7 +57,7 @@ class MGRSProjector : public Projector {
    * @param  mgrs_point [3d point in MGRS 100km grid]
    * @return            [projected point in WGS84]
    */
-  GPSPoint reverse(const BasicPoint3d& mgrs) const override;
+  GPSPoint reverse(const BasicPoint3d & mgrs) const override;
 
   /**
    * [MGRSProjector::reverse projects point within MGRS grid into gps lat/lon
@@ -63,14 +66,14 @@ class MGRSProjector : public Projector {
    * @param  mgrs_code  [MGRS grid code]
    * @return            [projected point in WGS84]
    */
-  GPSPoint reverse(const BasicPoint3d& mgrs_point, const std::string& mgrs_code) const;
+  GPSPoint reverse(const BasicPoint3d & mgrs_point, const std::string & mgrs_code) const;
 
   /**
    * [MGRSProjector::setMGRSCode sets MGRS code used for reverse projection]
    * @param mgrs_code [MGRS code. Minimum requirement is GZD and 100 km Grid
    * Square ID. e.g. "4QFJ"]
    */
-  void setMGRSCode(const std::string& mgrs_code);
+  void setMGRSCode(const std::string & mgrs_code);
 
   /**
    * [MGRSProjector::setMGRSCode sets MGRS code used for reverse projection from
@@ -79,7 +82,7 @@ class MGRSProjector : public Projector {
    * @param precision [resolution of MGRS Grid 0=100km, 1=10km, 2=1km, 3=100m,
    * 4=10m, 5=1m]
    */
-  void setMGRSCode(const GPSPoint& gps, const int precision = 0);
+  void setMGRSCode(const GPSPoint & gps, const int precision = 0);
 
   /**
    * [getProjectedMGRSGrid returns mgrs]
@@ -93,7 +96,7 @@ class MGRSProjector : public Projector {
    */
   bool isMGRSCodeSet() const { return !mgrs_code_.empty(); };
 
- private:
+private:
   /**
    * mgrs grid code used for reverse function
    */

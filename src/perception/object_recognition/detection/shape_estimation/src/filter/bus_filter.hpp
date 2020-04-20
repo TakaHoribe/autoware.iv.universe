@@ -21,12 +21,14 @@
 
 #include "shape_estimation/filter_interface.hpp"
 
-class BusFilter : public ShapeEstimationFilterInterface {
- public:
+class BusFilter : public ShapeEstimationFilterInterface
+{
+public:
   BusFilter(){};
 
   ~BusFilter(){};
 
-  bool filter(const autoware_perception_msgs::Shape& shape_output, const geometry_msgs::Pose& pose_output,
-              const bool& orientaion_output) override;
+  bool filter(
+    const autoware_perception_msgs::Shape & shape_output, const geometry_msgs::Pose & pose_output,
+    const bool & orientaion_output) override;
 };

@@ -19,23 +19,31 @@
 #include <lane_change_planner/state/forcing_lane_change.h>
 #include <lane_change_planner/utilities.h>
 
-namespace lane_change_planner {
-ForcingLaneChangeState::ForcingLaneChangeState(const Status& status,
-                                               const std::shared_ptr<DataManager>& data_manager_ptr,
-                                               const std::shared_ptr<RouteHandler>& route_handler_ptr)
-    : StateBase(status, data_manager_ptr, route_handler_ptr) {}
+namespace lane_change_planner
+{
+ForcingLaneChangeState::ForcingLaneChangeState(
+  const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+  const std::shared_ptr<RouteHandler> & route_handler_ptr)
+: StateBase(status, data_manager_ptr, route_handler_ptr)
+{
+}
 
 State ForcingLaneChangeState::getCurrentState() const { return State::FORCING_LANE_CHANGE; }
 
-void ForcingLaneChangeState::entry() {
+void ForcingLaneChangeState::entry()
+{
   ros_parameters_ = data_manager_ptr_->getLaneChangerParameters();
   original_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_follow_lane_ids);
   target_lanes_ = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
 }
 
-autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const { return status_.lane_change_path; }
+autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
+{
+  return status_.lane_change_path;
+}
 
-void ForcingLaneChangeState::update() {
+void ForcingLaneChangeState::update()
+{
   current_pose_ = data_manager_ptr_->getCurrentSelfPose();
 
   // update path
@@ -48,18 +56,20 @@ void ForcingLaneChangeState::update() {
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
     status_.lane_change_path.drivable_area =
-        util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
+      util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
   }
 }
 
-State ForcingLaneChangeState::getNextState() const {
+State ForcingLaneChangeState::getNextState() const
+{
   if (hasFinishedLaneChange()) {
     return State::FOLLOWING_LANE;
   }
   return State::FORCING_LANE_CHANGE;
 }
 
-bool ForcingLaneChangeState::hasFinishedLaneChange() const {
+bool ForcingLaneChangeState::hasFinishedLaneChange() const
+{
   static ros::Time start_time = ros::Time::now();
 
   if (route_handler_ptr_->isInTargetLane(current_pose_, target_lanes_)) {

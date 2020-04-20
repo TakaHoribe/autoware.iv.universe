@@ -21,18 +21,21 @@
 #include "lidar_apollo_instance_segmentation/feature_map.h"
 #include "util.h"
 
-class FeatureGenerator {
- private:
+class FeatureGenerator
+{
+private:
   bool use_intensity_feature_;
   bool use_constant_feature_;
   float min_height_;
   float max_height_;
   std::shared_ptr<FeatureMapInterface> map_ptr_;
 
- public:
-  FeatureGenerator(const int width, const int height, const int range, const bool use_intensity_feature,
-                   const bool use_constant_feature);
+public:
+  FeatureGenerator(
+    const int width, const int height, const int range, const bool use_intensity_feature,
+    const bool use_constant_feature);
   ~FeatureGenerator() {}
 
-  std::shared_ptr<FeatureMapInterface> generate(const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr);
+  std::shared_ptr<FeatureMapInterface> generate(
+    const pcl::PointCloud<pcl::PointXYZI>::Ptr & pc_ptr);
 };

@@ -27,49 +27,58 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 
-class SceneModuleInterface {
- public:
+class SceneModuleInterface
+{
+public:
   explicit SceneModuleInterface(const int64_t module_id) : module_id_(module_id) {}
   virtual ~SceneModuleInterface() = default;
 
-  virtual bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) = 0;
+  virtual bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) = 0;
   virtual visualization_msgs::MarkerArray createDebugMarkerArray() = 0;
 
   int64_t getModuleId() const { return module_id_; }
-  void setPlannerData(const std::shared_ptr<const PlannerData>& planner_data) { planner_data_ = planner_data; }
+  void setPlannerData(const std::shared_ptr<const PlannerData> & planner_data)
+  {
+    planner_data_ = planner_data;
+  }
 
- protected:
+protected:
   const int64_t module_id_;
   std::shared_ptr<const PlannerData> planner_data_;
 };
 
-class SceneModuleManagerInterface {
- public:
-  SceneModuleManagerInterface(const char* module_name) {
+class SceneModuleManagerInterface
+{
+public:
+  SceneModuleManagerInterface(const char * module_name)
+  {
     const auto ns = std::string("debug/") + module_name;
     pub_debug_ = private_nh_.advertise<visualization_msgs::MarkerArray>(ns, 20);
   }
 
   virtual ~SceneModuleManagerInterface() = default;
 
-  virtual const char* getModuleName() = 0;
+  virtual const char * getModuleName() = 0;
 
-  void updateSceneModuleInstances(const std::shared_ptr<const PlannerData>& planner_data,
-                                  const autoware_planning_msgs::PathWithLaneId& path) {
+  void updateSceneModuleInstances(
+    const std::shared_ptr<const PlannerData> & planner_data,
+    const autoware_planning_msgs::PathWithLaneId & path)
+  {
     planner_data_ = planner_data;
 
     launchNewModules(path);
     deleteExpiredModules(path);
   }
 
-  void modifyPathVelocity(autoware_planning_msgs::PathWithLaneId* path) {
+  void modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
+  {
     visualization_msgs::MarkerArray debug_marker_array;
 
-    for (const auto& scene_module : scene_modules_) {
+    for (const auto & scene_module : scene_modules_) {
       scene_module->setPlannerData(planner_data_);
       scene_module->modifyPathVelocity(path);
 
-      for (const auto& marker : scene_module->createDebugMarkerArray().markers) {
+      for (const auto & marker : scene_module->createDebugMarkerArray().markers) {
         debug_marker_array.markers.push_back(marker);
       }
     }
@@ -77,35 +86,42 @@ class SceneModuleManagerInterface {
     pub_debug_.publish(debug_marker_array);
   }
 
- protected:
-  virtual void launchNewModules(const autoware_planning_msgs::PathWithLaneId& path) = 0;
+protected:
+  virtual void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) = 0;
 
-  virtual std::function<bool(const std::shared_ptr<SceneModuleInterface>&)> getModuleExpiredFunction(
-      const autoware_planning_msgs::PathWithLaneId& path) = 0;
+  virtual std::function<bool(const std::shared_ptr<SceneModuleInterface> &)>
+  getModuleExpiredFunction(const autoware_planning_msgs::PathWithLaneId & path) = 0;
 
-  void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId& path) {
+  void deleteExpiredModules(const autoware_planning_msgs::PathWithLaneId & path)
+  {
     const auto isModuleExpired = getModuleExpiredFunction(path);
 
     // Copy container to avoid iterator corruption due to scene_modules_.erase() in unregisterModule()
     const auto copied_scene_modules = scene_modules_;
 
-    for (const auto& scene_module : copied_scene_modules) {
+    for (const auto & scene_module : copied_scene_modules) {
       if (isModuleExpired(scene_module)) {
         unregisterModule(scene_module);
       }
     }
   }
 
-  bool isModuleRegistered(const int64_t module_id) { return registered_module_id_set_.count(module_id) != 0; }
+  bool isModuleRegistered(const int64_t module_id)
+  {
+    return registered_module_id_set_.count(module_id) != 0;
+  }
 
-  void registerModule(const std::shared_ptr<SceneModuleInterface>& scene_module) {
+  void registerModule(const std::shared_ptr<SceneModuleInterface> & scene_module)
+  {
     ROS_INFO("register task: module = %s, id = %lu", getModuleName(), scene_module->getModuleId());
     registered_module_id_set_.emplace(scene_module->getModuleId());
     scene_modules_.insert(scene_module);
   }
 
-  void unregisterModule(const std::shared_ptr<SceneModuleInterface>& scene_module) {
-    ROS_INFO("unregister task: module = %s, id = %lu", getModuleName(), scene_module->getModuleId());
+  void unregisterModule(const std::shared_ptr<SceneModuleInterface> & scene_module)
+  {
+    ROS_INFO(
+      "unregister task: module = %s, id = %lu", getModuleName(), scene_module->getModuleId());
     registered_module_id_set_.erase(scene_module->getModuleId());
     scene_modules_.erase(scene_module);
   }

@@ -20,15 +20,18 @@
 #include "multi_object_tracker/tracker/model/tracker_base.hpp"
 #include "multi_object_tracker/utils/utils.hpp"
 
-Tracker::Tracker(const ros::Time& time, const int type)
-    : uuid_(unique_id::fromRandom()),
-      type_(type),
-      no_measurement_count_(0),
-      total_measurement_count_(1),
-      last_update_with_measurement_time_(time) {}
+Tracker::Tracker(const ros::Time & time, const int type)
+: uuid_(unique_id::fromRandom()),
+  type_(type),
+  no_measurement_count_(0),
+  total_measurement_count_(1),
+  last_update_with_measurement_time_(time)
+{
+}
 
-bool Tracker::updateWithMeasurement(const autoware_perception_msgs::DynamicObject& object,
-                                    const ros::Time& measurement_time) {
+bool Tracker::updateWithMeasurement(
+  const autoware_perception_msgs::DynamicObject & object, const ros::Time & measurement_time)
+{
   no_measurement_count_ = 0;
   ++total_measurement_count_;
   last_update_with_measurement_time_ = measurement_time;
@@ -36,12 +39,14 @@ bool Tracker::updateWithMeasurement(const autoware_perception_msgs::DynamicObjec
   return true;
 }
 
-bool Tracker::updateWithoutMeasurement() {
+bool Tracker::updateWithoutMeasurement()
+{
   ++no_measurement_count_;
   return true;
 }
 
-geometry_msgs::Point Tracker::getPosition(const ros::Time& time) {
+geometry_msgs::Point Tracker::getPosition(const ros::Time & time)
+{
   autoware_perception_msgs::DynamicObject object;
   getEstimatedDynamicObject(time, object);
   geometry_msgs::Point position;
@@ -51,7 +56,8 @@ geometry_msgs::Point Tracker::getPosition(const ros::Time& time) {
   return position;
 }
 
-double Tracker::getArea(const ros::Time& time) {
+double Tracker::getArea(const ros::Time & time)
+{
   autoware_perception_msgs::DynamicObject object;
   getEstimatedDynamicObject(time, object);
   return utils::getArea(object.shape);

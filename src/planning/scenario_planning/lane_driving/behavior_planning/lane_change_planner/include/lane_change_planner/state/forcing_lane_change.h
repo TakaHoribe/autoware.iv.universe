@@ -25,9 +25,11 @@
 
 #include <lanelet2_core/primitives/Lanelet.h>
 
-namespace lane_change_planner {
-class ForcingLaneChangeState : public StateBase {
- private:
+namespace lane_change_planner
+{
+class ForcingLaneChangeState : public StateBase
+{
+private:
   // State transition conditions
   bool hasFinishedLaneChange() const;
   geometry_msgs::PoseStamped current_pose_;
@@ -37,9 +39,10 @@ class ForcingLaneChangeState : public StateBase {
   lanelet::ConstLanelets original_lanes_;
   lanelet::ConstLanelets target_lanes_;
 
- public:
-  ForcingLaneChangeState(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr);
+public:
+  ForcingLaneChangeState(
+    const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
   // override virtual functions
   void entry() override;
   void update() override;

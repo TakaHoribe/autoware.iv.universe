@@ -35,15 +35,19 @@
 #include <ros/ros.h>
 #include "velodyne_laserscan/VelodyneLaserScan.h"
 
-namespace velodyne_laserscan {
-
-class LaserScanNodelet : public nodelet::Nodelet {
- public:
+namespace velodyne_laserscan
+{
+class LaserScanNodelet : public nodelet::Nodelet
+{
+public:
   LaserScanNodelet() {}
   ~LaserScanNodelet() {}
 
- private:
-  virtual void onInit() { node_.reset(new VelodyneLaserScan(getNodeHandle(), getPrivateNodeHandle())); }
+private:
+  virtual void onInit()
+  {
+    node_.reset(new VelodyneLaserScan(getNodeHandle(), getPrivateNodeHandle()));
+  }
   boost::shared_ptr<VelodyneLaserScan> node_;
 };
 

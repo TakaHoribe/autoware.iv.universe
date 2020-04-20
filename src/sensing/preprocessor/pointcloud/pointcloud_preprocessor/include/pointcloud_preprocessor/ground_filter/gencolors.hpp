@@ -49,10 +49,12 @@
 
 #include <iostream>
 
-namespace ray_ground_filter {
+namespace ray_ground_filter
+{
 using namespace cv;
 
-inline static void downsamplePoints(const Mat& src, Mat& dst, size_t count) {
+inline static void downsamplePoints(const Mat & src, Mat & dst, size_t count)
+{
   CV_Assert(count >= 2);
   CV_Assert(src.cols == 1 || src.rows == 1);
   CV_Assert(src.total() >= count);
@@ -93,7 +95,8 @@ inline static void downsamplePoints(const Mat& src, Mat& dst, size_t count) {
   }
 }
 
-inline void generateColors(std::vector<Scalar>& colors, size_t count, size_t factor = 100) {
+inline void generateColors(std::vector<Scalar> & colors, size_t count, size_t factor = 100)
+{
   if (count < 1) return;
 
   colors.resize(count);

@@ -20,13 +20,15 @@
 #include <cmath>
 #include "mpc_follower/mpc_utils.h"
 
-class TestSuite : public ::testing::Test {
- public:
+class TestSuite : public ::testing::Test
+{
+public:
   TestSuite() {}
   ~TestSuite() {}
 };
 
-TEST(TestSuite, TestConvertEulerAngleToMonotonic) {
+TEST(TestSuite, TestConvertEulerAngleToMonotonic)
+{
   std::vector<double> yaw;
   for (int i = -5; i < 5; ++i) {
     double tmp = amathutils::normalizeRadian((double)i * M_PI);
@@ -41,7 +43,8 @@ TEST(TestSuite, TestConvertEulerAngleToMonotonic) {
   ASSERT_DOUBLE_EQ(-M_PI + diff, yaw.back());
 }
 
-TEST(TestSuite, InterpolationTest) {
+TEST(TestSuite, InterpolationTest)
+{
   std::vector<double> idx = {0.0, 1.0, 2.0, 3.0};
 
   std::vector<double> value = {-2.0, 0.0, 2.0, 4.0};
@@ -65,7 +68,8 @@ TEST(TestSuite, InterpolationTest) {
   ASSERT_DOUBLE_EQ(-1.4, ret);
 }
 
-TEST(TestSuite, TestCalcTrajectoryYawFromXY) {
+TEST(TestSuite, TestCalcTrajectoryYawFromXY)
+{
   MPCTrajectory traj;
   /*              x    y    z   yaw   vx   k  time */
   traj.push_back(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -97,7 +101,8 @@ TEST(TestSuite, TestCalcTrajectoryYawFromXY) {
   ASSERT_DOUBLE_EQ(0.0, traj.yaw[2]);
 }
 
-TEST(TestSuite, TestCalcTrajectoryCurvature) {
+TEST(TestSuite, TestCalcTrajectoryCurvature)
+{
   MPCTrajectory traj;
   double radius = 0.5;
   for (double theta = 0; theta < M_PI; theta += 0.1) {
@@ -134,7 +139,8 @@ TEST(TestSuite, TestCalcTrajectoryCurvature) {
   ASSERT_NEAR(1 / radius, traj.k.back(), 1.0E-5);
 }
 
-TEST(TestSuite, TestCalcNearestPose) {
+TEST(TestSuite, TestCalcNearestPose)
+{
   MPCTrajectory traj;
   /*              x    y    z     yaw        vx   k  time */
   traj.push_back(0.0, 0.0, 0.0, M_PI / 4.0, 0.0, 0.0, 0.0);
@@ -150,8 +156,8 @@ TEST(TestSuite, TestCalcNearestPose) {
   self_pose.position.y = 0.3;
   self_pose.position.z = 0.0;
   self_pose.orientation = amathutils::getQuaternionFromYaw(M_PI / 3.0);
-  MPCUtils::calcNearestPose(traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error,
-                            nearest_time);
+  MPCUtils::calcNearestPose(
+    traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error, nearest_time);
   ASSERT_EQ(0, nearest_index);
   ASSERT_DOUBLE_EQ(std::sqrt(0.3 * 0.3 + 0.3 * 0.3), min_dist_error);
   ASSERT_DOUBLE_EQ(M_PI / 3.0 - M_PI / 4.0, nearest_yaw_error);
@@ -161,8 +167,8 @@ TEST(TestSuite, TestCalcNearestPose) {
   self_pose.position.y = 0.0;
   self_pose.position.z = 0.1;
   self_pose.orientation = amathutils::getQuaternionFromYaw(M_PI / 4.0);
-  MPCUtils::calcNearestPose(traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error,
-                            nearest_time);
+  MPCUtils::calcNearestPose(
+    traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error, nearest_time);
   ASSERT_EQ(0, nearest_index);
   ASSERT_DOUBLE_EQ(0.0, min_dist_error);
   ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5);
@@ -172,8 +178,8 @@ TEST(TestSuite, TestCalcNearestPose) {
   self_pose.position.y = 0.3;
   self_pose.position.z = 0.0;
   self_pose.orientation = amathutils::getQuaternionFromYaw(M_PI / 4.0);
-  MPCUtils::calcNearestPoseInterp(traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error,
-                                  nearest_time);
+  MPCUtils::calcNearestPoseInterp(
+    traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error, nearest_time);
   ASSERT_EQ(0, nearest_index);
   ASSERT_DOUBLE_EQ(0.0, min_dist_error);
   ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5);
@@ -183,26 +189,30 @@ TEST(TestSuite, TestCalcNearestPose) {
   self_pose.position.y = 0.3;
   self_pose.position.z = 0.0;
   self_pose.orientation = amathutils::getQuaternionFromYaw(M_PI / 4.0);
-  MPCUtils::calcNearestPoseInterp(traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error,
-                                  nearest_time);
+  MPCUtils::calcNearestPoseInterp(
+    traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error, nearest_time);
   ASSERT_EQ(0, nearest_index);
   ASSERT_DOUBLE_EQ(0.0, min_dist_error) << "min_dist_error = " << min_dist_error;
-  ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5) << "nearest_yaw_error = " << nearest_yaw_error;
+  ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5)
+    << "nearest_yaw_error = " << nearest_yaw_error;
   ASSERT_EQ(true, std::fabs(nearest_time - 0.3) < 1.0E-5) << "nearest_time = " << nearest_time;
 
   self_pose.position.x = -1.0;
   self_pose.position.y = 0.0;
   self_pose.position.z = 0.0;
   self_pose.orientation = amathutils::getQuaternionFromYaw(M_PI / 4.0);
-  MPCUtils::calcNearestPoseInterp(traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error,
-                                  nearest_time);
+  MPCUtils::calcNearestPoseInterp(
+    traj, self_pose, nearest_pose, nearest_index, min_dist_error, nearest_yaw_error, nearest_time);
   ASSERT_EQ(0, nearest_index);
-  ASSERT_EQ(true, std::fabs(min_dist_error - sqrt(2.0) / 2.0) < 1.0E-5) << "min_dist_error = " << min_dist_error;
-  ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5) << "nearest_yaw_error = " << nearest_yaw_error;
+  ASSERT_EQ(true, std::fabs(min_dist_error - sqrt(2.0) / 2.0) < 1.0E-5)
+    << "min_dist_error = " << min_dist_error;
+  ASSERT_EQ(true, std::fabs(nearest_yaw_error) < 1.0E-5)
+    << "nearest_yaw_error = " << nearest_yaw_error;
   ASSERT_EQ(true, std::fabs(nearest_time - (-0.5)) < 1.0E-5) << "nearest_time = " << nearest_time;
 }
 
-TEST(TestSuite, TestInterp1dMPCTraj) {
+TEST(TestSuite, TestInterp1dMPCTraj)
+{
   MPCTrajectory traj, traj_result;
   /*              x    y    z    yaw   vx   k  time */
   traj.push_back(0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0);
@@ -261,12 +271,16 @@ TEST(TestSuite, TestInterp1dMPCTraj) {
 
   /*                                      0     1    2    3    4    5    6  */
   std::vector<double> bad_index_time = {-0.1, 0.0, -0.7, 1.0, 1, 5, 2.0, 2.2};
-  ASSERT_EQ(false, MPCUtils::interp1dMPCTraj(bad_traj.relative_time, traj, index_time, traj_result));
-  ASSERT_EQ(false, MPCUtils::interp1dMPCTraj(traj.relative_time, traj, bad_index_time, traj_result));
-  ASSERT_EQ(false, MPCUtils::interp1dMPCTraj(bad_traj.relative_time, traj, bad_index_time, traj_result));
+  ASSERT_EQ(
+    false, MPCUtils::interp1dMPCTraj(bad_traj.relative_time, traj, index_time, traj_result));
+  ASSERT_EQ(
+    false, MPCUtils::interp1dMPCTraj(traj.relative_time, traj, bad_index_time, traj_result));
+  ASSERT_EQ(
+    false, MPCUtils::interp1dMPCTraj(bad_traj.relative_time, traj, bad_index_time, traj_result));
 }
 
-TEST(TestSuite, TestMPCTrajSize) {
+TEST(TestSuite, TestMPCTrajSize)
+{
   MPCTrajectory traj;
   traj.push_back(0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0);
   ASSERT_EQ(1, traj.size()) << "invalid size, zero expected";
@@ -275,7 +289,8 @@ TEST(TestSuite, TestMPCTrajSize) {
   ASSERT_EQ(0, traj.size()) << "invalid size, zero expected";
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "TestNode");
   return RUN_ALL_TESTS();

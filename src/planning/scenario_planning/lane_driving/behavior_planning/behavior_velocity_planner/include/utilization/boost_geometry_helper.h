@@ -34,44 +34,53 @@
 using Point2d = boost::geometry::model::d2::point_xy<double>;
 using Segment2d = boost::geometry::model::segment<Point2d>;
 using LineString2d = boost::geometry::model::linestring<Point2d>;
-using Polygon2d = boost::geometry::model::polygon<Point2d, false, false>;  // counter-clockwise, open
+using Polygon2d =
+  boost::geometry::model::polygon<Point2d, false, false>;  // counter-clockwise, open
 
 BOOST_GEOMETRY_REGISTER_POINT_3D(geometry_msgs::Point, double, cs::cartesian, x, y, z)
-BOOST_GEOMETRY_REGISTER_POINT_3D(geometry_msgs::PoseWithCovarianceStamped, double, cs::cartesian, pose.pose.position.x,
-                                 pose.pose.position.y, pose.pose.position.z)
+BOOST_GEOMETRY_REGISTER_POINT_3D(
+  geometry_msgs::PoseWithCovarianceStamped, double, cs::cartesian, pose.pose.position.x,
+  pose.pose.position.y, pose.pose.position.z)
 
-BOOST_GEOMETRY_REGISTER_POINT_3D(autoware_planning_msgs::PathPoint, double, cs::cartesian, pose.position.x,
-                                 pose.position.y, pose.position.z)
-BOOST_GEOMETRY_REGISTER_POINT_3D(autoware_planning_msgs::PathPointWithLaneId, double, cs::cartesian,
-                                 point.pose.position.x, point.pose.position.y, point.pose.position.z)
-BOOST_GEOMETRY_REGISTER_POINT_3D(autoware_planning_msgs::TrajectoryPoint, double, cs::cartesian, pose.position.x,
-                                 pose.position.y, pose.position.z)
+BOOST_GEOMETRY_REGISTER_POINT_3D(
+  autoware_planning_msgs::PathPoint, double, cs::cartesian, pose.position.x, pose.position.y,
+  pose.position.z)
+BOOST_GEOMETRY_REGISTER_POINT_3D(
+  autoware_planning_msgs::PathPointWithLaneId, double, cs::cartesian, point.pose.position.x,
+  point.pose.position.y, point.pose.position.z)
+BOOST_GEOMETRY_REGISTER_POINT_3D(
+  autoware_planning_msgs::TrajectoryPoint, double, cs::cartesian, pose.position.x, pose.position.y,
+  pose.position.z)
 
 template <class T>
-Point2d to_bg2d(const T& p) {
+Point2d to_bg2d(const T & p)
+{
   return Point2d(boost::geometry::get<0>(p), boost::geometry::get<1>(p));
 }
 
 template <class T>
-LineString2d to_bg2d(const std::vector<T>& vec) {
+LineString2d to_bg2d(const std::vector<T> & vec)
+{
   LineString2d ps;
-  for (const auto& p : vec) {
+  for (const auto & p : vec) {
     ps.push_back(to_bg2d(p));
   }
   return ps;
 }
 
-inline Polygon2d linestring2polygon(const LineString2d& line_string) {
+inline Polygon2d linestring2polygon(const LineString2d & line_string)
+{
   Polygon2d polygon;
 
-  for (const auto& p : line_string) {
+  for (const auto & p : line_string) {
     polygon.outer().push_back(p);
   }
 
   return polygon;
 }
 
-inline Polygon2d lines2polygon(const LineString2d& left_line, const LineString2d& right_line) {
+inline Polygon2d lines2polygon(const LineString2d & left_line, const LineString2d & right_line)
+{
   Polygon2d polygon;
 
   polygon.outer().push_back(left_line.front());
@@ -87,7 +96,8 @@ inline Polygon2d lines2polygon(const LineString2d& left_line, const LineString2d
   return polygon;
 }
 
-inline std::vector<Segment2d> makeSegments(const LineString2d& ls) {
+inline std::vector<Segment2d> makeSegments(const LineString2d & ls)
+{
   std::vector<Segment2d> segments;
   for (size_t i = 0; i < ls.size(); ++i) {
     segments.emplace_back(ls.at(i), ls.at(i + 1));

@@ -24,19 +24,20 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 
+#include <autoware_vehicle_msgs/RawVehicleCommand.h>
 #include <autoware_vehicle_msgs/Shift.h>
 #include <autoware_vehicle_msgs/VehicleCommand.h>
-#include <autoware_vehicle_msgs/RawVehicleCommand.h>
 
 #include <raw_vehicle_cmd_converter/accel_map.h>
 #include <raw_vehicle_cmd_converter/brake_map.h>
 
-class AccelMapConverter {
- public:
+class AccelMapConverter
+{
+public:
   AccelMapConverter();
   ~AccelMapConverter() = default;
 
- private:
+private:
   ros::NodeHandle nh_;            //!< @brief ros node handle
   ros::NodeHandle pnh_;           //!< @brief private ros node handle
   ros::Publisher pub_cmd_;        //!< @brief topic publisher for tlow level vehicle command
@@ -53,8 +54,9 @@ class AccelMapConverter {
 
   void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr vehicle_cmd_ptr);
   void callbackVelocity(const geometry_msgs::TwistStampedConstPtr msg);
-  void calculateAccelMap(const double current_velocity, const double desired_acc, double* desired_throttle,
-                         double* desired_brake);
+  void calculateAccelMap(
+    const double current_velocity, const double desired_acc, double * desired_throttle,
+    double * desired_brake);
 };
 
 #endif  // VEHICLE_RAW_VEHICLE_CMD_CONVERTER_INCLUDE_RAW_VEHICLE_CMD_CONVERTER_NODE_HPP_

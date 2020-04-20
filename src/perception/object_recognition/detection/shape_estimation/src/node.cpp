@@ -20,7 +20,8 @@
 #include "shape_estimation/node.hpp"
 #include "shape_estimation/shape_estimator.hpp"
 
-ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~") {
+ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~")
+{
   sub_ = nh_.subscribe("input", 1, &ShapeEstimationNode::callback, this);
   pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("objects", 1, true);
   // pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
@@ -28,7 +29,9 @@ ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~") {
   //   map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
 }
 
-void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_msg) {
+void ShapeEstimationNode::callback(
+  const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_msg)
+{
   // Guard
   if (pub_.getNumSubscribers() < 1) return;
 
@@ -37,7 +40,7 @@ void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObject
   output_msg.header = input_msg->header;
 
   // Estimate shape for each object and pack msg
-  for (const auto& feature_object : input_msg->feature_objects) {
+  for (const auto & feature_object : input_msg->feature_objects) {
     // convert ros to pcl
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(feature_object.feature.cluster, *cluster);
@@ -45,7 +48,9 @@ void ShapeEstimationNode::callback(const autoware_perception_msgs::DynamicObject
     autoware_perception_msgs::Shape shape;
     geometry_msgs::Pose pose;
     bool orientation;
-    if (!estimator_.getShapeAndPose(feature_object.object.semantic.type, *cluster, shape, pose, orientation)) continue;
+    if (!estimator_.getShapeAndPose(
+          feature_object.object.semantic.type, *cluster, shape, pose, orientation))
+      continue;
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;

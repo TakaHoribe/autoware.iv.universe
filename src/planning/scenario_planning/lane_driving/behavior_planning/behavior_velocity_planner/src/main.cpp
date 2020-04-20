@@ -18,7 +18,8 @@
 
 #include <behavior_velocity_planner/node.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "behavior_velocity_planner_node");
 
   BehaviorVelocityPlannerNode node;

@@ -19,12 +19,13 @@
 
 #include <autoware_planning_msgs/PathWithLaneId.h>
 #include <lane_change_planner/data_manager.h>
-#include <lane_change_planner/route_handler.h>
 #include <lane_change_planner/parameters.h>
+#include <lane_change_planner/route_handler.h>
 #include <iostream>
 #include <string>
 
-namespace lane_change_planner {
+namespace lane_change_planner
+{
 enum State {
   NO_STATE,
   FOLLOWING_LANE,
@@ -33,9 +34,10 @@ enum State {
   FORCING_LANE_CHANGE,
   BLOCKED_BY_OBSTACLE
 };
-std::ostream& operator<<(std::ostream& ostream, const State& state);
+std::ostream & operator<<(std::ostream & ostream, const State & state);
 
-struct Status {
+struct Status
+{
   autoware_planning_msgs::PathWithLaneId lane_follow_path;
   autoware_planning_msgs::PathWithLaneId lane_change_path;
   std::vector<uint64_t> lane_follow_lane_ids;
@@ -44,16 +46,18 @@ struct Status {
   bool lane_change_ready;
 };
 
-class StateBase {
- protected:
-  StateBase(const Status& status, const std::shared_ptr<DataManager>& data_manager_ptr,
-             const std::shared_ptr<RouteHandler>& route_handler_ptr);
+class StateBase
+{
+protected:
+  StateBase(
+    const Status & status, const std::shared_ptr<DataManager> & data_manager_ptr,
+    const std::shared_ptr<RouteHandler> & route_handler_ptr);
   Status status_;
   LaneChangerParameters ros_parameters_;
   std::shared_ptr<DataManager> data_manager_ptr_;
   std::shared_ptr<RouteHandler> route_handler_ptr_;
 
- public:
+public:
   virtual void entry() = 0;
   virtual void update() = 0;
   virtual State getNextState() const = 0;

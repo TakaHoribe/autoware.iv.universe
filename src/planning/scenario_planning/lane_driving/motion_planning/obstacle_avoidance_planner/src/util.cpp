@@ -30,9 +30,12 @@
 #include "obstacle_avoidance_planner/spline_interpolate.h"
 #include "obstacle_avoidance_planner/util.h"
 
-namespace util {
+namespace util
+{
 template <typename T>
-geometry_msgs::Point transformToRelativeCoordinate2D(const T& point, const geometry_msgs::Pose& origin) {
+geometry_msgs::Point transformToRelativeCoordinate2D(
+  const T & point, const geometry_msgs::Pose & origin)
+{
   geometry_msgs::Transform origin_coord2point;
   origin_coord2point.translation.x = point.x;
   origin_coord2point.translation.y = point.y;
@@ -52,13 +55,14 @@ geometry_msgs::Point transformToRelativeCoordinate2D(const T& point, const geome
   geometry_msgs::Point relative_p = rel_pose.position;
   return relative_p;
 }
-template geometry_msgs::Point transformToRelativeCoordinate2D<geometry_msgs::Point>(const geometry_msgs::Point&,
-                                                                                    const geometry_msgs::Pose& origin);
+template geometry_msgs::Point transformToRelativeCoordinate2D<geometry_msgs::Point>(
+  const geometry_msgs::Point &, const geometry_msgs::Pose & origin);
 template geometry_msgs::Point transformToRelativeCoordinate2D<geometry_msgs::Point32>(
-    const geometry_msgs::Point32&, const geometry_msgs::Pose& origin);
+  const geometry_msgs::Point32 &, const geometry_msgs::Pose & origin);
 
-geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point& point,
-                                                     const geometry_msgs::Pose& origin) {
+geometry_msgs::Point transformToAbsoluteCoordinate2D(
+  const geometry_msgs::Point & point, const geometry_msgs::Pose & origin)
+{
   geometry_msgs::Transform origin2point;
   origin2point.translation.x = point.x;
   origin2point.translation.y = point.y;
@@ -79,31 +83,37 @@ geometry_msgs::Point transformToAbsoluteCoordinate2D(const geometry_msgs::Point&
   return abs_p;
 }
 
-double calculate2DDistance(const geometry_msgs::Point& a, const geometry_msgs::Point& b) {
+double calculate2DDistance(const geometry_msgs::Point & a, const geometry_msgs::Point & b)
+{
   const double dx = a.x - b.x;
   const double dy = a.y - b.y;
   return std::sqrt(dx * dx + dy * dy);
 }
 
-double calculateSquaredDistance(const geometry_msgs::Point& a, const geometry_msgs::Point& b) {
+double calculateSquaredDistance(const geometry_msgs::Point & a, const geometry_msgs::Point & b)
+{
   const double dx = a.x - b.x;
   const double dy = a.y - b.y;
   return dx * dx + dy * dy;
 }
 
-double getYawFromPoints(const geometry_msgs::Point& a, const geometry_msgs::Point& a_root) {
+double getYawFromPoints(const geometry_msgs::Point & a, const geometry_msgs::Point & a_root)
+{
   const double dx = a.x - a_root.x;
   const double dy = a.y - a_root.y;
   return std::atan2(dy, dx);
 }
 
-double normalizeRadian(const double angle) {
+double normalizeRadian(const double angle)
+{
   double n_angle = std::fmod(angle, 2 * M_PI);
   n_angle = n_angle > M_PI ? n_angle - 2 * M_PI : n_angle < -M_PI ? 2 * M_PI + n_angle : n_angle;
   return n_angle;
 }
 
-geometry_msgs::Quaternion getQuaternionFromPoints(const geometry_msgs::Point& a, const geometry_msgs::Point& a_root) {
+geometry_msgs::Quaternion getQuaternionFromPoints(
+  const geometry_msgs::Point & a, const geometry_msgs::Point & a_root)
+{
   const double roll = 0;
   const double pitch = 0;
   const double yaw = util::getYawFromPoints(a, a_root);
@@ -113,8 +123,11 @@ geometry_msgs::Quaternion getQuaternionFromPoints(const geometry_msgs::Point& a,
 }
 
 template <typename T>
-geometry_msgs::Point transformMapToImage(const T& map_point, const nav_msgs::MapMetaData& occupancy_grid_info) {
-  geometry_msgs::Point relative_p = transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
+geometry_msgs::Point transformMapToImage(
+  const T & map_point, const nav_msgs::MapMetaData & occupancy_grid_info)
+{
+  geometry_msgs::Point relative_p =
+    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
   double resolution = occupancy_grid_info.resolution;
   double map_y_height = occupancy_grid_info.height;
   double map_x_width = occupancy_grid_info.width;
@@ -125,14 +138,16 @@ geometry_msgs::Point transformMapToImage(const T& map_point, const nav_msgs::Map
   image_point.y = map_x_width - map_x_in_image_resolution;
   return image_point;
 }
-template geometry_msgs::Point transformMapToImage<geometry_msgs::Point>(const geometry_msgs::Point&,
-                                                                        const nav_msgs::MapMetaData& map_info);
-template geometry_msgs::Point transformMapToImage<geometry_msgs::Point32>(const geometry_msgs::Point32&,
-                                                                          const nav_msgs::MapMetaData& map_info);
+template geometry_msgs::Point transformMapToImage<geometry_msgs::Point>(
+  const geometry_msgs::Point &, const nav_msgs::MapMetaData & map_info);
+template geometry_msgs::Point transformMapToImage<geometry_msgs::Point32>(
+  const geometry_msgs::Point32 &, const nav_msgs::MapMetaData & map_info);
 
-std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(const geometry_msgs::Point& map_point,
-                                                             const nav_msgs::MapMetaData& occupancy_grid_info) {
-  geometry_msgs::Point relative_p = transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
+std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(
+  const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info)
+{
+  geometry_msgs::Point relative_p =
+    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
   double resolution = occupancy_grid_info.resolution;
   double map_y_height = occupancy_grid_info.height;
   double map_x_width = occupancy_grid_info.width;
@@ -152,9 +167,12 @@ std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(const geometry_msgs
   }
 }
 
-bool transformMapToImage(const geometry_msgs::Point& map_point, const nav_msgs::MapMetaData& occupancy_grid_info,
-                         geometry_msgs::Point& image_point) {
-  geometry_msgs::Point relative_p = transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
+bool transformMapToImage(
+  const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info,
+  geometry_msgs::Point & image_point)
+{
+  geometry_msgs::Point relative_p =
+    transformToRelativeCoordinate2D(map_point, occupancy_grid_info.origin);
   const double map_y_height = occupancy_grid_info.height;
   const double map_x_width = occupancy_grid_info.width;
   const double scale = 1 / occupancy_grid_info.resolution;
@@ -171,8 +189,10 @@ bool transformMapToImage(const geometry_msgs::Point& map_point, const nav_msgs::
   }
 }
 
-bool interpolate2DPoints(const std::vector<double>& base_x, const std::vector<double>& base_y, const double resolution,
-                         std::vector<geometry_msgs::Point>& interpolated_points) {
+bool interpolate2DPoints(
+  const std::vector<double> & base_x, const std::vector<double> & base_y, const double resolution,
+  std::vector<geometry_msgs::Point> & interpolated_points)
+{
   if (base_x.empty() || base_y.empty()) {
     return false;
   }
@@ -198,16 +218,17 @@ bool interpolate2DPoints(const std::vector<double>& base_x, const std::vector<do
   }
 }
 
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geometry_msgs::Pose>& first_points,
-                                                        const std::vector<geometry_msgs::Pose>& second_points,
-                                                        const double delta_arc_length) {
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const std::vector<geometry_msgs::Pose> & first_points,
+  const std::vector<geometry_msgs::Pose> & second_points, const double delta_arc_length)
+{
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
   for (const auto point : first_points) {
     tmp_x.push_back(point.position.x);
     tmp_y.push_back(point.position.y);
   }
-  for (const auto& point : second_points) {
+  for (const auto & point : second_points) {
     tmp_x.push_back(point.position.x);
     tmp_y.push_back(point.position.y);
   }
@@ -216,11 +237,12 @@ std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geomet
   return interpolated_points;
 }
 
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geometry_msgs::Pose>& points,
-                                                        const double delta_arc_length) {
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const std::vector<geometry_msgs::Pose> & points, const double delta_arc_length)
+{
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
-  for (const auto& point : points) {
+  for (const auto & point : points) {
     tmp_x.push_back(point.position.x);
     tmp_y.push_back(point.position.y);
   }
@@ -230,10 +252,12 @@ std::vector<geometry_msgs::Point> getInterpolatedPoints(const std::vector<geomet
 }
 
 template <typename T>
-std::vector<geometry_msgs::Point> getInterpolatedPoints(const T& points, const double delta_arc_length) {
+std::vector<geometry_msgs::Point> getInterpolatedPoints(
+  const T & points, const double delta_arc_length)
+{
   std::vector<double> tmp_x;
   std::vector<double> tmp_y;
-  for (const auto& point : points) {
+  for (const auto & point : points) {
     tmp_x.push_back(point.pose.position.x);
     tmp_y.push_back(point.pose.position.y);
   }
@@ -241,14 +265,18 @@ std::vector<geometry_msgs::Point> getInterpolatedPoints(const T& points, const d
   util::interpolate2DPoints(tmp_x, tmp_y, delta_arc_length, interpolated_points);
   return interpolated_points;
 }
-template std::vector<geometry_msgs::Point> getInterpolatedPoints<std::vector<autoware_planning_msgs::TrajectoryPoint>>(
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>&, const double);
-template std::vector<geometry_msgs::Point> getInterpolatedPoints<std::vector<autoware_planning_msgs::PathPoint>>(
-    const std::vector<autoware_planning_msgs::PathPoint>&, const double);
+template std::vector<geometry_msgs::Point>
+getInterpolatedPoints<std::vector<autoware_planning_msgs::TrajectoryPoint>>(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> &, const double);
+template std::vector<geometry_msgs::Point>
+getInterpolatedPoints<std::vector<autoware_planning_msgs::PathPoint>>(
+  const std::vector<autoware_planning_msgs::PathPoint> &, const double);
 
 template <typename T>
-int getNearestIdx(const T& points, const geometry_msgs::Pose& pose, const int default_idx,
-                  const double delta_yaw_threshold) {
+int getNearestIdx(
+  const T & points, const geometry_msgs::Pose & pose, const int default_idx,
+  const double delta_yaw_threshold)
+{
   double min_dist = std::numeric_limits<double>::max();
   int nearest_idx = default_idx;
   const double point_yaw = tf2::getYaw(pose.orientation);
@@ -265,12 +293,16 @@ int getNearestIdx(const T& points, const geometry_msgs::Pose& pose, const int de
   return nearest_idx;
 }
 template int getNearestIdx<std::vector<autoware_planning_msgs::TrajectoryPoint>>(
-    const std::vector<autoware_planning_msgs::TrajectoryPoint>&, const geometry_msgs::Pose&, const int, const double);
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> &, const geometry_msgs::Pose &,
+  const int, const double);
 template int getNearestIdx<std::vector<autoware_planning_msgs::PathPoint>>(
-    const std::vector<autoware_planning_msgs::PathPoint>&, const geometry_msgs::Pose&, const int, const double);
+  const std::vector<autoware_planning_msgs::PathPoint> &, const geometry_msgs::Pose &, const int,
+  const double);
 
-int getNearestIdx(const std::vector<geometry_msgs::Point>& points, const geometry_msgs::Pose& pose,
-                  const int default_idx, const double delta_yaw_threshold) {
+int getNearestIdx(
+  const std::vector<geometry_msgs::Point> & points, const geometry_msgs::Pose & pose,
+  const int default_idx, const double delta_yaw_threshold)
+{
   double min_dist = std::numeric_limits<double>::max();
   int nearest_idx = default_idx;
   const double point_yaw = tf2::getYaw(pose.orientation);
@@ -289,8 +321,10 @@ int getNearestIdx(const std::vector<geometry_msgs::Point>& points, const geometr
   return nearest_idx;
 }
 
-int getNearestIdx(const std::vector<autoware_planning_msgs::PathPoint>& points, const geometry_msgs::Pose& pose,
-                  const int default_idx) {
+int getNearestIdx(
+  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Pose & pose,
+  const int default_idx)
+{
   double min_dist = std::numeric_limits<double>::max();
   int nearest_idx = default_idx;
   for (int i = 0; i < points.size(); i++) {
@@ -314,9 +348,10 @@ int getNearestIdx(const std::vector<autoware_planning_msgs::PathPoint>& points, 
 }
 
 std::vector<autoware_planning_msgs::TrajectoryPoint> convertPathToTrajectory(
-    const std::vector<autoware_planning_msgs::PathPoint>& path_points) {
+  const std::vector<autoware_planning_msgs::PathPoint> & path_points)
+{
   std::vector<autoware_planning_msgs::TrajectoryPoint> traj_points;
-  for (const auto& point : path_points) {
+  for (const auto & point : path_points) {
     autoware_planning_msgs::TrajectoryPoint tmp_point;
     tmp_point.pose = point.pose;
     tmp_point.twist = point.twist;
@@ -325,7 +360,8 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> convertPathToTrajectory(
   return traj_points;
 }
 
-std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<int>>& input) {
+std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<int>> & input)
+{
   std::vector<std::vector<int>> histogram_table = input;
   for (int i = 0; i < input.size(); i++) {
     for (int j = 0; j < input[i].size(); j++) {
@@ -339,13 +375,16 @@ std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<in
   return histogram_table;
 }
 
-struct HistogramBin {
+struct HistogramBin
+{
   int height;
   int variable_pos;
   int original_pos;
 };
 
-Rectangle getLargestRectancleInRow(const std::vector<int>& histo, const int curret_row, const int row_size) {
+Rectangle getLargestRectancleInRow(
+  const std::vector<int> & histo, const int curret_row, const int row_size)
+{
   std::vector<int> search_histo = histo;
   search_histo.push_back(0);
   std::stack<HistogramBin> stack;
@@ -384,7 +423,8 @@ Rectangle getLargestRectancleInRow(const std::vector<int>& histo, const int curr
   return largest_rect;
 }
 
-Rectangle getLargestRectangle(const std::vector<std::vector<int>>& input) {
+Rectangle getLargestRectangle(const std::vector<std::vector<int>> & input)
+{
   std::vector<std::vector<int>> histogram_table = getHistogramTable(input);
   Rectangle largest_rectangle;
   for (int i = 0; i < histogram_table.size(); i++) {

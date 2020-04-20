@@ -15,12 +15,13 @@
  */
 
 #include "lidar_apollo_instance_segmentation/detector.h"
-#include "lidar_apollo_instance_segmentation/feature_map.h"
 #include <NvCaffeParser.h>
 #include <NvInfer.h>
 #include <boost/filesystem.hpp>
+#include "lidar_apollo_instance_segmentation/feature_map.h"
 
-LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~") {
+LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~")
+{
   int range, width, height;
   bool use_intensity_feature, use_constant_feature;
   std::string engine_file;
@@ -39,13 +40,15 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
   // load weight file
   std::ifstream fs(engine_file);
   if (!fs.is_open()) {
-    ROS_INFO("Could not find %s. try making TensorRT engine from caffemodel and prototxt", engine_file.c_str());
+    ROS_INFO(
+      "Could not find %s. try making TensorRT engine from caffemodel and prototxt",
+      engine_file.c_str());
     Tn::Logger logger;
-    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
-    nvinfer1::INetworkDefinition* network = builder->createNetwork();
-    nvcaffeparser1::ICaffeParser* parser = nvcaffeparser1::createCaffeParser();
-    const nvcaffeparser1::IBlobNameToTensor* blob_name2tensor =
-        parser->parse(prototxt_file.c_str(), caffemodel_file.c_str(), *network, nvinfer1::DataType::kFLOAT);
+    nvinfer1::IBuilder * builder = nvinfer1::createInferBuilder(logger);
+    nvinfer1::INetworkDefinition * network = builder->createNetwork();
+    nvcaffeparser1::ICaffeParser * parser = nvcaffeparser1::createCaffeParser();
+    const nvcaffeparser1::IBlobNameToTensor * blob_name2tensor = parser->parse(
+      prototxt_file.c_str(), caffemodel_file.c_str(), *network, nvinfer1::DataType::kFLOAT);
     std::string output_node = "deconv0";
     auto output = blob_name2tensor->find(output_node.c_str());
     if (output == nullptr) ROS_ERROR("can not find output named %s", output_node.c_str());
@@ -53,12 +56,12 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
     const int batch_size = 1;
     builder->setMaxBatchSize(batch_size);
     builder->setMaxWorkspaceSize(1 << 30);
-    nvinfer1::ICudaEngine* engine = builder->buildCudaEngine(*network);
-    nvinfer1::IHostMemory* trt_model_stream = engine->serialize();
+    nvinfer1::ICudaEngine * engine = builder->buildCudaEngine(*network);
+    nvinfer1::IHostMemory * trt_model_stream = engine->serialize();
     assert(trt_model_stream != nullptr);
     std::ofstream outfile(engine_file, std::ofstream::binary);
     assert(!outfile.fail());
-    outfile.write(reinterpret_cast<char*>(trt_model_stream->data()), trt_model_stream->size());
+    outfile.write(reinterpret_cast<char *>(trt_model_stream->data()), trt_model_stream->size());
     outfile.close();
     network->destroy();
     parser->destroy();
@@ -67,21 +70,24 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
   net_ptr_.reset(new Tn::trtNet(engine_file));
 
   // feature map generator: pre process
-  feature_generator_ =
-      std::make_shared<FeatureGenerator>(width, height, range, use_intensity_feature, use_constant_feature);
+  feature_generator_ = std::make_shared<FeatureGenerator>(
+    width, height, range, use_intensity_feature, use_constant_feature);
 
   // cluster: post process
   cluster2d_ = std::make_shared<Cluster2D>(width, height, range);
 }
 
 bool LidarApolloInstanceSegmentation::detectDynamicObjects(
-    const sensor_msgs::PointCloud2& input, autoware_perception_msgs::DynamicObjectWithFeatureArray& output) {
+  const sensor_msgs::PointCloud2 & input,
+  autoware_perception_msgs::DynamicObjectWithFeatureArray & output)
+{
   // convert from ros to pcl
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud_raw_ptr(new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromROSMsg(input, *pcl_pointcloud_raw_ptr);
 
   // generate feature map
-  std::shared_ptr<FeatureMapInterface> feature_map_ptr = feature_generator_->generate(pcl_pointcloud_raw_ptr);
+  std::shared_ptr<FeatureMapInterface> feature_map_ptr =
+    feature_generator_->generate(pcl_pointcloud_raw_ptr);
 
   // inference
   std::shared_ptr<float> inferred_data(new float[net_ptr_->getOutputSize() / sizeof(float)]);
@@ -92,8 +98,9 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
   pcl::PointIndices valid_idx;
   valid_idx.indices.resize(pcl_pointcloud_raw_ptr->size());
   std::iota(valid_idx.indices.begin(), valid_idx.indices.end(), 0);
-  cluster2d_->cluster(inferred_data, pcl_pointcloud_raw_ptr, valid_idx, objectness_thresh,
-                      true /*use all grids for clustering*/);
+  cluster2d_->cluster(
+    inferred_data, pcl_pointcloud_raw_ptr, valid_idx, objectness_thresh,
+    true /*use all grids for clustering*/);
   const float height_thresh = 0.5;
   const int min_pts_num = 3;
   cluster2d_->getObjects(score_threshold_, height_thresh, min_pts_num, output, input.header);

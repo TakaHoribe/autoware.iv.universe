@@ -19,7 +19,8 @@
 #include <autoware_utils/geometry.h>
 #include <autoware_utils/unit_conversion.h>
 
-TEST(geometry, getPoint) {
+TEST(geometry, getPoint)
+{
   using autoware_utils::getPoint;
 
   const double x_ans = 1.0;
@@ -82,7 +83,8 @@ TEST(geometry, getPoint) {
   }
 }
 
-TEST(geometry, createPoint) {
+TEST(geometry, createPoint)
+{
   using autoware_utils::createPoint;
 
   const geometry_msgs::Point p_out = createPoint(1.0, 2.0, 3.0);
@@ -91,7 +93,8 @@ TEST(geometry, createPoint) {
   EXPECT_DOUBLE_EQ(p_out.z, 3.0);
 }
 
-TEST(geometry, createQuaternionFromRPY) {
+TEST(geometry, createQuaternionFromRPY)
+{
   using autoware_utils::createQuaternionFromRPY;
   using autoware_utils::deg2rad;
 
@@ -120,7 +123,8 @@ TEST(geometry, createQuaternionFromRPY) {
   }
 }
 
-TEST(geometry, calcDistance2d) {
+TEST(geometry, calcDistance2d)
+{
   using autoware_utils::calcDistance2d;
 
   geometry_msgs::Point point;
@@ -136,7 +140,8 @@ TEST(geometry, calcDistance2d) {
   EXPECT_DOUBLE_EQ(calcDistance2d(point, pose), 5.0);
 }
 
-TEST(geometry, calcDistance3d) {
+TEST(geometry, calcDistance3d)
+{
   using autoware_utils::calcDistance3d;
 
   geometry_msgs::Point point;

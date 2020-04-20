@@ -33,19 +33,28 @@
 const double STEERING_GEAR_RATIO = 18.0;
 const double RAD2DEG = 180.0 / 3.14159265;
 
-class PacmodSimInterface {
- public:
-  PacmodSimInterface() : nh_(""), pnh_("~") {
+class PacmodSimInterface
+{
+public:
+  PacmodSimInterface() : nh_(""), pnh_("~")
+  {
     nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, double(0.341));
     timer_ = nh_.createTimer(ros::Duration(0.03), &PacmodSimInterface::timerCallback, this);
-    sim_vehicle_cmd_pub_ = pnh_.advertise<autoware_vehicle_msgs::VehicleCommandStamped>("/sim/vehicle_cmd", 1);
+    sim_vehicle_cmd_pub_ =
+      pnh_.advertise<autoware_vehicle_msgs::VehicleCommandStamped>("/sim/vehicle_cmd", 1);
     steer_rpt_pub_ = pnh_.advertise<pacmod_msgs::SystemRptFloat>("/pacmod/parsed_tx/steer_rpt", 1);
-    wheel_speed_rpt_pub_ = pnh_.advertise<pacmod_msgs::WheelSpeedRpt>("/pacmod/parsed_tx/wheel_speed_rpt", 1);
-    sim_status_sub_ = pnh_.subscribe("/sim/status", 1, &PacmodSimInterface::callbackSimStatus, this);
-    sim_velocity_sub_ = pnh_.subscribe("/sim/velocity", 1, &PacmodSimInterface::callbackSimVelocity, this);
-    accel_cmd_sub_ = pnh_.subscribe("/pacmod/as_rx/accel_cmd", 1, &PacmodSimInterface::callbackAccelCmd, this);
-    brake_cmd_sub_ = pnh_.subscribe("/pacmod/as_rx/brake_cmd", 1, &PacmodSimInterface::callbackBrakeCmd, this);
-    steer_cmd_sub_ = pnh_.subscribe("/pacmod/as_rx/steer_cmd", 1, &PacmodSimInterface::callbackSteerCmd, this);
+    wheel_speed_rpt_pub_ =
+      pnh_.advertise<pacmod_msgs::WheelSpeedRpt>("/pacmod/parsed_tx/wheel_speed_rpt", 1);
+    sim_status_sub_ =
+      pnh_.subscribe("/sim/status", 1, &PacmodSimInterface::callbackSimStatus, this);
+    sim_velocity_sub_ =
+      pnh_.subscribe("/sim/velocity", 1, &PacmodSimInterface::callbackSimVelocity, this);
+    accel_cmd_sub_ =
+      pnh_.subscribe("/pacmod/as_rx/accel_cmd", 1, &PacmodSimInterface::callbackAccelCmd, this);
+    brake_cmd_sub_ =
+      pnh_.subscribe("/pacmod/as_rx/brake_cmd", 1, &PacmodSimInterface::callbackBrakeCmd, this);
+    steer_cmd_sub_ =
+      pnh_.subscribe("/pacmod/as_rx/steer_cmd", 1, &PacmodSimInterface::callbackSteerCmd, this);
 
     current_accel_cmd_.enable = false;
     current_brake_cmd_.enable = false;
@@ -54,7 +63,7 @@ class PacmodSimInterface {
 
   ~PacmodSimInterface() = default;
 
- private:
+private:
   // handle
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -81,10 +90,12 @@ class PacmodSimInterface {
   ros::Timer timer_;
 
   // callbacks
-  void timerCallback(const ros::TimerEvent& te) {
+  void timerCallback(const ros::TimerEvent & te)
+  {
     if (!current_accel_cmd_.enable || !current_brake_cmd_.enable || !current_steer_cmd_.enable) {
-      ROS_INFO("[pacmod_sim_interface] enable accel: %d, brake: %d, steer: %d", current_accel_cmd_.enable,
-               current_brake_cmd_.enable, current_steer_cmd_.enable);
+      ROS_INFO(
+        "[pacmod_sim_interface] enable accel: %d, brake: %d, steer: %d", current_accel_cmd_.enable,
+        current_brake_cmd_.enable, current_steer_cmd_.enable);
       return;
     }
 
@@ -92,19 +103,21 @@ class PacmodSimInterface {
     current_vehicle_cmd_.header.stamp = ros::Time::now();
     // current_vehicle_cmd_.command.shift.data = autoware_vehicle_msgs::Shift::DRIVE;
     // current_vehicle_cmd_.command.turn_signal.signal = autoware_vehicle_msgs::TurnSignal::NONE;
-    current_vehicle_cmd_.command.control.steering_angle = current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
+    current_vehicle_cmd_.command.control.steering_angle =
+      current_steer_cmd_.command / STEERING_GEAR_RATIO / RAD2DEG;
     current_vehicle_cmd_.command.control.steering_angle_velocity = 0.0;
     current_vehicle_cmd_.command.control.velocity = 0.0;
     const double temp_coeff = 1.0;
     current_vehicle_cmd_.command.control.acceleration =
-        (current_accel_cmd_.command - current_brake_cmd_.command) / 2.0 * temp_coeff;
+      (current_accel_cmd_.command - current_brake_cmd_.command) / 2.0 * temp_coeff;
     current_vehicle_cmd_.command.emergency = false;
 
     sim_vehicle_cmd_pub_.publish(current_vehicle_cmd_);
     return;
   };
 
-  void callbackSimStatus(const autoware_vehicle_msgs::VehicleStatusStamped& msg) {
+  void callbackSimStatus(const autoware_vehicle_msgs::VehicleStatusStamped & msg)
+  {
     /* wheel ratation speed [rad/s] */
     pacmod_msgs::WheelSpeedRpt wheel_speed;
     wheel_speed.header = msg.header;
@@ -131,15 +144,16 @@ class PacmodSimInterface {
     steer_rpt_pub_.publish(steer);
   };
 
-  void callbackSimVelocity(const geometry_msgs::TwistStamped& msg){};
-  void callbackAccelCmd(const pacmod_msgs::SystemCmdFloat& msg) { current_accel_cmd_ = msg; };
+  void callbackSimVelocity(const geometry_msgs::TwistStamped & msg){};
+  void callbackAccelCmd(const pacmod_msgs::SystemCmdFloat & msg) { current_accel_cmd_ = msg; };
 
-  void callbackBrakeCmd(const pacmod_msgs::SystemCmdFloat& msg) { current_brake_cmd_ = msg; };
+  void callbackBrakeCmd(const pacmod_msgs::SystemCmdFloat & msg) { current_brake_cmd_ = msg; };
 
-  void callbackSteerCmd(const pacmod_msgs::SteerSystemCmd& msg) { current_steer_cmd_ = msg; };
+  void callbackSteerCmd(const pacmod_msgs::SteerSystemCmd & msg) { current_steer_cmd_ = msg; };
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "pacmod_sim_interface");
   PacmodSimInterface node;
   ros::spin();

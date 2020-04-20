@@ -27,15 +27,16 @@
 #include "raw_vehicle_cmd_converter/csv_loader.h"
 #include "raw_vehicle_cmd_converter/interpolate.h"
 
-class BrakeMap {
- public:
+class BrakeMap
+{
+public:
   BrakeMap();
   ~BrakeMap();
 
   bool readBrakeMapFromCSV(std::string csv_path);
-  bool getBrake(double acc, double vel, double& brake);
+  bool getBrake(double acc, double vel, double & brake);
 
- private:
+private:
   std::string vehicle_name_;
   std::vector<double> vel_index_;
   std::vector<double> brake_index_;

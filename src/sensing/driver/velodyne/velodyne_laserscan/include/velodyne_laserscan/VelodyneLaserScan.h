@@ -43,16 +43,17 @@
 #include <dynamic_reconfigure/server.h>
 #include <velodyne_laserscan/VelodyneLaserScanConfig.h>
 
-namespace velodyne_laserscan {
+namespace velodyne_laserscan
+{
+class VelodyneLaserScan
+{
+public:
+  VelodyneLaserScan(ros::NodeHandle & nh, ros::NodeHandle & nh_priv);
 
-class VelodyneLaserScan {
- public:
-  VelodyneLaserScan(ros::NodeHandle& nh, ros::NodeHandle& nh_priv);
-
- private:
+private:
   boost::mutex connect_mutex_;
   void connectCb();
-  void recvCallback(const sensor_msgs::PointCloud2ConstPtr& msg);
+  void recvCallback(const sensor_msgs::PointCloud2ConstPtr & msg);
 
   ros::NodeHandle nh_;
   ros::Subscriber sub_;
@@ -60,7 +61,7 @@ class VelodyneLaserScan {
 
   VelodyneLaserScanConfig cfg_;
   dynamic_reconfigure::Server<VelodyneLaserScanConfig> srv_;
-  void reconfig(VelodyneLaserScanConfig& config, uint32_t level);
+  void reconfig(VelodyneLaserScanConfig & config, uint32_t level);
 
   unsigned int ring_count_;
 };

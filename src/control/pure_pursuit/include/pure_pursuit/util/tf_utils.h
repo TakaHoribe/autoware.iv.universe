@@ -25,32 +25,35 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 
-namespace tf_utils {
-
-inline boost::optional<geometry_msgs::TransformStamped> getTransform(const tf2_ros::Buffer& tf_buffer,
-                                                                     const std::string& from, const std::string& to,
-                                                                     const ros::Time& time,
-                                                                     const ros::Duration& duration) {
+namespace tf_utils
+{
+inline boost::optional<geometry_msgs::TransformStamped> getTransform(
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to,
+  const ros::Time & time, const ros::Duration & duration)
+{
   try {
     return tf_buffer.lookupTransform(from, to, time, duration);
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException & ex) {
     return {};
   }
 }
 
-inline geometry_msgs::TransformStamped waitForTransform(const tf2_ros::Buffer& tf_buffer, const std::string& from,
-                                                        const std::string& to) {
+inline geometry_msgs::TransformStamped waitForTransform(
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to)
+{
   while (ros::ok()) {
     try {
-      const auto transform = tf_buffer.lookupTransform(from, to, ros::Time::now(), ros::Duration(10.0));
+      const auto transform =
+        tf_buffer.lookupTransform(from, to, ros::Time::now(), ros::Duration(10.0));
       return transform;
-    } catch (tf2::TransformException& ex) {
+    } catch (tf2::TransformException & ex) {
       ROS_INFO("waiting for transform from `%s` to `%s` ...", from.c_str(), to.c_str());
     }
   }
 }
 
-inline geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped& transform) {
+inline geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformStamped & transform)
+{
   geometry_msgs::PoseStamped pose;
   pose.header = transform.header;
   pose.pose.position.x = transform.transform.translation.x;
@@ -60,9 +63,11 @@ inline geometry_msgs::PoseStamped transform2pose(const geometry_msgs::TransformS
   return pose;
 }
 
-inline boost::optional<geometry_msgs::PoseStamped> getCurrentPose(const tf2_ros::Buffer& tf_buffer,
-                                                                  const double timeout = 1.0) {
-  const auto tf_current_pose = getTransform(tf_buffer, "map", "base_link", ros::Time(0), ros::Duration(0));
+inline boost::optional<geometry_msgs::PoseStamped> getCurrentPose(
+  const tf2_ros::Buffer & tf_buffer, const double timeout = 1.0)
+{
+  const auto tf_current_pose =
+    getTransform(tf_buffer, "map", "base_link", ros::Time(0), ros::Duration(0));
   if (!tf_current_pose) {
     return {};
   }

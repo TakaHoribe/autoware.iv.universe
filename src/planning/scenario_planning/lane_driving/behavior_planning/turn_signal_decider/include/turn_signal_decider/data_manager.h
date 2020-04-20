@@ -28,9 +28,11 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
-namespace turn_signal_decider {
-class DataManager {
- private:
+namespace turn_signal_decider
+{
+class DataManager
+{
+private:
   // subscribe validation boolean
   bool is_map_ready_;
   bool is_path_ready_;
@@ -52,18 +54,18 @@ class DataManager {
   bool isPathValid() const;
   bool isPoseValid() const;
 
- public:
+public:
   DataManager();
 
   // callbacks
-  void onPathWithLaneId(const autoware_planning_msgs::PathWithLaneId& msg);
-  void onLaneletMap(const autoware_lanelet2_msgs::MapBin& map_msg);
-  void onVehiclePoseUpdate(const ros::TimerEvent& event);
+  void onPathWithLaneId(const autoware_planning_msgs::PathWithLaneId & msg);
+  void onLaneletMap(const autoware_lanelet2_msgs::MapBin & map_msg);
+  void onVehiclePoseUpdate(const ros::TimerEvent & event);
 
   // getters
   autoware_planning_msgs::PathWithLaneId getPath() const;
   lanelet::LaneletMapPtr getMapPtr() const;
-  lanelet::ConstLanelet getLaneFromId(const lanelet::Id& id) const;
+  lanelet::ConstLanelet getLaneFromId(const lanelet::Id & id) const;
   lanelet::routing::RoutingGraphPtr getRoutingGraphPtr() const;
   geometry_msgs::PoseStamped getVehiclePoseStamped() const;
 

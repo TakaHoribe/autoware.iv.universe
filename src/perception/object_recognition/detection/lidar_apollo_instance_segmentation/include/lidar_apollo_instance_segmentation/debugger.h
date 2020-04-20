@@ -18,14 +18,16 @@
 #include <ros/ros.h>
 #include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
 
-class Debugger {
- public:
+class Debugger
+{
+public:
   Debugger();
   ~Debugger(){};
   ros::Publisher instance_pointcloud_pub_;
-  void publishColoredPointCloud(const autoware_perception_msgs::DynamicObjectWithFeatureArray& input);
+  void publishColoredPointCloud(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray & input);
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 };

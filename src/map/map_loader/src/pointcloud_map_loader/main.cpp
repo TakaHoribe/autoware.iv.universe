@@ -34,7 +34,8 @@
 
 #include <map_loader/pointcloud_map_loader_node.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "pointcloud_map_loader");
 
   std::vector<std::string> pcd_paths;
