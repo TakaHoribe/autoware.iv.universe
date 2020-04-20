@@ -5,7 +5,7 @@ base_link2traffic_light_camera:
   roll: 0.0
   pitch: -0.3
   yaw: 0.0
-base_link2aipxx_base_link:
+base_link2sensor_kit_base_link:
   x: 0.9
   y: 0.0
   z: 2.0
