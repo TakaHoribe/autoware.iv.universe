@@ -89,6 +89,14 @@ pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr extractInvalidNearPoint
     ring_id_array = {30, 1,  2, 5, 6, 9, 10, 14, 13, 17, 18, 22, 21, 25, 26, 0,
                      29, 31, 4, 8, 3, 7, 12, 16, 11, 15, 20, 19, 24, 23, 27, 28};
   }
+  else {
+    // ROS_WARN_STREAM_THROTTLE(10, "support only VLP16 and VLP32C");
+    pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>);
+    output_pointcloud->header = input_pointcloud->header;
+    output_pointcloud->height = 1;
+    output_pointcloud->width = 0;
+    return output_pointcloud;
+  }
 
   velodyne_pointcloud::PointXYZIRADT tmp_p;
   cv::Mat image =
@@ -195,12 +203,12 @@ pcl::PointCloud<velodyne_pointcloud::PointXYZIRADT>::Ptr interpolate(
     tf2::Vector3 base_linkTF_point;
     base_linkTF_point = tf2_base_link_to_sensor.inverse() * sensorTF_point;
 
-    theta += w * time_offset;
-    tf2::Quaternion baselink_quat;
-    baselink_quat.setRPY(0.0, 0.0, theta);
-    double dis = v * time_offset;
-    x += dis * cos(theta);
-    y += dis * sin(theta);
+      theta += w * time_offset;
+      tf2::Quaternion baselink_quat;
+      baselink_quat.setRPY(0.0, 0.0, theta);
+      double dis = v * time_offset;
+      x += dis * std::cos(theta);
+      y += dis * std::sin(theta);
 
     tf2::Transform baselinkTF_odom;
     baselinkTF_odom.setOrigin(tf2::Vector3(x, y, 0));
