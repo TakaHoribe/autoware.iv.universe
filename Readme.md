@@ -37,11 +37,12 @@ catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
-- TODO: sample map.
-2. set goal pose
-3. push engage button.
+- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/197kgRfSomZzaSbRrjWTx614le2qN-oxx/view?usp=sharing).
+2. set initial pose
+3. set goal pose
+4. push engage button.
 [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
-4. (optional) [webviz](https://webviz.io/app/)
+5. (optional) [webviz](https://webviz.io/app/)
 
 ### Rosbag
 1. launch Autoware
