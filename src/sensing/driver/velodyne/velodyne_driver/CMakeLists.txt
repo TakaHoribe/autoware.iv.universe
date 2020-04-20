@@ -1,7 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(velodyne_driver)
 
-set(${PROJECT_NAME}_CATKIN_DEPS
+# Set minimum C++ standard to C++11
+if (NOT "${CMAKE_CXX_STANDARD_COMPUTED_DEFAULT}")
+  message(STATUS "Changing CXX_STANDARD from C++98 to C++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif ("${CMAKE_CXX_STANDARD_COMPUTED_DEFAULT}" STREQUAL "98")
+  message(STATUS "Changing CXX_STANDARD from C++98 to C++11")
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+
+set(${PROJECT_NAME}_CATKIN_DEPS 
     diagnostic_updater
     dynamic_reconfigure
     nodelet
@@ -9,7 +18,7 @@ set(${PROJECT_NAME}_CATKIN_DEPS
     tf
     velodyne_msgs)
 
-find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_CATKIN_DEPS})
+find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_CATKIN_DEPS} roslint)
 
 # This driver uses Boost threads
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -33,19 +42,14 @@ add_subdirectory(src/driver)
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-
 install(FILES nodelet_velodyne.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
 install(PROGRAMS src/vdump
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-
-install(
-  DIRECTORY
-    launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+roslint_cpp()
 
 if (CATKIN_ENABLE_TESTING)
 
@@ -70,7 +74,7 @@ if (CATKIN_ENABLE_TESTING)
     http://download.ros.org/data/velodyne/vlp16.pcap
     DESTINATION ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/tests
     MD5 f45c2bb1d7ee358274e423ea3b66fd73)
-
+  
   # unit tests
   add_rostest(tests/pcap_node_hertz.test)
   add_rostest(tests/pcap_nodelet_hertz.test)
@@ -78,8 +82,13 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(tests/pcap_32e_nodelet_hertz.test)
   add_rostest(tests/pcap_vlp16_node_hertz.test)
   add_rostest(tests/pcap_vlp16_nodelet_hertz.test)
-
+  
   # parse check all the launch/*.launch files
   roslaunch_add_file_check(launch)
 
+  # unit test
+  #catkin_add_gtest(time_test tests/timeconversiontest.cpp)
+  #target_link_libraries(time_test
+  #  ${catkin_LIBRARIES}
+  #  ${Boost_LIBRARIES})
 endif (CATKIN_ENABLE_TESTING)
