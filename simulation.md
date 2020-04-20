@@ -50,6 +50,6 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 
 * Set obstacles position by using `2D Dummy Pedestria` or `2D Dummy Car` in rviz.
   * Shorcut keys `l` and `k` are assigned respectively.
-  * Can adjust obstacles' postion error and velocity via `Tool Properties` in rviz.
+  * Can adjust obstacles' infomation including velocity, position/orientation error and etc, via `Tool Properties` in rviz.
   * Can delete all the objects by using `Delte All Objects` in rviz.
 ![Screenshot from 2020-04-20 13-42-03](https://user-images.githubusercontent.com/10920881/79714775-cbc8c480-830c-11ea-92e2-440200b13f99.png)
