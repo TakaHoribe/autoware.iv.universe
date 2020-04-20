@@ -5,7 +5,7 @@
     <arg name="input_autoware_engage" value="/autoware/engage" />
     <arg name="input_vehicle_engage" value="/vehicle/engage" />
     <arg name="input_route" value="/planning/mission_planning/route" />
-    <arg name="input_twist" value="/vehicle/status/twist" />
+    <arg name="input_twist" value="/localization/twist" />
 
     <arg name="output_autoware_state" value="/autoware/state" />
     <arg name="output_autoware_engage" value="/autoware/engage" />
