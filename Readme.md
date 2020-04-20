@@ -57,45 +57,7 @@ Note that the computer need to be connected to Internet to download neural netwo
 
 # How to run
 
-## Simulator
-![sim](https://user-images.githubusercontent.com/8327598/79709776-0bd47b00-82fe-11ea-872e-d94ef25bc3bf.png)
-
-### Rosbag
-1. Launch Autoware
-```
-source devel/setup.bash
-roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
-```
-- Sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
-2. Play rosbag
-```
-rosbag play --clock [rosbag file] -r 0.2
-```
-- Sample rosbag is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ltuRryNn3EUBCZiS88Wnj54632JVeIVz/view?usp=sharing).
-- Sensor configuration of the sample rosbag
-  - Velodyne 128 (Top)
-  - Velodyne 16 (Right)
-  - Velodyne 16 (Left)
-  - IMU (Tamagawa TAG300)
-  - GNSS (Ublox F9P)
-  - CAN data
-  - ~~Camera x 7~~
-    - Removed due to privacy concerns
-    - Cannot run traffic light recognition
-    - Decreased accuracy of object detection
- 
-`-r 0.2` means a 20% playback speed. Since it takes time for automatic initial position estimation, we recommend about 0.2.
-
-### Planning Simulator
-1. Launch Autoware
-```
-source devel/setup.bash
-roslaunch autoware_launch planning_simulator.launch map_path:=[path]
-```
-- Sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/197kgRfSomZzaSbRrjWTx614le2qN-oxx/view?usp=sharing).
-2. Set initial pose using RViz's `2D Pose Estimate` or “s“ on a keyboard
-3. Set goal pose using RViz's `2D Nav Goal` or “g“ on a keyboard
-4. Push engage button on [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
+How to run on a simulator is described [here](https://github.com/tier4/Autoware-T4B/blob/feature/add_how_to_use_doc/simulation.md).
 
 # Videos
 - [Scenario demo](https://youtu.be/kn2bIU_g0oY)
