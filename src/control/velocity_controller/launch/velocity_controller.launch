@@ -15,7 +15,7 @@
   <node pkg="velocity_controller" type="velocity_controller" name="velocity_controller" output="screen">
     <rosparam command="load" file="$(find velocity_controller)/config/velocity_controller_param.yaml" />
 
-    <remap from="~current_velocity" to="/vehicle/status/twist"/>
+    <remap from="~current_velocity" to="/localization/twist"/>
     <remap from="~control_cmd" to="longitudinal/control_cmd"/>
     <remap from="~current_trajectory" to="/planning/scenario_planning/trajectory"/>
 

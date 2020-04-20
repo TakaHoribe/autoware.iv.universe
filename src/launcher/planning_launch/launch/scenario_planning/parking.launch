@@ -14,7 +14,7 @@
       <arg name="input_route" value="/planning/mission_planning/route" />
       <arg name="input_occupancy_grid" value="costmap_generator/occupancy_grid" />
       <arg name="input_scenario" value="/planning/scenario_planning/scenario" />
-      <arg name="input_twist" default="/vehicle/status/twist" />
+      <arg name="input_twist" default="/localization/twist" />
       <arg name="output_trajectory" value="/planning/scenario_planning/parking/trajectory" />
       <arg name="is_completed" value="/planning/scenario_planning/parking/is_completed" />
     </include>

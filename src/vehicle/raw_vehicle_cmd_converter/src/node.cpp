@@ -21,7 +21,7 @@ AccelMapConverter::AccelMapConverter() : nh_(""), pnh_("~")
   pub_cmd_ = nh_.advertise<autoware_vehicle_msgs::RawVehicleCommand>("/vehicle/raw_vehicle_cmd", 1);
   sub_cmd_ = nh_.subscribe("/control/vehicle_cmd", 1, &AccelMapConverter::callbackVehicleCmd, this);
   sub_velocity_ =
-    nh_.subscribe("/vehicle/status/twist", 1, &AccelMapConverter::callbackVelocity, this);
+    nh_.subscribe("/localization/twist", 1, &AccelMapConverter::callbackVelocity, this);
 
   pnh_.param<double>("max_throttle", max_throttle_, 0.2);
   pnh_.param<double>("max_brake", max_brake_, 0.8);

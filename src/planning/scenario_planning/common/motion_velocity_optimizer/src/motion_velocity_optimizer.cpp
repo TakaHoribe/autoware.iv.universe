@@ -68,7 +68,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
   sub_current_trajectory_ = pnh_.subscribe(
     "input/trajectory", 1, &MotionVelocityOptimizer::callbackCurrentTrajectory, this);
   sub_current_velocity_ = pnh_.subscribe(
-    "/vehicle/status/twist", 1, &MotionVelocityOptimizer::callbackCurrentVelocity, this);
+    "/localization/twist", 1, &MotionVelocityOptimizer::callbackCurrentVelocity, this);
   sub_external_velocity_limit_ = pnh_.subscribe(
     "external_velocity_limit_mps", 1, &MotionVelocityOptimizer::callbackExternalVelocityLimit,
     this);
