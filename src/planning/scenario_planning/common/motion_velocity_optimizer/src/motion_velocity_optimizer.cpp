@@ -413,10 +413,10 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(5 * N + 1 + 2*(N - 1), 4 * N + 1);  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3 * N + 1 + 2*(N - 1), 4 * N + 1);  // the matrix size depends on constraint numbers.
 
-  std::vector<double> lower_bound(5 * N + 1 + 2*(N - 1), 0.0);
-  std::vector<double> upper_bound(5 * N + 1 + 2*(N - 1), 0.0);
+  std::vector<double> lower_bound(3 * N + 1 + 2*(N - 1), 0.0);
+  std::vector<double> upper_bound(3 * N + 1 + 2*(N - 1), 0.0);
 
   Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 1, 4 * N + 1);
   std::vector<double> q(4 * N + 1, 0.0);
@@ -456,26 +456,19 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
   for (unsigned int i = 4*N; i < 4*N + (N-1); ++i) { // jerk
     q[i] = smooth_weight;
   }
+  #endif
 
   for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
     P(i, i) += over_v_weight;
   }
-
+  
   for (unsigned int i = 3 * N; i < 4 * N; ++i) {  // over acceleration cost
     P(i, i) += over_a_weight;
   }
-  #endif
   
+
   {
     q[4*N] = smooth_weight;
-  }
-
-  for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
-    q[i] = over_v_weight;
-  }
-
-  for (unsigned int i = 3 * N; i < 4 * N; ++i) {  // over acceleration cost
-    q[i] = over_a_weight;
   }
 
   #if 0
@@ -553,7 +546,7 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     upper_bound[i + N - 1] = 0;
   }
 
-  
+  #if 0
   // constraint for soft constraint
   for (unsigned int i = 5 * N - 1; i < 6 * N - 1; ++i) {
     const unsigned int id = i - (5 * N - 1) + 2 * N;
@@ -566,7 +559,7 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     upper_bound[i + N] = OSQP_INFTY;
   }
 
-  #if 0 // temporary: don't consider max jerk constraints
+   // temporary: don't consider max jerk constraints
   // sum(psi) - eta < jerk_sum_max
   {
     const unsigned int i = 5 * N;
