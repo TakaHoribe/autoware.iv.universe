@@ -39,7 +39,7 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 
 4. Set goal position by using `2D Nav Goal` in rviz.
 
-![goal_position](https://user-images.githubusercontent.com/10920881/79715964-29aadb80-8310-11ea-9bfc-4ee27a271626.png)
+![goal](https://user-images.githubusercontent.com/10920881/79742459-d059a100-833d-11ea-9dc7-0cb972c389a4.png)
 
 5. Engage vehicle.
     - a. Go to [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html).
@@ -53,4 +53,4 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
   * Shorcut keys `l` and `k` are assigned respectively.
   * Can adjust obstacles' infomation including velocity, position/orientation error and etc, via `Tool Properties` in rviz.
   * Can delete all the objects by using `Delte All Objects` in rviz.
-![Screenshot from 2020-04-20 13-42-03](https://user-images.githubusercontent.com/10920881/79714775-cbc8c480-830c-11ea-92e2-440200b13f99.png)
+![dummy](https://user-images.githubusercontent.com/10920881/79742437-c9cb2980-833d-11ea-8ad7-7c3ed1a96540.png)
