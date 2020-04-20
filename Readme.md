@@ -27,7 +27,7 @@ If cuda or tensorRT is already installed, it is recommended to remove it.
 1. Clone this repository
 ```
 $ git clone https://github.com/tier4/AutowareArchitectureProposal.git
-cd AutowareArchitectureProposal/
+$ cd AutowareArchitectureProposal/
 ```
 2. Run the setup script
 ```
