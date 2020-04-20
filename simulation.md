@@ -4,7 +4,6 @@ Autoware provides 2 types of simulations.Rosbag is used for testing/validation f
 
 
 ## How to use rosbag for simulation
----
 Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4B#autoware-setup).
 
 1. Download sample map from [here](https://drive.google.com/a/public.tier4.jp/file/d/1ovrJcFS5CZ2H51D8xVWNtEvj_oiXW-zk/view?usp=sharing).
@@ -20,7 +19,6 @@ $ rosbag play --clock -r 0.2　sample.bag
 ```
 
 ## How to use Planning Simulator
----
 
 Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4B#autoware-setup).
 
