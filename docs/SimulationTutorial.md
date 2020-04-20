@@ -24,6 +24,7 @@ Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4
 || /vehicle/status/steering |
 || /vehicle/status/twist |
 | ~~Camera x 7~~ | ~~/sensing/camera/camera[]/image_raw~~ |
+
 Note: Image data are removed due to privacy concerns.
 
 3. Launch Autoware with rosbag mode.
