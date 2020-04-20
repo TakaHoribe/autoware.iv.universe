@@ -18,6 +18,9 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 $ rosbag play --clock -r 0.2　sample.bag
 ```
 
+![rosbag_sim](https://user-images.githubusercontent.com/10920881/79726334-9381b000-8325-11ea-9ac6-ebbb29b11f14.png)
+
+
 ## How to use Planning Simulator
 
 Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4B#autoware-setup).
