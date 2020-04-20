@@ -44,7 +44,7 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 $ rosbag play --clock [rosbag file] -r 0.2
 ```
-- sample rosbag is [here](https://drive.google.com/a/public.tier4.jp/file/d/1ltuRryNn3EUBCZiS88Wnj54632JVeIVz/view?usp=sharing).
+- sample rosbag is [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
   - Velodyne 128 (Top)
   - Velodyne 16 (Right)
   - Velodyne 16 (Left)
