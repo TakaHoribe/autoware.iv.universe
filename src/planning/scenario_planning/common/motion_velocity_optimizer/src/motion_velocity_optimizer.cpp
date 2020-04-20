@@ -465,6 +465,7 @@ void MotionVelocityOptimizer::solveOptimization(const double initial_vel, const 
     P(i, i) += over_a_weight;
   }
   #endif
+  
   {
     q[4*N] = smooth_weight;
   }
