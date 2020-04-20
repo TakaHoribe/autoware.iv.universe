@@ -29,7 +29,8 @@ Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4
 ```
 $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
-![launch_planning_sim](https://user-images.githubusercontent.com/10920881/79713465-d3866a00-8308-11ea-8bdb-c29209a45a0b.png)
+
+![launch_planning_simulator](https://user-images.githubusercontent.com/10920881/79715068-94a6e300-830d-11ea-9008-0ed311617c81.png)
 
 3. Set initial position by using `2D Pose Estimate` in rviz.
 
