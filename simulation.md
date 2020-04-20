@@ -38,7 +38,7 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 
 4. Set goal position by using `2D Nav Goal` in rviz.
 
-![goal_pose](https://user-images.githubusercontent.com/10920881/79714208-0df10680-830b-11ea-9814-b4ee7be77610.png)
+![goal_position](https://user-images.githubusercontent.com/10920881/79715964-29aadb80-8310-11ea-9bfc-4ee27a271626.png)
 
 5. Engage vehicle.
     - a. Go to [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html).
