@@ -27,6 +27,7 @@ If cuda or tensorRT is already installed, it is recommended to remove it.
 ```
 catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
+Note that the computer need to be connected to Internet to download neural network weight files.
 
 # How to Run
 
