@@ -32,18 +32,7 @@ Note that the computer need to be connected to Internet to download neural netwo
 # How to Run
 
 ## Simulator
-
-### Planning Simulator
-1. launch Autoware
-```
-$ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
-```
-- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/197kgRfSomZzaSbRrjWTx614le2qN-oxx/view?usp=sharing).
-2. set initial pose
-3. set goal pose
-4. push engage button.
-[autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
-5. (optional) [webviz](https://webviz.io/app/)
+![sim](https://user-images.githubusercontent.com/8327598/79709776-0bd47b00-82fe-11ea-872e-d94ef25bc3bf.png)
 
 ### Rosbag
 1. launch Autoware
@@ -62,6 +51,18 @@ $ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
     - Removed due to privacy concerns
     - Cannot run traffic light recognition
     - Decreased accuracy of object detection
+
+### Planning Simulator
+1. launch Autoware
+```
+$ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
+```
+- sample map is [here](https://drive.google.com/a/public.tier4.jp/file/d/197kgRfSomZzaSbRrjWTx614le2qN-oxx/view?usp=sharing).
+2. set initial pose
+3. set goal pose
+4. push engage button.
+[autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html)
+5. (optional) [webviz](https://webviz.io/app/)
 
 ## Real Car
 
