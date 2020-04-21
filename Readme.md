@@ -26,12 +26,12 @@ If cuda or tensorRT is already installed, it is recommended to remove it.
 ## Autoware setup
 1. Clone this repository
 ```
-$ git clone https://github.com/tier4/AutowareArchitectureProposal.git
-$ cd AutowareArchitectureProposal/
+git clone https://github.com/tier4/AutowareArchitectureProposal.git
+cd AutowareArchitectureProposal/
 ```
 2. Run the setup script
 ```
-$ ./setup_ubuntu18.04.sh
+./setup_ubuntu18.04.sh
 ```
 In this step, the following software are installed.
 Please confirm their licenses before using them.
@@ -44,7 +44,7 @@ Please confirm their licenses before using them.
 
 3. Build the source
 ```
-$ catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
+catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 Note that the computer need to be connected to Internet to download neural network weight files.
 
@@ -61,11 +61,11 @@ Note that the computer need to be connected to Internet to download neural netwo
 2. Download sample rosbag from [here](https://drive.google.com/open?id=1BFcNjIBUVKwupPByATYczv2X4qZtdAeD).
 3. Launch Autoware
 ```
-$ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
+roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 4. Play rosbag
 ```
-$ rosbag play --clock [rosbag file] -r 0.2
+rosbag play --clock [rosbag file] -r 0.2
 ```
 
 ##### Note
@@ -80,7 +80,7 @@ $ rosbag play --clock [rosbag file] -r 0.2
 
 2. Launch Autoware
 ```
-$ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
+roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
 3. Set initial pose
 4. Set goal pose
