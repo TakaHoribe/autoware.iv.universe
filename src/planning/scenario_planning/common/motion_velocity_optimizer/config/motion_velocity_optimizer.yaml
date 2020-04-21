@@ -26,7 +26,7 @@ resample_time: 10.0                   # resample total time [s]
 resample_dt: 0.1                      # resample time interval [s]
 min_trajectory_interval_distance: 0.1 # resample points-interval length [m]
 
-pseudo_jerk_weight: 60.0 # weight for "smoothness" cost
+pseudo_jerk_weight: 100.0 # weight for "smoothness" cost
 over_v_weight: 100000.0   # weight for "overspeed limit" cost
-over_a_weight: 100000.0     # weight for "overaccel limit" cost
+over_a_weight: 1000.0     # weight for "overaccel limit" cost
 over_jerk_weight: 100.0   # weight for "overjerk limit" cost
