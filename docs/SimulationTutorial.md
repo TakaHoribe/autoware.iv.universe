@@ -55,15 +55,16 @@ Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4
 $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
 
-![launch_planning_simulator](https://user-images.githubusercontent.com/10920881/79715068-94a6e300-830d-11ea-9008-0ed311617c81.png)
+![initial](https://user-images.githubusercontent.com/10920881/79816587-8b298380-83be-11ea-967c-8c45772e30f4.png)
 
 3. Set initial position by using `2D Pose Estimate` in rviz.
 
-![initial_pose](https://user-images.githubusercontent.com/10920881/79714203-0a5d7f80-830b-11ea-8ef2-90db71eb1f8d.png)
+![start](https://user-images.githubusercontent.com/10920881/79816595-8e247400-83be-11ea-857a-32cf096ac3dc.png)
 
 4. Set goal position by using `2D Nav Goal` in rviz.
 
-![goal](https://user-images.githubusercontent.com/10920881/79742459-d059a100-833d-11ea-9dc7-0cb972c389a4.png)
+![goal](https://user-images.githubusercontent.com/10920881/79816596-8fee3780-83be-11ea-9ee4-caabbef3a385.png)
+
 
 5. Engage vehicle.
     - a. Go to [autoware_web_controller](http://localhost:8085/autoware_web_controller/index.html).
@@ -71,13 +72,19 @@ $ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 
 ![engage](https://user-images.githubusercontent.com/10920881/79714298-4db7ee00-830b-11ea-9ac4-11e126d7a7c4.png)
 
-### Set dummy obstacles
+### Simulate dummy obstacles
 
 * Set obstacles' position by using `2D Dummy Pedestrian` or `2D Dummy Car` in rviz.
   * Shorcut keys `l` and `k` are assigned respectively.
   * Can adjust obstacles' infomation including velocity, position/orientation error and etc, via `Tool Properties` in rviz.
   * Can delete all the objects by using `Delte All Objects` in rviz.
 ![dummy](https://user-images.githubusercontent.com/10920881/79742437-c9cb2980-833d-11ea-8ad7-7c3ed1a96540.png)
+
+### Simulate parking maneuver
+Set goal in parking area.
+
+![parking](https://user-images.githubusercontent.com/10920881/79817389-56b6c700-83c0-11ea-873b-6ec73c8a5c38.png)
+
 
 ##### Note
 - sample map : © 2020 TierIV inc.
