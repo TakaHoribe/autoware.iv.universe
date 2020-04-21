@@ -29,11 +29,12 @@ Note: Image data are removed due to privacy concerns.
 
 3. Launch Autoware with rosbag mode.
 ```
-$ roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
+source devel/setup.bash
+roslaunch autoware_launch autoware.launch map_path:=[path] rosbag:=true
 ```
 4. Play sample rosbag.
 ```
-$ rosbag play --clock -r 0.2　sample.bag
+rosbag play --clock -r 0.2　sample.bag
 ```
 
 
@@ -52,7 +53,8 @@ Assuming already completed [Autoware setup](https://github.com/tier4/Autoware-T4
 1. Download sample map from [here](https://drive.google.com/open?id=197kgRfSomZzaSbRrjWTx614le2qN-oxx).
 2. Launch Autoware with Planning Simulator
 ```
-$ roslaunch autoware_launch planning_simulator.launch map_path:=[path]
+source devel/setup.bash
+roslaunch autoware_launch planning_simulator.launch map_path:=[path]
 ```
 
 ![initial](https://user-images.githubusercontent.com/10920881/79816587-8b298380-83be-11ea-967c-8c45772e30f4.png)
