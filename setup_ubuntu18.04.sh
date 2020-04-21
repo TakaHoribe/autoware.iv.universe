@@ -2,6 +2,12 @@
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 
+# Prevent root execution
+if [ $(id -u) -eq 0 ]; then
+  echo "Don't run as root" >&2
+  exit 1
+fi
+
 read -p ">  Do you run setup? This will take a while. [y/N] " answer
 
 if [[ $answer = [cC] ]]; then
