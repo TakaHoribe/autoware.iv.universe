@@ -19,3 +19,7 @@
   pip:
     name:
       - gdown
+
+- name: Autoware (install egm2008-1)
+  shell: geographiclib-get-geoids egm2008-1
+  become: yes

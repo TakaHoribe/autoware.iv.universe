@@ -41,6 +41,7 @@ Please confirm their licenses before using them.
 - [CUDA 10.2](https://docs.nvidia.com/cuda/eula/index.html)
 - [cuDNN 7](https://docs.nvidia.com/deeplearning/sdk/cudnn-sla/index.html)
 - [TensorRT 7](https://docs.nvidia.com/deeplearning/sdk/tensorrt-sla/index.html)
+- [geographiclib-tools](https://geographiclib.sourceforge.io/html/LICENSE.txt)
 
 3. Build the source
 ```
