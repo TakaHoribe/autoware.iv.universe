@@ -28,8 +28,8 @@
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <autoware_perception_msgs/TrafficLightRoiArray.h>
 #include <autoware_planning_msgs/Route.h>
-#include <autoware_traffic_light_msgs/TrafficLightRoiArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <tf2_ros/transform_listener.h>
@@ -37,14 +37,17 @@
 
 #include <memory>
 
-namespace traffic_light {
-class MapBasedDetector {
- public:
+namespace traffic_light
+{
+class MapBasedDetector
+{
+public:
   MapBasedDetector();
   ~MapBasedDetector() {}
 
- private:
-  struct Config {
+private:
+  struct Config
+  {
     double max_vibration_pitch;
     double max_vibration_yaw;
     double max_vibration_height;
@@ -52,7 +55,7 @@ class MapBasedDetector {
     double max_vibration_depth;
   };
 
- private:
+private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Subscriber map_sub_;
@@ -73,22 +76,28 @@ class MapBasedDetector {
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   Config config_;
 
-  void mapCallback(const autoware_lanelet2_msgs::MapBin& input_msg);
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& input_msg);
-  void routeCallback(const autoware_planning_msgs::Route::ConstPtr& input_msg);
-  void isInVisibility(const std::vector<lanelet::ConstLineString3d>& all_traffic_lights,
-                      const geometry_msgs::Pose& camera_pose, const sensor_msgs::CameraInfo& camera_info,
-                      std::vector<lanelet::ConstLineString3d>& visible_traffic_lights);
-  bool isInDistanceRange(const geometry_msgs::Point& tl_point, const geometry_msgs::Point& camera_point,
-                         const double max_distance_range);
-  bool isInAngleRange(const double& tl_yaw, const double& camera_yaw, const double max_angele_range);
-  bool isInImageFrame(const sensor_msgs::CameraInfo& camera_info, const geometry_msgs::Point& point);
-  double normalizeAngle(const double& angle);
-  bool getTrafficLightRoi(const geometry_msgs::Pose& camera_pose, const sensor_msgs::CameraInfo& camera_info,
-                          const lanelet::ConstLineString3d traffic_light, const Config& config,
-                          autoware_traffic_light_msgs::TrafficLightRoi& tl_roi);
-  void publishVisibleTrafficLights(const geometry_msgs::PoseStamped camera_pose_stamped,
-                                   const std::vector<lanelet::ConstLineString3d>& visible_traffic_lights,
-                                   const ros::Publisher& pub);
+  void mapCallback(const autoware_lanelet2_msgs::MapBin & input_msg);
+  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr & input_msg);
+  void routeCallback(const autoware_planning_msgs::Route::ConstPtr & input_msg);
+  void isInVisibility(
+    const std::vector<lanelet::ConstLineString3d> & all_traffic_lights,
+    const geometry_msgs::Pose & camera_pose, const sensor_msgs::CameraInfo & camera_info,
+    std::vector<lanelet::ConstLineString3d> & visible_traffic_lights);
+  bool isInDistanceRange(
+    const geometry_msgs::Point & tl_point, const geometry_msgs::Point & camera_point,
+    const double max_distance_range);
+  bool isInAngleRange(
+    const double & tl_yaw, const double & camera_yaw, const double max_angele_range);
+  bool isInImageFrame(
+    const sensor_msgs::CameraInfo & camera_info, const geometry_msgs::Point & point);
+  double normalizeAngle(const double & angle);
+  bool getTrafficLightRoi(
+    const geometry_msgs::Pose & camera_pose, const sensor_msgs::CameraInfo & camera_info,
+    const lanelet::ConstLineString3d traffic_light, const Config & config,
+    autoware_perception_msgs::TrafficLightRoi & tl_roi);
+  void publishVisibleTrafficLights(
+    const geometry_msgs::PoseStamped camera_pose_stamped,
+    const std::vector<lanelet::ConstLineString3d> & visible_traffic_lights,
+    const ros::Publisher & pub);
 };
 }  // namespace traffic_light

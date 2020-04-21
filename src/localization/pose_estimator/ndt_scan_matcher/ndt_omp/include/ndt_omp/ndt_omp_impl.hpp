@@ -45,37 +45,38 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform()
-    : target_cells_(),
-      resolution_(1.0f),
-      step_size_(0.1),
-      outlier_ratio_(0.55),
-      gauss_d1_(),
-      gauss_d2_(),
-      gauss_d3_(),
-      trans_probability_(),
-      j_ang_a_(),
-      j_ang_b_(),
-      j_ang_c_(),
-      j_ang_d_(),
-      j_ang_e_(),
-      j_ang_f_(),
-      j_ang_g_(),
-      j_ang_h_(),
-      h_ang_a2_(),
-      h_ang_a3_(),
-      h_ang_b2_(),
-      h_ang_b3_(),
-      h_ang_c2_(),
-      h_ang_c3_(),
-      h_ang_d1_(),
-      h_ang_d2_(),
-      h_ang_d3_(),
-      h_ang_e1_(),
-      h_ang_e2_(),
-      h_ang_e3_(),
-      h_ang_f1_(),
-      h_ang_f2_(),
-      h_ang_f3_() {
+: target_cells_(),
+  resolution_(1.0f),
+  step_size_(0.1),
+  outlier_ratio_(0.55),
+  gauss_d1_(),
+  gauss_d2_(),
+  gauss_d3_(),
+  trans_probability_(),
+  j_ang_a_(),
+  j_ang_b_(),
+  j_ang_c_(),
+  j_ang_d_(),
+  j_ang_e_(),
+  j_ang_f_(),
+  j_ang_g_(),
+  j_ang_h_(),
+  h_ang_a2_(),
+  h_ang_a3_(),
+  h_ang_b2_(),
+  h_ang_b3_(),
+  h_ang_c2_(),
+  h_ang_c3_(),
+  h_ang_d1_(),
+  h_ang_d2_(),
+  h_ang_d3_(),
+  h_ang_e1_(),
+  h_ang_e2_(),
+  h_ang_e3_(),
+  h_ang_f1_(),
+  h_ang_f2_(),
+  h_ang_f3_()
+{
   reg_name_ = "NormalDistributionsTransform";
 
   double gauss_c1, gauss_c2;
@@ -97,7 +98,8 @@ ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistribut
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransformation(
-    PointCloudSource& output, const Eigen::Matrix4f& guess) {
+  PointCloudSource & output, const Eigen::Matrix4f & guess)
+{
   nr_iterations_ = 0;
   converged_ = false;
 
@@ -126,8 +128,8 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeTra
   Eigen::Matrix<double, 6, 1> p, delta_p, score_gradient;
   Eigen::Vector3f init_translation = eig_transformation.translation();
   Eigen::Vector3f init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
-  p << init_translation(0), init_translation(1), init_translation(2), init_rotation(0), init_rotation(1),
-      init_rotation(2);
+  p << init_translation(0), init_translation(1), init_translation(2), init_rotation(0),
+    init_rotation(1), init_rotation(2);
 
   Eigen::Matrix<double, 6, 6> hessian;
 
@@ -143,7 +145,8 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeTra
     previous_transformation_ = transformation_;
 
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
-    Eigen::JacobiSVD<Eigen::Matrix<double, 6, 6>> sv(hessian, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::JacobiSVD<Eigen::Matrix<double, 6, 6>> sv(
+      hessian, Eigen::ComputeFullU | Eigen::ComputeFullV);
     // Negative for maximization as opposed to minimization
     delta_p = sv.solve(-score_gradient);
 
@@ -187,27 +190,33 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeTra
     //   converged_rotation = true;
     //   transformation_epsilon_ = 0.01;
     //   step_size_ = 0.1;
-    delta_p_norm = computeStepLengthMT(p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score,
-                                       score_gradient, hessian, output);
+    delta_p_norm = computeStepLengthMT(
+      p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score, score_gradient,
+      hessian, output);
     // }
 
     delta_p *= delta_p_norm;
 
-    transformation_ = (Eigen::Translation<float, 3>(static_cast<float>(delta_p(0)), static_cast<float>(delta_p(1)),
-                                                    static_cast<float>(delta_p(2))) *
-                       Eigen::AngleAxis<float>(static_cast<float>(delta_p(3)), Eigen::Vector3f::UnitX()) *
-                       Eigen::AngleAxis<float>(static_cast<float>(delta_p(4)), Eigen::Vector3f::UnitY()) *
-                       Eigen::AngleAxis<float>(static_cast<float>(delta_p(5)), Eigen::Vector3f::UnitZ()))
-                          .matrix();
+    transformation_ =
+      (Eigen::Translation<float, 3>(
+         static_cast<float>(delta_p(0)), static_cast<float>(delta_p(1)),
+         static_cast<float>(delta_p(2))) *
+       Eigen::AngleAxis<float>(static_cast<float>(delta_p(3)), Eigen::Vector3f::UnitX()) *
+       Eigen::AngleAxis<float>(static_cast<float>(delta_p(4)), Eigen::Vector3f::UnitY()) *
+       Eigen::AngleAxis<float>(static_cast<float>(delta_p(5)), Eigen::Vector3f::UnitZ()))
+        .matrix();
 
     transformation_array_.push_back(final_transformation_);
 
     p = p + delta_p;
 
     // Update Visualizer (untested)
-    if (update_visualizer_ != 0) update_visualizer_(output, std::vector<int>(), *target_, std::vector<int>());
+    if (update_visualizer_ != 0)
+      update_visualizer_(output, std::vector<int>(), *target_, std::vector<int>());
 
-    if (nr_iterations_ > max_iterations_ || (nr_iterations_ && (std::fabs(delta_p_norm) < transformation_epsilon_))) {
+    if (
+      nr_iterations_ > max_iterations_ ||
+      (nr_iterations_ && (std::fabs(delta_p_norm) < transformation_epsilon_))) {
       converged_ = true;
     }
 
@@ -229,17 +238,18 @@ int omp_get_thread_num() { return 0; }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
-    Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian, PointCloudSource& trans_cloud,
-    Eigen::Matrix<double, 6, 1>& p, bool compute_hessian) {
+  Eigen::Matrix<double, 6, 1> & score_gradient, Eigen::Matrix<double, 6, 6> & hessian,
+  PointCloudSource & trans_cloud, Eigen::Matrix<double, 6, 1> & p, bool compute_hessian)
+{
   score_gradient.setZero();
   hessian.setZero();
   double score = 0;
 
   std::vector<double> scores(num_threads_);
-  std::vector<Eigen::Matrix<double, 6, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 1>>> score_gradients(
-      num_threads_);
-  std::vector<Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>> hessians(
-      num_threads_);
+  std::vector<Eigen::Matrix<double, 6, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 1>>>
+    score_gradients(num_threads_);
+  std::vector<Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>>
+    hessians(num_threads_);
   for (int i = 0; i < num_threads_; i++) {
     scores[i] = 0;
     score_gradients[i].setZero();
@@ -275,8 +285,8 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeD
 
     x_trans_pt = trans_cloud.points[idx];
 
-    auto& neighborhood = neighborhoods[thread_n];
-    auto& distances = distancess[thread_n];
+    auto & neighborhood = neighborhoods[thread_n];
+    auto & distances = distancess[thread_n];
 
     // Find nieghbors (Radius search has been experimentally faster than direct neighbor checking.
     switch (search_method) {
@@ -299,7 +309,8 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeD
     Eigen::Matrix<double, 6, 1> score_gradient_pt = Eigen::Matrix<double, 6, 1>::Zero();
     Eigen::Matrix<double, 6, 6> hessian_pt = Eigen::Matrix<double, 6, 6>::Zero();
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it = neighborhood.begin();
+    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
+           neighborhood.begin();
          neighborhood_it != neighborhood.end(); neighborhood_it++) {
       cell = *neighborhood_it;
       x_pt = input_->points[idx];
@@ -317,8 +328,9 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeD
       computePointDerivatives(x, point_gradient_, point_hessian_);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2, according to Equations 6.10, 6.12 and 6.13,
       // respectively [Magnusson 2009]
-      score_pt += updateDerivatives(score_gradient_pt, hessian_pt, point_gradient_, point_hessian_, x_trans, c_inv,
-                                    compute_hessian);
+      score_pt += updateDerivatives(
+        score_gradient_pt, hessian_pt, point_gradient_, point_hessian_, x_trans, c_inv,
+        compute_hessian);
     }
 
     scores[thread_n] += score_pt;
@@ -338,7 +350,8 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeD
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDerivatives(
-    Eigen::Matrix<double, 6, 1>& p, bool compute_hessian) {
+  Eigen::Matrix<double, 6, 1> & p, bool compute_hessian)
+{
   // Simplified math for near 0 angles
   double cx, cy, cz, sx, sy, sz;
   if (fabs(p(3)) < 10e-5) {
@@ -378,14 +391,18 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeAng
   j_ang_h_ << (sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0;
 
   j_ang.setZero();
-  j_ang.row(0).noalias() = Eigen::Vector4f((-sx * sz + cx * sy * cz), (-sx * cz - cx * sy * sz), (-cx * cy), 0.0f);
-  j_ang.row(1).noalias() = Eigen::Vector4f((cx * sz + sx * sy * cz), (cx * cz - sx * sy * sz), (-sx * cy), 0.0f);
+  j_ang.row(0).noalias() =
+    Eigen::Vector4f((-sx * sz + cx * sy * cz), (-sx * cz - cx * sy * sz), (-cx * cy), 0.0f);
+  j_ang.row(1).noalias() =
+    Eigen::Vector4f((cx * sz + sx * sy * cz), (cx * cz - sx * sy * sz), (-sx * cy), 0.0f);
   j_ang.row(2).noalias() = Eigen::Vector4f((-sy * cz), sy * sz, cy, 0.0f);
   j_ang.row(3).noalias() = Eigen::Vector4f(sx * cy * cz, (-sx * cy * sz), sx * sy, 0.0f);
   j_ang.row(4).noalias() = Eigen::Vector4f((-cx * cy * cz), cx * cy * sz, (-cx * sy), 0.0f);
   j_ang.row(5).noalias() = Eigen::Vector4f((-cy * sz), (-cy * cz), 0, 0.0f);
-  j_ang.row(6).noalias() = Eigen::Vector4f((cx * cz - sx * sy * sz), (-cx * sz - sx * sy * cz), 0, 0.0f);
-  j_ang.row(7).noalias() = Eigen::Vector4f((sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0, 0.0f);
+  j_ang.row(6).noalias() =
+    Eigen::Vector4f((cx * cz - sx * sy * sz), (-cx * sz - sx * sy * cz), 0, 0.0f);
+  j_ang.row(7).noalias() =
+    Eigen::Vector4f((sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0, 0.0f);
 
   if (compute_hessian) {
     // Precomputed angular hessian components. Letters correspond to Equation 6.21 and numbers correspond to row index
@@ -413,35 +430,44 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeAng
 
     h_ang.setZero();
     h_ang.row(0).noalias() =
-        Eigen::Vector4f((-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz), sx * cy, 0.0f);  // a2
-    h_ang.row(1).noalias() =
-        Eigen::Vector4f((-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), (-cx * cy), 0.0f);  // a3
+      Eigen::Vector4f((-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz), sx * cy, 0.0f);  // a2
+    h_ang.row(1).noalias() = Eigen::Vector4f(
+      (-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), (-cx * cy), 0.0f);  // a3
 
-    h_ang.row(2).noalias() = Eigen::Vector4f((cx * cy * cz), (-cx * cy * sz), (cx * sy), 0.0f);  // b2
-    h_ang.row(3).noalias() = Eigen::Vector4f((sx * cy * cz), (-sx * cy * sz), (sx * sy), 0.0f);  // b3
+    h_ang.row(2).noalias() =
+      Eigen::Vector4f((cx * cy * cz), (-cx * cy * sz), (cx * sy), 0.0f);  // b2
+    h_ang.row(3).noalias() =
+      Eigen::Vector4f((sx * cy * cz), (-sx * cy * sz), (sx * sy), 0.0f);  // b3
 
-    h_ang.row(4).noalias() = Eigen::Vector4f((-sx * cz - cx * sy * sz), (sx * sz - cx * sy * cz), 0, 0.0f);  // c2
-    h_ang.row(5).noalias() = Eigen::Vector4f((cx * cz - sx * sy * sz), (-sx * sy * cz - cx * sz), 0, 0.0f);  // c3
+    h_ang.row(4).noalias() =
+      Eigen::Vector4f((-sx * cz - cx * sy * sz), (sx * sz - cx * sy * cz), 0, 0.0f);  // c2
+    h_ang.row(5).noalias() =
+      Eigen::Vector4f((cx * cz - sx * sy * sz), (-sx * sy * cz - cx * sz), 0, 0.0f);  // c3
 
-    h_ang.row(6).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), (sy), 0.0f);                  // d1
-    h_ang.row(7).noalias() = Eigen::Vector4f((-sx * sy * cz), (sx * sy * sz), (sx * cy), 0.0f);   // d2
-    h_ang.row(8).noalias() = Eigen::Vector4f((cx * sy * cz), (-cx * sy * sz), (-cx * cy), 0.0f);  // d3
+    h_ang.row(6).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), (sy), 0.0f);  // d1
+    h_ang.row(7).noalias() =
+      Eigen::Vector4f((-sx * sy * cz), (sx * sy * sz), (sx * cy), 0.0f);  // d2
+    h_ang.row(8).noalias() =
+      Eigen::Vector4f((cx * sy * cz), (-cx * sy * sz), (-cx * cy), 0.0f);  // d3
 
     h_ang.row(9).noalias() = Eigen::Vector4f((sy * sz), (sy * cz), 0, 0.0f);               // e1
     h_ang.row(10).noalias() = Eigen::Vector4f((-sx * cy * sz), (-sx * cy * cz), 0, 0.0f);  // e2
     h_ang.row(11).noalias() = Eigen::Vector4f((cx * cy * sz), (cx * cy * cz), 0, 0.0f);    // e3
 
-    h_ang.row(12).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), 0, 0.0f);                                 // f1
-    h_ang.row(13).noalias() = Eigen::Vector4f((-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz), 0, 0.0f);  // f2
-    h_ang.row(14).noalias() = Eigen::Vector4f((-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), 0, 0.0f);  // f3
+    h_ang.row(12).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), 0, 0.0f);  // f1
+    h_ang.row(13).noalias() =
+      Eigen::Vector4f((-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz), 0, 0.0f);  // f2
+    h_ang.row(14).noalias() =
+      Eigen::Vector4f((-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), 0, 0.0f);  // f3
   }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
-    Eigen::Vector3d& x, Eigen::Matrix<float, 4, 6>& point_gradient_, Eigen::Matrix<float, 24, 6>& point_hessian_,
-    bool compute_hessian) const {
+  Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_,
+  Eigen::Matrix<float, 24, 6> & point_hessian_, bool compute_hessian) const
+{
   Eigen::Vector4f x4(x[0], x[1], x[2], 0.0f);
 
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
@@ -486,8 +512,9 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePoi
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
-    Eigen::Vector3d& x, Eigen::Matrix<double, 3, 6>& point_gradient_, Eigen::Matrix<double, 18, 6>& point_hessian_,
-    bool compute_hessian) const {
+  Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
+  Eigen::Matrix<double, 18, 6> & point_hessian_, bool compute_hessian) const
+{
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
   point_gradient_(1, 3) = x.dot(j_ang_a_);
@@ -528,9 +555,11 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computePoi
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
-    Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-    const Eigen::Matrix<float, 4, 6>& point_gradient4, const Eigen::Matrix<float, 24, 6>& point_hessian_,
-    const Eigen::Vector3d& x_trans, const Eigen::Matrix3d& c_inv, bool compute_hessian) const {
+  Eigen::Matrix<double, 6, 1> & score_gradient, Eigen::Matrix<double, 6, 6> & hessian,
+  const Eigen::Matrix<float, 4, 6> & point_gradient4,
+  const Eigen::Matrix<float, 24, 6> & point_hessian_, const Eigen::Vector3d & x_trans,
+  const Eigen::Matrix3d & c_inv, bool compute_hessian) const
+{
   Eigen::Matrix<float, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
   Eigen::Matrix4f c_inv4 = Eigen::Matrix4f::Zero();
   c_inv4.topLeftCorner(3, 3) = c_inv.cast<float>();
@@ -551,27 +580,30 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateDe
   e_x_cov_x *= gauss_d1_;
 
   Eigen::Matrix<float, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
-  Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_point_gradient4 = x_trans4 * c_inv4_x_point_gradient4;
+  Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_point_gradient4 =
+    x_trans4 * c_inv4_x_point_gradient4;
 
   score_gradient.noalias() += (e_x_cov_x * x_trans4_dot_c_inv4_x_point_gradient4).cast<double>();
 
   if (compute_hessian) {
     Eigen::Matrix<float, 1, 4> x_trans4_x_c_inv4 = x_trans4 * c_inv4;
     Eigen::Matrix<float, 6, 6> point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i =
-        point_gradient4.transpose() * c_inv4_x_point_gradient4;
+      point_gradient4.transpose() * c_inv4_x_point_gradient4;
     Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_ext_point_hessian_4ij;
 
     for (int i = 0; i < 6; i++) {
       // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
       // Update gradient, Equation 6.12 [Magnusson 2009]
-      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij.noalias() = x_trans4_x_c_inv4 * point_hessian_.block<4, 6>(i * 4, 0);
+      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij.noalias() =
+        x_trans4_x_c_inv4 * point_hessian_.block<4, 6>(i * 4, 0);
 
       for (int j = 0; j < hessian.cols(); j++) {
         // Update hessian, Equation 6.13 [Magnusson 2009]
-        hessian(i, j) += e_x_cov_x * (-gauss_d2 * x_trans4_dot_c_inv4_x_point_gradient4(i) *
-                                          x_trans4_dot_c_inv4_x_point_gradient4(j) +
-                                      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij(j) +
-                                      point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i(j, i));
+        hessian(i, j) +=
+          e_x_cov_x * (-gauss_d2 * x_trans4_dot_c_inv4_x_point_gradient4(i) *
+                         x_trans4_dot_c_inv4_x_point_gradient4(j) +
+                       x_trans4_dot_c_inv4_x_ext_point_hessian_4ij(j) +
+                       point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i(j, i));
       }
     }
   }
@@ -582,7 +614,9 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateDe
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
-    Eigen::Matrix<double, 6, 6>& hessian, PointCloudSource& trans_cloud, Eigen::Matrix<double, 6, 1>&) {
+  Eigen::Matrix<double, 6, 6> & hessian, PointCloudSource & trans_cloud,
+  Eigen::Matrix<double, 6, 1> &)
+{
   // Original Point and Transformed Point
   PointSource x_pt, x_trans_pt;
   // Original Point and Transformed Point (for math)
@@ -612,7 +646,8 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeHes
     std::vector<float> distances;
     target_cells_.radiusSearch(x_trans_pt, resolution_, neighborhood, distances);
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it = neighborhood.begin();
+    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
+           neighborhood.begin();
          neighborhood_it != neighborhood.end(); neighborhood_it++) {
       cell = *neighborhood_it;
 
@@ -641,9 +676,10 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeHes
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
-    Eigen::Matrix<double, 6, 6>& hessian, const Eigen::Matrix<double, 3, 6>& point_gradient_,
-    const Eigen::Matrix<double, 18, 6>& point_hessian_, const Eigen::Vector3d& x_trans,
-    const Eigen::Matrix3d& c_inv) const {
+  Eigen::Matrix<double, 6, 6> & hessian, const Eigen::Matrix<double, 3, 6> & point_gradient_,
+  const Eigen::Matrix<double, 18, 6> & point_hessian_, const Eigen::Vector3d & x_trans,
+  const Eigen::Matrix3d & c_inv) const
+{
   Eigen::Vector3d cov_dxd_pi;
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
   double e_x_cov_x = gauss_d2_ * exp(-gauss_d2_ * x_trans.dot(c_inv * x_trans) / 2);
@@ -660,7 +696,8 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateHess
 
     for (int j = 0; j < hessian.cols(); j++) {
       // Update hessian, Equation 6.13 [Magnusson 2009]
-      hessian(i, j) += e_x_cov_x * (-gauss_d2_ * x_trans.dot(cov_dxd_pi) * x_trans.dot(c_inv * point_gradient_.col(j)) +
+      hessian(i, j) += e_x_cov_x * (-gauss_d2_ * x_trans.dot(cov_dxd_pi) *
+                                      x_trans.dot(c_inv * point_gradient_.col(j)) +
                                     x_trans.dot(c_inv * point_hessian_.block<3, 1>(3 * i, j)) +
                                     point_gradient_.col(j).dot(cov_dxd_pi));
     }
@@ -670,7 +707,9 @@ void ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateHess
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 bool ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateIntervalMT(
-    double& a_l, double& f_l, double& g_l, double& a_u, double& f_u, double& g_u, double a_t, double f_t, double g_t) {
+  double & a_l, double & f_l, double & g_l, double & a_u, double & f_u, double & g_u, double a_t,
+  double f_t, double g_t)
+{
   // Case U1 in Update Algorithm and Case a in Modified Update Algorithm [More, Thuente 1994]
   if (f_t > f_l) {
     a_u = a_t;
@@ -704,7 +743,9 @@ bool ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::updateInte
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelectionMT(
-    double a_l, double f_l, double g_l, double a_u, double f_u, double g_u, double a_t, double f_t, double g_t) {
+  double a_l, double f_l, double g_l, double a_u, double f_u, double g_u, double a_t, double f_t,
+  double g_t)
+{
   // Case 1 in Trial Value Selection [More, Thuente 1994]
   if (f_t > f_l) {
     // Calculate the minimizer of the cubic that interpolates f_l, f_t, g_l and g_t
@@ -779,9 +820,10 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::trialVal
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengthMT(
-    const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix<double, 6, 1>& step_dir, double step_init, double step_max,
-    double step_min, double& score, Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-    PointCloudSource& trans_cloud) {
+  const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix<double, 6, 1> & step_dir, double step_init,
+  double step_max, double step_min, double & score, Eigen::Matrix<double, 6, 1> & score_gradient,
+  Eigen::Matrix<double, 6, 6> & hessian, PointCloudSource & trans_cloud)
+{
   // Set the value of phi(0), Equation 1.3 [More, Thuente 1994]
   double phi_0 = -score;
   // Set the value of phi'(0), Equation 1.3 [More, Thuente 1994]
@@ -829,12 +871,13 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeS
 
   x_t = x + step_dir * a_t;
 
-  final_transformation_ = (Eigen::Translation<float, 3>(static_cast<float>(x_t(0)), static_cast<float>(x_t(1)),
-                                                        static_cast<float>(x_t(2))) *
-                           Eigen::AngleAxis<float>(static_cast<float>(x_t(3)), Eigen::Vector3f::UnitX()) *
-                           Eigen::AngleAxis<float>(static_cast<float>(x_t(4)), Eigen::Vector3f::UnitY()) *
-                           Eigen::AngleAxis<float>(static_cast<float>(x_t(5)), Eigen::Vector3f::UnitZ()))
-                              .matrix();
+  final_transformation_ =
+    (Eigen::Translation<float, 3>(
+       static_cast<float>(x_t(0)), static_cast<float>(x_t(1)), static_cast<float>(x_t(2))) *
+     Eigen::AngleAxis<float>(static_cast<float>(x_t(3)), Eigen::Vector3f::UnitX()) *
+     Eigen::AngleAxis<float>(static_cast<float>(x_t(4)), Eigen::Vector3f::UnitY()) *
+     Eigen::AngleAxis<float>(static_cast<float>(x_t(5)), Eigen::Vector3f::UnitZ()))
+      .matrix();
 
   // New transformed point cloud
   transformPointCloud(*input_, trans_cloud, final_transformation_);
@@ -856,8 +899,9 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeS
 
   // Iterate until max number of iterations, interval convergance or a value satisfies the sufficient decrease,
   // Equation 1.1, and curvature condition, Equation 1.2 [More, Thuente 1994]
-  while (!interval_converged && step_iterations < max_step_iterations &&
-         !(psi_t <= 0 /*Sufficient Decrease*/ && d_phi_t <= -nu * d_phi_0 /*Curvature Condition*/)) {
+  while (
+    !interval_converged && step_iterations < max_step_iterations &&
+    !(psi_t <= 0 /*Sufficient Decrease*/ && d_phi_t <= -nu * d_phi_0 /*Curvature Condition*/)) {
     // Use auxilary function if interval I is not closed
     if (open_interval) {
       a_t = trialValueSelectionMT(a_l, f_l, g_l, a_u, f_u, g_u, a_t, psi_t, d_psi_t);
@@ -870,12 +914,13 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeS
 
     x_t = x + step_dir * a_t;
 
-    final_transformation_ = (Eigen::Translation<float, 3>(static_cast<float>(x_t(0)), static_cast<float>(x_t(1)),
-                                                          static_cast<float>(x_t(2))) *
-                             Eigen::AngleAxis<float>(static_cast<float>(x_t(3)), Eigen::Vector3f::UnitX()) *
-                             Eigen::AngleAxis<float>(static_cast<float>(x_t(4)), Eigen::Vector3f::UnitY()) *
-                             Eigen::AngleAxis<float>(static_cast<float>(x_t(5)), Eigen::Vector3f::UnitZ()))
-                                .matrix();
+    final_transformation_ =
+      (Eigen::Translation<float, 3>(
+         static_cast<float>(x_t(0)), static_cast<float>(x_t(1)), static_cast<float>(x_t(2))) *
+       Eigen::AngleAxis<float>(static_cast<float>(x_t(3)), Eigen::Vector3f::UnitX()) *
+       Eigen::AngleAxis<float>(static_cast<float>(x_t(4)), Eigen::Vector3f::UnitY()) *
+       Eigen::AngleAxis<float>(static_cast<float>(x_t(5)), Eigen::Vector3f::UnitZ()))
+        .matrix();
 
     // New transformed point cloud
     // Done on final cloud to prevent wasted computation
@@ -928,7 +973,8 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeS
 
 template <typename PointSource, typename PointTarget>
 double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::calculateScore(
-    const PointCloudSource& trans_cloud) const {
+  const PointCloudSource & trans_cloud) const
+{
   double score = 0;
 
   for (int idx = 0; idx < trans_cloud.points.size(); idx++) {
@@ -939,7 +985,8 @@ double ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>::calculat
     std::vector<float> distances;
     target_cells_.radiusSearch(x_trans_pt, resolution_, neighborhood, distances);
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it = neighborhood.begin();
+    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
+           neighborhood.begin();
          neighborhood_it != neighborhood.end(); neighborhood_it++) {
       TargetGridLeafConstPtr cell = *neighborhood_it;
 

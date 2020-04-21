@@ -61,7 +61,8 @@ int16_t acceleration_z_raw = 0;
 
 sensor_msgs::Imu imu_msg;
 
-void receive_CAN(const can_msgs::Frame::ConstPtr& msg) {
+void receive_CAN(const can_msgs::Frame::ConstPtr & msg)
+{
   if (msg->id == 0x319) {
     imu_msg.header.frame_id = "imu";
     imu_msg.header.stamp = ros::Time::now();
@@ -69,13 +70,13 @@ void receive_CAN(const can_msgs::Frame::ConstPtr& msg) {
     counter = msg->data[1] + (msg->data[0] << 8);
     angular_velocity_x_raw = msg->data[3] + (msg->data[2] << 8);
     imu_msg.angular_velocity.x =
-        angular_velocity_x_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+      angular_velocity_x_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
     angular_velocity_y_raw = msg->data[5] + (msg->data[4] << 8);
     imu_msg.angular_velocity.y =
-        angular_velocity_y_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+      angular_velocity_y_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
     angular_velocity_z_raw = msg->data[7] + (msg->data[6] << 8);
     imu_msg.angular_velocity.z =
-        angular_velocity_z_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+      angular_velocity_z_raw * (200 / pow(2, 15)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
     ROS_INFO("IMU Counter = %d", counter);
   }
   if (msg->id == 0x31A) {
@@ -94,7 +95,8 @@ void receive_CAN(const can_msgs::Frame::ConstPtr& msg) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "tag_serial_driver");
   ros::NodeHandle n;
   ros::Subscriber sub = n.subscribe("/can/imu", 100, receive_CAN);

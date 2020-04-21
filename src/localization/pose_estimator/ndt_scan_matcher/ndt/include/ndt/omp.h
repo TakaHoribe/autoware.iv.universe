@@ -19,20 +19,22 @@
 
 #include "ndt/base.h"
 
+#include <ndt_omp/ndt_omp.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <ndt_omp/ndt_omp.h>
 
 template <class PointSource, class PointTarget>
-class NormalDistributionsTransformOMP : public NormalDistributionsTransformBase<PointSource, PointTarget> {
- public:
+class NormalDistributionsTransformOMP
+: public NormalDistributionsTransformBase<PointSource, PointTarget>
+{
+public:
   NormalDistributionsTransformOMP();
   ~NormalDistributionsTransformOMP() = default;
 
-  void align(pcl::PointCloud<PointSource>& output, const Eigen::Matrix4f& guess) override;
-  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>>& map_ptr) override;
-  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>>& scan_ptr) override;
+  void align(pcl::PointCloud<PointSource> & output, const Eigen::Matrix4f & guess) override;
+  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr) override;
+  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr) override;
 
   void setMaximumIterations(int max_iter) override;
   void setResolution(float res) override;
@@ -62,7 +64,7 @@ class NormalDistributionsTransformOMP : public NormalDistributionsTransformBase<
   int getNumThreads() const;
   ndt_omp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
 
- private:
+private:
   boost::shared_ptr<ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
 };
 

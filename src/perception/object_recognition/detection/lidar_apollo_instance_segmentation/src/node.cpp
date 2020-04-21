@@ -17,14 +17,17 @@
 #include "lidar_apollo_instance_segmentation/node.h"
 #include "lidar_apollo_instance_segmentation/detector.h"
 
-LidarInstanceSegmentationNode::LidarInstanceSegmentationNode() : nh_(""), pnh_("~") {
+LidarInstanceSegmentationNode::LidarInstanceSegmentationNode() : nh_(""), pnh_("~")
+{
   detector_ptr_ = std::make_shared<LidarApolloInstanceSegmentation>();
-  pointcloud_sub_ = pnh_.subscribe("input/pointcloud", 1, &LidarInstanceSegmentationNode::pointCloudCallback, this);
-  dynamic_objects_pub_ =
-      pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output/labeled_clusters", 1);
+  pointcloud_sub_ =
+    pnh_.subscribe("input/pointcloud", 1, &LidarInstanceSegmentationNode::pointCloudCallback, this);
+  dynamic_objects_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>(
+    "output/labeled_clusters", 1);
 }
 
-void LidarInstanceSegmentationNode::pointCloudCallback(const sensor_msgs::PointCloud2& msg) {
+void LidarInstanceSegmentationNode::pointCloudCallback(const sensor_msgs::PointCloud2 & msg)
+{
   autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
   detector_ptr_->detectDynamicObjects(msg, output_msg);
   dynamic_objects_pub_.publish(output_msg);

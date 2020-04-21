@@ -51,7 +51,8 @@
 
 #include <velodyne_pointcloud/datacontainerbase.h>
 
-namespace velodyne_rawdata {
+namespace velodyne_rawdata
+{
 // Shorthand typedefs for point cloud representations
 typedef velodyne_pointcloud::PointXYZIR VPoint;
 typedef pcl::PointCloud<VPoint> VPointCloud;
@@ -78,6 +79,19 @@ static const float VLP16_BLOCK_TDURATION = 110.592f;  // [µs]
 static const float VLP16_DSR_TOFFSET = 2.304f;        // [µs]
 static const float VLP16_FIRING_TOFFSET = 55.296f;    // [µs]
 
+/** Special Definitions for VLS128 support **/
+static const float VLP128_DISTANCE_RESOLUTION   =    0.004f;  // [m]
+
+/** Special Definitions for VLS128 support **/
+// These are used to detect which bank of 32 lasers is in this block
+static const uint16_t VLS128_BANK_1 = 0xeeff;
+static const uint16_t VLS128_BANK_2 = 0xddff;
+static const uint16_t VLS128_BANK_3 = 0xccff;
+static const uint16_t VLS128_BANK_4 = 0xbbff;
+
+static const float  VLS128_CHANNEL_TDURATION  =  2.665f;  // [µs] Channels corresponds to one laser firing
+static const float  VLS128_SEQ_TDURATION      =  53.3f;   // [µs] Sequence is a set of laser firings including recharging
+
 /** \brief Raw Velodyne data block.
  *
  *  Each block contains data from either the upper or lower laser
@@ -85,7 +99,8 @@ static const float VLP16_FIRING_TOFFSET = 55.296f;    // [µs]
  *
  *  use stdint.h types, so things work with both 64 and 32-bit machines
  */
-typedef struct raw_block {
+typedef struct raw_block
+{
   uint16_t header;    ///< UPPER_BANK or LOWER_BANK
   uint16_t rotation;  ///< 0-35999, divide by 100 to get degrees
   uint8_t data[BLOCK_DATA_SIZE];
@@ -118,15 +133,17 @@ static const int SCANS_PER_PACKET = (SCANS_PER_BLOCK * BLOCKS_PER_PACKET);
  *
  *  status has either a temperature encoding or the microcode level
  */
-typedef struct raw_packet {
+typedef struct raw_packet
+{
   raw_block_t blocks[BLOCKS_PER_PACKET];
   uint16_t revolution;
   uint8_t status[PACKET_STATUS_SIZE];
 } raw_packet_t;
 
 /** \brief Velodyne data conversion class */
-class RawData {
- public:
+class RawData
+{
+public:
   RawData();
   ~RawData() {}
 
@@ -156,7 +173,7 @@ class RawData {
    */
   int setupOffline(std::string calibration_file, double max_range_, double min_range_);
 
-  void unpack(const velodyne_msgs::VelodynePacket& pkt, DataContainerBase& data);
+  void unpack(const velodyne_msgs::VelodynePacket & pkt, DataContainerBase & data);
 
   void setParameters(double min_range, double max_range, double view_direction, double view_width);
 
@@ -165,9 +182,10 @@ class RawData {
   double getMaxRange() const;
   double getMinRange() const;
 
- private:
+private:
   /** configuration parameters */
-  typedef struct {
+  typedef struct
+  {
     std::string calibrationFile;  ///< calibration file name
     double max_range;             ///< maximum range to publish
     double min_range;             ///< minimum range to publish
@@ -186,11 +204,20 @@ class RawData {
   float sin_rot_table_[ROTATION_MAX_UNITS];
   float cos_rot_table_[ROTATION_MAX_UNITS];
 
+  // Caches the azimuth percent offset for the VLS-128 laser firings
+  float vls_128_laser_azimuth_cache[16];
+
   /** add private function to handle the VLP16 **/
-  void unpack_vlp16(const velodyne_msgs::VelodynePacket& pkt, DataContainerBase& data);
+  void unpack_vlp16(const velodyne_msgs::VelodynePacket & pkt, DataContainerBase & data);
+
+  /** add private function to handle the VLS128 **/
+  void unpack_vls128(const velodyne_msgs::VelodynePacket &pkt, DataContainerBase &data);
 
   /** in-line test whether a point is in range */
-  bool pointInRange(float range) { return (range >= config_.min_range && range <= config_.max_range); }
+  bool pointInRange(float range)
+  {
+    return (range >= config_.min_range && range <= config_.max_range);
+  }
 };
 
 }  // namespace velodyne_rawdata

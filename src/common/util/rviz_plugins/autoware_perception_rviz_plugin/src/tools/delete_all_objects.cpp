@@ -39,27 +39,33 @@
 
 #include "delete_all_objects.hpp"
 
-namespace rviz {
-
-DeleteAllObjectsTool::DeleteAllObjectsTool() {
+namespace rviz
+{
+DeleteAllObjectsTool::DeleteAllObjectsTool()
+{
   shortcut_key_ = 'd';
 
-  topic_property_ = new StringProperty("Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
-                                       "The topic on which to publish dummy object info.", getPropertyContainer(),
-                                       SLOT(updateTopic()), this);
+  topic_property_ = new StringProperty(
+    "Pose Topic", "/simulation/dummy_perceotion/publisher/object_info",
+    "The topic on which to publish dummy object info.", getPropertyContainer(), SLOT(updateTopic()),
+    this);
 }
 
-void DeleteAllObjectsTool::onInitialize() {
+void DeleteAllObjectsTool::onInitialize()
+{
   PoseTool::onInitialize();
   setName("Delete All Objects");
   updateTopic();
 }
 
-void DeleteAllObjectsTool::updateTopic() {
-  dummy_object_info_pub_ = nh_.advertise<dummy_perception_publisher::Object>(topic_property_->getStdString(), 1);
+void DeleteAllObjectsTool::updateTopic()
+{
+  dummy_object_info_pub_ =
+    nh_.advertise<dummy_perception_publisher::Object>(topic_property_->getStdString(), 1);
 }
 
-void DeleteAllObjectsTool::onPoseSet(double x, double y, double theta) {
+void DeleteAllObjectsTool::onPoseSet(double x, double y, double theta)
+{
   const ros::Time current_time = ros::Time::now();
   dummy_perception_publisher::Object output_msg;
   std::string fixed_frame = context_->getFixedFrame().toStdString();

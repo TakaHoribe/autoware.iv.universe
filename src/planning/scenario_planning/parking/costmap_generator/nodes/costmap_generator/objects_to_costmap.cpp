@@ -52,17 +52,21 @@
 
 // Constructor
 ObjectsToCostmap::ObjectsToCostmap()
-    : NUMBER_OF_POINTS(4),
-      NUMBER_OF_DIMENSIONS(2),
-      OBJECTS_COSTMAP_LAYER_("objects_costmap"),
-      BLURRED_OBJECTS_COSTMAP_LAYER_("blurred_objects_costmap") {}
+: NUMBER_OF_POINTS(4),
+  NUMBER_OF_DIMENSIONS(2),
+  OBJECTS_COSTMAP_LAYER_("objects_costmap"),
+  BLURRED_OBJECTS_COSTMAP_LAYER_("blurred_objects_costmap")
+{
+}
 
-Eigen::MatrixXd ObjectsToCostmap::makeRectanglePoints(const autoware_perception_msgs::DynamicObject& in_object,
-                                                      const double expand_rectangle_size) {
+Eigen::MatrixXd ObjectsToCostmap::makeRectanglePoints(
+  const autoware_perception_msgs::DynamicObject & in_object, const double expand_rectangle_size)
+{
   double length = in_object.shape.dimensions.x + expand_rectangle_size;
   double width = in_object.shape.dimensions.y + expand_rectangle_size;
   Eigen::MatrixXd origin_points(NUMBER_OF_DIMENSIONS, NUMBER_OF_POINTS);
-  origin_points << length / 2, length / 2, -length / 2, -length / 2, width / 2, -width / 2, -width / 2, width / 2;
+  origin_points << length / 2, length / 2, -length / 2, -length / 2, width / 2, -width / 2,
+    -width / 2, width / 2;
 
   double yaw = tf2::getYaw(in_object.state.pose_covariance.pose.orientation);
   Eigen::MatrixXd rotation_matrix(NUMBER_OF_DIMENSIONS, NUMBER_OF_DIMENSIONS);
@@ -79,9 +83,10 @@ Eigen::MatrixXd ObjectsToCostmap::makeRectanglePoints(const autoware_perception_
   return transformed_points;
 }
 
-grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectBox(const std_msgs::Header& header,
-                                                             const autoware_perception_msgs::DynamicObject& in_object,
-                                                             const double expand_rectangle_size) {
+grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectBox(
+  const std_msgs::Header & header, const autoware_perception_msgs::DynamicObject & in_object,
+  const double expand_rectangle_size)
+{
   grid_map::Polygon polygon;
   polygon.setFrameId(header.frame_id);
 
@@ -93,9 +98,10 @@ grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectBox(const std_msgs::Hea
   return polygon;
 }
 
-geometry_msgs::Point ObjectsToCostmap::makeExpandedPoint(const geometry_msgs::Point& in_centroid,
-                                                         const geometry_msgs::Point32& in_corner_point,
-                                                         const double expand_polygon_size) {
+geometry_msgs::Point ObjectsToCostmap::makeExpandedPoint(
+  const geometry_msgs::Point & in_centroid, const geometry_msgs::Point32 & in_corner_point,
+  const double expand_polygon_size)
+{
   geometry_msgs::Point expanded_point;
 
   if (expand_polygon_size == 0) {
@@ -114,8 +120,9 @@ geometry_msgs::Point ObjectsToCostmap::makeExpandedPoint(const geometry_msgs::Po
 }
 
 grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectConvexHull(
-    const std_msgs::Header& header, const autoware_perception_msgs::DynamicObject& in_object,
-    const double expand_polygon_size) {
+  const std_msgs::Header & header, const autoware_perception_msgs::DynamicObject & in_object,
+  const double expand_polygon_size)
+{
   grid_map::Polygon polygon;
   polygon.setFrameId(header.frame_id);
 
@@ -124,7 +131,7 @@ grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectConvexHull(
     if (in_object.shape.footprint.points[index].z == initial_z) {
       geometry_msgs::Point centroid = in_object.state.pose_covariance.pose.position;
       geometry_msgs::Point expanded_point =
-          makeExpandedPoint(centroid, in_object.shape.footprint.points[index], expand_polygon_size);
+        makeExpandedPoint(centroid, in_object.shape.footprint.points[index], expand_polygon_size);
       polygon.addVertex(grid_map::Position(expanded_point.x, expanded_point.y));
     }
   }
@@ -132,8 +139,10 @@ grid_map::Polygon ObjectsToCostmap::makePolygonFromObjectConvexHull(
   return polygon;
 }
 
-void ObjectsToCostmap::setCostInPolygon(const grid_map::Polygon& polygon, const std::string& gridmap_layer_name,
-                                        const float score, grid_map::GridMap& objects_costmap) {
+void ObjectsToCostmap::setCostInPolygon(
+  const grid_map::Polygon & polygon, const std::string & gridmap_layer_name, const float score,
+  grid_map::GridMap & objects_costmap)
+{
   grid_map::PolygonIterator iterators(objects_costmap, polygon);
   for (grid_map::PolygonIterator itr(objects_costmap, polygon); !itr.isPastEnd(); ++itr) {
     const float current_score = objects_costmap.at(gridmap_layer_name, *itr);
@@ -144,13 +153,15 @@ void ObjectsToCostmap::setCostInPolygon(const grid_map::Polygon& polygon, const 
 }
 
 grid_map::Matrix ObjectsToCostmap::makeCostmapFromObjects(
-    const grid_map::GridMap& costmap, const double expand_polygon_size, const double size_of_expansion_kernel,
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr& in_objects) {
+  const grid_map::GridMap & costmap, const double expand_polygon_size,
+  const double size_of_expansion_kernel,
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr & in_objects)
+{
   grid_map::GridMap objects_costmap = costmap;
   objects_costmap.add(OBJECTS_COSTMAP_LAYER_, 0);
   objects_costmap.add(BLURRED_OBJECTS_COSTMAP_LAYER_, 0);
 
-  for (const auto& object : in_objects->objects) {
+  for (const auto & object : in_objects->objects) {
     grid_map::Polygon polygon;
     if (object.shape.type == autoware_perception_msgs::Shape::POLYGON) {
       polygon = makePolygonFromObjectConvexHull(in_objects->header, object, expand_polygon_size);
@@ -161,20 +172,22 @@ grid_map::Matrix ObjectsToCostmap::makeCostmapFromObjects(
       polygon = makePolygonFromObjectBox(in_objects->header, object, expand_polygon_size);
     }
     setCostInPolygon(polygon, OBJECTS_COSTMAP_LAYER_, object.semantic.confidence, objects_costmap);
-    setCostInPolygon(polygon, BLURRED_OBJECTS_COSTMAP_LAYER_, object.semantic.confidence, objects_costmap);
+    setCostInPolygon(
+      polygon, BLURRED_OBJECTS_COSTMAP_LAYER_, object.semantic.confidence, objects_costmap);
   }
 
   // Applying mean filter to expanded gridmap
   const grid_map::SlidingWindowIterator::EdgeHandling edge_handling =
-      grid_map::SlidingWindowIterator::EdgeHandling::CROP;
-  for (grid_map::SlidingWindowIterator iterator(objects_costmap, BLURRED_OBJECTS_COSTMAP_LAYER_, edge_handling,
-                                                size_of_expansion_kernel);
+    grid_map::SlidingWindowIterator::EdgeHandling::CROP;
+  for (grid_map::SlidingWindowIterator iterator(
+         objects_costmap, BLURRED_OBJECTS_COSTMAP_LAYER_, edge_handling, size_of_expansion_kernel);
        !iterator.isPastEnd(); ++iterator) {
-    objects_costmap.at(BLURRED_OBJECTS_COSTMAP_LAYER_, *iterator) = iterator.getData().meanOfFinites();  // Blurring.
+    objects_costmap.at(BLURRED_OBJECTS_COSTMAP_LAYER_, *iterator) =
+      iterator.getData().meanOfFinites();  // Blurring.
   }
 
-  objects_costmap[OBJECTS_COSTMAP_LAYER_] =
-      objects_costmap[OBJECTS_COSTMAP_LAYER_].cwiseMax(objects_costmap[BLURRED_OBJECTS_COSTMAP_LAYER_]);
+  objects_costmap[OBJECTS_COSTMAP_LAYER_] = objects_costmap[OBJECTS_COSTMAP_LAYER_].cwiseMax(
+    objects_costmap[BLURRED_OBJECTS_COSTMAP_LAYER_]);
 
   return objects_costmap[OBJECTS_COSTMAP_LAYER_];
 }

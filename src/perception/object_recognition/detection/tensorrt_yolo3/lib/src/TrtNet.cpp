@@ -46,8 +46,9 @@ static Tn::Logger gLogger;
     return (ret);                                                         \
   } while (0)
 
-inline void* safeCudaMalloc(size_t memSize) {
-  void* deviceMem;
+inline void * safeCudaMalloc(size_t memSize)
+{
+  void * deviceMem;
   CUDA_CHECK(cudaMalloc(&deviceMem, memSize));
   if (deviceMem == nullptr) {
     std::cerr << "Out of memory" << std::endl;
@@ -56,11 +57,13 @@ inline void* safeCudaMalloc(size_t memSize) {
   return deviceMem;
 }
 
-inline int64_t volume(const nvinfer1::Dims& d) {
+inline int64_t volume(const nvinfer1::Dims & d)
+{
   return std::accumulate(d.d, d.d + d.nbDims, 1, std::multiplies<int64_t>());
 }
 
-inline unsigned int getElementSize(nvinfer1::DataType t) {
+inline unsigned int getElementSize(nvinfer1::DataType t)
+{
   switch (t) {
     case nvinfer1::DataType::kINT32:
       return 4;
@@ -75,23 +78,26 @@ inline unsigned int getElementSize(nvinfer1::DataType t) {
   return 0;
 }
 
-namespace Tn {
-trtNet::trtNet(const std::string& prototxt, const std::string& caffemodel,
-               const std::vector<std::string>& outputNodesName, const std::vector<std::vector<float>>& calibratorData,
-               RUN_MODE mode /*= RUN_MODE::FLOAT32*/)
-    : mTrtContext(nullptr),
-      mTrtEngine(nullptr),
-      mTrtRunTime(nullptr),
-      mTrtRunMode(mode),
-      mTrtInputCount(0),
-      mTrtIterationTime(0) {
+namespace Tn
+{
+trtNet::trtNet(
+  const std::string & prototxt, const std::string & caffemodel,
+  const std::vector<std::string> & outputNodesName,
+  const std::vector<std::vector<float>> & calibratorData, RUN_MODE mode /*= RUN_MODE::FLOAT32*/)
+: mTrtContext(nullptr),
+  mTrtEngine(nullptr),
+  mTrtRunTime(nullptr),
+  mTrtRunMode(mode),
+  mTrtInputCount(0),
+  mTrtIterationTime(0)
+{
   std::cout << "init plugin proto: " << prototxt << " caffemodel: " << caffemodel << std::endl;
   auto parser = createCaffeParser();
 
   const int maxBatchSize = 1;
-  IHostMemory* trtModelStream{nullptr};
+  IHostMemory * trtModelStream{nullptr};
 
-  Int8EntropyCalibrator* calibrator = nullptr;
+  Int8EntropyCalibrator * calibrator = nullptr;
   if (calibratorData.size() > 0) {
     auto endPos = prototxt.find_last_of(".");
     auto beginPos = prototxt.find_last_of('/') + 1;
@@ -101,9 +107,9 @@ trtNet::trtNet(const std::string& prototxt, const std::string& caffemodel,
   }
 
   PluginFactory pluginFactorySerialize;
-  ICudaEngine* tmpEngine =
-      loadModelAndCreateEngine(prototxt.c_str(), caffemodel.c_str(), maxBatchSize, parser, &pluginFactorySerialize,
-                               calibrator, trtModelStream, outputNodesName);
+  ICudaEngine * tmpEngine = loadModelAndCreateEngine(
+    prototxt.c_str(), caffemodel.c_str(), maxBatchSize, parser, &pluginFactorySerialize, calibrator,
+    trtModelStream, outputNodesName);
   assert(tmpEngine != nullptr);
   assert(trtModelStream != nullptr);
   if (calibrator) {
@@ -115,7 +121,8 @@ trtNet::trtNet(const std::string& prototxt, const std::string& caffemodel,
 
   mTrtRunTime = createInferRuntime(gLogger);
   assert(mTrtRunTime != nullptr);
-  mTrtEngine = mTrtRunTime->deserializeCudaEngine(trtModelStream->data(), trtModelStream->size(), &mTrtPluginFactory);
+  mTrtEngine = mTrtRunTime->deserializeCudaEngine(
+    trtModelStream->data(), trtModelStream->size(), &mTrtPluginFactory);
   assert(mTrtEngine != nullptr);
   // Deserialize the engine.
   trtModelStream->destroy();
@@ -123,13 +130,14 @@ trtNet::trtNet(const std::string& prototxt, const std::string& caffemodel,
   InitEngine();
 }
 
-trtNet::trtNet(const std::string& engineFile)
-    : mTrtContext(nullptr),
-      mTrtEngine(nullptr),
-      mTrtRunTime(nullptr),
-      mTrtRunMode(RUN_MODE::FLOAT32),
-      mTrtInputCount(0),
-      mTrtIterationTime(0) {
+trtNet::trtNet(const std::string & engineFile)
+: mTrtContext(nullptr),
+  mTrtEngine(nullptr),
+  mTrtRunTime(nullptr),
+  mTrtRunMode(RUN_MODE::FLOAT32),
+  mTrtInputCount(0),
+  mTrtIterationTime(0)
+{
   using namespace std;
   fstream file;
 
@@ -156,7 +164,8 @@ trtNet::trtNet(const std::string& engineFile)
   // std::cerr << "finised deserializing " << std::endl;
 }
 
-void trtNet::InitEngine() {
+void trtNet::InitEngine()
+{
   const int maxBatchSize = 1;
   mTrtContext = mTrtEngine->createExecutionContext();
   assert(mTrtContext != nullptr);
@@ -179,26 +188,26 @@ void trtNet::InitEngine() {
   CUDA_CHECK(cudaStreamCreate(&mTrtCudaStream));
 }
 
-nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* deployFile, const char* modelFile, int maxBatchSize,
-                                                        ICaffeParser* parser,
-                                                        nvcaffeparser1::IPluginFactory* pluginFactory,
-                                                        IInt8Calibrator* calibrator, IHostMemory*& trtModelStream,
-                                                        const std::vector<std::string>& outputNodesName) {
+nvinfer1::ICudaEngine * trtNet::loadModelAndCreateEngine(
+  const char * deployFile, const char * modelFile, int maxBatchSize, ICaffeParser * parser,
+  nvcaffeparser1::IPluginFactory * pluginFactory, IInt8Calibrator * calibrator,
+  IHostMemory *& trtModelStream, const std::vector<std::string> & outputNodesName)
+{
   // Create the builder
-  IBuilder* builder = createInferBuilder(gLogger);
+  IBuilder * builder = createInferBuilder(gLogger);
 
   // Parse the model to populate the network, then set the outputs.
-  INetworkDefinition* network = builder->createNetwork();
+  INetworkDefinition * network = builder->createNetwork();
   parser->setPluginFactory(pluginFactory);
 
   std::cout << "Begin parsing model..." << std::endl;
-  const IBlobNameToTensor* blobNameToTensor =
-      parser->parse(deployFile, modelFile, *network, nvinfer1::DataType::kFLOAT);
+  const IBlobNameToTensor * blobNameToTensor =
+    parser->parse(deployFile, modelFile, *network, nvinfer1::DataType::kFLOAT);
   if (!blobNameToTensor) RETURN_AND_LOG(nullptr, ERROR, "Fail to parse");
   std::cout << "End parsing model..." << std::endl;
 
   // specify which tensors are outputs
-  for (auto& name : outputNodesName) {
+  for (auto & name : outputNodesName) {
     auto output = blobNameToTensor->find(name.c_str());
     assert(output != nullptr);
     if (output == nullptr) std::cout << "can not find output named " << name << std::endl;
@@ -211,17 +220,19 @@ nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* deployFile, 
   builder->setMaxWorkspaceSize(1 << 30);  // 1G
   if (mTrtRunMode == RUN_MODE::INT8) {
     std::cout << "setInt8Mode" << std::endl;
-    if (!builder->platformHasFastInt8()) std::cout << "Notice: the platform do not has fast for int8" << std::endl;
+    if (!builder->platformHasFastInt8())
+      std::cout << "Notice: the platform do not has fast for int8" << std::endl;
     builder->setInt8Mode(true);
     builder->setInt8Calibrator(calibrator);
   } else if (mTrtRunMode == RUN_MODE::FLOAT16) {
     std::cout << "setFp16Mode" << std::endl;
-    if (!builder->platformHasFastFp16()) std::cout << "Notice: the platform do not has fast for fp16" << std::endl;
+    if (!builder->platformHasFastFp16())
+      std::cout << "Notice: the platform do not has fast for fp16" << std::endl;
     builder->setFp16Mode(true);
   }
 
   std::cout << "Begin building engine..." << std::endl;
-  ICudaEngine* engine = builder->buildCudaEngine(*network);
+  ICudaEngine * engine = builder->buildCudaEngine(*network);
   if (!engine) RETURN_AND_LOG(nullptr, ERROR, "Unable to create engine");
   std::cout << "End building engine..." << std::endl;
 
@@ -237,14 +248,16 @@ nvinfer1::ICudaEngine* trtNet::loadModelAndCreateEngine(const char* deployFile, 
   return engine;
 }
 
-void trtNet::doInference(const void* inputData, void* outputData) {
+void trtNet::doInference(const void * inputData, void * outputData)
+{
   static const int batchSize = 1;
   assert(mTrtInputCount == 1);
 
   // DMA the input to the GPU,  execute the batch asynchronously, and DMA it back:
   int inputIndex = 0;
-  CUDA_CHECK(cudaMemcpyAsync(mTrtCudaBuffer[inputIndex], inputData, mTrtBindBufferSize[inputIndex],
-                             cudaMemcpyHostToDevice, mTrtCudaStream));
+  CUDA_CHECK(cudaMemcpyAsync(
+    mTrtCudaBuffer[inputIndex], inputData, mTrtBindBufferSize[inputIndex], cudaMemcpyHostToDevice,
+    mTrtCudaStream));
   auto t_start = std::chrono::high_resolution_clock::now();
   mTrtContext->execute(batchSize, &mTrtCudaBuffer[inputIndex]);
   auto t_end = std::chrono::high_resolution_clock::now();
@@ -254,8 +267,9 @@ void trtNet::doInference(const void* inputData, void* outputData) {
 
   for (size_t bindingIdx = mTrtInputCount; bindingIdx < mTrtBindBufferSize.size(); ++bindingIdx) {
     auto size = mTrtBindBufferSize[bindingIdx];
-    CUDA_CHECK(cudaMemcpyAsync(outputData, mTrtCudaBuffer[bindingIdx], size, cudaMemcpyDeviceToHost, mTrtCudaStream));
-    outputData = (char*)outputData + size;
+    CUDA_CHECK(cudaMemcpyAsync(
+      outputData, mTrtCudaBuffer[bindingIdx], size, cudaMemcpyDeviceToHost, mTrtCudaStream));
+    outputData = (char *)outputData + size;
   }
 
   mTrtIterationTime++;

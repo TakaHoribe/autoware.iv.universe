@@ -25,12 +25,16 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool BusCorrector::correct(autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                           bool& orientaion_output) {
-  Eigen::Translation<double, 2> trans = Eigen::Translation<double, 2>(pose_output.position.x, pose_output.position.y);
+bool BusCorrector::correct(
+  autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+  bool & orientaion_output)
+{
+  Eigen::Translation<double, 2> trans =
+    Eigen::Translation<double, 2>(pose_output.position.x, pose_output.position.y);
 
-  Eigen::Quaterniond quat(pose_output.orientation.w, pose_output.orientation.x, pose_output.orientation.y,
-                          pose_output.orientation.z);
+  Eigen::Quaterniond quat(
+    pose_output.orientation.w, pose_output.orientation.x, pose_output.orientation.y,
+    pose_output.orientation.z);
   Eigen::Vector3d euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
   const double yaw = euler[2];
   Eigen::Rotation2Dd rotate(yaw);
@@ -78,8 +82,9 @@ bool BusCorrector::correct(autoware_perception_msgs::Shape& shape_output, geomet
   {
     double distance = 0.0;
     for (size_t i = 0; i < v_point.size(); ++i) {
-      if ((distance < (affine_mat * v_point.at(i)).norm()) && i != first_most_distant_index &&
-          i != second_most_distant_index) {
+      if (
+        (distance < (affine_mat * v_point.at(i)).norm()) && i != first_most_distant_index &&
+        i != second_most_distant_index) {
         distance = (affine_mat * v_point.at(i)).norm();
         third_most_distant_index = i;
       }
@@ -94,35 +99,41 @@ bool BusCorrector::correct(autoware_perception_msgs::Shape& shape_output, geomet
   constexpr double max_length = 12.0;
 
   if ((int)std::abs((int)first_most_distant_index - (int)second_most_distant_index) % 2 == 0) {
-    if (min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
-        (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
+    if (
+      min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
+      (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
       if ((v_point.at(third_most_distant_index) * 2.0).norm() < max_length) {
         correction_vector = v_point.at(third_most_distant_index);
         if (correction_vector.x() == 0.0)
-          correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
-                                      (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                                  correction_vector.y();
+          correction_vector.y() =
+            std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
+              (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+            correction_vector.y();
         else if (correction_vector.y() == 0.0)
-          correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
-                                      (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                                  correction_vector.x();
+          correction_vector.x() =
+            std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
+              (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+            correction_vector.x();
         else
           return false;
       } else {
         return false;
       }
-    } else if (min_length < (v_point.at(first_most_distant_index) * 2.0).norm() &&
-               (v_point.at(first_most_distant_index) * 2.0).norm() < max_length) {
+    } else if (
+      min_length < (v_point.at(first_most_distant_index) * 2.0).norm() &&
+      (v_point.at(first_most_distant_index) * 2.0).norm() < max_length) {
       if ((v_point.at(third_most_distant_index) * 2.0).norm() < max_width) {
         correction_vector = v_point.at(third_most_distant_index);
         if (correction_vector.x() == 0.0)
-          correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
-                                      (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                                  correction_vector.y();
+          correction_vector.y() =
+            std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
+              (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+            correction_vector.y();
         else if (correction_vector.y() == 0.0)
-          correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
-                                      (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                                  correction_vector.x();
+          correction_vector.x() =
+            std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
+              (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+            correction_vector.x();
         else
           return false;
       } else {
@@ -133,78 +144,93 @@ bool BusCorrector::correct(autoware_perception_msgs::Shape& shape_output, geomet
     }
   }
   // fit width
-  else if ((min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
-            (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) &&
-           (min_width < (v_point.at(second_most_distant_index) * 2.0).norm() &&
-            (v_point.at(second_most_distant_index) * 2.0).norm() < max_width)) {
+  else if (
+    (min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
+     (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) &&
+    (min_width < (v_point.at(second_most_distant_index) * 2.0).norm() &&
+     (v_point.at(second_most_distant_index) * 2.0).norm() < max_width)) {
     correction_vector = v_point.at(first_most_distant_index);
     if (correction_vector.x() == 0.0)
-      correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.y();
+      correction_vector.y() =
+        std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.y();
     else if (correction_vector.y() == 0.0)
-      correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.x();
+      correction_vector.x() =
+        std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.x();
     else
       return false;
-  } else if (min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
-             (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
+  } else if (
+    min_width < (v_point.at(first_most_distant_index) * 2.0).norm() &&
+    (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
     correction_vector = v_point.at(second_most_distant_index);
     if (correction_vector.x() == 0.0)
-      correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.y();
+      correction_vector.y() =
+        std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.y();
     else if (correction_vector.y() == 0.0)
-      correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.x();
+      correction_vector.x() =
+        std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.x();
     else
       return false;
-  } else if (min_width < (v_point.at(second_most_distant_index) * 2.0).norm() &&
-             (v_point.at(second_most_distant_index) * 2.0).norm() < max_width) {
+  } else if (
+    min_width < (v_point.at(second_most_distant_index) * 2.0).norm() &&
+    (v_point.at(second_most_distant_index) * 2.0).norm() < max_width) {
     correction_vector = v_point.at(first_most_distant_index);
 
     if (correction_vector.x() == 0.0)
-      correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.y();
+      correction_vector.y() =
+        std::max(std::abs(correction_vector.y()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.y();
     else if (correction_vector.y() == 0.0)
-      correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
-                                  (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.x();
+      correction_vector.x() =
+        std::max(std::abs(correction_vector.x()), ((min_length + max_length) / 2.0) / 2.0) *
+          (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.x();
     else
       return false;
   }
   // fit length
-  else if ((min_length < (v_point.at(first_most_distant_index) * 2.0).norm() &&
-            (v_point.at(first_most_distant_index) * 2.0).norm() < max_length) &&
-           (v_point.at(second_most_distant_index) * 2.0).norm() < max_width) {
+  else if (
+    (min_length < (v_point.at(first_most_distant_index) * 2.0).norm() &&
+     (v_point.at(first_most_distant_index) * 2.0).norm() < max_length) &&
+    (v_point.at(second_most_distant_index) * 2.0).norm() < max_width) {
     correction_vector = v_point.at(second_most_distant_index);
 
     if (correction_vector.x() == 0.0)
-      correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
-                                  (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.y();
+      correction_vector.y() =
+        std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
+          (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.y();
     else if (correction_vector.y() == 0.0)
-      correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
-                                  (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.x();
+      correction_vector.x() =
+        std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
+          (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.x();
     else
       return false;
-  } else if ((min_length < (v_point.at(second_most_distant_index) * 2.0).norm() &&
-              (v_point.at(second_most_distant_index) * 2.0).norm() < max_length) &&
-             (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
+  } else if (
+    (min_length < (v_point.at(second_most_distant_index) * 2.0).norm() &&
+     (v_point.at(second_most_distant_index) * 2.0).norm() < max_length) &&
+    (v_point.at(first_most_distant_index) * 2.0).norm() < max_width) {
     correction_vector = v_point.at(first_most_distant_index);
 
     if (correction_vector.x() == 0.0)
-      correction_vector.y() = std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
-                                  (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.y();
+      correction_vector.y() =
+        std::max(std::abs(correction_vector.y()), ((min_width + max_width) / 2.0) / 2.0) *
+          (correction_vector.y() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.y();
     else if (correction_vector.y() == 0.0)
-      correction_vector.x() = std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
-                                  (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
-                              correction_vector.x();
+      correction_vector.x() =
+        std::max(std::abs(correction_vector.x()), ((min_width + max_width) / 2.0) / 2.0) *
+          (correction_vector.x() < 0.0 ? -1.0 : 1.0) -
+        correction_vector.x();
     else
       return false;
   } else {

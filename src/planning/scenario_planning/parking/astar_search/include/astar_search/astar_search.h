@@ -31,18 +31,21 @@
 
 enum class NodeStatus : uint8_t { None, Open, Closed, Obstacle };
 
-struct IndexXYT {
+struct IndexXYT
+{
   int x;
   int y;
   int theta;
 };
 
-struct IndexXY {
+struct IndexXY
+{
   int x;
   int y;
 };
 
-struct AstarNode {
+struct AstarNode
+{
   NodeStatus status = NodeStatus::None;  // node status
   double x;                              // x
   double y;                              // y
@@ -50,26 +53,33 @@ struct AstarNode {
   double gc = 0;                         // actual cost
   double hc = 0;                         // heuristic cost
   bool is_back;                          // true if the current direction of the vehicle is back
-  AstarNode* parent = nullptr;           // parent node
+  AstarNode * parent = nullptr;          // parent node
 
   double cost() const { return gc + hc; }
 };
 
-struct NodeComparison {
-  bool operator()(const AstarNode* lhs, const AstarNode* rhs) { return lhs->cost() > rhs->cost(); }
+struct NodeComparison
+{
+  bool operator()(const AstarNode * lhs, const AstarNode * rhs)
+  {
+    return lhs->cost() > rhs->cost();
+  }
 };
 
-struct AstarWaypoint {
+struct AstarWaypoint
+{
   geometry_msgs::PoseStamped pose;
   bool is_back = false;
 };
 
-struct AstarWaypoints {
+struct AstarWaypoints
+{
   std_msgs::Header header;
   std::vector<AstarWaypoint> waypoints;
 };
 
-struct NodeUpdate {
+struct NodeUpdate
+{
   double shift_x;
   double shift_y;
   double shift_theta;
@@ -77,21 +87,24 @@ struct NodeUpdate {
   bool is_curve;
   bool is_back;
 
-  NodeUpdate rotated(const double theta) const {
+  NodeUpdate rotated(const double theta) const
+  {
     NodeUpdate result = *this;
     result.shift_x = std::cos(theta) * this->shift_x - std::sin(theta) * this->shift_y;
     result.shift_y = std::sin(theta) * this->shift_x + std::cos(theta) * this->shift_y;
     return result;
   }
 
-  NodeUpdate fliped() const {
+  NodeUpdate fliped() const
+  {
     NodeUpdate result = *this;
     result.shift_y = -result.shift_y;
     result.shift_theta = -result.shift_theta;
     return result;
   }
 
-  NodeUpdate reversed() const {
+  NodeUpdate reversed() const
+  {
     NodeUpdate result = *this;
     result.shift_x = -result.shift_x;
     result.shift_theta = -result.shift_theta;
@@ -100,13 +113,15 @@ struct NodeUpdate {
   }
 };
 
-struct RobotShape {
+struct RobotShape
+{
   double length;     // X [m]
   double width;      // Y [m]
   double base2back;  // base_link to rear [m]
 };
 
-struct AstarParam {
+struct AstarParam
+{
   // base configs
   bool use_back;               // backward search
   bool only_behind_solutions;  // solutions should be behind the goal
@@ -129,39 +144,40 @@ struct AstarParam {
   double distance_heuristic_weight;  // obstacle threshold on grid [0,255]
 };
 
-class AstarSearch {
- public:
+class AstarSearch
+{
+public:
   using TransitionTable = std::vector<std::vector<NodeUpdate>>;
 
-  explicit AstarSearch(const AstarParam& astar_param);
+  explicit AstarSearch(const AstarParam & astar_param);
 
-  void setRobotShape(const RobotShape& robot_shape) { astar_param_.robot_shape = robot_shape; }
-  void initializeNodes(const nav_msgs::OccupancyGrid& costmap);
-  bool makePlan(const geometry_msgs::Pose& start_pose, const geometry_msgs::Pose& goal_pose);
-  bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray& trajectory);
+  void setRobotShape(const RobotShape & robot_shape) { astar_param_.robot_shape = robot_shape; }
+  void initializeNodes(const nav_msgs::OccupancyGrid & costmap);
+  bool makePlan(const geometry_msgs::Pose & start_pose, const geometry_msgs::Pose & goal_pose);
+  bool hasObstacleOnTrajectory(const geometry_msgs::PoseArray & trajectory);
 
-  const AstarWaypoints& getWaypoints() const { return waypoints_; }
+  const AstarWaypoints & getWaypoints() const { return waypoints_; }
 
- private:
+private:
   bool search();
-  void setPath(const AstarNode& goal);
+  void setPath(const AstarNode & goal);
   bool setStartNode();
   bool setGoalNode();
-  double estimateCost(const geometry_msgs::Pose& pose);
+  double estimateCost(const geometry_msgs::Pose & pose);
 
-  bool detectCollision(const IndexXYT& index);
-  bool isOutOfRange(const IndexXYT& index);
-  bool isObs(const IndexXYT& index);
-  bool isGoal(const AstarNode& node);
+  bool detectCollision(const IndexXYT & index);
+  bool isOutOfRange(const IndexXYT & index);
+  bool isObs(const IndexXYT & index);
+  bool isGoal(const AstarNode & node);
 
-  AstarNode* getNodeRef(const IndexXYT& index) { return &nodes_[index.y][index.x][index.theta]; }
+  AstarNode * getNodeRef(const IndexXYT & index) { return &nodes_[index.y][index.x][index.theta]; }
 
   AstarParam astar_param_;
 
   // hybrid astar variables
   TransitionTable transition_table_;
   std::vector<std::vector<std::vector<AstarNode>>> nodes_;
-  std::priority_queue<AstarNode*, std::vector<AstarNode*>, NodeComparison> openlist_;
+  std::priority_queue<AstarNode *, std::vector<AstarNode *>, NodeComparison> openlist_;
 
   // costmap as occupancy grid
   nav_msgs::OccupancyGrid costmap_;

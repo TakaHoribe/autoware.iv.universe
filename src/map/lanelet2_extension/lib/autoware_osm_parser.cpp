@@ -25,9 +25,13 @@
 
 #include <string>
 
-namespace lanelet {
-namespace io_handlers {
-std::unique_ptr<LaneletMap> AutowareOsmParser::parse(const std::string& filename, ErrorMessages& errors) const {
+namespace lanelet
+{
+namespace io_handlers
+{
+std::unique_ptr<LaneletMap> AutowareOsmParser::parse(
+  const std::string & filename, ErrorMessages & errors) const
+{
   auto map = OsmParser::parse(filename, errors);
 
   // overwrite x and y values if there are local_x, local_y tags
@@ -41,7 +45,7 @@ std::unique_ptr<LaneletMap> AutowareOsmParser::parse(const std::string& filename
   }
 
   // rerun align function in just in case
-  for (Lanelet& lanelet : map->laneletLayer) {
+  for (Lanelet & lanelet : map->laneletLayer) {
     LineString3d new_left, new_right;
     std::tie(new_left, new_right) = geometry::align(lanelet.leftBound(), lanelet.rightBound());
     lanelet.setLeftBound(new_left);
@@ -51,12 +55,14 @@ std::unique_ptr<LaneletMap> AutowareOsmParser::parse(const std::string& filename
   return map;
 }
 
-namespace {
+namespace
+{
 RegisterParser<AutowareOsmParser> regParser;
 }
 
-void AutowareOsmParser::parseVersions(const std::string& filename, std::string* format_version,
-                                      std::string* map_version) {
+void AutowareOsmParser::parseVersions(
+  const std::string & filename, std::string * format_version, std::string * map_version)
+{
   if (format_version == nullptr || map_version == nullptr) {
     std::cerr << __FUNCTION__ << ": either format_version or map_version is null pointer!";
     return;
@@ -65,12 +71,14 @@ void AutowareOsmParser::parseVersions(const std::string& filename, std::string* 
   pugi::xml_document doc;
   auto result = doc.load_file(filename.c_str());
   if (!result) {
-    throw lanelet::ParseError(std::string("Errors occured while parsing osm file: ") + result.description());
+    throw lanelet::ParseError(
+      std::string("Errors occured while parsing osm file: ") + result.description());
   }
 
   auto osmNode = doc.child("osm");
   auto metainfo = osmNode.child("MetaInfo");
-  if (metainfo.attribute("format_version")) *format_version = metainfo.attribute("format_version").value();
+  if (metainfo.attribute("format_version"))
+    *format_version = metainfo.attribute("format_version").value();
   if (metainfo.attribute("map_version")) *map_version = metainfo.attribute("map_version").value();
 }
 

@@ -20,7 +20,8 @@
 #define DEBUG_INFO(...) { ROS_INFO(__VA_ARGS__); }
 
 // clang-format on
-Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false) {
+Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false)
+{
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
   nh_.param("/vehicle_info/wheel_base", wheelbase_, double(2.7));
@@ -34,21 +35,24 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_twist", 1);
   pub_steer_ = nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
   pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
-  pub_turn_signal_ = nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
+  pub_turn_signal_ =
+    nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
   pub_shift_ = nh_.advertise<autoware_vehicle_msgs::ShiftStamped>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
-  timer_simulation_ = nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
+  timer_simulation_ =
+    nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
 
   bool use_trajectory_for_z_position_source;
-  pnh_.param("use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(true));
+  pnh_.param(
+    "use_trajectory_for_z_position_source", use_trajectory_for_z_position_source, bool(true));
   if (use_trajectory_for_z_position_source) {
     sub_trajectory_ = nh_.subscribe("base_trajectory", 1, &Simulator::callbackTrajectory, this);
   }
 
   /* set vehicle model parameters */
-  double tread_length, angvel_lim, vel_lim, steer_lim, accel_rate, angvel_rate, steer_rate_lim, vel_time_delay,
-      acc_time_delay, vel_time_constant, steer_time_delay, steer_time_constant, angvel_time_delay, angvel_time_constant,
-      acc_time_constant;
+  double tread_length, angvel_lim, vel_lim, steer_lim, accel_rate, angvel_rate, steer_rate_lim,
+    vel_time_delay, acc_time_delay, vel_time_constant, steer_time_delay, steer_time_constant,
+    angvel_time_delay, angvel_time_constant, acc_time_constant;
   pnh_.param("tread_length", tread_length, double(1.0));
   pnh_.param("angvel_lim", angvel_lim, double(3.0));
   pnh_.param("vel_lim", vel_lim, double(10.0));
@@ -75,14 +79,14 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     vehicle_model_ptr_ = std::make_shared<SimModelIdealSteer>(wheelbase_);
   } else if (vehicle_model_type_str == "DELAY_STEER") {
     vehicle_model_type_ = VehicleModelType::DELAY_STEER;
-    vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteer>(vel_lim, steer_lim, accel_rate, steer_rate_lim,
-                                                                  wheelbase_, dt, vel_time_delay, vel_time_constant,
-                                                                  steer_time_delay, steer_time_constant);
+    vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteer>(
+      vel_lim, steer_lim, accel_rate, steer_rate_lim, wheelbase_, dt, vel_time_delay,
+      vel_time_constant, steer_time_delay, steer_time_constant);
   } else if (vehicle_model_type_str == "DELAY_STEER_ACC") {
     vehicle_model_type_ = VehicleModelType::DELAY_STEER_ACC;
     vehicle_model_ptr_ = std::make_shared<SimModelTimeDelaySteerAccel>(
-        vel_lim, steer_lim, accel_rate, steer_rate_lim, wheelbase_, dt, acc_time_delay, acc_time_constant,
-        steer_time_delay, steer_time_constant);
+      vel_lim, steer_lim, accel_rate, steer_rate_lim, wheelbase_, dt, acc_time_delay,
+      acc_time_constant, steer_time_delay, steer_time_constant);
   } else {
     ROS_ERROR("Invalid vehicle_model_type. Initialization failed.");
   }
@@ -96,7 +100,8 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     std::random_device seed;
     rand_engine_ptr_ = std::make_shared<std::mt19937>(seed());
   }
-  double pos_noise_stddev, vel_noise_stddev, rpy_noise_stddev, angvel_noise_stddev, steer_noise_stddev;
+  double pos_noise_stddev, vel_noise_stddev, rpy_noise_stddev, angvel_noise_stddev,
+    steer_noise_stddev;
   pnh_.param("pos_noise_stddev", pos_noise_stddev, 1e-2);
   pnh_.param("vel_noise_stddev", vel_noise_stddev, 1e-2);
   pnh_.param("rpy_noise_stddev", rpy_noise_stddev, 1e-4);
@@ -113,7 +118,8 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pnh_.param("initialize_source", initialize_source, std::string("ORIGIN"));
   ROS_INFO_STREAM("initialize_source : " << initialize_source);
   if (initialize_source == "RVIZ") {
-    sub_initialpose_ = nh_.subscribe("initialpose", 1, &Simulator::callbackInitialPoseWithCov, this);
+    sub_initialpose_ =
+      nh_.subscribe("initialpose", 1, &Simulator::callbackInitialPoseWithCov, this);
   } else if (initialize_source == "NDT") {
     sub_initialpose_ = nh_.subscribe("ndt_pose", 1, &Simulator::callbackInitialPoseStamped, this);
   } else if (initialize_source == "GNSS") {
@@ -131,20 +137,25 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   closest_pos_z_ = 0.0;
 }
 
-void Simulator::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr& msg) {
+void Simulator::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr & msg)
+{
   current_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
 }
-void Simulator::callbackInitialPoseWithCov(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg) {
+void Simulator::callbackInitialPoseWithCov(
+  const geometry_msgs::PoseWithCovarianceStampedConstPtr & msg)
+{
   geometry_msgs::Twist initial_twist;  // initialized with zero for all components
   setInitialStateWithPoseTransform(*msg, initial_twist);
 }
 
-void Simulator::callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr& msg) {
+void Simulator::callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr & msg)
+{
   geometry_msgs::Twist initial_twist;  // initialized with zero for all components
   setInitialStateWithPoseTransform(*msg, initial_twist);
 }
 
-void Simulator::timerCallbackSimulation(const ros::TimerEvent& e) {
+void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
+{
   if (!is_initialized_) {
     ROS_INFO_DELAYED_THROTTLE(3.0, "[simple_planning_simulator] waiting initial position...");
     return;
@@ -164,8 +175,9 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent& e) {
   /* save current vehicle pose & twist */
   current_pose_.position.x = vehicle_model_ptr_->getX();
   current_pose_.position.y = vehicle_model_ptr_->getY();
-  closest_pos_z_ = getPosZFromTrajectory(current_pose_.position.x,
-                                         current_pose_.position.y);  // update vehicle z position from trajectory
+  closest_pos_z_ = getPosZFromTrajectory(
+    current_pose_.position.x,
+    current_pose_.position.y);  // update vehicle z position from trajectory
   current_pose_.position.z = closest_pos_z_;
   double roll = 0.0;
   double pitch = 0.0;
@@ -218,15 +230,18 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent& e) {
   autoware_vehicle_msgs::ShiftStamped shift_msg;
   shift_msg.header.frame_id = simulation_frame_id_;
   shift_msg.header.stamp = ros::Time::now();
-  shift_msg.shift.data =
-      current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE : autoware_vehicle_msgs::Shift::REVERSE;
+  shift_msg.shift.data = current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE
+                                                        : autoware_vehicle_msgs::Shift::REVERSE;
   pub_shift_.publish(shift_msg);
 }
 
-void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr& msg) {
+void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg)
+{
   current_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
 
-  if (vehicle_model_type_ == VehicleModelType::IDEAL_STEER || vehicle_model_type_ == VehicleModelType::DELAY_STEER) {
+  if (
+    vehicle_model_type_ == VehicleModelType::IDEAL_STEER ||
+    vehicle_model_type_ == VehicleModelType::DELAY_STEER) {
     Eigen::VectorXd input(2);
     input << msg->control.velocity, msg->control.steering_angle;
     vehicle_model_ptr_->setInput(input);
@@ -240,8 +255,9 @@ void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandCo
   }
 }
 
-void Simulator::setInitialStateWithPoseTransform(const geometry_msgs::PoseStamped& pose_stamped,
-                                                 const geometry_msgs::Twist& twist) {
+void Simulator::setInitialStateWithPoseTransform(
+  const geometry_msgs::PoseStamped & pose_stamped, const geometry_msgs::Twist & twist)
+{
   geometry_msgs::TransformStamped transform;
   getTransformFromTF(map_frame_id_, pose_stamped.header.frame_id, transform);
   geometry_msgs::Pose pose;
@@ -252,15 +268,18 @@ void Simulator::setInitialStateWithPoseTransform(const geometry_msgs::PoseStampe
   setInitialState(pose, twist);
 }
 
-void Simulator::setInitialStateWithPoseTransform(const geometry_msgs::PoseWithCovarianceStamped& pose,
-                                                 const geometry_msgs::Twist& twist) {
+void Simulator::setInitialStateWithPoseTransform(
+  const geometry_msgs::PoseWithCovarianceStamped & pose, const geometry_msgs::Twist & twist)
+{
   geometry_msgs::PoseStamped ps;
   ps.header = pose.header;
   ps.pose = pose.pose.pose;
   setInitialStateWithPoseTransform(ps, twist);
 }
 
-void Simulator::setInitialState(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist) {
+void Simulator::setInitialState(
+  const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist)
+{
   const double x = pose.position.x;
   const double y = pose.position.y;
   const double yaw = tf2::getYaw(pose.orientation);
@@ -288,20 +307,24 @@ void Simulator::setInitialState(const geometry_msgs::Pose& pose, const geometry_
   is_initialized_ = true;
 }
 
-void Simulator::getTransformFromTF(const std::string parent_frame, const std::string child_frame,
-                                   geometry_msgs::TransformStamped& transform) {
+void Simulator::getTransformFromTF(
+  const std::string parent_frame, const std::string child_frame,
+  geometry_msgs::TransformStamped & transform)
+{
   while (1) {
     try {
       transform = tf_buffer_.lookupTransform(parent_frame, child_frame, ros::Time(0));
       break;
-    } catch (tf2::TransformException& ex) {
+    } catch (tf2::TransformException & ex) {
       ROS_ERROR("%s", ex.what());
       ros::Duration(1.0).sleep();
     }
   }
 }
 
-void Simulator::publishPoseTwist(const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist) {
+void Simulator::publishPoseTwist(
+  const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist)
+{
   ros::Time current_time = ros::Time::now();
 
   // simulatied pose
@@ -318,7 +341,8 @@ void Simulator::publishPoseTwist(const geometry_msgs::Pose& pose, const geometry
   pub_twist_.publish(ts);
 }
 
-void Simulator::publishTF(const geometry_msgs::Pose& pose) {
+void Simulator::publishTF(const geometry_msgs::Pose & pose)
+{
   ros::Time current_time = ros::Time::now();
 
   // send odom transform
@@ -333,7 +357,8 @@ void Simulator::publishTF(const geometry_msgs::Pose& pose) {
   tf_broadcaster_.sendTransform(odom_trans);
 }
 
-double Simulator::getPosZFromTrajectory(const double x, const double y) {
+double Simulator::getPosZFromTrajectory(const double x, const double y)
+{
   // calculae cloest point on trajectory
   /*
          write me...
@@ -362,7 +387,9 @@ double Simulator::getPosZFromTrajectory(const double x, const double y) {
   }
 }
 
-geometry_msgs::Quaternion Simulator::getQuaternionFromRPY(const double& roll, const double& pitch, const double& yaw) {
+geometry_msgs::Quaternion Simulator::getQuaternionFromRPY(
+  const double & roll, const double & pitch, const double & yaw)
+{
   tf2::Quaternion q;
   q.setRPY(roll, pitch, yaw);
   return tf2::toMsg(q);

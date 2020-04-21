@@ -28,16 +28,19 @@
 #include <string>
 #include <vector>
 
-namespace Tn {
-std::list<std::string> readFileList(const std::string& fileName);
+namespace Tn
+{
+std::list<std::string> readFileList(const std::string & fileName);
 
-struct Source {
+struct Source
+{
   std::string fileName;
   int label;
 };
-std::list<Source> readLabelFileList(const std::string& fileName);
+std::list<Source> readLabelFileList(const std::string & fileName);
 
-struct Bbox {
+struct Bbox
+{
   int classId;
   int left;
   int right;
@@ -46,7 +49,8 @@ struct Bbox {
   float score;
 };
 //[lst<filename>,lst<bbox_vec>]
-std::tuple<std::list<std::string>, std::list<std::vector<Bbox>>> readObjectLabelFileList(const std::string& fileName);
+std::tuple<std::list<std::string>, std::list<std::vector<Bbox>>> readObjectLabelFileList(
+  const std::string & fileName);
 }  // namespace Tn
 
 #endif

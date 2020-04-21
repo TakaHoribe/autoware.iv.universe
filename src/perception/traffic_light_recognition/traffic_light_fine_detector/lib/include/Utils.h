@@ -42,10 +42,13 @@
 
 #endif
 
-namespace Tn {
-class Profiler : public nvinfer1::IProfiler {
- public:
-  void printLayerTimes(int itrationsTimes) {
+namespace Tn
+{
+class Profiler : public nvinfer1::IProfiler
+{
+public:
+  void printLayerTimes(int itrationsTimes)
+  {
     float totalTime = 0;
     for (size_t i = 0; i < mProfile.size(); i++) {
       printf("%-40.40s %4.3fms\n", mProfile[i].first.c_str(), mProfile[i].second / itrationsTimes);
@@ -54,12 +57,14 @@ class Profiler : public nvinfer1::IProfiler {
     printf("Time over all layers: %4.3f\n", totalTime / itrationsTimes);
   }
 
- private:
+private:
   typedef std::pair<std::string, float> Record;
   std::vector<Record> mProfile;
 
-  virtual void reportLayerTime(const char* layerName, float ms) {
-    auto record = std::find_if(mProfile.begin(), mProfile.end(), [&](const Record& r) { return r.first == layerName; });
+  virtual void reportLayerTime(const char * layerName, float ms)
+  {
+    auto record = std::find_if(
+      mProfile.begin(), mProfile.end(), [&](const Record & r) { return r.first == layerName; });
     if (record == mProfile.end())
       mProfile.push_back(std::make_pair(layerName, ms));
     else
@@ -68,13 +73,15 @@ class Profiler : public nvinfer1::IProfiler {
 };
 
 // Logger for TensorRT info/warning/errors
-class Logger : public nvinfer1::ILogger {
- public:
+class Logger : public nvinfer1::ILogger
+{
+public:
   Logger() : Logger(Severity::kWARNING) {}
 
   Logger(Severity severity) : reportableSeverity(severity) {}
 
-  void log(Severity severity, const char* msg) override {
+  void log(Severity severity, const char * msg) override
+  {
     // suppress messages with severity enum value greater than the reportable
     if (severity > reportableSeverity) return;
 
@@ -102,14 +109,16 @@ class Logger : public nvinfer1::ILogger {
 };
 
 template <typename T>
-void write(char*& buffer, const T& val) {
-  *reinterpret_cast<T*>(buffer) = val;
+void write(char *& buffer, const T & val)
+{
+  *reinterpret_cast<T *>(buffer) = val;
   buffer += sizeof(T);
 }
 
 template <typename T>
-void read(const char*& buffer, T& val) {
-  val = *reinterpret_cast<const T*>(buffer);
+void read(const char *& buffer, T & val)
+{
+  val = *reinterpret_cast<const T *>(buffer);
   buffer += sizeof(T);
 }
 }  // namespace Tn

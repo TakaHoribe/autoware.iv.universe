@@ -24,8 +24,10 @@
 
 #include <fmt/format.h>
 
-inline void logThrottleNamed(const ros::console::levels::Level& log_level, const double duration,
-                             const std::string& log_name, const std::string& msg) {
+inline void logThrottleNamed(
+  const ros::console::levels::Level & log_level, const double duration,
+  const std::string & log_name, const std::string & msg)
+{
   static std::unordered_map<std::string, ros::Time> last_output_time;
 
   if (last_output_time.count(log_name) != 0) {

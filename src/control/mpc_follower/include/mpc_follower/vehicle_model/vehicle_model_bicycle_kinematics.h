@@ -56,15 +56,17 @@
  * @class vehicle model class of bicycle kinematics
  * @brief calculate model-related values
  */
-class KinematicsBicycleModel : public VehicleModelInterface {
- public:
+class KinematicsBicycleModel : public VehicleModelInterface
+{
+public:
   /**
    * @brief constructor with parameter initialization
    * @param [in] wheelbase wheelbase length [m]
    * @param [in] steer_lim steering angle limit [rad]
    * @param [in] steer_tau steering time constant for 1d-model
    */
-  KinematicsBicycleModel(const double& wheelbase, const double& steer_lim, const double& steer_tau);
+  KinematicsBicycleModel(
+    const double & wheelbase, const double & steer_lim, const double & steer_tau);
 
   /**
    * @brief destructor
@@ -79,16 +81,17 @@ class KinematicsBicycleModel : public VehicleModelInterface {
    * @param [out] Wd coefficient matrix
    * @param [in] dt Discretization time
    */
-  void calculateDiscreteMatrix(Eigen::MatrixXd& Ad, Eigen::MatrixXd& Bd, Eigen::MatrixXd& Cd, Eigen::MatrixXd& Wd,
-                               const double& dt) override;
+  void calculateDiscreteMatrix(
+    Eigen::MatrixXd & Ad, Eigen::MatrixXd & Bd, Eigen::MatrixXd & Cd, Eigen::MatrixXd & Wd,
+    const double & dt) override;
 
   /**
    * @brief calculate reference input
    * @param [out] reference input
    */
-  void calculateReferenceInput(Eigen::MatrixXd& Uref) override;
+  void calculateReferenceInput(Eigen::MatrixXd & Uref) override;
 
- private:
+private:
   double wheelbase_;  //!< @brief wheelbase length [m]
   double steer_lim_;  //!< @brief steering angle limit [rad]
   double steer_tau_;  //!< @brief steering time constant for 1d-model

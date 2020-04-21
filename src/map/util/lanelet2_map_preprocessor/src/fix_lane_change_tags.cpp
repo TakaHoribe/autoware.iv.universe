@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Tier IV, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 #include <ros/ros.h>
 
@@ -14,7 +30,8 @@
 #include <unordered_set>
 #include <vector>
 
-void printUsage() {
+void printUsage()
+{
   std::cerr << "Please set following private parameters:" << std::endl
             << "llt_map_path" << std::endl
             << "output_path" << std::endl;
@@ -23,13 +40,15 @@ void printUsage() {
 using lanelet::utils::getId;
 using lanelet::utils::to2D;
 
-bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                    lanelet::Projector& projector) {
+bool loadLaneletMap(
+  const std::string & llt_map_path, lanelet::LaneletMapPtr & lanelet_map_ptr,
+  lanelet::Projector & projector)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet_map_ptr = lanelet::load(llt_map_path, "autoware_osm_handler", projector, &errors);
 
-  for (const auto& error : errors) {
+  for (const auto & error : errors) {
     ROS_ERROR_STREAM(error);
   }
   if (!errors.empty()) {
@@ -39,25 +58,29 @@ bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lan
   return true;
 }
 
-bool exists(std::unordered_set<lanelet::Id>& set, lanelet::Id element) {
+bool exists(std::unordered_set<lanelet::Id> & set, lanelet::Id element)
+{
   return std::find(set.begin(), set.end(), element) != set.end();
 }
 
-lanelet::Lanelets convertToVector(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+lanelet::Lanelets convertToVector(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   lanelet::Lanelets lanelets;
   for (lanelet::Lanelet lanelet : lanelet_map_ptr->laneletLayer) {
     lanelets.push_back(lanelet);
   }
   return lanelets;
 }
-void fixTags(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+void fixTags(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   auto lanelets = convertToVector(lanelet_map_ptr);
   lanelet::traffic_rules::TrafficRulesPtr trafficRules =
-      lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany, lanelet::Participants::Vehicle);
+    lanelet::traffic_rules::TrafficRulesFactory::create(
+      lanelet::Locations::Germany, lanelet::Participants::Vehicle);
   lanelet::routing::RoutingGraphUPtr routingGraph =
-      lanelet::routing::RoutingGraph::build(*lanelet_map_ptr, *trafficRules);
+    lanelet::routing::RoutingGraph::build(*lanelet_map_ptr, *trafficRules);
 
-  for (auto& llt : lanelets) {
+  for (auto & llt : lanelets) {
     if (!routingGraph->conflicting(llt).empty()) {
       continue;
     }
@@ -71,7 +94,8 @@ void fixTags(lanelet::LaneletMapPtr& lanelet_map_ptr) {
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "merge_lines");
   ros::NodeHandle pnh("~");
 

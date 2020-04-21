@@ -17,9 +17,11 @@
 #include <ros/ros.h>
 
 QPSolverOSQP::QPSolverOSQP() {}
-bool QPSolverOSQP::solve(const Eigen::MatrixXd& Hmat, const Eigen::MatrixXd& fvec, const Eigen::MatrixXd& A,
-                         const Eigen::VectorXd& lb, const Eigen::VectorXd& ub, const Eigen::VectorXd& lbA,
-                         const Eigen::VectorXd& ubA, Eigen::VectorXd& U) {
+bool QPSolverOSQP::solve(
+  const Eigen::MatrixXd & Hmat, const Eigen::MatrixXd & fvec, const Eigen::MatrixXd & A,
+  const Eigen::VectorXd & lb, const Eigen::VectorXd & ub, const Eigen::VectorXd & lbA,
+  const Eigen::VectorXd & ubA, Eigen::VectorXd & U)
+{
   const int raw_a = A.rows();
   const int col_a = A.cols();
   const int DIM_U = ub.size();

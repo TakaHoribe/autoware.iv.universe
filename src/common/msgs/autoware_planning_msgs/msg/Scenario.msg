@@ -1,5 +1,5 @@
 string Empty=Empty
-string LaneFollowing=LaneFollowing
+string LaneDriving=LaneDriving
 string Parking=Parking
 
 string current_scenario

@@ -26,7 +26,8 @@
 #include <iostream>
 #include <string>
 
-void loadingAutowareOSMFile(const std::string map_file_path) {
+void loadingAutowareOSMFile(const std::string map_file_path)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet::GPSPoint gps_point;
@@ -44,7 +45,8 @@ void loadingAutowareOSMFile(const std::string map_file_path) {
   lanelet_map = lanelet::load(map_file_path, "osm_handler", projector, &errors);
 }
 
-void usingMGRSProjector() {
+void usingMGRSProjector()
+{
   // MGRS Projector projects lat/lon to x,y,z point in MGRS 100km grid.
   // The origin is automatically calcaulted so you don't have to select any
   // origin.
@@ -72,7 +74,8 @@ void usingMGRSProjector() {
   std::cout << projected_gps_point2.lat << " " << projected_gps_point2.lon << " " << std::endl;
 }
 
-void usingAutowareTrafficLight(const std::string map_file_path) {
+void usingAutowareTrafficLight(const std::string map_file_path)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet::projection::MGRSProjector projector;
@@ -80,7 +83,8 @@ void usingAutowareTrafficLight(const std::string map_file_path) {
 
   for (auto lanelet : lanelet_map->laneletLayer) {
     // You can access to traffic light element as AutowareTrafficLight class
-    auto autoware_traffic_lights = lanelet.regulatoryElementsAs<lanelet::autoware::AutowareTrafficLight>();
+    auto autoware_traffic_lights =
+      lanelet.regulatoryElementsAs<lanelet::autoware::AutowareTrafficLight>();
     for (auto light : autoware_traffic_lights) {
       // You can access to the position of each lamps(light bulb) in traffic
       // light
@@ -106,7 +110,8 @@ void usingAutowareTrafficLight(const std::string map_file_path) {
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "lanelet2_extension_example");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");

@@ -25,9 +25,10 @@
 #include <cassert>
 // #include <chrono>
 
-namespace assignment_problem {
-
-struct ResidualEdge {
+namespace assignment_problem
+{
+struct ResidualEdge
+{
   // Desternation node
   const int dst;
   int capacity;
@@ -40,12 +41,15 @@ struct ResidualEdge {
   // : dst(0), capacity(0), cost(0), flow(0), reverse(0) {}
 
   ResidualEdge(int dst, int capacity, double cost, int flow, int reverse)
-      : dst(dst), capacity(capacity), cost(cost), flow(flow), reverse(reverse) {}
+  : dst(dst), capacity(capacity), cost(cost), flow(flow), reverse(reverse)
+  {
+  }
 };
 
-void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
-                              std::unordered_map<int, int>* direct_assignment,
-                              std::unordered_map<int, int>* reverse_assignment) {
+void MaximizeLinearAssignment(
+  const std::vector<std::vector<double>> & cost, std::unordered_map<int, int> * direct_assignment,
+  std::unordered_map<int, int> * reverse_assignment)
+{
   // NOTE: Need to set as default arguments
   bool sparse_cost = true;
   // bool sparse_cost = false;
@@ -123,7 +127,8 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
     // From source to agent
     adjacency_list.at(source).emplace_back(agent + 1, 1, 0, 0, adjacency_list.at(agent + 1).size());
     // From agent to source
-    adjacency_list.at(agent + 1).emplace_back(source, 0, 0, 0, adjacency_list.at(source).size() - 1);
+    adjacency_list.at(agent + 1).emplace_back(
+      source, 0, 0, 0, adjacency_list.at(source).size() - 1);
   }
 
   // Add edges from agents
@@ -131,12 +136,15 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
     for (int task = 0; task < n_tasks; ++task) {
       if (!sparse_cost || cost.at(agent).at(task) > EPS) {
         // From agent to task
-        adjacency_list.at(agent + 1).emplace_back(task + n_agents + 1, 1, MAX_COST - cost.at(agent).at(task), 0,
-                                                  adjacency_list.at(task + n_agents + 1).size());
+        adjacency_list.at(agent + 1).emplace_back(
+          task + n_agents + 1, 1, MAX_COST - cost.at(agent).at(task), 0,
+          adjacency_list.at(task + n_agents + 1).size());
 
         // From task to agent
         adjacency_list.at(task + n_agents + 1)
-            .emplace_back(agent + 1, 0, cost.at(agent).at(task) - MAX_COST, 0, adjacency_list.at(agent + 1).size() - 1);
+          .emplace_back(
+            agent + 1, 0, cost.at(agent).at(task) - MAX_COST, 0,
+            adjacency_list.at(agent + 1).size() - 1);
       }
     }
   }
@@ -144,30 +152,34 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
   // Add edges form tasks
   for (int task = 0; task < n_tasks; ++task) {
     // From task to sink
-    adjacency_list.at(task + n_agents + 1).emplace_back(sink, 1, 0, 0, adjacency_list.at(sink).size());
+    adjacency_list.at(task + n_agents + 1)
+      .emplace_back(sink, 1, 0, 0, adjacency_list.at(sink).size());
 
     // From sink to task
-    adjacency_list.at(sink).emplace_back(task + n_agents + 1, 0, 0, 0,
-                                         adjacency_list.at(task + n_agents + 1).size() - 1);
+    adjacency_list.at(sink).emplace_back(
+      task + n_agents + 1, 0, 0, 0, adjacency_list.at(task + n_agents + 1).size() - 1);
   }
 
   // Add edges from dummy
   if (sparse_cost) {
     for (int agent = 0; agent < n_agents; ++agent) {
       // From agent to dummy
-      adjacency_list.at(agent + 1).emplace_back(agent + n_agents + n_tasks + 2, 1, MAX_COST, 0,
-                                                adjacency_list.at(agent + n_agents + n_tasks + 2).size());
+      adjacency_list.at(agent + 1).emplace_back(
+        agent + n_agents + n_tasks + 2, 1, MAX_COST, 0,
+        adjacency_list.at(agent + n_agents + n_tasks + 2).size());
 
       // From dummy to agent
       adjacency_list.at(agent + n_agents + n_tasks + 2)
-          .emplace_back(agent + 1, 0, -MAX_COST, 0, adjacency_list.at(agent + 1).size() - 1);
+        .emplace_back(agent + 1, 0, -MAX_COST, 0, adjacency_list.at(agent + 1).size() - 1);
 
       // From dummy to sink
-      adjacency_list.at(agent + n_agents + n_tasks + 2).emplace_back(sink, 1, 0, 0, adjacency_list.at(sink).size());
+      adjacency_list.at(agent + n_agents + n_tasks + 2)
+        .emplace_back(sink, 1, 0, 0, adjacency_list.at(sink).size());
 
       // From sink to dummy
-      adjacency_list.at(sink).emplace_back(agent + n_agents + n_tasks + 2, 0, 0, 0,
-                                           adjacency_list.at(agent + n_agents + n_tasks + 2).size() - 1);
+      adjacency_list.at(sink).emplace_back(
+        agent + n_agents + n_tasks + 2, 0, 0, 0,
+        adjacency_list.at(agent + n_agents + n_tasks + 2).size() - 1);
     }
   }
 
@@ -205,9 +217,10 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
 
   for (int i = 0; i < max_flow; ++i) {
     // Initialize priority queue (<distance, node>)
-    std::priority_queue<std::pair<double, int>, std::vector<std::pair<double, int>>,
-                        std::greater<std::pair<double, int>>>
-        pqueue;
+    std::priority_queue<
+      std::pair<double, int>, std::vector<std::pair<double, int>>,
+      std::greater<std::pair<double, int>>>
+      pqueue;
 
     // Reset all trajectory states
     if (i > 0) {
@@ -250,12 +263,13 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
         // If the node is not visited and have capacity to increase flow, visit.
         if (!is_visited.at(it_incident_edge->dst) && it_incident_edge->capacity > 0) {
           // Calculate reduced cost
-          double reduced_cost = it_incident_edge->cost + potentials.at(cur_node) - potentials.at(it_incident_edge->dst);
+          double reduced_cost =
+            it_incident_edge->cost + potentials.at(cur_node) - potentials.at(it_incident_edge->dst);
           assert(reduced_cost >= 0);
           if (dists.at(it_incident_edge->dst) > reduced_cost) {
             dists.at(it_incident_edge->dst) = reduced_cost;
             prevs.at(it_incident_edge->dst) =
-                std::make_pair(cur_node, it_incident_edge - adjacency_list.at(cur_node).cbegin());
+              std::make_pair(cur_node, it_incident_edge - adjacency_list.at(cur_node).cbegin());
             // std::cout << "[push]: (" << reduced_cost << ", " << next_v << ")" << std::endl;
             pqueue.push(std::make_pair(reduced_cost, it_incident_edge->dst));
           }
@@ -285,9 +299,9 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
     int v = sink;
     int prev_v;
     while (v != source) {
-      ResidualEdge& e_forward = adjacency_list.at(prevs.at(v).first).at(prevs.at(v).second);
+      ResidualEdge & e_forward = adjacency_list.at(prevs.at(v).first).at(prevs.at(v).second);
       assert(e_forward.dst == v);
-      ResidualEdge& e_backward = adjacency_list.at(v).at(e_forward.reverse);
+      ResidualEdge & e_backward = adjacency_list.at(v).at(e_forward.reverse);
       prev_v = e_backward.dst;
 
       if (e_backward.flow == 0) {
@@ -332,10 +346,11 @@ void MaximizeLinearAssignment(const std::vector<std::vector<double>>& cost,
 #ifndef NDEBUG
     // Check if the potentials are feasible potentials
     for (int v = 0; v < n_nodes; ++v) {
-      for (auto it_incident_edge = adjacency_list.at(v).cbegin(); it_incident_edge != adjacency_list.at(v).cend();
-           ++it_incident_edge) {
+      for (auto it_incident_edge = adjacency_list.at(v).cbegin();
+           it_incident_edge != adjacency_list.at(v).cend(); ++it_incident_edge) {
         if (it_incident_edge->capacity > 0) {
-          double reduced_cost = it_incident_edge->cost + potentials.at(v) - potentials.at(it_incident_edge->dst);
+          double reduced_cost =
+            it_incident_edge->cost + potentials.at(v) - potentials.at(it_incident_edge->dst);
           assert(reduced_cost >= 0);
         }
       }

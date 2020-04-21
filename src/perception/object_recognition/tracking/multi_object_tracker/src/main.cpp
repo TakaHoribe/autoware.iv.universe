@@ -22,7 +22,8 @@
 
 // #include "multi_object_tracker/data_association/data_association.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   // Eigen::MatrixXd score(4, 3);
   // std::unordered_map<int, int> direct_assignment;
   // std::unordered_map<int, int> reverse_assignment;

@@ -33,9 +33,11 @@
 
 #include <unordered_set>
 
-namespace {
-RouteSections combineConsecutiveRouteSections(const RouteSections& route_sections1,
-                                              const RouteSections& route_sections2) {
+namespace
+{
+RouteSections combineConsecutiveRouteSections(
+  const RouteSections & route_sections1, const RouteSections & route_sections2)
+{
   RouteSections route_sections;
   route_sections.reserve(route_sections1.size() + route_sections2.size());
   if (!route_sections1.empty()) {
@@ -48,12 +50,13 @@ RouteSections combineConsecutiveRouteSections(const RouteSections& route_section
   return route_sections;
 }
 
-bool isRouteLooped(const RouteSections& route_sections) {
+bool isRouteLooped(const RouteSections & route_sections)
+{
   for (std::size_t i = 0; i < route_sections.size(); i++) {
-    const auto& route_section = route_sections.at(i);
-    for (const auto& lane_id : route_section.lane_ids) {
+    const auto & route_section = route_sections.at(i);
+    for (const auto & lane_id : route_section.lane_ids) {
       for (std::size_t j = i + 1; j < route_sections.size(); j++) {
-        const auto& future_route_section = route_sections.at(j);
+        const auto & future_route_section = route_sections.at(j);
         if (exists(future_route_section.lane_ids, lane_id)) {
           return true;
         }
@@ -63,7 +66,9 @@ bool isRouteLooped(const RouteSections& route_sections) {
   return false;
 }
 
-constexpr double normalizeRadian(const double rad, const double min_rad = -M_PI, const double max_rad = M_PI) {
+constexpr double normalizeRadian(
+  const double rad, const double min_rad = -M_PI, const double max_rad = M_PI)
+{
   const auto value = std::fmod(rad, 2 * M_PI);
   if (min_rad < value && value <= max_rad)
     return value;
@@ -71,23 +76,27 @@ constexpr double normalizeRadian(const double rad, const double min_rad = -M_PI,
     return value - std::copysign(2 * M_PI, value);
 }
 
-bool isInLane(const lanelet::ConstLanelet& lanelet, const lanelet::ConstPoint3d& point) {
+bool isInLane(const lanelet::ConstLanelet & lanelet, const lanelet::ConstPoint3d & point)
+{
   // check if goal is on a lane at appropriate angle
-  const auto distance =
-      boost::geometry::distance(lanelet.polygon2d().basicPolygon(), lanelet::utils::to2D(point).basicPoint());
+  const auto distance = boost::geometry::distance(
+    lanelet.polygon2d().basicPolygon(), lanelet::utils::to2D(point).basicPoint());
   constexpr double th_distance = std::numeric_limits<double>::epsilon();
   return distance < th_distance;
 }
 
-bool isInParkingSpace(const lanelet::ConstLineStrings3d& parking_spaces, const lanelet::ConstPoint3d& point) {
-  for (const auto& parking_space : parking_spaces) {
+bool isInParkingSpace(
+  const lanelet::ConstLineStrings3d & parking_spaces, const lanelet::ConstPoint3d & point)
+{
+  for (const auto & parking_space : parking_spaces) {
     lanelet::ConstPolygon3d parking_space_polygon;
     if (!lanelet::utils::lineStringWithWidthToPolygon(parking_space, &parking_space_polygon)) {
       continue;
     }
 
-    const double distance = boost::geometry::distance(lanelet::utils::to2D(parking_space_polygon).basicPolygon(),
-                                                      lanelet::utils::to2D(point).basicPoint());
+    const double distance = boost::geometry::distance(
+      lanelet::utils::to2D(parking_space_polygon).basicPolygon(),
+      lanelet::utils::to2D(point).basicPoint());
     constexpr double th_distance = std::numeric_limits<double>::epsilon();
     if (distance < th_distance) {
       return true;
@@ -96,10 +105,12 @@ bool isInParkingSpace(const lanelet::ConstLineStrings3d& parking_spaces, const l
   return false;
 }
 
-bool isInParkingLot(const lanelet::ConstPolygons3d& parking_lots, const lanelet::ConstPoint3d& point) {
-  for (const auto& parking_lot : parking_lots) {
-    const double distance = boost::geometry::distance(lanelet::utils::to2D(parking_lot).basicPolygon(),
-                                                      lanelet::utils::to2D(point).basicPoint());
+bool isInParkingLot(
+  const lanelet::ConstPolygons3d & parking_lots, const lanelet::ConstPoint3d & point)
+{
+  for (const auto & parking_lot : parking_lots) {
+    const double distance = boost::geometry::distance(
+      lanelet::utils::to2D(parking_lot).basicPolygon(), lanelet::utils::to2D(point).basicPoint());
     constexpr double th_distance = std::numeric_limits<double>::epsilon();
     if (distance < th_distance) {
       return true;
@@ -110,27 +121,33 @@ bool isInParkingLot(const lanelet::ConstPolygons3d& parking_lots, const lanelet:
 
 }  // anonymous namespace
 
-namespace mission_planner {
-MissionPlannerLanelet2::MissionPlannerLanelet2() : is_graph_ready_(false) {
-  map_subscriber_ = pnh_.subscribe("input/vector_map", 10, &MissionPlannerLanelet2::mapCallback, this);
+namespace mission_planner
+{
+MissionPlannerLanelet2::MissionPlannerLanelet2() : is_graph_ready_(false)
+{
+  map_subscriber_ =
+    pnh_.subscribe("input/vector_map", 10, &MissionPlannerLanelet2::mapCallback, this);
 }
 
-void MissionPlannerLanelet2::mapCallback(const autoware_lanelet2_msgs::MapBin& msg) {
+void MissionPlannerLanelet2::mapCallback(const autoware_lanelet2_msgs::MapBin & msg)
+{
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
-  lanelet::utils::conversion::fromBinMsg(msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
+  lanelet::utils::conversion::fromBinMsg(
+    msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
   is_graph_ready_ = true;
 }
 
 bool MissionPlannerLanelet2::isRoutingGraphReady() const { return (is_graph_ready_); }
 
-void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route& route) const {
+void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route & route) const
+{
   lanelet::ConstLanelets route_lanelets;
   lanelet::ConstLanelets end_lanelets;
   lanelet::ConstLanelets normal_lanelets;
   lanelet::ConstLanelets goal_lanelets;
 
-  for (const auto& route_section : route.route_sections) {
-    for (const auto& lane_id : route_section.lane_ids) {
+  for (const auto & route_section : route.route_sections) {
+    for (const auto & lane_id : route_section.lane_ids) {
       auto lanelet = lanelet_map_ptr_->laneletLayer.get(lane_id);
       route_lanelets.push_back(lanelet);
       if (route_section.preferred_lane_id == lane_id) {
@@ -151,20 +168,26 @@ void MissionPlannerLanelet2::visualizeRoute(const autoware_planning_msgs::Route&
   setColor(&cl_ll_borders, 1.0, 1.0, 1.0, 0.999);
 
   visualization_msgs::MarkerArray route_marker_array;
-  insertMarkerArray(&route_marker_array,
-                    lanelet::visualization::laneletsBoundaryAsMarkerArray(route_lanelets, cl_ll_borders, false));
-  insertMarkerArray(&route_marker_array,
-                    lanelet::visualization::laneletsAsTriangleMarkerArray("route_lanelets", route_lanelets, cl_route));
-  insertMarkerArray(&route_marker_array,
-                    lanelet::visualization::laneletsAsTriangleMarkerArray("end_lanelets", end_lanelets, cl_end));
-  insertMarkerArray(&route_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
-                                             "normal_lanelets", normal_lanelets, cl_normal));
-  insertMarkerArray(&route_marker_array,
-                    lanelet::visualization::laneletsAsTriangleMarkerArray("goal_lanelets", goal_lanelets, cl_goal));
+  insertMarkerArray(
+    &route_marker_array,
+    lanelet::visualization::laneletsBoundaryAsMarkerArray(route_lanelets, cl_ll_borders, false));
+  insertMarkerArray(
+    &route_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
+                           "route_lanelets", route_lanelets, cl_route));
+  insertMarkerArray(
+    &route_marker_array,
+    lanelet::visualization::laneletsAsTriangleMarkerArray("end_lanelets", end_lanelets, cl_end));
+  insertMarkerArray(
+    &route_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
+                           "normal_lanelets", normal_lanelets, cl_normal));
+  insertMarkerArray(
+    &route_marker_array,
+    lanelet::visualization::laneletsAsTriangleMarkerArray("goal_lanelets", goal_lanelets, cl_goal));
   marker_publisher_.publish(route_marker_array);
 }
 
-bool MissionPlannerLanelet2::isGoalValid() const {
+bool MissionPlannerLanelet2::isGoalValid() const
+{
   lanelet::Lanelet closest_lanelet;
   if (!getClosestLanelet(goal_pose_.pose, lanelet_map_ptr_, &closest_lanelet)) {
     return false;
@@ -172,7 +195,8 @@ bool MissionPlannerLanelet2::isGoalValid() const {
   const auto goal_lanelet_pt = lanelet::utils::conversion::toLaneletPoint(goal_pose_.pose.position);
 
   if (isInLane(closest_lanelet, goal_lanelet_pt)) {
-    const auto lane_yaw = lanelet::utils::getLaneletAngle(closest_lanelet, goal_pose_.pose.position);
+    const auto lane_yaw =
+      lanelet::utils::getLaneletAngle(closest_lanelet, goal_pose_.pose.position);
     const auto goal_yaw = tf2::getYaw(goal_pose_.pose.orientation);
     const auto angle_diff = normalizeRadian(lane_yaw - goal_yaw);
 
@@ -198,9 +222,10 @@ bool MissionPlannerLanelet2::isGoalValid() const {
   return false;
 }
 
-autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
+autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute()
+{
   std::stringstream ss;
-  for (const auto& checkpoint : checkpoints_) {
+  for (const auto & checkpoint : checkpoints_) {
     ss << "x: " << checkpoint.pose.position.x << " "
        << "y: " << checkpoint.pose.position.y << std::endl;
   }
@@ -242,9 +267,11 @@ autoware_planning_msgs::Route MissionPlannerLanelet2::planRoute() {
   return route_msg;
 }
 
-bool MissionPlannerLanelet2::planPathBetweenCheckpoints(const geometry_msgs::PoseStamped& start_checkpoint,
-                                                        const geometry_msgs::PoseStamped& goal_checkpoint,
-                                                        lanelet::ConstLanelets* path_lanelets_ptr) const {
+bool MissionPlannerLanelet2::planPathBetweenCheckpoints(
+  const geometry_msgs::PoseStamped & start_checkpoint,
+  const geometry_msgs::PoseStamped & goal_checkpoint,
+  lanelet::ConstLanelets * path_lanelets_ptr) const
+{
   lanelet::Lanelet start_lanelet;
   if (!getClosestLanelet(start_checkpoint.pose, lanelet_map_ptr_, &start_lanelet)) {
     return false;
@@ -256,25 +283,28 @@ bool MissionPlannerLanelet2::planPathBetweenCheckpoints(const geometry_msgs::Pos
 
   // get all possible lanes that can be used to reach goal (including all possible lane change)
   lanelet::Optional<lanelet::routing::Route> optional_route =
-      routing_graph_ptr_->getRoute(start_lanelet, goal_lanelet, 0);
+    routing_graph_ptr_->getRoute(start_lanelet, goal_lanelet, 0);
   if (!optional_route) {
-    ROS_ERROR_STREAM("Failed to find a proper path!" << std::endl
-                                                     << "start checkpoint: " << toString(start_pose_.pose) << std::endl
-                                                     << "goal checkpoint: " << toString(goal_pose_.pose) << std::endl
-                                                     << "start lane id: " << start_lanelet.id() << std::endl
-                                                     << "goal lane id: " << goal_lanelet.id() << std::endl);
+    ROS_ERROR_STREAM(
+      "Failed to find a proper path!"
+      << std::endl
+      << "start checkpoint: " << toString(start_pose_.pose) << std::endl
+      << "goal checkpoint: " << toString(goal_pose_.pose) << std::endl
+      << "start lane id: " << start_lanelet.id() << std::endl
+      << "goal lane id: " << goal_lanelet.id() << std::endl);
     return false;
   }
 
   const auto shortest_path = optional_route->shortestPath();
-  for (const auto& llt : shortest_path) {
+  for (const auto & llt : shortest_path) {
     path_lanelets_ptr->push_back(llt);
   }
   return true;
 }
 
-lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(const lanelet::ConstLanelets& path_lanelets,
-                                                               const RouteHandler& route_handler) {
+lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(
+  const lanelet::ConstLanelets & path_lanelets, const RouteHandler & route_handler)
+{
   auto lanelet_sequence = route_handler.getLaneletSequence(path_lanelets.back());
   lanelet::ConstLanelets main_lanelets;
   while (!lanelet_sequence.empty()) {
@@ -284,17 +314,18 @@ lanelet::ConstLanelets MissionPlannerLanelet2::getMainLanelets(const lanelet::Co
   return main_lanelets;
 }
 
-RouteSections MissionPlannerLanelet2::createRouteSections(const lanelet::ConstLanelets& main_path,
-                                                          const RouteHandler& route_handler) {
+RouteSections MissionPlannerLanelet2::createRouteSections(
+  const lanelet::ConstLanelets & main_path, const RouteHandler & route_handler)
+{
   RouteSections route_sections;
 
   if (main_path.empty()) return route_sections;
 
-  for (const auto& main_llt : main_path) {
+  for (const auto & main_llt : main_path) {
     autoware_planning_msgs::RouteSection route_section_msg;
     lanelet::ConstLanelets route_section_lanelets = route_handler.getNeighborsWithinRoute(main_llt);
     route_section_msg.preferred_lane_id = main_llt.id();
-    for (const auto& section_llt : route_section_lanelets) {
+    for (const auto & section_llt : route_section_lanelets) {
       route_section_msg.lane_ids.push_back(section_llt.id());
       lanelet::ConstLanelet next_lanelet;
       if (route_handler.getNextLaneletWithinRoute(section_llt, &next_lanelet)) {

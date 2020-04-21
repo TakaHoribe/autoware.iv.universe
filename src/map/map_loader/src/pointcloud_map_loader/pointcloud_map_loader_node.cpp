@@ -35,8 +35,10 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-PointCloudMapLoaderNode::PointCloudMapLoaderNode(const std::vector<std::string>& pcd_paths) {
-  pub_pointcloud_map_ = private_nh_.advertise<sensor_msgs::PointCloud2>("output/pointcloud_map", 1, true);
+PointCloudMapLoaderNode::PointCloudMapLoaderNode(const std::vector<std::string> & pcd_paths)
+{
+  pub_pointcloud_map_ =
+    private_nh_.advertise<sensor_msgs::PointCloud2>("output/pointcloud_map", 1, true);
 
   const auto pcd = loadPCDFiles(pcd_paths);
 
@@ -45,11 +47,13 @@ PointCloudMapLoaderNode::PointCloudMapLoaderNode(const std::vector<std::string>&
   }
 }
 
-sensor_msgs::PointCloud2 PointCloudMapLoaderNode::loadPCDFiles(const std::vector<std::string>& pcd_paths) {
+sensor_msgs::PointCloud2 PointCloudMapLoaderNode::loadPCDFiles(
+  const std::vector<std::string> & pcd_paths)
+{
   sensor_msgs::PointCloud2 whole_pcd{};
 
   sensor_msgs::PointCloud2 partial_pcd;
-  for (const auto& path : pcd_paths) {
+  for (const auto & path : pcd_paths) {
     if (pcl::io::loadPCDFile(path, partial_pcd) == -1) {
       ROS_ERROR_STREAM("PCD load failed: " << path);
     }

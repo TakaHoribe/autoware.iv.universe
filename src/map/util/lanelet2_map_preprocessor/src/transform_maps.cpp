@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Tier IV, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 #include <ros/ros.h>
 
@@ -16,7 +32,8 @@
 #include <unordered_set>
 #include <vector>
 
-void printUsage() {
+void printUsage()
+{
   std::cerr << "Please set following private parameters:" << std::endl
             << "llt_map_path" << std::endl
             << "pcd_map_path" << std::endl
@@ -24,13 +41,15 @@ void printUsage() {
             << "pcd_output_path" << std::endl;
 }
 
-bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                    lanelet::Projector& projector) {
+bool loadLaneletMap(
+  const std::string & llt_map_path, lanelet::LaneletMapPtr & lanelet_map_ptr,
+  lanelet::Projector & projector)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet_map_ptr = lanelet::load(llt_map_path, "autoware_osm_handler", projector, &errors);
 
-  for (const auto& error : errors) {
+  for (const auto & error : errors) {
     ROS_ERROR_STREAM(error);
   }
   if (!errors.empty()) {
@@ -40,18 +59,22 @@ bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lan
   return true;
 }
 
-bool loadPCDMap(const std::string& pcd_map_path, pcl::PointCloud<pcl::PointXYZ>::Ptr& pcd_map_ptr) {
+bool loadPCDMap(const std::string & pcd_map_path, pcl::PointCloud<pcl::PointXYZ>::Ptr & pcd_map_ptr)
+{
   if (pcl::io::loadPCDFile<pcl::PointXYZ>(pcd_map_path, *pcd_map_ptr) == -1)  //* load the file
   {
     PCL_ERROR("Couldn't read file test_pcd.pcd \n");
     return false;
   }
-  std::cout << "Loaded " << pcd_map_ptr->width * pcd_map_ptr->height << " data points." << std::endl;
+  std::cout << "Loaded " << pcd_map_ptr->width * pcd_map_ptr->height << " data points."
+            << std::endl;
   return true;
 }
 
-void transformMaps(pcl::PointCloud<pcl::PointXYZ>::Ptr& pcd_map_ptr, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                   const Eigen::Affine3d affine) {
+void transformMaps(
+  pcl::PointCloud<pcl::PointXYZ>::Ptr & pcd_map_ptr, lanelet::LaneletMapPtr & lanelet_map_ptr,
+  const Eigen::Affine3d affine)
+{
   {
     for (lanelet::Point3d pt : lanelet_map_ptr->pointLayer) {
       Eigen::Vector3d eigen_pt(pt.x(), pt.y(), pt.z());
@@ -63,7 +86,7 @@ void transformMaps(pcl::PointCloud<pcl::PointXYZ>::Ptr& pcd_map_ptr, lanelet::La
   }
 
   {
-    for (auto& pt : pcd_map_ptr->points) {
+    for (auto & pt : pcd_map_ptr->points) {
       Eigen::Vector3d eigen_pt(pt.x, pt.y, pt.z);
       auto transformed_pt = affine * eigen_pt;
       pt.x = transformed_pt.x();
@@ -73,20 +96,24 @@ void transformMaps(pcl::PointCloud<pcl::PointXYZ>::Ptr& pcd_map_ptr, lanelet::La
   }
 }
 
-Eigen::Affine3d createAffineMatrixFromXYZRPY(const double x, const double y, const double z, const double roll,
-                                             const double pitch, const double yaw) {
+Eigen::Affine3d createAffineMatrixFromXYZRPY(
+  const double x, const double y, const double z, const double roll, const double pitch,
+  const double yaw)
+{
   double roll_rad = roll * M_PI / 180.0;
   double pitch_rad = pitch * M_PI / 180.0;
   double yaw_rad = yaw * M_PI / 180.0;
 
   Eigen::Translation<double, 3> trans(x, y, z);
   Eigen::Matrix3d rot;
-  rot = Eigen::AngleAxisd(yaw_rad, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(pitch_rad, Eigen::Vector3d::UnitY()) *
+  rot = Eigen::AngleAxisd(yaw_rad, Eigen::Vector3d::UnitZ()) *
+        Eigen::AngleAxisd(pitch_rad, Eigen::Vector3d::UnitY()) *
         Eigen::AngleAxisd(roll_rad, Eigen::Vector3d::UnitX());
   return trans * rot;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "lanelet_map_height_adjuster");
   ros::NodeHandle pnh("~");
 

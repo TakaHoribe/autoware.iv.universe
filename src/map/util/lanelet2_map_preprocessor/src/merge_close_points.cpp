@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Tier IV, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 #include <ros/ros.h>
 
@@ -13,19 +29,22 @@
 #include <unordered_set>
 #include <vector>
 
-void printUsage() {
+void printUsage()
+{
   std::cerr << "Please set following private parameters:" << std::endl
             << "llt_map_path" << std::endl
             << "output_path" << std::endl;
 }
 
-bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lanelet_map_ptr,
-                    lanelet::Projector& projector) {
+bool loadLaneletMap(
+  const std::string & llt_map_path, lanelet::LaneletMapPtr & lanelet_map_ptr,
+  lanelet::Projector & projector)
+{
   lanelet::LaneletMapPtr lanelet_map;
   lanelet::ErrorMessages errors;
   lanelet_map_ptr = lanelet::load(llt_map_path, "autoware_osm_handler", projector, &errors);
 
-  for (const auto& error : errors) {
+  for (const auto & error : errors) {
     ROS_ERROR_STREAM(error);
   }
   if (!errors.empty()) {
@@ -35,11 +54,13 @@ bool loadLaneletMap(const std::string& llt_map_path, lanelet::LaneletMapPtr& lan
   return true;
 }
 
-bool exists(std::unordered_set<lanelet::Id>& set, lanelet::Id element) {
+bool exists(std::unordered_set<lanelet::Id> & set, lanelet::Id element)
+{
   return std::find(set.begin(), set.end(), element) != set.end();
 }
 
-lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map_ptr) {
+lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
   lanelet::Points3d points;
   for (const lanelet::Point3d pt : lanelet_map_ptr->pointLayer) {
     points.push_back(pt);
@@ -62,8 +83,9 @@ lanelet::Points3d convertPointsLayerToPoints(lanelet::LaneletMapPtr& lanelet_map
 //   return lanelet::LineString3d(lanelet::utils::getId(), new_points);
 // }
 
-void mergePoints(lanelet::LaneletMapPtr& lanelet_map_ptr) {
-  const auto& points = convertPointsLayerToPoints(lanelet_map_ptr);
+void mergePoints(lanelet::LaneletMapPtr & lanelet_map_ptr)
+{
+  const auto & points = convertPointsLayerToPoints(lanelet_map_ptr);
 
   for (size_t i = 0; i < points.size(); i++) {
     auto point_i = points.at(i);
@@ -86,7 +108,8 @@ void mergePoints(lanelet::LaneletMapPtr& lanelet_map_ptr) {
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[])
+{
   ros::init(argc, argv, "merge_lines");
   ros::NodeHandle pnh("~");
 

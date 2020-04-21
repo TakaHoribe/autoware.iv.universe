@@ -18,14 +18,17 @@
 
 #include "tensorrt_yolo3_ros.h"
 
-TensorrtYoloROS::TensorrtYoloROS(/* args */) : pnh_("~") {
+TensorrtYoloROS::TensorrtYoloROS(/* args */) : pnh_("~")
+{
   std::string package_path = ros::package::getPath("tensorrt_yolo3");
   std::string engine_path = package_path + "/data/yolov3_416_fp32.engine";
   std::ifstream fs(engine_path);
   if (fs.is_open()) {
     net_ptr_.reset(new Tn::trtNet(engine_path));
   } else {
-    ROS_INFO("Could not find %s, try making TensorRT engine from caffemodel and prototxt", engine_path.c_str());
+    ROS_INFO(
+      "Could not find %s, try making TensorRT engine from caffemodel and prototxt",
+      engine_path.c_str());
     boost::filesystem::create_directories(package_path + "/data");
     std::string prototxt_file;
     std::string caffemodel_file;
@@ -36,25 +39,29 @@ TensorrtYoloROS::TensorrtYoloROS(/* args */) : pnh_("~") {
     output_name.push_back(output_node);
     std::vector<std::vector<float>> calib_data;
     Tn::RUN_MODE run_mode = Tn::RUN_MODE::FLOAT32;
-    net_ptr_.reset(new Tn::trtNet(prototxt_file, caffemodel_file, output_name, calib_data, run_mode));
+    net_ptr_.reset(
+      new Tn::trtNet(prototxt_file, caffemodel_file, output_name, calib_data, run_mode));
     net_ptr_->saveEngine(engine_path);
   }
 }
 
 TensorrtYoloROS::~TensorrtYoloROS() {}
 
-void TensorrtYoloROS::createROSPubSub() {
-  sub_image_ = nh_.subscribe<sensor_msgs::Image>("/image_raw", 1, &TensorrtYoloROS::imageCallback, this);
+void TensorrtYoloROS::createROSPubSub()
+{
+  sub_image_ =
+    nh_.subscribe<sensor_msgs::Image>("/image_raw", 1, &TensorrtYoloROS::imageCallback, this);
   pub_objects_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("rois", 1);
   pub_image_ = nh_.advertise<sensor_msgs::Image>("/perception/tensorrt_yolo3/classified_image", 1);
 }
 
-void TensorrtYoloROS::imageCallback(const sensor_msgs::Image::ConstPtr& in_image_msg) {
+void TensorrtYoloROS::imageCallback(const sensor_msgs::Image::ConstPtr & in_image_msg)
+{
   //   std::cerr << "*******"  << std::endl;
   cv_bridge::CvImagePtr in_image_ptr;
   try {
     in_image_ptr = cv_bridge::toCvCopy(in_image_msg, sensor_msgs::image_encodings::BGR8);
-  } catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception & e) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
@@ -82,16 +89,18 @@ void TensorrtYoloROS::imageCallback(const sensor_msgs::Image::ConstPtr& in_image
   // TODO: if this file is ros interface class, not appropriate to write this method in this file/class
   auto bbox = postProcessImg(result, class_num, in_image_ptr->image, out_objects);
 
-  for (const auto& item : bbox) {
-    cv::rectangle(in_image_ptr->image, cv::Point(item.left, item.top), cv::Point(item.right, item.bot),
-                  cv::Scalar(0, 0, 255), 3, 8, 0);
+  for (const auto & item : bbox) {
+    cv::rectangle(
+      in_image_ptr->image, cv::Point(item.left, item.top), cv::Point(item.right, item.bot),
+      cv::Scalar(0, 0, 255), 3, 8, 0);
   }
   pub_image_.publish(in_image_ptr->toImageMsg());
 
   pub_objects_.publish(out_objects);
 }
 
-std::vector<float> TensorrtYoloROS::prepareImage(cv::Mat& in_img) {
+std::vector<float> TensorrtYoloROS::prepareImage(cv::Mat & in_img)
+{
   // using namespace cv;
 
   int c = 3;
@@ -107,7 +116,8 @@ std::vector<float> TensorrtYoloROS::prepareImage(cv::Mat& in_img) {
   cv::resize(rgb, resized, scaleSize, 0, 0, cv::INTER_CUBIC);
 
   cv::Mat cropped(h, w, CV_8UC3, 127);
-  cv::Rect rect((w - scaleSize.width) / 2, (h - scaleSize.height) / 2, scaleSize.width, scaleSize.height);
+  cv::Rect rect(
+    (w - scaleSize.width) / 2, (h - scaleSize.height) / 2, scaleSize.width, scaleSize.height);
   resized.copyTo(cropped(rect));
 
   cv::Mat img_float;
@@ -129,8 +139,9 @@ std::vector<float> TensorrtYoloROS::prepareImage(cv::Mat& in_img) {
 }
 
 std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(
-    std::vector<Yolo::Detection>& detections, const int classes, cv::Mat& img,
-    autoware_perception_msgs::DynamicObjectWithFeatureArray& out_objects) {
+  std::vector<Yolo::Detection> & detections, const int classes, cv::Mat & img,
+  autoware_perception_msgs::DynamicObjectWithFeatureArray & out_objects)
+{
   int h = 416;
   int w = 416;
 
@@ -141,8 +152,8 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(
   float scaleSize[] = {width * scale, height * scale};
 
   // correct box
-  for (auto& item : detections) {
-    auto& bbox = item.bbox;
+  for (auto & item : detections) {
+    auto & bbox = item.bbox;
     bbox[0] = (bbox[0] * w - (w - scaleSize[0]) / 2.f) / scaleSize[0];
     bbox[1] = (bbox[1] * h - (h - scaleSize[1]) / 2.f) / scaleSize[1];
     bbox[2] /= scaleSize[0];
@@ -155,15 +166,15 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(
   if (nms_thresh > 0) doNms(detections, classes, nms_thresh);
 
   std::vector<Tn::Bbox> boxes;
-  for (const auto& item : detections) {
-    auto& b = item.bbox;
+  for (const auto & item : detections) {
+    auto & b = item.bbox;
     Tn::Bbox bbox = {
-        item.classId,                                        // classId
-        std::max(int((b[0] - b[2] / 2.) * width), 0),        // left
-        std::min(int((b[0] + b[2] / 2.) * width), width),    // right
-        std::max(int((b[1] - b[3] / 2.) * height), 0),       // top
-        std::min(int((b[1] + b[3] / 2.) * height), height),  // bot
-        item.prob                                            // score
+      item.classId,                                        // classId
+      std::max(int((b[0] - b[2] / 2.) * width), 0),        // left
+      std::min(int((b[0] + b[2] / 2.) * width), width),    // right
+      std::max(int((b[1] - b[3] / 2.) * height), 0),       // top
+      std::min(int((b[1] + b[3] / 2.) * height), height),  // bot
+      item.prob                                            // score
     };
     boxes.push_back(bbox);
 
@@ -171,9 +182,10 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(
 
     obj.feature.roi.x_offset = std::max(int((b[0] - b[2] / 2.) * width), 0);
     obj.feature.roi.y_offset = std::max(int((b[1] - b[3] / 2.) * height), 0);
-    double roi_width = std::min(int((b[0] + b[2] / 2.) * width), width) - std::max(int((b[0] - b[2] / 2.) * width), 0);
-    double roi_height =
-        std::min(int((b[1] + b[3] / 2.) * height), height) - std::max(int((b[1] - b[3] / 2.) * height), 0);
+    double roi_width = std::min(int((b[0] + b[2] / 2.) * width), width) -
+                       std::max(int((b[0] - b[2] / 2.) * width), 0);
+    double roi_height = std::min(int((b[1] + b[3] / 2.) * height), height) -
+                        std::max(int((b[1] - b[3] / 2.) * height), 0);
     obj.feature.roi.width = roi_width;
     obj.feature.roi.height = roi_height;
     // if (in_objects[i].x < 0)
@@ -207,20 +219,22 @@ std::vector<Tn::Bbox> TensorrtYoloROS::postProcessImg(
   return boxes;
 }
 
-void TensorrtYoloROS::doNms(std::vector<Yolo::Detection>& detections, int classes, float nms_thresh) {
+void TensorrtYoloROS::doNms(
+  std::vector<Yolo::Detection> & detections, int classes, float nms_thresh)
+{
   auto t_start = std::chrono::high_resolution_clock::now();
 
   std::vector<std::vector<Yolo::Detection>> resClass;
   resClass.resize(classes);
 
-  for (const auto& item : detections) resClass[item.classId].push_back(item);
+  for (const auto & item : detections) resClass[item.classId].push_back(item);
 
-  auto iouCompute = [](float* lbox, float* rbox) {
+  auto iouCompute = [](float * lbox, float * rbox) {
     float interBox[] = {
-        std::max(lbox[0] - lbox[2] / 2.f, rbox[0] - rbox[2] / 2.f),  // left
-        std::min(lbox[0] + lbox[2] / 2.f, rbox[0] + rbox[2] / 2.f),  // right
-        std::max(lbox[1] - lbox[3] / 2.f, rbox[1] - rbox[3] / 2.f),  // top
-        std::min(lbox[1] + lbox[3] / 2.f, rbox[1] + rbox[3] / 2.f),  // bottom
+      std::max(lbox[0] - lbox[2] / 2.f, rbox[0] - rbox[2] / 2.f),  // left
+      std::min(lbox[0] + lbox[2] / 2.f, rbox[0] + rbox[2] / 2.f),  // right
+      std::max(lbox[1] - lbox[3] / 2.f, rbox[1] - rbox[3] / 2.f),  // top
+      std::min(lbox[1] + lbox[3] / 2.f, rbox[1] + rbox[3] / 2.f),  // bottom
     };
 
     if (interBox[2] > interBox[3] || interBox[0] > interBox[1]) return 0.0f;
@@ -231,14 +245,16 @@ void TensorrtYoloROS::doNms(std::vector<Yolo::Detection>& detections, int classe
 
   std::vector<Yolo::Detection> result;
   for (int i = 0; i < classes; ++i) {
-    auto& dets = resClass[i];
+    auto & dets = resClass[i];
     if (dets.size() == 0) continue;
 
-    sort(dets.begin(), dets.end(),
-         [=](const Yolo::Detection& left, const Yolo::Detection& right) { return left.prob > right.prob; });
+    sort(
+      dets.begin(), dets.end(), [=](const Yolo::Detection & left, const Yolo::Detection & right) {
+        return left.prob > right.prob;
+      });
 
     for (unsigned int m = 0; m < dets.size(); ++m) {
-      auto& item = dets[m];
+      auto & item = dets[m];
       result.push_back(item);
       for (unsigned int n = m + 1; n < dets.size(); ++n) {
         if (iouCompute(item.bbox, dets[n].bbox) > nms_thresh) {

@@ -24,11 +24,12 @@
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-namespace euclidean_cluster {
-
+namespace euclidean_cluster
+{
 EuclideanClusterNodelet::EuclideanClusterNodelet() {}
 
-void EuclideanClusterNodelet::onInit() {
+void EuclideanClusterNodelet::onInit()
+{
   private_nh_ = getPrivateNodeHandle();
 
   private_nh_.param<std::string>("target_frame", target_frame_, "base_link");
@@ -38,13 +39,16 @@ void EuclideanClusterNodelet::onInit() {
   private_nh_.param<float>("tolerance", tolerance_, 1.0);
 
   nh_ = getNodeHandle();
-  pointcloud_sub_ = private_nh_.subscribe("input", 1, &EuclideanClusterNodelet::pointcloudCallback, this);
+  pointcloud_sub_ =
+    private_nh_.subscribe("input", 1, &EuclideanClusterNodelet::pointcloudCallback, this);
 
-  cluster_pub_ = private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
+  cluster_pub_ =
+    private_nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("output", 10);
   debug_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("debug/clusters", 1);
 }
 
-void EuclideanClusterNodelet::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& input_msg) {
+void EuclideanClusterNodelet::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr & input_msg)
+{
   // convert ros to pcl
   pcl::PointCloud<pcl::PointXYZ>::Ptr raw_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*input_msg, *raw_pointcloud_ptr);

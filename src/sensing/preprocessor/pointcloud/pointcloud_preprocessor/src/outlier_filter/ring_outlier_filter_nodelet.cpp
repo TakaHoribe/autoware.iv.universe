@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include "pointcloud_preprocessor/outlier_filter/ring_outlier_filter_nodelet.h"
 #include <pluginlib/class_list_macros.h>
 
@@ -22,20 +21,23 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/segment_differences.h>
 
-namespace pointcloud_preprocessor {
-
-bool RingOutlierFilterNodelet::child_init(ros::NodeHandle& nh, bool& has_service) {
+namespace pointcloud_preprocessor
+{
+bool RingOutlierFilterNodelet::child_init(ros::NodeHandle & nh, bool & has_service)
+{
   // Enable the dynamic reconfigure service
   has_service = true;
-  srv_ = boost::make_shared<dynamic_reconfigure::Server<pointcloud_preprocessor::RingOutlierFilterConfig>>(nh);
+  srv_ = boost::make_shared<
+    dynamic_reconfigure::Server<pointcloud_preprocessor::RingOutlierFilterConfig>>(nh);
   dynamic_reconfigure::Server<pointcloud_preprocessor::RingOutlierFilterConfig>::CallbackType f =
-      boost::bind(&RingOutlierFilterNodelet::config_callback, this, _1, _2);
+    boost::bind(&RingOutlierFilterNodelet::config_callback, this, _1, _2);
   srv_->setCallback(f);
   return (true);
 }
 
-void RingOutlierFilterNodelet::filter(const PointCloud2::ConstPtr& input, const IndicesPtr& indices,
-                                      PointCloud2& output) {
+void RingOutlierFilterNodelet::filter(
+  const PointCloud2::ConstPtr & input, const IndicesPtr & indices, PointCloud2 & output)
+{
   boost::mutex::scoped_lock lock(mutex_);
   pcl::PointCloud<pcl::PointXYZIRADT>::Ptr pcl_input(new pcl::PointCloud<pcl::PointXYZIRADT>);
   pcl::fromROSMsg(*input, *pcl_input);
@@ -44,7 +46,7 @@ void RingOutlierFilterNodelet::filter(const PointCloud2::ConstPtr& input, const 
     return;
   }
   std::vector<pcl::PointCloud<pcl::PointXYZIRADT>> pcl_input_ring_array;
-  pcl_input_ring_array.resize(32);  // TODO
+  pcl_input_ring_array.resize(128);  // TODO
   for (const auto& p : pcl_input->points) {
     pcl_input_ring_array.at(p.ring).push_back(p);
   }
@@ -54,12 +56,13 @@ void RingOutlierFilterNodelet::filter(const PointCloud2::ConstPtr& input, const 
 
   pcl::PointCloud<pcl::PointXYZ> pcl_tmp;
   pcl::PointXYZ p;
-  for (const auto& ring_pointcloud : pcl_input_ring_array) {
+  for (const auto & ring_pointcloud : pcl_input_ring_array) {
     if (ring_pointcloud.points.size() < 2) {
       continue;
     }
 
-    for (auto iter = std::begin(ring_pointcloud.points); iter != std::end(ring_pointcloud.points) - 1; ++iter) {
+    for (auto iter = std::begin(ring_pointcloud.points);
+         iter != std::end(ring_pointcloud.points) - 1; ++iter) {
       p.x = iter->x;
       p.y = iter->y;
       p.z = iter->z;
@@ -70,11 +73,14 @@ void RingOutlierFilterNodelet::filter(const PointCloud2::ConstPtr& input, const 
       if (min_dist > 0 && max_dist > 0 && max_dist / min_dist < distance_ratio_) {
         continue;
       } else {
-        if (pcl_tmp.points.size() > num_points_threshold_ &&
-            std::sqrt(std::pow(pcl_tmp.points.front().x - pcl_tmp.points.back().x, 2.0) +
-                      std::pow(pcl_tmp.points.front().y - pcl_tmp.points.back().y, 2.0) +
-                      std::pow(pcl_tmp.points.front().z - pcl_tmp.points.back().z, 2.0)) >= object_length_threshold_) {
-          for (const auto& tmp_p : pcl_tmp.points) {
+        if (
+          pcl_tmp.points.size() > num_points_threshold_ &&
+          std::sqrt(
+            std::pow(pcl_tmp.points.front().x - pcl_tmp.points.back().x, 2.0) +
+            std::pow(pcl_tmp.points.front().y - pcl_tmp.points.back().y, 2.0) +
+            std::pow(pcl_tmp.points.front().z - pcl_tmp.points.back().z, 2.0)) >=
+            object_length_threshold_) {
+          for (const auto & tmp_p : pcl_tmp.points) {
             pcl_output->points.push_back(tmp_p);
           }
         }
@@ -207,23 +213,28 @@ void RingOutlierFilterNodelet::subscribe() { Filter::subscribe(); }
 
 void RingOutlierFilterNodelet::unsubscribe() { Filter::unsubscribe(); }
 
-void RingOutlierFilterNodelet::config_callback(pointcloud_preprocessor::RingOutlierFilterConfig& config,
-                                               uint32_t level) {
+void RingOutlierFilterNodelet::config_callback(
+  pointcloud_preprocessor::RingOutlierFilterConfig & config, uint32_t level)
+{
   boost::mutex::scoped_lock lock(mutex_);
 
   if (distance_ratio_ != config.distance_ratio) {
     distance_ratio_ = config.distance_ratio;
-    NODELET_DEBUG("[%s::config_callback] Setting new distance ratio to: %f.", getName().c_str(), config.distance_ratio);
+    NODELET_DEBUG(
+      "[%s::config_callback] Setting new distance ratio to: %f.", getName().c_str(),
+      config.distance_ratio);
   }
   if (object_length_threshold_ != config.object_length_threshold) {
     object_length_threshold_ = config.object_length_threshold;
-    NODELET_DEBUG("[%s::config_callback] Setting new object length threshold to: %f.", getName().c_str(),
-                  config.object_length_threshold);
+    NODELET_DEBUG(
+      "[%s::config_callback] Setting new object length threshold to: %f.", getName().c_str(),
+      config.object_length_threshold);
   }
   if (num_points_threshold_ != config.num_points_threshold) {
     num_points_threshold_ = config.num_points_threshold;
-    NODELET_DEBUG("[%s::config_callback] Setting new num_points_threshold to: %d.", getName().c_str(),
-                  config.num_points_threshold);
+    NODELET_DEBUG(
+      "[%s::config_callback] Setting new num_points_threshold to: %d.", getName().c_str(),
+      config.num_points_threshold);
   }
   // ---[ These really shouldn't be here, and as soon as dynamic_reconfigure improves, we'll remove them and inherit
   // from Filter
@@ -233,7 +244,8 @@ void RingOutlierFilterNodelet::config_callback(pointcloud_preprocessor::RingOutl
   }
   if (tf_output_frame_ != config.output_frame) {
     tf_output_frame_ = config.output_frame;
-    NODELET_DEBUG("[config_callback] Setting the output TF frame to: %s.", tf_output_frame_.c_str());
+    NODELET_DEBUG(
+      "[config_callback] Setting the output TF frame to: %s.", tf_output_frame_.c_str());
   }
   // ]---
 }

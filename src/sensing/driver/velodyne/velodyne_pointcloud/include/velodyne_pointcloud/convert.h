@@ -36,18 +36,21 @@
 #include <velodyne_pointcloud/pointcloudXYZIRADT.h>
 #include <velodyne_pointcloud/rawdata.h>
 
-namespace velodyne_pointcloud {
-class Convert {
- public:
+namespace velodyne_pointcloud
+{
+class Convert
+{
+public:
   Convert(ros::NodeHandle node, ros::NodeHandle private_nh);
   ~Convert() {}
 
- private:
-  void callback(velodyne_pointcloud::CloudNodeConfig& config, uint32_t level);
-  void processScan(const velodyne_msgs::VelodyneScan::ConstPtr& scanMsg);
-  visualization_msgs::MarkerArray createVelodyneModelMakerMsg(const std_msgs::Header& header);
-  bool getTransform(const std::string& target_frame, const std::string& source_frame,
-                    tf2::Transform* tf2_transform_ptr);
+private:
+  void callback(velodyne_pointcloud::CloudNodeConfig & config, uint32_t level);
+  void processScan(const velodyne_msgs::VelodyneScan::ConstPtr & scanMsg);
+  visualization_msgs::MarkerArray createVelodyneModelMakerMsg(const std_msgs::Header & header);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    tf2::Transform * tf2_transform_ptr);
 
   ros::Subscriber velodyne_scan_;
   ros::Publisher velodyne_points_pub_;
@@ -69,7 +72,8 @@ class Convert {
   std::string base_link_frame_;
 
   /// configuration parameters
-  typedef struct {
+  typedef struct
+  {
     int npackets;  ///< number of packets to combine
   } Config;
   Config config_;

@@ -38,37 +38,44 @@
 
 #include <mission_checkpoint/mission_checkpoint.hpp>
 
-namespace rviz {
-MissionCheckpointTool::MissionCheckpointTool() {
+namespace rviz
+{
+MissionCheckpointTool::MissionCheckpointTool()
+{
   shortcut_key_ = 'c';
 
-  pose_topic_property_ =
-      new StringProperty("Pose Topic", "mission_checkpoint", "The topic on which to publish checkpoint.",
-                         getPropertyContainer(), SLOT(updateTopic()), this);
-  std_dev_x_ =
-      new FloatProperty("X std deviation", 0.5, "X standard deviation for checkpoint pose [m]", getPropertyContainer());
-  std_dev_y_ =
-      new FloatProperty("Y std deviation", 0.5, "Y standard deviation for checkpoint pose [m]", getPropertyContainer());
-  std_dev_theta_ = new FloatProperty("Theta std deviation", M_PI / 12.0,
-                                     "Theta standard deviation for checkpoint pose [rad]", getPropertyContainer());
-  position_z_ = new FloatProperty("Z position", 0.0, "Z position for checkpoint pose [m]", getPropertyContainer());
+  pose_topic_property_ = new StringProperty(
+    "Pose Topic", "mission_checkpoint", "The topic on which to publish checkpoint.",
+    getPropertyContainer(), SLOT(updateTopic()), this);
+  std_dev_x_ = new FloatProperty(
+    "X std deviation", 0.5, "X standard deviation for checkpoint pose [m]", getPropertyContainer());
+  std_dev_y_ = new FloatProperty(
+    "Y std deviation", 0.5, "Y standard deviation for checkpoint pose [m]", getPropertyContainer());
+  std_dev_theta_ = new FloatProperty(
+    "Theta std deviation", M_PI / 12.0, "Theta standard deviation for checkpoint pose [rad]",
+    getPropertyContainer());
+  position_z_ = new FloatProperty(
+    "Z position", 0.0, "Z position for checkpoint pose [m]", getPropertyContainer());
   std_dev_x_->setMin(0);
   std_dev_y_->setMin(0);
   std_dev_theta_->setMin(0);
   position_z_->setMin(0);
 }
 
-void MissionCheckpointTool::onInitialize() {
+void MissionCheckpointTool::onInitialize()
+{
   PoseTool::onInitialize();
   setName("2D Checkpoint Pose");
   updateTopic();
 }
 
-void MissionCheckpointTool::updateTopic() {
+void MissionCheckpointTool::updateTopic()
+{
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic_property_->getStdString(), 1);
 }
 
-void MissionCheckpointTool::onPoseSet(double x, double y, double theta) {
+void MissionCheckpointTool::onPoseSet(double x, double y, double theta)
+{
   const ros::Time current_time = ros::Time::now();
   // pose
   std::string fixed_frame = context_->getFixedFrame().toStdString();
@@ -82,7 +89,9 @@ void MissionCheckpointTool::onPoseSet(double x, double y, double theta) {
   tf::Quaternion quat;
   quat.setRPY(0.0, 0.0, theta);
   tf::quaternionTFToMsg(quat, pose.pose.orientation);
-  ROS_INFO("Setting pose: %.3f %.3f %.3f %.3f [frame=%s]", x, y, position_z_->getFloat(), theta, fixed_frame.c_str());
+  ROS_INFO(
+    "Setting pose: %.3f %.3f %.3f %.3f [frame=%s]", x, y, position_z_->getFloat(), theta,
+    fixed_frame.c_str());
   pose_pub_.publish(pose);
 }
 

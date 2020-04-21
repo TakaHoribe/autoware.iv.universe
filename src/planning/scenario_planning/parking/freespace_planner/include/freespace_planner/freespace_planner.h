@@ -55,7 +55,8 @@
 
 #include "astar_search/astar_search.h"
 
-struct NodeParam {
+struct NodeParam
+{
   double waypoints_velocity;  // constant velocity on planned waypoints [km/h]
   double update_rate;         // replanning and publishing rate [Hz]
   double th_arrived_distance_m;
@@ -66,11 +67,12 @@ struct NodeParam {
   bool replan_when_course_out;
 };
 
-class AstarNavi {
- public:
+class AstarNavi
+{
+public:
   AstarNavi();
 
- private:
+private:
   // ros
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -113,19 +115,19 @@ class AstarNavi {
   std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer_;
 
   // functions, callback
-  void onRoute(const autoware_planning_msgs::Route::ConstPtr& msg);
-  void onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr& msg);
-  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr& msg);
-  void onTwist(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void onRoute(const autoware_planning_msgs::Route::ConstPtr & msg);
+  void onOccupancyGrid(const nav_msgs::OccupancyGrid::ConstPtr & msg);
+  void onScenario(const autoware_planning_msgs::Scenario::ConstPtr & msg);
+  void onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
 
-  void onTimer(const ros::TimerEvent& event);
+  void onTimer(const ros::TimerEvent & event);
 
   void reset();
   bool isPlanRequired();
   void planTrajectory();
   void updateTargetIndex();
 
-  geometry_msgs::TransformStamped getTransform(const std::string& from, const std::string& to);
+  geometry_msgs::TransformStamped getTransform(const std::string & from, const std::string & to);
 };
 
 #endif

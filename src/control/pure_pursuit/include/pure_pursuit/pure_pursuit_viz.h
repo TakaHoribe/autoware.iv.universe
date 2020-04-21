@@ -31,36 +31,13 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
-
-#include <ros/ros.h>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include "libplanning_utils/planning_utils.h"
+visualization_msgs::Marker createNextTargetMarker(const geometry_msgs::Point & next_target);
 
-constexpr auto MAP_FRAME = "map";  // TODO: parameterize
-
-// visualizer
-// display the next waypoint by markers.
-std::unique_ptr<visualization_msgs::Marker> displayNextWaypoint(const geometry_msgs::Point& position);
-
-// display the next target by markers.
-std::unique_ptr<visualization_msgs::Marker> displayNextTarget(const geometry_msgs::Point& target);
-
-// generate the locus of pure pursuit
-std::vector<geometry_msgs::Point> generateTrajectoryCircle(const geometry_msgs::Point& target,
-                                                           const geometry_msgs::Pose& current_pose);
-
-// display the locus of pure pursuit by markers.
-std::unique_ptr<visualization_msgs::Marker> displayTrajectoryCircle(
-    const std::vector<geometry_msgs::Point>& traj_circle_array);
-
-// display the search radius by markers.
-std::unique_ptr<visualization_msgs::Marker> displaySearchRadius(const geometry_msgs::Point& current_pose,
-                                                                const double search_radius);
-
-visualization_msgs::MarkerArray displayControlTrajectory(const autoware_planning_msgs::Trajectory& traj);
+visualization_msgs::Marker createTrajectoryCircleMarker(
+  const geometry_msgs::Point & target, const geometry_msgs::Pose & current_pose);

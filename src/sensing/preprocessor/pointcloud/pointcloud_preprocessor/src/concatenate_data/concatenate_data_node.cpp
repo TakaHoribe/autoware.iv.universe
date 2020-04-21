@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-
 #include <nodelet/loader.h>
 #include <ros/ros.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "concatenate_data_node");
   ros::NodeHandle private_nh("~");
 

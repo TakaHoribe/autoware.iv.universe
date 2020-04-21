@@ -16,12 +16,14 @@
 
 #include "simple_planning_simulator/vehicle_model/sim_model_interface.hpp"
 
-SimModelInterface::SimModelInterface(int dim_x, int dim_u) : dim_x_(dim_x), dim_u_(dim_u) {
+SimModelInterface::SimModelInterface(int dim_x, int dim_u) : dim_x_(dim_x), dim_u_(dim_u)
+{
   state_ = Eigen::VectorXd::Zero(dim_x_);
   input_ = Eigen::VectorXd::Zero(dim_u_);
 };
 
-void SimModelInterface::updateRungeKutta(const double& dt, const Eigen::VectorXd& input) {
+void SimModelInterface::updateRungeKutta(const double & dt, const Eigen::VectorXd & input)
+{
   Eigen::VectorXd k1 = calcModel(state_, input);
   Eigen::VectorXd k2 = calcModel(state_ + k1 * 0.5 * dt, input);
   Eigen::VectorXd k3 = calcModel(state_ + k2 * 0.5 * dt, input);
@@ -29,10 +31,11 @@ void SimModelInterface::updateRungeKutta(const double& dt, const Eigen::VectorXd
 
   state_ += 1.0 / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4) * dt;
 }
-void SimModelInterface::updateEuler(const double& dt, const Eigen::VectorXd& input) {
+void SimModelInterface::updateEuler(const double & dt, const Eigen::VectorXd & input)
+{
   state_ += calcModel(state_, input) * dt;
 }
-void SimModelInterface::getState(Eigen::VectorXd& state) { state = state_; };
-void SimModelInterface::getInput(Eigen::VectorXd& input) { input = input_; };
-void SimModelInterface::setState(const Eigen::VectorXd& state) { state_ = state; };
-void SimModelInterface::setInput(const Eigen::VectorXd& input) { input_ = input; };
+void SimModelInterface::getState(Eigen::VectorXd & state) { state = state_; };
+void SimModelInterface::getInput(Eigen::VectorXd & input) { input = input_; };
+void SimModelInterface::setState(const Eigen::VectorXd & state) { state_ = state; };
+void SimModelInterface::setInput(const Eigen::VectorXd & input) { input_ = input; };

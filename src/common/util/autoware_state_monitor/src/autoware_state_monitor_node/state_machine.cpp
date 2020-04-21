@@ -17,23 +17,30 @@
 
 #include <autoware_state_monitor/rosconsole_wrapper.h>
 
-namespace {
-
-double calcDistance2d(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+namespace
+{
+double calcDistance2d(const geometry_msgs::Point & p1, const geometry_msgs::Point & p2)
+{
   return std::hypot(p1.x - p2.x, p1.y - p2.y);
 }
 
-double calcDistance2d(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2) {
+double calcDistance2d(const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2)
+{
   return calcDistance2d(p1.position, p2.position);
 }
 
-bool isNearGoal(const geometry_msgs::Pose& current_pose, const geometry_msgs::Pose& goal_pose, const double th_dist) {
+bool isNearGoal(
+  const geometry_msgs::Pose & current_pose, const geometry_msgs::Pose & goal_pose,
+  const double th_dist)
+{
   return calcDistance2d(current_pose, goal_pose) < th_dist;
 }
 
-bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_buffer,
-               const double th_stopped_velocity_mps) {
-  for (const auto& twist : twist_buffer) {
+bool isStopped(
+  const std::deque<geometry_msgs::TwistStamped::ConstPtr> & twist_buffer,
+  const double th_stopped_velocity_mps)
+{
+  for (const auto & twist : twist_buffer) {
     if (std::abs(twist->twist.linear.x) > th_stopped_velocity_mps) {
       return false;
     }
@@ -42,10 +49,11 @@ bool isStopped(const std::deque<geometry_msgs::TwistStamped::ConstPtr>& twist_bu
 }
 
 template <class T>
-std::vector<T> filterConfigByModuleName(const std::vector<T>& configs, const char* module_name) {
+std::vector<T> filterConfigByModuleName(const std::vector<T> & configs, const char * module_name)
+{
   std::vector<T> filtered;
 
-  for (const auto& config : configs) {
+  for (const auto & config : configs) {
     if (config.module == module_name) {
       filtered.push_back(config);
     }
@@ -56,39 +64,46 @@ std::vector<T> filterConfigByModuleName(const std::vector<T>& configs, const cha
 
 }  // namespace
 
-struct ModuleName {
-  static constexpr const char* Sensing = "sensing";
-  static constexpr const char* Localization = "localization";
-  static constexpr const char* Perception = "perception";
-  static constexpr const char* Planning = "planning";
-  static constexpr const char* Control = "control";
+struct ModuleName
+{
+  static constexpr const char * Sensing = "sensing";
+  static constexpr const char * Localization = "localization";
+  static constexpr const char * Perception = "perception";
+  static constexpr const char * Planning = "planning";
+  static constexpr const char * Control = "control";
 };
 
-bool StateMachine::isModuleInitialized(const char* module_name) const {
-  const auto non_received_topics = filterConfigByModuleName(state_input_.topic_stats.non_received_list, module_name);
-  const auto non_set_params = filterConfigByModuleName(state_input_.param_stats.non_set_list, module_name);
-  const auto non_received_tfs = filterConfigByModuleName(state_input_.tf_stats.non_received_list, module_name);
+bool StateMachine::isModuleInitialized(const char * module_name) const
+{
+  const auto non_received_topics =
+    filterConfigByModuleName(state_input_.topic_stats.non_received_list, module_name);
+  const auto non_set_params =
+    filterConfigByModuleName(state_input_.param_stats.non_set_list, module_name);
+  const auto non_received_tfs =
+    filterConfigByModuleName(state_input_.tf_stats.non_received_list, module_name);
 
   if (non_received_topics.empty() && non_set_params.empty() && non_received_tfs.empty()) {
     return true;
   }
 
-  for (const auto& topic_config : non_received_topics) {
+  for (const auto & topic_config : non_received_topics) {
     const auto msg = fmt::format("topic `{}` is not received yet", topic_config.name);
     msgs_.push_back(msg);
     logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
   }
 
-  for (const auto& param_config : non_set_params) {
+  for (const auto & param_config : non_set_params) {
     const auto msg = fmt::format("param `{}` is not set", param_config.name);
     msgs_.push_back(msg);
     logThrottleNamed(ros::console::levels::Warn, 1.0, param_config.name, msg);
   }
 
-  for (const auto& tf_config : non_received_tfs) {
-    const auto msg = fmt::format("tf from `{}` to `{}` is not received yet", tf_config.from, tf_config.to);
+  for (const auto & tf_config : non_received_tfs) {
+    const auto msg =
+      fmt::format("tf from `{}` to `{}` is not received yet", tf_config.from, tf_config.to);
     msgs_.push_back(msg);
-    logThrottleNamed(ros::console::levels::Warn, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to), msg);
+    logThrottleNamed(
+      ros::console::levels::Warn, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to), msg);
   }
 
   {
@@ -100,7 +115,8 @@ bool StateMachine::isModuleInitialized(const char* module_name) const {
   return false;
 }
 
-bool StateMachine::isVehicleInitialized() const {
+bool StateMachine::isVehicleInitialized() const
+{
   if (!isModuleInitialized(ModuleName::Sensing)) {
     return false;
   }
@@ -120,7 +136,8 @@ bool StateMachine::isRouteReceived() const { return state_input_.route != nullpt
 
 bool StateMachine::isNewRouteReceived() const { return state_input_.route != executing_route_; }
 
-bool StateMachine::isPlanningCompleted() const {
+bool StateMachine::isPlanningCompleted() const
+{
   if (!isModuleInitialized(ModuleName::Planning)) {
     return false;
   }
@@ -132,7 +149,8 @@ bool StateMachine::isPlanningCompleted() const {
   return true;
 }
 
-bool StateMachine::isEngaged() const {
+bool StateMachine::isEngaged() const
+{
   // TODO: Output engage status from controller_interface instead of topic
   if (!state_input_.autoware_engage) {
     return false;
@@ -155,10 +173,12 @@ bool StateMachine::isEngaged() const {
 
 bool StateMachine::isOverrided() const { return !isEngaged(); }
 
-bool StateMachine::hasArrivedGoal() const {
-  const auto is_near_goal =
-      isNearGoal(state_input_.current_pose->pose, *state_input_.goal_pose, state_param_.th_arrived_distance_m);
-  const auto is_stopped = isStopped(state_input_.twist_buffer, state_param_.th_stopped_velocity_mps);
+bool StateMachine::hasArrivedGoal() const
+{
+  const auto is_near_goal = isNearGoal(
+    state_input_.current_pose->pose, *state_input_.goal_pose, state_param_.th_arrived_distance_m);
+  const auto is_stopped =
+    isStopped(state_input_.twist_buffer, state_param_.th_stopped_velocity_mps);
 
   if (is_near_goal && is_stopped) {
     return true;
@@ -167,19 +187,22 @@ bool StateMachine::hasArrivedGoal() const {
   return false;
 }
 
-bool StateMachine::hasFailedToArriveGoal() const {
+bool StateMachine::hasFailedToArriveGoal() const
+{
   // not implemented
   return false;
 }
 
-AutowareState StateMachine::updateState(const StateInput& state_input) {
+AutowareState StateMachine::updateState(const StateInput & state_input)
+{
   msgs_ = {};
   state_input_ = state_input;
   autoware_state_ = judgeAutowareState();
   return autoware_state_;
 }
 
-AutowareState StateMachine::judgeAutowareState() const {
+AutowareState StateMachine::judgeAutowareState() const
+{
   switch (autoware_state_) {
     case (AutowareState::InitializingVehicle): {
       msgs_.push_back("[InitializingVehicle] Please wait for a while.");

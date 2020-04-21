@@ -23,13 +23,14 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 
-class Pose2Twist {
- public:
+class Pose2Twist
+{
+public:
   Pose2Twist(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~Pose2Twist();
 
- private:
-  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr& pose_msg_ptr);
+private:
+  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr & pose_msg_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

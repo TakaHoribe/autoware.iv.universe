@@ -24,16 +24,26 @@
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
 
-namespace autoware_utils {
+namespace autoware_utils
+{
+inline geometry_msgs::Point getPoint(const geometry_msgs::Point & p) { return p; }
+inline geometry_msgs::Point getPoint(const geometry_msgs::Pose & p) { return p.position; }
+inline geometry_msgs::Point getPoint(const geometry_msgs::PoseStamped & p)
+{
+  return p.pose.position;
+}
 
-inline geometry_msgs::Point getPoint(const geometry_msgs::Point& p) { return p; }
-inline geometry_msgs::Point getPoint(const geometry_msgs::Pose& p) { return p.position; }
-inline geometry_msgs::Point getPoint(const geometry_msgs::PoseStamped& p) { return p.pose.position; }
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint & p)
+{
+  return p.pose.position;
+}
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint & p)
+{
+  return p.pose.position;
+}
 
-inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint& p) { return p.pose.position; }
-inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint& p) { return p.pose.position; }
-
-inline geometry_msgs::Point createPoint(const double x, const double y, const double z) {
+inline geometry_msgs::Point createPoint(const double x, const double y, const double z)
+{
   geometry_msgs::Point p;
   p.x = x;
   p.y = y;
@@ -41,21 +51,25 @@ inline geometry_msgs::Point createPoint(const double x, const double y, const do
   return p;
 }
 
-inline tf2::Quaternion createQuaternionFromRPY(const double roll, const double pitch, const double yaw) {
+inline tf2::Quaternion createQuaternionFromRPY(
+  const double roll, const double pitch, const double yaw)
+{
   tf2::Quaternion q;
   q.setRPY(roll, pitch, yaw);
   return q;
 }
 
 template <class Point1, class Point2>
-double calcDistance2d(const Point1& point1, const Point2& point2) {
+double calcDistance2d(const Point1 & point1, const Point2 & point2)
+{
   const auto p1 = getPoint(point1);
   const auto p2 = getPoint(point2);
   return std::hypot(p1.x - p2.x, p1.y - p2.y);
 }
 
 template <class Point1, class Point2>
-double calcDistance3d(const Point1& point1, const Point2& point2) {
+double calcDistance3d(const Point1 & point1, const Point2 & point2)
+{
   const auto p1 = getPoint(point1);
   const auto p2 = getPoint(point2);
   // To be replaced by std::hypot(dx, dy, dz) in C++17

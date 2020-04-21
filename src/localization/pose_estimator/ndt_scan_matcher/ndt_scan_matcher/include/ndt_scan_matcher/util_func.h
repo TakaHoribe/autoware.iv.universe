@@ -35,7 +35,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 // ref by http://takacity.blog.fc2.com/blog-entry-69.html
-std_msgs::ColorRGBA ExchangeColorCrc(double x) {
+std_msgs::ColorRGBA ExchangeColorCrc(double x)
+{
   std_msgs::ColorRGBA color;
 
   x = std::max(x, 0.0);
@@ -62,7 +63,8 @@ std_msgs::ColorRGBA ExchangeColorCrc(double x) {
   return color;
 }
 
-double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
+double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
+{
   double diff_rad = lhs_rad - rhs_rad;
   if (diff_rad > M_PI) {
     diff_rad = diff_rad - 2 * M_PI;
@@ -73,16 +75,20 @@ double calcDiffForRadian(const double lhs_rad, const double rhs_rad) {
 }
 
 // x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose& pose) {
+geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose & pose)
+{
   geometry_msgs::Vector3 rpy;
   tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
   return rpy;
 }
 
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped& pose) { return getRPY(pose.pose); }
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped & pose) { return getRPY(pose.pose); }
 
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseWithCovarianceStamped& pose) { return getRPY(pose.pose.pose); }
+geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseWithCovarianceStamped & pose)
+{
+  return getRPY(pose.pose.pose);
+}
 
 // geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped &pose_a,
 //                                const geometry_msgs::PoseStamped &pose_b)
@@ -117,7 +123,9 @@ geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseWithCovarianceStamped& po
 //   return twist;
 // }
 
-geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped& pose_a, const geometry_msgs::PoseStamped& pose_b) {
+geometry_msgs::Twist calcTwist(
+  const geometry_msgs::PoseStamped & pose_a, const geometry_msgs::PoseStamped & pose_b)
+{
   const double dt = (pose_b.header.stamp - pose_a.header.stamp).toSec();
 
   if (dt == 0) {
@@ -149,10 +157,12 @@ geometry_msgs::Twist calcTwist(const geometry_msgs::PoseStamped& pose_a, const g
 }
 
 void getNearestTimeStampPose(
-    const std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr>& pose_cov_msg_ptr_array,
-    const ros::Time& time_stamp, geometry_msgs::PoseWithCovarianceStamped::ConstPtr& output_old_pose_cov_msg_ptr,
-    geometry_msgs::PoseWithCovarianceStamped::ConstPtr& output_new_pose_cov_msg_ptr) {
-  for (const auto& pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
+  const std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
+  const ros::Time & time_stamp,
+  geometry_msgs::PoseWithCovarianceStamped::ConstPtr & output_old_pose_cov_msg_ptr,
+  geometry_msgs::PoseWithCovarianceStamped::ConstPtr & output_new_pose_cov_msg_ptr)
+{
+  for (const auto & pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
     output_new_pose_cov_msg_ptr = pose_cov_msg_ptr;
     if (output_new_pose_cov_msg_ptr->header.stamp > time_stamp) {
       // TODO refactor
@@ -167,9 +177,13 @@ void getNearestTimeStampPose(
   std::cout << output_new_pose_cov_msg_ptr->header.stamp.toSec() - 1576563220 << std::endl;
 }
 
-geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseStamped& pose_a,
-                                           const geometry_msgs::PoseStamped& pose_b, const ros::Time& time_stamp) {
-  if (pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 || time_stamp.toSec() == 0) {
+geometry_msgs::PoseStamped interpolatePose(
+  const geometry_msgs::PoseStamped & pose_a, const geometry_msgs::PoseStamped & pose_b,
+  const ros::Time & time_stamp)
+{
+  if (
+    pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 ||
+    time_stamp.toSec() == 0) {
     return geometry_msgs::PoseStamped();
   }
 
@@ -200,9 +214,10 @@ geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseStamped& pos
   return pose;
 }
 
-geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseWithCovarianceStamped& pose_a,
-                                           const geometry_msgs::PoseWithCovarianceStamped& pose_b,
-                                           const ros::Time& time_stamp) {
+geometry_msgs::PoseStamped interpolatePose(
+  const geometry_msgs::PoseWithCovarianceStamped & pose_a,
+  const geometry_msgs::PoseWithCovarianceStamped & pose_b, const ros::Time & time_stamp)
+{
   geometry_msgs::PoseStamped tmp_pose_a;
   tmp_pose_a.header = pose_a.header;
   tmp_pose_a.pose = pose_a.pose.pose;
@@ -214,8 +229,10 @@ geometry_msgs::PoseStamped interpolatePose(const geometry_msgs::PoseWithCovarian
   return interpolatePose(tmp_pose_a, tmp_pose_b, time_stamp);
 }
 
-void popOldPose(std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr>& pose_cov_msg_ptr_array,
-                const ros::Time& time_stamp) {
+void popOldPose(
+  std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
+  const ros::Time & time_stamp)
+{
   while (!pose_cov_msg_ptr_array.empty()) {
     if (pose_cov_msg_ptr_array.front()->header.stamp >= time_stamp) {
       break;
@@ -225,7 +242,8 @@ void popOldPose(std::deque<geometry_msgs::PoseWithCovarianceStamped::ConstPtr>& 
 }
 
 static geometry_msgs::PoseArray createRandomPoseArray(
-    const geometry_msgs::PoseWithCovarianceStamped& base_pose_with_cov, const size_t particle_num) {
+  const geometry_msgs::PoseWithCovarianceStamped & base_pose_with_cov, const size_t particle_num)
+{
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
   std::normal_distribution<> x_distribution(0.0, base_pose_with_cov.pose.covariance[0]);

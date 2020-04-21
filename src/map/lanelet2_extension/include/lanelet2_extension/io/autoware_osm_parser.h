@@ -23,10 +23,13 @@
 
 #include <string>
 
-namespace lanelet {
-namespace io_handlers {
-class AutowareOsmParser : public OsmParser {
- public:
+namespace lanelet
+{
+namespace io_handlers
+{
+class AutowareOsmParser : public OsmParser
+{
+public:
   using OsmParser::OsmParser;
 
   /**
@@ -37,7 +40,8 @@ class AutowareOsmParser : public OsmParser {
    * @param  errors   [any errors catched during parsing]
    * @return          [returns LaneletMap]
    */
-  std::unique_ptr<LaneletMap> parse(const std::string& filename, ErrorMessages& errors) const;  // NOLINT
+  std::unique_ptr<LaneletMap> parse(
+    const std::string & filename, ErrorMessages & errors) const;  // NOLINT
 
   /**
    * [parseVersions parses MetaInfo tags from osm file]
@@ -45,11 +49,12 @@ class AutowareOsmParser : public OsmParser {
    * @param format_version [parsed information about map format version]
    * @param map_version    [parsed information about map version]
    */
-  static void parseVersions(const std::string& filename, std::string* format_version, std::string* map_version);
+  static void parseVersions(
+    const std::string & filename, std::string * format_version, std::string * map_version);
 
-  static constexpr const char* extension() { return ".osm"; }
+  static constexpr const char * extension() { return ".osm"; }
 
-  static constexpr const char* name() { return "autoware_osm_handler"; }
+  static constexpr const char * name() { return "autoware_osm_handler"; }
 };
 
 }  // namespace io_handlers

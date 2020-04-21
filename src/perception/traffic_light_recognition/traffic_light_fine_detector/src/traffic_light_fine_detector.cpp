@@ -42,8 +42,10 @@
 #include <boost/filesystem.hpp>
 #include <chrono>
 
-namespace traffic_light {
-TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~") {
+namespace traffic_light
+{
+TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~")
+{
   std::string package_path = ros::package::getPath("traffic_light_fine_detector");
   std::string data_path = package_path + "/data/";
   std::string engine_path = package_path + "/data/yolov3-tlr.engine";
@@ -66,8 +68,8 @@ TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~") 
     int count = 0;
     Tn::RUN_MODE run_mode = Tn::RUN_MODE::FLOAT32;
     if (boost::filesystem::is_directory(calib_image_path)) {
-      for (const auto& entry :
-           boost::make_iterator_range(boost::filesystem::directory_iterator(calib_image_path), {})) {
+      for (const auto & entry : boost::make_iterator_range(
+             boost::filesystem::directory_iterator(calib_image_path), {})) {
         cv::Mat img = cv::imread(entry.path().string());
         if (img.empty()) {
           ROS_INFO("fail to load image: %s", entry.path().string().c_str());
@@ -95,16 +97,20 @@ TrafficLightFineDetectorNode::TrafficLightFineDetectorNode() : nh_(), pnh_("~") 
 
 TrafficLightFineDetectorNode::~TrafficLightFineDetectorNode() {}
 
-void TrafficLightFineDetectorNode::initROS() {
+void TrafficLightFineDetectorNode::initROS()
+{
   pnh_.param<bool>("approximate_sync", is_approximate_sync_, false);
   pnh_.param<double>("score_thresh", score_thresh_, 0.7);
-  output_rois_pub_ = pnh_.advertise<autoware_traffic_light_msgs::TrafficLightRoiArray>("output/rois", 1);
+  output_rois_pub_ =
+    pnh_.advertise<autoware_perception_msgs::TrafficLightRoiArray>("output/rois", 1);
   image_sub_.subscribe(pnh_, "input/image", 1);
   traffic_light_roi_sub_.subscribe(pnh_, "input/rois", 1);
   if (is_approximate_sync_) {
-    approximate_sync_ = std::make_shared<message_filters::Synchronizer<ApproximateSyncPolicy>>(1000);
+    approximate_sync_ =
+      std::make_shared<message_filters::Synchronizer<ApproximateSyncPolicy>>(1000);
     approximate_sync_->connectInput(image_sub_, traffic_light_roi_sub_);
-    approximate_sync_->registerCallback(boost::bind(&TrafficLightFineDetectorNode::callback, this, _1, _2));
+    approximate_sync_->registerCallback(
+      boost::bind(&TrafficLightFineDetectorNode::callback, this, _1, _2));
   } else {
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(1000);
     sync_->connectInput(image_sub_, traffic_light_roi_sub_);
@@ -113,17 +119,18 @@ void TrafficLightFineDetectorNode::initROS() {
 }
 
 void TrafficLightFineDetectorNode::callback(
-    const sensor_msgs::Image::ConstPtr& in_image_msg,
-    const autoware_traffic_light_msgs::TrafficLightRoiArray::ConstPtr& in_roi_msg) {
+  const sensor_msgs::Image::ConstPtr & in_image_msg,
+  const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr & in_roi_msg)
+{
   cv::Mat original_image;
-  autoware_traffic_light_msgs::TrafficLightRoiArray out_rois;
+  autoware_perception_msgs::TrafficLightRoiArray out_rois;
 
   rosmsg2cvmat(in_image_msg, original_image);
   int outputCount = net_ptr_->getOutputSize() / sizeof(float);
   std::unique_ptr<float[]> output_data(new float[outputCount]);
   int class_num = 1;
 
-  for (const auto& el : in_roi_msg->rois) {
+  for (const auto & el : in_roi_msg->rois) {
     cv::Point lt = cv::Point(el.roi.x_offset, el.roi.y_offset);
     cv::Point rb = cv::Point(el.roi.x_offset + el.roi.width, el.roi.y_offset + el.roi.height);
     fit_in_frame(lt, rb, cv::Size(original_image.size()));
@@ -135,12 +142,12 @@ void TrafficLightFineDetectorNode::callback(
     auto output = output_data.get();
     auto bboxes = postProcessImg(output, class_num, cropped);
     if (bboxes.size() == 0) continue;
-    for (const auto& item : bboxes) {
+    for (const auto & item : bboxes) {
       if (item.score > score_thresh_) {
         cv::Point lt_roi = cv::Point(lt.x + item.left, lt.y + item.top);
         cv::Point rb_roi = cv::Point(lt.x + item.right, lt.y + item.bot);
         fit_in_frame(lt_roi, rb_roi, cv::Size(original_image.size()));
-        autoware_traffic_light_msgs::TrafficLightRoi tl_roi;
+        autoware_perception_msgs::TrafficLightRoi tl_roi;
         cvrect2tlroimsg(cv::Rect(lt_roi, rb_roi), el.id, tl_roi);
         out_rois.rois.push_back(tl_roi);
         break;
@@ -151,7 +158,8 @@ void TrafficLightFineDetectorNode::callback(
   output_rois_pub_.publish(out_rois);
 }
 
-std::vector<float> TrafficLightFineDetectorNode::prepareImage(cv::Mat& in_img) {
+std::vector<float> TrafficLightFineDetectorNode::prepareImage(cv::Mat & in_img)
+{
   // using namespace cv;
 
   int c = 3;
@@ -167,7 +175,8 @@ std::vector<float> TrafficLightFineDetectorNode::prepareImage(cv::Mat& in_img) {
   cv::resize(rgb, resized, scaleSize, 0, 0, cv::INTER_CUBIC);
 
   cv::Mat cropped(h, w, CV_8UC3, 127);
-  cv::Rect rect((w - scaleSize.width) / 2, (h - scaleSize.height) / 2, scaleSize.width, scaleSize.height);
+  cv::Rect rect(
+    (w - scaleSize.width) / 2, (h - scaleSize.height) / 2, scaleSize.width, scaleSize.height);
   resized.copyTo(cropped(rect));
 
   cv::Mat img_float;
@@ -188,7 +197,9 @@ std::vector<float> TrafficLightFineDetectorNode::prepareImage(cv::Mat& in_img) {
   return result;
 }
 
-std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(float* output, const int classes, cv::Mat& img) {
+std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(
+  float * output, const int classes, cv::Mat & img)
+{
   int detect_h = 256;
   int detect_w = 256;
   float obj_threshold = 0.10;
@@ -203,8 +214,8 @@ std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(float* output
     total_size += size;
   }
   int offset = 0;
-  float* transposed_output = new float[total_size];
-  float* transposed_output_t = transposed_output;
+  float * transposed_output = new float[total_size];
+  float * transposed_output_t = transposed_output;
   for (size_t i = 0; i < output_shape.size(); i++) {
     auto shape = output_shape[i];  // nchw
     int chw = shape[1] * shape[2] * shape[3];
@@ -242,7 +253,7 @@ std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(float* output
         int offset_w = offset_h + w * shape[2] * shape[3];
         for (int c = 0; c < shape[2]; c++) {
           int offset_c = offset_w + c * shape[3];
-          float* ptr = transposed_output + offset_c;
+          float * ptr = transposed_output + offset_c;
           ptr[4] = sigmoid(ptr[4]);
           ptr[5] = sigmoid(ptr[5]);
           float score = ptr[4] * ptr[5];
@@ -282,7 +293,7 @@ std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(float* output
   float scaleSize[] = {width * scale, height * scale};
 
   // correct box
-  for (auto& det : detections) {
+  for (auto & det : detections) {
     det.x = (det.x * detect_w - (detect_w - scaleSize[0]) / 2.f) / scale;
     det.y = (det.y * detect_h - (detect_h - scaleSize[1]) / 2.f) / scale;
     det.w *= detect_w;
@@ -295,27 +306,28 @@ std::vector<Tn::Bbox> TrafficLightFineDetectorNode::postProcessImg(float* output
   float nms_thresh = 0.45;
   if (nms_thresh > 0) doNms(detections, nms_thresh);
   std::vector<Tn::Bbox> boxes;
-  for (const auto& det : detections) {
+  for (const auto & det : detections) {
     Tn::Bbox bbox = {
-        0,                                     // classId
-        std::max(int(det.x), 0),               // left
-        std::min(int(det.x + det.w), width),   // right
-        std::max(int(det.y), 0),               // top
-        std::min(int(det.y + det.h), height),  // bot
-        det.prob,                              // score
+      0,                                     // classId
+      std::max(int(det.x), 0),               // left
+      std::min(int(det.x + det.w), width),   // right
+      std::max(int(det.y), 0),               // top
+      std::min(int(det.y + det.h), height),  // bot
+      det.prob,                              // score
     };
     boxes.push_back(bbox);
   }
   return boxes;
 }
 
-void TrafficLightFineDetectorNode::doNms(std::vector<Detection>& detections, float nms_thresh) {
-  auto iouCompute = [](float* lbox, float* rbox) {
+void TrafficLightFineDetectorNode::doNms(std::vector<Detection> & detections, float nms_thresh)
+{
+  auto iouCompute = [](float * lbox, float * rbox) {
     float interBox[] = {
-        std::max(lbox[0], rbox[0]),                      // left
-        std::min(lbox[0] + lbox[2], rbox[0] + rbox[2]),  // right
-        std::max(lbox[1], rbox[1]),                      // top
-        std::min(lbox[1] + lbox[3], rbox[1] + rbox[3]),  // bottom
+      std::max(lbox[0], rbox[0]),                      // left
+      std::min(lbox[0] + lbox[2], rbox[0] + rbox[2]),  // right
+      std::max(lbox[1], rbox[1]),                      // top
+      std::min(lbox[1] + lbox[3], rbox[1] + rbox[3]),  // bottom
     };
 
     if (interBox[2] >= interBox[3] || interBox[0] >= interBox[1]) return 0.0f;
@@ -324,14 +336,15 @@ void TrafficLightFineDetectorNode::doNms(std::vector<Detection>& detections, flo
     return interBoxS / (lbox[2] * lbox[3] + rbox[2] * rbox[3] - interBoxS);
   };
 
-  sort(detections.begin(), detections.end(),
-       [=](const Detection& left, const Detection& right) { return left.prob > right.prob; });
+  sort(detections.begin(), detections.end(), [=](const Detection & left, const Detection & right) {
+    return left.prob > right.prob;
+  });
 
   std::vector<Detection> result;
   for (unsigned int m = 0; m < detections.size(); ++m) {
     result.push_back(detections[m]);
     for (unsigned int n = m + 1; n < detections.size(); ++n) {
-      if (iouCompute((float*)(&detections[m]), (float*)(&detections[n])) > nms_thresh) {
+      if (iouCompute((float *)(&detections[m]), (float *)(&detections[n])) > nms_thresh) {
         detections.erase(detections.begin() + n);
         --n;
       }
@@ -340,11 +353,13 @@ void TrafficLightFineDetectorNode::doNms(std::vector<Detection>& detections, flo
   detections = move(result);
 }
 
-bool TrafficLightFineDetectorNode::rosmsg2cvmat(const sensor_msgs::Image::ConstPtr& image_msg, cv::Mat& image) {
+bool TrafficLightFineDetectorNode::rosmsg2cvmat(
+  const sensor_msgs::Image::ConstPtr & image_msg, cv::Mat & image)
+{
   try {
     cv_bridge::CvImagePtr cv_image = cv_bridge::toCvCopy(image_msg, "bgr8");
     image = cv_image->image;
-  } catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception & e) {
     ROS_ERROR("Failed to convert sensor_msgs::Image to cv::Mat \n%s", e.what());
     return false;
   }
@@ -352,22 +367,26 @@ bool TrafficLightFineDetectorNode::rosmsg2cvmat(const sensor_msgs::Image::ConstP
   return true;
 }
 
-bool TrafficLightFineDetectorNode::fit_in_frame(cv::Point& lt, cv::Point& rb, const cv::Size& size) {
+bool TrafficLightFineDetectorNode::fit_in_frame(
+  cv::Point & lt, cv::Point & rb, const cv::Size & size)
+{
   try {
     if (rb.x > size.width) rb.x = size.width;
     if (rb.y > size.height) rb.y = size.height;
     if (lt.x < 0) lt.x = 0;
     if (lt.y < 0) lt.y = 0;
-  } catch (cv::Exception& e) {
-    ROS_ERROR("Failed to fit bounding rect in size [%d, %d] \n%s", size.width, size.height, e.what());
+  } catch (cv::Exception & e) {
+    ROS_ERROR(
+      "Failed to fit bounding rect in size [%d, %d] \n%s", size.width, size.height, e.what());
     return false;
   }
 
   return true;
 }
 
-void TrafficLightFineDetectorNode::cvrect2tlroimsg(const cv::Rect& rect, const int32_t id,
-                                                   autoware_traffic_light_msgs::TrafficLightRoi& tl_roi) {
+void TrafficLightFineDetectorNode::cvrect2tlroimsg(
+  const cv::Rect & rect, const int32_t id, autoware_perception_msgs::TrafficLightRoi & tl_roi)
+{
   tl_roi.id = id;
   tl_roi.roi.x_offset = rect.x;
   tl_roi.roi.y_offset = rect.y;

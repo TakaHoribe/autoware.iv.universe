@@ -20,7 +20,8 @@
 #include <ros/ros.h>
 #include "dynamic_object_visualization/dynamic_object_visualizer.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   ros::init(argc, argv, "dynamic_object_visualizer");
   DynamicObjectVisualizer node;
   ros::spin();

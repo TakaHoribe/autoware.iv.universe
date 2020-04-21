@@ -18,31 +18,35 @@
 #include <cmath>
 #include "lidar_apollo_instance_segmentation/util.h"
 
-FeatureMapInterface::FeatureMapInterface(const int _channels, const int _width, const int _height, const int _range)
-    : channels(_channels),
-      width(_width),
-      height(_height),
-      range(_range),
-      max_height_data(nullptr),
-      mean_height_data(nullptr),
-      count_data(nullptr),
-      direction_data(nullptr),
-      top_intensity_data(nullptr),
-      mean_intensity_data(nullptr),
-      distance_data(nullptr),
-      nonempty_data(nullptr) {
+FeatureMapInterface::FeatureMapInterface(
+  const int _channels, const int _width, const int _height, const int _range)
+: channels(_channels),
+  width(_width),
+  height(_height),
+  range(_range),
+  max_height_data(nullptr),
+  mean_height_data(nullptr),
+  count_data(nullptr),
+  direction_data(nullptr),
+  top_intensity_data(nullptr),
+  mean_intensity_data(nullptr),
+  distance_data(nullptr),
+  nonempty_data(nullptr)
+{
   map_data.resize(width * height * channels);
 }
 
 FeatureMap::FeatureMap(const int width, const int height, const int range)
-    : FeatureMapInterface(4, width, height, range) {
+: FeatureMapInterface(4, width, height, range)
+{
   max_height_data = &(map_data[0]) + width * height * 0;
   mean_height_data = &(map_data[0]) + width * height * 1;
   count_data = &(map_data[0]) + width * height * 2;
   nonempty_data = &(map_data[0]) + width * height * 3;
 }
-void FeatureMap::initializeMap(std::vector<float>& map) {}
-void FeatureMap::resetMap(std::vector<float>& map) {
+void FeatureMap::initializeMap(std::vector<float> & map) {}
+void FeatureMap::resetMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int i = 0; i < size; ++i) {
     max_height_data[i] = -5.0f;
@@ -53,7 +57,8 @@ void FeatureMap::resetMap(std::vector<float>& map) {
 }
 
 FeatureMapWithIntensity::FeatureMapWithIntensity(const int width, const int height, const int range)
-    : FeatureMapInterface(6, width, height, range) {
+: FeatureMapInterface(6, width, height, range)
+{
   max_height_data = &(map_data[0]) + width * height * 0;
   mean_height_data = &(map_data[0]) + width * height * 1;
   count_data = &(map_data[0]) + width * height * 2;
@@ -61,8 +66,9 @@ FeatureMapWithIntensity::FeatureMapWithIntensity(const int width, const int heig
   mean_intensity_data = &(map_data[0]) + width * height * 4;
   nonempty_data = &(map_data[0]) + width * height * 5;
 }
-void FeatureMapWithIntensity::initializeMap(std::vector<float>& map) {}
-void FeatureMapWithIntensity::resetMap(std::vector<float>& map) {
+void FeatureMapWithIntensity::initializeMap(std::vector<float> & map) {}
+void FeatureMapWithIntensity::resetMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int i = 0; i < size; ++i) {
     max_height_data[i] = -5.0f;
@@ -75,7 +81,8 @@ void FeatureMapWithIntensity::resetMap(std::vector<float>& map) {
 }
 
 FeatureMapWithConstant::FeatureMapWithConstant(const int width, const int height, const int range)
-    : FeatureMapInterface(6, width, height, range) {
+: FeatureMapInterface(6, width, height, range)
+{
   max_height_data = &(map_data[0]) + width * height * 0;
   mean_height_data = &(map_data[0]) + width * height * 1;
   count_data = &(map_data[0]) + width * height * 2;
@@ -83,7 +90,8 @@ FeatureMapWithConstant::FeatureMapWithConstant(const int width, const int height
   distance_data = &(map_data[0]) + width * height * 4;
   nonempty_data = &(map_data[0]) + width * height * 5;
 }
-void FeatureMapWithConstant::initializeMap(std::vector<float>& map) {
+void FeatureMapWithConstant::initializeMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int row = 0; row < height; ++row) {
     for (int col = 0; col < width; ++col) {
@@ -101,7 +109,8 @@ void FeatureMapWithConstant::initializeMap(std::vector<float>& map) {
   }
 }
 
-void FeatureMapWithConstant::resetMap(std::vector<float>& map) {
+void FeatureMapWithConstant::resetMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int i = 0; i < size; ++i) {
     max_height_data[i] = -5.0f;
@@ -111,9 +120,10 @@ void FeatureMapWithConstant::resetMap(std::vector<float>& map) {
   }
 }
 
-FeatureMapWithConstantAndIntensity::FeatureMapWithConstantAndIntensity(const int width, const int height,
-                                                                       const int range)
-    : FeatureMapInterface(8, width, height, range) {
+FeatureMapWithConstantAndIntensity::FeatureMapWithConstantAndIntensity(
+  const int width, const int height, const int range)
+: FeatureMapInterface(8, width, height, range)
+{
   max_height_data = &(map_data[0]) + width * height * 0;
   mean_height_data = &(map_data[0]) + width * height * 1;
   count_data = &(map_data[0]) + width * height * 2;
@@ -123,7 +133,8 @@ FeatureMapWithConstantAndIntensity::FeatureMapWithConstantAndIntensity(const int
   distance_data = &(map_data[0]) + width * height * 6;
   nonempty_data = &(map_data[0]) + width * height * 7;
 }
-void FeatureMapWithConstantAndIntensity::initializeMap(std::vector<float>& map) {
+void FeatureMapWithConstantAndIntensity::initializeMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int row = 0; row < height; ++row) {
     for (int col = 0; col < width; ++col) {
@@ -141,7 +152,8 @@ void FeatureMapWithConstantAndIntensity::initializeMap(std::vector<float>& map) 
   }
 }
 
-void FeatureMapWithConstantAndIntensity::resetMap(std::vector<float>& map) {
+void FeatureMapWithConstantAndIntensity::resetMap(std::vector<float> & map)
+{
   const int size = width * height;
   for (int i = 0; i < size; ++i) {
     max_height_data[i] = -5.0f;

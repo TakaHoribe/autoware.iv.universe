@@ -26,15 +26,16 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "autoware_perception_msgs/Shape.h"
 
-bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster,
-                             autoware_perception_msgs::Shape& shape_output, geometry_msgs::Pose& pose_output,
-                             bool& orientation_output) {
+bool CylinderModel::estimate(
+  const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
+  geometry_msgs::Pose & pose_output, bool & orientation_output)
+{
   // calc centroid point for cylinder height(z)
   pcl::PointXYZ centroid;
   centroid.x = 0;
   centroid.y = 0;
   centroid.z = 0;
-  for (const auto& pcl_point : cluster) {
+  for (const auto & pcl_point : cluster) {
     centroid.x += pcl_point.x;
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;

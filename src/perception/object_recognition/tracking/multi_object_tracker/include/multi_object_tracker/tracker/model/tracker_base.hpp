@@ -22,37 +22,44 @@
 #include <ros/ros.h>
 #include <unique_id/unique_id.h>
 
-class Tracker {
- protected:
+class Tracker
+{
+protected:
   boost::uuids::uuid getUUID() { return uuid_; }
   void setType(int type) { type_ = type; }
 
- private:
+private:
   boost::uuids::uuid uuid_;
   int type_;
   int no_measurement_count_;
   int total_measurement_count_;
   ros::Time last_update_with_measurement_time_;
 
- public:
-  Tracker(const ros::Time& time, const int type);
+public:
+  Tracker(const ros::Time & time, const int type);
   virtual ~Tracker(){};
-  bool updateWithMeasurement(const autoware_perception_msgs::DynamicObject& object, const ros::Time& measurement_time);
+  bool updateWithMeasurement(
+    const autoware_perception_msgs::DynamicObject & object, const ros::Time & measurement_time);
   bool updateWithoutMeasurement();
   int getType() { return type_; }
   int getNoMeasurementCount() { return no_measurement_count_; }
   int getTotalMeasurementCount() { return total_measurement_count_; }
-  double getElapsedTimeFromLastUpdate() { return (ros::Time::now() - last_update_with_measurement_time_).toSec(); }
-  virtual geometry_msgs::Point getPosition(const ros::Time& time);
-  virtual double getArea(const ros::Time& time);
+  double getElapsedTimeFromLastUpdate()
+  {
+    return (ros::Time::now() - last_update_with_measurement_time_).toSec();
+  }
+  virtual geometry_msgs::Point getPosition(const ros::Time & time);
+  virtual double getArea(const ros::Time & time);
 
   /*
    *　Pure virtual function
    */
- protected:
-  virtual bool measure(const autoware_perception_msgs::DynamicObject& object, const ros::Time& time) = 0;
+protected:
+  virtual bool measure(
+    const autoware_perception_msgs::DynamicObject & object, const ros::Time & time) = 0;
 
- public:
-  virtual bool getEstimatedDynamicObject(const ros::Time& time, autoware_perception_msgs::DynamicObject& object) = 0;
-  virtual bool predict(const ros::Time& time) = 0;
+public:
+  virtual bool getEstimatedDynamicObject(
+    const ros::Time & time, autoware_perception_msgs::DynamicObject & object) = 0;
+  virtual bool predict(const ros::Time & time) = 0;
 };

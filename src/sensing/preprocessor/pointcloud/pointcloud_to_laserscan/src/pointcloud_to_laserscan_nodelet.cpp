@@ -48,11 +48,12 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <visualization_msgs/Marker.h>
 
-namespace pointcloud_to_laserscan {
-
+namespace pointcloud_to_laserscan
+{
 PointCloudToLaserScanNodelet::PointCloudToLaserScanNodelet() {}
 
-void PointCloudToLaserScanNodelet::onInit() {
+void PointCloudToLaserScanNodelet::onInit()
+{
   boost::mutex::scoped_lock lock(connect_mutex_);
   private_nh_ = getPrivateNodeHandle();
 
@@ -92,55 +93,64 @@ void PointCloudToLaserScanNodelet::onInit() {
     tf2_.reset(new tf2_ros::Buffer());
     tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
     message_filter_.reset(new MessageFilter(sub_, *tf2_, target_frame_, input_queue_size_, nh_));
-    message_filter_->registerCallback(boost::bind(&PointCloudToLaserScanNodelet::cloudCb, this, _1));
-    message_filter_->registerFailureCallback(boost::bind(&PointCloudToLaserScanNodelet::failureCb, this, _1, _2));
+    message_filter_->registerCallback(
+      boost::bind(&PointCloudToLaserScanNodelet::cloudCb, this, _1));
+    message_filter_->registerFailureCallback(
+      boost::bind(&PointCloudToLaserScanNodelet::failureCb, this, _1, _2));
   } else  // otherwise setup direct subscription
   {
     sub_.registerCallback(boost::bind(&PointCloudToLaserScanNodelet::cloudCb, this, _1));
   }
 
   laserscan_pub_ = nh_.advertise<sensor_msgs::LaserScan>(
-      "vscan/laserscan", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
-      boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
+    "vscan/laserscan", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
+    boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
   pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(
-      "vscan/pointcloud", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
-      boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
+    "vscan/pointcloud", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
+    boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
   ray_viz_pub_ = nh_.advertise<visualization_msgs::Marker>(
-      "vscan/ray", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
-      boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
+    "vscan/ray", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
+    boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
   stixel_viz_pub_ = nh_.advertise<visualization_msgs::Marker>(
-      "vscan/stixel", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
-      boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
+    "vscan/stixel", 1, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
+    boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
 }
 
-void PointCloudToLaserScanNodelet::connectCb() {
+void PointCloudToLaserScanNodelet::connectCb()
+{
   boost::mutex::scoped_lock lock(connect_mutex_);
-  if ((laserscan_pub_.getNumSubscribers() > 0 || pointcloud_pub_.getNumSubscribers() > 0 ||
-       ray_viz_pub_.getNumSubscribers() > 0 || stixel_viz_pub_.getNumSubscribers() > 0) &&
-      sub_.getSubscriber().getNumPublishers() == 0) {
+  if (
+    (laserscan_pub_.getNumSubscribers() > 0 || pointcloud_pub_.getNumSubscribers() > 0 ||
+     ray_viz_pub_.getNumSubscribers() > 0 || stixel_viz_pub_.getNumSubscribers() > 0) &&
+    sub_.getSubscriber().getNumPublishers() == 0) {
     NODELET_INFO("Got a subscriber to scan, starting subscriber to pointcloud");
     sub_.subscribe(nh_, "cloud_in", input_queue_size_);
   }
 }
 
-void PointCloudToLaserScanNodelet::disconnectCb() {
+void PointCloudToLaserScanNodelet::disconnectCb()
+{
   boost::mutex::scoped_lock lock(connect_mutex_);
-  if (laserscan_pub_.getNumSubscribers() == 0 && pointcloud_pub_.getNumSubscribers() == 0 &&
-      ray_viz_pub_.getNumSubscribers() == 0 && stixel_viz_pub_.getNumSubscribers() == 0) {
+  if (
+    laserscan_pub_.getNumSubscribers() == 0 && pointcloud_pub_.getNumSubscribers() == 0 &&
+    ray_viz_pub_.getNumSubscribers() == 0 && stixel_viz_pub_.getNumSubscribers() == 0) {
     NODELET_INFO("No subscibers to scan, shutting down subscriber to pointcloud");
     sub_.unsubscribe();
   }
 }
 
-void PointCloudToLaserScanNodelet::failureCb(const sensor_msgs::PointCloud2ConstPtr& cloud_msg,
-                                             tf2_ros::filter_failure_reasons::FilterFailureReason reason) {
-  NODELET_WARN_STREAM_THROTTLE(1.0, "Can't transform pointcloud from frame " << cloud_msg->header.frame_id << " to "
-                                                                             << message_filter_->getTargetFramesString()
-                                                                             << " at time " << cloud_msg->header.stamp
-                                                                             << ", reason: " << reason);
+void PointCloudToLaserScanNodelet::failureCb(
+  const sensor_msgs::PointCloud2ConstPtr & cloud_msg,
+  tf2_ros::filter_failure_reasons::FilterFailureReason reason)
+{
+  NODELET_WARN_STREAM_THROTTLE(
+    1.0, "Can't transform pointcloud from frame "
+           << cloud_msg->header.frame_id << " to " << message_filter_->getTargetFramesString()
+           << " at time " << cloud_msg->header.stamp << ", reason: " << reason);
 }
 
-void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr& cloud_msg) {
+void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr & cloud_msg)
+{
   // build laserscan output
   sensor_msgs::LaserScan output;
   output.header = cloud_msg->header;
@@ -188,7 +198,7 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
       cloud.reset(new sensor_msgs::PointCloud2);
       tf2_->transform(*cloud_msg, *cloud, target_frame_, ros::Duration(tolerance_));
       cloud_out = cloud;
-    } catch (tf2::TransformException& ex) {
+    } catch (tf2::TransformException & ex) {
       NODELET_ERROR_STREAM("Transform failure: " << ex.what());
       return;
     }
@@ -198,8 +208,8 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
 
   // Iterate through pointcloud
   int pointcloud_index = 0;
-  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(*cloud_out, "x"), iter_y(*cloud_out, "y"),
-       iter_z(*cloud_out, "z");
+  for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(*cloud_out, "x"),
+       iter_y(*cloud_out, "y"), iter_z(*cloud_out, "z");
        iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++pointcloud_index) {
     if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z)) {
       NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
@@ -207,25 +217,29 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
     }
 
     if (*iter_z > max_height_ || *iter_z < min_height_) {
-      NODELET_DEBUG("rejected for height %f not in range (%f, %f)\n", *iter_z, min_height_, max_height_);
+      NODELET_DEBUG(
+        "rejected for height %f not in range (%f, %f)\n", *iter_z, min_height_, max_height_);
       continue;
     }
 
     double range = hypot(*iter_x, *iter_y);
     if (range < range_min_) {
-      NODELET_DEBUG("rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range, range_min_, *iter_x,
-                    *iter_y, *iter_z);
+      NODELET_DEBUG(
+        "rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range, range_min_,
+        *iter_x, *iter_y, *iter_z);
       continue;
     }
     if (range > range_max_) {
-      NODELET_DEBUG("rejected for range %f above maximum value %f. Point: (%f, %f, %f)", range, range_max_, *iter_x,
-                    *iter_y, *iter_z);
+      NODELET_DEBUG(
+        "rejected for range %f above maximum value %f. Point: (%f, %f, %f)", range, range_max_,
+        *iter_x, *iter_y, *iter_z);
       continue;
     }
 
     double angle = atan2(*iter_y, *iter_x);
     if (angle < output.angle_min || angle > output.angle_max) {
-      NODELET_DEBUG("rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
+      NODELET_DEBUG(
+        "rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
       continue;
     }
 
@@ -240,7 +254,7 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
 
   pcl::PointCloud<pcl::PointXYZ> pcl_pointcloud;
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*cloud_out, "x"), iter_y(*cloud_out, "y"),
-      iter_z(*cloud_out, "z");
+    iter_z(*cloud_out, "z");
   for (size_t i = 0; i < v_pointcloud_index.size(); ++i) {
     if (v_pointcloud_index.at(i) != no_data) {
       pcl::PointXYZ point;

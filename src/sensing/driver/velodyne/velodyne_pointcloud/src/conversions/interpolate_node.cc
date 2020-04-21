@@ -9,7 +9,7 @@
 #include "velodyne_pointcloud/interpolate.h"
 
 /** Main node entry point. */
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "interpolate_node");
   ros::NodeHandle node;

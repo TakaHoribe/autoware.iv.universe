@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="input_pose_topic" default="/localization/pose_estimator/ndt_pose" doc="" />
+  <arg name="input_pose_topic" default="/localization/pose_estimator/pose" doc="" />
   <arg name="output_twist_topic" default="/estimate_twist" doc="" />
 
   <node pkg="pose2twist" type="pose2twist" name="pose2twist" output="log">

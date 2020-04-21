@@ -46,7 +46,8 @@
 
 #include <unsupported/Eigen/NonLinearOptimization>
 
-namespace ndt_omp {
+namespace ndt_omp
+{
 enum NeighborSearchMethod { KDTREE, DIRECT26, DIRECT7, DIRECT1 };
 
 /** \brief A 3D Normal Distribution Transform registration implementation for point cloud data.
@@ -61,8 +62,9 @@ enum NeighborSearchMethod { KDTREE, DIRECT26, DIRECT7, DIRECT1 };
  * \author Brian Okorn (Space and Naval Warfare Systems Center Pacific)
  */
 template <typename PointSource, typename PointTarget>
-class NormalDistributionsTransform : public pcl::Registration<PointSource, PointTarget> {
- protected:
+class NormalDistributionsTransform : public pcl::Registration<PointSource, PointTarget>
+{
+protected:
   typedef typename pcl::Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
   typedef typename PointCloudSource::Ptr PointCloudSourcePtr;
   typedef typename PointCloudSource::ConstPtr PointCloudSourceConstPtr;
@@ -77,13 +79,13 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   /** \brief Typename of searchable voxel grid containing mean and covariance. */
   typedef ndt_omp::VoxelGridCovariance<PointTarget> TargetGrid;
   /** \brief Typename of pointer to searchable voxel grid. */
-  typedef TargetGrid* TargetGridPtr;
+  typedef TargetGrid * TargetGridPtr;
   /** \brief Typename of const pointer to searchable voxel grid. */
-  typedef const TargetGrid* TargetGridConstPtr;
+  typedef const TargetGrid * TargetGridConstPtr;
   /** \brief Typename of const pointer to searchable voxel grid leaf. */
   typedef typename TargetGrid::LeafConstPtr TargetGridLeafConstPtr;
 
- public:
+public:
   typedef boost::shared_ptr<NormalDistributionsTransform<PointSource, PointTarget> > Ptr;
   typedef boost::shared_ptr<const NormalDistributionsTransform<PointSource, PointTarget> > ConstPtr;
 
@@ -102,7 +104,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   /** \brief Provide a pointer to the input target (e.g., the point cloud that we want to align the input source to).
    * \param[in] cloud the input point cloud target
    */
-  inline void setInputTarget(const PointCloudTargetConstPtr& cloud) {
+  inline void setInputTarget(const PointCloudTargetConstPtr & cloud)
+  {
     pcl::Registration<PointSource, PointTarget>::setInputTarget(cloud);
     init();
   }
@@ -110,7 +113,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   /** \brief Set/change the voxel grid resolution.
    * \param[in] resolution side length of voxels
    */
-  inline void setResolution(float resolution) {
+  inline void setResolution(float resolution)
+  {
     // Prevents unnessary voxel initiations
     if (resolution_ != resolution) {
       resolution_ = resolution;
@@ -161,13 +165,17 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   inline Eigen::Matrix<double, 6, 6> getHessian() const { return hessian_; }
 
   /** \brief Return the transformation array*/
-  inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const { return transformation_array_; }
+  inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const
+  {
+    return transformation_array_;
+  }
 
   /** \brief Convert 6 element transformation vector to affine transformation.
    * \param[in] x transformation vector of the form [x, y, z, roll, pitch, yaw]
    * \param[out] trans affine transform corresponding to given transfomation vector
    */
-  static void convertTransform(const Eigen::Matrix<double, 6, 1>& x, Eigen::Affine3f& trans) {
+  static void convertTransform(const Eigen::Matrix<double, 6, 1> & x, Eigen::Affine3f & trans)
+  {
     trans = Eigen::Translation<float, 3>(float(x(0)), float(x(1)), float(x(2))) *
             Eigen::AngleAxis<float>(float(x(3)), Eigen::Vector3f::UnitX()) *
             Eigen::AngleAxis<float>(float(x(4)), Eigen::Vector3f::UnitY()) *
@@ -178,7 +186,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] x transformation vector of the form [x, y, z, roll, pitch, yaw]
    * \param[out] trans 4x4 transformation matrix corresponding to given transfomation vector
    */
-  static void convertTransform(const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix4f& trans) {
+  static void convertTransform(const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix4f & trans)
+  {
     Eigen::Affine3f _affine;
     convertTransform(x, _affine);
     trans = _affine.matrix();
@@ -186,9 +195,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
 
   // negative log likelihood function
   // lower is better
-  double calculateScore(const PointCloudSource& cloud) const;
+  double calculateScore(const PointCloudSource & cloud) const;
 
- protected:
+protected:
   using pcl::Registration<PointSource, PointTarget>::reg_name_;
   using pcl::Registration<PointSource, PointTarget>::getClassName;
   using pcl::Registration<PointSource, PointTarget>::input_;
@@ -209,7 +218,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   /** \brief Estimate the transformation and returns the transformed source (input) as output.
    * \param[out] output the resultant input transfomed point cloud dataset
    */
-  virtual void computeTransformation(PointCloudSource& output) {
+  virtual void computeTransformation(PointCloudSource & output)
+  {
     computeTransformation(output, Eigen::Matrix4f::Identity());
   }
 
@@ -217,10 +227,11 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[out] output the resultant input transfomed point cloud dataset
    * \param[in] guess the initial gross estimation of the transformation
    */
-  virtual void computeTransformation(PointCloudSource& output, const Eigen::Matrix4f& guess);
+  virtual void computeTransformation(PointCloudSource & output, const Eigen::Matrix4f & guess);
 
   /** \brief Initiate covariance voxel structure. */
-  void inline init() {
+  void inline init()
+  {
     target_cells_.setLeafSize(resolution_, resolution_, resolution_);
     target_cells_.setInputCloud(target_);
     // Initiate voxel structure.
@@ -235,8 +246,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] p the current transform vector
    * \param[in] compute_hessian flag to calculate hessian, unnessissary for step calculation.
    */
-  double computeDerivatives(Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-                            PointCloudSource& trans_cloud, Eigen::Matrix<double, 6, 1>& p, bool compute_hessian = true);
+  double computeDerivatives(
+    Eigen::Matrix<double, 6, 1> & score_gradient, Eigen::Matrix<double, 6, 6> & hessian,
+    PointCloudSource & trans_cloud, Eigen::Matrix<double, 6, 1> & p, bool compute_hessian = true);
 
   /** \brief Compute individual point contirbutions to derivatives of probability function w.r.t. the transformation
    * vector. \note Equation 6.10, 6.12 and 6.13 [Magnusson 2009]. \param[in,out] score_gradient the gradient vector of
@@ -245,28 +257,31 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * covariance voxel \param[in] c_inv covariance of occupied covariance voxel \param[in] compute_hessian flag to
    * calculate hessian, unnessissary for step calculation.
    */
-  double updateDerivatives(Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-                           const Eigen::Matrix<float, 4, 6>& point_gradient_,
-                           const Eigen::Matrix<float, 24, 6>& point_hessian_, const Eigen::Vector3d& x_trans,
-                           const Eigen::Matrix3d& c_inv, bool compute_hessian = true) const;
+  double updateDerivatives(
+    Eigen::Matrix<double, 6, 1> & score_gradient, Eigen::Matrix<double, 6, 6> & hessian,
+    const Eigen::Matrix<float, 4, 6> & point_gradient_,
+    const Eigen::Matrix<float, 24, 6> & point_hessian_, const Eigen::Vector3d & x_trans,
+    const Eigen::Matrix3d & c_inv, bool compute_hessian = true) const;
 
   /** \brief Precompute anglular components of derivatives.
    * \note Equation 6.19 and 6.21 [Magnusson 2009].
    * \param[in] p the current transform vector
    * \param[in] compute_hessian flag to calculate hessian, unnessissary for step calculation.
    */
-  void computeAngleDerivatives(Eigen::Matrix<double, 6, 1>& p, bool compute_hessian = true);
+  void computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p, bool compute_hessian = true);
 
   /** \brief Compute point derivatives.
    * \note Equation 6.18-21 [Magnusson 2009].
    * \param[in] x point from the input cloud
    * \param[in] compute_hessian flag to calculate hessian, unnessissary for step calculation.
    */
-  void computePointDerivatives(Eigen::Vector3d& x, Eigen::Matrix<double, 3, 6>& point_gradient_,
-                               Eigen::Matrix<double, 18, 6>& point_hessian_, bool compute_hessian = true) const;
+  void computePointDerivatives(
+    Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
+    Eigen::Matrix<double, 18, 6> & point_hessian_, bool compute_hessian = true) const;
 
-  void computePointDerivatives(Eigen::Vector3d& x, Eigen::Matrix<float, 4, 6>& point_gradient_,
-                               Eigen::Matrix<float, 24, 6>& point_hessian_, bool compute_hessian = true) const;
+  void computePointDerivatives(
+    Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_,
+    Eigen::Matrix<float, 24, 6> & point_hessian_, bool compute_hessian = true) const;
 
   /** \brief Compute hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].
@@ -274,8 +289,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] trans_cloud transformed point cloud
    * \param[in] p the current transform vector
    */
-  void computeHessian(Eigen::Matrix<double, 6, 6>& hessian, PointCloudSource& trans_cloud,
-                      Eigen::Matrix<double, 6, 1>& p);
+  void computeHessian(
+    Eigen::Matrix<double, 6, 6> & hessian, PointCloudSource & trans_cloud,
+    Eigen::Matrix<double, 6, 1> & p);
 
   /** \brief Compute individual point contirbutions to hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].
@@ -283,9 +299,10 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] x_trans transformed point minus mean of occupied covariance voxel
    * \param[in] c_inv covariance of occupied covariance voxel
    */
-  void updateHessian(Eigen::Matrix<double, 6, 6>& hessian, const Eigen::Matrix<double, 3, 6>& point_gradient_,
-                     const Eigen::Matrix<double, 18, 6>& point_hessian_, const Eigen::Vector3d& x_trans,
-                     const Eigen::Matrix3d& c_inv) const;
+  void updateHessian(
+    Eigen::Matrix<double, 6, 6> & hessian, const Eigen::Matrix<double, 3, 6> & point_gradient_,
+    const Eigen::Matrix<double, 18, 6> & point_hessian_, const Eigen::Vector3d & x_trans,
+    const Eigen::Matrix3d & c_inv) const;
 
   /** \brief Compute line search step length and update transform and probability derivatives using More-Thuente method.
    * \note Search Algorithm [More, Thuente 1994]
@@ -302,10 +319,10 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * Algorithm 2 [Magnusson 2009] \param[in,out] trans_cloud transformed point cloud, \f$ X \f$ transformed by \f$
    * T(\vec{p},\vec{x}) \f$ in Algorithm 2 [Magnusson 2009] \return final step length
    */
-  double computeStepLengthMT(const Eigen::Matrix<double, 6, 1>& x, Eigen::Matrix<double, 6, 1>& step_dir,
-                             double step_init, double step_max, double step_min, double& score,
-                             Eigen::Matrix<double, 6, 1>& score_gradient, Eigen::Matrix<double, 6, 6>& hessian,
-                             PointCloudSource& trans_cloud);
+  double computeStepLengthMT(
+    const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix<double, 6, 1> & step_dir, double step_init,
+    double step_max, double step_min, double & score, Eigen::Matrix<double, 6, 1> & score_gradient,
+    Eigen::Matrix<double, 6, 6> & hessian, PointCloudSource & trans_cloud);
 
   /** \brief Update interval of possible step lengths for More-Thuente method, \f$ I \f$ in More-Thuente (1994)
    * \note Updating Algorithm until some value satifies \f$ \psi(\alpha_k) \leq 0 \f$ and \f$ \phi'(\alpha_k) \geq 0 \f$
@@ -324,8 +341,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * trial value, \f$ g_t \f$ in Moore-Thuente (1994), \f$ \psi'(\alpha_t) \f$ for Update Algorithm and \f$
    * \phi'(\alpha_t) \f$ for Modified Update Algorithm \return if interval converges
    */
-  bool updateIntervalMT(double& a_l, double& f_l, double& g_l, double& a_u, double& f_u, double& g_u, double a_t,
-                        double f_t, double g_t);
+  bool updateIntervalMT(
+    double & a_l, double & f_l, double & g_l, double & a_u, double & f_u, double & g_u, double a_t,
+    double f_t, double g_t);
 
   /** \brief Select new trial value for More-Thuente method.
    * \note Trial Value Selection [More, Thuente 1994], \f$ \psi(\alpha_k) \f$ is used for \f$ f_k \f$ and \f$ g_k \f$
@@ -342,8 +360,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] g_t derivative at previous trial value, \f$ g_t \f$ in Moore-Thuente (1994)
    * \return new trial value
    */
-  double trialValueSelectionMT(double a_l, double f_l, double g_l, double a_u, double f_u, double g_u, double a_t,
-                               double f_t, double g_t);
+  double trialValueSelectionMT(
+    double a_l, double f_l, double g_l, double a_u, double f_u, double g_u, double a_t, double f_t,
+    double g_t);
 
   /** \brief Auxilary function used to determin endpoints of More-Thuente interval.
    * \note \f$ \psi(\alpha) \f$ in Equation 1.6 (Moore, Thuente 1994)
@@ -354,7 +373,9 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] mu the step length, constant \f$ \mu \f$ in Equation 1.1 [More, Thuente 1994]
    * \return sufficent decrease value
    */
-  inline double auxilaryFunction_PsiMT(double a, double f_a, double f_0, double g_0, double mu = 1.e-4) {
+  inline double auxilaryFunction_PsiMT(
+    double a, double f_a, double f_0, double g_0, double mu = 1.e-4)
+  {
     return (f_a - f_0 - mu * g_0 * a);
   }
 
@@ -365,7 +386,10 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    * \param[in] mu the step length, constant \f$ \mu \f$ in Equation 1.1 [More, Thuente 1994]
    * \return sufficent decrease derivative
    */
-  inline double auxilaryFunction_dPsiMT(double g_a, double g_0, double mu = 1.e-4) { return (g_a - mu * g_0); }
+  inline double auxilaryFunction_dPsiMT(double g_a, double g_0, double mu = 1.e-4)
+  {
+    return (g_a - mu * g_0);
+  }
 
   /** \brief The voxel grid generated from target cloud containing point means and covariances. */
   TargetGrid target_cells_;
@@ -401,8 +425,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
    *
    * The precomputed angular derivatives for the hessian of a transformation vector, Equation 6.19 [Magnusson 2009].
    */
-  Eigen::Vector3d h_ang_a2_, h_ang_a3_, h_ang_b2_, h_ang_b3_, h_ang_c2_, h_ang_c3_, h_ang_d1_, h_ang_d2_, h_ang_d3_,
-      h_ang_e1_, h_ang_e2_, h_ang_e3_, h_ang_f1_, h_ang_f2_, h_ang_f3_;
+  Eigen::Vector3d h_ang_a2_, h_ang_a3_, h_ang_b2_, h_ang_b3_, h_ang_c2_, h_ang_c3_, h_ang_d1_,
+    h_ang_d2_, h_ang_d3_, h_ang_e1_, h_ang_e2_, h_ang_e3_, h_ang_f1_, h_ang_f2_, h_ang_f3_;
 
   Eigen::Matrix<float, 16, 4> h_ang;
 
@@ -419,7 +443,7 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
   Eigen::Matrix<double, 6, 6> hessian_;
   std::vector<Eigen::Matrix4f> transformation_array_;
 
- public:
+public:
   NeighborSearchMethod search_method;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

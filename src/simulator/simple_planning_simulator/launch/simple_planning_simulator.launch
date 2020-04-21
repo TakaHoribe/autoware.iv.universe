@@ -74,4 +74,5 @@
     <param name="steer_noise_stddev" value="$(arg steer_noise_stddev)"/>
   </node>
 
+  <node pkg="topic_tools" type="relay" name="relay" args="/vehicle/status/twist /localization/twist" />
 </launch>

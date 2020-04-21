@@ -23,21 +23,23 @@
 // #include "shape_estimation/map_corrector_node.hpp"
 #include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
 
-class ShapeEstimationNode {
- private:  // ros
+class ShapeEstimationNode
+{
+private:  // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
   ros::Publisher pub_;
   ros::Subscriber sub_;
   // bool use_map_correct_;
 
-  void callback(const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& input_msg);
+  void callback(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_msg);
 
- private:
+private:
   ShapeEstimator estimator_;
   // std::shared_ptr<MapCorrectorNode> map_corrector_node_ptr_;
 
- public:
+public:
   ShapeEstimationNode();
 
   ~ShapeEstimationNode(){};

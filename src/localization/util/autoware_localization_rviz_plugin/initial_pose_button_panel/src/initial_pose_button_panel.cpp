@@ -47,9 +47,10 @@
 
 #include "initial_pose_button_panel.h"
 
-namespace autoware_localization_rviz_plugin {
-
-InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(parent) {
+namespace autoware_localization_rviz_plugin
+{
+InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget * parent) : rviz::Panel(parent)
+{
   topic_label_ = new QLabel("PoseWithCovarianceStamped ");
   topic_label_->setAlignment(Qt::AlignCenter);
 
@@ -64,45 +65,51 @@ InitialPoseButtonPanel::InitialPoseButtonPanel(QWidget* parent) : rviz::Panel(pa
   status_label_->setAlignment(Qt::AlignCenter);
   status_label_->setStyleSheet("QLabel { background-color : gray;}");
 
-  QSizePolicy* q_size_policy = new QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  QSizePolicy * q_size_policy = new QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   initialize_button_->setSizePolicy(*q_size_policy);
 
-  QHBoxLayout* topic_layout = new QHBoxLayout;
+  QHBoxLayout * topic_layout = new QHBoxLayout;
   topic_layout->addWidget(topic_label_);
   topic_layout->addWidget(topic_edit_);
 
-  QVBoxLayout* v_layout = new QVBoxLayout;
+  QVBoxLayout * v_layout = new QVBoxLayout;
   v_layout->addLayout(topic_layout);
   v_layout->addWidget(initialize_button_);
   v_layout->addWidget(status_label_);
 
   setLayout(v_layout);
 
-  pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
+  pose_cov_sub_ = nh_.subscribe(
+    topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
 
   client_ = nh_.serviceClient<autoware_localization_srvs::PoseWithCovarianceStamped>(
-      "/localization/util/pose_initializer_srv");
+    "/localization/util/pose_initializer_srv");
 }
 
-void InitialPoseButtonPanel::callbackPoseCov(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+void InitialPoseButtonPanel::callbackPoseCov(
+  const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg)
+{
   pose_cov_msg_ = *msg;
   initialize_button_->setText("Pose Initializer   Let's GO!");
   initialize_button_->setEnabled(true);
 }
 
-void InitialPoseButtonPanel::editTopic() {
+void InitialPoseButtonPanel::editTopic()
+{
   pose_cov_sub_.shutdown();
-  pose_cov_sub_ = nh_.subscribe(topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
+  pose_cov_sub_ = nh_.subscribe(
+    topic_edit_->text().toStdString(), 10, &InitialPoseButtonPanel::callbackPoseCov, this);
   initialize_button_->setText("Wait for subscribe topic");
   initialize_button_->setEnabled(false);
 }
 
-void InitialPoseButtonPanel::pushInitialzeButton() {
+void InitialPoseButtonPanel::pushInitialzeButton()
+{
   // lock button
   initialize_button_->setEnabled(false);
 
   status_label_->setStyleSheet("QLabel { background-color : dodgerblue;}");
-  status_label_->setText("FOOOOOOOOOOOOOOOOOOOOOOOO");
+  status_label_->setText("Initialzing...");
 
   std::thread thread([this] {
     autoware_localization_srvs::PoseWithCovarianceStamped srv;

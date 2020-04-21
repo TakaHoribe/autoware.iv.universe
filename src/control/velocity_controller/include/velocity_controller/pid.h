@@ -20,18 +20,21 @@
 #include <algorithm>
 #include <vector>
 
-class PIDController {
- public:
+class PIDController
+{
+public:
   PIDController();
   ~PIDController() = default;
 
-  double calculate(double error, double dt, bool is_integrated, std::vector<double>& pid_contributions);
+  double calculate(
+    double error, double dt, bool is_integrated, std::vector<double> & pid_contributions);
   void setGains(double kp, double ki, double kd);
-  void setLimits(double max_ret, double min_ret, double max_ret_p, double min_ret_p, double max_ret_i, double min_ret_i,
-                 double max_ret_d, double min_ret_d);
+  void setLimits(
+    double max_ret, double min_ret, double max_ret_p, double min_ret_p, double max_ret_i,
+    double min_ret_i, double max_ret_d, double min_ret_d);
   void reset();
 
- private:
+private:
   // parameters
   double kp_;
   double ki_;

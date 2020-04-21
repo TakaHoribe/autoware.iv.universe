@@ -29,7 +29,8 @@
 #include "autoware_state.h"
 #include "config.h"
 
-struct StateInput {
+struct StateInput
+{
   TopicStats topic_stats;
   ParamStats param_stats;
   TfStats tf_stats;
@@ -44,25 +45,28 @@ struct StateInput {
   std::deque<geometry_msgs::TwistStamped::ConstPtr> twist_buffer;
 };
 
-struct StateParam {
+struct StateParam
+{
   double th_arrived_distance_m;
   double th_stopped_time_sec;
   double th_stopped_velocity_mps;
 };
 
-struct Times {
+struct Times
+{
   ros::Time arrived_goal;
 };
 
-class StateMachine {
- public:
-  explicit StateMachine(const StateParam& state_param) : state_param_(state_param) {}
+class StateMachine
+{
+public:
+  explicit StateMachine(const StateParam & state_param) : state_param_(state_param) {}
 
   AutowareState getCurrentState() const { return autoware_state_; }
-  AutowareState updateState(const StateInput& state_input);
+  AutowareState updateState(const StateInput & state_input);
   std::vector<std::string> getErrorMessages() const { return msgs_; }
 
- private:
+private:
   AutowareState autoware_state_ = AutowareState::InitializingVehicle;
   StateInput state_input_;
   const StateParam state_param_;
@@ -73,7 +77,7 @@ class StateMachine {
 
   AutowareState judgeAutowareState() const;
 
-  bool isModuleInitialized(const char* module_name) const;
+  bool isModuleInitialized(const char * module_name) const;
   bool isVehicleInitialized() const;
   bool isRouteReceived() const;
   bool isNewRouteReceived() const;

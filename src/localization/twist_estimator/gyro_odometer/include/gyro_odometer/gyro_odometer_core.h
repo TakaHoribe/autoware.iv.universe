@@ -24,19 +24,22 @@
 
 #include <std_msgs/Float32.h>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <sensor_msgs/Imu.h>
 
-class GyroOdometer {
- public:
+class GyroOdometer
+{
+public:
   GyroOdometer(ros::NodeHandle nh, ros::NodeHandle private_nh);
   ~GyroOdometer();
 
- private:
-  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist_msg_ptr);
-  void callbackImu(const sensor_msgs::Imu::ConstPtr& imu_msg_ptr);
-  bool getTransform(const std::string &target_frame, const std::string &source_frame, const geometry_msgs::TransformStamped::Ptr &transform_stamped_ptr);
+private:
+  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & twist_msg_ptr);
+  void callbackImu(const sensor_msgs::Imu::ConstPtr & imu_msg_ptr);
+  bool getTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr);
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
@@ -45,6 +48,7 @@ class GyroOdometer {
   ros::Subscriber imu_sub_;
 
   ros::Publisher twist_pub_;
+  ros::Publisher twist_with_covariance_pub_;
   ros::Publisher linear_x_pub_;
   ros::Publisher angular_z_pub_;
 
