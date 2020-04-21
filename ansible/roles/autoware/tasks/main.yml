@@ -20,15 +20,6 @@
     name:
       - gdown
 
-- name: Autoware (install geographiclib-tools)
-  apt:
-    name:
-      - geographiclib-tools
-    state: latest
-    update_cache: yes
-    cache_valid_time: 3600
-  become: yes
-
 - name: Autoware (install egm2008-1)
   shell: geographiclib-get-geoids egm2008-1
   become: yes
