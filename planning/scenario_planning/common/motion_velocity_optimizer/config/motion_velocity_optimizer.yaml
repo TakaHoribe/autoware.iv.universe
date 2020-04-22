@@ -29,4 +29,4 @@ pseudo_jerk_weight: 100.0 # weight for "smoothness" cost
 over_v_weight: 10000.0   # weight for "overspeed limit" cost
 over_a_weight: 1000.0     # weight for "overaccel limit" cost
 
-use_Linf: False
+use_Linf: False # True: use Linf as objective for jerk, False: use L2 as objective for jerk

@@ -54,6 +54,8 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
     "stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, 1.5);
   pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
 
+  pnh_.param<bool>("use_Linf", planning_param_.use_Linf, false);
+
   pnh_.param<bool>("show_debug_info", show_debug_info_, true);
   pnh_.param<bool>("show_debug_info_all", show_debug_info_all_, false);
   pnh_.param<bool>("show_figure", show_figure_, false);
@@ -697,10 +699,6 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(
   }
 
   output = input;  // initialize
-
-  if (input.points.size() < 3) {
-    return true;  // cannot calculate lateral acc. do nothing.
-  }
 
   /* Interpolate with constant interval distance for lateral acceleration calculation. */
   constexpr double points_interval = 0.1;  // [m]
