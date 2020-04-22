@@ -41,6 +41,20 @@ add_dependencies(autoware_utils
   ${catkin_EXPORTED_TARGETS}
 )
 
+# Install executables and/or libraries
+install(
+  TARGETS
+    autoware_utils
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Install project namespaced headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
 # Test
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
@@ -57,18 +71,3 @@ if (CATKIN_ENABLE_TESTING)
     ${catkin_LIBRARIES}
   )
 endif ()
-
-# Install executables and/or libraries
-install(
-  TARGETS
-    autoware_utils
-    test_autoware_utils
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-# Install project namespaced headers
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
