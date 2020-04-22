@@ -20,7 +20,7 @@
 #include <boost/filesystem.hpp>
 #include "lidar_apollo_instance_segmentation/feature_map.h"
 
-LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~")
+LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
   int range, width, height;
   bool use_intensity_feature, use_constant_feature;
@@ -36,6 +36,8 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
   pnh_.param<std::string>("caffemodel_file", caffemodel_file, "vls-128.caffemodel");
   pnh_.param<bool>("use_intensity_feature", use_intensity_feature, true);
   pnh_.param<bool>("use_constant_feature", use_constant_feature, true);
+  pnh_.param<std::string>("target_frame", target_frame_, "base_link");
+  pnh_.param<float>("z_offset", z_offset_, 2);
 
   // load weight file
   std::ifstream fs(engine_file);
@@ -77,13 +79,49 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
   cluster2d_ = std::make_shared<Cluster2D>(width, height, range);
 }
 
+bool LidarApolloInstanceSegmentation::transformCloud(
+  const sensor_msgs::PointCloud2 & input,
+  sensor_msgs::PointCloud2& transformed_cloud,
+  float z_offset)
+{
+  // transform pointcloud to tagret_frame
+  if (target_frame_ != input.header.frame_id) {
+    try {
+      geometry_msgs::TransformStamped transform_stamped;
+      transform_stamped = tf_buffer_.lookupTransform(target_frame_, input.header.frame_id,
+                                                     input.header.stamp, ros::Duration(0.5));
+      Eigen::Matrix4f affine_matrix =
+        tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
+      pcl_ros::transformPointCloud(affine_matrix, input, transformed_cloud);
+      transformed_cloud.header.frame_id = target_frame_;
+    } catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+      return false;
+    }
+  } else {
+    transformed_cloud = input;
+  }
+
+  // move pointcloud z_offset in z axis
+  sensor_msgs::PointCloud2 pointcloud_with_z_offset;
+  Eigen::Affine3f z_up_translation(Eigen::Translation3f(0, 0, z_offset));
+  Eigen::Matrix4f z_up_transform = z_up_translation.matrix();
+  pcl_ros::transformPointCloud(z_up_transform, transformed_cloud, transformed_cloud);
+
+  return true;
+}
+
 bool LidarApolloInstanceSegmentation::detectDynamicObjects(
   const sensor_msgs::PointCloud2 & input,
   autoware_perception_msgs::DynamicObjectWithFeatureArray & output)
 {
+  // move up pointcloud z_offset in z axis
+  sensor_msgs::PointCloud2 transformed_cloud;
+  transformCloud(input, transformed_cloud, z_offset_);
+
   // convert from ros to pcl
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud_raw_ptr(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::fromROSMsg(input, *pcl_pointcloud_raw_ptr);
+  pcl::fromROSMsg(transformed_cloud, *pcl_pointcloud_raw_ptr);
 
   // generate feature map
   std::shared_ptr<FeatureMapInterface> feature_map_ptr =
@@ -104,6 +142,13 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
   const float height_thresh = 0.5;
   const int min_pts_num = 3;
   cluster2d_->getObjects(score_threshold_, height_thresh, min_pts_num, output, input.header);
+
+  // move down pointcloud z_offset in z axis
+  for (int i=0; i<output.feature_objects.size(); i++) {
+    sensor_msgs::PointCloud2 transformed_cloud;
+    transformCloud(output.feature_objects.at(i).feature.cluster, transformed_cloud, -z_offset_);
+    output.feature_objects.at(i).feature.cluster = transformed_cloud;
+  }
 
   output.header = input.header;
   return true;
