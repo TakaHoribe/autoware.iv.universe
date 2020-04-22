@@ -78,7 +78,6 @@ private:
     double max_velocity;                      // max velocity [m/s]
     double max_accel;                         // max acceleration in planning [m/s2] > 0
     double min_decel;                         // min deceltion in planning [m/s2] < 0
-    double max_jerk_sum;                      // max time integration of jerk [m/s2]
     double max_lateral_accel;                 // max lateral acceleartion [m/ss] > 0
     double min_curve_velocity;                // min velocity at curve [m/s]
     double decel_distance_before_curve;       // distance before you slow down for lateral acceleration limit at a curve
@@ -91,11 +90,12 @@ private:
     double extract_behind_dist;               // backward waypoints distance from current position [m]
     double max_trajectory_length;             // max length of the objective trajectory for resample
     double min_trajectory_length;             // min length of the objective trajectory for resample
-    double resample_time;               // max time to calculate trajectory length
+    double resample_time;                     // max time to calculate trajectory length
     double resample_dt;                       // dt to calculate trajectory length
     double min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
     double stop_dist_to_prohibit_engage;      // set zero vel when vehicle stops and stop dist is closer than this
     double delta_yaw_threshold;               // delta yaw between ego_pose and traj point when calc closest point
+    bool   use_Linf;                          // True: use Linf as objective, False: use L2 as objective
   } planning_param_;
 
   struct QPParam
@@ -103,7 +103,6 @@ private:
     double pseudo_jerk_weight;
     double over_v_weight;
     double over_a_weight;
-    double over_jerk_weight;
   } qp_param_;
 
   /* topic callback */
@@ -164,7 +163,6 @@ private:
     planning_param_.max_velocity = config.max_velocity;
     planning_param_.max_accel = config.max_accel;
     planning_param_.min_decel = config.min_decel;
-    planning_param_.max_jerk_sum = config.max_jerk_sum;
     planning_param_.max_lateral_accel = config.max_lateral_accel;
     planning_param_.min_curve_velocity = config.min_curve_velocity;
     planning_param_.decel_distance_before_curve = config.decel_distance_before_curve;
@@ -184,10 +182,11 @@ private:
     planning_param_.min_trajectory_length = config.min_trajectory_length;
     planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
 
+    planning_param_.use_Linf = config.use_Linf;
+
     qp_param_.pseudo_jerk_weight = config.pseudo_jerk_weight;
     qp_param_.over_v_weight = config.over_v_weight;
     qp_param_.over_a_weight = config.over_a_weight;
-    qp_param_.over_jerk_weight = config.over_jerk_weight;
 
     show_debug_info_ = config.show_debug_info;
   }

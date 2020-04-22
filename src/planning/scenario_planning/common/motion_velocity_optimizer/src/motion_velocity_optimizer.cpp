@@ -467,51 +467,52 @@ void MotionVelocityOptimizer::solveOptimization(
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(3 * N + 1 + 2*(N - 1), 4 * N + 1);  // the matrix size depends on constraint numbers.
+  // 
+  const bool use_Linf = planning_param_.use_Linf;
+  unsigned int l_variables;
+  unsigned int l_constraints;
+  if(use_Linf) {
+    /*
+    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN, | psi] in R^{4N+1}
+    * b: velocity^2
+    * a: acceleration
+    * delta: 0 < bi < vmax^2 + delta
+    * sigma: amin < ai - sigma < amax
+    * psi: a'*curr_v -  psi < 0, - a'*curr_v - psi < 0 (<=> |a'|*curr_v < psi)
+    */
+    l_variables = 4 * N + 1;
+    l_constraints = 3 * N + 1 + 2 * (N - 1);
+  }
+  else {
+    /*
+    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
+    * b: velocity^2
+    * a: acceleration
+    * delta: 0 < bi < vmax^2 + delta
+    * sigma: amin < ai - sigma < amax
+    */
+    l_variables = 4 * N;
+    l_constraints = 3 * N + 1;
+  }
 
-  std::vector<double> lower_bound(3 * N + 1 + 2*(N - 1), 0.0);
-  std::vector<double> upper_bound(3 * N + 1 + 2*(N - 1), 0.0);
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(l_constraints, l_variables);  // the matrix size depends on constraint numbers.
 
-  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N + 1, 4 * N + 1);
-  std::vector<double> q(4 * N + 1, 0.0);
+  std::vector<double> lower_bound(l_constraints, 0.0);
+  std::vector<double> upper_bound(l_constraints, 0.0);
 
-  /*
-   * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
-   * b: velocity^2
-   * a: acceleration
-   * delta: 0 < bi < vmax^2 + delta
-   * sigma: amin < ai - sigma < amax
-   */
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(l_variables, l_variables);
+  std::vector<double> q(l_variables, 0.0);
 
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
-  //const double jerk_sum_max = planning_param_.max_jerk_sum;
   const double smooth_weight = qp_param_.pseudo_jerk_weight;
   const double over_v_weight = qp_param_.over_v_weight;
   const double over_a_weight = qp_param_.over_a_weight;
-  //const double over_jerk_weight = qp_param_.over_jerk_weight;
 
   /* design objective function */
   for (unsigned int i = 0; i < N; ++i) {  // bi
     q[i] = -1.0;                          // |vmax^2 - b| -> minimize (-bi)
   }
-  
-  #if 0
-  for (unsigned int i = N; i < 2 * N - 1; ++i) {  // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
-    unsigned int j = i - N;
-    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
-    const double w_x_dsinv =
-      smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001)) * vel * vel;
-    P(i, i) += w_x_dsinv;
-    P(i, i + 1) -= w_x_dsinv;
-    P(i + 1, i) -= w_x_dsinv;
-    P(i + 1, i + 1) += w_x_dsinv;
-  }
-
-  for (unsigned int i = 4*N; i < 4*N + (N-1); ++i) { // jerk
-    q[i] = smooth_weight;
-  }
-  #endif
 
   for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
     P(i, i) += over_v_weight;
@@ -521,17 +522,21 @@ void MotionVelocityOptimizer::solveOptimization(
     P(i, i) += over_a_weight;
   }
   
-
-  {
+  if(use_Linf) { // pseudo jerk (Linf): minimize psi, subject to |a'|*curr_v < psi
     q[4*N] = smooth_weight;
   }
-
-  #if 0
-  { // over jerk_sum cost
-    const unsigned int ie = 4 * N + 1;
-    P(ie, ie) += over_jerk_weight;
+  else { // pseudo jerk (L2): d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
+    for (unsigned int i = N; i < 2 * N - 1; ++i) {  
+      unsigned int j = i - N;
+      const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+      const double w_x_dsinv =
+        smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001)) * vel * vel;
+      P(i, i) += w_x_dsinv;
+      P(i, i + 1) -= w_x_dsinv;
+      P(i + 1, i) -= w_x_dsinv;
+      P(i + 1, i + 1) += w_x_dsinv;
+    }
   }
-  #endif
 
   /* design constraint matrix */
   // 0 < b - delta < vmax^2
@@ -581,62 +586,28 @@ void MotionVelocityOptimizer::solveOptimization(
     lower_bound[i + 1] = initial_acc;
   }
 
-  // constraint for slack variable (a[i+1] - a[i] <= psi[i], a[i] - a[i+1] <= psi[i])
-  for (unsigned int i = 3 * N + 1; i < 4 * N; ++i) {
-    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
-    const unsigned int ia = i - (3 * N + 1) + N;
-    const unsigned int ip = 4 * N;
-    const unsigned int j = i - 3 * N + 1;
-    const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
-    
-    A(i, ia) = -dsinv*vel;
-    A(i, ia + 1) = dsinv*vel;
-    A(i, ip) = -1;
-    lower_bound[i] = - OSQP_INFTY;
-    upper_bound[i] = 0;
+  if(use_Linf) {
+    // constraint for slack variable (a[i+1] - a[i] <= psi[i], a[i] - a[i+1] <= psi[i])
+    for (unsigned int i = 3 * N + 1; i < 4 * N; ++i) {
+      const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+      const unsigned int ia = i - (3 * N + 1) + N;
+      const unsigned int ip = 4 * N;
+      const unsigned int j = i - 3 * N + 1;
+      const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
+      
+      A(i, ia) = -dsinv*vel;
+      A(i, ia + 1) = dsinv*vel;
+      A(i, ip) = -1;
+      lower_bound[i] = - OSQP_INFTY;
+      upper_bound[i] = 0;
 
-    A(i + N - 1, ia) = dsinv*vel;
-    A(i + N - 1, ia + 1) = -dsinv*vel;
-    A(i + N - 1, ip) = -1;
-    lower_bound[i + N - 1] = - OSQP_INFTY;
-    upper_bound[i + N - 1] = 0;
-  }
-
-  #if 0
-  // constraint for soft constraint
-  for (unsigned int i = 5 * N - 1; i < 6 * N - 1; ++i) {
-    const unsigned int id = i - (5 * N - 1) + 2 * N;
-    const unsigned int is = i - (5 * N - 1) + 3 * N;
-    A(i, id) = 1;
-    A(i + N, is) = 1;
-    lower_bound[i] = 0;
-    upper_bound[i] = OSQP_INFTY;
-    lower_bound[i + N] = 0;
-    upper_bound[i + N] = OSQP_INFTY;
-  }
-
-   // temporary: don't consider max jerk constraints
-  // sum(psi) - eta < jerk_sum_max
-  {
-    const unsigned int i = 5 * N;
-    for (unsigned int ip = 4 * N; ip < 4 * N + N - 1; ++ip) {
-      A(i, ip) = 1;
+      A(i + N - 1, ia) = dsinv*vel;
+      A(i + N - 1, ia + 1) = -dsinv*vel;
+      A(i + N - 1, ip) = -1;
+      lower_bound[i + N - 1] = - OSQP_INFTY;
+      upper_bound[i + N - 1] = 0;
     }
-    A(i, 5 * N - 1) = - 1;
-    lower_bound[i] = 0;
-    upper_bound[i] = jerk_sum_max;
   }
-  for (unsigned int i = 5 * N; i < 5 * N + N - 1; ++i) {
-    const unsigned int ia = i - 5 * N + N;
-    const unsigned int j = i - 5 * N;
-    const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
-    A(i, ia) = -dsinv;
-    A(i, ia + 1) = dsinv;
-    A(i, 5 * N - 1) = - 1;
-    lower_bound[i] = -jerk_sum_max;
-    upper_bound[i] = jerk_sum_max;
-  }
-  #endif
 
   auto tf1 = std::chrono::system_clock::now();
   double elapsed_ms1 =
