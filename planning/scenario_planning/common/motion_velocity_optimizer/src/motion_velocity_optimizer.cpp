@@ -700,6 +700,10 @@ bool MotionVelocityOptimizer::lateralAccelerationFilter(
 
   output = input;  // initialize
 
+  if (input.points.size() < 3) {
+    return true;  // cannot calculate lateral acc. do nothing.
+  }
+
   /* Interpolate with constant interval distance for lateral acceleration calculation. */
   constexpr double points_interval = 0.1;  // [m]
   std::vector<double> in_arclength, out_arclength;
