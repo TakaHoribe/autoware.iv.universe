@@ -12,6 +12,7 @@
   <arg if="$(eval model=='model_128')" name="trained_engine_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.engine" />
   <arg if="$(eval model=='model_128')" name="trained_prototxt_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.prototxt" />
   <arg if="$(eval model=='model_128')" name="trained_caffemodel_file" default="$(find lidar_apollo_instance_segmentation)/data/vls-128.caffemodel" />
+  <arg name="target_frame" default="base_link" />
 
   <node pkg="lidar_apollo_instance_segmentation" type="lidar_apollo_instance_segmentation_node"
         name="lidar_apollo_instance_segmentation" output="screen" >
@@ -27,6 +28,7 @@
       height: 672
       use_intensity_feature: true
       use_constant_feature: false
+      target_frame: $(arg target_frame)
     </rosparam>
 
     <rosparam if="$(eval model=='model_64')" subst_value="true">

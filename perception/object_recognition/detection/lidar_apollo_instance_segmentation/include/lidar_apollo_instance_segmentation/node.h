@@ -18,6 +18,9 @@
 
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <pcl_ros/transforms.h>
 #include <memory>
 
 #include "lidar_apollo_instance_segmentation/debugger.h"
@@ -40,6 +43,9 @@ private:
   ros::Subscriber pointcloud_sub_;
   ros::Publisher dynamic_objects_pub_;
   std::shared_ptr<LidarInstanceSegmentationInterface> detector_ptr_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  std::string target_frame_;
   Debugger debugger_;
   void pointCloudCallback(const sensor_msgs::PointCloud2 & msg);
 

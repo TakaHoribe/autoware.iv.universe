@@ -81,6 +81,10 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     roscpp
     roslib
     pcl_ros
+    tf2
+    tf2_geometry_msgs
+    tf2_eigen
+    tf2_ros
     autoware_perception_msgs
   )
   set(CMAKE_CXX_STANDARD 11)
