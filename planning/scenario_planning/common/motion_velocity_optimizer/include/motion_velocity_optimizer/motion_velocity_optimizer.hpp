@@ -95,7 +95,7 @@ private:
     double min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
     double stop_dist_to_prohibit_engage;      // set zero vel when vehicle stops and stop dist is closer than this
     double delta_yaw_threshold;               // delta yaw between ego_pose and traj point when calc closest point
-    bool   use_Linf;                          // True: use Linf as objective, False: use L2 as objective
+    std::string algorithm_type;               // Option : Linf, L2
   } planning_param_;
 
   struct QPParam
@@ -125,7 +125,11 @@ private:
     const double & base_speed, const autoware_planning_msgs::Trajectory & base_waypoints,
     const int base_closest, const autoware_planning_msgs::Trajectory & prev_replanned_traj,
     const int prev_replanned_traj_closest, double & initial_vel, double & initial_acc);
-  void solveOptimization(
+  void solveOptimizationL2(
+    const double initial_vel, const double initial_acc,
+    const autoware_planning_msgs::Trajectory & input, const int closest,
+    autoware_planning_msgs::Trajectory & output);
+  void solveOptimizationLinf(
     const double initial_vel, const double initial_acc,
     const autoware_planning_msgs::Trajectory & input, const int closest,
     autoware_planning_msgs::Trajectory & output);
@@ -182,7 +186,7 @@ private:
     planning_param_.min_trajectory_length = config.min_trajectory_length;
     planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
 
-    planning_param_.use_Linf = config.use_Linf;
+    planning_param_.algorithm_type = config.algorithm_type;
 
     qp_param_.pseudo_jerk_weight = config.pseudo_jerk_weight;
     qp_param_.over_v_weight = config.over_v_weight;

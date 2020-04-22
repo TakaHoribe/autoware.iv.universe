@@ -3,7 +3,7 @@
   <arg name="output" default="screen"/>
 
   <!-- debug flags -->
-  <arg name="show_debug_info" default="true"/>
+  <arg name="show_debug_info" default="false"/>
   <arg name="show_debug_info_all" default="false"/>
   <arg name="publish_debug_trajs" default="true"/>
 
