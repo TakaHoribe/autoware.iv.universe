@@ -46,6 +46,7 @@ private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
   std::string target_frame_;
+  float z_offset_;
   Debugger debugger_;
   void pointCloudCallback(const sensor_msgs::PointCloud2 & msg);
 

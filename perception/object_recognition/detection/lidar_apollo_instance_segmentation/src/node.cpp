@@ -25,6 +25,7 @@ LidarInstanceSegmentationNode::LidarInstanceSegmentationNode() : nh_(""), pnh_("
   dynamic_objects_pub_ = pnh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>(
     "output/labeled_clusters", 1);
   pnh_.param<std::string>("target_frame", target_frame_, "base_link");
+  pnh_.param<float>("z_offset", z_offset_, 2);
 }
 
 void LidarInstanceSegmentationNode::pointCloudCallback(const sensor_msgs::PointCloud2 & msg)
@@ -49,7 +50,23 @@ void LidarInstanceSegmentationNode::pointCloudCallback(const sensor_msgs::PointC
     transformed_pointcloud = msg;
   }
 
-  detector_ptr_->detectDynamicObjects(transformed_pointcloud, output_msg);
+  // move up pointcloud +z_offset in z axis
+  sensor_msgs::PointCloud2 pointcloud_with_z_offset;
+  Eigen::Affine3f z_up_translation(Eigen::Translation3f(0, 0, z_offset_));
+  Eigen::Matrix4f z_up_transform = z_up_translation.matrix();
+  pcl_ros::transformPointCloud(z_up_transform, transformed_pointcloud, pointcloud_with_z_offset);
+
+  detector_ptr_->detectDynamicObjects(pointcloud_with_z_offset, output_msg);
+
+  // move down pointcloud z_offset in z axis
+  Eigen::Affine3f z_down_translation(Eigen::Translation3f(0, 0, -z_offset_));
+  Eigen::Matrix4f z_down_transform = z_down_translation.matrix();
+  for (int i=0; i<output_msg.feature_objects.size(); i++) {
+    sensor_msgs::PointCloud2 transformed_pointcloud;
+    pcl_ros::transformPointCloud(z_down_transform, output_msg.feature_objects.at(i).feature.cluster, transformed_pointcloud);
+    output_msg.feature_objects.at(i).feature.cluster = transformed_pointcloud;
+  }
+
   dynamic_objects_pub_.publish(output_msg);
   debugger_.publishColoredPointCloud(output_msg);
 }
