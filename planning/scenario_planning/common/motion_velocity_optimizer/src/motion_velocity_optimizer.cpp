@@ -81,6 +81,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
 
   /* debug */
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
+  debug_closest_acc_ = pnh_.advertise<std_msgs::Float32>("closest_acceleration", 1);
   pub_trajectory_raw_ =
     pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_raw", 1);
   pub_trajectory_vel_lim_ = pnh_.advertise<autoware_planning_msgs::Trajectory>(
@@ -261,7 +262,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   insertBehindVelocity(prev_output_closest, prev_output_, traj_resampled_closest, output);
 
   /* for debug */
-  publishClosestVelocity(output.points.at(traj_resampled_closest).twist.linear.x);
+  publishFloat(output.points.at(traj_resampled_closest).twist.linear.x, debug_closest_velocity_);
+  publishFloat(output.points.at(traj_resampled_closest).accel.linear.x, debug_closest_acc_);
   publishStopDistance(traj_resampled, traj_resampled_closest);
   if (publish_debug_trajs_) {
     pub_trajectory_raw_.publish(traj_extracted);
@@ -796,11 +798,11 @@ bool MotionVelocityOptimizer::extractPathAroundIndex(
   return true;
 }
 
-void MotionVelocityOptimizer::publishClosestVelocity(const double & vel) const
+void MotionVelocityOptimizer::publishFloat(const double & data, const ros::Publisher & pub) const
 {
-  std_msgs::Float32 closest_velocity;
-  closest_velocity.data = vel;
-  debug_closest_velocity_.publish(closest_velocity);
+  std_msgs::Float32 msg;
+  msg.data = data;
+  pub.publish(msg);
 }
 
 void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt)
