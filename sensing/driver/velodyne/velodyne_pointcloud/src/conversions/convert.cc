@@ -146,7 +146,7 @@ void Convert::processScan(const velodyne_msgs::VelodyneScan::ConstPtr & scanMsg)
       std::end(combined_points_xyziradt->points),
       std::begin(invalid_near_points_filtered_xyziradt->points),
       std::end(invalid_near_points_filtered_xyziradt->points));
-    combined_points_xyziradt->header = pcl_conversions::toPCL(scanMsg->header);
+    combined_points_xyziradt->header = valid_points_xyziradt->header;
     combined_points_xyziradt->height = 1;
     combined_points_xyziradt->width = combined_points_xyziradt->points.size();
     velodyne_points_combined_ex_pub_.publish(combined_points_xyziradt);
