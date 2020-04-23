@@ -74,28 +74,36 @@ private:
   bool show_figure_;          // for plot visualize
   bool publish_debug_trajs_;  // publish planned trajectories
 
-  struct MotionVelocityOptimizerParam {
-    double max_velocity;                      // max velocity [m/s]
-    double max_accel;                         // max acceleration in planning [m/s2] > 0
-    double min_decel;                         // min deceltion in planning [m/s2] < 0
-    double max_lateral_accel;                 // max lateral acceleartion [m/ss] > 0
-    double min_curve_velocity;                // min velocity at curve [m/s]
-    double decel_distance_before_curve;       // distance before you slow down for lateral acceleration limit at a curve
-    double decel_distance_after_curve;        // distance after you slow down for lateral acceleration limit at a curve
-    double replan_vel_deviation;              // replan with current speed if speed deviation exceeds this value [m/s]
-    double engage_velocity;                   // use this speed when start moving [m/s]
-    double engage_acceleration;               // use this acceleration when start moving [m/ss]
-    double engage_exit_ratio;                 // exit engage sequence when the velocity exceeds ratio x engage_velocity.
-    double extract_ahead_dist;                // forward waypoints distance from current position [m]
-    double extract_behind_dist;               // backward waypoints distance from current position [m]
-    double max_trajectory_length;             // max length of the objective trajectory for resample
-    double min_trajectory_length;             // min length of the objective trajectory for resample
-    double resample_time;                     // max time to calculate trajectory length
-    double resample_dt;                       // dt to calculate trajectory length
-    double min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
-    double stop_dist_to_prohibit_engage;      // set zero vel when vehicle stops and stop dist is closer than this
-    double delta_yaw_threshold;               // delta yaw between ego_pose and traj point when calc closest point
-    std::string algorithm_type;               // Option : Linf, L2
+  struct MotionVelocityOptimizerParam
+  {
+    double max_velocity;        // max velocity [m/s]
+    double max_accel;           // max acceleration in planning [m/s2] > 0
+    double min_decel;           // min deceltion in planning [m/s2] < 0
+    double max_lateral_accel;   // max lateral acceleartion [m/ss] > 0
+    double min_curve_velocity;  // min velocity at curve [m/s]
+    double
+      decel_distance_before_curve;  // distance before you slow down for lateral acceleration limit at a curve
+    double
+      decel_distance_after_curve;  // distance after you slow down for lateral acceleration limit at a curve
+    double
+      replan_vel_deviation;  // replan with current speed if speed deviation exceeds this value [m/s]
+    double engage_velocity;      // use this speed when start moving [m/s]
+    double engage_acceleration;  // use this acceleration when start moving [m/ss]
+    double
+      engage_exit_ratio;  // exit engage sequence when the velocity exceeds ratio x engage_velocity.
+    double extract_ahead_dist;     // forward waypoints distance from current position [m]
+    double extract_behind_dist;    // backward waypoints distance from current position [m]
+    double max_trajectory_length;  // max length of the objective trajectory for resample
+    double min_trajectory_length;  // min length of the objective trajectory for resample
+    double resample_time;          // max time to calculate trajectory length
+    double resample_dt;            // dt to calculate trajectory length
+    double
+      min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
+    double
+      stop_dist_to_prohibit_engage;  // set zero vel when vehicle stops and stop dist is closer than this
+    double
+      delta_yaw_threshold;  // delta yaw between ego_pose and traj point when calc closest point
+    std::string algorithm_type;  // Option : Linf, L2
   } planning_param_;
 
   struct QPParam
@@ -203,5 +211,5 @@ private:
   ros::Publisher pub_trajectory_resampled_;
   ros::Publisher debug_closest_velocity_;
   ros::Publisher debug_closest_acc_;
-  void publishFloat(const double & data, const ros::Publisher &pub) const;
+  void publishFloat(const double & data, const ros::Publisher & pub) const;
 };

@@ -435,7 +435,6 @@ void MotionVelocityOptimizer::calcInitialMotion(
   return;
 }
 
-
 void MotionVelocityOptimizer::solveOptimizationL2(
   const double initial_vel, const double initial_acc,
   const autoware_planning_msgs::Trajectory & input, const int closest,
@@ -470,7 +469,6 @@ void MotionVelocityOptimizer::solveOptimizationL2(
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-
   /*
    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
    * b: velocity^2
@@ -482,8 +480,8 @@ void MotionVelocityOptimizer::solveOptimizationL2(
   const uint32_t l_variables = 4 * N;
   const uint32_t l_constraints = 3 * N + 1;
 
-  Eigen::MatrixXd A =
-    Eigen::MatrixXd::Zero(l_constraints, l_variables);  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(
+    l_constraints, l_variables);  // the matrix size depends on constraint numbers.
 
   std::vector<double> lower_bound(l_constraints, 0.0);
   std::vector<double> upper_bound(l_constraints, 0.0);
@@ -613,7 +611,6 @@ void MotionVelocityOptimizer::solveOptimizationL2(
     elapsed_ms2);
 }
 
-
 void MotionVelocityOptimizer::solveOptimizationLinf(
   const double initial_vel, const double initial_acc,
   const autoware_planning_msgs::Trajectory & input, const int closest,
@@ -630,7 +627,8 @@ void MotionVelocityOptimizer::solveOptimizationLinf(
 
   if (std::fabs(input.points.at(closest).twist.linear.x) < 0.1) {
     DEBUG_INFO(
-      "[MotionVelocityOptimizer::solveOptimization Linf] closest vmax < 0.1, keep stopping. return.");
+      "[MotionVelocityOptimizer::solveOptimization Linf] closest vmax < 0.1, keep stopping. "
+      "return.");
     return;
   }
 
@@ -659,7 +657,8 @@ void MotionVelocityOptimizer::solveOptimizationLinf(
   const uint32_t l_variables = 4 * N + 1;
   const uint32_t l_constraints = 3 * N + 1 + 2 * (N - 1);
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(l_constraints, l_variables);  // the matrix size depends on constraint numbers.
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(
+    l_constraints, l_variables);  // the matrix size depends on constraint numbers.
 
   std::vector<double> lower_bound(l_constraints, 0.0);
   std::vector<double> upper_bound(l_constraints, 0.0);
@@ -687,7 +686,7 @@ void MotionVelocityOptimizer::solveOptimizationLinf(
   }
 
   // pseudo jerk (Linf): minimize psi, subject to |a'|*curr_v < psi
-  q[4*N] = smooth_weight;
+  q[4 * N] = smooth_weight;
 
   /* design constraint matrix */
   // 0 < b - delta < vmax^2
@@ -745,16 +744,16 @@ void MotionVelocityOptimizer::solveOptimizationLinf(
     const unsigned int j = i - 3 * N + 1;
     const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
 
-    A(i, ia) = -dsinv*vel;
-    A(i, ia + 1) = dsinv*vel;
+    A(i, ia) = -dsinv * vel;
+    A(i, ia + 1) = dsinv * vel;
     A(i, ip) = -1;
-    lower_bound[i] = - OSQP_INFTY;
+    lower_bound[i] = -OSQP_INFTY;
     upper_bound[i] = 0;
 
-    A(i + N - 1, ia) = dsinv*vel;
-    A(i + N - 1, ia + 1) = -dsinv*vel;
+    A(i + N - 1, ia) = dsinv * vel;
+    A(i + N - 1, ia + 1) = -dsinv * vel;
     A(i + N - 1, ip) = -1;
-    lower_bound[i + N - 1] = - OSQP_INFTY;
+    lower_bound[i + N - 1] = -OSQP_INFTY;
     upper_bound[i + N - 1] = 0;
   }
 
