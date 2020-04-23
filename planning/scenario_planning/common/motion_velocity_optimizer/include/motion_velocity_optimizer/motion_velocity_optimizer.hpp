@@ -202,5 +202,6 @@ private:
   ros::Publisher pub_trajectory_latcc_filtered_;
   ros::Publisher pub_trajectory_resampled_;
   ros::Publisher debug_closest_velocity_;
-  void publishClosestVelocity(const double & vel) const;
+  ros::Publisher debug_closest_acc_;
+  void publishFloat(const double & data, const ros::Publisher &pub) const;
 };

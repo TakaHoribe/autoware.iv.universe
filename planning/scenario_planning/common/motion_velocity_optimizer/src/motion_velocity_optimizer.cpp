@@ -86,6 +86,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
 
   /* debug */
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
+  debug_closest_acc_ = pnh_.advertise<std_msgs::Float32>("closest_acceleration", 1);
   pub_trajectory_raw_ =
     pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_raw", 1);
   pub_trajectory_vel_lim_ = pnh_.advertise<autoware_planning_msgs::Trajectory>(
@@ -198,12 +199,9 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
     return prev_output_;
   }
 
-  autoware_planning_msgs::Trajectory
-    traj_extracted;  // extructed from traj_input around current_position
-  autoware_planning_msgs::Trajectory
-    traj_vel_limtted;  // velocity is limitted by external velocity limit
-  autoware_planning_msgs::Trajectory
-    traj_latacc_filtered;  // velocity is limitted by max lateral acceleration
+  autoware_planning_msgs::Trajectory traj_extracted;        // extructed around current_position
+  autoware_planning_msgs::Trajectory traj_vel_limtted;      // external velocity limitted
+  autoware_planning_msgs::Trajectory traj_latacc_filtered;  // max lateral acceleration limitted
   autoware_planning_msgs::Trajectory traj_resampled;  // resampled depending on the current_velocity
   autoware_planning_msgs::Trajectory output;          // velocity is optimized by qp solver
 
@@ -245,9 +243,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   int prev_output_closest = vpu::calcClosestWaypoint(
     prev_output_, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
   DEBUG_INFO(
-    "[calcClosestWaypoint] for base_resampled : base_resampled.size() = %d, prev_planned_closest_ "
-    "= %d",
-    (int)traj_resampled.points.size(), prev_output_closest);
+    "[calcClosestWaypoint] base_resampled.size() = %lu, prev_planned_closest_ = %d",
+    traj_resampled.points.size(), prev_output_closest);
 
   /* Optimize velocity */
   optimizeVelocity(
@@ -266,7 +263,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   insertBehindVelocity(prev_output_closest, prev_output_, traj_resampled_closest, output);
 
   /* for debug */
-  publishClosestVelocity(output.points.at(traj_resampled_closest).twist.linear.x);
+  publishFloat(output.points.at(traj_resampled_closest).twist.linear.x, debug_closest_velocity_);
+  publishFloat(output.points.at(traj_resampled_closest).accel.linear.x, debug_closest_acc_);
   publishStopDistance(traj_resampled, traj_resampled_closest);
   if (publish_debug_trajs_) {
     pub_trajectory_raw_.publish(traj_extracted);
@@ -350,8 +348,7 @@ bool MotionVelocityOptimizer::resampleTrajectory(
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
     ROS_WARN(
       "[motion_velocity_optimizer]: fail trajectory interpolation. size : in_arclength = %lu, "
-      "input = %lu, "
-      "out_arclength = %lu, output = %lu",
+      "input = %lu, out_arclength = %lu, output = %lu",
       in_arclength.size(), input.points.size(), out_arclength.size(), output.points.size());
     return false;
   }
@@ -392,8 +389,7 @@ void MotionVelocityOptimizer::calcInitialMotion(
     initial_acc = prev_output.points.at(prev_output_closest).accel.linear.x;
     DEBUG_WARN(
       "[calcInitialMotion] : Large deviation error for speed control. Use current speed for "
-      "initial value, "
-      "desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
+      "initial value, desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
       desired_vel, vehicle_speed, vel_error, planning_param_.replan_vel_deviation);
     initialize_type_ = InitializeType::LARGE_DEVIATION_REPLAN;
     return;
@@ -998,11 +994,11 @@ bool MotionVelocityOptimizer::extractPathAroundIndex(
   return true;
 }
 
-void MotionVelocityOptimizer::publishClosestVelocity(const double & vel) const
+void MotionVelocityOptimizer::publishFloat(const double & data, const ros::Publisher & pub) const
 {
-  std_msgs::Float32 closest_velocity;
-  closest_velocity.data = vel;
-  debug_closest_velocity_.publish(closest_velocity);
+  std_msgs::Float32 msg;
+  msg.data = data;
+  pub.publish(msg);
 }
 
 void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt)
