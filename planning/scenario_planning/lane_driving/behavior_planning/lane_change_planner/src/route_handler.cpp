@@ -457,14 +457,14 @@ PathWithLaneId RouteHandler::getReferencePath(
   }
 
   const auto arc_coordinates = lanelet::utils::getArcCoordinates(lanelet_sequence, pose);
-  double s = arc_coordinates.length;
-  double s_backward = std::max(0., s - backward_path_length);
+  const double s = arc_coordinates.length;
+  const double s_backward = std::max(0., s - backward_path_length);
   double s_forward = s + forward_path_length;
-  double lane_length = lanelet::utils::getLaneletLength2d(lanelet_sequence);
 
   constexpr double buffer = 1.0;  // buffer for min_lane_change_length
-  int n_lane_change = std::abs(getNumLaneToPreferredLane(lanelet_sequence.back()));
-  double lane_change_buffer = n_lane_change * (minimum_lane_change_length + buffer);
+  const int n_lane_change = std::abs(getNumLaneToPreferredLane(lanelet_sequence.back()));
+  const double lane_length = lanelet::utils::getLaneletLength2d(lanelet_sequence);
+  const double lane_change_buffer = n_lane_change * (minimum_lane_change_length + buffer);
 
   if (isDeadEndLanelet(lanelet_sequence.back())) {
     s_forward = std::min(s_forward, lane_length - lane_change_buffer);
