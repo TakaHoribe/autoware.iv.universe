@@ -29,6 +29,7 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId *
 {
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
+  first_stop_path_point_index_ = static_cast<int>(path->points.size()) - 1;
 
   Eigen::Vector2d stop_point;
   bg::model::linestring<Point> stop_line = {{stop_line_[0].x(), stop_line_[0].y()},
@@ -69,11 +70,14 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId *
       // create stop point
       autoware_planning_msgs::PathPointWithLaneId stop_point_with_lane_id;
       getBackwordPointFromBasePoint(point2, point1, point2, length_sum - stop_length, stop_point);
-      stop_point_with_lane_id =
-        path->points.at(std::max(static_cast<int>(insert_stop_point_idx - 1), 0));
+      const int stop_point_idx = std::max(static_cast<int>(insert_stop_point_idx - 1), 0);
+      stop_point_with_lane_id = path->points.at(stop_point_idx);
       stop_point_with_lane_id.point.pose.position.x = stop_point.x();
       stop_point_with_lane_id.point.pose.position.y = stop_point.y();
       stop_point_with_lane_id.point.twist.linear.x = 0.0;
+      if (stop_point_idx < first_stop_path_point_index_) {
+        first_stop_path_point_index_ = stop_point_idx;
+      }
       debug_data_.stop_poses.push_back(stop_point_with_lane_id.point.pose);
 
       // insert stop point
