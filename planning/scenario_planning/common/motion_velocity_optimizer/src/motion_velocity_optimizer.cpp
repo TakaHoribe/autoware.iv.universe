@@ -504,7 +504,7 @@ void MotionVelocityOptimizer::solveOptimizationL2(
   // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
   for (unsigned int i = N; i < 2 * N - 1; ++i) {
     unsigned int j = i - N;
-    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+    const double vel = initial_vel;
     const double w_x_dsinv =
       smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001)) * vel * vel;
     P(i, i) += w_x_dsinv;
@@ -738,7 +738,7 @@ void MotionVelocityOptimizer::solveOptimizationLinf(
 
   // constraint for slack variable (a[i+1] - a[i] <= psi[i], a[i] - a[i+1] <= psi[i])
   for (unsigned int i = 3 * N + 1; i < 4 * N; ++i) {
-    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+    const double vel = initial_vel;
     const unsigned int ia = i - (3 * N + 1) + N;
     const unsigned int ip = 4 * N;
     const unsigned int j = i - 3 * N + 1;
