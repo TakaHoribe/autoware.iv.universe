@@ -55,7 +55,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
   pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
 
   pnh_.param<std::string>("algorithm_type", planning_param_.algorithm_type, "L2");
-  if (planning_param_.algorithm_type != "L2" || planning_param_.algorithm_type != "Linf") {
+  if (planning_param_.algorithm_type != "L2" && planning_param_.algorithm_type != "Linf") {
     ROS_WARN("[MotionVelocityOptimizer] undesired algorithm is selected. set L2.");
     planning_param_.algorithm_type = "L2";
   }
