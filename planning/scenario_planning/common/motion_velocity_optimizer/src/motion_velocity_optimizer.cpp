@@ -54,6 +54,12 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
     "stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, 1.5);
   pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
 
+  pnh_.param<std::string>("algorithm_type", planning_param_.algorithm_type, "L2");
+  if (planning_param_.algorithm_type != "L2" && planning_param_.algorithm_type != "Linf") {
+    ROS_WARN("[MotionVelocityOptimizer] undesired algorithm is selected. set L2.");
+    planning_param_.algorithm_type = "L2";
+  }
+
   pnh_.param<bool>("show_debug_info", show_debug_info_, true);
   pnh_.param<bool>("show_debug_info_all", show_debug_info_all_, false);
   pnh_.param<bool>("show_figure", show_figure_, false);
@@ -81,6 +87,7 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
 
   /* debug */
   debug_closest_velocity_ = pnh_.advertise<std_msgs::Float32>("closest_velocity", 1);
+  debug_closest_acc_ = pnh_.advertise<std_msgs::Float32>("closest_acceleration", 1);
   pub_trajectory_raw_ =
     pnh_.advertise<autoware_planning_msgs::Trajectory>("debug/trajectory_raw", 1);
   pub_trajectory_vel_lim_ = pnh_.advertise<autoware_planning_msgs::Trajectory>(
@@ -193,12 +200,9 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
     return prev_output_;
   }
 
-  autoware_planning_msgs::Trajectory
-    traj_extracted;  // extructed from traj_input around current_position
-  autoware_planning_msgs::Trajectory
-    traj_vel_limtted;  // velocity is limitted by external velocity limit
-  autoware_planning_msgs::Trajectory
-    traj_latacc_filtered;  // velocity is limitted by max lateral acceleration
+  autoware_planning_msgs::Trajectory traj_extracted;        // extructed around current_position
+  autoware_planning_msgs::Trajectory traj_vel_limtted;      // external velocity limitted
+  autoware_planning_msgs::Trajectory traj_latacc_filtered;  // max lateral acceleration limitted
   autoware_planning_msgs::Trajectory traj_resampled;  // resampled depending on the current_velocity
   autoware_planning_msgs::Trajectory output;          // velocity is optimized by qp solver
 
@@ -240,9 +244,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   int prev_output_closest = vpu::calcClosestWaypoint(
     prev_output_, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
   DEBUG_INFO(
-    "[calcClosestWaypoint] for base_resampled : base_resampled.size() = %d, prev_planned_closest_ "
-    "= %d",
-    (int)traj_resampled.points.size(), prev_output_closest);
+    "[calcClosestWaypoint] base_resampled.size() = %lu, prev_planned_closest_ = %d",
+    traj_resampled.points.size(), prev_output_closest);
 
   /* Optimize velocity */
   optimizeVelocity(
@@ -261,7 +264,8 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   insertBehindVelocity(prev_output_closest, prev_output_, traj_resampled_closest, output);
 
   /* for debug */
-  publishClosestVelocity(output.points.at(traj_resampled_closest).twist.linear.x);
+  publishFloat(output.points.at(traj_resampled_closest).twist.linear.x, debug_closest_velocity_);
+  publishFloat(output.points.at(traj_resampled_closest).accel.linear.x, debug_closest_acc_);
   publishStopDistance(traj_resampled, traj_resampled_closest);
   if (publish_debug_trajs_) {
     pub_trajectory_raw_.publish(traj_extracted);
@@ -345,8 +349,7 @@ bool MotionVelocityOptimizer::resampleTrajectory(
   if (!vpu::linearInterpTrajectory(in_arclength, input, out_arclength, output)) {
     ROS_WARN(
       "[motion_velocity_optimizer]: fail trajectory interpolation. size : in_arclength = %lu, "
-      "input = %lu, "
-      "out_arclength = %lu, output = %lu",
+      "input = %lu, out_arclength = %lu, output = %lu",
       in_arclength.size(), input.points.size(), out_arclength.size(), output.points.size());
     return false;
   }
@@ -387,8 +390,7 @@ void MotionVelocityOptimizer::calcInitialMotion(
     initial_acc = prev_output.points.at(prev_output_closest).accel.linear.x;
     DEBUG_WARN(
       "[calcInitialMotion] : Large deviation error for speed control. Use current speed for "
-      "initial value, "
-      "desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
+      "initial value, desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
       desired_vel, vehicle_speed, vel_error, planning_param_.replan_vel_deviation);
     initialize_type_ = InitializeType::LARGE_DEVIATION_REPLAN;
     return;
@@ -433,7 +435,7 @@ void MotionVelocityOptimizer::calcInitialMotion(
   return;
 }
 
-void MotionVelocityOptimizer::solveOptimization(
+void MotionVelocityOptimizer::solveOptimizationL2(
   const double initial_vel, const double initial_acc,
   const autoware_planning_msgs::Trajectory & input, const int closest,
   autoware_planning_msgs::Trajectory & output)
@@ -443,13 +445,13 @@ void MotionVelocityOptimizer::solveOptimization(
   output = input;
 
   if ((int)input.points.size() < closest) {
-    ROS_WARN("[MotionVelocityOptimizer::solveOptimization] invalid closest.");
+    ROS_WARN("[MotionVelocityOptimizer::solveOptimization L2] invalid closest.");
     return;
   }
 
   if (std::fabs(input.points.at(closest).twist.linear.x) < 0.1) {
     DEBUG_INFO(
-      "[MotionVelocityOptimizer::solveOptimization] closest vmax < 0.1, keep stopping. return.");
+      "[MotionVelocityOptimizer::solveOptimization L2] closest vmax < 0.1, keep stopping. return.");
     return;
   }
 
@@ -467,15 +469,6 @@ void MotionVelocityOptimizer::solveOptimization(
     vmax.at(i) = input.points.at(i + closest).twist.linear.x;
   }
 
-  Eigen::MatrixXd A =
-    Eigen::MatrixXd::Zero(3 * N + 1, 4 * N);  // the matrix size depends on constraint numbers.
-
-  std::vector<double> lower_bound(3 * N + 1, 0.0);
-  std::vector<double> upper_bound(3 * N + 1, 0.0);
-
-  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(4 * N, 4 * N);
-  std::vector<double> q(4 * N, 0.0);
-
   /*
    * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN] in R^{4N}
    * b: velocity^2
@@ -483,6 +476,18 @@ void MotionVelocityOptimizer::solveOptimization(
    * delta: 0 < bi < vmax^2 + delta
    * sigma: amin < ai - sigma < amax
    */
+
+  const uint32_t l_variables = 4 * N;
+  const uint32_t l_constraints = 3 * N + 1;
+
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(
+    l_constraints, l_variables);  // the matrix size depends on constraint numbers.
+
+  std::vector<double> lower_bound(l_constraints, 0.0);
+  std::vector<double> upper_bound(l_constraints, 0.0);
+
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(l_variables, l_variables);
+  std::vector<double> q(l_variables, 0.0);
 
   const double amax = planning_param_.max_accel;
   const double amin = planning_param_.min_decel;
@@ -495,10 +500,10 @@ void MotionVelocityOptimizer::solveOptimization(
     q[i] = -1.0;                          // |vmax^2 - b| -> minimize (-bi)
   }
 
-  for (unsigned int i = N; i < 2 * N - 1;
-       ++i) {  // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
+  // pseudo jerk: d(ai)/ds -> minimize weight * (a1 - a0)^2 * curr_v^2
+  for (unsigned int i = N; i < 2 * N - 1; ++i) {
     unsigned int j = i - N;
-    const double vel = std::max(std::fabs(current_velocity_ptr_->twist.linear.x), 1.0);
+    const double vel = initial_vel;
     const double w_x_dsinv =
       smooth_weight * (1.0 / std::max(interval_dist_arr.at(j), 0.0001)) * vel * vel;
     P(i, i) += w_x_dsinv;
@@ -591,7 +596,7 @@ void MotionVelocityOptimizer::solveOptimization(
     output.points.at(i).accel.linear.x = 0.0;
   }
 
-  DEBUG_INFO_ALL("[after optimize] idx, vel, acc, over_vel, over_acc ");
+  DEBUG_INFO_ALL("[after optimize L2] idx, vel, acc, over_vel, over_acc ");
   for (unsigned int i = 0; i < N; ++i) {
     DEBUG_INFO_ALL(
       "i = %d, v: %f, vmax: %f a: %f, b: %f, delta: %f, sigma: %f\n", i, std::sqrt(optval.at(i)),
@@ -602,7 +607,196 @@ void MotionVelocityOptimizer::solveOptimization(
   double elapsed_ms2 =
     std::chrono::duration_cast<std::chrono::nanoseconds>(tf2 - ts2).count() * 1.0e-6;
   DEBUG_INFO(
-    "[optimization] initialization time = %f [ms], optimization time = %f [ms]", elapsed_ms1,
+    "[optimization L2] initialization time = %f [ms], optimization time = %f [ms]", elapsed_ms1,
+    elapsed_ms2);
+}
+
+void MotionVelocityOptimizer::solveOptimizationLinf(
+  const double initial_vel, const double initial_acc,
+  const autoware_planning_msgs::Trajectory & input, const int closest,
+  autoware_planning_msgs::Trajectory & output)
+{
+  auto ts = std::chrono::system_clock::now();
+
+  output = input;
+
+  if ((int)input.points.size() < closest) {
+    ROS_WARN("[MotionVelocityOptimizer::solveOptimization Linf] invalid closest.");
+    return;
+  }
+
+  if (std::fabs(input.points.at(closest).twist.linear.x) < 0.1) {
+    DEBUG_INFO(
+      "[MotionVelocityOptimizer::solveOptimization Linf] closest vmax < 0.1, keep stopping. "
+      "return.");
+    return;
+  }
+
+  const unsigned int N = input.points.size() - closest;
+
+  if (N < 2) {
+    return;
+  }
+
+  std::vector<double> interval_dist_arr;
+  vpu::calcTrajectoryIntervalDistance(input, interval_dist_arr);
+
+  std::vector<double> vmax(N, 0.0);
+  for (unsigned int i = 0; i < N; ++i) {
+    vmax.at(i) = input.points.at(i + closest).twist.linear.x;
+  }
+
+  /*
+  * x = [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN, | psi] in R^{4N+1}
+  * b: velocity^2
+  * a: acceleration
+  * delta: 0 < bi < vmax^2 + delta
+  * sigma: amin < ai - sigma < amax
+  * psi: a'*curr_v -  psi < 0, - a'*curr_v - psi < 0 (<=> |a'|*curr_v < psi)
+  */
+  const uint32_t l_variables = 4 * N + 1;
+  const uint32_t l_constraints = 3 * N + 1 + 2 * (N - 1);
+
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(
+    l_constraints, l_variables);  // the matrix size depends on constraint numbers.
+
+  std::vector<double> lower_bound(l_constraints, 0.0);
+  std::vector<double> upper_bound(l_constraints, 0.0);
+
+  Eigen::MatrixXd P = Eigen::MatrixXd::Zero(l_variables, l_variables);
+  std::vector<double> q(l_variables, 0.0);
+
+  const double amax = planning_param_.max_accel;
+  const double amin = planning_param_.min_decel;
+  const double smooth_weight = qp_param_.pseudo_jerk_weight;
+  const double over_v_weight = qp_param_.over_v_weight;
+  const double over_a_weight = qp_param_.over_a_weight;
+
+  /* design objective function */
+  for (unsigned int i = 0; i < N; ++i) {  // bi
+    q[i] = -1.0;                          // |vmax^2 - b| -> minimize (-bi)
+  }
+
+  for (unsigned int i = 2 * N; i < 3 * N; ++i) {  // over velocity cost
+    P(i, i) += over_v_weight;
+  }
+
+  for (unsigned int i = 3 * N; i < 4 * N; ++i) {  // over acceleration cost
+    P(i, i) += over_a_weight;
+  }
+
+  // pseudo jerk (Linf): minimize psi, subject to |a'|*curr_v < psi
+  q[4 * N] = smooth_weight;
+
+  /* design constraint matrix */
+  // 0 < b - delta < vmax^2
+  // NOTE: The delta allows b to be negative. This is actully invalid because the definition is b=v^2.
+  // But mathematically, the strict b>0 constraint may make the problem infeasible, such as the case of
+  // v=0 & a<0. To avoid the infesibility, we allow b<0. The negative b is dealt as b=0 when it is
+  // converted to v with sqrt. If the weight of delta^2 is large (the value of delta is very small),
+  // b is almost 0, and is not a big problem.
+  for (unsigned int i = 0; i < N; ++i) {
+    const int j = 2 * N + i;
+    A(i, i) = 1.0;   // b_i
+    A(i, j) = -1.0;  // -delta_i
+    upper_bound[i] = vmax[i] * vmax[i];
+    lower_bound[i] = 0.0;
+  }
+
+  // amin < a - sigma < amax
+  for (unsigned int i = N; i < 2 * N; ++i) {
+    const int j = 2 * N + i;
+    A(i, i) = 1.0;   // a_i
+    A(i, j) = -1.0;  // -sigma_i
+    upper_bound[i] = amax;
+    lower_bound[i] = amin;
+  }
+
+  // b' = 2a
+  for (unsigned int i = 2 * N; i < 3 * N - 1; ++i) {
+    const unsigned int j = i - 2 * N;
+    const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
+    A(i, j) = -dsinv;
+    A(i, j + 1) = dsinv;
+    A(i, j + N) = -2.0;
+    upper_bound[i] = 0.0;
+    lower_bound[i] = 0.0;
+  }
+
+  // initial condition
+  const double v0 = initial_vel;
+  {
+    const unsigned int i = 3 * N - 1;
+    A(i, 0) = 1.0;  // b0
+    upper_bound[i] = v0 * v0;
+    lower_bound[i] = v0 * v0;
+
+    A(i + 1, N) = 1.0;  // a0
+    upper_bound[i + 1] = initial_acc;
+    lower_bound[i + 1] = initial_acc;
+  }
+
+  // constraint for slack variable (a[i+1] - a[i] <= psi[i], a[i] - a[i+1] <= psi[i])
+  for (unsigned int i = 3 * N + 1; i < 4 * N; ++i) {
+    const double vel = initial_vel;
+    const unsigned int ia = i - (3 * N + 1) + N;
+    const unsigned int ip = 4 * N;
+    const unsigned int j = i - 3 * N + 1;
+    const double dsinv = 1.0 / std::max(interval_dist_arr.at(j), 0.0001);
+
+    A(i, ia) = -dsinv * vel;
+    A(i, ia + 1) = dsinv * vel;
+    A(i, ip) = -1;
+    lower_bound[i] = -OSQP_INFTY;
+    upper_bound[i] = 0;
+
+    A(i + N - 1, ia) = dsinv * vel;
+    A(i + N - 1, ia + 1) = -dsinv * vel;
+    A(i + N - 1, ip) = -1;
+    lower_bound[i + N - 1] = -OSQP_INFTY;
+    upper_bound[i + N - 1] = 0;
+  }
+
+  auto tf1 = std::chrono::system_clock::now();
+  double elapsed_ms1 =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(tf1 - ts).count() * 1.0e-6;
+
+  /* execute optimization */
+  auto ts2 = std::chrono::system_clock::now();
+  std::tuple<std::vector<double>, std::vector<double>, int> result =
+    qp_solver_.optimize(P, A, q, lower_bound, upper_bound);
+
+  // [b0, b1, ..., bN, |  a0, a1, ..., aN, | delta0, delta1, ..., deltaN, | sigma0, sigme1, ..., sigmaN]
+  const std::vector<double> optval = std::get<0>(result);
+
+  /* get velocity & acceleration */
+  for (int i = 0; i < closest; ++i) {
+    double v = optval.at(0);
+    output.points.at(i).twist.linear.x = std::sqrt(std::max(v, 0.0));
+    output.points.at(i).accel.linear.x = optval.at(N);
+  }
+  for (unsigned int i = 0; i < N; ++i) {
+    double v = optval.at(i);
+    output.points.at(i + closest).twist.linear.x = std::sqrt(std::max(v, 0.0));
+    output.points.at(i + closest).accel.linear.x = optval.at(i + N);
+  }
+  for (unsigned int i = N + closest; i < output.points.size(); ++i) {
+    output.points.at(i).twist.linear.x = 0.0;
+    output.points.at(i).accel.linear.x = 0.0;
+  }
+
+  DEBUG_INFO_ALL("[after optimize Linf] idx, vel, acc, over_vel, over_acc ");
+  for (unsigned int i = 0; i < N; ++i) {
+    DEBUG_INFO_ALL(
+      "i = %d, v: %f, vmax: %f a: %f, b: %f, delta: %f, sigma: %f\n", i, std::sqrt(optval.at(i)),
+      vmax[i], optval.at(i + N), optval.at(i), optval.at(i + 2 * N), optval.at(i + 3 * N));
+  }
+
+  auto tf2 = std::chrono::system_clock::now();
+  double elapsed_ms2 =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(tf2 - ts2).count() * 1.0e-6;
+  DEBUG_INFO(
+    "[optimization Linf] initialization time = %f [ms], optimization time = %f [ms]", elapsed_ms1,
     elapsed_ms2);
 }
 
@@ -621,7 +815,11 @@ void MotionVelocityOptimizer::optimizeVelocity(
     /* out */ initial_vel, initial_acc);
 
   autoware_planning_msgs::Trajectory optimized_traj;
-  solveOptimization(initial_vel, initial_acc, input, input_closest, /* out */ optimized_traj);
+  if (planning_param_.algorithm_type == "L2") {
+    solveOptimizationL2(initial_vel, initial_acc, input, input_closest, /* out */ optimized_traj);
+  } else if (planning_param_.algorithm_type == "Linf") {
+    solveOptimizationLinf(initial_vel, initial_acc, input, input_closest, /* out */ optimized_traj);
+  }
 
   /* find stop point for stopVelocityFilter */
   int stop_idx_zero_vel = -1;
@@ -796,11 +994,11 @@ bool MotionVelocityOptimizer::extractPathAroundIndex(
   return true;
 }
 
-void MotionVelocityOptimizer::publishClosestVelocity(const double & vel) const
+void MotionVelocityOptimizer::publishFloat(const double & data, const ros::Publisher & pub) const
 {
-  std_msgs::Float32 closest_velocity;
-  closest_velocity.data = vel;
-  debug_closest_velocity_.publish(closest_velocity);
+  std_msgs::Float32 msg;
+  msg.data = data;
+  pub.publish(msg);
 }
 
 void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt)
