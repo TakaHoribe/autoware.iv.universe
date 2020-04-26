@@ -28,7 +28,7 @@ DummyPerceptionPublisherNode::DummyPerceptionPublisherNode()
   pointcloud_pub_ = pnh_.advertise<sensor_msgs::PointCloud2>("output/points_raw", 1, true);
 
   object_sub_ =
-    pnh_.subscribe("input/object", 1, &DummyPerceptionPublisherNode::objectCallback, this);
+    pnh_.subscribe("input/object", 100, &DummyPerceptionPublisherNode::objectCallback, this);
 
   timer_ = nh_.createTimer(ros::Duration(0.1), &DummyPerceptionPublisherNode::timerCallback, this);
   pnh_.param<double>("visible_range", visible_range_, double(100.0));
