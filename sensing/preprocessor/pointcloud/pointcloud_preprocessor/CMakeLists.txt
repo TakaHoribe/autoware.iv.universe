@@ -32,14 +32,13 @@ generate_dynamic_reconfigure_options(
 find_package(OpenCV REQUIRED)
 find_package (Eigen3 REQUIRED)
 find_package (Boost REQUIRED)
-find_package (PCL REQUIRED)
 find_package (OpenMP)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pointcloud_accumulator
   CATKIN_DEPENDS nodelet pcl_ros roscpp sensor_msgs std_msgs
-  DEPENDS Boost EIGEN3 PCL
+  DEPENDS Boost EIGEN3
 )
 
 ###########
@@ -50,8 +49,7 @@ include_directories(
   include
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS})
+  ${EIGEN3_INCLUDE_DIRS})
 
 # Compare Map Filter
 add_library(
@@ -65,8 +63,7 @@ add_library(
   )
 target_link_libraries(compare_map_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(compare_map_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 add_executable(
@@ -75,8 +72,7 @@ add_executable(
 target_link_libraries(distance_based_compare_map_filter_node
                       compare_map_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(distance_based_compare_map_filter_node
                  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
@@ -86,8 +82,7 @@ add_executable(
 target_link_libraries(voxel_based_approximate_compare_map_filter_node
                       compare_map_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(voxel_based_approximate_compare_map_filter_node
                  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
@@ -97,8 +92,7 @@ add_executable(
 target_link_libraries(voxel_distance_based_compare_map_filter_node
                       compare_map_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(voxel_distance_based_compare_map_filter_node
                  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
@@ -107,8 +101,7 @@ add_executable(
 target_link_libraries(voxel_based_compare_map_filter_node
                       compare_map_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(voxel_based_compare_map_filter_node
                  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
@@ -121,16 +114,14 @@ add_library(outlier_filter
             )
 target_link_libraries(outlier_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(outlier_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(voxel_grid_outlier_filter_node
                src/outlier_filter/voxel_grid_outlier_filter_node.cpp)
 target_link_libraries(voxel_grid_outlier_filter_node
                       outlier_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(voxel_grid_outlier_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 
@@ -139,8 +130,7 @@ add_executable(ring_outlier_filter_node
 target_link_libraries(ring_outlier_filter_node
                       outlier_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(ring_outlier_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 
@@ -152,16 +142,14 @@ add_library(downsample_filter
             )
 target_link_libraries(downsample_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(downsample_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(voxel_grid_downsample_filter_node
                src/downsample_filter/voxel_grid_downsample_filter_node.cpp)
 target_link_libraries(voxel_grid_downsample_filter_node
                       downsample_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(voxel_grid_downsample_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 
@@ -173,16 +161,14 @@ add_library(pointcloud_accumulator
   )
 target_link_libraries(pointcloud_accumulator
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(pointcloud_accumulator ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(pointcloud_accumulator_node
   src/pointcloud_accumulator/pointcloud_accumulator_node.cpp)
 target_link_libraries(pointcloud_accumulator_node
                       pointcloud_accumulator
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(pointcloud_accumulator_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 # PassThrough
@@ -194,8 +180,7 @@ add_library(
   )
 target_link_libraries(passthrough_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(passthrough_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
   passthrough_filter_node
@@ -203,8 +188,7 @@ add_executable(
 target_link_libraries(passthrough_filter_node
                       passthrough_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(passthrough_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 # Ray Ground Filter
@@ -221,12 +205,10 @@ if (OPENMP_FOUND)
 endif ()
 target_include_directories(ground_filter PRIVATE
   ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 target_link_libraries(ground_filter
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
 add_dependencies(ground_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
@@ -235,7 +217,6 @@ add_executable(ray_ground_filter_node
 target_link_libraries(ray_ground_filter_node
    ground_filter
    ${catkin_LIBRARIES}
-   ${PCL_LIBRARIES}
    ${OpenCV_LIBRARIES}
 )
 add_dependencies(ray_ground_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
@@ -250,8 +231,7 @@ add_library(
   )
 target_link_libraries(crop_box_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(crop_box_filter ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
   crop_box_filter_node
@@ -259,8 +239,7 @@ add_executable(
 target_link_libraries(crop_box_filter_node
                       crop_box_filter
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(crop_box_filter_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 # Concatenate data
@@ -270,8 +249,7 @@ add_library(
   )
 target_link_libraries(concatenate_data
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(concatenate_data ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 add_executable(
   concatenate_data_node
@@ -279,8 +257,7 @@ add_executable(
 target_link_libraries(concatenate_data_node
                       concatenate_data
                       ${Boost_LIBRARIES}
-                      ${catkin_LIBRARIES}
-                      ${PCL_LIBRARIES})
+                      ${catkin_LIBRARIES})
 add_dependencies(concatenate_data_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 #############

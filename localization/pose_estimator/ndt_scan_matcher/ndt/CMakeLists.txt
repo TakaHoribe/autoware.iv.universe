@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   ndt_pcl_modified
   ndt_omp
 )
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 
 catkin_package(
   INCLUDE_DIRS include

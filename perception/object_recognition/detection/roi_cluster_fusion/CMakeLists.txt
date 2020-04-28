@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
 )
 
-find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -41,7 +40,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
@@ -49,7 +47,6 @@ include_directories(
 add_library(roi_cluster_fusion src/roi_cluster_fusion_nodelet.cpp)
 target_link_libraries(roi_cluster_fusion
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
 add_dependencies(roi_cluster_fusion ${catkin_EXPORTED_TARGETS})
@@ -58,7 +55,6 @@ add_executable(roi_cluster_fusion_node src/roi_cluster_fusion_node.cpp)
 target_link_libraries(roi_cluster_fusion_node
   roi_cluster_fusion
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
 add_dependencies(roi_cluster_fusion_node ${catkin_EXPORTED_TARGETS})

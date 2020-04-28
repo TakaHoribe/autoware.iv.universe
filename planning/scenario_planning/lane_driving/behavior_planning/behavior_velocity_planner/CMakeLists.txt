@@ -22,10 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 
-find_package(PCL REQUIRED)
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
 catkin_package(
   INCLUDE_DIRS
     include
@@ -47,7 +43,6 @@ catkin_package(
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -182,7 +177,6 @@ add_dependencies(behavior_velocity_planner_node
 
 target_link_libraries(behavior_velocity_planner_node
   scene_module_manager
-  ${PCL_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
