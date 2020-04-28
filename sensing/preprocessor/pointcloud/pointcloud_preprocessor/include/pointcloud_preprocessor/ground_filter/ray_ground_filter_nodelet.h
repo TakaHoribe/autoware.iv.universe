@@ -57,7 +57,6 @@
 
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/registration/icp.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 
@@ -131,7 +130,6 @@ private:
   double grid_precision_;
   cv::Mat previous_occupancy_mat_;
   cv::Mat accumulated_occupancy_mat_;
-  const size_t min_icp_points_ = 10;  // min num points to allow icp to start
 
   std::vector<cv::Scalar> colors_;
   const size_t color_num_ = 10;  // different number of color to generate
