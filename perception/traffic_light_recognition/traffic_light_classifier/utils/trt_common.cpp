@@ -86,7 +86,7 @@ bool TrtCommon::buildEngineFromOnnx(std::string onnx_file_path, std::string outp
   }
 
   builder->setMaxBatchSize(max_batch_size_);
-  builder->setMaxWorkspaceSize(16 << 20);
+  config->setMaxWorkspaceSize(16 << 20);
 
   if (precision_ == "fp16") {
     config->setFlag(nvinfer1::BuilderFlag::kFP16);
