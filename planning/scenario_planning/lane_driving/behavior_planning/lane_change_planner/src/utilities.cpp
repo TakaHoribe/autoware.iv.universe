@@ -698,5 +698,17 @@ std::vector<uint64_t> getIds(const lanelet::ConstLanelets & lanelets)
   return ids;
 }
 
+autoware_planning_msgs::Path convertToPathFromPathWithLaneId(
+  const autoware_planning_msgs::PathWithLaneId & path_with_lane_id)
+{
+  autoware_planning_msgs::Path path;
+  path.header = path_with_lane_id.header;
+  path.drivable_area = path_with_lane_id.drivable_area;
+  for (const auto & pt_with_lane_id : path_with_lane_id.points) {
+    path.points.push_back(pt_with_lane_id.point);
+  }
+  return path;
+}
+
 }  // namespace util
 }  // namespace lane_change_planner

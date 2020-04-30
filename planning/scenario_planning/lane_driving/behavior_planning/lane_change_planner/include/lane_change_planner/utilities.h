@@ -24,6 +24,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <autoware_perception_msgs/DynamicObjectArray.h>
+#include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 
 #include <lanelet2_core/geometry/Lanelet.h>
@@ -99,6 +100,9 @@ double getDistanceToNextIntersection(
   const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets);
 
 std::vector<uint64_t> getIds(const lanelet::ConstLanelets & lanelets);
+
+autoware_planning_msgs::Path convertToPathFromPathWithLaneId(
+  const autoware_planning_msgs::PathWithLaneId & path_with_lane_id);
 
 }  // namespace util
 }  // namespace lane_change_planner

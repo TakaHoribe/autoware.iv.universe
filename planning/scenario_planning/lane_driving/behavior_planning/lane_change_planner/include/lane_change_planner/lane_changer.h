@@ -47,6 +47,7 @@ private:
   ros::Timer timer_;
 
   ros::Publisher path_publisher_;
+  ros::Publisher candidate_path_publisher_;
   ros::Publisher path_marker_publisher_;
   ros::Publisher drivable_area_publisher_;
   ros::Publisher lane_change_ready_publisher_;
