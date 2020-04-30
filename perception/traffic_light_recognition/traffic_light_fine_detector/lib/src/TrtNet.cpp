@@ -73,9 +73,10 @@ inline unsigned int getElementSize(nvinfer1::DataType t)
       return 2;
     case nvinfer1::DataType::kINT8:
       return 1;
+    default:
+      throw std::runtime_error("Invalid DataType.");
+      return 0;
   }
-  throw std::runtime_error("Invalid DataType.");
-  return 0;
 }
 
 namespace Tn
@@ -193,6 +194,7 @@ nvinfer1::ICudaEngine * trtNet::loadModelAndCreateEngine(
   const auto explicitBatch =
     1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
   INetworkDefinition * network = builder->createNetworkV2(explicitBatch);
+  IBuilderConfig * config = builder->createBuilderConfig();
   auto parser = nvonnxparser::createParser(*network, gLogger);
 
   std::cout << "Begin parsing model..." << std::endl;
@@ -201,22 +203,22 @@ nvinfer1::ICudaEngine * trtNet::loadModelAndCreateEngine(
 
   // Build the engine.
   builder->setMaxBatchSize(maxBatchSize);
-  builder->setMaxWorkspaceSize(1 << 30);  // 1G
+  config->setMaxWorkspaceSize(1 << 30);  // 1G
   if (mTrtRunMode == RUN_MODE::INT8) {
     std::cout << "setInt8Mode" << std::endl;
     if (!builder->platformHasFastInt8())
       std::cout << "Notice: the platform do not has fast for int8" << std::endl;
-    builder->setInt8Mode(true);
-    builder->setInt8Calibrator(calibrator);
+    config->setFlag(BuilderFlag::kINT8);
+    config->setInt8Calibrator(calibrator);
   } else if (mTrtRunMode == RUN_MODE::FLOAT16) {
     std::cout << "setFp16Mode" << std::endl;
     if (!builder->platformHasFastFp16())
       std::cout << "Notice: the platform do not has fast for fp16" << std::endl;
-    builder->setFp16Mode(true);
+    config->setFlag(BuilderFlag::kFP16);;
   }
 
   std::cout << "Begin building engine..." << std::endl;
-  ICudaEngine * engine = builder->buildCudaEngine(*network);
+  ICudaEngine * engine = builder->buildEngineWithConfig(*network, *config);
   if (!engine) RETURN_AND_LOG(nullptr, ERROR, "Unable to create engine");
   std::cout << "End building engine..." << std::endl;
 
@@ -228,6 +230,8 @@ nvinfer1::ICudaEngine * trtNet::loadModelAndCreateEngine(
   trtModelStream = engine->serialize();
 
   builder->destroy();
+  config->destroy();
+
   return engine;
 }
 
@@ -241,12 +245,7 @@ void trtNet::doInference(const void * inputData, void * outputData)
   CUDA_CHECK(cudaMemcpyAsync(
     mTrtCudaBuffer[inputIndex], inputData, mTrtBindBufferSize[inputIndex], cudaMemcpyHostToDevice,
     mTrtCudaStream));
-  auto t_start = std::chrono::high_resolution_clock::now();
   mTrtContext->execute(batchSize, &mTrtCudaBuffer[inputIndex]);
-  auto t_end = std::chrono::high_resolution_clock::now();
-  float total = std::chrono::duration<float, std::milli>(t_end - t_start).count();
-
-  // std::cout << "Time taken for inference is " << total << " ms." << std::endl;
 
   for (size_t bindingIdx = mTrtInputCount; bindingIdx < mTrtBindBufferSize.size(); ++bindingIdx) {
     auto size = mTrtBindBufferSize[bindingIdx];
