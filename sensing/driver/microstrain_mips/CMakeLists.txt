@@ -20,6 +20,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 set(CMAKE_C_FLAGS "-Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Wno-format -fno-builtin-memcpy")
 
+# Ignore warnings when building GX4-45_Test.c and microstrain_3dm.cpp
+set(CMAKE_C_FLAGS "-w")
+set(CMAKE_CXX_FLAGS "-w")
+
 add_message_files(
   FILES
   status_msg.msg
