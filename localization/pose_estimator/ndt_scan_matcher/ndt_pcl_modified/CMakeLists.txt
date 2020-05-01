@@ -6,7 +6,7 @@ add_compile_options(-std=c++14)
 set(CMAKE_BUILD_TYPE "Release")
 
 find_package(catkin REQUIRED)
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 
 catkin_package(
   INCLUDE_DIRS include

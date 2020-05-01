@@ -13,15 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
 )
 
-find_package(PCL 1.7 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-message(STATUS "PCL_INCLUDE_DIRS:" ${PCL_INCLUDE_DIRS})
-message(STATUS "PCL_LIBRARY_DIRS:" ${PCL_LIBRARY_DIRS})
-message(STATUS "PCL_DEFINITIONS:" ${PCL_DEFINITIONS})
-
 find_package(OpenMP)
 if (OPENMP_FOUND)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -31,6 +22,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ndt_omp
+  CATKIN_DEPENDS
 )
 
 ###########
@@ -45,7 +37,6 @@ include_directories(
 add_library(ndt_omp
   src/ndt_omp/voxel_grid_covariance_omp.cpp
   src/ndt_omp/ndt_omp.cpp
-  src/ndt_omp/gicp_omp.cpp
 )
 
 add_executable(align
@@ -56,7 +47,6 @@ add_dependencies(align
 )
 target_link_libraries(align
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ndt_omp
 )
 

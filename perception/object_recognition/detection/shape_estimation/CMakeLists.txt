@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   rosunit
 )
 
-find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -30,11 +29,9 @@ catkin_package(
 
 include_directories(include
   ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
-
 add_executable(shape_estimation
   src/main.cpp
   src/node.cpp
@@ -60,9 +57,7 @@ add_dependencies(shape_estimation
 target_link_libraries(shape_estimation
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
-  ${PCL_LIBRARIES}
 )
-
 install(TARGETS shape_estimation
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

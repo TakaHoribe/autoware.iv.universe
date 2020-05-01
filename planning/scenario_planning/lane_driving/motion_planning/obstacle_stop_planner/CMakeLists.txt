@@ -19,10 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(PCL REQUIRED)
 
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
@@ -41,7 +38,6 @@ catkin_package(
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
@@ -55,7 +51,6 @@ add_dependencies(obstacle_stop_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} 
 
 target_link_libraries(obstacle_stop_planner_node
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
 )
 
