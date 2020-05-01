@@ -127,8 +127,10 @@ void CNNClassifier::preProcess(cv::Mat & image, float * input_tensor, bool norma
   cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
   cv::resize(image, image, cv::Size(input_w_, input_h_));
 
-  const size_t strides_cv[3] = {input_w_ * input_c_, input_c_, 1};
-  const size_t strides[3] = {input_h_ * input_w_, input_w_, 1};
+  const size_t strides_cv[3] = {static_cast<size_t>(input_w_ * input_c_),
+                                static_cast<size_t>(input_c_), 1};
+  const size_t strides[3] = {static_cast<size_t>(input_h_ * input_w_), 
+                             static_cast<size_t>(input_w_), 1};
 
   for (int i = 0; i < input_h_; i++) {
     for (int j = 0; j < input_w_; j++) {

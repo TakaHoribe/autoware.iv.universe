@@ -47,8 +47,9 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
       engine_file.c_str());
     Tn::Logger logger;
     nvinfer1::IBuilder * builder = nvinfer1::createInferBuilder(logger);
-    nvinfer1::INetworkDefinition * network = builder->createNetwork();
+    nvinfer1::INetworkDefinition * network = builder->createNetworkV2(0U);
     nvcaffeparser1::ICaffeParser * parser = nvcaffeparser1::createCaffeParser();
+    nvinfer1::IBuilderConfig * config = builder->createBuilderConfig();
     const nvcaffeparser1::IBlobNameToTensor * blob_name2tensor = parser->parse(
       prototxt_file.c_str(), caffemodel_file.c_str(), *network, nvinfer1::DataType::kFLOAT);
     std::string output_node = "deconv0";
@@ -57,8 +58,8 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
     network->markOutput(*output);
     const int batch_size = 1;
     builder->setMaxBatchSize(batch_size);
-    builder->setMaxWorkspaceSize(1 << 30);
-    nvinfer1::ICudaEngine * engine = builder->buildCudaEngine(*network);
+    config->setMaxWorkspaceSize(1 << 30);
+    nvinfer1::ICudaEngine * engine = builder->buildEngineWithConfig(*network, *config);
     nvinfer1::IHostMemory * trt_model_stream = engine->serialize();
     assert(trt_model_stream != nullptr);
     std::ofstream outfile(engine_file, std::ofstream::binary);
@@ -68,6 +69,7 @@ LidarApolloInstanceSegmentation::LidarApolloInstanceSegmentation() : nh_(""), pn
     network->destroy();
     parser->destroy();
     builder->destroy();
+    config->destroy();
   }
   net_ptr_.reset(new Tn::trtNet(engine_file));
 
