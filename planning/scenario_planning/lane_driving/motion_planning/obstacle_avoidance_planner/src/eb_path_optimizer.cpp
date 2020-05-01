@@ -162,6 +162,10 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathOptimizer::getOptimiz
   std::vector<geometry_msgs::Point> interpolated_points = util::getInterpolatedPoints(
     candidate_points.fixed_points, candidate_points.non_fixed_points,
     traj_param_.delta_arc_length_for_optimization);
+  if (interpolated_points.empty()) {
+    return util::convertPathToTrajectory(path.points);
+  }
+
   debug_data.interpolated_points = interpolated_points;
   const int farrest_idx =
     std::min((int)(traj_param_.num_sampling_points - 1), (int)(interpolated_points.size() - 1));
@@ -226,11 +230,13 @@ EBPathOptimizer::getExtendedOptimizedTrajectory(
     (float)(extending_trajectory_length / traj_param_.num_sampling_points));
   std::vector<geometry_msgs::Point> interpolated_points = util::getInterpolatedPoints(
     fixed_poitns, non_fixed_points, delat_arc_length_for_extending_trajectory);
+  if (interpolated_points.empty()) {
+    return optimized_points;
+  }
   const int farrest_idx =
     std::min((int)(traj_param_.num_sampling_points - 1), (int)(interpolated_points.size() - 1));
   std::vector<geometry_msgs::Point> padded_interpolated_points =
     getPaddedInterpolatedPoints(interpolated_points, farrest_idx);
-
   std::vector<ConstrainRectangle> constrain_rectangles = getConstrainRectangleVec(
     path_points, padded_interpolated_points, traj_param_.num_fix_points_for_extending, farrest_idx);
 

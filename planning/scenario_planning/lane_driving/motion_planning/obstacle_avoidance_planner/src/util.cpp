@@ -197,23 +197,35 @@ bool interpolate2DPoints(
     return false;
   }
   std::vector<double> base_s = spline::calcEuclidDist(base_x, base_y);
-  if (base_s.empty()) {
+  if (base_s.empty() || base_s.size() == 1) {
     return false;
   }
   std::vector<double> new_s;
   for (double i = 0.0; i < base_s.back() - 1e-6; i += resolution) {
     new_s.push_back(i);
   }
-  // new_s.push_back(base_s.back());
   spline::SplineInterpolate spline;
   std::vector<double> interpolated_x;
   std::vector<double> interpolated_y;
   spline.interpolate(base_s, base_x, new_s, interpolated_x);
   spline.interpolate(base_s, base_y, new_s, interpolated_y);
-  for (size_t i = 0; i < interpolated_x.size(); i++) {
+
+  std::vector<double> second_base_s = spline::calcEuclidDist(interpolated_x, interpolated_y);
+  if (second_base_s.empty() || second_base_s.size() == 1) {
+    return false;
+  }
+  std::vector<double> second_new_s;
+  for (double i = 0.0; i < second_base_s.back() - 1e-6; i += resolution) {
+    second_new_s.push_back(i);
+  }
+  std::vector<double> re_interpolated_x;
+  std::vector<double> re_interpolated_y;
+  spline.interpolate(second_base_s, interpolated_x, second_new_s, re_interpolated_x);
+  spline.interpolate(second_base_s, interpolated_y, second_new_s, re_interpolated_y);
+  for (size_t i = 0; i < re_interpolated_x.size(); i++) {
     geometry_msgs::Point point;
-    point.x = interpolated_x[i];
-    point.y = interpolated_y[i];
+    point.x = re_interpolated_x[i];
+    point.y = re_interpolated_y[i];
     interpolated_points.push_back(point);
   }
 }
