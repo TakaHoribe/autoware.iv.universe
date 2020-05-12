@@ -23,6 +23,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <boost/shared_ptr.hpp>
 #include <iostream>
+#include <string>
 
 #include <dynamic_reconfigure/server.h>
 #include <motion_velocity_optimizer/MotionVelocityOptimizerConfig.h>
@@ -48,14 +49,11 @@ private:
   tf2_ros::TransformListener tf_listener_;       //!< @brief tf listener
   ros::Timer timer_;
 
-  boost::shared_ptr<geometry_msgs::PoseStamped const> current_pose_ptr_;  // current vehicle pose
-  boost::shared_ptr<geometry_msgs::TwistStamped const>
-    current_velocity_ptr_;  // current vehicle twist
-  boost::shared_ptr<autoware_planning_msgs::Trajectory const>
-    base_traj_raw_ptr_;  // current base_waypoints
-  boost::shared_ptr<std_msgs::Float32 const>
-    external_velocity_limit_ptr_;  // current external_velocity_limit
-  boost::shared_ptr<double> external_velocity_limit_acc_limited_ptr_;
+  geometry_msgs::PoseStamped::ConstPtr current_pose_ptr_;           // current vehicle pose
+  geometry_msgs::TwistStamped::ConstPtr current_velocity_ptr_;      // current vehicle twist
+  autoware_planning_msgs::Trajectory::ConstPtr base_traj_raw_ptr_;  // current base_waypoints
+  std_msgs::Float32::ConstPtr external_velocity_limit_ptr_;  // current external_velocity_limit
+  boost::shared_ptr<double> external_velocity_limit_filtered_;
 
   autoware_planning_msgs::Trajectory prev_output_;  // previously published trajectory
 
@@ -76,34 +74,27 @@ private:
 
   struct MotionVelocityOptimizerParam
   {
-    double max_velocity;        // max velocity [m/s]
-    double max_accel;           // max acceleration in planning [m/s2] > 0
-    double min_decel;           // min deceltion in planning [m/s2] < 0
-    double max_lateral_accel;   // max lateral acceleartion [m/ss] > 0
-    double min_curve_velocity;  // min velocity at curve [m/s]
-    double
-      decel_distance_before_curve;  // distance before you slow down for lateral acceleration limit at a curve
-    double
-      decel_distance_after_curve;  // distance after you slow down for lateral acceleration limit at a curve
-    double
-      replan_vel_deviation;  // replan with current speed if speed deviation exceeds this value [m/s]
-    double engage_velocity;      // use this speed when start moving [m/s]
-    double engage_acceleration;  // use this acceleration when start moving [m/ss]
-    double
-      engage_exit_ratio;  // exit engage sequence when the velocity exceeds ratio x engage_velocity.
-    double extract_ahead_dist;     // forward waypoints distance from current position [m]
-    double extract_behind_dist;    // backward waypoints distance from current position [m]
-    double max_trajectory_length;  // max length of the objective trajectory for resample
-    double min_trajectory_length;  // min length of the objective trajectory for resample
-    double resample_time;          // max time to calculate trajectory length
-    double resample_dt;            // dt to calculate trajectory length
-    double
-      min_trajectory_interval_distance;  // minimum interval distance between each trajectory points
-    double
-      stop_dist_to_prohibit_engage;  // set zero vel when vehicle stops and stop dist is closer than this
-    double
-      delta_yaw_threshold;  // delta yaw between ego_pose and traj point when calc closest point
-    std::string algorithm_type;  // Option : Linf, L2
+    double max_velocity;                 // max velocity [m/s]
+    double max_accel;                    // max acceleration in planning [m/s2] > 0
+    double min_decel;                    // min deceltion in planning [m/s2] < 0
+    double max_lateral_accel;            // max lateral acceleartion [m/ss] > 0
+    double min_curve_velocity;           // min velocity at curve [m/s]
+    double decel_distance_before_curve;  // distance before slow down for lateral acc at a curve
+    double decel_distance_after_curve;   // distance after slow down for lateral acc at a curve
+    double replan_vel_deviation;  // if speed error exceeds this [m/s], replan from current velocity
+    double engage_velocity;       // use this speed when start moving [m/s]
+    double engage_acceleration;   // use this acceleration when start moving [m/ss]
+    double engage_exit_ratio;     // exit engage sequence when the speed exceeds ratio x engege_vel.
+    double extract_ahead_dist;    // forward waypoints distance from current position [m]
+    double extract_behind_dist;   // backward waypoints distance from current position [m]
+    double max_trajectory_length;             // max length of the objective trajectory for resample
+    double min_trajectory_length;             // min length of the objective trajectory for resample
+    double resample_time;                     // max time to calculate trajectory length
+    double resample_dt;                       // dt to calculate trajectory length
+    double min_trajectory_interval_distance;  // for resampling
+    double stop_dist_to_prohibit_engage;      // prevent to move toward close stop point
+    double delta_yaw_threshold;               // for closest index calculation
+    std::string algorithm_type;               // Option : Linf, L2
   } planning_param_;
 
   struct QPParam
@@ -121,22 +112,27 @@ private:
 
   /* non-const methods */
   void run();
+
   void updateCurrentPose();
+
   autoware_planning_msgs::Trajectory calcTrajectoryVelocity(
     const autoware_planning_msgs::Trajectory & base_traj);
   void updateExternalVelocityLimit(const double dt);
-  void optimizeVelocity(
+
+  autoware_planning_msgs::Trajectory optimizeVelocity(
     const autoware_planning_msgs::Trajectory & input, const int input_closest,
-    const autoware_planning_msgs::Trajectory & prev_output_traj, const int prev_output_closest,
-    autoware_planning_msgs::Trajectory & output);
+    const autoware_planning_msgs::Trajectory & prev_output_traj, const int prev_output_closest);
+
   void calcInitialMotion(
     const double & base_speed, const autoware_planning_msgs::Trajectory & base_waypoints,
     const int base_closest, const autoware_planning_msgs::Trajectory & prev_replanned_traj,
     const int prev_replanned_traj_closest, double & initial_vel, double & initial_acc);
+
   void solveOptimizationL2(
     const double initial_vel, const double initial_acc,
     const autoware_planning_msgs::Trajectory & input, const int closest,
     autoware_planning_msgs::Trajectory & output);
+
   void solveOptimizationLinf(
     const double initial_vel, const double initial_acc,
     const autoware_planning_msgs::Trajectory & input, const int closest,
@@ -150,18 +146,23 @@ private:
   bool lateralAccelerationFilter(
     const autoware_planning_msgs::Trajectory & input,
     autoware_planning_msgs::Trajectory & output) const;
+
   bool extractPathAroundIndex(
     const autoware_planning_msgs::Trajectory & input, const int index,
     autoware_planning_msgs::Trajectory & output) const;
+
   bool externalVelocityLimitFilter(
     const autoware_planning_msgs::Trajectory & input,
     autoware_planning_msgs::Trajectory & output) const;
+
   void preventMoveToCloseStopLine(
     const int closest, autoware_planning_msgs::Trajectory & trajectory) const;
 
   void publishTrajectory(const autoware_planning_msgs::Trajectory & traj) const;
+
   void publishStopDistance(
     const autoware_planning_msgs::Trajectory & trajectory, const int closest) const;
+
   void insertBehindVelocity(
     const int prev_out_closest, const autoware_planning_msgs::Trajectory & prev_output,
     const int output_closest, autoware_planning_msgs::Trajectory & output) const;
