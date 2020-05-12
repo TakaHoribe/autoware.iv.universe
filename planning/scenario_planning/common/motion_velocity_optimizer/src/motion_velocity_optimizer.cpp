@@ -988,16 +988,29 @@ void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt)
 {
   if (!external_velocity_limit_ptr_) return;
 
-  if (!external_velocity_limit_filtered_) {
-    external_velocity_limit_filtered_ =
-      boost::make_shared<double>(external_velocity_limit_ptr_->data);
+  if (external_velocity_limit_ptr_->data < -1.0e-5) {
+    ROS_WARN("external velocity limit is negative. The command is ignored");
     return;
   }
 
-  double dv_raw = (external_velocity_limit_ptr_->data - *external_velocity_limit_filtered_);
+  double v_lim = std::min<double>(external_velocity_limit_ptr_->data, planning_param_.max_velocity);
+
+  if (!external_velocity_limit_filtered_) {
+    external_velocity_limit_filtered_ = boost::make_shared<double>(v_lim);
+    return;
+  }
+
+  double dv_raw = (v_lim - *external_velocity_limit_filtered_);
   double dv_filtered =
     std::max(std::min(dv_raw, planning_param_.max_accel * dt), planning_param_.min_decel * dt);
   *external_velocity_limit_filtered_ += dv_filtered;
+
+  if (!prev_output_.points.empty() && dv_raw < -0.1) {
+    double traj_v_max = vpu::getMaxAbsVelocity(prev_output_);
+    *external_velocity_limit_filtered_ = std::min(traj_v_max, *external_velocity_limit_filtered_);
+  }
+
+  ROS_INFO("external_velocity_limit_filtered_ = %f [km/h]", *external_velocity_limit_filtered_ * 3.6);
 }
 
 void MotionVelocityOptimizer::timerCallback(const ros::TimerEvent & e)
