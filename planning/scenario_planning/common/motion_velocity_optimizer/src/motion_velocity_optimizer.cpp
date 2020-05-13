@@ -1009,8 +1009,6 @@ void MotionVelocityOptimizer::updateExternalVelocityLimit(const double dt)
     double traj_v_max = vpu::getMaxAbsVelocity(prev_output_);
     *external_velocity_limit_filtered_ = std::min(traj_v_max, *external_velocity_limit_filtered_);
   }
-
-  ROS_INFO("external_velocity_limit_filtered_ = %f [km/h]", *external_velocity_limit_filtered_ * 3.6);
 }
 
 void MotionVelocityOptimizer::timerCallback(const ros::TimerEvent & e)
