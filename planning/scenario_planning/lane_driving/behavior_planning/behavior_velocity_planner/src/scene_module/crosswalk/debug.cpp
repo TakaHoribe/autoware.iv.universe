@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/crosswalk/scene.h>
+#include <scene_module/crosswalk/scene_crosswalk.h>
+#include <scene_module/crosswalk/scene_walkway.h>
 
 #include "utilization/marker_helper.h"
 #include "utilization/util.h"
@@ -401,6 +402,15 @@ visualization_msgs::MarkerArray createMarkers(const DebugData & debug_data)
 }  // namespace
 
 visualization_msgs::MarkerArray CrosswalkModule::createDebugMarkerArray()
+{
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  appendMarkerArray(createMarkers(debug_data_), &debug_marker_array);
+
+  return debug_marker_array;
+}
+
+visualization_msgs::MarkerArray WalkwayModule::createDebugMarkerArray()
 {
   visualization_msgs::MarkerArray debug_marker_array;
 
