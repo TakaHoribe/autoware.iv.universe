@@ -84,6 +84,7 @@ add_library(scene_module_crosswalk STATIC
   src/scene_module/crosswalk/scene_crosswalk.cpp
   src/scene_module/crosswalk/scene_walkway.cpp
   src/scene_module/crosswalk/debug.cpp
+  src/scene_module/crosswalk/util.cpp
 )
 
 add_dependencies(scene_module_crosswalk

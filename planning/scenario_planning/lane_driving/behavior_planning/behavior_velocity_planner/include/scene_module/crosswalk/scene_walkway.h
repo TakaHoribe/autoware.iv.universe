@@ -45,6 +45,7 @@
 
 #include <scene_module/scene_module_interface.h>
 #include <scene_module/crosswalk/scene_crosswalk.h>
+#include <scene_module/crosswalk/util.h>
 
 class WalkwayModule : public SceneModuleInterface
 {
@@ -58,17 +59,6 @@ public:
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
 private:
-  bool getBackwordPointFromBasePoint(
-    const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
-    const Eigen::Vector2d & base_point, const double backward_length,
-    Eigen::Vector2d & output_point);
-
-  bool insertTargetVelocityPoint(
-    const autoware_planning_msgs::PathWithLaneId & input,
-    const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &
-      polygon,
-    const double & margin, const double & velocity,
-    autoware_planning_msgs::PathWithLaneId & output);
 
   enum class State { APPROACH, STOP, SURPASSED };
 
@@ -79,5 +69,5 @@ private:
   const double stop_margin_ = 1.0;
 
   // Debug
-  CrosswalkModule::DebugData debug_data_;
+  DebugData debug_data_;
 };
