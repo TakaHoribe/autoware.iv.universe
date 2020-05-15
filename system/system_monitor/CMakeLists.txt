@@ -211,7 +211,7 @@ install(DIRECTORY config/
 if (CATKIN_ENABLE_TESTING)
   roslint_add_test()
   find_package(rostest REQUIRED)
-  
+
   add_rostest_gtest(test_cpu_monitor
     test/test_cpu_monitor.test
     test/src/cpu_monitor/test_${CMAKE_CPU_PLATFORM}_cpu_monitor.cpp
@@ -274,7 +274,7 @@ if (CATKIN_ENABLE_TESTING)
   add_executable(echo1 test/src/process_monitor/sort1.cpp)
   add_executable(sort1 test/src/process_monitor/sort1.cpp)
   add_executable(sed1 test/src/process_monitor/sed1.cpp)
-  
+
   install(TARGETS mpstat1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
   install(TARGETS mpstat2 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
   install(TARGETS df1 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
