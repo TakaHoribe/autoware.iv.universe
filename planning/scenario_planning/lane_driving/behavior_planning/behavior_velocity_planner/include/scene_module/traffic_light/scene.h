@@ -52,7 +52,7 @@ public:
   };
 
 public:
-  TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem);
+  TrafficLightModule(const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem, lanelet::ConstLanelet lane);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -83,6 +83,7 @@ private:
 
   // Key Feature
   const lanelet::TrafficLight & traffic_light_reg_elem_;
+  lanelet::ConstLanelet lane_;
 
   // State
   State state_;
@@ -91,6 +92,7 @@ private:
   const double stop_margin_ = 0.0;
   const double tl_state_timeout_ = 1.0;
   const double max_stop_acceleration_threshold_ = -5.0;
+  const double confidence_threshold_ = 0.3;
 
   // Debug
   DebugData debug_data_;
