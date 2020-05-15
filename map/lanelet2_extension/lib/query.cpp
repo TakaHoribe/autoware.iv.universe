@@ -92,6 +92,11 @@ lanelet::ConstLanelets query::crosswalkLanelets(const lanelet::ConstLanelets lls
   return (query::subtypeLanelets(lls, lanelet::AttributeValueString::Crosswalk));
 }
 
+lanelet::ConstLanelets query::walkwayLanelets(const lanelet::ConstLanelets lls)
+{
+  return (query::subtypeLanelets(lls, lanelet::AttributeValueString::Walkway));
+}
+
 lanelet::ConstLanelets query::roadLanelets(const lanelet::ConstLanelets lls)
 {
   return (query::subtypeLanelets(lls, lanelet::AttributeValueString::Road));

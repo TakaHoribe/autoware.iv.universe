@@ -68,6 +68,7 @@ lanelet::ConstLanelets subtypeLanelets(const lanelet::ConstLanelets lls, const c
  * @return     [crosswalk lanelets]
  */
 lanelet::ConstLanelets crosswalkLanelets(const lanelet::ConstLanelets lls);
+lanelet::ConstLanelets walkwayLanelets(const lanelet::ConstLanelets lls);
 
 /**
  * [roadLanelets extracts road lanelets]
