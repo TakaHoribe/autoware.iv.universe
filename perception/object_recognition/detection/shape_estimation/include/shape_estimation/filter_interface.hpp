@@ -31,5 +31,5 @@ public:
 
   virtual bool filter(
     const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-    const bool & orientaion) = 0;
+    const bool & orientation) = 0;
 };

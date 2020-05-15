@@ -21,7 +21,7 @@
 
 bool NoFilter::filter(
   const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-  const bool & orientaion)
+  const bool & orientation)
 {
   return true;
 }

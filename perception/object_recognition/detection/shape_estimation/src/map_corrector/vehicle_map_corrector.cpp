@@ -30,7 +30,7 @@
 bool VehicleMapCorrector::correct(
   const VectorMap & vector_map, const geometry_msgs::TransformStamped & transform_stamped,
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientaion_output)
+  bool & orientation_output)
 {
   geometry_msgs::Point point;
   tf2::doTransform(pose_output.position, point, transform_stamped);
@@ -88,7 +88,7 @@ bool VehicleMapCorrector::correct(
     tf2::Quaternion output_quaternion;
     output_quaternion.setRPY(0.0, 0.0, corrected_yaw);
     pose_output.orientation = tf2::toMsg(output_quaternion);
-    orientaion_output = true;
+    orientation_output = true;
   } else {
     // quaternion.setRPY(0.0, -M_PI / 2.0, 0.0);
     // pose_output.orientation = tf2::toMsg(quaternion);
