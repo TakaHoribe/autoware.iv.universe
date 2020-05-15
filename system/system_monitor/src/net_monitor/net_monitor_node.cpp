@@ -21,7 +21,7 @@
 
 #include <system_monitor/net_monitor/net_monitor.h>
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "net_monitor");
   ros::NodeHandle nh;

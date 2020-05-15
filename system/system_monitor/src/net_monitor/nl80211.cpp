@@ -21,37 +21,35 @@
 
 #include <linux/nl80211.h>
 #include <net/if.h>
-#include <netlink/socket.h>
-#include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
-#include <system_monitor/net_monitor/nl80211.h>
+#include <netlink/genl/genl.h>
+#include <netlink/socket.h>
 #include <ros/ros.h>
+#include <system_monitor/net_monitor/nl80211.h>
 
-NL80211::NL80211()
-: initialized_(false), socket_(nullptr), id_(-1), cb_(nullptr), bitrate_(0.0)
-{
-}
+NL80211::NL80211() : initialized_(false), socket_(nullptr), id_(-1), cb_(nullptr), bitrate_(0.0) {}
 
 // Attribute validation policy
 static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1];
 static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1];
 
-static int callback(struct nl_msg *msg, void *arg)
+static int callback(struct nl_msg * msg, void * arg)
 {
   int ret;
-  float *rate = reinterpret_cast<float*>(arg);
+  float * rate = reinterpret_cast<float *>(arg);
 
   // Return actual netlink message.
-  struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  struct nlmsghdr * nlh = nlmsg_hdr(msg);
   // Return pointer to message payload.
-  struct genlmsghdr *ghdr = static_cast<genlmsghdr*>(nlmsg_data(nlh));
+  struct genlmsghdr * ghdr = static_cast<genlmsghdr *>(nlmsg_data(nlh));
 
-  struct nlattr *tb[NL80211_ATTR_MAX + 1];
-  struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
-  struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
+  struct nlattr * tb[NL80211_ATTR_MAX + 1];
+  struct nlattr * sinfo[NL80211_STA_INFO_MAX + 1];
+  struct nlattr * rinfo[NL80211_RATE_INFO_MAX + 1];
 
   // Create attribute index based on a stream of attributes.
-  ret = nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(ghdr, 0), genlmsg_attrlen(ghdr, 0), nullptr);
+  ret =
+    nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(ghdr, 0), genlmsg_attrlen(ghdr, 0), nullptr);
   // Returns 0 on success or a negative error code.
   if (ret < 0) return NL_SKIP;
 
@@ -67,13 +65,13 @@ static int callback(struct nl_msg *msg, void *arg)
   if (!sinfo[NL80211_STA_INFO_TX_BITRATE]) return NL_SKIP;
 
   // Create attribute index based on nested attribute.
-  ret = nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy);
+  ret =
+    nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy);
   // Returns 0 on success or a negative error code.
   if (ret < 0) return NL_SKIP;
 
   // total bitrate exists
-  if (rinfo[NL80211_RATE_INFO_BITRATE])
-  {
+  if (rinfo[NL80211_RATE_INFO_BITRATE]) {
     // Return payload of 16 bit integer attribute.
     *rate = static_cast<float>(nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE])) / 10;
   }
@@ -92,18 +90,16 @@ void NL80211::init(void)
 
   // Connect a generic netlink socket.
   if (genl_connect(socket_))
-  // Returns 0 on success or a negative error code.
-  if (ret < 0)
-  {
-    shutdown();
-    return;
-  }
+    // Returns 0 on success or a negative error code.
+    if (ret < 0) {
+      shutdown();
+      return;
+    }
 
   // Resolve generic netlink family name to its identifier.
   id_ = genl_ctrl_resolve(socket_, "nl80211");
   // Returns a positive identifier or a negative error code.
-  if (id_ < 0)
-  {
+  if (id_ < 0) {
     shutdown();
     return;
   }
@@ -111,17 +107,15 @@ void NL80211::init(void)
   // Allocate a new callback handle.
   cb_ = nl_cb_alloc(NL_CB_DEFAULT);
   // Returns newly allocated callback handle or NULL.
-  if (!cb_)
-  {
+  if (!cb_) {
     shutdown();
     return;
   }
 
   // Set up a callback.
-  ret = nl_cb_set(cb_, NL_CB_VALID, NL_CB_CUSTOM, callback, reinterpret_cast<void*>(&bitrate_));
+  ret = nl_cb_set(cb_, NL_CB_VALID, NL_CB_CUSTOM, callback, reinterpret_cast<void *>(&bitrate_));
   // Returns 0 on success or a negative error code.
-  if (ret < 0)
-  {
+  if (ret < 0) {
     shutdown();
     return;
   }
@@ -130,11 +124,11 @@ void NL80211::init(void)
   return;
 }
 
-float NL80211::getBitrate(const char *ifa_name)
+float NL80211::getBitrate(const char * ifa_name)
 {
   int ret;
-  struct nl_msg *msg;
-  void *hdr;
+  struct nl_msg * msg;
+  void * hdr;
   int index;
 
   bitrate_ = 0.0;
@@ -154,8 +148,7 @@ float NL80211::getBitrate(const char *ifa_name)
   // Add Generic Netlink headers to Netlink message.
   hdr = genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, id_, 0, NLM_F_DUMP, NL80211_CMD_GET_STATION, 0);
   // Returns pointer to user header or NULL if an error occurred.
-  if (!hdr)
-  {
+  if (!hdr) {
     nlmsg_free(msg);
     return bitrate_;
   }
@@ -163,8 +156,7 @@ float NL80211::getBitrate(const char *ifa_name)
   // Add 32 bit integer attribute to netlink message.
   ret = nla_put_u32(msg, NL80211_ATTR_IFINDEX, index);
   // Returns 0 on success or a negative error code.
-  if (ret < 0)
-  {
+  if (ret < 0) {
     nlmsg_free(msg);
     return bitrate_;
   }
@@ -172,8 +164,7 @@ float NL80211::getBitrate(const char *ifa_name)
   // Finalize and transmit Netlink message.
   ret = nl_send_auto(socket_, msg);
   // Returns number of bytes sent or a negative error code.
-  if (ret < 0)
-  {
+  if (ret < 0) {
     nlmsg_free(msg);
     return bitrate_;
   }
@@ -181,8 +172,7 @@ float NL80211::getBitrate(const char *ifa_name)
   // Receive a set of messages from a netlink socket.
   ret = nl_recvmsgs(socket_, cb_);
   // 0 on success or a negative error code from nl_recv().
-  if (ret < 0)
-  {
+  if (ret < 0) {
     nlmsg_free(msg);
     return bitrate_;
   }

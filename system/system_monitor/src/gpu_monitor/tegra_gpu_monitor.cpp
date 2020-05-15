@@ -19,18 +19,18 @@
  * @brief Tegra GPU monitor class
  */
 
+#include <system_monitor/gpu_monitor/tegra_gpu_monitor.h>
+#include <system_monitor/system_monitor_utility.h>
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <system_monitor/system_monitor_utility.h>
-#include <system_monitor/gpu_monitor/tegra_gpu_monitor.h>
+#include <string>
+#include <vector>
 
 namespace fs = boost::filesystem;
 
-GPUMonitor::GPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : GPUMonitorBase(nh, pnh)
+GPUMonitor::GPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: GPUMonitorBase(nh, pnh)
 {
   getTempNames();
   getLoadNames();
@@ -43,10 +43,9 @@ GPUMonitor::GPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
   updater_.removeByName("GPU Thermal Throttling");
 }
 
-void GPUMonitor::checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void GPUMonitor::checkTemp(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (temps_.empty())
-  {
+  if (temps_.empty()) {
     stat.summary(DiagStatus::ERROR, "temperature files not found");
     return;
   }
@@ -54,13 +53,11 @@ void GPUMonitor::checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat)
   int level = DiagStatus::OK;
   std::string error_str = "";
 
-  for (auto itr = temps_.begin(); itr != temps_.end(); ++itr)
-  {
+  for (auto itr = temps_.begin(); itr != temps_.end(); ++itr) {
     // Read temperature file
     const fs::path path(itr->path_);
     fs::ifstream ifs(path, std::ios::in);
-    if (!ifs)
-    {
+    if (!ifs) {
       stat.add("file open error", itr->path_);
       error_str = "file open error";
       continue;
@@ -73,8 +70,10 @@ void GPUMonitor::checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat)
     stat.addf(itr->label_, "%.1f DegC", temp);
 
     level = DiagStatus::OK;
-    if (temp >= temp_error_) level = std::max(level, static_cast<int>(DiagStatus::ERROR));
-    else if (temp >= temp_warn_) level = std::max(level, static_cast<int>(DiagStatus::WARN));
+    if (temp >= temp_error_)
+      level = std::max(level, static_cast<int>(DiagStatus::ERROR));
+    else if (temp >= temp_warn_)
+      level = std::max(level, static_cast<int>(DiagStatus::WARN));
   }
 
   if (!error_str.empty())
@@ -83,10 +82,9 @@ void GPUMonitor::checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat)
     stat.summary(level, temp_dict_.at(level));
 }
 
-void GPUMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void GPUMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (loads_.empty())
-  {
+  if (loads_.empty()) {
     stat.summary(DiagStatus::ERROR, "load files not found");
     return;
   }
@@ -94,13 +92,11 @@ void GPUMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
   int level = DiagStatus::OK;
   std::string error_str = "";
 
-  for (auto itr = loads_.begin(); itr != loads_.end(); ++itr)
-  {
+  for (auto itr = loads_.begin(); itr != loads_.end(); ++itr) {
     // Read load file
     const fs::path path(itr->path_);
     fs::ifstream ifs(path, std::ios::in);
-    if (!ifs)
-    {
+    if (!ifs) {
       stat.add("file open error", itr->path_);
       error_str = "file open error";
       continue;
@@ -113,8 +109,10 @@ void GPUMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
     level = DiagStatus::OK;
     load /= 1000;
-    if (load >= gpu_usage_error_) level = std::max(level, static_cast<int>(DiagStatus::ERROR));
-    else if (load >= gpu_usage_warn_) level = std::max(level, static_cast<int>(DiagStatus::WARN));
+    if (load >= gpu_usage_error_)
+      level = std::max(level, static_cast<int>(DiagStatus::ERROR));
+    else if (load >= gpu_usage_warn_)
+      level = std::max(level, static_cast<int>(DiagStatus::WARN));
   }
 
   if (!error_str.empty())
@@ -123,29 +121,28 @@ void GPUMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
     stat.summary(level, load_dict_.at(level));
 }
 
-void GPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void GPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   // TODO(Fumihito Ito): implement me
 }
 
-void GPUMonitor::checkFrequency(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void GPUMonitor::checkFrequency(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (freqs_.empty())
-  {
+  if (freqs_.empty()) {
     stat.summary(DiagStatus::ERROR, "frequency files not found");
     return;
   }
 
-  for (auto itr = freqs_.begin(); itr != freqs_.end(); ++itr)
-  {
+  for (auto itr = freqs_.begin(); itr != freqs_.end(); ++itr) {
     // Read cur_freq file
     const fs::path path(itr->path_);
     fs::ifstream ifs(path, std::ios::in);
-    if (ifs)
-    {
+    if (ifs) {
       std::string line;
       if (std::getline(ifs, line))
-        stat.addf((boost::format("GPU %1%: clock") % itr->label_).str(), "%d MHz", std::stoi(line)/1000000);
+        stat.addf(
+          (boost::format("GPU %1%: clock") % itr->label_).str(), "%d MHz",
+          std::stoi(line) / 1000000);
     }
     ifs.close();
   }
@@ -159,8 +156,7 @@ void GPUMonitor::getTempNames(void)
   std::vector<thermal_zone> therms;
   SystemMonitorUtility::getThermalZone("GPU-therm", &therms);
 
-  for (auto itr = therms.begin(); itr != therms.end(); ++itr)
-  {
+  for (auto itr = therms.begin(); itr != therms.end(); ++itr) {
     temps_.emplace_back(itr->label_, itr->path_);
   }
 }
@@ -169,8 +165,8 @@ void GPUMonitor::getLoadNames(void)
 {
   const fs::path root("/sys/devices");
 
-  for (const fs::path& path : boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator()))
-  {
+  for (const fs::path & path :
+       boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator())) {
     if (!fs::is_directory(path)) continue;
 
     boost::smatch match;
@@ -190,8 +186,8 @@ void GPUMonitor::getFreqNames(void)
 {
   const fs::path root("/sys/class/devfreq");
 
-  for (const fs::path& path : boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator()))
-  {
+  for (const fs::path & path :
+       boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator())) {
     // /sys/class/devfreq/?????/cur_freq ?
     if (!fs::is_directory(path)) continue;
 

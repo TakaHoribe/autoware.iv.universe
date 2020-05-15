@@ -21,9 +21,9 @@
  * @brief HDD monitor class
  */
 
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <map>
 #include <string>
-#include <diagnostic_updater/diagnostic_updater.h>
 
 /**
  * @brief error and warning temperature levels
@@ -44,7 +44,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  HDDMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  HDDMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief main loop
@@ -60,7 +60,7 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat);    // NOLINT(runtime/references)
+  void checkTemp(diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check HDD usage
@@ -68,18 +68,19 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  void checkUsage(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief get temperature parameters
    */
   void getTempParams(void);
 
-  ros::NodeHandle nh_;                            //!< @brief ros node handle
-  ros::NodeHandle pnh_;                           //!< @brief private ros node handle
-  diagnostic_updater::Updater updater_;           //!< @brief Updater class which advertises to /diagnostics
+  ros::NodeHandle nh_;                   //!< @brief ros node handle
+  ros::NodeHandle pnh_;                  //!< @brief private ros node handle
+  diagnostic_updater::Updater updater_;  //!< @brief Updater class which advertises to /diagnostics
 
-  char hostname_[HOST_NAME_MAX+1];                //!< @brief host name
+  char hostname_[HOST_NAME_MAX + 1];  //!< @brief host name
 
   float usage_warn_;                              //!< @brief HDD usage(%) to generate warning
   float usage_error_;                             //!< @brief HDD usage(%) to generate error
@@ -89,18 +90,15 @@ protected:
   /**
    * @brief HDD temperature status messages
    */
-  const std::map<int, const char*> temp_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "hot"}, {DiagStatus::ERROR, "critical hot"}
-  };
+  const std::map<int, const char *> temp_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "hot"}, {DiagStatus::ERROR, "critical hot"}};
 
   /**
    * @brief HDD usage status messages
    */
-  const std::map<int, const char*> usage_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "low disk space"}, {DiagStatus::ERROR, "very low disk space"}
-  };
+  const std::map<int, const char *> usage_dict_ = {{DiagStatus::OK, "OK"},
+                                                   {DiagStatus::WARN, "low disk space"},
+                                                   {DiagStatus::ERROR, "very low disk space"}};
 };
 
 #endif  // SYSTEM_MONITOR_HDD_MONITOR_HDD_MONITOR_H

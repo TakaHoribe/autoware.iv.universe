@@ -21,23 +21,22 @@
  * @brief CPU monitor base class
  */
 
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <map>
 #include <string>
 #include <vector>
-#include <diagnostic_updater/diagnostic_updater.h>
 
 /**
  * @brief CPU temperature information
  */
 typedef struct cpu_temp_info
 {
-  std::string label_;   //!< @brief cpu label
-  std::string path_;    //!< @brief sysfs path to cpu temperature
+  std::string label_;  //!< @brief cpu label
+  std::string path_;   //!< @brief sysfs path to cpu temperature
 
   cpu_temp_info() : label_(), path_() {}
-  cpu_temp_info(const std::string &label, const std::string &path) : label_(label), path_(path) {}
-}
-cpu_temp_info;
+  cpu_temp_info(const std::string & label, const std::string & path) : label_(label), path_(path) {}
+} cpu_temp_info;
 
 /**
  * @brief CPU frequency information
@@ -48,9 +47,8 @@ typedef struct cpu_freq_info
   std::string path_;  //!< @brief sysfs path to cpu frequency
 
   cpu_freq_info() : index_(0), path_() {}
-  cpu_freq_info(int index, const std::string &path) : index_(index), path_(path) {}
-}
-cpu_freq_info;
+  cpu_freq_info(int index, const std::string & path) : index_(index), path_(path) {}
+} cpu_freq_info;
 
 class CPUMonitorBase
 {
@@ -78,7 +76,7 @@ protected:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  CPUMonitorBase(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  CPUMonitorBase(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief check CPU temperature
@@ -86,7 +84,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat);    // NOLINT(runtime/references)
+  virtual void checkTemp(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check CPU usage
@@ -94,7 +93,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  virtual void checkUsage(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check CPU load average
@@ -102,13 +102,15 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkLoad(diagnostic_updater::DiagnosticStatusWrapper &stat);  // NOLINT(runtime/references)
+  virtual void checkLoad(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check CPU thermal throttling
    * @param [out] stat diagnostic message passed directly to diagnostic publish calls
    */
-  virtual void checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat);  // NOLINT(runtime/references)
+  virtual void checkThrottling(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check CPU frequency
@@ -116,48 +118,43 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkFrequency(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  virtual void checkFrequency(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
-  ros::NodeHandle nh_;                    //!< @brief ros node handle
-  ros::NodeHandle pnh_;                   //!< @brief private ros node handle
-  diagnostic_updater::Updater updater_;   //!< @brief Updater class which advertises to /diagnostics
+  ros::NodeHandle nh_;                   //!< @brief ros node handle
+  ros::NodeHandle pnh_;                  //!< @brief private ros node handle
+  diagnostic_updater::Updater updater_;  //!< @brief Updater class which advertises to /diagnostics
 
-  char hostname_[HOST_NAME_MAX+1];        //!< @brief host name
-  int num_cores_;                         //!< @brief number of cores
-  std::vector<cpu_temp_info> temps_;      //!< @brief CPU list for temperature
-  std::vector<cpu_freq_info> freqs_;      //!< @brief CPU list for frequency
-  bool mpstat_exists_;                    //!< @brief flag if mpstat exists
+  char hostname_[HOST_NAME_MAX + 1];  //!< @brief host name
+  int num_cores_;                     //!< @brief number of cores
+  std::vector<cpu_temp_info> temps_;  //!< @brief CPU list for temperature
+  std::vector<cpu_freq_info> freqs_;  //!< @brief CPU list for frequency
+  bool mpstat_exists_;                //!< @brief flag if mpstat exists
 
-  float temp_warn_;                       //!< @brief CPU temperature(DegC) to generate warning
-  float temp_error_;                      //!< @brief CPU temperature(DegC) to generate error
-  float usage_warn_;                      //!< @brief CPU usage(%) to generate warning
-  float usage_error_;                     //!< @brief CPU usage(%) to generate error
-  float load1_warn_;                      //!< @brief CPU load average 1min(%) to generate warning
-  float load5_warn_;                      //!< @brief CPU load average 5min(%) to generate warning
+  float temp_warn_;    //!< @brief CPU temperature(DegC) to generate warning
+  float temp_error_;   //!< @brief CPU temperature(DegC) to generate error
+  float usage_warn_;   //!< @brief CPU usage(%) to generate warning
+  float usage_error_;  //!< @brief CPU usage(%) to generate error
+  float load1_warn_;   //!< @brief CPU load average 1min(%) to generate warning
+  float load5_warn_;   //!< @brief CPU load average 5min(%) to generate warning
 
   /**
    * @brief CPU temperature status messages
    */
-  const std::map<int, const char*> temp_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "warm"}, {DiagStatus::ERROR, "hot"}
-  };
+  const std::map<int, const char *> temp_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "warm"}, {DiagStatus::ERROR, "hot"}};
 
   /**
    * @brief CPU usage status messages
    */
-  const std::map<int, const char*> load_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}
-  };
+  const std::map<int, const char *> load_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}};
 
   /**
    * @brief CPU thermal throttling status messages
    */
-  const std::map<int, const char*> thermal_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "unused"}, {DiagStatus::ERROR, "throttling"}
-  };
+  const std::map<int, const char *> thermal_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "unused"}, {DiagStatus::ERROR, "throttling"}};
 };
 
 #endif  // SYSTEM_MONITOR_CPU_MONITOR_CPU_MONITOR_BASE_H

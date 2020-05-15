@@ -23,7 +23,7 @@
 
 #include <system_monitor/cpu_monitor/cpu_monitor_base.h>
 
-class CPUMonitor: public CPUMonitorBase
+class CPUMonitor : public CPUMonitorBase
 {
 public:
   /**
@@ -31,7 +31,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 };
 
 #endif  // SYSTEM_MONITOR_CPU_MONITOR_UNKNOWN_CPU_MONITOR_H

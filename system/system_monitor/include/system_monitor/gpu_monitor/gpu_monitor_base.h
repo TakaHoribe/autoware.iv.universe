@@ -21,8 +21,8 @@
  * @brief GPU monitor class
  */
 
-#include <map>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <map>
 
 class GPUMonitorBase
 {
@@ -40,7 +40,7 @@ protected:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  GPUMonitorBase(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  GPUMonitorBase(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief check GPU temperature
@@ -48,7 +48,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkTemp(diagnostic_updater::DiagnosticStatusWrapper &stat);  // NOLINT(runtime/references)
+  virtual void checkTemp(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check GPU usage
@@ -56,7 +57,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  virtual void checkUsage(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check GPU memory usage
@@ -64,7 +66,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkMemoryUsage(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  virtual void checkMemoryUsage(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check GPU throttling
@@ -72,7 +75,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat);  // NOLINT(runtime/references)
+  virtual void checkThrottling(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief check GPU frequency
@@ -80,44 +84,39 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  virtual void checkFrequency(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  virtual void checkFrequency(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
-  ros::NodeHandle nh_;                    //!< @brief ros node handle
-  ros::NodeHandle pnh_;                   //!< @brief private ros node handle
-  diagnostic_updater::Updater updater_;   //!< @brief Updater class which advertises to /diagnostics
+  ros::NodeHandle nh_;                   //!< @brief ros node handle
+  ros::NodeHandle pnh_;                  //!< @brief private ros node handle
+  diagnostic_updater::Updater updater_;  //!< @brief Updater class which advertises to /diagnostics
 
-  char hostname_[HOST_NAME_MAX+1];        //!< @brief host name
+  char hostname_[HOST_NAME_MAX + 1];  //!< @brief host name
 
-  float temp_warn_;                       //!< @brief GPU temperature(DegC) to generate warning
-  float temp_error_;                      //!< @brief GPU temperature(DegC) to generate error
-  float gpu_usage_warn_;                  //!< @brief GPU usage(%) to generate warning
-  float gpu_usage_error_;                 //!< @brief GPU usage(%) to generate error
-  float memory_usage_warn_;               //!< @brief GPU memory usage(%) to generate warning
-  float memory_usage_error_;              //!< @brief GPU memory usage(%) to generate error
+  float temp_warn_;           //!< @brief GPU temperature(DegC) to generate warning
+  float temp_error_;          //!< @brief GPU temperature(DegC) to generate error
+  float gpu_usage_warn_;      //!< @brief GPU usage(%) to generate warning
+  float gpu_usage_error_;     //!< @brief GPU usage(%) to generate error
+  float memory_usage_warn_;   //!< @brief GPU memory usage(%) to generate warning
+  float memory_usage_error_;  //!< @brief GPU memory usage(%) to generate error
 
   /**
    * @brief GPU temperature status messages
    */
-  const std::map<int, const char*> temp_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "warm"}, {DiagStatus::ERROR, "hot"}
-  };
+  const std::map<int, const char *> temp_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "warm"}, {DiagStatus::ERROR, "hot"}};
 
   /**
    * @brief GPU usage status messages
    */
-  const std::map<int, const char*> load_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}
-  };
+  const std::map<int, const char *> load_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}};
 
   /**
    * @brief GPU throttling status messages
    */
-  const std::map<int, const char*> throttling_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "unused"}, {DiagStatus::ERROR, "throttling"}
-  };
+  const std::map<int, const char *> throttling_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "unused"}, {DiagStatus::ERROR, "throttling"}};
 };
 
 #endif  // SYSTEM_MONITOR_GPU_MONITOR_GPU_MONITOR_BASE_H

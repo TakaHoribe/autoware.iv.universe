@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include <string>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <system_monitor/gpu_monitor/tegra_gpu_monitor.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <string>
 
-static constexpr const char* TEST_FILE = "test";
+static constexpr const char * TEST_FILE = "test";
 
 namespace fs = boost::filesystem;
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
@@ -31,29 +31,33 @@ class TestGPUMonitor : public GPUMonitor
   friend class GPUMonitorTestSuite;
 
 public:
-  TestGPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : GPUMonitor(nh, pnh) {}
+  TestGPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : GPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
-  void addTempName(const std::string &path) { temps_.emplace_back(path, path); }
+  void addTempName(const std::string & path) { temps_.emplace_back(path, path); }
   void clearTempNames(void) { temps_.clear(); }
 
-  void addLoadName(const std::string &path) { loads_.emplace_back(path, path); }
+  void addLoadName(const std::string & path) { loads_.emplace_back(path, path); }
   void clearLoadNames(void) { loads_.clear(); }
 
-  void addFreqName(const std::string &path) { freqs_.emplace_back(path, path); }
+  void addFreqName(const std::string & path) { freqs_.emplace_back(path, path); }
   void clearFreqNames(void) { freqs_.clear(); }
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -91,12 +95,10 @@ protected:
     if (fs::exists(TEST_FILE)) fs::remove(TEST_FILE);
   }
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -462,8 +464,11 @@ TEST_F(GPUMonitorTestSuite, freqFrequencyFilesNotFoundTest)
 class DummyGPUMonitor : public GPUMonitorBase
 {
   friend class GPUMonitorTestSuite;
+
 public:
-  DummyGPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : GPUMonitorBase(nh, pnh) {}
+  DummyGPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : GPUMonitorBase(nh, pnh)
+  {
+  }
   void update(void) { updater_.force_update(); }
 };
 
@@ -474,7 +479,7 @@ TEST_F(GPUMonitorTestSuite, dummyGPUMonitorTest)
   monitor->update();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "GPUMonitorTestNode");

@@ -14,42 +14,45 @@
  * limitations under the License.
  */
 
+#include <gtest/gtest.h>
+#include <msr_reader/msr_reader.h>
 #include <pthread.h>
-#include <fstream>
-#include <string>
-#include <vector>
+#include <ros/ros.h>
+#include <system_monitor/cpu_monitor/intel_cpu_monitor.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/process.hpp>
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <msr_reader/msr_reader.h>
-#include <system_monitor/cpu_monitor/intel_cpu_monitor.h>
+#include <fstream>
+#include <string>
+#include <vector>
 
-static constexpr const char* TEST_FILE = "test";
-static constexpr const char* DOCKER_ENV = "/.dockerenv";
+static constexpr const char * TEST_FILE = "test";
+static constexpr const char * DOCKER_ENV = "/.dockerenv";
 
 namespace fs = boost::filesystem;
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
 
-char** argv_;
+char ** argv_;
 
 class TestCPUMonitor : public CPUMonitor
 {
   friend class CPUMonitorTestSuite;
 
 public:
-  TestCPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : CPUMonitor(nh, pnh) {}
+  TestCPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : CPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
-  void addTempName(const std::string &path) { temps_.emplace_back(path, path); }
+  void addTempName(const std::string & path) { temps_.emplace_back(path, path); }
   void clearTempNames(void) { temps_.clear(); }
   bool isTempNamesEmpty(void) { temps_.empty(); }
 
-  void addFreqName(int index, const std::string &path) { freqs_.emplace_back(index, path); }
+  void addFreqName(int index, const std::string & path) { freqs_.emplace_back(index, path); }
   void clearFreqNames(void) { freqs_.clear(); }
 
   void setMpstatExists(bool mpstat_exists) { mpstat_exists_ = mpstat_exists; }
@@ -62,14 +65,15 @@ public:
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -122,12 +126,10 @@ protected:
     if (fs::exists(mpstat_)) fs::remove(mpstat_);
   }
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -145,8 +147,7 @@ protected:
   }
 };
 
-enum ThreadTestMode
-{
+enum ThreadTestMode {
   Normal = 0,
   Throttling,
   ReturnsError,
@@ -158,9 +159,9 @@ enum ThreadTestMode
 bool stop_thread;
 pthread_mutex_t mutex;
 
-void* msr_reader(void *args)
+void * msr_reader(void * args)
 {
-  ThreadTestMode *mode = reinterpret_cast<ThreadTestMode*>(args);
+  ThreadTestMode * mode = reinterpret_cast<ThreadTestMode *>(args);
 
   // Create a new socket
   int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -169,8 +170,12 @@ void* msr_reader(void *args)
   // Allow address reuse
   int ret = 0;
   int opt = 1;
-  ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&opt), (socklen_t) sizeof(opt));
-  if (ret < 0) { close(sock); return nullptr; }
+  ret = setsockopt(
+    sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&opt), (socklen_t)sizeof(opt));
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   // Give the socket FD the local address ADDR
   sockaddr_in addr;
@@ -178,70 +183,77 @@ void* msr_reader(void *args)
   addr.sin_family = AF_INET;
   addr.sin_port = htons(7634);
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  ret = bind(sock, (struct sockaddr*)&addr, sizeof(addr));
-  if (ret < 0) { close(sock); return nullptr; }
+  ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   // Prepare to accept connections on socket FD
   ret = listen(sock, 5);
-  if (ret < 0) { close(sock); return nullptr; }
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   sockaddr_in client;
   socklen_t len = sizeof(client);
 
   // Await a connection on socket FD
-  int new_sock = accept(sock, reinterpret_cast<sockaddr*>(&client), &len);
-  if (new_sock < 0) { close(sock); return nullptr; }
+  int new_sock = accept(sock, reinterpret_cast<sockaddr *>(&client), &len);
+  if (new_sock < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   ret = 0;
   std::ostringstream oss;
   boost::archive::text_oarchive oa(oss);
   MSRInfo msr = {0};
 
-  switch (*mode)
-  {
-  case Normal:
-    msr.error_code_ = 0;
-    msr.pkg_thermal_status_.push_back(false);
-    oa << msr;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+  switch (*mode) {
+    case Normal:
+      msr.error_code_ = 0;
+      msr.pkg_thermal_status_.push_back(false);
+      oa << msr;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case Throttling:
-    msr.error_code_ = 0;
-    msr.pkg_thermal_status_.push_back(true);
-    oa << msr;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case Throttling:
+      msr.error_code_ = 0;
+      msr.pkg_thermal_status_.push_back(true);
+      oa << msr;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case ReturnsError:
-    msr.error_code_ = EACCES;
-    oa << msr;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case ReturnsError:
+      msr.error_code_ = EACCES;
+      oa << msr;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case RecvTimeout:
-    // Wait for recv timeout
-    while (true)
-    {
-      pthread_mutex_lock(&mutex);
-      if (stop_thread) break;
-      pthread_mutex_unlock(&mutex);
-      sleep(1);
-    }
-    break;
+    case RecvTimeout:
+      // Wait for recv timeout
+      while (true) {
+        pthread_mutex_lock(&mutex);
+        if (stop_thread) break;
+        pthread_mutex_unlock(&mutex);
+        sleep(1);
+      }
+      break;
 
-  case RecvNoData:
-    // Send nothing, close socket immediately
-    break;
+    case RecvNoData:
+      // Send nothing, close socket immediately
+      break;
 
-  case FormatError:
-    // Send wrong data
-    oa << "test";
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case FormatError:
+      // Send wrong data
+      oa << "test";
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
 
   // Close the file descriptor FD
@@ -545,7 +557,9 @@ TEST_F(CPUMonitorTestSuite, usageMpstatNotFoundTest)
   ASSERT_EQ(status.level, DiagStatus::ERROR);
   ASSERT_STREQ(status.message.c_str(), "mpstat error");
   ASSERT_TRUE(findValue(status, "mpstat", value));
-  ASSERT_STREQ(value.c_str(), "Command 'mpstat' not found, but can be installed with: sudo apt install sysstat");
+  ASSERT_STREQ(
+    value.c_str(),
+    "Command 'mpstat' not found, but can be installed with: sudo apt install sysstat");
 }
 
 TEST_F(CPUMonitorTestSuite, load1WarnTest)
@@ -928,8 +942,11 @@ TEST_F(CPUMonitorTestSuite, usageMpstatExceptionTest)
 class DummyCPUMonitor : public CPUMonitorBase
 {
   friend class CPUMonitorTestSuite;
+
 public:
-  DummyCPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : CPUMonitorBase(nh, pnh) {}
+  DummyCPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : CPUMonitorBase(nh, pnh)
+  {
+  }
   void update(void) { updater_.force_update(); }
 };
 
@@ -942,7 +959,7 @@ TEST_F(CPUMonitorTestSuite, dummyCPUMonitorTest)
   monitor->update();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   argv_ = argv;
   testing::InitGoogleTest(&argc, argv);

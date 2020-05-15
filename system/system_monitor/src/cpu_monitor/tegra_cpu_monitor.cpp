@@ -19,21 +19,19 @@
  * @brief TEGRA PU monitor class
  */
 
-#include <vector>
-#include <system_monitor/system_monitor_utility.h>
 #include <system_monitor/cpu_monitor/tegra_cpu_monitor.h>
+#include <system_monitor/system_monitor_utility.h>
+#include <vector>
 
-CPUMonitor::CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : CPUMonitorBase(nh, pnh)
+CPUMonitor::CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: CPUMonitorBase(nh, pnh)
 {
   // There is no event record for thermal throttling.
   // Need to manually monitor temperature to figure out if thermal limits crossed or not.
   updater_.removeByName("CPU Thermal Throttling");
 }
 
-void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat)
-{
-}
+void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper & stat) {}
 
 void CPUMonitor::getTempNames(void)
 {
@@ -41,8 +39,7 @@ void CPUMonitor::getTempNames(void)
   std::vector<thermal_zone> therms;
   SystemMonitorUtility::getThermalZone("CPU-therm", &therms);
 
-  for (auto itr = therms.begin(); itr != therms.end(); ++itr)
-  {
+  for (auto itr = therms.begin(); itr != therms.end(); ++itr) {
     temps_.emplace_back(itr->label_, itr->path_);
   }
 }

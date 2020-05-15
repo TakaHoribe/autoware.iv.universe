@@ -21,21 +21,21 @@
  * @brief HDD reader definitions
  */
 
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/string.hpp>
 #include <map>
 #include <string>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/string.hpp>
 
 /**
  * @brief HDD information
  */
 struct HDDInfo
 {
-  int         error_code_;  //!< @brief error code, 0 on success, otherwise error
-  std::string model_;       //!< @brief Model number
-  std::string serial_;      //!< @brief Serial number
-  int         temp_;        //!< @brief temperature(DegC)
+  int error_code_;      //!< @brief error code, 0 on success, otherwise error
+  std::string model_;   //!< @brief Model number
+  std::string serial_;  //!< @brief Serial number
+  int temp_;            //!< @brief temperature(DegC)
 
   /**
    * @brief Load or save data members.
@@ -44,7 +44,8 @@ struct HDDInfo
    * @note NOLINT syntax is needed since this is an interface to serialization and
    * used inside boost serialization.
    */
-  template<typename archive> void serialize(archive& ar, const unsigned /*version*/)  // NOLINT(runtime/references)
+  template <typename archive>
+  void serialize(archive & ar, const unsigned /*version*/)  // NOLINT(runtime/references)
   {
     ar & error_code_;
     ar & model_;

@@ -19,14 +19,14 @@
  * @brief Process monitor class
  */
 
-#include <string>
-#include <vector>
+#include <system_monitor/process_monitor/process_monitor.h>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include <system_monitor/process_monitor/process_monitor.h>
+#include <string>
+#include <vector>
 
-ProcessMonitor::ProcessMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : nh_(nh), pnh_(pnh)
+ProcessMonitor::ProcessMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: nh_(nh), pnh_(pnh)
 {
   int index;
 
@@ -37,14 +37,12 @@ ProcessMonitor::ProcessMonitor(const ros::NodeHandle &nh, const ros::NodeHandle 
   updater_.setHardwareID(hostname_);
   updater_.add("Tasks Summary", this, &ProcessMonitor::monitorProcesses);
 
-  for (index = 0; index < num_of_procs_; ++index)
-  {
+  for (index = 0; index < num_of_procs_; ++index) {
     auto task = std::make_shared<DiagTask>((boost::format("High-load Proc[%1%]") % index).str());
     load_tasks_.push_back(task);
     updater_.add(*task);
   }
-  for (index = 0; index < num_of_procs_; ++index)
-  {
+  for (index = 0; index < num_of_procs_; ++index) {
     auto task = std::make_shared<DiagTask>((boost::format("High-mem Proc[%1%]") % index).str());
     memory_tasks_.push_back(task);
     updater_.add(*task);
@@ -55,15 +53,14 @@ void ProcessMonitor::run(void)
 {
   ros::Rate rate(1.0);
 
-  while (ros::ok())
-  {
+  while (ros::ok()) {
     ros::spinOnce();
     updater_.force_update();
     rate.sleep();
   }
 }
 
-void ProcessMonitor::monitorProcesses(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void ProcessMonitor::monitorProcesses(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   bp::ipstream is_err;
   bp::ipstream is_out;
@@ -72,8 +69,7 @@ void ProcessMonitor::monitorProcesses(diagnostic_updater::DiagnosticStatusWrappe
   // Get processes
   bp::child c("top -bn1 -o %CPU -w 128", bp::std_out > is_out, bp::std_err > is_err);
   c.wait();
-  if (c.exit_code() != 0)
-  {
+  if (c.exit_code() != 0) {
     is_err >> os.rdbuf();
     stat.summary(DiagStatus::ERROR, "top error");
     stat.add("top", os.str().c_str());
@@ -97,7 +93,8 @@ void ProcessMonitor::monitorProcesses(diagnostic_updater::DiagnosticStatusWrappe
   getHighMemoryProcesses(str);
 }
 
-void ProcessMonitor::getTasksSummary(diagnostic_updater::DiagnosticStatusWrapper &stat, const std::string &output)
+void ProcessMonitor::getTasksSummary(
+  diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & output)
 {
   bp::pipe p;
   std::string line;
@@ -108,8 +105,7 @@ void ProcessMonitor::getTasksSummary(diagnostic_updater::DiagnosticStatusWrapper
     bp::ipstream is_err;
     bp::child c((boost::format("echo %1%") % output).str(), bp::std_out > p, bp::std_err > is_err);
     c.wait();
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       std::ostringstream os;
       is_err >> os.rdbuf();
       stat.summary(DiagStatus::ERROR, "echo error");
@@ -123,8 +119,7 @@ void ProcessMonitor::getTasksSummary(diagnostic_updater::DiagnosticStatusWrapper
     bp::child c("grep Tasks:", bp::std_out > is_out, bp::std_in < p);
     c.wait();
     // no matching line
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       stat.summary(DiagStatus::ERROR, "matching pattern not found");
       stat.add("name", "Tasks:");
       return;
@@ -132,26 +127,25 @@ void ProcessMonitor::getTasksSummary(diagnostic_updater::DiagnosticStatusWrapper
 
     std::getline(is_out, line);
     boost::smatch match;
-    boost::regex
-      filter("^Tasks: (\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) zombie");
+    boost::regex filter(
+      "^Tasks: (\\d+) total,\\s+(\\d+) running,\\s+(\\d+) sleeping,\\s+(\\d+) stopped,\\s+(\\d+) "
+      "zombie");
 
-    if (boost::regex_match(line, match, filter))
-    {
+    if (boost::regex_match(line, match, filter)) {
       stat.add("total", match[1].str());
       stat.add("running", match[2].str());
       stat.add("sleeping", match[3].str());
       stat.add("stopped", match[4].str());
       stat.add("zombie", match[5].str());
       stat.summary(DiagStatus::OK, "OK");
-    }
-    else
-    {
+    } else {
       stat.summary(DiagStatus::ERROR, "invalid format");
     }
   }
 }
 
-void ProcessMonitor::removeHeader(diagnostic_updater::DiagnosticStatusWrapper &stat, std::string &output)
+void ProcessMonitor::removeHeader(
+  diagnostic_updater::DiagnosticStatusWrapper & stat, std::string & output)
 {
   bp::pipe p1;
   bp::pipe p2;
@@ -162,8 +156,7 @@ void ProcessMonitor::removeHeader(diagnostic_updater::DiagnosticStatusWrapper &s
     bp::ipstream is_err;
     bp::child c((boost::format("echo %1%") % output).str(), bp::std_out > p1, bp::std_err > is_err);
     c.wait();
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       is_err >> os.rdbuf();
       stat.summary(DiagStatus::ERROR, "echo error");
       stat.add("echo", os.str().c_str());
@@ -176,8 +169,7 @@ void ProcessMonitor::removeHeader(diagnostic_updater::DiagnosticStatusWrapper &s
     bp::child c("sed \"/^%Cpu/d\"", bp::std_out > p2, bp::std_err > is_err, bp::std_in < p1);
     c.wait();
     // no matching line
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       stat.summary(DiagStatus::ERROR, "sed error");
       stat.add("sed", "Failed to remove header");
       return;
@@ -190,8 +182,7 @@ void ProcessMonitor::removeHeader(diagnostic_updater::DiagnosticStatusWrapper &s
     bp::child c("sed \"1,6d\"", bp::std_out > is_out, bp::std_err > is_err, bp::std_in < p2);
     c.wait();
     // no matching line
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       stat.summary(DiagStatus::ERROR, "sed error");
       stat.add("sed", "Failed to remove header");
       return;
@@ -202,7 +193,7 @@ void ProcessMonitor::removeHeader(diagnostic_updater::DiagnosticStatusWrapper &s
   }
 }
 
-void ProcessMonitor::getHighLoadProcesses(const std::string &output)
+void ProcessMonitor::getHighLoadProcesses(const std::string & output)
 {
   bp::pipe p;
   std::ostringstream os;
@@ -212,8 +203,7 @@ void ProcessMonitor::getHighLoadProcesses(const std::string &output)
   bp::ipstream is_err;
   bp::child c((boost::format("echo %1%") % output).str(), bp::std_out > p, bp::std_err > is_err);
   c.wait();
-  if (c.exit_code() != 0)
-  {
+  if (c.exit_code() != 0) {
     is_err >> os.rdbuf();
     setErrorContent(&load_tasks_, "echo error", "echo", os.str().c_str());
     return;
@@ -223,7 +213,7 @@ void ProcessMonitor::getHighLoadProcesses(const std::string &output)
   getTopratedProcesses(&load_tasks_, &p);
 }
 
-void ProcessMonitor::getHighMemoryProcesses(const std::string &output)
+void ProcessMonitor::getHighMemoryProcesses(const std::string & output)
 {
   bp::pipe p1;
   bp::pipe p2;
@@ -235,8 +225,7 @@ void ProcessMonitor::getHighMemoryProcesses(const std::string &output)
     bp::ipstream is_err;
     bp::child c((boost::format("echo %1%") % output).str(), bp::std_out > p1, bp::std_err > is_err);
     c.wait();
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       is_err >> os.rdbuf();
       setErrorContent(&memory_tasks_, "echo error", "echo", os.str().c_str());
       return;
@@ -248,8 +237,7 @@ void ProcessMonitor::getHighMemoryProcesses(const std::string &output)
     bp::ipstream is_err;
     bp::child c("sort -r -k 10", bp::std_out > p2, bp::std_err > is_err, bp::std_in < p1);
     c.wait();
-    if (c.exit_code() != 0)
-    {
+    if (c.exit_code() != 0) {
       is_err >> os.rdbuf();
       setErrorContent(&memory_tasks_, "sort error", "sort", os.str().c_str());
       return;
@@ -260,7 +248,8 @@ void ProcessMonitor::getHighMemoryProcesses(const std::string &output)
   getTopratedProcesses(&memory_tasks_, &p2);
 }
 
-void ProcessMonitor::getTopratedProcesses(std::vector<std::shared_ptr<DiagTask>> *tasks, bp::pipe *p)
+void ProcessMonitor::getTopratedProcesses(
+  std::vector<std::shared_ptr<DiagTask>> * tasks, bp::pipe * p)
 {
   if (tasks == nullptr || p == nullptr) return;
 
@@ -268,13 +257,13 @@ void ProcessMonitor::getTopratedProcesses(std::vector<std::shared_ptr<DiagTask>>
   bp::ipstream is_err;
   std::ostringstream os;
 
-  bp::child c((boost::format("sed -n \"1,%1% p\"") % num_of_procs_).str(),
-    bp::std_out > is_out, bp::std_err > is_err, bp::std_in < *p);
+  bp::child c(
+    (boost::format("sed -n \"1,%1% p\"") % num_of_procs_).str(), bp::std_out > is_out,
+    bp::std_err > is_err, bp::std_in < *p);
 
   c.wait();
   // Failed to modify line
-  if (c.exit_code() != 0)
-  {
+  if (c.exit_code() != 0) {
     is_err >> os.rdbuf();
     setErrorContent(tasks, "sed error", "sed", os.str().c_str());
     return;
@@ -284,8 +273,7 @@ void ProcessMonitor::getTopratedProcesses(std::vector<std::shared_ptr<DiagTask>>
   std::string line;
   int index = 0;
 
-  while (std::getline(is_out, line) && !line.empty())
-  {
+  while (std::getline(is_out, line) && !line.empty()) {
     boost::trim_left(line);
     boost::split(list, line, boost::is_space(), boost::token_compress_on);
 
@@ -306,14 +294,13 @@ void ProcessMonitor::getTopratedProcesses(std::vector<std::shared_ptr<DiagTask>>
   }
 }
 
-void ProcessMonitor::setErrorContent(std::vector<std::shared_ptr<DiagTask>> *tasks,
-                                     const std::string &message,
-                                     const std::string &error_command, const std::string &content)
+void ProcessMonitor::setErrorContent(
+  std::vector<std::shared_ptr<DiagTask>> * tasks, const std::string & message,
+  const std::string & error_command, const std::string & content)
 {
   if (tasks == nullptr) return;
 
-  for (auto itr = tasks->begin(); itr != tasks->end(); ++itr)
-  {
+  for (auto itr = tasks->begin(); itr != tasks->end(); ++itr) {
     (*itr)->setDiagnosticsStatus(DiagStatus::ERROR, message);
     (*itr)->setErrorContent(error_command, content);
   }

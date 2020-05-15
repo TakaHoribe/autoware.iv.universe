@@ -14,28 +14,31 @@
  * limitations under the License.
  */
 
-#include <string>
+#include <gtest/gtest.h>
+#include <ros/ros.h>
+#include <system_monitor/ntp_monitor/ntp_monitor.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/process.hpp>
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <system_monitor/ntp_monitor/ntp_monitor.h>
+#include <string>
 
 namespace fs = boost::filesystem;
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
 
-char** argv_;
+char ** argv_;
 
 class TestNTPMonitor : public NTPMonitor
 {
   friend class NTPMonitorTestSuite;
 
 public:
-  TestNTPMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : NTPMonitor(nh, pnh) {}
+  TestNTPMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : NTPMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
   void changeOffsetWarn(float offset_warn) { offset_warn_ = offset_warn; }
   void changeOffsetError(float offset_error) { offset_error_ = offset_error; }
@@ -44,14 +47,15 @@ public:
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -98,12 +102,10 @@ protected:
     if (fs::exists(ntpdate_)) fs::remove(ntpdate_);
   }
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -250,7 +252,9 @@ TEST_F(NTPMonitorTestSuite, offsetNtpdateNotFoundTest)
   ASSERT_EQ(status.level, DiagStatus::ERROR);
   ASSERT_STREQ(status.message.c_str(), "ntpdate error");
   ASSERT_TRUE(findValue(status, "ntpdate", value));
-  ASSERT_STREQ(value.c_str(), "Command 'ntpdate' not found, but can be installed with: sudo apt install ntpdate");
+  ASSERT_STREQ(
+    value.c_str(),
+    "Command 'ntpdate' not found, but can be installed with: sudo apt install ntpdate");
 }
 
 TEST_F(NTPMonitorTestSuite, offsetNtpdateErrorTest)
@@ -276,7 +280,7 @@ TEST_F(NTPMonitorTestSuite, offsetNtpdateErrorTest)
   ASSERT_STREQ(status.message.c_str(), "ntpdate error");
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   argv_ = argv;
   testing::InitGoogleTest(&argc, argv);

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include <string>
-#include <boost/algorithm/string.hpp>
 #include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <system_monitor/gpu_monitor/nvml_gpu_monitor.h>
+#include <boost/algorithm/string.hpp>
+#include <string>
 
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
 
@@ -27,11 +27,14 @@ class TestGPUMonitor : public GPUMonitor
   friend class GPUMonitorTestSuite;
 
 public:
-  TestGPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : GPUMonitor(nh, pnh) {}
+  TestGPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : GPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
-  void addGPU(const gpu_info &info) { gpus_.push_back(info); }
+  void addGPU(const gpu_info & info) { gpus_.push_back(info); }
   void clearGPU(void) { gpus_.clear(); }
 
   void changeTempWarn(float temp_warn) { temp_warn_ = temp_warn; }
@@ -41,18 +44,22 @@ public:
   void changeGPUUsageError(float gpu_usage_error) { gpu_usage_error_ = gpu_usage_error; }
 
   void changeMemoryUsageWarn(float memory_usage_warn) { memory_usage_warn_ = memory_usage_warn; }
-  void changeMemoryUsageError(float memory_usage_error) { memory_usage_error_ = memory_usage_error; }
+  void changeMemoryUsageError(float memory_usage_error)
+  {
+    memory_usage_error_ = memory_usage_error;
+  }
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -81,16 +88,12 @@ protected:
     sub_ = nh_.subscribe("/diagnostics", 1000, &TestGPUMonitor::diagCallback, monitor_.get());
   }
 
-  void TearDown(void)
-  {
-  }
+  void TearDown(void) {}
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -502,7 +505,8 @@ TEST_F(GPUMonitorTestSuite, illigalDeviceHandleTest)
 
   ASSERT_TRUE(monitor_->findDiagStatus("GPU Memory Usage", status));
   ASSERT_EQ(status.level, DiagStatus::ERROR);
-  ASSERT_STREQ(status.message.c_str(), "Failed to retrieve the amount of used, free and total memory");
+  ASSERT_STREQ(
+    status.message.c_str(), "Failed to retrieve the amount of used, free and total memory");
 
   ASSERT_TRUE(monitor_->findDiagStatus("GPU Thermal Throttling", status));
   ASSERT_EQ(status.level, DiagStatus::ERROR);
@@ -513,8 +517,11 @@ TEST_F(GPUMonitorTestSuite, illigalDeviceHandleTest)
 class DummyGPUMonitor : public GPUMonitorBase
 {
   friend class GPUMonitorTestSuite;
+
 public:
-  DummyGPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : GPUMonitorBase(nh, pnh) {}
+  DummyGPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : GPUMonitorBase(nh, pnh)
+  {
+  }
   void update(void) { updater_.force_update(); }
 };
 
@@ -525,7 +532,7 @@ TEST_F(GPUMonitorTestSuite, dummyGPUMonitorTest)
   monitor->update();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "GPUMonitorTestNode");

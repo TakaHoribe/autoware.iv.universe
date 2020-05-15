@@ -19,8 +19,6 @@
  * @brief Net monitor class
  */
 
-#include <algorithm>
-#include <string>
 #include <ifaddrs.h>
 #include <linux/ethtool.h>
 #include <linux/if_link.h>
@@ -28,12 +26,13 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
+#include <system_monitor/net_monitor/net_monitor.h>
+#include <algorithm>
 #include <boost/format.hpp>
 #include <boost/range/algorithm.hpp>
-#include <system_monitor/net_monitor/net_monitor.h>
+#include <string>
 
-NetMonitor::NetMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : nh_(nh), pnh_(pnh)
+NetMonitor::NetMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : nh_(nh), pnh_(pnh)
 {
   gethostname(hostname_, sizeof(hostname_));
 
@@ -50,8 +49,7 @@ void NetMonitor::run(void)
 {
   ros::Rate rate(1.0);
 
-  while (ros::ok())
-  {
+  while (ros::ok()) {
     ros::spinOnce();
     updater_.force_update();
     rate.sleep();
@@ -60,22 +58,20 @@ void NetMonitor::run(void)
   nl80211_.shutdown();
 }
 
-void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (device_params_.empty())
-  {
+  if (device_params_.empty()) {
     stat.summary(DiagStatus::ERROR, "invalid device parameter");
     return;
   }
 
-  const struct ifaddrs *ifa;
-  struct ifaddrs *ifas = nullptr;
+  const struct ifaddrs * ifa;
+  struct ifaddrs * ifas = nullptr;
 
   ros::Duration duration = ros::Time::now() - last_update_time_;
 
   // Get network interfaces
-  if (getifaddrs(&ifas) < 0)
-  {
+  if (getifaddrs(&ifas) < 0) {
     stat.summary(DiagStatus::ERROR, "getifaddrs error");
     stat.add("getifaddrs", strerror(errno));
     return;
@@ -90,8 +86,7 @@ void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
   float rx_usage;
   float tx_usage;
 
-  for (ifa = ifas ; ifa ; ifa = ifa->ifa_next)
-  {
+  for (ifa = ifas; ifa; ifa = ifa->ifa_next) {
     // Skip no addr
     if (!ifa->ifa_addr) continue;
     // Skip loopback
@@ -99,8 +94,10 @@ void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
     // Skip non AF_PACKET
     if (ifa->ifa_addr->sa_family != AF_PACKET) continue;
     // Skip device not specified
-    if (boost::find(device_params_, ifa->ifa_name) == device_params_.end() &&
-        boost::find(device_params_, "*") == device_params_.end() ) continue;
+    if (
+      boost::find(device_params_, ifa->ifa_name) == device_params_.end() &&
+      boost::find(device_params_, "*") == device_params_.end())
+      continue;
 
     int fd;
     struct ifreq ifrm;
@@ -109,9 +106,8 @@ void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
     // Get MTU information
     fd = socket(AF_INET, SOCK_DGRAM, 0);
-    strncpy(ifrm.ifr_name, ifa->ifa_name, IFNAMSIZ-1);
-    if (ioctl(fd, SIOCGIFMTU, &ifrm) < 0)
-    {
+    strncpy(ifrm.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
+    if (ioctl(fd, SIOCGIFMTU, &ifrm) < 0) {
       stat.add((boost::format("Network %1%: status") % index).str(), usage_dict_.at(level));
       stat.add((boost::format("Network %1%: interface name") % index).str(), ifa->ifa_name);
       stat.add("ioctl(SIOCGIFMTU)", strerror(errno));
@@ -122,15 +118,13 @@ void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
 
     // Get network capacity
     float speed = 0.0;
-    strncpy(ifrc.ifr_name, ifa->ifa_name, IFNAMSIZ-1);
+    strncpy(ifrc.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
     ifrc.ifr_data = (caddr_t)&edata;
     edata.cmd = ETHTOOL_GSET;
-    if (ioctl(fd, SIOCETHTOOL, &ifrc) < 0)
-    {
+    if (ioctl(fd, SIOCETHTOOL, &ifrc) < 0) {
       // possibly wireless connection, get bitrate(MBit/s) and convert to B/s
       speed = nl80211_.getBitrate(ifa->ifa_name) / 8;
-      if (speed <= 0)
-      {
+      if (speed <= 0) {
         stat.add((boost::format("Network %1%: status") % index).str(), usage_dict_.at(level));
         stat.add((boost::format("Network %1%: interface name") % index).str(), ifa->ifa_name);
         stat.add("ioctl(SIOCETHTOOL)", strerror(errno));
@@ -138,17 +132,14 @@ void NetMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
         ++index;
         continue;
       }
-    }
-    else
-    {
+    } else {
       speed = edata.speed;
     }
 
     level = (ifa->ifa_flags & IFF_RUNNING) ? DiagStatus::OK : DiagStatus::ERROR;
 
-    struct rtnl_link_stats *stats = (struct rtnl_link_stats*)ifa->ifa_data;
-    if (bytes_.find(ifa->ifa_name) != bytes_.end())
-    {
+    struct rtnl_link_stats * stats = (struct rtnl_link_stats *)ifa->ifa_data;
+    if (bytes_.find(ifa->ifa_name) != bytes_.end()) {
       rx_traffic = toMbit(stats->rx_bytes - bytes_[ifa->ifa_name].rx_bytes) / duration.toSec();
       tx_traffic = toMbit(stats->tx_bytes - bytes_[ifa->ifa_name].tx_bytes) / duration.toSec();
       rx_usage = rx_traffic / speed * 1e+2;

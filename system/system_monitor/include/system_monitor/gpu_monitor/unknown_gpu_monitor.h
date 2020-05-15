@@ -23,7 +23,7 @@
 
 #include <system_monitor/gpu_monitor/gpu_monitor_base.h>
 
-class GPUMonitor: public GPUMonitorBase
+class GPUMonitor : public GPUMonitorBase
 {
 public:
   /**
@@ -31,7 +31,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  GPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  GPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 };
 
 #endif  // SYSTEM_MONITOR_GPU_MONITOR_UNKNOWN_GPU_MONITOR_H

@@ -14,32 +14,35 @@
  * limitations under the License.
  */
 
-#include <string>
+#include <gtest/gtest.h>
+#include <hdd_reader/hdd_reader.h>
+#include <ros/ros.h>
+#include <system_monitor/hdd_monitor/hdd_monitor.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/process.hpp>
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <hdd_reader/hdd_reader.h>
-#include <system_monitor/hdd_monitor/hdd_monitor.h>
+#include <string>
 
 namespace fs = boost::filesystem;
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
 
-char** argv_;
+char ** argv_;
 
 class TestHDDMonitor : public HDDMonitor
 {
   friend class HDDMonitorTestSuite;
 
 public:
-  TestHDDMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : HDDMonitor(nh, pnh) {}
+  TestHDDMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : HDDMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
-  void addTempParams(const std::string &name, float temp_warn, float temp_error)
+  void addTempParams(const std::string & name, float temp_warn, float temp_error)
   {
     TempParam param;
     param.temp_warn_ = temp_warn;
@@ -48,8 +51,7 @@ public:
   }
   void changeTempParams(float temp_warn, float temp_error)
   {
-    for (auto itr = temp_params_.begin(); itr != temp_params_.end(); ++itr)
-    {
+    for (auto itr = temp_params_.begin(); itr != temp_params_.end(); ++itr) {
       itr->second.temp_warn_ = temp_warn;
       itr->second.temp_error_ = temp_error;
     }
@@ -61,14 +63,15 @@ public:
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -115,12 +118,10 @@ protected:
     if (fs::exists(df_)) fs::remove(df_);
   }
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -138,8 +139,7 @@ protected:
   }
 };
 
-enum ThreadTestMode
-{
+enum ThreadTestMode {
   Normal = 0,
   Hot,
   CriticalHot,
@@ -152,9 +152,9 @@ enum ThreadTestMode
 bool stop_thread;
 pthread_mutex_t mutex;
 
-void* hdd_reader(void *args)
+void * hdd_reader(void * args)
 {
-  ThreadTestMode *mode = reinterpret_cast<ThreadTestMode*>(args);
+  ThreadTestMode * mode = reinterpret_cast<ThreadTestMode *>(args);
 
   // Create a new socket
   int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -163,8 +163,12 @@ void* hdd_reader(void *args)
   // Allow address reuse
   int ret = 0;
   int opt = 1;
-  ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&opt), (socklen_t) sizeof(opt));
-  if (ret < 0) { close(sock); return nullptr; }
+  ret = setsockopt(
+    sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&opt), (socklen_t)sizeof(opt));
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   // Give the socket FD the local address ADDR
   sockaddr_in addr;
@@ -172,19 +176,28 @@ void* hdd_reader(void *args)
   addr.sin_family = AF_INET;
   addr.sin_port = htons(7635);
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  ret = bind(sock, (struct sockaddr*)&addr, sizeof(addr));
-  if (ret < 0) { close(sock); return nullptr; }
+  ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   // Prepare to accept connections on socket FD
   ret = listen(sock, 5);
-  if (ret < 0) { close(sock); return nullptr; }
+  if (ret < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   sockaddr_in client;
   socklen_t len = sizeof(client);
 
   // Await a connection on socket FD
-  int new_sock = accept(sock, reinterpret_cast<sockaddr*>(&client), &len);
-  if (new_sock < 0) { close(sock); return nullptr; }
+  int new_sock = accept(sock, reinterpret_cast<sockaddr *>(&client), &len);
+  if (new_sock < 0) {
+    close(sock);
+    return nullptr;
+  }
 
   ret = 0;
   std::ostringstream oss;
@@ -192,62 +205,60 @@ void* hdd_reader(void *args)
   HDDInfoList list;
   HDDInfo info = {0};
 
-  switch (*mode)
-  {
-  case Normal:
-    info.error_code_ = 0;
-    info.temp_ = 40;
-    list["/dev/sda"] = info;
-    oa << list;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+  switch (*mode) {
+    case Normal:
+      info.error_code_ = 0;
+      info.temp_ = 40;
+      list["/dev/sda"] = info;
+      oa << list;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case Hot:
-    info.error_code_ = 0;
-    info.temp_ = 55;
-    list["/dev/sda"] = info;
-    oa << list;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case Hot:
+      info.error_code_ = 0;
+      info.temp_ = 55;
+      list["/dev/sda"] = info;
+      oa << list;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case CriticalHot:
-    info.error_code_ = 0;
-    info.temp_ = 70;
-    list["/dev/sda"] = info;
-    oa << list;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case CriticalHot:
+      info.error_code_ = 0;
+      info.temp_ = 70;
+      list["/dev/sda"] = info;
+      oa << list;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case ReturnsError:
-    info.error_code_ = EACCES;
-    list["/dev/sda"] = info;
-    oa << list;
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case ReturnsError:
+      info.error_code_ = EACCES;
+      list["/dev/sda"] = info;
+      oa << list;
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  case RecvTimeout:
-    // Wait for recv timeout
-    while (true)
-    {
-      pthread_mutex_lock(&mutex);
-      if (stop_thread) break;
-      pthread_mutex_unlock(&mutex);
-      sleep(1);
-    }
-    break;
+    case RecvTimeout:
+      // Wait for recv timeout
+      while (true) {
+        pthread_mutex_lock(&mutex);
+        if (stop_thread) break;
+        pthread_mutex_unlock(&mutex);
+        sleep(1);
+      }
+      break;
 
-  case RecvNoData:
-    // Send nothing, close socket immediately
-    break;
+    case RecvNoData:
+      // Send nothing, close socket immediately
+      break;
 
-  case FormatError:
-    // Send wrong data
-    oa << "test";
-    ret = write(new_sock, oss.str().c_str(), oss.str().length());
-    break;
+    case FormatError:
+      // Send wrong data
+      oa << "test";
+      ret = write(new_sock, oss.str().c_str(), oss.str().length());
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
 
   // Close the file descriptor FD
@@ -644,7 +655,7 @@ TEST_F(HDDMonitorTestSuite, usageDfErrorTest)
   ASSERT_TRUE(findValue(status, "df", value));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   argv_ = argv;
   testing::InitGoogleTest(&argc, argv);

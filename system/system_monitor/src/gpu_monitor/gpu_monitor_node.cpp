@@ -19,8 +19,8 @@
  * @brief GPU monitor node class
  */
 
-#include <string>
 #include <ros/ros.h>
+#include <string>
 
 #if defined _GPU_NVML_
 #include <system_monitor/gpu_monitor/nvml_gpu_monitor.h>
@@ -30,7 +30,7 @@
 #include <system_monitor/gpu_monitor/unknown_gpu_monitor.h>
 #endif
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "gpu_monitor");
   ros::NodeHandle nh;

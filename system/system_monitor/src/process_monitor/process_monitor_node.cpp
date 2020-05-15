@@ -21,7 +21,7 @@
 
 #include <system_monitor/process_monitor/process_monitor.h>
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "process_monitor");
   ros::NodeHandle nh;

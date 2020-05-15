@@ -21,16 +21,16 @@
  * @brief MSR reader definitions
  */
 
-#include <vector>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
+#include <vector>
 
 /**
  * @brief MSR information
  */
 struct MSRInfo
 {
-  int               error_code_;          //!< @brief error code, 0 on success, otherwise error
+  int error_code_;                        //!< @brief error code, 0 on success, otherwise error
   std::vector<bool> pkg_thermal_status_;  //!< @brief Pkg Thermal Status
 
   /**
@@ -40,7 +40,8 @@ struct MSRInfo
    * @note NOLINT syntax is needed since this is an interface to serialization and
    * used inside boost serialization.
    */
-  template<typename archive> void serialize(archive& ar, const unsigned /*version*/)  // NOLINT(runtime/references)
+  template <typename archive>
+  void serialize(archive & ar, const unsigned /*version*/)  // NOLINT(runtime/references)
   {
     ar & error_code_;
     ar & pkg_thermal_status_;

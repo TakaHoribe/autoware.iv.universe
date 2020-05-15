@@ -19,8 +19,8 @@
  * @brief CPU monitor node class
  */
 
-#include <string>
 #include <ros/ros.h>
+#include <string>
 
 #if defined _CPU_INTEL_
 #include <system_monitor/cpu_monitor/intel_cpu_monitor.h>
@@ -34,7 +34,7 @@
 #include <system_monitor/cpu_monitor/unknown_cpu_monitor.h>
 #endif
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "cpu_monitor");
   ros::NodeHandle nh;

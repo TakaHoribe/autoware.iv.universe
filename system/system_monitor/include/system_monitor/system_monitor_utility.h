@@ -21,27 +21,28 @@
  * @brief System Monitor Utility class
  */
 
-#include <string>
-#include <vector>
-#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/range.hpp>
 #include <boost/regex.hpp>
+#include <string>
+#include <vector>
 
 namespace fs = boost::filesystem;
 
 typedef struct thermal_zone
 {
-  std::string type_;    //!< @brief thermal zone name
-  std::string label_;   //!< @brief thermal_zone[0-9]
-  std::string path_;    //!< @brief sysfs path to temperature
+  std::string type_;   //!< @brief thermal zone name
+  std::string label_;  //!< @brief thermal_zone[0-9]
+  std::string path_;   //!< @brief sysfs path to temperature
 
   thermal_zone() : type_(), label_(), path_() {}
-  thermal_zone(const std::string &type, const std::string &label, const std::string &path)
-  : type_(type), label_(label), path_(path) {}
-}
-thermal_zone;
+  thermal_zone(const std::string & type, const std::string & label, const std::string & path)
+  : type_(type), label_(label), path_(path)
+  {
+  }
+} thermal_zone;
 
 class SystemMonitorUtility
 {
@@ -51,7 +52,7 @@ public:
    * @param [in] t thermal zone name
    * @param [in] pointer to thermal zone informaton
    */
-  static void getThermalZone(const std::string &t, std::vector<thermal_zone> *therm)
+  static void getThermalZone(const std::string & t, std::vector<thermal_zone> * therm)
   {
     if (therm == nullptr) return;
 
@@ -59,8 +60,8 @@ public:
 
     const fs::path root("/sys/class/thermal");
 
-    for (const fs::path& path : boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator()))
-    {
+    for (const fs::path & path :
+         boost::make_iterator_range(fs::directory_iterator(root), fs::directory_iterator())) {
       if (!fs::is_directory(path)) continue;
 
       boost::smatch match;
@@ -73,8 +74,7 @@ public:
       std::string type;
       const fs::path type_path = path / "type";
       fs::ifstream ifs(type_path, std::ios::in);
-      if (ifs)
-      {
+      if (ifs) {
         std::string line;
         if (std::getline(ifs, line)) type = line;
       }

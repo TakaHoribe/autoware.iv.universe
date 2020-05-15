@@ -21,7 +21,7 @@
 
 #include <system_monitor/ntp_monitor/ntp_monitor.h>
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "ntp_monitor");
   ros::NodeHandle nh;

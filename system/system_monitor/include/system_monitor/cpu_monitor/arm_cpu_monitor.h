@@ -23,7 +23,7 @@
 
 #include <system_monitor/cpu_monitor/cpu_monitor_base.h>
 
-class CPUMonitor: public CPUMonitorBase
+class CPUMonitor : public CPUMonitorBase
 {
 public:
   /**
@@ -31,7 +31,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief get names for core temperature files
@@ -45,7 +45,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat) override;   // NOLINT(runtime/references)
+  void checkThrottling(
+    diagnostic_updater::DiagnosticStatusWrapper & stat) override;  // NOLINT(runtime/references)
 };
 
 #endif  // SYSTEM_MONITOR_CPU_MONITOR_ARM_CPU_MONITOR_H

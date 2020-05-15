@@ -39,20 +39,21 @@ public:
    * @param [in] ifa_name interface name
    * @return bitrate
    */
-  float getBitrate(const char *ifa_name);
+  float getBitrate(const char * ifa_name);
 
   /**
    * @brief shutdown
    */
   void shutdown(void);
 
-  float bitrate_;   //!< @brief bitrate
+  float bitrate_;  //!< @brief bitrate
 
 private:
-  bool initialized_;        //!< @brief Indicating whether initialization was completed successfully or not
-  struct nl_sock *socket_;  //!< @brief Netlink socket
-  int id_;                  //!< @brief Generic netlink family id
-  struct nl_cb *cb_;        //!< @brief Callback handle
+  bool
+    initialized_;  //!< @brief Indicating whether initialization was completed successfully or not
+  struct nl_sock * socket_;  //!< @brief Netlink socket
+  int id_;                   //!< @brief Generic netlink family id
+  struct nl_cb * cb_;        //!< @brief Callback handle
 };
 
 #endif  // SYSTEM_MONITOR_NET_MONITOR_NL80211_H

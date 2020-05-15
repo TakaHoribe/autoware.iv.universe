@@ -21,7 +21,7 @@
 
 #include <system_monitor/hdd_monitor/hdd_monitor.h>
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "hdd_monitor");
   ros::NodeHandle nh;

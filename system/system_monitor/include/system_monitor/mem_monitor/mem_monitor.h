@@ -21,9 +21,9 @@
  * @brief Memory monitor class
  */
 
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <map>
 #include <string>
-#include <diagnostic_updater/diagnostic_updater.h>
 
 class MemMonitor
 {
@@ -33,7 +33,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  MemMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  MemMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief main loop
@@ -49,31 +49,30 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat);   // NOLINT(runtime/references)
+  void checkUsage(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
   /**
    * @brief get human-readable output for memory size
    * @param [in] str size with bytes
    * @return human-readable output
    */
-  std::string toHumanReadable(const std::string &str);
+  std::string toHumanReadable(const std::string & str);
 
-  ros::NodeHandle nh_;                    //!< @brief ros node handle
-  ros::NodeHandle pnh_;                   //!< @brief private ros node handle
-  diagnostic_updater::Updater updater_;   //!< @brief Updater class which advertises to /diagnostics
+  ros::NodeHandle nh_;                   //!< @brief ros node handle
+  ros::NodeHandle pnh_;                  //!< @brief private ros node handle
+  diagnostic_updater::Updater updater_;  //!< @brief Updater class which advertises to /diagnostics
 
-  char hostname_[HOST_NAME_MAX+1];        //!< @brief host name
+  char hostname_[HOST_NAME_MAX + 1];  //!< @brief host name
 
-  float usage_warn_;                      //!< @brief Memory usage(%) to generate warning
-  float usage_error_;                     //!< @brief Memory usage(%) to generate error
+  float usage_warn_;   //!< @brief Memory usage(%) to generate warning
+  float usage_error_;  //!< @brief Memory usage(%) to generate error
 
   /**
    * @brief Memory usage status messages
    */
-  const std::map<int, const char*> usage_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}
-  };
+  const std::map<int, const char *> usage_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high load"}, {DiagStatus::ERROR, "very high load"}};
 };
 
 #endif  // SYSTEM_MONITOR_MEM_MONITOR_MEM_MONITOR_H

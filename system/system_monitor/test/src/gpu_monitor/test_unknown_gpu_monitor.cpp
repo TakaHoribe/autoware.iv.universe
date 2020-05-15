@@ -25,9 +25,12 @@ class TestGPUMonitor : public GPUMonitor
   friend class GPUMonitorTestSuite;
 
 public:
-  TestGPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : GPUMonitor(nh, pnh) {}
+  TestGPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : GPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
   void update(void) { updater_.force_update(); }
 
@@ -51,17 +54,12 @@ protected:
     sub_ = nh_.subscribe("/diagnostics", 1000, &TestGPUMonitor::diagCallback, monitor_.get());
   }
 
-  void TearDown(void)
-  {
-  }
+  void TearDown(void) {}
 };
 
-TEST_F(GPUMonitorTestSuite, test)
-{
-  ASSERT_TRUE(true);
-}
+TEST_F(GPUMonitorTestSuite, test) { ASSERT_TRUE(true); }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "GPUMonitorTestNode");

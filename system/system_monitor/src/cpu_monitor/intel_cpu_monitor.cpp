@@ -19,33 +19,32 @@
  * @brief  CPU monitor class
  */
 
-#include <algorithm>
-#include <string>
-#include <vector>
+#include <msr_reader/msr_reader.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <system_monitor/cpu_monitor/intel_cpu_monitor.h>
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/regex.hpp>
-#include <msr_reader/msr_reader.h>
-#include <system_monitor/cpu_monitor/intel_cpu_monitor.h>
+#include <string>
+#include <vector>
 
 namespace fs = boost::filesystem;
 
-CPUMonitor::CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : CPUMonitorBase(nh, pnh)
+CPUMonitor::CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: CPUMonitorBase(nh, pnh)
 {
   pnh_.param<int>("msr_reader_port", msr_reader_port_, 7634);
 }
 
-void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   // Create a new socket
   int sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-  {
+  if (sock < 0) {
     stat.summary(DiagStatus::ERROR, "socket error");
     stat.add("socket", strerror(errno));
     return;
@@ -56,8 +55,7 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
   tv.tv_sec = 10;
   tv.tv_usec = 0;
   int ret = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     stat.summary(DiagStatus::ERROR, "setsockopt error");
     stat.add("setsockopt", strerror(errno));
     close(sock);
@@ -70,9 +68,8 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
   addr.sin_family = AF_INET;
   addr.sin_port = htons(msr_reader_port_);
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  ret = connect(sock, (struct sockaddr*)&addr, sizeof(addr));
-  if (ret < 0)
-  {
+  ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+  if (ret < 0) {
     stat.summary(DiagStatus::ERROR, "connect error");
     stat.add("connect", strerror(errno));
     close(sock);
@@ -81,17 +78,15 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
 
   // Receive messages from a socket
   char buf[1024] = "";
-  ret = recv(sock, buf, sizeof(buf)-1, 0);
-  if (ret < 0)
-  {
+  ret = recv(sock, buf, sizeof(buf) - 1, 0);
+  if (ret < 0) {
     stat.summary(DiagStatus::ERROR, "recv error");
     stat.add("recv", strerror(errno));
     close(sock);
     return;
   }
   // No data received
-  if (ret == 0)
-  {
+  if (ret == 0) {
     stat.summary(DiagStatus::ERROR, "recv error");
     stat.add("recv", "No data received");
     close(sock);
@@ -100,8 +95,7 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
 
   // Close the file descriptor FD
   ret = close(sock);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     stat.summary(DiagStatus::ERROR, "close error");
     stat.add("close", strerror(errno));
     return;
@@ -110,22 +104,18 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
   // Restore MSR information
   MSRInfo info;
 
-  try
-  {
+  try {
     std::istringstream iss(buf);
     boost::archive::text_iarchive oa(iss);
     oa >> info;
-  }
-  catch (const std::exception& e)
-  {
+  } catch (const std::exception & e) {
     stat.summary(DiagStatus::ERROR, "recv error");
     stat.add("recv", e.what());
     return;
   }
 
   // msr_reader returns an error
-  if (info.error_code_ != 0)
-  {
+  if (info.error_code_ != 0) {
     stat.summary(DiagStatus::ERROR, "msr_reader error");
     stat.add("msr_reader", strerror(info.error_code_));
     return;
@@ -135,10 +125,12 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
   int whole_level = DiagStatus::OK;
   int index = 0;
 
-  for (auto itr = info.pkg_thermal_status_.begin(); itr != info.pkg_thermal_status_.end(); ++itr, ++index)
-  {
-    if (*itr) level = DiagStatus::ERROR;
-    else level = DiagStatus::OK;
+  for (auto itr = info.pkg_thermal_status_.begin(); itr != info.pkg_thermal_status_.end();
+       ++itr, ++index) {
+    if (*itr)
+      level = DiagStatus::ERROR;
+    else
+      level = DiagStatus::OK;
 
     stat.add((boost::format("CPU %1%: Pkg Thermal Status") % index).str(), thermal_dict_.at(level));
 
@@ -152,9 +144,8 @@ void CPUMonitor::getTempNames(void)
 {
   const fs::path root("/sys/devices/platform");
 
-  for (const fs::path& path :
-    boost::make_iterator_range(fs::recursive_directory_iterator(root), fs::recursive_directory_iterator()))
-  {
+  for (const fs::path & path : boost::make_iterator_range(
+         fs::recursive_directory_iterator(root), fs::recursive_directory_iterator())) {
     if (fs::is_directory(path)) continue;
 
     boost::smatch match;
@@ -171,8 +162,7 @@ void CPUMonitor::getTempNames(void)
     std::string label = boost::algorithm::replace_all_copy(temp_input, "input", "label");
     const fs::path label_path(label);
     fs::ifstream ifs(label_path, std::ios::in);
-    if (ifs)
-    {
+    if (ifs) {
       std::string line;
       if (std::getline(ifs, line)) temp.label_ = line;
     }
@@ -180,15 +170,12 @@ void CPUMonitor::getTempNames(void)
     temps_.push_back(temp);
   }
 
-  std::sort(temps_.begin(), temps_.end(),
-    [](const cpu_temp_info& c1, const cpu_temp_info& c2)
-    {
-      boost::smatch match;
-      boost::regex filter(".*temp(\\d+)_input");
-      int n1, n2 = 0;
-      if (boost::regex_match(c1.path_, match, filter)) n1 = std::stoi(match[1].str());
-      if (boost::regex_match(c2.path_, match, filter)) n2 = std::stoi(match[1].str());
-      return n1 < n2;
-    }
-  );  // NOLINT
+  std::sort(temps_.begin(), temps_.end(), [](const cpu_temp_info & c1, const cpu_temp_info & c2) {
+    boost::smatch match;
+    boost::regex filter(".*temp(\\d+)_input");
+    int n1, n2 = 0;
+    if (boost::regex_match(c1.path_, match, filter)) n1 = std::stoi(match[1].str());
+    if (boost::regex_match(c2.path_, match, filter)) n2 = std::stoi(match[1].str());
+    return n1 < n2;
+  });  // NOLINT
 }

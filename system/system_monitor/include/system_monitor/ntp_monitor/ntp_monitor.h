@@ -21,9 +21,9 @@
  * @brief NTP monitor class
  */
 
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <map>
 #include <string>
-#include <diagnostic_updater/diagnostic_updater.h>
 
 class NTPMonitor
 {
@@ -33,7 +33,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  NTPMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  NTPMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief main loop
@@ -49,26 +49,25 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkOffset(diagnostic_updater::DiagnosticStatusWrapper &stat);  // NOLINT(runtime/references)
+  void checkOffset(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);  // NOLINT(runtime/references)
 
-  ros::NodeHandle nh_;                    //!< @brief ros node handle
-  ros::NodeHandle pnh_;                   //!< @brief private ros node handle
-  diagnostic_updater::Updater updater_;   //!< @brief Updater class which advertises to /diagnostics
+  ros::NodeHandle nh_;                   //!< @brief ros node handle
+  ros::NodeHandle pnh_;                  //!< @brief private ros node handle
+  diagnostic_updater::Updater updater_;  //!< @brief Updater class which advertises to /diagnostics
 
-  char hostname_[HOST_NAME_MAX+1];        //!< @brief host name
-  bool ntpdate_exists_;                   //!< @brief flag if ntpdate exists
+  char hostname_[HOST_NAME_MAX + 1];  //!< @brief host name
+  bool ntpdate_exists_;               //!< @brief flag if ntpdate exists
 
-  std::string server_;                    //!< @brief Reference server
-  float offset_warn_;                     //!< @brief NTP offset(us) to generate warning
-  float offset_error_;                    //!< @brief NTP offset(us) to generate error
+  std::string server_;  //!< @brief Reference server
+  float offset_warn_;   //!< @brief NTP offset(us) to generate warning
+  float offset_error_;  //!< @brief NTP offset(us) to generate error
 
   /**
    * @brief NTP offset status messages
    */
-  const std::map<int, const char*> offset_dict_ =
-  {
-    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high"}, {DiagStatus::ERROR, "too high"}
-  };
+  const std::map<int, const char *> offset_dict_ = {
+    {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "high"}, {DiagStatus::ERROR, "too high"}};
 };
 
 #endif  // SYSTEM_MONITOR_NTP_MONITOR_NTP_MONITOR_H

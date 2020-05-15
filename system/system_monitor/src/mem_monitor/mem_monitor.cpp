@@ -19,16 +19,15 @@
  * @brief Memory monitor class
  */
 
-#include <string>
-#include <vector>
+#include <system_monitor/mem_monitor/mem_monitor.h>
 #include <boost/format.hpp>
 #include <boost/process.hpp>
-#include <system_monitor/mem_monitor/mem_monitor.h>
+#include <string>
+#include <vector>
 
 namespace bp = boost::process;
 
-MemMonitor::MemMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : nh_(nh), pnh_(pnh)
+MemMonitor::MemMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : nh_(nh), pnh_(pnh)
 {
   gethostname(hostname_, sizeof(hostname_));
 
@@ -43,23 +42,21 @@ void MemMonitor::run(void)
 {
   ros::Rate rate(1.0);
 
-  while (ros::ok())
-  {
+  while (ros::ok()) {
     ros::spinOnce();
     updater_.force_update();
     rate.sleep();
   }
 }
 
-void MemMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void MemMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   // Get total amount of free and used memory
   bp::ipstream is_out;
   bp::ipstream is_err;
   bp::child c("free -tb", bp::std_out > is_out, bp::std_err > is_err);
   c.wait();
-  if (c.exit_code() != 0)
-  {
+  if (c.exit_code() != 0) {
     std::ostringstream os;
     is_err >> os.rdbuf();
     stat.summary(DiagStatus::ERROR, "free error");
@@ -73,11 +70,9 @@ void MemMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
   std::vector<std::string> list;
   float usage;
 
-  while (std::getline(is_out, line) && !line.empty())
-  {
+  while (std::getline(is_out, line) && !line.empty()) {
     // Skip header
-    if ( index <= 0 )
-    {
+    if (index <= 0) {
       ++index;
       continue;
     }
@@ -85,15 +80,16 @@ void MemMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
     boost::split(list, line, boost::is_space(), boost::token_compress_on);
 
     // Physical memory
-    if (index == 1)
-    {
+    if (index == 1) {
       // used divided by total is usage
       usage = std::atof(list[2].c_str()) / std::atof(list[1].c_str());
 
-      if (usage >= usage_error_) level = DiagStatus::ERROR;
-      else if (usage >= usage_warn_) level = DiagStatus::WARN;
+      if (usage >= usage_error_)
+        level = DiagStatus::ERROR;
+      else if (usage >= usage_warn_)
+        level = DiagStatus::WARN;
 
-      stat.addf((boost::format("%1% usage") % list[0]).str(), "%.2f%%", usage*1e+2);
+      stat.addf((boost::format("%1% usage") % list[0]).str(), "%.2f%%", usage * 1e+2);
     }
 
     stat.add((boost::format("%1% total") % list[0]).str(), toHumanReadable(list[1]));
@@ -106,17 +102,16 @@ void MemMonitor::checkUsage(diagnostic_updater::DiagnosticStatusWrapper &stat)
   stat.summary(level, usage_dict_.at(level));
 }
 
-std::string MemMonitor::toHumanReadable(const std::string &str)
+std::string MemMonitor::toHumanReadable(const std::string & str)
 {
-  const char* units[] = {"B", "K", "M", "G", "T"};
+  const char * units[] = {"B", "K", "M", "G", "T"};
   int count = 0;
   double size = std::atol(str.c_str());
 
-  while (size > 1024)
-  {
-      size /= 1024;
-      ++count;
+  while (size > 1024) {
+    size /= 1024;
+    ++count;
   }
-  const char* format = (size > 0 && size < 10) ? "%.1f%s" : "%.0f%s";
+  const char * format = (size > 0 && size < 10) ? "%.1f%s" : "%.0f%s";
   return (boost::format(format) % size % units[count]).str();
 }

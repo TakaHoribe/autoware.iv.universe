@@ -14,37 +14,40 @@
  * limitations under the License.
  */
 
-#include <fstream>
-#include <string>
-#include <vector>
+#include <gtest/gtest.h>
+#include <ros/ros.h>
+#include <system_monitor/cpu_monitor/arm_cpu_monitor.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/process.hpp>
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <system_monitor/cpu_monitor/arm_cpu_monitor.h>
+#include <fstream>
+#include <string>
+#include <vector>
 
-static constexpr const char* TEST_FILE = "test";
+static constexpr const char * TEST_FILE = "test";
 
 namespace fs = boost::filesystem;
 using DiagStatus = diagnostic_msgs::DiagnosticStatus;
 
-char** argv_;
+char ** argv_;
 
 class TestCPUMonitor : public CPUMonitor
 {
   friend class CPUMonitorTestSuite;
 
 public:
-  TestCPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : CPUMonitor(nh, pnh) {}
+  TestCPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : CPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
-  void addTempName(const std::string &path) { temps_.emplace_back(path, path); }
+  void addTempName(const std::string & path) { temps_.emplace_back(path, path); }
   void clearTempNames(void) { temps_.clear(); }
 
-  void addFreqName(int index, const std::string &path) { freqs_.emplace_back(index, path); }
+  void addFreqName(int index, const std::string & path) { freqs_.emplace_back(index, path); }
   void clearFreqNames(void) { freqs_.clear(); }
 
   void setMpstatExists(bool mpstat_exists) { mpstat_exists_ = mpstat_exists; }
@@ -57,14 +60,15 @@ public:
 
   void update(void) { updater_.force_update(); }
 
-  const std::string removePrefix(const std::string &name) { return boost::algorithm::erase_all_copy(name, prefix_); }
-
-  bool findDiagStatus(const std::string &name, DiagStatus& status)  // NOLINT
+  const std::string removePrefix(const std::string & name)
   {
-    for (int i = 0; i < array_.status.size(); ++i)
-    {
-      if (removePrefix(array_.status[i].name) == name)
-      {
+    return boost::algorithm::erase_all_copy(name, prefix_);
+  }
+
+  bool findDiagStatus(const std::string & name, DiagStatus & status)  // NOLINT
+  {
+    for (int i = 0; i < array_.status.size(); ++i) {
+      if (removePrefix(array_.status[i].name) == name) {
         status = array_.status[i];
         return true;
       }
@@ -117,12 +121,10 @@ protected:
     if (fs::exists(mpstat_)) fs::remove(mpstat_);
   }
 
-  bool findValue(const DiagStatus status, const std::string &key, std::string &value)   // NOLINT
+  bool findValue(const DiagStatus status, const std::string & key, std::string & value)  // NOLINT
   {
-    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr)
-    {
-      if (itr->key == key)
-      {
+    for (auto itr = status.values.begin(); itr != status.values.end(); ++itr) {
+      if (itr->key == key) {
         value = itr->value;
         return true;
       }
@@ -428,7 +430,9 @@ TEST_F(CPUMonitorTestSuite, usageMpstatNotFoundTest)
   ASSERT_EQ(status.level, DiagStatus::ERROR);
   ASSERT_STREQ(status.message.c_str(), "mpstat error");
   ASSERT_TRUE(findValue(status, "mpstat", value));
-  ASSERT_STREQ(value.c_str(), "Command 'mpstat' not found, but can be installed with: sudo apt install sysstat");
+  ASSERT_STREQ(
+    value.c_str(),
+    "Command 'mpstat' not found, but can be installed with: sudo apt install sysstat");
 }
 
 TEST_F(CPUMonitorTestSuite, load1WarnTest)
@@ -644,8 +648,11 @@ TEST_F(CPUMonitorTestSuite, usageMpstatExceptionTest)
 class DummyCPUMonitor : public CPUMonitorBase
 {
   friend class CPUMonitorTestSuite;
+
 public:
-  DummyCPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : CPUMonitorBase(nh, pnh) {}
+  DummyCPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : CPUMonitorBase(nh, pnh)
+  {
+  }
   void update(void) { updater_.force_update(); }
 };
 
@@ -658,7 +665,7 @@ TEST_F(CPUMonitorTestSuite, dummyCPUMonitorTest)
   monitor->update();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   argv_ = argv;
   testing::InitGoogleTest(&argc, argv);

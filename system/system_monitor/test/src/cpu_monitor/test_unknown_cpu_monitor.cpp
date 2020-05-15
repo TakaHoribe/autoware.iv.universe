@@ -25,9 +25,12 @@ class TestCPUMonitor : public CPUMonitor
   friend class CPUMonitorTestSuite;
 
 public:
-  TestCPUMonitor(const ros::NodeHandle& nh, const ros::NodeHandle& pnh) : CPUMonitor(nh, pnh) {}
+  TestCPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh) : CPUMonitor(nh, pnh) {}
 
-  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr& diag_msg) { array_ = *diag_msg; }
+  void diagCallback(const diagnostic_msgs::DiagnosticArray::ConstPtr & diag_msg)
+  {
+    array_ = *diag_msg;
+  }
 
   void update(void) { updater_.force_update(); }
 
@@ -53,17 +56,12 @@ protected:
     monitor_->getFreqNames();
   }
 
-  void TearDown(void)
-  {
-  }
+  void TearDown(void) {}
 };
 
-TEST_F(CPUMonitorTestSuite, test)
-{
-  ASSERT_TRUE(true);
-}
+TEST_F(CPUMonitorTestSuite, test) { ASSERT_TRUE(true); }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "CPUMonitorTestNode");

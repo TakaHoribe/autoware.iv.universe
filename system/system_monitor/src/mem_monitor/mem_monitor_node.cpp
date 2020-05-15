@@ -21,7 +21,7 @@
 
 #include <system_monitor/mem_monitor/mem_monitor.h>
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "mem_monitor");
   ros::NodeHandle nh;

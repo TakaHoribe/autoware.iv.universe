@@ -21,7 +21,7 @@
 
 #include <system_monitor/cpu_monitor/unknown_cpu_monitor.h>
 
-CPUMonitor::CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : CPUMonitorBase(nh, pnh)
+CPUMonitor::CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: CPUMonitorBase(nh, pnh)
 {
 }

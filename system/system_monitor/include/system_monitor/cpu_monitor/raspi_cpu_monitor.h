@@ -23,29 +23,37 @@
 
 #include <system_monitor/cpu_monitor/cpu_monitor_base.h>
 
-#define raspiUnderVoltageDetected             (1 << 0)    // 0x00001
-#define raspiArmFrequencyCapped               (1 << 1)    // 0x00002
-#define raspiCurrentlyThrottled               (1 << 2)    // 0x00004
-#define raspiSoftTemperatureLimitActive       (1 << 3)    // 0x00008
-#define raspiUnderVoltageHasOccurred          (1 << 16)   // 0x10000
-#define raspiArmFrequencyCappedHasOccurred    (1 << 17)   // 0x20000
-#define raspiThrottlingHasOccurred            (1 << 18)   // 0x40000
-#define raspiSoftTemperatureLimitHasOccurred  (1 << 19)   // 0x80000
+#define raspiUnderVoltageDetected (1 << 0)              // 0x00001
+#define raspiArmFrequencyCapped (1 << 1)                // 0x00002
+#define raspiCurrentlyThrottled (1 << 2)                // 0x00004
+#define raspiSoftTemperatureLimitActive (1 << 3)        // 0x00008
+#define raspiUnderVoltageHasOccurred (1 << 16)          // 0x10000
+#define raspiArmFrequencyCappedHasOccurred (1 << 17)    // 0x20000
+#define raspiThrottlingHasOccurred (1 << 18)            // 0x40000
+#define raspiSoftTemperatureLimitHasOccurred (1 << 19)  // 0x80000
 
-#define raspiThermalThrottlingMask            (raspiCurrentlyThrottled | raspiSoftTemperatureLimitActive)
+#define raspiThermalThrottlingMask (raspiCurrentlyThrottled | raspiSoftTemperatureLimitActive)
 
-#define throttledToString(X) ( \
-  ((X) & raspiUnderVoltageDetected)            ? "Under-voltage detected"              : \
-  ((X) & raspiArmFrequencyCapped)              ? "Arm frequency capped"                : \
-  ((X) & raspiCurrentlyThrottled)              ? "Currently throttled"                 : \
-  ((X) & raspiSoftTemperatureLimitActive)      ? "Soft temperature limit active"       : \
-  ((X) & raspiUnderVoltageHasOccurred)         ? "Under-voltage has occurred"          : \
-  ((X) & raspiArmFrequencyCappedHasOccurred)   ? "Arm frequency capped has occurred"   : \
-  ((X) & raspiThrottlingHasOccurred)           ? "Throttling has occurred"             : \
-  ((X) & raspiSoftTemperatureLimitHasOccurred) ? "Soft temperature limit has occurred" : \
-                                                 "UNKNOWN" )
+#define throttledToString(X)                                              \
+  (((X)&raspiUnderVoltageDetected)                                        \
+     ? "Under-voltage detected"                                           \
+     : ((X)&raspiArmFrequencyCapped)                                      \
+         ? "Arm frequency capped"                                         \
+         : ((X)&raspiCurrentlyThrottled)                                  \
+             ? "Currently throttled"                                      \
+             : ((X)&raspiSoftTemperatureLimitActive)                      \
+                 ? "Soft temperature limit active"                        \
+                 : ((X)&raspiUnderVoltageHasOccurred)                     \
+                     ? "Under-voltage has occurred"                       \
+                     : ((X)&raspiArmFrequencyCappedHasOccurred)           \
+                         ? "Arm frequency capped has occurred"            \
+                         : ((X)&raspiThrottlingHasOccurred)               \
+                             ? "Throttling has occurred"                  \
+                             : ((X)&raspiSoftTemperatureLimitHasOccurred) \
+                                 ? "Soft temperature limit has occurred"  \
+                                 : "UNKNOWN")
 
-class CPUMonitor: public CPUMonitorBase
+class CPUMonitor : public CPUMonitorBase
 {
 public:
   /**
@@ -53,7 +61,7 @@ public:
    * @param [in] nh node handle to access global parameters
    * @param [in] pnh node handle to access private parameters
    */
-  CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
+  CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh);
 
   /**
    * @brief get names for core temperature files
@@ -67,7 +75,8 @@ protected:
    * @note NOLINT syntax is needed since diagnostic_updater asks for a non-const reference
    * to pass diagnostic message updated in this function to diagnostic publish calls.
    */
-  void checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat) override;   // NOLINT(runtime/references)
+  void checkThrottling(
+    diagnostic_updater::DiagnosticStatusWrapper & stat) override;  // NOLINT(runtime/references)
 };
 
 #endif  // SYSTEM_MONITOR_CPU_MONITOR_RASPI_CPU_MONITOR_H

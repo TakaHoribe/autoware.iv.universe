@@ -19,29 +19,28 @@
  * @brief Raspberry Pi CPU monitor class
  */
 
-#include <string>
-#include <vector>
+#include <system_monitor/cpu_monitor/raspi_cpu_monitor.h>
+#include <system_monitor/system_monitor_utility.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <system_monitor/system_monitor_utility.h>
-#include <system_monitor/cpu_monitor/raspi_cpu_monitor.h>
+#include <string>
+#include <vector>
 
 namespace fs = boost::filesystem;
 
-CPUMonitor::CPUMonitor(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-  : CPUMonitorBase(nh, pnh)
+CPUMonitor::CPUMonitor(const ros::NodeHandle & nh, const ros::NodeHandle & pnh)
+: CPUMonitorBase(nh, pnh)
 {
 }
 
-void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   int level = DiagStatus::OK;
   std::vector<std::string> status;
 
   const fs::path path("/sys/devices/platform/soc/soc:firmware/get_throttled");
   fs::ifstream ifs(path, std::ios::in);
-  if (!ifs)
-  {
+  if (!ifs) {
     stat.summary(DiagStatus::ERROR, "file open error");
     stat.add("get_throttled", "file open error");
     return;
@@ -52,11 +51,11 @@ void CPUMonitor::checkThrottling(diagnostic_updater::DiagnosticStatusWrapper &st
   ifs.close();
 
   // Consider only thermal throttling as an error
-  if ((throttled & raspiThermalThrottlingMask) == raspiThermalThrottlingMask) level = DiagStatus::ERROR;
+  if ((throttled & raspiThermalThrottlingMask) == raspiThermalThrottlingMask)
+    level = DiagStatus::ERROR;
 
-  while (throttled)
-  {
-    int flag = throttled & ((~throttled)+1);
+  while (throttled) {
+    int flag = throttled & ((~throttled) + 1);
     throttled ^= flag;
     status.push_back(throttledToString(flag));
   }
@@ -73,8 +72,7 @@ void CPUMonitor::getTempNames(void)
   std::vector<thermal_zone> therms;
   SystemMonitorUtility::getThermalZone("cpu-thermal", &therms);
 
-  for (auto itr = therms.begin(); itr != therms.end(); ++itr)
-  {
+  for (auto itr = therms.begin(); itr != therms.end(); ++itr) {
     temps_.emplace_back(itr->label_, itr->path_);
   }
 }
