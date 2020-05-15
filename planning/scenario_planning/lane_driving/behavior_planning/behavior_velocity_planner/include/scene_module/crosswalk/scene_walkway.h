@@ -15,9 +15,8 @@
  */
 #pragma once
 
-#include <memory>
-#include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/assert.hpp>
@@ -25,7 +24,6 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/lexical_cast.hpp>
 
 #define EIGEN_MPL2_ONLY
 #include <Eigen/Core>
@@ -42,21 +40,34 @@
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_extension/utility/query.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_routing/RoutingGraphContainer.h>
 
-#include <scene_module/crosswalk/scene_crosswalk.h>
-#include <scene_module/crosswalk/scene_walkway.h>
 #include <scene_module/scene_module_interface.h>
+#include <scene_module/crosswalk/scene_crosswalk.h>
+#include <scene_module/crosswalk/util.h>
 
-class CrosswalkModuleManager : public SceneModuleManagerInterface
+class WalkwayModule : public SceneModuleInterface
 {
 public:
-  CrosswalkModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
 
-  const char * getModuleName() override { return "crosswalk"; }
+public:
+  WalkwayModule(const int64_t module_id, const lanelet::ConstLanelet & walkway);
+
+  bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
+
+  visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
 private:
-  void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
-  std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(
-    const autoware_planning_msgs::PathWithLaneId & path) override;
+  enum class State { APPROACH, STOP, SURPASSED };
+
+  lanelet::ConstLanelet walkway_;
+  State state_;
+
+  // Parameter
+  const double stop_margin_ = 1.0;
+
+  // Debug
+  DebugData debug_data_;
 };
