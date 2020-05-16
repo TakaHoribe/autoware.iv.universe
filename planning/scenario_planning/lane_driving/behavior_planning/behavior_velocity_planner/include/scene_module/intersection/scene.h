@@ -73,10 +73,9 @@ public:
     State getState();
 
   private:
-    State state_;         //! current state
-    double margin_time_;  //! margin time when transit to Go from Stop
-    std::shared_ptr<ros::Time>
-      start_time_;  //! timer start time when received Go state when current state is Stop
+    State state_;                            //! current state
+    double margin_time_;                     //! margin time when transit to Go from Stop
+    std::shared_ptr<ros::Time> start_time_;  //! first time received GO when STOP state
   };
 
   struct DebugData
@@ -90,6 +89,7 @@ public:
     std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
     autoware_planning_msgs::PathWithLaneId path_right_edge;
     autoware_planning_msgs::PathWithLaneId path_left_edge;
+    autoware_planning_msgs::PathWithLaneId spline_path;
   };
 
 public:
@@ -106,21 +106,11 @@ public:
 private:
   int64_t lane_id_;
 
-  int stop_line_idx_;   //! stop-line index
-  int judge_line_idx_;  //! stop-judgement-line index
 
   // Parameter
-  double judge_line_dist_ = 0.0;  //! distance from stop-line to stop-judgement line
-  double approaching_speed_to_stopline_ =
-    100.0 / 3.6;                    //! speed when approaching stop-line (should be slow)
-  double path_expand_width_ = 2.0;  //! path width to calculate the edge line for both side
+  double approaching_speed_to_stopline_;  //! speed when approaching stop-line (should be slow)
+  double path_expand_width_;              //! path width to calculate the edge line for both side
   bool show_debug_info_ = false;
-
-  /**
-   * @brief set velocity from idx to the end point
-   */
-  bool setVelocityFrom(
-    const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId * input);
 
   /**
    * @brief get objective lanelets for detection area
@@ -155,20 +145,12 @@ private:
     autoware_planning_msgs::PathWithLaneId * path_r,
     autoware_planning_msgs::PathWithLaneId * path_l);
 
-  /**
-   * @brief set stop-line and stop-judgement-line index. This may modificates path size due to
-   * interpolate insertion.
-   */
-  bool setStopLineIdx(
-    const int closest, const double judge_line_dist, autoware_planning_msgs::PathWithLaneId * path,
-    int * stop_line_idx, int * judge_line_idx);
-
-  geometry_msgs::Pose getAheadPose(
-    const size_t start_idx, const double ahead_dist,
-    const autoware_planning_msgs::PathWithLaneId & path) const;
+  bool generateStopLine(
+    const int closest, const std::vector<lanelet::ConstLanelet> objective_lanelets,
+    autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
 
   StateMachine state_machine_;  //! for state
 
   // Debug
-  DebugData debug_data_;
+  mutable DebugData debug_data_;
 };

@@ -202,6 +202,10 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
     createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", lane_id_, 0.0, 0.5, 0.5),
     &debug_marker_array);
 
+  appendMarkerArray(
+    createPathMarkerArray(debug_data_.spline_path, "spline", lane_id_, 0.5, 0.5, 0.5),
+    &debug_marker_array);
+
   if (state == IntersectionModule::State::STOP) {
     appendMarkerArray(
       createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);

@@ -49,7 +49,7 @@ bool calcClosestIndex(
   double yaw_pose = tf2::getYaw(pose.orientation);
   closest = -1;
 
-  for (int i = 0; i < (int)path.points.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(path.points.size()); ++i) {
     const double dist_squared = calcSquaredDist2d(getPose(path, i), pose);
 
     /* check distance threshold */

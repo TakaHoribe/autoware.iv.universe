@@ -50,6 +50,7 @@ include_directories(
 add_library(scene_module_lib STATIC
   src/utilization/path_utilization.cpp
   src/utilization/util.cpp
+  src/utilization/interpolate.cpp
 )
 
 add_dependencies(scene_module_lib
@@ -102,6 +103,7 @@ add_library(scene_module_intersection STATIC
   src/scene_module/intersection/manager.cpp
   src/scene_module/intersection/scene.cpp
   src/scene_module/intersection/debug.cpp
+  src/scene_module/intersection/util.cpp
 )
 
 add_dependencies(scene_module_intersection
