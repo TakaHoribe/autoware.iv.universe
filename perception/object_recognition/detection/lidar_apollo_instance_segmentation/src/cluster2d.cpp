@@ -47,6 +47,13 @@
  *****************************************************************************/
 
 #include "lidar_apollo_instance_segmentation/cluster2d.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
+geometry_msgs::Quaternion getQuaternionFromRPY(const double r, const double p, const double y){
+  tf2::Quaternion q;
+  q.setRPY(r, p, y);
+  return tf2::toMsg(q);
+}
 
 Cluster2D::Cluster2D(const int rows, const int cols, const float range)
 {
@@ -186,18 +193,25 @@ void Cluster2D::cluster(
 void Cluster2D::filter(const std::shared_ptr<float> & inferred_data)
 {
   const float * confidence_pt_data = inferred_data.get() + siz_ * 3;
+  const float * heading_pt_x_data = inferred_data.get() + siz_ * 9;
+  const float * heading_pt_y_data = inferred_data.get() + siz_ * 10;
   const float * height_pt_data = inferred_data.get() + siz_ * 11;
 
   for (size_t obstacle_id = 0; obstacle_id < obstacles_.size(); obstacle_id++) {
     Obstacle * obs = &obstacles_[obstacle_id];
     double score = 0.0;
     double height = 0.0;
+    double vec_x = 0.0;
+    double vec_y = 0.0;
     for (int grid : obs->grids) {
       score += static_cast<double>(confidence_pt_data[grid]);
       height += static_cast<double>(height_pt_data[grid]);
+      vec_x += heading_pt_x_data[grid];
+      vec_y += heading_pt_y_data[grid];
     }
     obs->score = score / static_cast<double>(obs->grids.size());
     obs->height = height / static_cast<double>(obs->grids.size());
+    obs->heading = std::atan2(vec_y, vec_x) * 0.5;
     obs->cloud_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
   }
 }
@@ -205,7 +219,7 @@ void Cluster2D::filter(const std::shared_ptr<float> & inferred_data)
 void Cluster2D::classify(const std::shared_ptr<float> & inferred_data)
 {
   const float * classify_pt_data = inferred_data.get() + siz_ * 4;
-  int num_classes = 6;
+  int num_classes = 5;
   for (size_t obs_id = 0; obs_id < obstacles_.size(); obs_id++) {
     Obstacle * obs = &obstacles_[obs_id];
 
@@ -296,6 +310,9 @@ autoware_perception_msgs::DynamicObjectWithFeature Cluster2D::obstacleToObject(
   length = max_point.x - min_point.x;
   width = max_point.y - min_point.y;
   height = max_point.z - min_point.z;
+
+  resulting_object.object.state.pose_covariance.pose.orientation = getQuaternionFromRPY(0.0, 0.0, in_obstacle.heading);
+  resulting_object.object.state.orientation_reliable = true;
 
   resulting_object.object.state.pose_covariance.pose.position.x = min_point.x + length / 2;
   resulting_object.object.state.pose_covariance.pose.position.y = min_point.y + width / 2;
