@@ -65,8 +65,6 @@ void TrafficLightModuleManager::launchNewModules(
 
     // Use lanelet_id to unregister module when the route is changed
     const auto module_id = traffic_light_reg_elem.second.id();
-    const std::string turn_dir = traffic_light_reg_elem.second.attributeOr("turn_direction", "else");
-    ROS_WARN("module_id =  %d, direction = %s", module_id, turn_dir.c_str());
     if (!isModuleRegistered(module_id)) {
       registerModule(std::make_shared<TrafficLightModule>(module_id, *(traffic_light_reg_elem.first), traffic_light_reg_elem.second));
     }

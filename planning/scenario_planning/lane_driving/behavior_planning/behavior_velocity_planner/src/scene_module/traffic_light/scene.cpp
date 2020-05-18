@@ -130,7 +130,6 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       if (it_red != highest_confidence_tl_state.lamp_states.end()) {
         // check turn direction
         const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
-        ROS_WARN("%s", turn_direction.c_str());
         // if turn_direction is right, check right signal
         if(turn_direction == "right") {
           const auto it_right = std::find_if(highest_confidence_tl_state.lamp_states.begin(), highest_confidence_tl_state.lamp_states.end(), [](auto x){ return x.type == autoware_perception_msgs::LampState::RIGHT; });
@@ -147,11 +146,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         else if(turn_direction == "straight") {
           const auto it_straight = std::find_if(highest_confidence_tl_state.lamp_states.begin(), highest_confidence_tl_state.lamp_states.end(), [](auto x){ return x.type == autoware_perception_msgs::LampState::UP; });
           // if up signal detected, go out
-          if(it_straight != highest_confidence_tl_state.lamp_states.end())
-          {
-            ROS_WARN("Go straight");
-            continue;
-          }
+          if(it_straight != highest_confidence_tl_state.lamp_states.end()) continue;
         }
         // insert stop point into path
         if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
