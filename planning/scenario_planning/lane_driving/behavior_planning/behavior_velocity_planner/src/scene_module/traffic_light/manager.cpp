@@ -19,7 +19,8 @@
 
 namespace
 {
-std::unordered_map<lanelet::TrafficLightConstPtr, lanelet::ConstLanelet> getTrafficLightRegElemsOnPath(
+std::unordered_map<lanelet::TrafficLightConstPtr, lanelet::ConstLanelet>
+getTrafficLightRegElemsOnPath(
   const autoware_planning_msgs::PathWithLaneId & path, const lanelet::LaneletMapPtr lanelet_map)
 {
   std::unordered_map<lanelet::TrafficLightConstPtr, lanelet::ConstLanelet> traffic_light_reg_elems;
@@ -42,7 +43,7 @@ std::set<int64_t> getLaneletIdSetOnPath(
 {
   std::set<int64_t> lanelet_id_set;
   for (const auto & traffic_light_reg_elem : getTrafficLightRegElemsOnPath(path, lanelet_map)) {
-    lanelet_id_set.insert(traffic_light_reg_elem.second.id());  
+    lanelet_id_set.insert(traffic_light_reg_elem.second.id());
   }
   return lanelet_id_set;
 }
@@ -66,7 +67,8 @@ void TrafficLightModuleManager::launchNewModules(
     // Use lanelet_id to unregister module when the route is changed
     const auto module_id = traffic_light_reg_elem.second.id();
     if (!isModuleRegistered(module_id)) {
-      registerModule(std::make_shared<TrafficLightModule>(module_id, *(traffic_light_reg_elem.first), traffic_light_reg_elem.second));
+      registerModule(std::make_shared<TrafficLightModule>(
+        module_id, *(traffic_light_reg_elem.first), traffic_light_reg_elem.second));
     }
   }
 }
