@@ -22,6 +22,7 @@
 #include <pcl_ros/transforms.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <opencv2/core/core.hpp>
@@ -45,6 +46,7 @@ private:
   ros::NodeHandle pnh_;
   ros::Subscriber path_sub_;
   ros::Subscriber obstacle_pointcloud_sub_;
+  ros::Subscriber current_velocity_sub_;
   ros::Publisher path_pub_;
   ros::Publisher stop_reason_diag_pub_;
   std::shared_ptr<ObstacleStopPlannerDebugNode> debug_ptr_;
@@ -55,12 +57,19 @@ private:
    * Parameter
    */
   sensor_msgs::PointCloud2::Ptr obstacle_ros_pointcloud_ptr_;
+  geometry_msgs::TwistStamped::ConstPtr current_velocity_ptr_;
   double wheel_base_, front_overhang_, rear_overhang_, left_overhang_, right_overhang_,
     vehicle_width_;
   double stop_margin_;
+  double decel_margin_;
   double min_behavior_stop_margin_;
+  double expand_decel_range_;
+  double max_decel_vel_;
+  double min_decel_vel_;
+  double max_decel_;
   void obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
+  void currentVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_msg);
 
 private:
   bool convexHull(
@@ -85,7 +94,7 @@ private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr output_pointcloud_ptr);
   void createOneStepPolygon(
     const geometry_msgs::Pose base_stap_pose, const geometry_msgs::Pose next_step_pose,
-    std::vector<cv::Point2d> & polygon);
+    std::vector<cv::Point2d> & polygon, const double expand_width = 0.0);
   bool getSelfPose(
     const std_msgs::Header & header, const tf2_ros::Buffer & tf_buffer,
     geometry_msgs::Pose & self_pose);

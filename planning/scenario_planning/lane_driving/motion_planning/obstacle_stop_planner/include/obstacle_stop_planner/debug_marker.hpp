@@ -30,18 +30,34 @@
 #include <Eigen/Geometry>
 namespace motion_planning
 {
+enum class PolygonType : int8_t {
+  Vehicle = 0,
+  Collision,
+  DecellationRange,
+  Decellation
+};
+
+enum class PointType : int8_t {
+  Stop = 0,
+  Decellation
+};
+
+enum class PoseType : int8_t {
+  Stop = 0,
+  StartDecellation,
+  EndDecellation
+};
+
 class ObstacleStopPlannerDebugNode
 {
 public:
   ObstacleStopPlannerDebugNode(const double base_link2front);
   ~ObstacleStopPlannerDebugNode(){};
-  void pushPolygon(const std::vector<cv::Point2d> & polygon, const double z);
-  void pushPolygon(const std::vector<Eigen::Vector3d> & polygon);
-  void pushCollisionPolygon(const std::vector<cv::Point2d> & polygon, const double z);
-  void pushCollisionPolygon(const std::vector<Eigen::Vector3d> & polygon);
-  void pushStopPose(const geometry_msgs::Pose & stop_pose);
-  void pushStopObstaclePoint(const geometry_msgs::Point & stop_obstacle_point);
-  void pushStopObstaclePoint(const pcl::PointXYZ & stop_obstacle_point);
+  bool pushPolygon(const std::vector<cv::Point2d> & polygon, const double z, const PolygonType & type);
+  bool pushPolygon(const std::vector<Eigen::Vector3d> & polygon, const PolygonType & type);
+  bool pushPose(const geometry_msgs::Pose & pose, const PoseType & type);
+  bool pushObstaclePoint(const geometry_msgs::Point & obstacle_point, const PointType & type);
+  bool pushObstaclePoint(const pcl::PointXYZ & obstacle_point, const PointType & type);
 
   void publish();
 
@@ -52,9 +68,14 @@ private:
   double base_link2front_;
 
   std::shared_ptr<geometry_msgs::Pose> stop_pose_ptr_;
+  std::shared_ptr<geometry_msgs::Pose> start_decel_pose_ptr_;
+  std::shared_ptr<geometry_msgs::Pose> end_decel_pose_ptr_;
   std::shared_ptr<geometry_msgs::Point> stop_obstacle_point_ptr_;
-  std::vector<std::vector<Eigen::Vector3d>> polygons_;
+  std::shared_ptr<geometry_msgs::Point> decel_obstacle_point_ptr_;
+  std::vector<std::vector<Eigen::Vector3d>> vehicle_polygons_;
+  std::vector<std::vector<Eigen::Vector3d>> decel_range_polygons_;
   std::vector<std::vector<Eigen::Vector3d>> collision_polygons_;
+  std::vector<std::vector<Eigen::Vector3d>> decel_polygons_;
 };
 
 }  // namespace motion_planning
