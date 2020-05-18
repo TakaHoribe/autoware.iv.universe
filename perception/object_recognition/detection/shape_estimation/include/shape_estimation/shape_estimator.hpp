@@ -31,13 +31,13 @@ private:
   bool estimateShape(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientaion_output);
+    bool & orientation_output);
   bool applyFilter(
     const int type, const autoware_perception_msgs::Shape & shape_output,
-    const geometry_msgs::Pose & pose_output, const bool & orientaion_output);
+    const geometry_msgs::Pose & pose_output, const bool & orientation_output);
   bool applyCorrector(
     const int type, autoware_perception_msgs::Shape & shape_output,
-    geometry_msgs::Pose & pose_output, bool & orientaion_output);
+    geometry_msgs::Pose & pose_output, bool & orientation_output);
 
 public:
   ShapeEstimator();
@@ -47,5 +47,5 @@ public:
   bool getShapeAndPose(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientaion_output);
+    bool & orientation_output);
 };

@@ -21,7 +21,7 @@
 
 bool TruckFilter::filter(
   const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-  const bool & orientaion)
+  const bool & orientation)
 {
   double x = shape.dimensions.x;
   double y = shape.dimensions.y;

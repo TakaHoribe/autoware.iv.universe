@@ -44,21 +44,11 @@
 #include <lanelet2_routing/RoutingGraphContainer.h>
 
 #include <scene_module/scene_module_interface.h>
+#include <scene_module/crosswalk/util.h>
 
 class CrosswalkModule : public SceneModuleInterface
 {
 public:
-  struct DebugData
-  {
-    double base_link2front;
-    std::vector<Eigen::Vector3d> collision_points;
-    std::vector<geometry_msgs::Pose> stop_poses;
-    std::vector<geometry_msgs::Pose> slow_poses;
-    std::vector<std::vector<Eigen::Vector3d>> collision_lines;
-    std::vector<std::vector<Eigen::Vector3d>> crosswalk_polygons;
-    std::vector<std::vector<Eigen::Vector3d>> stop_polygons;
-    std::vector<std::vector<Eigen::Vector3d>> slow_polygons;
-  };
 
 public:
   CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet & crosswalk);
@@ -68,10 +58,6 @@ public:
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
 private:
-  bool getBackwordPointFromBasePoint(
-    const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
-    const Eigen::Vector2d & base_point, const double backward_length,
-    Eigen::Vector2d & output_point);
 
   bool checkSlowArea(
     const autoware_planning_msgs::PathWithLaneId & input,
@@ -87,13 +73,6 @@ private:
       polygon,
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr & objects_ptr,
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
-    autoware_planning_msgs::PathWithLaneId & output);
-
-  bool insertTargetVelocityPoint(
-    const autoware_planning_msgs::PathWithLaneId & input,
-    const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &
-      polygon,
-    const double & margin, const double & velocity,
     autoware_planning_msgs::PathWithLaneId & output);
 
   enum class State { APPROARCH, INSIDE, GO_OUT };

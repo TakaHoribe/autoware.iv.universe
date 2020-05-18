@@ -58,6 +58,11 @@ void CrosswalkModuleManager::launchNewModules(const autoware_planning_msgs::Path
     const auto module_id = crosswalk.id();
     if (!isModuleRegistered(module_id)) {
       registerModule(std::make_shared<CrosswalkModule>(module_id, crosswalk));
+      if (
+        crosswalk.attributeOr(lanelet::AttributeNamesString::Subtype, std::string("")) ==
+        lanelet::AttributeValueString::Walkway) {
+        registerModule(std::make_shared<WalkwayModule>(module_id, crosswalk));
+      }
     }
   }
 }

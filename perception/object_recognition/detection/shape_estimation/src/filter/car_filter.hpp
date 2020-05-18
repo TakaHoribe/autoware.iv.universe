@@ -30,5 +30,5 @@ public:
 
   bool filter(
     const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-    const bool & orientaion) override;
+    const bool & orientation) override;
 };

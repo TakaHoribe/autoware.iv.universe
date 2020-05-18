@@ -81,8 +81,10 @@ target_link_libraries(scene_module_stop_line
 # Scene Module: Crosswalk
 add_library(scene_module_crosswalk STATIC
   src/scene_module/crosswalk/manager.cpp
-  src/scene_module/crosswalk/scene.cpp
+  src/scene_module/crosswalk/scene_crosswalk.cpp
+  src/scene_module/crosswalk/scene_walkway.cpp
   src/scene_module/crosswalk/debug.cpp
+  src/scene_module/crosswalk/util.cpp
 )
 
 add_dependencies(scene_module_crosswalk

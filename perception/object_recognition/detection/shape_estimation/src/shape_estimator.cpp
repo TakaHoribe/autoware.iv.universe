@@ -39,7 +39,7 @@ ShapeEstimator::ShapeEstimator() {}
 bool ShapeEstimator::getShapeAndPose(
   const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientaion_output)
+  bool & orientation_output)
 {
   // check input
   if (cluster.empty()) return false;
@@ -65,14 +65,14 @@ bool ShapeEstimator::getShapeAndPose(
 
   shape_output = shape;
   pose_output = pose;
-  orientaion_output = orientation;
+  orientation_output = orientation;
   return true;
 }
 
 bool ShapeEstimator::estimateShape(
   const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientaion_output)
+  bool & orientation_output)
 {
   // estimate shape
   std::unique_ptr<ShapeEstimationModelInterface> model_ptr;
@@ -91,12 +91,12 @@ bool ShapeEstimator::estimateShape(
     model_ptr.reset(new ConvexHullModel);
   }
 
-  return model_ptr->estimate(cluster, shape_output, pose_output, orientaion_output);
+  return model_ptr->estimate(cluster, shape_output, pose_output, orientation_output);
 }
 
 bool ShapeEstimator::applyFilter(
   const int type, const autoware_perception_msgs::Shape & shape_output,
-  const geometry_msgs::Pose & pose_output, const bool & orientaion_output)
+  const geometry_msgs::Pose & pose_output, const bool & orientation_output)
 {
   std::unique_ptr<ShapeEstimationFilterInterface> filter_ptr;
   if (type == autoware_perception_msgs::Semantic::CAR) {
@@ -109,12 +109,12 @@ bool ShapeEstimator::applyFilter(
     filter_ptr.reset(new NoFilter);
   }
 
-  return filter_ptr->filter(shape_output, pose_output, orientaion_output);
+  return filter_ptr->filter(shape_output, pose_output, orientation_output);
 }
 
 bool ShapeEstimator::applyCorrector(
   const int type, autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientaion_output)
+  bool & orientation_output)
 {
   std::unique_ptr<ShapeEstimationCorrectorInterface> corrector_ptr;
   if (type == autoware_perception_msgs::Semantic::CAR) {
@@ -127,5 +127,5 @@ bool ShapeEstimator::applyCorrector(
     corrector_ptr.reset(new NoCorrector);
   }
 
-  return corrector_ptr->correct(shape_output, pose_output, orientaion_output);
+  return corrector_ptr->correct(shape_output, pose_output, orientation_output);
 }

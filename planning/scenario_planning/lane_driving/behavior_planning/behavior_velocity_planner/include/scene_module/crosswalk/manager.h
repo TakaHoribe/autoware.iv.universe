@@ -43,7 +43,8 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_extension/utility/query.h>
 
-#include <scene_module/crosswalk/scene.h>
+#include <scene_module/crosswalk/scene_crosswalk.h>
+#include <scene_module/crosswalk/scene_walkway.h>
 #include <scene_module/scene_module_interface.h>
 
 class CrosswalkModuleManager : public SceneModuleManagerInterface
