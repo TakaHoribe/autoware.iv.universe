@@ -435,7 +435,7 @@ std::vector<lanelet::ConstLineString3d> query::stopLinesLanelet(const lanelet::C
   std::vector<lanelet::ConstLineString3d> stoplines;
 
   // find stop lines referened by right ofway reg. elems.
-  std::vector<std::shared_ptr<const lanelet::RightOfWay> > right_of_way_reg_elems =
+  std::vector<std::shared_ptr<const lanelet::RightOfWay>> right_of_way_reg_elems =
     ll.regulatoryElementsAs<const lanelet::RightOfWay>();
 
   if (right_of_way_reg_elems.size() > 0) {
@@ -450,7 +450,7 @@ std::vector<lanelet::ConstLineString3d> query::stopLinesLanelet(const lanelet::C
   }
 
   // find stop lines referenced by traffic lights
-  std::vector<std::shared_ptr<const lanelet::TrafficLight> > traffic_light_reg_elems =
+  std::vector<std::shared_ptr<const lanelet::TrafficLight>> traffic_light_reg_elems =
     ll.regulatoryElementsAs<const lanelet::TrafficLight>();
 
   if (traffic_light_reg_elems.size() > 0) {
@@ -461,7 +461,7 @@ std::vector<lanelet::ConstLineString3d> query::stopLinesLanelet(const lanelet::C
     }
   }
   // find stop lines referenced by traffic signs
-  std::vector<std::shared_ptr<const lanelet::TrafficSign> > traffic_sign_reg_elems =
+  std::vector<std::shared_ptr<const lanelet::TrafficSign>> traffic_sign_reg_elems =
     ll.regulatoryElementsAs<const lanelet::TrafficSign>();
 
   if (traffic_sign_reg_elems.size() > 0) {
@@ -484,7 +484,7 @@ std::vector<lanelet::ConstLineString3d> query::stopSignStopLines(
 
   for (const auto & ll : lanelets) {
     // find stop lines referenced by traffic signs
-    std::vector<std::shared_ptr<const lanelet::TrafficSign> > traffic_sign_reg_elems =
+    std::vector<std::shared_ptr<const lanelet::TrafficSign>> traffic_sign_reg_elems =
       ll.regulatoryElementsAs<const lanelet::TrafficSign>();
 
     if (traffic_sign_reg_elems.size() > 0) {
@@ -664,6 +664,84 @@ bool query::getClosestLanelet(
   }
 
   return found;
+}
+
+std::vector<std::deque<lanelet::ConstLanelet>> getSucceedingLaneletSequencesRecursive(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length)
+{
+  std::vector<std::deque<lanelet::ConstLanelet>> succeeding_lanelet_sequences;
+
+  const auto next_lanelets = graph->following(lanelet);
+  const double lanelet_length = utils::getLaneletLength3d(lanelet);
+
+  // end condition of the recursive function
+  if (next_lanelets.empty() || lanelet_length >= length) {
+    succeeding_lanelet_sequences.push_back({lanelet});
+    return succeeding_lanelet_sequences;
+  }
+
+  for (const auto & next_lanelet : next_lanelets) {
+    // get lanelet sequnce after next_lanelet
+    auto tmp_lanelet_sequences =
+      getSucceedingLaneletSequencesRecursive(graph, next_lanelet, length - lanelet_length);
+    for (auto & tmp_lanelet_sequence : tmp_lanelet_sequences) {
+      tmp_lanelet_sequence.push_front(lanelet);
+      succeeding_lanelet_sequences.push_back(tmp_lanelet_sequence);
+    }
+  }
+  return succeeding_lanelet_sequences;
+}
+
+std::vector<std::deque<lanelet::ConstLanelet>> getPreceedingLaneletSequencesRecursive(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length)
+{
+  std::vector<std::deque<lanelet::ConstLanelet>> preceeding_lanelet_sequences;
+
+  const auto prev_lanelets = graph->previous(lanelet);
+  const double lanelet_length = utils::getLaneletLength3d(lanelet);
+
+  // end condition of the recursive function
+  if (prev_lanelets.empty() || lanelet_length >= length) {
+    preceeding_lanelet_sequences.push_back({lanelet});
+    return preceeding_lanelet_sequences;
+  }
+
+  for (const auto & prev_lanelet : prev_lanelets) {
+    // get lanelet sequnce after prev_lanelet
+    auto tmp_lanelet_sequences =
+      getPreceedingLaneletSequencesRecursive(graph, prev_lanelet, length - lanelet_length);
+    for (auto & tmp_lanelet_sequence : tmp_lanelet_sequences) {
+      tmp_lanelet_sequence.push_back(lanelet);
+      preceeding_lanelet_sequences.push_back(tmp_lanelet_sequence);
+    }
+  }
+  return preceeding_lanelet_sequences;
+}
+
+std::vector<lanelet::ConstLanelets> query::getSucceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length)
+{
+  const auto lanelet_sequences_deq =
+    getSucceedingLaneletSequencesRecursive(graph, lanelet, length);
+  // convert deque into vector
+  std::vector<ConstLanelets> lanelet_sequences_vec;
+  for (const auto & lanelet_sequence : lanelet_sequences_deq) {
+    lanelet_sequences_vec.push_back({lanelet_sequence.begin(), lanelet_sequence.end()});
+  }
+  return lanelet_sequences_vec;
+}
+
+std::vector<lanelet::ConstLanelets> query::getPreceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length)
+{
+  const auto lanelet_sequences_deq =
+    getPreceedingLaneletSequencesRecursive(graph, lanelet, length);
+  // convert deque into vector
+  std::vector<ConstLanelets> lanelet_sequences_vec;
+  for (const auto & lanelet_sequence : lanelet_sequences_deq) {
+    lanelet_sequences_vec.push_back({lanelet_sequence.begin(), lanelet_sequence.end()});
+  }
+  return lanelet_sequences_vec;
 }
 
 }  // namespace utils

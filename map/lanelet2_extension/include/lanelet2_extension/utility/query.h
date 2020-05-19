@@ -196,6 +196,12 @@ bool getClosestLanelet(
   const ConstLanelets & lanelets, const geometry_msgs::Pose & search_pose,
   ConstLanelet * closest_lanelet_ptr);
 
+std::vector<lanelet::ConstLanelets> getSucceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length);
+
+std::vector<lanelet::ConstLanelets> getPreceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet, const double length);
+
 }  // namespace query
 }  // namespace utils
 }  // namespace lanelet
