@@ -135,6 +135,26 @@ ROS_WARN(
   return true;
 }
 
+int IntersectionModule::getFirstPointInsideLanelets(
+  const autoware_planning_msgs::PathWithLaneId & path,
+  const std::vector<lanelet::ConstLanelet> lanelets) const
+{
+  int first_idx_inside_lanelet = -1;
+  for (size_t i = 0; i < path.points.size(); ++i) {
+    bool is_in_lanelet = false;
+    auto p = path.points.at(i).point.pose.position;
+    for (const auto & lane : lanelets) {
+      is_in_lanelet = bg::within(to_bg2d(p), lane.polygon2d());
+      if (is_in_lanelet) {
+        first_idx_inside_lanelet = static_cast<int>(i);
+        break;
+      }
+    }
+    if (is_in_lanelet) break;
+  }
+  return first_idx_inside_lanelet;
+}
+
 bool IntersectionModule::generateStopLine(
   const int closest, const std::vector<lanelet::ConstLanelet> objective_lanelets,
   autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const
@@ -146,7 +166,8 @@ bool IntersectionModule::generateStopLine(
 
   /* set parameters */
   constexpr double interval = 0.2;
-  const double mergin_dist = 1.0 + planner_data_->base_link2front;
+  constexpr double mergin_dist_ = 1.0;
+  const double mergin_dist = mergin_dist_ + planner_data_->base_link2front;
   const int mergin_idx_dist = std::ceil(mergin_dist / interval);
   const int judge_idx_dist = std::ceil(judge_line_dist / interval);
 
@@ -155,46 +176,45 @@ bool IntersectionModule::generateStopLine(
   if (!util::splineInterpolate(*path, interval, &path_ip)) return false;
   debug_data_.spline_path = path_ip;
 
-  // find the first path point inside the objective_lanelets
-  int first_idx_inside_lanelet = -1;
-  ROS_INFO(
-    "path_ip.size = %lu, objective_lanelets.size = %lu", path_ip.points.size(),
-    objective_lanelets.size());
-  for (size_t i = 0; i < path_ip.points.size(); ++i) {
-    bool is_in_lanelet = false;
-    auto p = path_ip.points.at(i).point.pose.position;
-    int j = 0;
-    for (const auto & lane : objective_lanelets) {
-      is_in_lanelet = bg::within(to_bg2d(p), lane.polygon2d());
-      if (is_in_lanelet) {
-        ROS_WARN("i = %lu, j = %d, is_in_lanelet = %d", i, j, is_in_lanelet);
-        first_idx_inside_lanelet = static_cast<int>(i);
-        break;
-      }
-      ++j;
-    }
-    if (is_in_lanelet) break;
-  }
+  int first_idx_inside_lanelet = getFirstPointInsideLanelets(path_ip, objective_lanelets);
   if (first_idx_inside_lanelet == -1)
   {
-    ROS_INFO("no stop line exist.");
+    DEBUG_INFO("[generateStopLine] no stop line exist.");
     return false;
   }
-  const int stop_idx_ip = std::max(first_idx_inside_lanelet - mergin_idx_dist, 0);
+  const int stop_idx_ip = std::max(first_idx_inside_lanelet - 1 - mergin_idx_dist, 0);
   const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
-  ROS_WARN(
-    "stop_idx_ip = %d, judge_idx_ip = %d, mergin_dist = %f, mergin_idx_dist = %d", stop_idx_ip,
-    judge_idx_ip, mergin_dist, mergin_idx_dist);
 
-  /* insert stop_line & judge_line (judge line must be inserted at first) */
-  const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
-  *judge_line_idx = util::insertPoint(inserted_judge_point, path);
-  if (stop_idx_ip == judge_idx_ip) {
-    *stop_line_idx = *judge_line_idx;
-  } else {
-    const auto inserted_stop_point = path_ip.points.at(stop_idx_ip).point.pose;
-    *stop_line_idx = util::insertPoint(inserted_stop_point, path);
+  ROS_INFO("[generateStopLine] first_idx_inside_lanelet = %d, stop_idx_ip = %d, judge_idx_ip = %d, mergin_dist = %f, mergin_idx_dist = %d", first_idx_inside_lanelet, stop_idx_ip, judge_idx_ip, mergin_dist, mergin_idx_dist);
+
+
+  // insert stop_point
+  const auto inserted_stop_point = path_ip.points.at(stop_idx_ip).point.pose;
+  *stop_line_idx = util::insertPoint(inserted_stop_point, path);
+  ROS_INFO("[generateStopLine] stop_line_idx = %d line = %d", *stop_line_idx, __LINE__);
+
+  // if another stop point exist before intersection stop_line, disable judge_line.
+  bool stop_point_exists_before_intersection_stop_line = false;
+  for (int i = 0; i < *stop_line_idx; ++i) {
+    if (std::fabs(path->points.at(i).point.twist.linear.x) < 0.1) {
+      stop_point_exists_before_intersection_stop_line = true;
+      break;
+    }
   }
+  if (stop_point_exists_before_intersection_stop_line || stop_idx_ip == judge_idx_ip) {
+    *judge_line_idx = *stop_line_idx;
+    if (stop_point_exists_before_intersection_stop_line) {
+      ROS_WARN("[generateStopLine] [XXXXX] stop_point_exists_before_intersection_stop_line = true. stop = judge.");
+    }else{
+      ROS_WARN("[generateStopLine] [XXXXX] stop_idx_ip == judge_idx_ip");
+    }
+  } else {
+    const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
+    *judge_line_idx = util::insertPoint(inserted_judge_point, path);
+    ++(*stop_line_idx);  // stop index is incremented by judge line insertion
+    ROS_WARN("[generateStopLine] [XXXXX] insert judge point.");
+  }
+  ROS_INFO("[generateStopLine] stop_line_idx = %d, judge_line_idx = %d, line = %d", *stop_line_idx, *judge_line_idx, __LINE__);
 
   return true;
 }

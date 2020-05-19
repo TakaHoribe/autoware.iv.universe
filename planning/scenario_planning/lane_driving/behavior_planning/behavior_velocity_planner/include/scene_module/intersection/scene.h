@@ -149,6 +149,10 @@ private:
     const int closest, const std::vector<lanelet::ConstLanelet> objective_lanelets,
     autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
 
+  int getFirstPointInsideLanelets(
+    const autoware_planning_msgs::PathWithLaneId & path,
+    const std::vector<lanelet::ConstLanelet> lanelets) const;
+
   StateMachine state_machine_;  //! for state
 
   // Debug
