@@ -76,21 +76,22 @@ generate_dynamic_reconfigure_options(cfg/HSVFilter.cfg)
 
 find_package(OpenCV REQUIRED)
 
+include_directories(
+  include
+  utils
+  ${OpenCV_INCLUDE_DIRS}
+  ${CUDA_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  )
+
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS
+  )
+
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
-
-  include_directories(
-    include
-    utils
-    ${OpenCV_INCLUDE_DIRS}
-    ${CUDA_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS}
-    )
-
-  catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS
-    )
+  add_definitions(-DENABLE_GPU)
 
   # Download caffemodel and prototxt
   set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
@@ -146,29 +147,42 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
-
-  #############
-  ## Install ##
-  #############
-
-  install(
-    TARGETS
-    traffic_light_classifier_node
-    libutils
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-
-  install(
-    DIRECTORY
-    launch
-    data
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-    )
-
 else()
-  find_package(catkin REQUIRED)
-  catkin_package()
-  message("TrafficLightClassifier won't be built, CUDA and/or TensorRT were not found.")
+  message("CUDA and/or TensorRT were not found. build only color classifier")
+
+  ###########
+  ## Build ##
+  ###########
+
+  add_executable(traffic_light_classifier_node
+    src/color_classifier.cpp
+    src/node.cpp
+    src/main.cpp
+    )
+
+  add_dependencies(traffic_light_classifier_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+    )
+  target_link_libraries(traffic_light_classifier_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    )
 endif()
+
+#############
+## Install ##
+#############
+
+install(
+  TARGETS
+  traffic_light_classifier_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+install(
+  DIRECTORY
+  launch
+  data
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
