@@ -126,12 +126,12 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         return true;
       }
 
-      // check red lamp
-      const auto it_red = std::find_if(
+      // if green lamp is off, check arrow signals
+      const auto it_green = std::find_if(
         highest_confidence_tl_state.lamp_states.begin(),
         highest_confidence_tl_state.lamp_states.end(),
-        [](auto x) { return x.type == autoware_perception_msgs::LampState::RED; });
-      if (it_red != highest_confidence_tl_state.lamp_states.end()) {
+        [](auto x) { return x.type == autoware_perception_msgs::LampState::GREEN; });
+      if (it_green == highest_confidence_tl_state.lamp_states.end()) {
         // check turn direction
         const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
         // if turn_direction is right, check right signal
