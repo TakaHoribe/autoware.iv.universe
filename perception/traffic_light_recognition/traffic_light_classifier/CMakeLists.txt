@@ -147,19 +147,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
-
-  #############
-  ## Install ##
-  #############
-
-  install(
-    TARGETS
-    traffic_light_classifier_node
-    libutils
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
 else()
   message("CUDA and/or TensorRT were not found. build only color classifier")
 
@@ -179,24 +166,23 @@ else()
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
-
-  #############
-  ## Install ##
-  #############
-
-  install(
-    TARGETS
-    traffic_light_classifier_node
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-
-  install(
-    DIRECTORY
-    launch
-    data
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-    )
-
 endif()
+
+#############
+## Install ##
+#############
+
+install(
+  TARGETS
+  traffic_light_classifier_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+install(
+  DIRECTORY
+  launch
+  data
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )

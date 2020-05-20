@@ -44,7 +44,7 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   if (classifier_type == TrafficLightClassifierNode::ClassifierType::HSVFilter) {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
   } else if (classifier_type == TrafficLightClassifierNode::ClassifierType::CNN) {
-#if GPU_ENABLE
+#if ENABLE_GPU
     classifier_ptr_ = std::make_shared<CNNClassifier>();
 #else
     ROS_ERROR("please install CUDA, CUDNN and TensorRT to use cnn classifier");
