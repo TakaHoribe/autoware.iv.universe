@@ -48,11 +48,11 @@ bool ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<Eigen::Vector3d
     case PolygonType::Collision:
       if (!polygon.empty()) collision_polygons_.push_back(polygon);
       return true;
-    case PolygonType::DecellationRange:
-      if (!polygon.empty()) decel_range_polygons_.push_back(polygon);
+    case PolygonType::SlowDownRange:
+      if (!polygon.empty()) slow_down_range_polygons_.push_back(polygon);
       return true;
-    case PolygonType::Decellation:
-      if (!polygon.empty()) decel_polygons_.push_back(polygon);
+    case PolygonType::SlowDown:
+      if (!polygon.empty()) slow_down_polygons_.push_back(polygon);
       return true;
     default:
       return false;
@@ -65,11 +65,11 @@ bool ObstacleStopPlannerDebugNode::pushPose(const geometry_msgs::Pose & pose, co
     case PoseType::Stop:
       stop_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(pose);
       return true;
-    case PoseType::StartDecellation:
-      start_decel_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(pose);
+    case PoseType::SlowDownStart:
+      slow_down_start_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(pose);
       return true;
-    case PoseType::EndDecellation:
-      end_decel_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(pose);
+    case PoseType::SlowDownEnd:
+      slow_down_end_pose_ptr_ = std::make_shared<geometry_msgs::Pose>(pose);
       return true;
     default:
       return false;
@@ -83,8 +83,8 @@ bool ObstacleStopPlannerDebugNode::pushObstaclePoint(
     case PointType::Stop:
       stop_obstacle_point_ptr_ = std::make_shared<geometry_msgs::Point>(obstacle_point);
       return true;
-    case PointType::Decellation:
-      decel_obstacle_point_ptr_ = std::make_shared<geometry_msgs::Point>(obstacle_point);
+    case PointType::SlowDown:
+      slow_down_obstacle_point_ptr_ = std::make_shared<geometry_msgs::Point>(obstacle_point);
       return true;
     default:
       return false;
@@ -210,11 +210,11 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (!decel_range_polygons_.empty()) {
+  if (!slow_down_range_polygons_.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "decel_detection_polygons";
+    marker.ns = "slow_down_detection_polygons";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -233,27 +233,27 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    for (size_t i = 0; i < decel_range_polygons_.size(); ++i) {
-      for (size_t j = 0; j < decel_range_polygons_.at(i).size(); ++j) {
+    for (size_t i = 0; i < slow_down_range_polygons_.size(); ++i) {
+      for (size_t j = 0; j < slow_down_range_polygons_.at(i).size(); ++j) {
         {
           geometry_msgs::Point point;
-          point.x = decel_range_polygons_.at(i).at(j).x();
-          point.y = decel_range_polygons_.at(i).at(j).y();
-          point.z = decel_range_polygons_.at(i).at(j).z();
+          point.x = slow_down_range_polygons_.at(i).at(j).x();
+          point.y = slow_down_range_polygons_.at(i).at(j).y();
+          point.z = slow_down_range_polygons_.at(i).at(j).z();
           marker.points.push_back(point);
         }
-        if (j + 1 == decel_range_polygons_.at(i).size()) {
+        if (j + 1 == slow_down_range_polygons_.at(i).size()) {
           geometry_msgs::Point point;
-          point.x = decel_range_polygons_.at(i).at(0).x();
-          point.y = decel_range_polygons_.at(i).at(0).y();
-          point.z = decel_range_polygons_.at(i).at(0).z();
+          point.x = slow_down_range_polygons_.at(i).at(0).x();
+          point.y = slow_down_range_polygons_.at(i).at(0).y();
+          point.z = slow_down_range_polygons_.at(i).at(0).z();
           marker.points.push_back(point);
 
         } else {
           geometry_msgs::Point point;
-          point.x = decel_range_polygons_.at(i).at(j + 1).x();
-          point.y = decel_range_polygons_.at(i).at(j + 1).y();
-          point.z = decel_range_polygons_.at(i).at(j + 1).z();
+          point.x = slow_down_range_polygons_.at(i).at(j + 1).x();
+          point.y = slow_down_range_polygons_.at(i).at(j + 1).y();
+          point.z = slow_down_range_polygons_.at(i).at(j + 1).z();
           marker.points.push_back(point);
         }
       }
@@ -261,11 +261,11 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
   
-  if (!decel_polygons_.empty()) {
+  if (!slow_down_polygons_.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "decel_polygons";
+    marker.ns = "slow_down_polygons";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -284,27 +284,27 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    for (size_t i = 0; i < decel_polygons_.size(); ++i) {
-      for (size_t j = 0; j < decel_polygons_.at(i).size(); ++j) {
+    for (size_t i = 0; i < slow_down_polygons_.size(); ++i) {
+      for (size_t j = 0; j < slow_down_polygons_.at(i).size(); ++j) {
         {
           geometry_msgs::Point point;
-          point.x = decel_polygons_.at(i).at(j).x();
-          point.y = decel_polygons_.at(i).at(j).y();
-          point.z = decel_polygons_.at(i).at(j).z();
+          point.x = slow_down_polygons_.at(i).at(j).x();
+          point.y = slow_down_polygons_.at(i).at(j).y();
+          point.z = slow_down_polygons_.at(i).at(j).z();
           marker.points.push_back(point);
         }
-        if (j + 1 == decel_polygons_.at(i).size()) {
+        if (j + 1 == slow_down_polygons_.at(i).size()) {
           geometry_msgs::Point point;
-          point.x = decel_polygons_.at(i).at(0).x();
-          point.y = decel_polygons_.at(i).at(0).y();
-          point.z = decel_polygons_.at(i).at(0).z();
+          point.x = slow_down_polygons_.at(i).at(0).x();
+          point.y = slow_down_polygons_.at(i).at(0).y();
+          point.z = slow_down_polygons_.at(i).at(0).z();
           marker.points.push_back(point);
 
         } else {
           geometry_msgs::Point point;
-          point.x = decel_polygons_.at(i).at(j + 1).x();
-          point.y = decel_polygons_.at(i).at(j + 1).y();
-          point.z = decel_polygons_.at(i).at(j + 1).z();
+          point.x = slow_down_polygons_.at(i).at(j + 1).x();
+          point.y = slow_down_polygons_.at(i).at(j + 1).y();
+          point.z = slow_down_polygons_.at(i).at(j + 1).z();
           marker.points.push_back(point);
         }
       }
@@ -361,17 +361,17 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (start_decel_pose_ptr_ != nullptr) {
+  if (slow_down_start_pose_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "virtual_wall/start_decel";
+    marker.ns = "virtual_wall/slow_down_start";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(*start_decel_pose_ptr_, tf_map2base_link);
+    tf2::fromMsg(*slow_down_start_pose_ptr_, tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -385,17 +385,17 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (start_decel_pose_ptr_ != nullptr) {
+  if (slow_down_start_pose_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "factor_text/start_decel";
+    marker.ns = "factor_text/slow_down_start";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(*start_decel_pose_ptr_, tf_map2base_link);
+    tf2::fromMsg(*slow_down_start_pose_ptr_, tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -406,21 +406,21 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
-    marker.text = "decellation\nstart";
+    marker.text = "slow down\nstart";
     msg.markers.push_back(marker);
   }
 
-  if (end_decel_pose_ptr_ != nullptr) {
+  if (slow_down_end_pose_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "virtual_wall/end_decel";
+    marker.ns = "virtual_wall/slow_down_end";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(*end_decel_pose_ptr_, tf_map2base_link);
+    tf2::fromMsg(*slow_down_end_pose_ptr_, tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -434,17 +434,17 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (end_decel_pose_ptr_ != nullptr) {
+  if (slow_down_end_pose_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "factor_text/end_decel";
+    marker.ns = "factor_text/slow_down_end";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(*end_decel_pose_ptr_, tf_map2base_link);
+    tf2::fromMsg(*slow_down_end_pose_ptr_, tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -455,7 +455,7 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
-    marker.text = "decellation\nend";
+    marker.text = "slow down\nend";
     msg.markers.push_back(marker);
   }
 
@@ -509,16 +509,16 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (decel_obstacle_point_ptr_ != nullptr) {
+  if (slow_down_obstacle_point_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "decel_obstacle_point";
+    marker.ns = "slow_down_obstacle_point";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::SPHERE;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position = *decel_obstacle_point_ptr_;
+    marker.pose.position = *slow_down_obstacle_point_ptr_;
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
@@ -533,16 +533,16 @@ void ObstacleStopPlannerDebugNode::publish()
     msg.markers.push_back(marker);
   }
 
-  if (decel_obstacle_point_ptr_ != nullptr) {
+  if (slow_down_obstacle_point_ptr_ != nullptr) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "decel_obstacle_text";
+    marker.ns = "slow_down_obstacle_text";
     marker.id = 0;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position = *decel_obstacle_point_ptr_;
+    marker.pose.position = *slow_down_obstacle_point_ptr_;
     marker.pose.position.z += 2.0;
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
@@ -562,13 +562,13 @@ void ObstacleStopPlannerDebugNode::publish()
   debug_viz_pub_.publish(msg);
   vehicle_polygons_.clear();
   collision_polygons_.clear();
-  decel_range_polygons_.clear();
-  decel_polygons_.clear();
+  slow_down_range_polygons_.clear();
+  slow_down_polygons_.clear();
   stop_pose_ptr_ = nullptr;
-  start_decel_pose_ptr_ = nullptr;
-  end_decel_pose_ptr_ = nullptr;
+  slow_down_start_pose_ptr_ = nullptr;
+  slow_down_end_pose_ptr_ = nullptr;
   stop_obstacle_point_ptr_ = nullptr;
-  decel_obstacle_point_ptr_ = nullptr;
+  slow_down_obstacle_point_ptr_ = nullptr;
   return;
 }
 }  // namespace motion_planning

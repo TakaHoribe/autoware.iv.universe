@@ -120,14 +120,15 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   vehicle_width_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   // Parameters
   stop_margin_ = getParam<double>(pnh_, "stop_margin", 5.0);
-  decel_margin_ = getParam<double>(pnh_, "decel_margin", 5.0);
+  slow_down_margin_ = getParam<double>(pnh_, "slow_down_margin", 5.0);
   min_behavior_stop_margin_ = getParam<double>(pnh_, "min_behavior_stop_margin", 2.0);
-  expand_decel_range_ = getParam<double>(pnh_, "expand_decel_range", 1.0);
-  max_decel_vel_ = getParam<double>(pnh_, "max_decel_vel", 4.0);
-  min_decel_vel_ = getParam<double>(pnh_, "min_decel_vel", 2.0);
-  max_decel_ = getParam<double>(pnh_, "max_decel", 2.0);
+  expand_slow_down_range_ = getParam<double>(pnh_, "expand_slow_down_range", 1.0);
+  max_slow_down_vel_ = getParam<double>(pnh_, "max_slow_down_vel", 4.0);
+  min_slow_down_vel_ = getParam<double>(pnh_, "min_slow_down_vel", 2.0);
+  max_decellation_ = getParam<double>(pnh_, "max_decellation", 2.0);
   stop_margin_ += wheel_base_ + front_overhang_;
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
+  slow_down_margin_ += wheel_base_ + front_overhang_;
   debug_ptr_ = std::make_shared<ObstacleStopPlannerDebugNode>(wheel_base_ + front_overhang_);
 }
 
@@ -201,7 +202,7 @@ void ObstacleStopPlannerNode::pathCallback(
     pcl::fromROSMsg(transformed_obstacle_ros_pointcloud, *transformed_obstacle_pointcloud_ptr);
     // search obstacle candidate pointcloud to reduce calculation cost
     const double search_range =
-      step_length + std::hypot((vehicle_width_ / 2.0 + expand_decel_range_), (wheel_base_ + front_overhang_));
+      step_length + std::hypot((vehicle_width_ / 2.0 + expand_slow_down_range_), (wheel_base_ + front_overhang_));
     searchPointcloudNearTrajectory(
       trajectory, search_range, transformed_obstacle_pointcloud_ptr,
       obstacle_candidate_pointcloud_ptr);
@@ -215,25 +216,25 @@ void ObstacleStopPlannerNode::pathCallback(
   pcl::PointXYZ nearest_collision_point;
 
   /*
-   * check decel
+   * check slow_down
    */
-  std::vector<bool> is_decel_vec(trajectory.points.size(), false);
-  bool is_decel = false;
-  int decel_count = 0;
-  size_t decimate_trajectory_decel_index;
-  pcl::PointXYZ nearest_decel_point;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr decel_pointcloud_ptr(
+  std::vector<bool> is_slow_down_vec(trajectory.points.size(), false);
+  bool is_slow_down = false;
+  int slow_down_count = 0;
+  size_t decimate_trajectory_slow_down_index;
+  pcl::PointXYZ nearest_slow_down_point;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr slow_down_pointcloud_ptr(
       new pcl::PointCloud<pcl::PointXYZ>);
 
   for (int i = 0; i < (int)(trajectory.points.size()) - 1; ++i) {
     /*
-     * create one step polygon for decel range
+     * create one step polygon for slow_down range
      */
-    std::vector<cv::Point2d> one_step_move_decel_range_polygon;
+    std::vector<cv::Point2d> one_step_move_slow_down_range_polygon;
     createOneStepPolygon(
       trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose,
-      one_step_move_decel_range_polygon, expand_decel_range_);
-    debug_ptr_->pushPolygon(one_step_move_decel_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::DecellationRange);
+      one_step_move_slow_down_range_polygon, expand_slow_down_range_);
+    debug_ptr_->pushPolygon(one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::SlowDownRange);
     
     /*
      * create one step polygon for vehicle
@@ -248,12 +249,12 @@ void ObstacleStopPlannerNode::pathCallback(
      * collision check obstacle pointcloud and polygon
      */
     // convert boost polygon
-    Polygon boost_one_step_move_decel_range_polygon;
-    for (const auto & point : one_step_move_decel_range_polygon) {
-      boost_one_step_move_decel_range_polygon.outer().push_back(bg::make<Point>(point.x, point.y));
+    Polygon boost_one_step_move_slow_down_range_polygon;
+    for (const auto & point : one_step_move_slow_down_range_polygon) {
+      boost_one_step_move_slow_down_range_polygon.outer().push_back(bg::make<Point>(point.x, point.y));
     }
-    boost_one_step_move_decel_range_polygon.outer().push_back(bg::make<Point>(
-      one_step_move_decel_range_polygon.front().x, one_step_move_decel_range_polygon.front().y));
+    boost_one_step_move_slow_down_range_polygon.outer().push_back(bg::make<Point>(
+      one_step_move_slow_down_range_polygon.front().x, one_step_move_slow_down_range_polygon.front().y));
 
     Polygon boost_one_step_move_vehicle_polygon;
     for (const auto & point : one_step_move_vehicle_polygon) {
@@ -290,34 +291,34 @@ void ObstacleStopPlannerNode::pathCallback(
     for (size_t j = 0; j < obstacle_candidate_pointcloud_ptr->size(); ++j) {
       Point point(
         obstacle_candidate_pointcloud_ptr->at(j).x, obstacle_candidate_pointcloud_ptr->at(j).y);
-      if (bg::within(point, boost_one_step_move_decel_range_polygon)) {
-        if (!is_decel_vec.at(i)) {
-          is_decel_vec.at(i)= true;
-          bool prev_decel = i > 0 ? is_decel_vec.at(i - 1) : false;
-          if (!prev_decel) {
-            decel_count++;
+      if (bg::within(point, boost_one_step_move_slow_down_range_polygon)) {
+        if (!is_slow_down_vec.at(i)) {
+          is_slow_down_vec.at(i)= true;
+          bool prev_slow_down = i > 0 ? is_slow_down_vec.at(i - 1) : false;
+          if (!prev_slow_down) {
+            slow_down_count++;
           }
         }
-        if (decel_count == 1) {
-          decel_pointcloud_ptr->push_back(obstacle_candidate_pointcloud_ptr->at(j));
+        if (slow_down_count == 1) {
+          slow_down_pointcloud_ptr->push_back(obstacle_candidate_pointcloud_ptr->at(j));
           debug_ptr_->pushPolygon(
-            one_step_move_decel_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::Decellation);
+            one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::SlowDown);
         }
       }
     }
   }
 
   /*
-   * search nearest decel point by begining of path
+   * search nearest slow_down point by begining of path
    */
-  auto itr = std::find(is_decel_vec.begin(), is_decel_vec.end(), true);
-  if (itr != is_decel_vec.end()) {
-    is_decel =true;
-    auto index = std::distance(is_decel_vec.begin(), itr);
+  auto itr = std::find(is_slow_down_vec.begin(), is_slow_down_vec.end(), true);
+  if (itr != is_slow_down_vec.end()) {
+    is_slow_down =true;
+    auto index = std::distance(is_slow_down_vec.begin(), itr);
     getNearestPoint(
-      *decel_pointcloud_ptr, trajectory.points.at(index).pose, nearest_decel_point);
-    debug_ptr_->pushObstaclePoint(nearest_decel_point, PointType::Decellation);
-    decimate_trajectory_decel_index = index;
+      *slow_down_pointcloud_ptr, trajectory.points.at(index).pose, nearest_slow_down_point);
+    debug_ptr_->pushObstaclePoint(nearest_slow_down_point, PointType::SlowDown);
+    decimate_trajectory_slow_down_index = index;
   }
 
   /*
@@ -429,10 +430,10 @@ void ObstacleStopPlannerNode::pathCallback(
   }
 
   /*
-   * insert decel point
+   * insert slow_down point
    */
-  if (is_decel) {
-    for (int i = decimate_trajectory_index_map.at(decimate_trajectory_decel_index);
+  if (is_slow_down) {
+    for (int i = decimate_trajectory_index_map.at(decimate_trajectory_slow_down_index);
          i < (int)base_path.points.size(); ++i) {
       Eigen::Vector2d trajectory_vec;
       {
@@ -440,21 +441,21 @@ void ObstacleStopPlannerNode::pathCallback(
           getYawFromGeometryMsgsQuaternion(base_path.points.at(i).pose.orientation);
         trajectory_vec << std::cos(yaw), std::sin(yaw);
       }
-      Eigen::Vector2d decel_point_vec;
-      decel_point_vec << nearest_decel_point.x - base_path.points.at(i).pose.position.x,
-        nearest_decel_point.y - base_path.points.at(i).pose.position.y;
+      Eigen::Vector2d slow_down_point_vec;
+      slow_down_point_vec << nearest_slow_down_point.x - base_path.points.at(i).pose.position.x,
+        nearest_slow_down_point.y - base_path.points.at(i).pose.position.y;
 
       if (
-        trajectory_vec.dot(decel_point_vec) < 0.0 ||
-        (i + 1 == base_path.points.size() && 0.0 < trajectory_vec.dot(decel_point_vec))) {
-        Eigen::Vector2d start_decel_point;
+        trajectory_vec.dot(slow_down_point_vec) < 0.0 ||
+        (i + 1 == base_path.points.size() && 0.0 < trajectory_vec.dot(slow_down_point_vec))) {
+        Eigen::Vector2d slow_down_start_point;
         // search insert point
-        size_t decel_point_idx = i;
-        size_t start_decel_point_idx = 0;
-        double start_decel_vel = 0.0;
+        size_t slow_down_point_idx = i;
+        size_t slow_down_start_point_idx = 0;
+        double slow_down_start_vel = 0.0;
         {
           double length_sum = 0.0;
-          length_sum += trajectory_vec.normalized().dot(decel_point_vec);
+          length_sum += trajectory_vec.normalized().dot(slow_down_point_vec);
           Eigen::Vector2d line_start_point, line_end_point;
           {
             line_start_point << base_path.points.at(0).pose.position.x,
@@ -468,44 +469,44 @@ void ObstacleStopPlannerNode::pathCallback(
               base_path.points.at(j).pose.position.y;
             line_end_point << base_path.points.at(j - 1).pose.position.x,
               base_path.points.at(j - 1).pose.position.y;
-            if (decel_margin_ < length_sum) {
-              start_decel_point_idx = j;
+            if (slow_down_margin_ < length_sum) {
+              slow_down_start_point_idx = j;
               break;
             }
             length_sum += (line_end_point - line_start_point).norm();
           }
           getBackwordPointFromBasePoint(
-            line_start_point, line_end_point, line_start_point, length_sum - decel_margin_,
-            start_decel_point);
-          start_decel_vel = std::max(std::sqrt(3.0 * 3.0 + 2 * max_decel_ * length_sum),
+            line_start_point, line_end_point, line_start_point, length_sum - slow_down_margin_,
+            slow_down_start_point);
+          slow_down_start_vel = std::max(std::sqrt(3.0 * 3.0 + 2 * max_decellation_ * length_sum),
                                      current_velocity_ptr_->twist.linear.x);
         }
 
-        autoware_planning_msgs::TrajectoryPoint start_decel_trajectory_point =
-          base_path.points.at(std::max((int)(start_decel_point_idx)-1, 0));
-        autoware_planning_msgs::TrajectoryPoint end_decel_trajectory_point;
-        start_decel_trajectory_point.pose.position.x = start_decel_point.x();
-        start_decel_trajectory_point.pose.position.y = start_decel_point.y();
-        start_decel_trajectory_point.twist.linear.x = start_decel_vel;
+        autoware_planning_msgs::TrajectoryPoint slow_down_start_trajectory_point =
+          base_path.points.at(std::max((int)(slow_down_start_point_idx)-1, 0));
+        autoware_planning_msgs::TrajectoryPoint slow_down_end_trajectory_point;
+        slow_down_start_trajectory_point.pose.position.x = slow_down_start_point.x();
+        slow_down_start_trajectory_point.pose.position.y = slow_down_start_point.y();
+        slow_down_start_trajectory_point.twist.linear.x = slow_down_start_vel;
         output_msg.points.insert(
-          output_msg.points.begin() + start_decel_point_idx, start_decel_trajectory_point);
-        bool is_end_decel = false;
-        for (size_t j = start_decel_point_idx; j < output_msg.points.size() - 1; ++j) {
-          output_msg.points.at(j).twist.linear.x = std::min(start_decel_vel, output_msg.points.at(j).twist.linear.x);
+          output_msg.points.begin() + slow_down_start_point_idx, slow_down_start_trajectory_point);
+        bool is_slow_down_end = false;
+        for (size_t j = slow_down_start_point_idx; j < output_msg.points.size() - 1; ++j) {
+          output_msg.points.at(j).twist.linear.x = std::min(slow_down_start_vel, output_msg.points.at(j).twist.linear.x);
           const auto dist = std::hypot(output_msg.points.at(j).pose.position.x - output_msg.points.at(j + 1).pose.position.x,
                                        output_msg.points.at(j).pose.position.y - output_msg.points.at(j + 1).pose.position.y);
-          start_decel_vel = std::max(3.0, std::sqrt(std::max(start_decel_vel * start_decel_vel - 2 * max_decel_ * dist, 0.0)));
-          if (!is_end_decel && start_decel_vel <= 3.0) {
-            end_decel_trajectory_point = output_msg.points.at(j + 1);
-            is_end_decel = true;
+          slow_down_start_vel = std::max(3.0, std::sqrt(std::max(slow_down_start_vel * slow_down_start_vel - 2 * max_decellation_ * dist, 0.0)));
+          if (!is_slow_down_end && slow_down_start_vel <= 3.0) {
+            slow_down_end_trajectory_point = output_msg.points.at(j + 1);
+            is_slow_down_end = true;
           }
         }
-        if (!is_end_decel) {
-          end_decel_trajectory_point = output_msg.points.back();
-          is_end_decel = true;
+        if (!is_slow_down_end) {
+          slow_down_end_trajectory_point = output_msg.points.back();
+          is_slow_down_end = true;
         }
-        debug_ptr_->pushPose(start_decel_trajectory_point.pose, PoseType::StartDecellation);
-        debug_ptr_->pushPose(end_decel_trajectory_point.pose, PoseType::EndDecellation);
+        debug_ptr_->pushPose(slow_down_start_trajectory_point.pose, PoseType::SlowDownStart);
+        debug_ptr_->pushPose(slow_down_end_trajectory_point.pose, PoseType::SlowDownEnd);
       }
     }
   }

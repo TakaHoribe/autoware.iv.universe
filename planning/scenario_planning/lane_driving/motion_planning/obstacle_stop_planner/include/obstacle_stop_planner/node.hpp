@@ -61,12 +61,12 @@ private:
   double wheel_base_, front_overhang_, rear_overhang_, left_overhang_, right_overhang_,
     vehicle_width_;
   double stop_margin_;
-  double decel_margin_;
+  double slow_down_margin_;
   double min_behavior_stop_margin_;
-  double expand_decel_range_;
-  double max_decel_vel_;
-  double min_decel_vel_;
-  double max_decel_;
+  double expand_slow_down_range_;
+  double max_slow_down_vel_;
+  double min_slow_down_vel_;
+  double max_decellation_;
   void obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
   void currentVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_msg);

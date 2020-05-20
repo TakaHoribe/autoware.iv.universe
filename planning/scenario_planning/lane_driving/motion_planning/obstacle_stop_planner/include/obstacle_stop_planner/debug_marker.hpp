@@ -33,19 +33,19 @@ namespace motion_planning
 enum class PolygonType : int8_t {
   Vehicle = 0,
   Collision,
-  DecellationRange,
-  Decellation
+  SlowDownRange,
+  SlowDown
 };
 
 enum class PointType : int8_t {
   Stop = 0,
-  Decellation
+  SlowDown
 };
 
 enum class PoseType : int8_t {
   Stop = 0,
-  StartDecellation,
-  EndDecellation
+  SlowDownStart,
+  SlowDownEnd
 };
 
 class ObstacleStopPlannerDebugNode
@@ -68,14 +68,14 @@ private:
   double base_link2front_;
 
   std::shared_ptr<geometry_msgs::Pose> stop_pose_ptr_;
-  std::shared_ptr<geometry_msgs::Pose> start_decel_pose_ptr_;
-  std::shared_ptr<geometry_msgs::Pose> end_decel_pose_ptr_;
+  std::shared_ptr<geometry_msgs::Pose> slow_down_start_pose_ptr_;
+  std::shared_ptr<geometry_msgs::Pose> slow_down_end_pose_ptr_;
   std::shared_ptr<geometry_msgs::Point> stop_obstacle_point_ptr_;
-  std::shared_ptr<geometry_msgs::Point> decel_obstacle_point_ptr_;
+  std::shared_ptr<geometry_msgs::Point> slow_down_obstacle_point_ptr_;
   std::vector<std::vector<Eigen::Vector3d>> vehicle_polygons_;
-  std::vector<std::vector<Eigen::Vector3d>> decel_range_polygons_;
+  std::vector<std::vector<Eigen::Vector3d>> slow_down_range_polygons_;
   std::vector<std::vector<Eigen::Vector3d>> collision_polygons_;
-  std::vector<std::vector<Eigen::Vector3d>> decel_polygons_;
+  std::vector<std::vector<Eigen::Vector3d>> slow_down_polygons_;
 };
 
 }  // namespace motion_planning
