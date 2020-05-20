@@ -130,7 +130,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       const auto it_green = std::find_if(
         highest_confidence_tl_state.lamp_states.begin(),
         highest_confidence_tl_state.lamp_states.end(),
-        [](auto x) { return x.type == autoware_perception_msgs::LampState::GREEN; });
+        [](const auto & x) { return x.type == autoware_perception_msgs::LampState::GREEN; });
       if (it_green == highest_confidence_tl_state.lamp_states.end()) {
         // check turn direction
         const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
@@ -139,7 +139,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           const auto it_right = std::find_if(
             highest_confidence_tl_state.lamp_states.begin(),
             highest_confidence_tl_state.lamp_states.end(),
-            [](auto x) { return x.type == autoware_perception_msgs::LampState::RIGHT; });
+            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::RIGHT; });
           // if right signal detected, go out
           if (it_right != highest_confidence_tl_state.lamp_states.end()) continue;
         }
@@ -148,7 +148,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           const auto it_left = std::find_if(
             highest_confidence_tl_state.lamp_states.begin(),
             highest_confidence_tl_state.lamp_states.end(),
-            [](auto x) { return x.type == autoware_perception_msgs::LampState::LEFT; });
+            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::LEFT; });
           // if left signal detected, go out
           if (it_left != highest_confidence_tl_state.lamp_states.end()) continue;
         }
@@ -157,7 +157,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           const auto it_straight = std::find_if(
             highest_confidence_tl_state.lamp_states.begin(),
             highest_confidence_tl_state.lamp_states.end(),
-            [](auto x) { return x.type == autoware_perception_msgs::LampState::UP; });
+            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::UP; });
           // if up signal detected, go out
           if (it_straight != highest_confidence_tl_state.lamp_states.end()) continue;
         }
