@@ -39,6 +39,8 @@ private:
     const int type, autoware_perception_msgs::Shape & shape_output,
     geometry_msgs::Pose & pose_output, bool & orientation_output);
 
+  int lshape_fitting_range_;
+
 public:
   ShapeEstimator();
 
@@ -47,5 +49,8 @@ public:
   bool getShapeAndPose(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output);
+    bool & orientation_output, bool & use_corrector);
+
+  void setFittingRange(int lshape_fitting_range);
+
 };

@@ -24,6 +24,8 @@ ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~")
 {
   sub_ = nh_.subscribe("input", 1, &ShapeEstimationNode::callback, this);
   pub_ = nh_.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>("objects", 1, true);
+  pnh_.param<bool>("use_corrector", use_corrector_, true);
+  pnh_.param<int>("lshape_fitting_range", lshape_fitting_range_, 3);
   // pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
   // if (use_map_correct_)
   //   map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
@@ -41,20 +43,31 @@ void ShapeEstimationNode::callback(
 
   // Estimate shape for each object and pack msg
   for (const auto & feature_object : input_msg->feature_objects) {
+
     // convert ros to pcl
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(feature_object.feature.cluster, *cluster);
     // estimate shape and pose
     autoware_perception_msgs::Shape shape;
+
+    bool orientation = feature_object.object.state.orientation_reliable;
     geometry_msgs::Pose pose;
-    bool orientation;
+    if (orientation) {
+      pose = feature_object.object.state.pose_covariance.pose;
+      estimator_.setFittingRange(lshape_fitting_range_);
+    }
+
     if (!estimator_.getShapeAndPose(
-          feature_object.object.semantic.type, *cluster, shape, pose, orientation))
+          feature_object.object.semantic.type, *cluster, shape, pose, orientation, use_corrector_))
       continue;
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
     output_msg.feature_objects.back().object.state.orientation_reliable = orientation;
+    output_msg.feature_objects.back().object.state.twist_covariance.twist
+      = feature_object.object.state.twist_covariance.twist;
+    output_msg.feature_objects.back().object.state.twist_reliable
+      = feature_object.object.state.twist_reliable;
   }
   // if (use_map_correct_)
   // {

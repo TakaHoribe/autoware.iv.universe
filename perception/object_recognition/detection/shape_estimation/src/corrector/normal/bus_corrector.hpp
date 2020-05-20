@@ -19,22 +19,18 @@
 
 #pragma once
 
-#include "shape_estimation/model_interface.hpp"
+#include "shape_estimation/corrector_interface.hpp"
 
-class BoundingBoxModel : public ShapeEstimationModelInterface
+namespace normal {
+class BusCorrector : public ShapeEstimationCorrectorInterface
 {
-private:
-  double calcClosenessCriterion(const std::vector<double> & C_1, const std::vector<double> & C_2);
-
 public:
-  BoundingBoxModel(){};
+  BusCorrector(){};
 
-  ~BoundingBoxModel(){};
+  ~BusCorrector(){};
 
-  /*
-   * minimum cluster size is 2.
-   */
-  bool estimate(
-    const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-    geometry_msgs::Pose & pose_output, bool & orientation_output) override;
+  bool correct(
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientation_output) override;
 };
+}

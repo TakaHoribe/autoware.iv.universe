@@ -13,36 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ *
  * v1.0 Yukihiro Saito
  */
 
 #pragma once
 
-#include <ros/ros.h>
-#include "shape_estimation/shape_estimator.hpp"
-// #include "shape_estimation/map_corrector_node.hpp"
-#include "autoware_perception_msgs/DynamicObjectWithFeatureArray.h"
+#include "shape_estimation/corrector_interface.hpp"
 
-class ShapeEstimationNode
+namespace normal {
+class TruckCorrector : public ShapeEstimationCorrectorInterface
 {
-private:  // ros
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Publisher pub_;
-  ros::Subscriber sub_;
-  // bool use_map_correct_;
-
-  void callback(
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_msg);
-
-private:
-  ShapeEstimator estimator_;
-  bool use_corrector_;
-  int lshape_fitting_range_;
-  // std::shared_ptr<MapCorrectorNode> map_corrector_node_ptr_;
-
 public:
-  ShapeEstimationNode();
+  TruckCorrector(){};
 
-  ~ShapeEstimationNode(){};
+  ~TruckCorrector(){};
+
+  bool correct(
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientation_output) override;
 };
+}

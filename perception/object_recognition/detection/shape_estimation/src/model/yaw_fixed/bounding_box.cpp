@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Autoware Foundation. All rights reserved.
+ * Copyright 2020 TierIV. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * v1.0 Yukihiro Saito
  */
 
 #include "bounding_box.hpp"
@@ -28,9 +26,16 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "autoware_perception_msgs/Shape.h"
 
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include <eigen_conversions/eigen_msg.h>
+
 #define EIGEN_MPL2_ONLY
 
 #include <Eigen/Core>
+
+namespace yaw_fixed {
 
 bool BoundingBoxModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
@@ -49,7 +54,7 @@ bool BoundingBoxModel::estimate(
   centroid.x = centroid.x / (double)cluster.size();
   centroid.y = centroid.y / (double)cluster.size();
   centroid.z = centroid.z / (double)cluster.size();
-
+  
   // calc min and max z for height
   double min_z = 0;
   double max_z = 0;
@@ -58,6 +63,33 @@ bool BoundingBoxModel::estimate(
     if (max_z < cluster.at(i).z || i == 0) max_z = cluster.at(i).z;
   }
 
+  double min_angle = 0;
+  double max_angle = M_PI / 2;
+
+  double original_roll, original_pitch, original_yaw;
+  tf2::Quaternion quaternion;
+  tf2::fromMsg(pose_output.orientation, quaternion);
+  tf2::Matrix3x3(quaternion).getRPY(original_roll, original_pitch, original_yaw);
+
+  // -pi < original_yaw < pi
+  if ( original_yaw > M_PI ) {
+    original_yaw = original_yaw - (2 * M_PI);
+  }
+  double yaw = original_yaw;
+
+  // 0 < yaw < pi/2
+  if ( M_PI_2 < yaw && yaw < M_PI  /* quadrant2 */) {
+    yaw = yaw - M_PI_2;
+  } else if ( -M_PI_2 < yaw && yaw < 0 /* quadrant4 */ ) {
+    yaw = yaw + M_PI_2;
+  } else if ( -M_PI < yaw && yaw < -M_PI_2 /* quadrant3 */) {
+    yaw = yaw + M_PI;
+  }
+
+  min_angle = yaw - (lshape_fitting_range_ * M_PI / 180);
+  max_angle = yaw + (lshape_fitting_range_ * M_PI / 180);
+
+
   /*
    * Paper : IV2017, Efficient L-Shape Fitting for Vehicle Detection Using Laser Scanners
    * Authors : Xio Zhang, Wenda Xu, Chiyu Dong and John M. Dolan
@@ -65,10 +97,9 @@ bool BoundingBoxModel::estimate(
 
   // Paper : Algo.2 Search-Based Rectangle Fitting
   std::vector<std::pair<double /*theta*/, double /*q*/>> Q;
-  const double max_angle = M_PI / 2.0;
   const double eplison = 0.001;
   const double angle_reso = M_PI / 180.0;
-  for (double theta = 0; theta <= max_angle + eplison; theta += angle_reso) {
+  for (double theta = min_angle; theta <= max_angle + eplison; theta += angle_reso) {
     Eigen::Vector2d e_1;
     e_1 << std::cos(theta), std::sin(theta);  // col.3, Algo.2
     Eigen::Vector2d e_2;
@@ -140,17 +171,57 @@ bool BoundingBoxModel::estimate(
   tf2::Quaternion quat;
   quat.setEuler(/* roll */ 0, /* pitch */ 0, /* yaw */ std::atan2(e_1_star.y(), e_1_star.x()));
 
+  // lshape output
+  constexpr double ep = 0.001;
+  geometry_msgs::Pose lshape_pose;
+  lshape_pose.position.x = (intersection_x_1 + intersection_x_2) / 2.0;
+  lshape_pose.position.y = (intersection_y_1 + intersection_y_2) / 2.0;
+  lshape_pose.position.z = centroid.z;
+  lshape_pose.orientation = tf2::toMsg(quat);
+  autoware_perception_msgs::Shape lshape;
+  lshape.dimensions.x = std::fabs(e_x.dot(diagonal_vec));
+  lshape.dimensions.y = std::fabs(e_y.dot(diagonal_vec));
+  lshape.dimensions.z = std::max((max_z - min_z), ep);
+
+  // refine orientation
+  geometry_msgs::Pose refined_pose = lshape_pose;
+  autoware_perception_msgs::Shape refined_shape = lshape;
+  {
+    double lshape_roll, lshape_pitch, lshape_yaw;
+    tf2::Quaternion quaternion;
+    tf2::fromMsg(lshape_pose.orientation, quaternion);
+    tf2::Matrix3x3(quaternion).getRPY(lshape_roll, lshape_pitch, lshape_yaw);
+
+    Eigen::Affine3d base2obj_transform;
+    tf::poseMsgToEigen(lshape_pose, base2obj_transform);
+    Eigen::Matrix3d refine_rotation;
+    if ( lshape_yaw > M_PI ) lshape_yaw = lshape_yaw - (2 * M_PI);
+    double angle = lshape_yaw - original_yaw;
+
+    if ( std::fabs(angle) < M_PI_4 /* same direction */ ) {
+      refine_rotation = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+    } else if ( M_PI_4 < angle && angle < (3 * M_PI / 4) /* +90 direction */ ) {
+      refine_rotation = Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitZ());
+      std::swap(refined_shape.dimensions.x, refined_shape.dimensions.y);
+    } else if ( (3 * M_PI / 4) < std::fabs(angle) /* opposite direction */ ) {
+      refine_rotation = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
+    } else /* -90 direction */ {
+      refine_rotation = Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitZ());
+      std::swap(refined_shape.dimensions.x, refined_shape.dimensions.y);
+    }
+
+    Eigen::Quaterniond refined_quaternion(base2obj_transform.rotation() * refine_rotation);
+    refined_pose.orientation.x = refined_quaternion.x();
+    refined_pose.orientation.y = refined_quaternion.y();
+    refined_pose.orientation.z = refined_quaternion.z();
+    refined_pose.orientation.w = refined_quaternion.w();
+  }
+
   // output
   shape_output.type = autoware_perception_msgs::Shape::BOUNDING_BOX;
-  pose_output.position.x = (intersection_x_1 + intersection_x_2) / 2.0;
-  pose_output.position.y = (intersection_y_1 + intersection_y_2) / 2.0;
-  pose_output.position.z = centroid.z;
-  pose_output.orientation = tf2::toMsg(quat);
-  orientation_output = false;
-  constexpr double ep = 0.001;
-  shape_output.dimensions.x = std::fabs(e_x.dot(diagonal_vec));
-  shape_output.dimensions.y = std::fabs(e_y.dot(diagonal_vec));
-  shape_output.dimensions.z = std::max((max_z - min_z), ep);
+  pose_output = refined_pose;
+  shape_output = refined_shape;
+  orientation_output = true;
 
   // check wrong output
   if (shape_output.dimensions.x < ep && shape_output.dimensions.y < ep) return false;
@@ -336,4 +407,5 @@ double BoundingBoxModel::calcClosenessCriterion(
     beta += 1.0 / d;
   }
   return beta;
+}
 }

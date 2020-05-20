@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   rostest
   rosunit
+  eigen_conversions
 )
 
 find_package(OpenCV REQUIRED)
@@ -25,6 +26,7 @@ catkin_package(
     roscpp
     tf2
     tf2_geometry_msgs
+    eigen_conversions
 )
 
 include_directories(include
@@ -36,17 +38,22 @@ add_executable(shape_estimation
   src/main.cpp
   src/node.cpp
   src/shape_estimator.cpp
-  src/model/bounding_box.cpp
-  src/model/convex_hull.cpp
-  src/model/cylinder.cpp
+  src/model/normal/bounding_box.cpp
+  src/model/normal/convex_hull.cpp
+  src/model/normal/cylinder.cpp
+  src/model/yaw_fixed/bounding_box.cpp
   src/filter/car_filter.cpp
   src/filter/bus_filter.cpp
   src/filter/truck_filter.cpp
   src/filter/no_filter.cpp
-  src/corrector/car_corrector.cpp
-  src/corrector/bus_corrector.cpp
-  src/corrector/truck_corrector.cpp
-  src/corrector/no_corrector.cpp
+  src/corrector/normal/car_corrector.cpp
+  src/corrector/normal/bus_corrector.cpp
+  src/corrector/normal/truck_corrector.cpp
+  src/corrector/normal/no_corrector.cpp
+  src/corrector/yaw_fixed/car_corrector.cpp
+  src/corrector/yaw_fixed/bus_corrector.cpp
+  src/corrector/yaw_fixed/truck_corrector.cpp
+  src/corrector/yaw_fixed/no_corrector.cpp
 )
 
 add_dependencies(shape_estimation
