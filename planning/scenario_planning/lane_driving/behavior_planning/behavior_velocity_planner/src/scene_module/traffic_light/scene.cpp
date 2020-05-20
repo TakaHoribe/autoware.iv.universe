@@ -127,39 +127,23 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       }
 
       // if green lamp is off, check arrow signals
-      const auto it_green = std::find_if(
-        highest_confidence_tl_state.lamp_states.begin(),
-        highest_confidence_tl_state.lamp_states.end(),
-        [](const auto & x) { return x.type == autoware_perception_msgs::LampState::GREEN; });
-      if (it_green == highest_confidence_tl_state.lamp_states.end()) {
+      if (!hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::GREEN)) {
         // check turn direction
         const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
         // if turn_direction is right, check right signal
         if (turn_direction == "right") {
-          const auto it_right = std::find_if(
-            highest_confidence_tl_state.lamp_states.begin(),
-            highest_confidence_tl_state.lamp_states.end(),
-            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::RIGHT; });
           // if right signal detected, go out
-          if (it_right != highest_confidence_tl_state.lamp_states.end()) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::RIGHT)) continue;
         }
         // if turn_direction is left, check left signal
         else if (turn_direction == "left") {
-          const auto it_left = std::find_if(
-            highest_confidence_tl_state.lamp_states.begin(),
-            highest_confidence_tl_state.lamp_states.end(),
-            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::LEFT; });
           // if left signal detected, go out
-          if (it_left != highest_confidence_tl_state.lamp_states.end()) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::LEFT)) continue;
         }
         // if turn_direction is straight, check up signal
         else if (turn_direction == "straight") {
-          const auto it_straight = std::find_if(
-            highest_confidence_tl_state.lamp_states.begin(),
-            highest_confidence_tl_state.lamp_states.end(),
-            [](const auto & x) { return x.type == autoware_perception_msgs::LampState::UP; });
           // if up signal detected, go out
-          if (it_straight != highest_confidence_tl_state.lamp_states.end()) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::UP)) continue;
         }
         // insert stop point into path
         if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
@@ -335,4 +319,16 @@ bool TrafficLightModule::getBackwordPointFromBasePoint(
   Eigen::Vector2d backward_vec = backward_length * line_vec.normalized();
   output_point = base_point + backward_vec;
   return true;
+}
+
+bool TrafficLightModule::hasLamp(
+    const autoware_perception_msgs::TrafficLightState & tl_state,
+    const uint8_t &  lamp_color)
+{
+  const auto it_lamp = std::find_if(
+        tl_state.lamp_states.begin(),
+        tl_state.lamp_states.end(),
+        [&lamp_color](const auto & x) { return x.type == lamp_color; });
+  
+  return it_lamp != tl_state.lamp_states.end();
 }
