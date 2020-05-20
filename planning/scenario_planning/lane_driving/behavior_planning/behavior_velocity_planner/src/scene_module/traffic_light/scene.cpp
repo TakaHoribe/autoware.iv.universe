@@ -133,17 +133,20 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         // if turn_direction is right, check right signal
         if (turn_direction == "right") {
           // if right signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::RIGHT)) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::RIGHT))
+            continue;
         }
         // if turn_direction is left, check left signal
         else if (turn_direction == "left") {
           // if left signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::LEFT)) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::LEFT))
+            continue;
         }
         // if turn_direction is straight, check up signal
         else if (turn_direction == "straight") {
           // if up signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::UP)) continue;
+          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::UP))
+            continue;
         }
         // insert stop point into path
         if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
@@ -322,13 +325,11 @@ bool TrafficLightModule::getBackwordPointFromBasePoint(
 }
 
 bool TrafficLightModule::hasLamp(
-    const autoware_perception_msgs::TrafficLightState & tl_state,
-    const uint8_t &  lamp_color)
+  const autoware_perception_msgs::TrafficLightState & tl_state, const uint8_t & lamp_color)
 {
   const auto it_lamp = std::find_if(
-        tl_state.lamp_states.begin(),
-        tl_state.lamp_states.end(),
-        [&lamp_color](const auto & x) { return x.type == lamp_color; });
-  
+    tl_state.lamp_states.begin(), tl_state.lamp_states.end(),
+    [&lamp_color](const auto & x) { return x.type == lamp_color; });
+
   return it_lamp != tl_state.lamp_states.end();
 }
