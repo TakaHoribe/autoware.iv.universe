@@ -53,17 +53,22 @@ void ShapeEstimationNode::callback(
     pcl::fromROSMsg(feature_object.feature.cluster, *cluster);
     // estimate shape and pose
     autoware_perception_msgs::Shape shape;
-
-    bool orientation = feature_object.object.state.orientation_reliable;
+    bool orientation;
     geometry_msgs::Pose pose;
-    if (orientation) {
-      pose = feature_object.object.state.pose_covariance.pose;
 
+    bool success_estimate = false;
+    if (feature_object.object.state.orientation_reliable) {
+      success_estimate = estimator_->getShapeAndPose(
+        feature_object.object.semantic.type, *cluster,
+        feature_object.object.state, shape, pose, orientation);
+    } else {
+      success_estimate = estimator_->getShapeAndPose(
+        feature_object.object.semantic.type, *cluster, shape, pose, orientation);
     }
 
-    if (!estimator_->getShapeAndPose(
-          feature_object.object.semantic.type, *cluster, shape, pose, orientation))
+    if (!success_estimate)
       continue;
+
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
