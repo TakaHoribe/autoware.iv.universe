@@ -497,7 +497,7 @@ void ObstacleStopPlannerNode::pathCallback(
           output_msg.points.at(j).twist.linear.x = std::min(slow_down_vel, output_msg.points.at(j).twist.linear.x);
           const auto dist = std::hypot(output_msg.points.at(j).pose.position.x - output_msg.points.at(j + 1).pose.position.x,
                                        output_msg.points.at(j).pose.position.y - output_msg.points.at(j + 1).pose.position.y);
-          slow_down_vel = std::max(3.0, std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_decellation_ * dist, 0.0)));
+          slow_down_vel = std::max(slow_down_target_vel, std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_decellation_ * dist, 0.0)));
           if (!is_slow_down_end && slow_down_vel <= slow_down_target_vel) {
             slow_down_end_trajectory_point = output_msg.points.at(j + 1);
             is_slow_down_end = true;
