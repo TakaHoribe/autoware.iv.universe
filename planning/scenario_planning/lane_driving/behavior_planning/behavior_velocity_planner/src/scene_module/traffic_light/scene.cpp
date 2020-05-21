@@ -239,7 +239,8 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     found = true;
   }
   if (!found) {
-    ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot find traffic light lamp state (%s).", reason.c_str());
+    ROS_WARN_THROTTLE(
+      1.0, "[traffic_light] cannot find traffic light lamp state (%s).", reason.c_str());
     return false;
   }
   return true;
