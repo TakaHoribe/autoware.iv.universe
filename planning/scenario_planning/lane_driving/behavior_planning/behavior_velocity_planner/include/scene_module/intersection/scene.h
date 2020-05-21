@@ -87,6 +87,7 @@ public:
     geometry_msgs::Pose judge_point_pose;
     autoware_planning_msgs::PathWithLaneId path_with_judgeline;
     std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
+    std::vector<lanelet::CompoundPolygon3d> detection_area;
     autoware_planning_msgs::PathWithLaneId path_right_edge;
     autoware_planning_msgs::PathWithLaneId path_left_edge;
     autoware_planning_msgs::PathWithLaneId spline_path;
@@ -113,12 +114,12 @@ private:
   bool show_debug_info_ = false;
 
   /**
-   * @brief get objective lanelets for detection area
+   * @brief get objective polygons for detection area
    */
-  bool getObjectiveLanelets(
+  bool getObjectivePolygons(
     lanelet::LaneletMapConstPtr lanelet_map_ptr,
-    lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, const int lane_id,
-    std::vector<lanelet::ConstLanelet> * objective_lanelets);
+    lanelet::routing::RoutingGraphPtr routing_graph_ptr, const int lane_id,
+    std::vector<lanelet::CompoundPolygon3d> * polygons);
 
   /**
    * @brief check collision with path & dynamic object predicted path
@@ -133,7 +134,7 @@ private:
    */
   bool checkCollision(
     const autoware_planning_msgs::PathWithLaneId & path,
-    const std::vector<lanelet::ConstLanelet> & objective_lanelets,
+    const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
     const double path_width);
 
@@ -146,12 +147,14 @@ private:
     autoware_planning_msgs::PathWithLaneId * path_l);
 
   bool generateStopLine(
-    const int closest, const std::vector<lanelet::ConstLanelet> objective_lanelets,
+    const int closest, const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
     autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
 
-  int getFirstPointInsideLanelets(
+  int getFirstPointInsidePolygons(
     const autoware_planning_msgs::PathWithLaneId & path,
-    const std::vector<lanelet::ConstLanelet> lanelets) const;
+    const std::vector<lanelet::CompoundPolygon3d> & polygons) const;
+
+  bool getStopPoseFromMap(const int lane_id, geometry_msgs::Point * stop_pose) const;
 
   StateMachine state_machine_;  //! for state
 

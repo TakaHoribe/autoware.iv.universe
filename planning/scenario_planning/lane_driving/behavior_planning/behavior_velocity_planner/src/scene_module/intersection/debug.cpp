@@ -56,6 +56,42 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(
   return msg;
 }
 
+
+visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
+  const std::vector<lanelet::CompoundPolygon3d> & polygons, const std::string & ns,
+  const int64_t lane_id)
+{
+  const auto current_time = ros::Time::now();
+  visualization_msgs::MarkerArray msg;
+
+  int i = 0;
+  for (const auto & polygon : polygons) {
+    visualization_msgs::Marker marker{};
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+
+    marker.ns = ns + std::to_string(i);
+    marker.id = i++;
+    marker.lifetime = ros::Duration(0.3);
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+    marker.scale = createMarkerScale(0.1, 0.0, 0.0);
+    marker.color = createMarkerColor(0.0, 1.0, 0.0, 0.999);
+    for (const auto & p : polygon) {
+      geometry_msgs::Point point;
+      point.x = p.x();
+      point.y = p.y();
+      point.z = p.z();
+      marker.points.push_back(point);
+    }
+    marker.points.push_back(marker.points.front());
+    msg.markers.push_back(marker);
+  }
+
+  return msg;
+}
+
 visualization_msgs::MarkerArray createPathMarkerArray(
   const autoware_planning_msgs::PathWithLaneId & path, const std::string & ns,
   const int64_t lane_id, const double r, const double g, const double b)
@@ -189,9 +225,13 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
       debug_data_.path_with_judgeline, "path_with_judgeline", lane_id_, 0.0, 0.5, 1.0),
     &debug_marker_array);
 
+  // appendMarkerArray(
+  //   createLaneletsAreaMarkerArray(
+  //     debug_data_.intersection_detection_lanelets, "intersection_detection_lanelets", lane_id_),
+  //   &debug_marker_array);
+
   appendMarkerArray(
-    createLaneletsAreaMarkerArray(
-      debug_data_.intersection_detection_lanelets, "intersection_detection_lanelets", lane_id_),
+    createLaneletPolygonsMarkerArray(debug_data_.detection_area, "detection_area", lane_id_),
     &debug_marker_array);
 
   appendMarkerArray(

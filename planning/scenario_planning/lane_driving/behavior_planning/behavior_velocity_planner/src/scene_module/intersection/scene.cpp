@@ -18,6 +18,8 @@
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_core/primitives/BasicRegulatoryElements.h>
 #include <lanelet2_extension/utility/utilities.h>
+#include <lanelet2_extension/regulatory_elements/road_marking.h>
+#include <lanelet2_extension/utility/query.h>
 
 #include "utilization/boost_geometry_helper.h"
 #include "utilization/util.h"
@@ -65,13 +67,12 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   const auto routing_graph_ptr = planner_data_->routing_graph;
 
   /* get detection area */
-  std::vector<lanelet::ConstLanelet> objective_lanelets;
-  getObjectiveLanelets(lanelet_map_ptr, routing_graph_ptr, lane_id_, &objective_lanelets);
-  debug_data_.intersection_detection_lanelets = objective_lanelets;
+  std::vector<lanelet::CompoundPolygon3d> objective_polygons;
+  getObjectivePolygons(lanelet_map_ptr, routing_graph_ptr, lane_id_, &objective_polygons);
   DEBUG_INFO(
-    "[IntersectionModuleManager::run] lane_id = %ld, objective_lanelets.size = %lu", lane_id_,
-    objective_lanelets.size());
-  if (objective_lanelets.empty()) {
+    "[IntersectionModuleManager::run] lane_id = %ld, objective_polygons.size = %lu", lane_id_,
+    objective_polygons.size());
+  if (objective_polygons.empty()) {
     DEBUG_INFO("[IntersectionModule::run]: no detection area. skip computation.");
     return true;
   }
@@ -80,7 +81,7 @@ ROS_WARN("before path.size = %lu", path->points.size());
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
   int judge_line_idx = -1;
-  if (!generateStopLine(closest, objective_lanelets, path, &stop_line_idx, &judge_line_idx)) {
+  if (!generateStopLine(closest, objective_polygons, path, &stop_line_idx, &judge_line_idx)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     return false;
   }
@@ -120,7 +121,7 @@ ROS_WARN(
   const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
-  if (checkCollision(*path, objective_lanelets, objects_ptr, path_expand_width_)) {
+  if (checkCollision(*path, objective_polygons, objects_ptr, path_expand_width_)) {
     state_machine_.setStateWithMarginTime(State::STOP);
   } else {
     state_machine_.setStateWithMarginTime(State::GO);
@@ -135,16 +136,17 @@ ROS_WARN(
   return true;
 }
 
-int IntersectionModule::getFirstPointInsideLanelets(
+int IntersectionModule::getFirstPointInsidePolygons(
   const autoware_planning_msgs::PathWithLaneId & path,
-  const std::vector<lanelet::ConstLanelet> lanelets) const
+  const std::vector<lanelet::CompoundPolygon3d> & polygons) const
 {
   int first_idx_inside_lanelet = -1;
   for (size_t i = 0; i < path.points.size(); ++i) {
     bool is_in_lanelet = false;
     auto p = path.points.at(i).point.pose.position;
-    for (const auto & lane : lanelets) {
-      is_in_lanelet = bg::within(to_bg2d(p), lane.polygon2d());
+    for (const auto & polygon : polygons) {
+      const auto polygon_2d = lanelet::utils::to2D(polygon);
+      is_in_lanelet = bg::within(to_bg2d(p), polygon_2d);
       if (is_in_lanelet) {
         first_idx_inside_lanelet = static_cast<int>(i);
         break;
@@ -156,7 +158,7 @@ int IntersectionModule::getFirstPointInsideLanelets(
 }
 
 bool IntersectionModule::generateStopLine(
-  const int closest, const std::vector<lanelet::ConstLanelet> objective_lanelets,
+  const int closest, const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
   autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const
 {
   /* set judge line dist */
@@ -167,8 +169,8 @@ bool IntersectionModule::generateStopLine(
   /* set parameters */
   constexpr double interval = 0.2;
   constexpr double mergin_dist_ = 1.0;
-  const double mergin_dist = mergin_dist_ + planner_data_->base_link2front;
-  const int mergin_idx_dist = std::ceil(mergin_dist / interval);
+  const int mergin_idx_dist = std::ceil(mergin_dist_ / interval);
+  const int base2front_idx_dist = std::ceil(planner_data_->base_link2front / interval);
   const int judge_idx_dist = std::ceil(judge_line_dist / interval);
 
   /* spline interpolation */
@@ -176,22 +178,26 @@ bool IntersectionModule::generateStopLine(
   if (!util::splineInterpolate(*path, interval, &path_ip)) return false;
   debug_data_.spline_path = path_ip;
 
-  int first_idx_inside_lanelet = getFirstPointInsideLanelets(path_ip, objective_lanelets);
-  if (first_idx_inside_lanelet == -1)
-  {
-    DEBUG_INFO("[generateStopLine] no stop line exist.");
-    return false;
+  /* generate stop point */
+  // If a stop_line is defined in lanelet_map, use it.
+  // else, generates a local stop_line with considering the lane conflictions.
+  int stop_idx_ip;  // stop point index for interpolated path.
+  geometry_msgs::Point stop_point_from_map;
+  if (getStopPoseFromMap(lane_id_, &stop_point_from_map)) {
+    planning_utils::calcClosestIndex(path_ip, stop_point_from_map, stop_idx_ip, 10.0);
+    stop_idx_ip = std::max(stop_idx_ip - base2front_idx_dist, 0);
+  } else {
+    int first_idx_inside_lane = getFirstPointInsidePolygons(path_ip, objective_polygons);
+    if (first_idx_inside_lane == -1) {
+      DEBUG_INFO("[generateStopLine] no stop line exist.");
+      return false;
+    }
+    stop_idx_ip = std::max(first_idx_inside_lane - 1 - mergin_idx_dist - base2front_idx_dist, 0);
   }
-  const int stop_idx_ip = std::max(first_idx_inside_lanelet - 1 - mergin_idx_dist, 0);
-  const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
-
-  ROS_INFO("[generateStopLine] first_idx_inside_lanelet = %d, stop_idx_ip = %d, judge_idx_ip = %d, mergin_dist = %f, mergin_idx_dist = %d", first_idx_inside_lanelet, stop_idx_ip, judge_idx_ip, mergin_dist, mergin_idx_dist);
-
 
   // insert stop_point
   const auto inserted_stop_point = path_ip.points.at(stop_idx_ip).point.pose;
   *stop_line_idx = util::insertPoint(inserted_stop_point, path);
-  ROS_INFO("[generateStopLine] stop_line_idx = %d line = %d", *stop_line_idx, __LINE__);
 
   // if another stop point exist before intersection stop_line, disable judge_line.
   bool stop_point_exists_before_intersection_stop_line = false;
@@ -201,59 +207,32 @@ bool IntersectionModule::generateStopLine(
       break;
     }
   }
+
+  /* insert judge point */
+  const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
+  ROS_INFO("[generateStopLine] stop_idx_ip = %d, judge_idx_ip = %d, mergin_dist = %f, mergin_idx_dist = %d",
+      stop_idx_ip, judge_idx_ip, mergin_dist_, mergin_idx_dist);
   if (stop_point_exists_before_intersection_stop_line || stop_idx_ip == judge_idx_ip) {
     *judge_line_idx = *stop_line_idx;
-    if (stop_point_exists_before_intersection_stop_line) {
-      ROS_WARN("[generateStopLine] [XXXXX] stop_point_exists_before_intersection_stop_line = true. stop = judge.");
-    }else{
-      ROS_WARN("[generateStopLine] [XXXXX] stop_idx_ip == judge_idx_ip");
-    }
+    DEBUG_INFO("[generateStopLine] judge distance is zero.");
   } else {
     const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
     *judge_line_idx = util::insertPoint(inserted_judge_point, path);
     ++(*stop_line_idx);  // stop index is incremented by judge line insertion
-    ROS_WARN("[generateStopLine] [XXXXX] insert judge point.");
   }
   ROS_INFO("[generateStopLine] stop_line_idx = %d, judge_line_idx = %d, line = %d", *stop_line_idx, *judge_line_idx, __LINE__);
 
   return true;
 }
 
-
-bool IntersectionModule::getObjectiveLanelets(
+bool IntersectionModule::getObjectivePolygons(
   lanelet::LaneletMapConstPtr lanelet_map_ptr,
-  lanelet::routing::RoutingGraphConstPtr routing_graph_ptr, const int lane_id,
-  std::vector<lanelet::ConstLanelet> * objective_lanelets)
+  lanelet::routing::RoutingGraphPtr routing_graph_ptr, const int lane_id,
+  std::vector<lanelet::CompoundPolygon3d> * polygons)
 {
-  lanelet::ConstLanelet assigned_lanelet =
-    lanelet_map_ptr->laneletLayer.get(lane_id);  // current assigned lanelets
+  const auto & assigned_lanelet = lanelet_map_ptr->laneletLayer.get(lane_id);
 
-  // get conflicting lanes on assigned lanelet
-  const auto conflicting_lanelets =
-    lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
-  auto candidate_lanelets = conflicting_lanelets;
-
-  // get previous lanelet of conflicting lanelets
-  for (const auto & conflicting_lanelet : conflicting_lanelets) {
-    lanelet::ConstLanelets previous_lanelets = routing_graph_ptr->previous(conflicting_lanelet);
-    for (const auto & previous_lanelet : previous_lanelets) {
-      candidate_lanelets.push_back(previous_lanelet);
-    }
-  }
-
-  // get lanelets that must be ignored
-  std::vector<lanelet::ConstLanelet> exclude_lanelets;
-
-  // for the behind ego-car lane.
-  for (const auto & previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
-    exclude_lanelets.push_back(previous_lanelet);
-    for (const auto & following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
-      if (lanelet::utils::contains(exclude_lanelets, following_lanelet)) {
-        continue;
-      }
-      exclude_lanelets.push_back(following_lanelet);
-    }
-  }
+  lanelet::ConstLanelets exclude_lanelets;
 
   // for non-priority roads.
   const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
@@ -266,21 +245,59 @@ bool IntersectionModule::getObjectiveLanelets(
     }
   }
 
+  // for the behind ego-car lane.
+  for (const auto & previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
+    exclude_lanelets.push_back(previous_lanelet);
+    for (const auto & following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
+      if (lanelet::utils::contains(exclude_lanelets, following_lanelet)) {
+        continue;
+      }
+      exclude_lanelets.push_back(following_lanelet);
+    }
+  }
+
+  // get conflicting lanes on assigned lanelet
+  const auto & conflicting_lanelets =
+    lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
+
+  lanelet::ConstLanelets objective_lanelets;  // final objective lanelets
+
   // remove exclude_lanelets from candidates
-  for (const auto & candidate_lanelet : candidate_lanelets) {
-    if (lanelet::utils::contains(exclude_lanelets, candidate_lanelet)) {
+  for (const auto & conflicting_lanelet : conflicting_lanelets) {
+    if (lanelet::utils::contains(exclude_lanelets, conflicting_lanelet)) {
       continue;
     }
-
-    objective_lanelets->push_back(candidate_lanelet);
+    objective_lanelets.push_back(conflicting_lanelet);
   }
+
+  // get possible lanelet path that reaches conflicting_lane longer than given length
+  double length = 100;
+  std::vector<lanelet::ConstLanelets> objective_lanelets_sequences;
+  for (const auto & ll : objective_lanelets) {
+    const auto & lanelet_sequences =
+      lanelet::utils::query::getPreceedingLaneletSequences(routing_graph_ptr, ll, length);
+    for (const auto & l : lanelet_sequences) {
+      objective_lanelets_sequences.push_back(l);
+    }
+  }
+
+  // get exact polygon of interest with exact length
+  polygons->clear();
+  for (const auto & ll : objective_lanelets_sequences) {
+    const double path_length = lanelet::utils::getLaneletLength3d(ll);
+    const auto polygon3d =
+      lanelet::utils::getPolygonFromArcLength(ll, path_length - length, path_length);
+    polygons->push_back(polygon3d);
+  }
+
+  debug_data_.detection_area = *polygons;
 
   return true;
 }
 
 bool IntersectionModule::checkCollision(
   const autoware_planning_msgs::PathWithLaneId & path,
-  const std::vector<lanelet::ConstLanelet> & objective_lanelets,
+  const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const double path_width)
 {
   /* generates side edge line */
@@ -292,14 +309,15 @@ bool IntersectionModule::checkCollision(
   debug_data_.path_left_edge = path_l;
 
   /* check collision for each objects and lanelets area */
-  for (const auto & objective_lanelet : objective_lanelets) {
+  for (const auto & objective_polygon : objective_polygons) {
     for (const auto & object : objects_ptr->objects) {
       const auto object_pose = object.state.pose_covariance.pose;
 
       // TODO(Kenji Miyake): Map Matching of objects
 
+      const auto objective_polygon_2d = lanelet::utils::to2D(objective_polygon);
       const bool is_in_objective_lanelet =
-        bg::within(to_bg2d(object_pose.position), objective_lanelet.polygon2d());
+        bg::within(to_bg2d(object_pose.position), objective_polygon_2d);
       if (!is_in_objective_lanelet) {
         continue;
       }
@@ -317,8 +335,6 @@ bool IntersectionModule::checkCollision(
       if (!has_right_collision && !has_left_collision) {
         continue;
       }
-
-
 
       return true;
     }
@@ -355,6 +371,34 @@ bool IntersectionModule::generateEdgeLine(
   }
 }
 
+bool IntersectionModule::getStopPoseFromMap(
+  const int lane_id, geometry_msgs::Point * stop_point) const
+{
+  lanelet::ConstLanelet lanelet = planner_data_->lanelet_map->laneletLayer.get(lane_id);
+  const auto road_markings = lanelet.regulatoryElementsAs<lanelet::autoware::RoadMarking>();
+  lanelet::ConstLineStrings3d stop_line;
+  for (const auto & road_marking : road_markings) {
+    const std::string type =
+      road_marking->roadMarking().attributeOr(lanelet::AttributeName::Type, "none");
+    if (type == lanelet::AttributeValueString::StopLine) {
+      stop_line.push_back(road_marking->roadMarking());
+      break;  // only one stop_line exists.
+    }
+  }
+  if (stop_line.empty()) {
+    ROS_INFO("map has no stop_line.");
+    return false;
+  }
+
+  const auto p_start = stop_line.front().front();
+  const auto p_end = stop_line.front().back();
+  stop_point->x = 0.5 * (p_start.x() + p_end.x());
+  stop_point->y = 0.5 * (p_start.y() + p_end.y());
+  stop_point->z = 0.5 * (p_start.z() + p_end.z());
+
+  return true;
+}
+
 void IntersectionModule::StateMachine::setStateWithMarginTime(State state)
 {
   /* same state request */
@@ -374,21 +418,17 @@ void IntersectionModule::StateMachine::setStateWithMarginTime(State state)
   if (state == State::GO) {
     if (start_time_ == nullptr) {
       start_time_ = std::make_shared<ros::Time>(ros::Time::now());
-      return;
     } else {
       const double duration = (ros::Time::now() - *start_time_).toSec();
       if (duration > margin_time_) {
         state_ = State::GO;
         start_time_ = nullptr;  // reset timer
-      } else {
       }
-      return;
     }
+    return;
   }
 
-  ROS_ERROR(
-    "[StateMachine::setStateWithMarginTime()] : Unsuitable state. ignore "
-    "request.");
+  ROS_ERROR("[StateMachine] : Unsuitable state. ignore request.");
   return;
 }
 
