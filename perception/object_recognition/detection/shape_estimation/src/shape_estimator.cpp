@@ -39,12 +39,17 @@
 #include "model/yaw_fixed/bounding_box.hpp"
 #include "shape_estimation/model_interface.hpp"
 
-ShapeEstimator::ShapeEstimator() {}
+ShapeEstimator::ShapeEstimator()
+  : ShapeEstimator::ShapeEstimator(3, true){}
+
+ShapeEstimator::ShapeEstimator(double l_shape_fitting_search_angle_range, bool use_corrector)
+  : l_shape_fitting_search_angle_range_(l_shape_fitting_search_angle_range),
+    use_corrector_(use_corrector) {}
 
 bool ShapeEstimator::getShapeAndPose(
   const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientation_output, bool & use_corrector)
+  bool & orientation_output)
 {
   // check input
   if (cluster.empty()) return false;
@@ -64,7 +69,7 @@ bool ShapeEstimator::getShapeAndPose(
   }
 
   // rule based corrector
-  if (use_corrector) {
+  if (use_corrector_) {
     if (!applyCorrector(type, shape, pose, orientation)) {
       return false;
     }

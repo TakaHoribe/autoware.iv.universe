@@ -36,9 +36,7 @@ private:  // ros
     const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr & input_msg);
 
 private:
-  ShapeEstimator estimator_;
-  bool use_corrector_;
-  double l_shape_fitting_search_angle_range_;
+  std::unique_ptr<ShapeEstimator> estimator_;
   // std::shared_ptr<MapCorrectorNode> map_corrector_node_ptr_;
 
 public:

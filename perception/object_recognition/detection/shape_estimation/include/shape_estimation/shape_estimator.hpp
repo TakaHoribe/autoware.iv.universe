@@ -40,16 +40,19 @@ private:
     geometry_msgs::Pose & pose_output, bool & orientation_output);
 
   double l_shape_fitting_search_angle_range_;
+  bool use_corrector_;
 
 public:
   ShapeEstimator();
+
+  ShapeEstimator(double l_shape_fitting_search_angle_range, bool use_corrector);
 
   ~ShapeEstimator(){};
 
   bool getShapeAndPose(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output, bool & use_corrector);
+    bool & orientation_output);
 
   void setFittingRange(double l_shape_fitting_search_angle_range);
 

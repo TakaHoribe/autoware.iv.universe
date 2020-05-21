@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(shape_estimation)
 
-add_compile_options(-std=c++11 -O3)
+add_compile_options(-std=c++14 -O3)
 
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
