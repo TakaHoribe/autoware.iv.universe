@@ -193,8 +193,3 @@ bool ShapeEstimator::applyCorrector(
 
   return corrector_ptr->correct(shape_output, pose_output, orientation_output);
 }
-
-void ShapeEstimator::setFittingRange(double l_shape_fitting_search_angle_range)
-{
-  l_shape_fitting_search_angle_range_ = l_shape_fitting_search_angle_range;
-}

@@ -59,6 +59,4 @@ public:
     const autoware_perception_msgs::State & state,
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
     bool & orientation_output);
-  void setFittingRange(double l_shape_fitting_search_angle_range);
-
 };
