@@ -30,30 +30,19 @@
 #include <Eigen/Geometry>
 namespace motion_planning
 {
-enum class PolygonType : int8_t {
-  Vehicle = 0,
-  Collision,
-  SlowDownRange,
-  SlowDown
-};
+enum class PolygonType : int8_t { Vehicle = 0, Collision, SlowDownRange, SlowDown };
 
-enum class PointType : int8_t {
-  Stop = 0,
-  SlowDown
-};
+enum class PointType : int8_t { Stop = 0, SlowDown };
 
-enum class PoseType : int8_t {
-  Stop = 0,
-  SlowDownStart,
-  SlowDownEnd
-};
+enum class PoseType : int8_t { Stop = 0, SlowDownStart, SlowDownEnd };
 
 class ObstacleStopPlannerDebugNode
 {
 public:
   ObstacleStopPlannerDebugNode(const double base_link2front);
   ~ObstacleStopPlannerDebugNode(){};
-  bool pushPolygon(const std::vector<cv::Point2d> & polygon, const double z, const PolygonType & type);
+  bool pushPolygon(
+    const std::vector<cv::Point2d> & polygon, const double z, const PolygonType & type);
   bool pushPolygon(const std::vector<Eigen::Vector3d> & polygon, const PolygonType & type);
   bool pushPose(const geometry_msgs::Pose & pose, const PoseType & type);
   bool pushObstaclePoint(const geometry_msgs::Point & obstacle_point, const PointType & type);

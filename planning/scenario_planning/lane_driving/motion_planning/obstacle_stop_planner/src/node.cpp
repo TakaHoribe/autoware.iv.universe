@@ -103,7 +103,8 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   obstacle_pointcloud_sub_ = pnh_.subscribe(
     "input/pointcloud", 1, &ObstacleStopPlannerNode::obstaclePointcloudCallback, this);
   path_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
-  current_velocity_sub_ = pnh_.subscribe("input/twist", 1, &ObstacleStopPlannerNode::currentVelocityCallback, this);
+  current_velocity_sub_ =
+    pnh_.subscribe("input/twist", 1, &ObstacleStopPlannerNode::currentVelocityCallback, this);
 
   // Publishers
   path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
@@ -210,7 +211,8 @@ void ObstacleStopPlannerNode::pathCallback(
     pcl::fromROSMsg(transformed_obstacle_ros_pointcloud, *transformed_obstacle_pointcloud_ptr);
     // search obstacle candidate pointcloud to reduce calculation cost
     const double search_range =
-      step_length + std::hypot((vehicle_width_ / 2.0 + expand_slow_down_range_), (wheel_base_ + front_overhang_));
+      step_length +
+      std::hypot((vehicle_width_ / 2.0 + expand_slow_down_range_), (wheel_base_ + front_overhang_));
     searchPointcloudNearTrajectory(
       trajectory, search_range, transformed_obstacle_pointcloud_ptr,
       obstacle_candidate_pointcloud_ptr);
@@ -231,12 +233,10 @@ void ObstacleStopPlannerNode::pathCallback(
   size_t decimate_trajectory_slow_down_index;
   pcl::PointXYZ nearest_slow_down_point;
   pcl::PointXYZ lateral_nearest_slow_down_point;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr slow_down_pointcloud_ptr(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr slow_down_pointcloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
   double lateral_deviation = 0.0;
 
   for (int i = 0; i < (int)(trajectory.points.size()) - 1; ++i) {
-
     /*
      * create one step polygon for vehicle
      */
@@ -244,14 +244,15 @@ void ObstacleStopPlannerNode::pathCallback(
     createOneStepPolygon(
       trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose,
       one_step_move_vehicle_polygon);
-    debug_ptr_->pushPolygon(one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z, PolygonType::Vehicle);
+    debug_ptr_->pushPolygon(
+      one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z, PolygonType::Vehicle);
     // convert boost polygon
     Polygon boost_one_step_move_vehicle_polygon;
     for (const auto & point : one_step_move_vehicle_polygon) {
       boost_one_step_move_vehicle_polygon.outer().push_back(bg::make<Point>(point.x, point.y));
     }
     boost_one_step_move_vehicle_polygon.outer().push_back(bg::make<Point>(
-    one_step_move_vehicle_polygon.front().x, one_step_move_vehicle_polygon.front().y));
+      one_step_move_vehicle_polygon.front().x, one_step_move_vehicle_polygon.front().y));
 
     std::vector<cv::Point2d> one_step_move_slow_down_range_polygon;
     Polygon boost_one_step_move_slow_down_range_polygon;
@@ -262,15 +263,19 @@ void ObstacleStopPlannerNode::pathCallback(
       createOneStepPolygon(
         trajectory.points.at(i).pose, trajectory.points.at(i + 1).pose,
         one_step_move_slow_down_range_polygon, expand_slow_down_range_);
-      debug_ptr_->pushPolygon(one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::SlowDownRange);
+      debug_ptr_->pushPolygon(
+        one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z,
+        PolygonType::SlowDownRange);
       // convert boost polygon
       for (const auto & point : one_step_move_slow_down_range_polygon) {
-        boost_one_step_move_slow_down_range_polygon.outer().push_back(bg::make<Point>(point.x, point.y));
+        boost_one_step_move_slow_down_range_polygon.outer().push_back(
+          bg::make<Point>(point.x, point.y));
       }
       boost_one_step_move_slow_down_range_polygon.outer().push_back(bg::make<Point>(
-        one_step_move_slow_down_range_polygon.front().x, one_step_move_slow_down_range_polygon.front().y));
+        one_step_move_slow_down_range_polygon.front().x,
+        one_step_move_slow_down_range_polygon.front().y));
     }
-    
+
     // check within polygon
     pcl::PointCloud<pcl::PointXYZ>::Ptr collision_pointcloud_ptr(
       new pcl::PointCloud<pcl::PointXYZ>);
@@ -284,29 +289,30 @@ void ObstacleStopPlannerNode::pathCallback(
           canditate_slow_down = true;
         }
       }
-    }
-    else {
+    } else {
       slow_down_pointcloud_ptr = obstacle_candidate_pointcloud_ptr;
     }
     for (size_t j = 0; j < slow_down_pointcloud_ptr->size(); ++j) {
-      Point point(
-        slow_down_pointcloud_ptr->at(j).x, slow_down_pointcloud_ptr->at(j).y);
+      Point point(slow_down_pointcloud_ptr->at(j).x, slow_down_pointcloud_ptr->at(j).y);
       if (bg::within(point, boost_one_step_move_vehicle_polygon)) {
         collision_pointcloud_ptr->push_back(slow_down_pointcloud_ptr->at(j));
         is_collision = true;
         debug_ptr_->pushPolygon(
-          one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z, PolygonType::Collision);
+          one_step_move_vehicle_polygon, trajectory.points.at(i).pose.position.z,
+          PolygonType::Collision);
       }
     }
     if (canditate_slow_down && !is_collision && !is_slow_down) {
       is_slow_down = true;
       decimate_trajectory_slow_down_index = i;
       debug_ptr_->pushPolygon(
-        one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z, PolygonType::SlowDown);
+        one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z,
+        PolygonType::SlowDown);
       getNearestPoint(
         *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, nearest_slow_down_point);
       getLateralNearestPoint(
-        *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, lateral_nearest_slow_down_point, lateral_deviation);
+        *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, lateral_nearest_slow_down_point,
+        lateral_deviation);
       debug_ptr_->pushObstaclePoint(nearest_slow_down_point, PointType::SlowDown);
     }
 
@@ -453,8 +459,10 @@ void ObstacleStopPlannerNode::pathCallback(
         size_t slow_down_point_idx = i;
         size_t slow_down_start_point_idx = 0;
         double slow_down_vel = 0.0;
-        const double slow_down_target_vel = min_slow_down_vel_ + (max_slow_down_vel_ - min_slow_down_vel_) *
-                                            std::max(lateral_deviation - vehicle_width_ / 2, 0.0) / expand_slow_down_range_;
+        const double slow_down_target_vel =
+          min_slow_down_vel_ + (max_slow_down_vel_ - min_slow_down_vel_) *
+                                 std::max(lateral_deviation - vehicle_width_ / 2, 0.0) /
+                                 expand_slow_down_range_;
         {
           double length_sum = 0.0;
           length_sum += trajectory_vec.normalized().dot(slow_down_point_vec);
@@ -480,8 +488,10 @@ void ObstacleStopPlannerNode::pathCallback(
           getBackwordPointFromBasePoint(
             line_start_point, line_end_point, line_start_point, length_sum - slow_down_margin_,
             slow_down_start_point);
-          slow_down_vel = std::max(std::sqrt(slow_down_target_vel * slow_down_target_vel + 2 * max_decellation_ * length_sum),
-                                     current_velocity_ptr_->twist.linear.x);
+          slow_down_vel = std::max(
+            std::sqrt(
+              slow_down_target_vel * slow_down_target_vel + 2 * max_decellation_ * length_sum),
+            current_velocity_ptr_->twist.linear.x);
         }
 
         autoware_planning_msgs::TrajectoryPoint slow_down_start_trajectory_point =
@@ -494,10 +504,14 @@ void ObstacleStopPlannerNode::pathCallback(
           output_msg.points.begin() + slow_down_start_point_idx, slow_down_start_trajectory_point);
         bool is_slow_down_end = false;
         for (size_t j = slow_down_start_point_idx; j < output_msg.points.size() - 1; ++j) {
-          output_msg.points.at(j).twist.linear.x = std::min(slow_down_vel, output_msg.points.at(j).twist.linear.x);
-          const auto dist = std::hypot(output_msg.points.at(j).pose.position.x - output_msg.points.at(j + 1).pose.position.x,
-                                       output_msg.points.at(j).pose.position.y - output_msg.points.at(j + 1).pose.position.y);
-          slow_down_vel = std::max(slow_down_target_vel, std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_decellation_ * dist, 0.0)));
+          output_msg.points.at(j).twist.linear.x =
+            std::min(slow_down_vel, output_msg.points.at(j).twist.linear.x);
+          const auto dist = std::hypot(
+            output_msg.points.at(j).pose.position.x - output_msg.points.at(j + 1).pose.position.x,
+            output_msg.points.at(j).pose.position.y - output_msg.points.at(j + 1).pose.position.y);
+          slow_down_vel = std::max(
+            slow_down_target_vel,
+            std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_decellation_ * dist, 0.0)));
           if (!is_slow_down_end && slow_down_vel <= slow_down_target_vel) {
             slow_down_end_trajectory_point = output_msg.points.at(j + 1);
             is_slow_down_end = true;
@@ -781,8 +795,8 @@ void ObstacleStopPlannerNode::getLateralNearestPoint(
     Eigen::Vector2d pointcloud_vec;
     pointcloud_vec << pointcloud.at(i).x - base_pose.position.x,
       pointcloud.at(i).y - base_pose.position.y;
-    double norm = std::abs(base_pose_vec.x() * pointcloud_vec.y() -
-                           base_pose_vec.y() * pointcloud_vec.x());
+    double norm =
+      std::abs(base_pose_vec.x() * pointcloud_vec.y() - base_pose_vec.y() * pointcloud_vec.x());
     if (norm < min_norm) {
       min_norm = norm;
       lateral_nearest_point = pointcloud.at(i);

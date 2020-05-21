@@ -20,7 +20,6 @@
 // }
 namespace motion_planning
 {
-
 ObstacleStopPlannerDebugNode::ObstacleStopPlannerDebugNode(const double base_link2front)
 : nh_(), pnh_("~"), base_link2front_(base_link2front)
 {
@@ -39,7 +38,8 @@ bool ObstacleStopPlannerDebugNode::pushPolygon(
   return pushPolygon(eigen_polygon, type);
 }
 
-bool ObstacleStopPlannerDebugNode::pushPolygon(const std::vector<Eigen::Vector3d> & polygon, const PolygonType & type)
+bool ObstacleStopPlannerDebugNode::pushPolygon(
+  const std::vector<Eigen::Vector3d> & polygon, const PolygonType & type)
 {
   switch (type) {
     case PolygonType::Vehicle:
@@ -91,7 +91,8 @@ bool ObstacleStopPlannerDebugNode::pushObstaclePoint(
   }
 }
 
-bool ObstacleStopPlannerDebugNode::pushObstaclePoint(const pcl::PointXYZ & obstacle_point, const PointType & type)
+bool ObstacleStopPlannerDebugNode::pushObstaclePoint(
+  const pcl::PointXYZ & obstacle_point, const PointType & type)
 {
   geometry_msgs::Point ros_point;
   ros_point.x = obstacle_point.x;
@@ -260,7 +261,7 @@ void ObstacleStopPlannerDebugNode::publish()
     }
     msg.markers.push_back(marker);
   }
-  
+
   if (!slow_down_polygons_.empty()) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
@@ -379,7 +380,7 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.scale.y = 5.0;
     marker.scale.z = 2.0;
     marker.color.a = 0.5;  // Don't forget to set the alpha!
-    marker.color.r = 1.0; 
+    marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
     msg.markers.push_back(marker);
@@ -428,7 +429,7 @@ void ObstacleStopPlannerDebugNode::publish()
     marker.scale.y = 5.0;
     marker.scale.z = 2.0;
     marker.color.a = 0.5;  // Don't forget to set the alpha!
-    marker.color.r = 1.0; 
+    marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
     msg.markers.push_back(marker);

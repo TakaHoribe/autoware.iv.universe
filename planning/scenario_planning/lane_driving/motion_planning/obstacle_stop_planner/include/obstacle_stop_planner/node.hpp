@@ -16,13 +16,13 @@
 #pragma once
 
 #include <autoware_planning_msgs/Trajectory.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <geometry_msgs/TwistStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <opencv2/core/core.hpp>
