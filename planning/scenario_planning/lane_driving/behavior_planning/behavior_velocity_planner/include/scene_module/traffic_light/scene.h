@@ -83,6 +83,9 @@ private:
       stop_line,
     const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point);
 
+  bool hasLamp(
+    const autoware_perception_msgs::TrafficLightState & tl_state, const uint8_t & lamp_color);
+
   // Key Feature
   const lanelet::TrafficLight & traffic_light_reg_elem_;
   lanelet::ConstLanelet lane_;
