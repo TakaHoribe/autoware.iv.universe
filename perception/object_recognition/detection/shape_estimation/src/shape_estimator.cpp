@@ -51,30 +51,10 @@ bool ShapeEstimator::getShapeAndPose(
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
   bool & orientation_output)
 {
-  // check input
-  if (cluster.empty()) return false;
-
   autoware_perception_msgs::Shape shape;
   bool orientation;
   geometry_msgs::Pose pose;
-
-  // estimate shape
-  if (!estimateShape(type, cluster, shape, pose, orientation)) {
-    return false;
-  }
-
-  // rule based filter
-  if (!applyFilter(type, shape, pose, orientation)) {
-    return false;
-  }
-
-  // rule based corrector
-  if (use_corrector_) {
-    if (!applyCorrector(type, shape, pose, orientation)) {
-      return false;
-    }
-  }
-
+  process(type, cluster, shape, pose, orientation);
   shape_output = shape;
   pose_output = pose;
   orientation_output = orientation;
@@ -87,12 +67,23 @@ bool ShapeEstimator::getShapeAndPose(
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
   bool & orientation_output)
 {
-  // check input
-  if (cluster.empty()) return false;
-
   autoware_perception_msgs::Shape shape;
   bool orientation = state.orientation_reliable;
   geometry_msgs::Pose pose = state.pose_covariance.pose;
+  process(type, cluster, shape, pose, orientation);
+  shape_output = shape;
+  pose_output = pose;
+  orientation_output = orientation;
+  return true;
+}
+
+bool ShapeEstimator::process(
+  const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
+  autoware_perception_msgs::Shape & shape, geometry_msgs::Pose & pose,
+  bool & orientation)
+{
+  // check input
+  if (cluster.empty()) return false;
 
   // estimate shape
   if (!estimateShape(type, cluster, shape, pose, orientation)) {
@@ -111,9 +102,6 @@ bool ShapeEstimator::getShapeAndPose(
     }
   }
 
-  shape_output = shape;
-  pose_output = pose;
-  orientation_output = orientation;
   return true;
 }
 

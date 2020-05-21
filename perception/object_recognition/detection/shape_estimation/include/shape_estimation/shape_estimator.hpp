@@ -39,6 +39,10 @@ private:
   bool applyCorrector(
     const int type, autoware_perception_msgs::Shape & shape_output,
     geometry_msgs::Pose & pose_output, bool & orientation_output);
+  bool process(
+    const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientation_output);
 
   double l_shape_fitting_search_angle_range_;
   bool use_corrector_;

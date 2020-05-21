@@ -56,17 +56,9 @@ void ShapeEstimationNode::callback(
     bool orientation;
     geometry_msgs::Pose pose;
 
-    bool success_estimate = false;
-    if (feature_object.object.state.orientation_reliable) {
-      success_estimate = estimator_->getShapeAndPose(
-        feature_object.object.semantic.type, *cluster,
-        feature_object.object.state, shape, pose, orientation);
-    } else {
-      success_estimate = estimator_->getShapeAndPose(
-        feature_object.object.semantic.type, *cluster, shape, pose, orientation);
-    }
-
-    if (!success_estimate)
+    if (!estimator_->getShapeAndPose(
+           feature_object.object.semantic.type, *cluster,
+           feature_object.object.state, shape, pose, orientation))
       continue;
 
     output_msg.feature_objects.push_back(feature_object);
