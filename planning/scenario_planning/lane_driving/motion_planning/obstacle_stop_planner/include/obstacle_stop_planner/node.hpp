@@ -67,6 +67,7 @@ private:
   double max_slow_down_vel_;
   double min_slow_down_vel_;
   double max_decellation_;
+  bool enable_slow_down_;
   void obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
   void currentVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_msg);
@@ -105,5 +106,8 @@ private:
   void getNearestPoint(
     const pcl::PointCloud<pcl::PointXYZ> & pointcloud, const geometry_msgs::Pose & base_pose,
     pcl::PointXYZ & nearest_collision_point);
+  void getLateralNearestPoint(
+    const pcl::PointCloud<pcl::PointXYZ> & pointcloud, const geometry_msgs::Pose & base_pose,
+    pcl::PointXYZ & lateral_nearest_point, double & deviation);
 };
 }  // namespace motion_planning
