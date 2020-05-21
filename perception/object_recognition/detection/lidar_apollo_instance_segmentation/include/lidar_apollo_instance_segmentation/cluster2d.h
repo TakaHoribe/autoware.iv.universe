@@ -76,10 +76,11 @@ struct Obstacle
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr;
   float score;
   float height;
+  float heading;
   MetaType meta_type;
   std::vector<float> meta_type_probs;
 
-  Obstacle() : score(0.0), height(-5.0), meta_type(META_UNKNOWN)
+  Obstacle() : score(0.0), height(-5.0), heading(0.0), meta_type(META_UNKNOWN)
   {
     cloud_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
     meta_type_probs.assign(MAX_META_TYPE, 0.0);

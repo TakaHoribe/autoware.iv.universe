@@ -27,6 +27,12 @@ ShapeEstimationNode::ShapeEstimationNode() : nh_(""), pnh_("~")
   // pnh_.param<bool>("use_map_corrent", use_map_correct_, true);
   // if (use_map_correct_)
   //   map_corrector_node_ptr_ = std::make_shared<MapCorrectorNode>();
+
+  bool use_corrector;
+  double l_shape_fitting_search_angle_range;
+  pnh_.param<bool>("use_corrector", use_corrector, true);
+  pnh_.param<double>("l_shape_fitting_search_angle_range", l_shape_fitting_search_angle_range, 3);
+  estimator_ = std::make_unique<ShapeEstimator>(l_shape_fitting_search_angle_range, use_corrector);
 }
 
 void ShapeEstimationNode::callback(
@@ -41,16 +47,20 @@ void ShapeEstimationNode::callback(
 
   // Estimate shape for each object and pack msg
   for (const auto & feature_object : input_msg->feature_objects) {
+
     // convert ros to pcl
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(feature_object.feature.cluster, *cluster);
     // estimate shape and pose
     autoware_perception_msgs::Shape shape;
-    geometry_msgs::Pose pose;
     bool orientation;
-    if (!estimator_.getShapeAndPose(
-          feature_object.object.semantic.type, *cluster, shape, pose, orientation))
+    geometry_msgs::Pose pose;
+
+    if (!estimator_->getShapeAndPose(
+           feature_object.object.semantic.type, *cluster,
+           feature_object.object.state, shape, pose, orientation))
       continue;
+
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
