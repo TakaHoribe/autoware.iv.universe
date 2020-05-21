@@ -15,12 +15,6 @@
  */
 
 #include "bus_corrector.hpp"
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#define EIGEN_MPL2_ONLY
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
 
 namespace yaw_fixed {
@@ -49,21 +43,15 @@ bool BusCorrector::correct(
   Eigen::Affine3d base2obj_transform;
   tf::poseMsgToEigen(pose_output, base2obj_transform);
 
-  Eigen::Vector3d centroid = base2obj_transform.translation();
-  Eigen::Matrix3d base2obj_rot = base2obj_transform.rotation();
   std::vector<Eigen::Vector3d> v_point;
   v_point.push_back
-    (centroid +
-     base2obj_rot * Eigen::Vector3d(shape_output.dimensions.x * 0.5, shape_output.dimensions.y * 0.5, 0.0));
+    (base2obj_transform * Eigen::Vector3d(shape_output.dimensions.x * 0.5, shape_output.dimensions.y * 0.5, 0.0));
   v_point.push_back
-    (centroid +
-     base2obj_rot * Eigen::Vector3d(-shape_output.dimensions.x * 0.5, shape_output.dimensions.y * 0.5, 0.0));
+    (base2obj_transform * Eigen::Vector3d(-shape_output.dimensions.x * 0.5, shape_output.dimensions.y * 0.5, 0.0));
   v_point.push_back
-    (centroid +
-     base2obj_rot * Eigen::Vector3d(shape_output.dimensions.x * 0.5, -shape_output.dimensions.y * 0.5, 0.0));
+    (base2obj_transform * Eigen::Vector3d(shape_output.dimensions.x * 0.5, -shape_output.dimensions.y * 0.5, 0.0));
   v_point.push_back
-    (centroid +
-     base2obj_rot * Eigen::Vector3d(-shape_output.dimensions.x * 0.5, -shape_output.dimensions.y * 0.5, 0.0));
+    (base2obj_transform * Eigen::Vector3d(-shape_output.dimensions.x * 0.5, -shape_output.dimensions.y * 0.5, 0.0));
 
   double distance = std::pow(24, 24);
   size_t nearest_idx = 0;
@@ -97,8 +85,8 @@ bool BusCorrector::correct(
     width = (max_width + min_width) * 0.5;
   }
 
-  c2 = c1 + base2obj_rot * (e1 * length);
-  c3 = c1 + base2obj_rot * (e2 * width);
+  c2 = c1 + base2obj_transform.rotation() * (e1 * length);
+  c3 = c1 + base2obj_transform.rotation() * (e2 * width);
   c4 = c1 + (c2 - c1) + (c3 - c1);
 
   shape_output.dimensions.x = (c2 - c1).norm();
