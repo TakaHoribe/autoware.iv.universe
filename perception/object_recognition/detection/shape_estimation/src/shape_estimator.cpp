@@ -88,7 +88,7 @@ bool ShapeEstimator::estimateShape(
     type == autoware_perception_msgs::Semantic::TRUCK ||
     type == autoware_perception_msgs::Semantic::BUS) {
     if (orientation_output) {
-      model_ptr.reset(new yaw_fixed::BoundingBoxModel(lshape_fitting_range_));
+      model_ptr.reset(new yaw_fixed::BoundingBoxModel(l_shape_fitting_search_angle_range_));
     } else {
       model_ptr.reset(new normal::BoundingBoxModel);
     }
@@ -153,7 +153,7 @@ bool ShapeEstimator::applyCorrector(
   return corrector_ptr->correct(shape_output, pose_output, orientation_output);
 }
 
-void ShapeEstimator::setFittingRange(int lshape_fitting_range)
+void ShapeEstimator::setFittingRange(double l_shape_fitting_search_angle_range)
 {
-  lshape_fitting_range_ = lshape_fitting_range;
+  l_shape_fitting_search_angle_range_ = l_shape_fitting_search_angle_range;
 }

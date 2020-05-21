@@ -38,7 +38,7 @@ private:  // ros
 private:
   ShapeEstimator estimator_;
   bool use_corrector_;
-  int lshape_fitting_range_;
+  double l_shape_fitting_search_angle_range_;
   // std::shared_ptr<MapCorrectorNode> map_corrector_node_ptr_;
 
 public:

@@ -23,14 +23,14 @@ class BoundingBoxModel : public ShapeEstimationModelInterface
 {
 private:
   double calcClosenessCriterion(const std::vector<double> & C_1, const std::vector<double> & C_2);
-  int lshape_fitting_range_;
+  double l_shape_fitting_search_angle_range_;
 
 public:
   BoundingBoxModel()
-    : lshape_fitting_range_(3){};
+    : l_shape_fitting_search_angle_range_(3){};
 
-  BoundingBoxModel(int lshape_fitting_range)
-    : lshape_fitting_range_(lshape_fitting_range){};
+  BoundingBoxModel(double l_shape_fitting_search_angle_range)
+    : l_shape_fitting_search_angle_range_(l_shape_fitting_search_angle_range){};
 
   ~BoundingBoxModel(){};
 

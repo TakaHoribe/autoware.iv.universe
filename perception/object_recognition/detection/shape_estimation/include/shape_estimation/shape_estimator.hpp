@@ -39,7 +39,7 @@ private:
     const int type, autoware_perception_msgs::Shape & shape_output,
     geometry_msgs::Pose & pose_output, bool & orientation_output);
 
-  int lshape_fitting_range_;
+  double l_shape_fitting_search_angle_range_;
 
 public:
   ShapeEstimator();
@@ -51,6 +51,6 @@ public:
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
     bool & orientation_output, bool & use_corrector);
 
-  void setFittingRange(int lshape_fitting_range);
+  void setFittingRange(double l_shape_fitting_search_angle_range);
 
 };

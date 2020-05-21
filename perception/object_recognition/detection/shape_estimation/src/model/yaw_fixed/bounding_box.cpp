@@ -86,8 +86,8 @@ bool BoundingBoxModel::estimate(
     yaw = yaw + M_PI;
   }
 
-  min_angle = yaw - (lshape_fitting_range_ * M_PI / 180);
-  max_angle = yaw + (lshape_fitting_range_ * M_PI / 180);
+  min_angle = yaw - (l_shape_fitting_search_angle_range_ * M_PI / 180);
+  max_angle = yaw + (l_shape_fitting_search_angle_range_ * M_PI / 180);
 
 
   /*
