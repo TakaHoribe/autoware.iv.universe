@@ -426,8 +426,14 @@ lanelet::CompoundPolygon3d getPolygonFromArcLength(
   const lanelet::ConstLanelets & lanelets, const double s1, const double s2)
 {
   const auto combined_lanelet = combineLanelets(lanelets);
-  const auto ratio_s1 = s1 / getLaneletLength2d(combined_lanelet);
-  const auto ratio_s2 = s2 / getLaneletLength2d(combined_lanelet);
+  const auto total_length = getLaneletLength2d(combined_lanelet);
+
+  // make sure that s1, and s2 are between [0, lane_length]
+  const auto s1_saturated = std::max(0.0, std::min(s1, total_length));
+  const auto s2_saturated = std::max(0.0, std::min(s2, total_length));
+
+  const auto ratio_s1 = s1_saturated / total_length;
+  const auto ratio_s2 = s2_saturated / total_length;
 
   const auto s1_left =
     ratio_s1 * boost::geometry::length(combined_lanelet.leftBound().basicLineString());
