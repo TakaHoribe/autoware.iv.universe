@@ -17,8 +17,7 @@
  * v1.0 Yukihiro Saito
  */
 
-#include "convex_hull.hpp"
-#include <geometry_msgs/Point32.h>
+#include "cylinder.hpp"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -27,11 +26,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "autoware_perception_msgs/Shape.h"
 
-bool ConvexHullModel::estimate(
+namespace normal {
+bool CylinderModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
   geometry_msgs::Pose & pose_output, bool & orientation_output)
 {
-  // calc centroid point for convex hull height(z)
+  // calc centroid point for cylinder height(z)
   pcl::PointXYZ centroid;
   centroid.x = 0;
   centroid.y = 0;
@@ -45,7 +45,7 @@ bool ConvexHullModel::estimate(
   centroid.y = centroid.y / (double)cluster.size();
   centroid.z = centroid.z / (double)cluster.size();
 
-  // calc min and max z for convex hull height(z)
+  // calc min and max z for cylinder length
   double min_z = 0;
   double max_z = 0;
   for (size_t i = 0; i < cluster.size(); ++i) {
@@ -53,44 +53,30 @@ bool ConvexHullModel::estimate(
     if (max_z < cluster.at(i).z || i == 0) max_z = cluster.at(i).z;
   }
 
-  std::vector<cv::Point> v_pointcloud;
-  std::vector<cv::Point> v_polygon_points;
+  // calc circumscribed circle on x-y plane
+  cv::Mat_<float> cv_points((int)cluster.size(), 2);
   for (size_t i = 0; i < cluster.size(); ++i) {
-    v_pointcloud.push_back(
-      cv::Point((cluster.at(i).x - centroid.x) * 1000.0, (cluster.at(i).y - centroid.y) * 1000.0));
+    cv_points(i, 0) = cluster.at(i).x;  // x
+    cv_points(i, 1) = cluster.at(i).y;  // y
   }
-  cv::convexHull(v_pointcloud, v_polygon_points);
-
-  pcl::PointXYZ polygon_centroid;
-  polygon_centroid.x = 0;
-  polygon_centroid.y = 0;
-  for (size_t i = 0; i < v_polygon_points.size(); ++i) {
-    polygon_centroid.x += (double)v_polygon_points.at(i).x / 1000.0;
-    polygon_centroid.y += (double)v_polygon_points.at(i).y / 1000.0;
-  }
-  polygon_centroid.x = polygon_centroid.x / (double)v_polygon_points.size();
-  polygon_centroid.y = polygon_centroid.y / (double)v_polygon_points.size();
-
-  for (size_t i = 0; i < v_polygon_points.size(); ++i) {
-    geometry_msgs::Point32 point;
-    point.x = (double)v_polygon_points.at(i).x / 1000.0 - polygon_centroid.x;
-    point.y = (double)v_polygon_points.at(i).y / 1000.0 - polygon_centroid.y;
-    point.z = 0.0;
-    shape_output.footprint.points.push_back(point);
-  }
-
+  cv::Point2f center;
+  float radius;
+  cv::minEnclosingCircle(cv::Mat(cv_points).reshape(2), center, radius);
   constexpr double ep = 0.001;
-  shape_output.type = autoware_perception_msgs::Shape::POLYGON;
-  pose_output.position.x = centroid.x + polygon_centroid.x;
-  pose_output.position.y = centroid.y + polygon_centroid.y;
+  radius = std::max(radius, (float)ep);
+
+  shape_output.type = autoware_perception_msgs::Shape::CYLINDER;
+  pose_output.position.x = center.x;
+  pose_output.position.y = center.y;
   pose_output.position.z = centroid.z;
   pose_output.orientation.x = 0;
   pose_output.orientation.y = 0;
   pose_output.orientation.z = 0;
   pose_output.orientation.w = 1;
   orientation_output = false;
-  shape_output.dimensions.x = 0.0;
-  shape_output.dimensions.y = 0.0;
+  shape_output.dimensions.x = (double)radius * 2.0;
+  shape_output.dimensions.y = (double)radius * 2.0;
   shape_output.dimensions.z = std::max((max_z - min_z), ep);
   return true;
+}
 }

@@ -32,6 +32,7 @@
 
 #include <Eigen/Core>
 
+namespace normal {
 bool BoundingBoxModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
   geometry_msgs::Pose & pose_output, bool & orientation_output)
@@ -336,4 +337,5 @@ double BoundingBoxModel::calcClosenessCriterion(
     beta += 1.0 / d;
   }
   return beta;
+}
 }

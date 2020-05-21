@@ -17,14 +17,20 @@
  * v1.0 Yukihiro Saito
  */
 
-#include "no_corrector.hpp"
-#define EIGEN_MPL2_ONLY
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#pragma once
 
-bool NoCorrector::correct(
-  autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientation_output)
+#include "shape_estimation/corrector_interface.hpp"
+
+namespace yaw_fixed {
+class NoCorrector : public ShapeEstimationCorrectorInterface
 {
-  return true;
+public:
+  NoCorrector(){};
+
+  ~NoCorrector(){};
+
+  bool correct(
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
+    bool & orientaion_output) override;
+};
 }

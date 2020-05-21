@@ -21,14 +21,16 @@
 
 #include "shape_estimation/corrector_interface.hpp"
 
-class TruckCorrector : public ShapeEstimationCorrectorInterface
+namespace normal {
+class NoCorrector : public ShapeEstimationCorrectorInterface
 {
 public:
-  TruckCorrector(){};
+  NoCorrector(){};
 
-  ~TruckCorrector(){};
+  ~NoCorrector(){};
 
   bool correct(
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
     bool & orientation_output) override;
 };
+}
