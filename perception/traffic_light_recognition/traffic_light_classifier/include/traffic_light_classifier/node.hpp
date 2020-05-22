@@ -32,7 +32,11 @@
 #include <std_msgs/Header.h>
 
 #include <traffic_light_classifier/classifier_interface.hpp>
+
+#if ENABLE_GPU
 #include <traffic_light_classifier/cnn_classifier.hpp>
+#endif
+
 #include <traffic_light_classifier/color_classifier.hpp>
 
 #include <opencv/cv.hpp>

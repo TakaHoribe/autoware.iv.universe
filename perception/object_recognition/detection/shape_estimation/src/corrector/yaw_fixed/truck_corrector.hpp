@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Autoware Foundation. All rights reserved.
+ * Copyright 2020 TierIV. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,23 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
- * v1.0 Yukihiro Saito
  */
 
 #pragma once
 
 #include "shape_estimation/corrector_interface.hpp"
 
-class NoCorrector : public ShapeEstimationCorrectorInterface
+namespace yaw_fixed {
+class TruckCorrector : public ShapeEstimationCorrectorInterface
 {
 public:
-  NoCorrector(){};
+  TruckCorrector(){};
 
-  ~NoCorrector(){};
+  ~TruckCorrector(){};
 
   bool correct(
     autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output) override;
+    bool & orientaion_output) override;
 };
+}

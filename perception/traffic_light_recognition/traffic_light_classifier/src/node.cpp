@@ -44,7 +44,11 @@ TrafficLightClassifierNode::TrafficLightClassifierNode()
   if (classifier_type == TrafficLightClassifierNode::ClassifierType::HSVFilter) {
     classifier_ptr_ = std::make_shared<ColorClassifier>();
   } else if (classifier_type == TrafficLightClassifierNode::ClassifierType::CNN) {
+#if ENABLE_GPU
     classifier_ptr_ = std::make_shared<CNNClassifier>();
+#else
+    ROS_ERROR("please install CUDA, CUDNN and TensorRT to use cnn classifier");
+#endif
   }
 }
 
@@ -52,6 +56,10 @@ void TrafficLightClassifierNode::imageRoiCallback(
   const sensor_msgs::ImageConstPtr & input_image_msg,
   const autoware_perception_msgs::TrafficLightRoiArrayConstPtr & input_rois_msg)
 {
+  if (classifier_ptr_.use_count() == 0) {
+    return;
+  }
+
   cv_bridge::CvImagePtr cv_ptr;
   try {
     cv_ptr = cv_bridge::toCvCopy(input_image_msg, sensor_msgs::image_encodings::BGR8);

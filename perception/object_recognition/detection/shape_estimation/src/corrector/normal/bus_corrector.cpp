@@ -17,7 +17,7 @@
  * v1.0 Yukihiro Saito
  */
 
-#include "car_corrector.hpp"
+#include "bus_corrector.hpp"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -25,7 +25,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-bool CarCorrector::correct(
+namespace normal {
+bool BusCorrector::correct(
   autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
   bool & orientation_output)
 {
@@ -93,10 +94,10 @@ bool CarCorrector::correct(
 
   // rule based correction
   Eigen::Vector2d correction_vector = Eigen::Vector2d::Zero();
-  constexpr double min_width = 1.2;
-  constexpr double max_width = 2.2;
-  constexpr double min_length = 3.0;
-  constexpr double max_length = 5.0;
+  constexpr double min_width = 2.0;
+  constexpr double max_width = 2.9;
+  constexpr double min_length = 5.0;
+  constexpr double max_length = 12.0;
 
   if ((int)std::abs((int)first_most_distant_index - (int)second_most_distant_index) % 2 == 0) {
     if (
@@ -258,4 +259,5 @@ bool CarCorrector::correct(
   }
 
   return true;
+}
 }

@@ -74,14 +74,24 @@ private:
     autoware_planning_msgs::PathWithLaneId & output);
 
   bool getHighestConfidenceTrafficLightState(
-    lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
+    const lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
     autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state);
+
+  bool isOverJudgePoint(
+    const geometry_msgs::Pose & self_pose,
+    const autoware_planning_msgs::PathWithLaneId & input_path, const size_t & judge_point_idx,
+    const Eigen::Vector2d & judge_point);
+
+  bool isStopRequired(const lanelet::ConstLineStringsOrPolygons3d & traffic_lights);
 
   bool createTargetPoint(
     const autoware_planning_msgs::PathWithLaneId & input,
     const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
       stop_line,
     const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point);
+
+  bool hasLamp(
+    const autoware_perception_msgs::TrafficLightState & tl_state, const uint8_t & lamp_color);
 
   // Key Feature
   const lanelet::TrafficLight & traffic_light_reg_elem_;
