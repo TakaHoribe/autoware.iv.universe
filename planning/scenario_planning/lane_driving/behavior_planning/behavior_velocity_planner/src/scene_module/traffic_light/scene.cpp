@@ -19,6 +19,17 @@
 
 #include <tf2/utils.h>
 
+namespace
+{
+double calcDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
+{
+  const auto dx = p1.position.x - p2.x();
+  const auto dy = p1.position.y - p2.y();
+
+  return std::hypot(dx, dy);
+}
+}  // namespace
+
 namespace bg = boost::geometry;
 using Point = bg::model::d2::point_xy<double>;
 using Line = bg::model::linestring<Point>;
@@ -58,135 +69,166 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   if (state_ == State::GO_OUT) {
     return true;
   } else if (state_ == State::APPROARCH) {
-    for (int i = 0; i < lanelet_stop_line.size() - 1; i++) {
-      Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
-                        {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
-      // update state
+    for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
+      const Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
+                              {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
+      // Check Judge Line
       {
         Eigen::Vector2d judge_point;
         size_t judge_point_idx;
         if (!createTargetPoint(
-              input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point))
+              input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) {
           continue;
-        const double sq_dist = (judge_point.x() - self_pose.pose.position.x) *
-                                 (judge_point.x() - self_pose.pose.position.x) +
-                               (judge_point.y() - self_pose.pose.position.y) *
-                                 (judge_point.y() - self_pose.pose.position.y);
-        const double range = 5.0;
-        if (sq_dist < range * range) {
-          double yaw;
-          if (judge_point_idx == 0)
-            yaw = std::atan2(
-              input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
-              input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
-          else
-            yaw = std::atan2(
-              judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
-              judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
-          tf2::Quaternion quat;
-          quat.setRPY(0, 0, yaw);
-          tf2::Transform tf_map2judge_pose(
-            quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.pose.position.z));
-          tf2::Transform tf_map2self_pose;
-          tf2::Transform tf_judge_pose2self_pose;
-          tf2::fromMsg(self_pose.pose, tf_map2self_pose);
-          tf_judge_pose2self_pose = tf_map2judge_pose.inverse() * tf_map2self_pose;
-          // -- debug code --
-          geometry_msgs::Pose judge_pose;
-          tf2::toMsg(tf_map2judge_pose, judge_pose);
-          debug_data_.judge_poses.push_back(judge_pose);
-          // ----------------
-          if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
-            state_ = State::GO_OUT;
-            return true;
-          }
+        }
+
+        if (isOverJudgePoint(self_pose.pose, input_path, judge_point_idx, judge_point)) {
+          state_ = State::GO_OUT;
+          return true;
         }
       }
 
-      // search traffic light state
-      autoware_perception_msgs::TrafficLightState highest_confidence_tl_state;
-      if (!getHighestConfidenceTrafficLightState(traffic_lights, highest_confidence_tl_state))
-        continue;
-      // check stop border distance
-      Eigen::Vector2d stop_line_point;
-      size_t stop_line_point_idx;
-      if (!createTargetPoint(
-            input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point))
-        continue;
-      Eigen::Vector2d self_point;
-      self_point << self_pose.pose.position.x, self_pose.pose.position.y;
-      const double sq_dist =
-        (self_point.x() - stop_line_point.x()) * (self_point.x() - stop_line_point.x()) +
-        (self_point.y() - stop_line_point.y()) * (self_point.y() - stop_line_point.y());
-      if (sq_dist < stop_border_distance_threshold * stop_border_distance_threshold) {
-        ROS_WARN_THROTTLE(
-          1.0,
-          "[traffic_light] state is red. this vehicle are passing too fast to stop "
-          "at the stop line");
-        return true;
-      }
-
-      // if green lamp is off, check arrow signals
-      if (!hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::GREEN)) {
-        // check turn direction
-        const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
-        // if turn_direction is right, check right signal
-        if (turn_direction == "right") {
-          // if right signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::RIGHT))
-            continue;
-        }
-        // if turn_direction is left, check left signal
-        else if (turn_direction == "left") {
-          // if left signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::LEFT))
-            continue;
-        }
-        // if turn_direction is straight, check up signal
-        else if (turn_direction == "straight") {
-          // if up signal detected, go out
-          if (hasLamp(highest_confidence_tl_state, autoware_perception_msgs::LampState::UP))
-            continue;
-        }
-        // insert stop point into path
-        if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
+      // Check Stop Line
+      {
+        Eigen::Vector2d stop_line_point;
+        size_t stop_line_point_idx;
+        if (!createTargetPoint(
+              input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) {
           continue;
         }
+
+        if (calcDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
+          ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
+          return true;
+        }
       }
-      // not go to continue in any index, return true
+
+      // Check Traffic Light
+      if (!isStopRequired(traffic_lights)) {
+        continue;
+      }
+
+      // Add Stop WayPoint
+      if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
+        continue;
+      }
+
       return true;
     }
   }
-  // all index in for() go to continue, return false
+
   return false;
 }
 
+bool TrafficLightModule::isOverJudgePoint(
+  const geometry_msgs::Pose & self_pose, const autoware_planning_msgs::PathWithLaneId & input_path,
+  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point)
+{
+  constexpr double range = 5.0;
+  if (calcDistance(self_pose, judge_point) < range) {
+    return false;
+  }
+
+  double yaw;
+  if (judge_point_idx == 0)
+    yaw = std::atan2(
+      input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
+      input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
+  else
+    yaw = std::atan2(
+      judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
+      judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
+
+  // Calculate transform from judge_pose to self_pose
+  tf2::Transform tf_judge_pose2self_pose;
+  {
+    tf2::Quaternion quat;
+    quat.setRPY(0, 0, yaw);
+    tf2::Transform tf_map2judge_pose(
+      quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.position.z));
+    tf2::Transform tf_map2self_pose;
+    tf2::fromMsg(self_pose, tf_map2self_pose);
+    tf_judge_pose2self_pose = tf_map2judge_pose.inverse() * tf_map2self_pose;
+
+    // debug code
+    geometry_msgs::Pose judge_pose;
+    tf2::toMsg(tf_map2judge_pose, judge_pose);
+    debug_data_.judge_poses.push_back(judge_pose);
+  }
+
+  if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
+    return true;
+  }
+
+  return false;
+}
+
+bool TrafficLightModule::isStopRequired(
+  const lanelet::ConstLineStringsOrPolygons3d & traffic_lights)
+{
+  autoware_perception_msgs::TrafficLightState tl_state;
+  if (!getHighestConfidenceTrafficLightState(traffic_lights, tl_state)) {
+    // Don't stop when UNKNOWN or TIMEOUT as discussed at #508
+    return false;
+  }
+
+  if (hasLamp(tl_state, autoware_perception_msgs::LampState::GREEN)) {
+    return false;
+  }
+
+  const std::string turn_direction = lane_.attributeOr("turn_direction", "else");
+
+  if (turn_direction == "else") {
+    return true;
+  }
+
+  if (turn_direction == "right" && hasLamp(tl_state, autoware_perception_msgs::LampState::RIGHT)) {
+    return false;
+  }
+
+  if (turn_direction == "left" && hasLamp(tl_state, autoware_perception_msgs::LampState::LEFT)) {
+    return false;
+  }
+
+  if (turn_direction == "straight" && hasLamp(tl_state, autoware_perception_msgs::LampState::UP)) {
+    return false;
+  }
+
+  return true;
+}
+
 bool TrafficLightModule::getHighestConfidenceTrafficLightState(
-  lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
+  const lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
   autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state)
 {
   // search traffic light state
   bool found = false;
   double highest_confidence = 0.0;
+  std::string reason;
   for (const auto & traffic_light : traffic_lights) {
-    // traffic ligth must be linestrings
+    // traffic light must be linestrings
     if (!traffic_light.isLineString()) {
+      reason = "NotLineString";
       continue;
     }
+
     const int id = static_cast<lanelet::ConstLineString3d>(traffic_light).id();
     const auto tl_state_stamped = planner_data_->getTrafficLightState(id);
     if (!tl_state_stamped) {
+      reason = "TrafficLightStateNotFound";
       continue;
     }
+
     const auto header = tl_state_stamped->header;
     const auto tl_state = tl_state_stamped->traffic_light_state;
-
     if (!((ros::Time::now() - header.stamp).toSec() < tl_state_timeout_)) {
+      reason = "TimeOut";
       continue;
     }
+
     if (
       tl_state.lamp_states.empty() ||
       tl_state.lamp_states.front().type == autoware_perception_msgs::LampState::UNKNOWN) {
+      reason = "LampStateUnknown";
       continue;
     }
 
@@ -197,7 +239,8 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
     found = true;
   }
   if (!found) {
-    ROS_WARN_THROTTLE(1.0, "[traffic_light] cannot find traffic light lamp state.");
+    ROS_WARN_THROTTLE(
+      1.0, "[traffic_light] cannot find traffic light lamp state (%s).", reason.c_str());
     return false;
   }
   return true;

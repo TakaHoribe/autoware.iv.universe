@@ -74,8 +74,15 @@ private:
     autoware_planning_msgs::PathWithLaneId & output);
 
   bool getHighestConfidenceTrafficLightState(
-    lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
+    const lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
     autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state);
+
+  bool isOverJudgePoint(
+    const geometry_msgs::Pose & self_pose,
+    const autoware_planning_msgs::PathWithLaneId & input_path, const size_t & judge_point_idx,
+    const Eigen::Vector2d & judge_point);
+
+  bool isStopRequired(const lanelet::ConstLineStringsOrPolygons3d & traffic_lights);
 
   bool createTargetPoint(
     const autoware_planning_msgs::PathWithLaneId & input,
