@@ -42,9 +42,12 @@ PointCloudMapLoaderNode::PointCloudMapLoaderNode(const std::vector<std::string> 
 
   const auto pcd = loadPCDFiles(pcd_paths);
 
-  if (pcd.width != 0) {
-    pub_pointcloud_map_.publish(pcd);
+  if (pcd.width == 0) {
+    ROS_ERROR("No PCD was loaded: pcd_paths.size() = %zu", pcd_paths.size());
+    return;
   }
+
+  pub_pointcloud_map_.publish(pcd);
 }
 
 sensor_msgs::PointCloud2 PointCloudMapLoaderNode::loadPCDFiles(
