@@ -196,6 +196,30 @@ bool getClosestLanelet(
   const ConstLanelets & lanelets, const geometry_msgs::Pose & search_pose,
   ConstLanelet * closest_lanelet_ptr);
 
+/**
+ * [getSucceedingLaneletSequences retrieves a sequence of lanelets after the given lanelet.
+ * The total length of retrieved lanelet sequence at least given length.]
+ * @param graph [input lanelet routing graph]
+ * @param lanelet [starting lanelet of the lanelet sequence]
+ * @param length [minimum length of retrieved lanelet sequence]
+ * @return   [lanelet sequence that follows given lanelet]
+ */
+std::vector<lanelet::ConstLanelets> getSucceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet,
+  const double length);
+
+/**
+ * [getPreceedingLaneletSequences retrieves a sequence of lanelets before the given lanelet.
+ * The total length of retrieved lanelet sequence at least given length.]
+ * @param graph [input lanelet routing graph]
+ * @param lanelet [ending lanelet of the lanelet sequence]
+ * @param length [minimum length of retrieved lanelet sequence]
+ * @return   [lanelet sequence that leads to given lanelet]
+ */
+std::vector<lanelet::ConstLanelets> getPreceedingLaneletSequences(
+  const routing::RoutingGraphPtr & graph, const lanelet::ConstLanelet & lanelet,
+  const double length);
+
 }  // namespace query
 }  // namespace utils
 }  // namespace lanelet
