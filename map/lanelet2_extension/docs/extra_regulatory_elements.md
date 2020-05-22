@@ -22,6 +22,12 @@ Sample detection area in .osm format is shown below:
   <node id=4 version='1' lat='49.00541994701' lon='8.41564400223'>
     <tag k=’ele’ v=’0’/>
   </node>
+  <node id=5 version='1' lat='49.00542180052' lon='8.41564400223'>
+    <tag k=’ele’ v=’0’/>
+  </node>
+  <node id=6 version='1' lat='49.00541994701' lon='8.41564400223'>
+    <tag k=’ele’ v=’0’/>
+  </node>
   <way id=11 version='1'>
     <nd ref=1 />
     <nd ref=2 />
@@ -30,6 +36,11 @@ Sample detection area in .osm format is shown below:
     <nd ref=1 />
     <tag k='type' v=’detection_area’ />
     <tag k='area' v=’yes’ />
+  </way>
+  <way id=12 version="1">
+    <nd ref=5 />
+    <nd ref=6 />
+    <tag k='type' v=stop_line’ />
   </way>
   <relation id="13">
      <tag k="type" v="regulatory_element"/>
