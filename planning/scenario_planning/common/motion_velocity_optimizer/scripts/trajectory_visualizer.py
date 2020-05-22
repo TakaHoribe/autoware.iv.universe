@@ -12,7 +12,7 @@ import tf
 
 # PLOT_TYPE = "VEL_ACC_JERK"
 PLOT_TYPE = "VEL_ONLY"
-PLOT_MAX_ARCLENGTH = 100
+PLOT_MAX_ARCLENGTH = 200
 
 PATH_ORIGIN_FRAME = "map"
 SELF_POSE_FRAME = "base_link"
@@ -107,42 +107,42 @@ class TrajectoryVisualizer():
         x = self.CalcArcLengthPath(self.behavior_path)
         y = self.ToVelListPath(self.behavior_path)
         if len(x) == len(y):
-            ax1.plot(x, y, label="1: behavior_path", marker="")
+            ax1.plot(x, y, label="1: behavior_path", marker="", ls="--")
 
         x = self.CalcArcLength(self.obstacle_avoid_traj)
         y = self.ToVelList(self.obstacle_avoid_traj)
         if len(x) == len(y):
-            ax1.plot(x, y, label="2: obstacle_avoid_traj", marker="")
+            ax1.plot(x, y, label="2: obstacle_avoid_traj", marker="", ls="-.")
 
         x = self.CalcArcLength(self.obstacle_stop_traj)
         y = self.ToVelList(self.obstacle_stop_traj)
         if len(x) == len(y):
-            ax1.plot(x, y, label="3: obstacle_stop_traj", marker="")
+            ax1.plot(x, y, label="3: obstacle_stop_traj", marker="", ls="--")
 
         x = self.CalcArcLength(self.trajectory_raw)
         y = self.ToVelList(self.trajectory_raw)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4-1: opt input", marker="")
+            ax1.plot(x, y, label="4-1: opt input", marker="", ls="--")
 
         x = self.CalcArcLength(self.trajectory_external_velocity_limitted)
         y = self.ToVelList(self.trajectory_external_velocity_limitted)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4-2: opt external_velocity_limitted", marker="")
+            ax1.plot(x, y, label="4-2: opt external_velocity_limitted", marker="", ls="--")
 
         x = self.CalcArcLength(self.trajectory_lateral_acc_filtered)
         y = self.ToVelList(self.trajectory_lateral_acc_filtered)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4-3: opt lat_acc_filtered", marker="*")
+            ax1.plot(x, y, label="4-3: opt lat_acc_filtered", marker="*", ls="--")
 
         x = self.CalcArcLength(self.trajectory_time_resamped)
         y = self.ToVelList(self.trajectory_time_resamped)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4-4: opt time_resamped", marker="*")
+            ax1.plot(x, y, label="4-4: opt time_resamped", marker="*", ls="--")
 
         x = self.CalcArcLength(self.trajectory_final)
         y = self.ToVelList(self.trajectory_final)
         if len(x) == len(y):
-            ax1.plot(x, y, label="4-5: opt final", marker="*")
+            ax1.plot(x, y, label="4-5: opt final", marker="*", ls="--")
 
         closest = self.calcClosestTrajectory(self.trajectory_final)
         x_closest = x[closest]
