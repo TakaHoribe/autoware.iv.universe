@@ -148,6 +148,23 @@ target_link_libraries(scene_module_blind_spot
   ${catkin_LIBRARIES}
 )
 
+# Scene Module: Detection Area
+add_library(scene_module_detection_area STATIC
+  src/scene_module/detection_area/manager.cpp
+  src/scene_module/detection_area/scene.cpp
+  src/scene_module/detection_area/debug.cpp
+)
+
+add_dependencies(scene_module_detection_area
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(scene_module_detection_area
+  scene_module_lib
+  ${catkin_LIBRARIES}
+)
+
 # Scene Module Manager
 add_library(scene_module_manager STATIC
   src/planner_manager.cpp
@@ -164,6 +181,7 @@ target_link_libraries(scene_module_manager
   scene_module_intersection
   scene_module_traffic_light
   scene_module_blind_spot
+  scene_module_detection_area
 )
 
 # Node

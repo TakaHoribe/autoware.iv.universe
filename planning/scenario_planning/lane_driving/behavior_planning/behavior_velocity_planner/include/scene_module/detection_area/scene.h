@@ -45,23 +45,28 @@ public:
   struct DebugData
   {
     double base_link2front;
-    std::vector<std::tuple<
-      std::shared_ptr<const lanelet::TrafficLight>, autoware_perception_msgs::TrafficLightState>>
-      tl_state;  // TODO: replace tuple with struct
     std::vector<geometry_msgs::Pose> stop_poses;
-    std::vector<geometry_msgs::Pose> judge_poses;
   };
 
 public:
   DetectionAreaModule(
-    const int64_t module_id, const lanelet::ConstLineString3d & stop_line,
-    const lanelet::autoware::DetectionArea &detection_area_regelem);
+    const int64_t module_id,
+    const lanelet::autoware::DetectionArea &detection_area_reg_elem);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
 private:
+  using Point = boost::geometry::model::d2::point_xy<double>;
+  using Line = boost::geometry::model::linestring<Point>;
+  using Polygon = boost::geometry::model::polygon<Point, false>;
+
+  bool isPointsWithinDetectionArea(
+    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
+    const lanelet::ConstPolygons3d & detection_areas
+  );
+
   bool getBackwordPointFromBasePoint(
     const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,
     const Eigen::Vector2d & base_point, const double backward_length,
@@ -74,10 +79,6 @@ private:
     const double & margin, const double & velocity,
     autoware_planning_msgs::PathWithLaneId & output);
 
-  bool getHighestConfidenceTrafficLightState(
-    lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
-    autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state);
-
   bool createTargetPoint(
     const autoware_planning_msgs::PathWithLaneId & input,
     const boost::geometry::model::linestring<boost::geometry::model::d2::point_xy<double>> &
@@ -85,8 +86,7 @@ private:
     const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point);
 
   // Key Feature
-  const lanelet::TrafficLight & traffic_light_reg_elem_;
-  lanelet::ConstLanelet lane_;
+  const lanelet::autoware::DetectionArea & detection_area_reg_elem_;
 
   // State
   State state_;
