@@ -30,9 +30,13 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
+
 #include <ros/ros.h>
 
 #include <map_loader/pointcloud_map_loader_node.h>
+
+namespace fs = boost::filesystem;
 
 int main(int argc, char * argv[])
 {
@@ -40,7 +44,32 @@ int main(int argc, char * argv[])
 
   std::vector<std::string> pcd_paths;
   for (int i = 1; i < argc; ++i) {
-    pcd_paths.push_back(argv[i]);
+    const fs::path arg(argv[i]);
+
+    if (!fs::exists(arg)) {
+      const std::string msg = "invalid path: " + arg.string();
+      throw std::runtime_error(msg);
+    }
+
+    if (fs::is_regular_file(arg)) {
+      pcd_paths.push_back(argv[i]);
+    }
+
+    if (fs::is_directory(arg)) {
+      for (const auto & f : fs::directory_iterator(arg)) {
+        const auto & p = f.path();
+
+        if (!fs::is_regular_file(p)) {
+          continue;
+        }
+
+        if (p.extension() != ".pcd" && p.extension() != ".PCD") {
+          continue;
+        }
+
+        pcd_paths.push_back(p.string());
+      }
+    }
   }
 
   PointCloudMapLoaderNode pointcloud_map_loader_node(pcd_paths);
