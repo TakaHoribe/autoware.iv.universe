@@ -726,7 +726,7 @@ std::vector<lanelet::ConstLanelets> query::getSucceedingLaneletSequences(
   // convert deque into vector
   std::vector<ConstLanelets> lanelet_sequences_vec;
   for (const auto & lanelet_sequence : lanelet_sequences_deq) {
-    lanelet_sequences_vec.push_back({lanelet_sequence.begin(), lanelet_sequence.end()});
+    lanelet_sequences_vec.emplace_back(lanelet_sequence.begin(), lanelet_sequence.end());
   }
   return lanelet_sequences_vec;
 }
@@ -739,7 +739,7 @@ std::vector<lanelet::ConstLanelets> query::getPreceedingLaneletSequences(
   // convert deque into vector
   std::vector<ConstLanelets> lanelet_sequences_vec;
   for (const auto & lanelet_sequence : lanelet_sequences_deq) {
-    lanelet_sequences_vec.push_back({lanelet_sequence.begin(), lanelet_sequence.end()});
+    lanelet_sequences_vec.emplace_back(lanelet_sequence.begin(), lanelet_sequence.end());
   }
   return lanelet_sequences_vec;
 }
