@@ -39,6 +39,10 @@ inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint & p
 {
   return p.pose.position;
 }
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPointWithLaneId & p)
+{
+  return p.point.pose.position;
+}
 inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint & p)
 {
   return p.pose.position;
