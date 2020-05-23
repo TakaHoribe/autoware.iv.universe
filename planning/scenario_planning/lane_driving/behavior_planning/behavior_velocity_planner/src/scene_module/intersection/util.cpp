@@ -147,11 +147,13 @@ bool setVelocityFrom(
   return true;
 }
 
-bool isAheadOf(const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin)
+
+bool hasLaneId(const autoware_planning_msgs::PathPointWithLaneId & p, const int id)
 {
-  geometry_msgs::Pose p = planning_utils::transformRelCoordinate2D(target, origin);
-  bool is_target_ahead = (p.position.x > 0.0);
-  return is_target_ahead;
+  for (const auto & pid : p.lane_ids) {
+    if (pid == id) return true;
+  }
+  return false;
 }
 
 }  // namespace util

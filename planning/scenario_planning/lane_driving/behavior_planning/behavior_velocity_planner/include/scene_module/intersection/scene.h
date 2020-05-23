@@ -31,6 +31,8 @@
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.h>
+#include "utilization/boost_geometry_helper.h"
+
 
 class IntersectionModule : public SceneModuleInterface
 {
@@ -51,25 +53,9 @@ public:
       state_ = State::GO;
       margin_time_ = 0.0;
     }
-
-    /**
-     * @brief set request state command with margin time
-     */
     void setStateWithMarginTime(State state);
-
-    /**
-     * @brief set request state command directly
-     */
     void setState(State state);
-
-    /**
-     * @brief set margin time
-     */
     void setMarginTime(const double t);
-
-    /**
-     * @brief get current state
-     */
     State getState();
 
   private:
@@ -85,16 +71,15 @@ public:
     geometry_msgs::Pose virtual_wall_pose;
     geometry_msgs::Pose stop_point_pose;
     geometry_msgs::Pose judge_point_pose;
-    autoware_planning_msgs::PathWithLaneId path_with_judgeline;
+    geometry_msgs::Polygon ego_lane_polygon;
     std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
     std::vector<lanelet::CompoundPolygon3d> detection_area;
-    autoware_planning_msgs::PathWithLaneId path_right_edge;
-    autoware_planning_msgs::PathWithLaneId path_left_edge;
     autoware_planning_msgs::PathWithLaneId spline_path;
+    autoware_perception_msgs::DynamicObjectArray conflicting_targets;
   };
 
 public:
-  IntersectionModule(const int64_t module_id, const int64_t lane_id);
+  IntersectionModule(const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -106,11 +91,13 @@ public:
 
 private:
   int64_t lane_id_;
-
+  std::string turn_direction_;
+  bool has_traffic_light_;
 
   // Parameter
-  double approaching_speed_to_stopline_;  //! speed when approaching stop-line (should be slow)
-  double path_expand_width_;              //! path width to calculate the edge line for both side
+  double decel_velocoity_;    //! when collision, set this velocity for straight and traffic_light lane.
+  double path_expand_width_;  //! path width to calculate the edge line for both side
+  double stop_line_margin_;   //! distance from auto-generated stopline to detection_area boundary
   bool show_debug_info_ = false;
 
   /**
@@ -122,32 +109,19 @@ private:
     std::vector<lanelet::CompoundPolygon3d> * polygons);
 
   /**
-   * @brief check collision with path & dynamic object predicted path
-   */
-  bool checkPathCollision(
-    const autoware_planning_msgs::PathWithLaneId & path,
-    const autoware_perception_msgs::DynamicObject & object);
-
-  /**
    * @brief check collision for all lanelet area & dynamic objects (call checkPathCollision() as
    * actual collision check algorithm inside this function)
    */
   bool checkCollision(
     const autoware_planning_msgs::PathWithLaneId & path,
     const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
-    const double path_width);
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest);
 
-  /**
-   * @brief calculate right and left path edge line
-   */
-  bool generateEdgeLine(
-    const autoware_planning_msgs::PathWithLaneId & path, const double path_width,
-    autoware_planning_msgs::PathWithLaneId * path_r,
-    autoware_planning_msgs::PathWithLaneId * path_l);
+  Polygon2d generateEgoLanePolygon(
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest) const;
 
   bool generateStopLine(
-    const int closest, const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
+    const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
     autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
 
   int getFirstPointInsidePolygons(
@@ -155,6 +129,13 @@ private:
     const std::vector<lanelet::CompoundPolygon3d> & polygons) const;
 
   bool getStopPoseFromMap(const int lane_id, geometry_msgs::Point * stop_pose) const;
+  void cutPredictPathWithDuration(
+    autoware_perception_msgs::DynamicObjectArray & objects, const double time_thr) const;
+  double calcIntersectionPassingTime(
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const int objective_lane_id) const;
+  void cutPredictPathWithDuration(
+    autoware_perception_msgs::DynamicObjectArray * objects, const double time_thr) const;
 
   StateMachine state_machine_;  //! for state
 

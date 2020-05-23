@@ -69,14 +69,14 @@ void IntersectionModuleManager::launchNewModules(
     }
 
     // Has traffic light, but not turn_right?
-    const auto traffic_lights = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
-    const auto has_traffic_light = !traffic_lights.empty();
-    const auto is_right = turn_direction == "right";
-    if (has_traffic_light && !is_right) {
-      continue;
-    }
+    // const auto traffic_lights = ll.regulatoryElementsAs<const lanelet::TrafficLight>();
+    // const auto has_traffic_light = !traffic_lights.empty();
+    // const auto is_right = turn_direction == "right";
+    // if (has_traffic_light && !is_right) {
+    //   continue;
+    // }
 
-    registerModule(std::make_shared<IntersectionModule>(module_id, lane_id));
+    registerModule(std::make_shared<IntersectionModule>(module_id, lane_id, planner_data_));
   }
 }
 

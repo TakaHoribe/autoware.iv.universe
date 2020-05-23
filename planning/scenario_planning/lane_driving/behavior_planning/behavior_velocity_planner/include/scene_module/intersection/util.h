@@ -45,5 +45,5 @@ geometry_msgs::Pose getAheadPose(
   const autoware_planning_msgs::PathWithLaneId & path);
 
 bool isAheadOf(const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin);
-
+bool hasLaneId(const autoware_planning_msgs::PathPointWithLaneId & p, const int id);
 }  // namespace util
