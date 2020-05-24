@@ -100,8 +100,9 @@ private:
   double decel_velocoity_;    //! used when in straight and traffic_light lane
   double path_expand_width_;  //! path width to calculate the edge line for both side
   double stop_line_margin_;   //! distance from auto-generated stopline to detection_area boundary
-  double stuck_vehicle_detect_dist_;  //! distance from intersection for stuck vehicle check.
+  double stuck_vehicle_detect_dist_;  //! distance from intersection for stuck vehicle check
   double stuck_vehicle_vel_thr_;      //! Threshold of the speed to be recognized as stopped
+  double intersection_velocity_;      //! used for intersection passing time
   bool show_debug_info_ = false;
 
   /**

@@ -43,6 +43,7 @@ IntersectionModule::IntersectionModule(
   decel_velocoity_ = 30.0 / 3.6;
   stuck_vehicle_detect_dist_ = 5.0;
   stuck_vehicle_vel_thr_ = 3.0 / 3.6;
+  intersection_velocity_ = 10.0 / 3.6;
 
 
   const auto & assigned_lanelet = planner_data->lanelet_map->laneletLayer.get(lane_id);
@@ -421,8 +422,7 @@ double IntersectionModule::calcIntersectionPassingTime(
   }
   if (!assigned_lane_found) return 0.0;  // has already passed the intersection.
 
-  constexpr double intersection_velocity = 3.0;  // TODO set to be reasonable
-  const double passing_time = dist_sum / intersection_velocity;
+  const double passing_time = dist_sum / intersection_velocity_;  // TODO set to be reasonable
 
   DEBUG_INFO("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
 
