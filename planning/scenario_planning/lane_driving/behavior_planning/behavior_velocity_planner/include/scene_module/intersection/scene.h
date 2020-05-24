@@ -72,10 +72,12 @@ public:
     geometry_msgs::Pose stop_point_pose;
     geometry_msgs::Pose judge_point_pose;
     geometry_msgs::Polygon ego_lane_polygon;
+    geometry_msgs::Polygon stuck_vehicle_detect_area;
     std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
     std::vector<lanelet::CompoundPolygon3d> detection_area;
     autoware_planning_msgs::PathWithLaneId spline_path;
     autoware_perception_msgs::DynamicObjectArray conflicting_targets;
+    autoware_perception_msgs::DynamicObjectArray stuck_targets;
   };
 
 public:
@@ -95,9 +97,11 @@ private:
   bool has_traffic_light_;
 
   // Parameter
-  double decel_velocoity_;    //! when collision, set this velocity for straight and traffic_light lane.
+  double decel_velocoity_;    //! used when in straight and traffic_light lane
   double path_expand_width_;  //! path width to calculate the edge line for both side
   double stop_line_margin_;   //! distance from auto-generated stopline to detection_area boundary
+  double stuck_vehicle_detect_dist_;  //! distance from intersection for stuck vehicle check.
+  double stuck_vehicle_vel_thr_;      //! Threshold of the speed to be recognized as stopped
   bool show_debug_info_ = false;
 
   /**
@@ -117,8 +121,15 @@ private:
     const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest);
 
-  Polygon2d generateEgoLanePolygon(
-    const autoware_planning_msgs::PathWithLaneId & path, const int closest) const;
+  /**
+   * @brief Calculate the polygon of the path from the ego-car position to the end of the intersection lanelet (+ extra distance).
+   * @param path       ego-car lane
+   * @param closest    ego-car position on the lane
+   * @param extra_dist extra distance from the end point of the intersection lanelet
+   */
+  Polygon2d generateEgoIntersectionLanePolygon(
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const double extra_dist) const;
 
   bool generateStopLine(
     const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
@@ -129,13 +140,19 @@ private:
     const std::vector<lanelet::CompoundPolygon3d> & polygons) const;
 
   bool getStopPoseFromMap(const int lane_id, geometry_msgs::Point * stop_pose) const;
+
   void cutPredictPathWithDuration(
-    autoware_perception_msgs::DynamicObjectArray & objects, const double time_thr) const;
+    autoware_perception_msgs::DynamicObjectArray * objects_ptr, const double time_thr) const;
+
   double calcIntersectionPassingTime(
     const autoware_planning_msgs::PathWithLaneId & path, const int closest,
     const int objective_lane_id) const;
-  void cutPredictPathWithDuration(
-    autoware_perception_msgs::DynamicObjectArray * objects, const double time_thr) const;
+
+  bool checkStuckVehicleInIntersection(
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr) const;
+
+  bool isTargetVehicleType(const autoware_perception_msgs::DynamicObject & object) const;
 
   StateMachine state_machine_;  //! for state
 

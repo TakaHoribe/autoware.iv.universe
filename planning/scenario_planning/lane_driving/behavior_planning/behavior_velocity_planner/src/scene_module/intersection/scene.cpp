@@ -32,7 +32,8 @@
 // clang-format on
 namespace bg = boost::geometry;
 
-IntersectionModule::IntersectionModule(const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data)
+IntersectionModule::IntersectionModule(
+  const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data)
 : SceneModuleInterface(module_id), lane_id_(lane_id)
 {
   state_machine_.setMarginTime(2.0);  // [sec]
@@ -40,6 +41,8 @@ IntersectionModule::IntersectionModule(const int64_t module_id, const int64_t la
   path_expand_width_ = 2.0;
   stop_line_margin_ = 1.0;
   decel_velocoity_ = 30.0 / 3.6;
+  stuck_vehicle_detect_dist_ = 5.0;
+  stuck_vehicle_vel_thr_ = 3.0 / 3.6;
 
 
   const auto & assigned_lanelet = planner_data->lanelet_map->laneletLayer.get(lane_id);
@@ -114,7 +117,9 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   /* calculate dynamic collision around detection area */
   bool has_collision = checkCollision(*path, objective_polygons, objects_ptr, closest);
-  state_machine_.setStateWithMarginTime(has_collision ? State::STOP : State::GO);
+  bool is_stuck = checkStuckVehicleInIntersection(*path, closest, objects_ptr);
+  bool is_entry_prohibited = (has_collision || is_stuck);
+  state_machine_.setStateWithMarginTime(is_entry_prohibited ? State::STOP : State::GO);
 
   /* set stop speed : TODO behavior on straight lane should be improved*/
   if (state_machine_.getState() == State::STOP) {
@@ -285,10 +290,10 @@ bool IntersectionModule::getObjectivePolygons(
 }
 
 void IntersectionModule::cutPredictPathWithDuration(
-  autoware_perception_msgs::DynamicObjectArray * objects, const double time_thr) const
+  autoware_perception_msgs::DynamicObjectArray * objects_ptr, const double time_thr) const
 {
   const ros::Time current_time = ros::Time::now();
-  for (auto & object : objects->objects) {                        // each objects
+  for (auto & object : objects_ptr->objects) {                        // each objects
     for (auto & predicted_path : object.state.predicted_paths) {  // each predicted paths
       std::vector<geometry_msgs::PoseWithCovarianceStamped> vp;
       for (auto & predicted_pose : predicted_path.path) {  // each path points
@@ -306,7 +311,8 @@ bool IntersectionModule::checkCollision(
   const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest)
 {
-  const Polygon2d ego_poly = generateEgoLanePolygon(path, closest);  // TODO use Lanelet
+  const Polygon2d ego_poly =
+    generateEgoIntersectionLanePolygon(path, closest, 0.0);  // TODO use Lanelet
   debug_data_.ego_lane_polygon = toGeomMsg(ego_poly);
 
   /* extruct objects in detection area */
@@ -360,18 +366,27 @@ bool IntersectionModule::checkCollision(
   return collision_detected;
 }
 
-Polygon2d IntersectionModule::generateEgoLanePolygon(
-  const autoware_planning_msgs::PathWithLaneId & path, const int closest) const
+Polygon2d IntersectionModule::generateEgoIntersectionLanePolygon(
+  const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+  const double extra_dist) const
 {
-  size_t ego_area_end_idx = 0;
+  size_t assigned_lane_end_idx = 0;
   bool has_assigned_lane_id_prev = false;
   for (size_t i = 0; i < path.points.size(); ++i) {
     bool has_assigned_lane_id = util::hasLaneId(path.points.at(i), lane_id_);
     if (has_assigned_lane_id_prev && !has_assigned_lane_id) {
-      ego_area_end_idx = i;
+      assigned_lane_end_idx = i;
       break;
     }
     has_assigned_lane_id_prev = has_assigned_lane_id;
+  }
+
+  size_t ego_area_end_idx = assigned_lane_end_idx;
+  double dist_sum = 0.0;
+  for (size_t i = assigned_lane_end_idx + 1; i < path.points.size(); ++i) {
+    dist_sum += planning_utils::calcDist2d(path.points.at(i), path.points.at(i - 1));
+    if (dist_sum > extra_dist) break;
+    ++ego_area_end_idx;
   }
 
   Polygon2d ego_area;  // open polygon
@@ -443,6 +458,43 @@ bool IntersectionModule::getStopPoseFromMap(
   stop_point->z = 0.5 * (p_start.z() + p_end.z());
 
   return true;
+}
+
+bool IntersectionModule::checkStuckVehicleInIntersection(
+  const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr) const
+{
+  const Polygon2d stuck_vehicle_detect_area =
+    generateEgoIntersectionLanePolygon(path, closest, stuck_vehicle_detect_dist_);
+  debug_data_.stuck_vehicle_detect_area = toGeomMsg(stuck_vehicle_detect_area);
+
+  for (const auto & object : objects_ptr->objects) {
+    if (!isTargetVehicleType(object)) {
+      continue;  // not target vehicle type
+    }
+    if (std::fabs(object.state.twist_covariance.twist.linear.x) > stuck_vehicle_vel_thr_) {
+      continue;  // not stop vehicle
+    }
+    const auto object_pos = object.state.pose_covariance.pose.position;
+    if (bg::within(to_bg2d(object_pos), stuck_vehicle_detect_area)) {
+      DEBUG_INFO("[intersection] stuck vehicle found.");
+      debug_data_.stuck_targets.objects.push_back(object);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IntersectionModule::isTargetVehicleType(
+  const autoware_perception_msgs::DynamicObject & object) const
+{
+  if (
+    object.semantic.type == autoware_perception_msgs::Semantic::CAR ||
+    object.semantic.type == autoware_perception_msgs::Semantic::BUS ||
+    object.semantic.type == autoware_perception_msgs::Semantic::TRUCK) {
+    return true;
+  }
+  return false;
 }
 
 void IntersectionModule::StateMachine::setStateWithMarginTime(State state)

@@ -97,7 +97,7 @@ visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
 
 visualization_msgs::MarkerArray createPolygonMarkerArray(
   const geometry_msgs::Polygon & polygon, const std::string & ns,
-  const int64_t lane_id)
+  const int64_t lane_id, const double r, const double g, const double b)
 {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
@@ -112,8 +112,8 @@ visualization_msgs::MarkerArray createPolygonMarkerArray(
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
   marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
-  marker.scale = createMarkerScale(0.1, 0.0, 0.0);
-  marker.color = createMarkerColor(0.0, 0.3, 0.7, 0.999);
+  marker.scale = createMarkerScale(0.3, 0.0, 0.0);
+  marker.color = createMarkerColor(r, g, b, 0.8);
   for (const auto & p : polygon.points) {
     geometry_msgs::Point point;
     point.x = p.x;
@@ -130,7 +130,7 @@ visualization_msgs::MarkerArray createPolygonMarkerArray(
 
 visualization_msgs::MarkerArray createObjectsMarkerArray(
   const autoware_perception_msgs::DynamicObjectArray & objects, const std::string & ns,
-  const int64_t lane_id)
+  const int64_t lane_id, const double r, const double g, const double b)
 {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
@@ -142,25 +142,6 @@ visualization_msgs::MarkerArray createObjectsMarkerArray(
 
   int32_t uid = (lane_id << (sizeof(visualization_msgs::Marker::id) * 8 / 2));
   int32_t i = 0;
-  // for (const auto & object : objects.objects)
-  // {
-  //   marker.id = uid + i++;
-  //   marker.lifetime = ros::Duration(0.3);
-  //   marker.type = visualization_msgs::Marker::LINE_STRIP;
-  //   marker.action = visualization_msgs::Marker::ADD;
-  //   marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
-  //   marker.scale = createMarkerScale(0.1, 0.0, 0.0);
-  //   marker.color = createMarkerColor(0.0, 0.1, 0.9, 0.999);
-  //   for (const auto & p : object.shape.footprint.points) {
-  //     geometry_msgs::Point point;
-  //     point.x = p.x;
-  //     point.y = p.y;
-  //     point.z = p.z;
-  //     marker.points.push_back(point);
-  //   }
-  //   marker.points.push_back(marker.points.front());
-  //   msg.markers.push_back(marker);
-  // }
   for (const auto & object : objects.objects)
   {
     marker.id = uid + i++;
@@ -169,7 +150,7 @@ visualization_msgs::MarkerArray createObjectsMarkerArray(
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose = object.state.pose_covariance.pose;
     marker.scale = createMarkerScale(3.0, 1.0, 1.0);
-    marker.color = createMarkerColor(0.2, 0.9, 0.9, 0.8);
+    marker.color = createMarkerColor(r, g, b, 0.8);
     msg.markers.push_back(marker);
   }
 
@@ -309,11 +290,19 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
     &debug_marker_array);
 
   appendMarkerArray(
-  createPolygonMarkerArray(debug_data_.ego_lane_polygon, "ego_lane", lane_id_),
+  createPolygonMarkerArray(debug_data_.ego_lane_polygon, "ego_lane", lane_id_, 0.0, 0.3, 0.7),
   &debug_marker_array);
 
   appendMarkerArray(
-  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_),
+  createPolygonMarkerArray(debug_data_.stuck_vehicle_detect_area, "stuck_vehicle_detect_area", lane_id_, 0.0, 0.5, 0.5),
+  &debug_marker_array);
+
+  appendMarkerArray(
+  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.5, 0.0),
+  &debug_marker_array);
+
+  appendMarkerArray(
+  createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.9, 0.9, 0.2),
   &debug_marker_array);
 
   appendMarkerArray(
