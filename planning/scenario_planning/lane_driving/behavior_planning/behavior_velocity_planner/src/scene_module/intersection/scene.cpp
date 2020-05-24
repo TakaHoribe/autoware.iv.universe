@@ -37,7 +37,7 @@ IntersectionModule::IntersectionModule(
 : SceneModuleInterface(module_id), lane_id_(lane_id)
 {
   state_machine_.setMarginTime(2.0);  // [sec]
-  show_debug_info_ = true;
+  show_debug_info_ = false;
   path_expand_width_ = 2.0;
   stop_line_margin_ = 1.0;
   decel_velocoity_ = 30.0 / 3.6;
