@@ -70,9 +70,9 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   const auto routing_graph_ptr = planner_data_->routing_graph;
 
   /* get detection area */
-  std::vector<lanelet::CompoundPolygon3d> objective_polygons;
-  getObjectivePolygons(lanelet_map_ptr, routing_graph_ptr, lane_id_, &objective_polygons);
-  if (objective_polygons.empty()) {
+  std::vector<lanelet::CompoundPolygon3d> detection_areas;
+  getObjectivePolygons(lanelet_map_ptr, routing_graph_ptr, lane_id_, &detection_areas);
+  if (detection_areas.empty()) {
     DEBUG_INFO("[Intersection] no detection area. skip computation.");
     return true;
   }
@@ -80,7 +80,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
   int judge_line_idx = -1;
-  if (!generateStopLine(objective_polygons, path, &stop_line_idx, &judge_line_idx)) {
+  if (!generateStopLine(detection_areas, path, &stop_line_idx, &judge_line_idx)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     return false;
   }
@@ -117,7 +117,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
-  bool has_collision = checkCollision(*path, objective_polygons, objects_ptr, closest);
+  bool has_collision = checkCollision(*path, detection_areas, objects_ptr, closest);
   bool is_stuck = checkStuckVehicleInIntersection(*path, closest, objects_ptr);
   bool is_entry_prohibited = (has_collision || is_stuck);
   state_machine_.setStateWithMarginTime(is_entry_prohibited ? State::STOP : State::GO);
@@ -154,7 +154,7 @@ int IntersectionModule::getFirstPointInsidePolygons(
 }
 
 bool IntersectionModule::generateStopLine(
-  const std::vector<lanelet::CompoundPolygon3d> objective_polygons,
+  const std::vector<lanelet::CompoundPolygon3d> detection_areas,
   autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const
 {
   /* set judge line dist */
@@ -182,7 +182,7 @@ bool IntersectionModule::generateStopLine(
     planning_utils::calcClosestIndex(path_ip, stop_point_from_map, stop_idx_ip, 10.0);
     stop_idx_ip = std::max(stop_idx_ip - base2front_idx_dist, 0);
   } else {
-    int first_idx_inside_lane = getFirstPointInsidePolygons(path_ip, objective_polygons);
+    int first_idx_inside_lane = getFirstPointInsidePolygons(path_ip, detection_areas);
     if (first_idx_inside_lane == -1) {
       DEBUG_INFO("[intersection] generate stopline, but no intersect line found.");
       return false;
@@ -309,7 +309,7 @@ void IntersectionModule::cutPredictPathWithDuration(
 
 bool IntersectionModule::checkCollision(
   const autoware_planning_msgs::PathWithLaneId & path,
-  const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
+  const std::vector<lanelet::CompoundPolygon3d> & detection_areas,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest)
 {
   /* generate ego-lane polygon */
@@ -331,9 +331,9 @@ bool IntersectionModule::checkCollision(
     }
 
     // keep vehicle in detection_area
-    for (const auto & objective_polygon : objective_polygons) {
+    for (const auto & detection_area : detection_areas) {
       const bool is_in_objective_lanelet =
-        bg::within(to_bg2d(object_pose.position), lanelet::utils::to2D(objective_polygon));
+        bg::within(to_bg2d(object_pose.position), lanelet::utils::to2D(detection_area));
       if (is_in_objective_lanelet) {
         target_objects.objects.push_back(object);
         break;
