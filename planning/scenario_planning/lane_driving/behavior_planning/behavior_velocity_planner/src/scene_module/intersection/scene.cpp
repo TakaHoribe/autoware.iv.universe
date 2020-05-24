@@ -311,13 +311,18 @@ bool IntersectionModule::checkCollision(
   const std::vector<lanelet::CompoundPolygon3d> & objective_polygons,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest)
 {
+  /* generate ego-lane polygon */
   const Polygon2d ego_poly =
     generateEgoIntersectionLanePolygon(path, closest, 0.0);  // TODO use Lanelet
   debug_data_.ego_lane_polygon = toGeomMsg(ego_poly);
 
-  /* extruct objects in detection area */
-  autoware_perception_msgs::DynamicObjectArray objects_in_detection_area;
+  /* extruct target objects */
+  autoware_perception_msgs::DynamicObjectArray target_objects;
   for (const auto & object : objects_ptr->objects) {
+    // ignore non-vehicle type objects, such as pedestrian.
+    if (!isTargetVehicleType(object)) continue;
+
+    // ignore vehicle in ego-lane. (TODO update check algorithm)
     const auto object_pose = object.state.pose_covariance.pose;
     const bool is_in_ego_lane = bg::within(to_bg2d(object_pose.position), ego_poly);
     if (is_in_ego_lane) {
@@ -325,28 +330,26 @@ bool IntersectionModule::checkCollision(
       continue;  // TODO(Kenji Miyake): check direction?
     }
 
+    // keep vehicle in detection_area
     for (const auto & objective_polygon : objective_polygons) {
       const bool is_in_objective_lanelet =
         bg::within(to_bg2d(object_pose.position), lanelet::utils::to2D(objective_polygon));
       if (is_in_objective_lanelet) {
-        objects_in_detection_area.objects.push_back(object);
+        target_objects.objects.push_back(object);
         break;
       }
     }
   }
-  ROS_INFO(
-    "[intersection] object_raw.size = %lu, object_in_DA.size = %lu.", objects_ptr->objects.size(),
-    objects_in_detection_area.objects.size());
 
-  /* remove the predicted position after passing_time */
+  /* check collision between target_objects predicted path and ego lane */
+
+  // cut the predicted path at passing_time
   const double passing_time = calcIntersectionPassingTime(path, closest, lane_id_);
-  cutPredictPathWithDuration(&objects_in_detection_area, passing_time);
+  cutPredictPathWithDuration(&target_objects, passing_time);
 
-  /* check collision between predicted_path and ego_area */
-  int dc = 0;
-
+  // check collision between predicted_path and ego_area
   bool collision_detected = false;
-  for (const auto & object : objects_in_detection_area.objects) {
+  for (const auto & object : target_objects.objects) {
     bool has_collision = false;
     for (const auto & predicted_path : object.state.predicted_paths) {
       has_collision = bg::intersects(ego_poly, to_bg2d(predicted_path.path));
@@ -355,11 +358,6 @@ bool IntersectionModule::checkCollision(
         debug_data_.conflicting_targets.objects.push_back(object);
         break;
       }
-    }
-    if (has_collision) {
-      ROS_INFO("[intersection] object no.%d has_collsion = YES!!!", dc++);
-    } else {
-      ROS_INFO("[intersection] object no.%d has_collsion = No", dc++);
     }
   }
 
