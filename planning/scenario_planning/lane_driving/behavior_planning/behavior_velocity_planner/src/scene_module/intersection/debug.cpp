@@ -298,11 +298,11 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
   &debug_marker_array);
 
   appendMarkerArray(
-  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.5, 0.0),
+  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.4, 0.0),
   &debug_marker_array);
 
   appendMarkerArray(
-  createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.9, 0.9, 0.2),
+  createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.99, 0.99, 0.2),
   &debug_marker_array);
 
   appendMarkerArray(

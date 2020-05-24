@@ -326,7 +326,6 @@ bool IntersectionModule::checkCollision(
     const auto object_pose = object.state.pose_covariance.pose;
     const bool is_in_ego_lane = bg::within(to_bg2d(object_pose.position), ego_poly);
     if (is_in_ego_lane) {
-      ROS_INFO("[intersection] object is in ego_lane. ignored.");
       continue;  // TODO(Kenji Miyake): check direction?
     }
 
@@ -425,7 +424,7 @@ double IntersectionModule::calcIntersectionPassingTime(
   constexpr double intersection_velocity = 3.0;  // TODO set to be reasonable
   const double passing_time = dist_sum / intersection_velocity;
 
-  ROS_INFO("[intersection] dist = %f, passing_time = %f", dist_sum, passing_time);
+  DEBUG_INFO("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
 
   return passing_time;
 }
@@ -444,10 +443,7 @@ bool IntersectionModule::getStopPoseFromMap(
       break;  // only one stop_line exists.
     }
   }
-  if (stop_line.empty()) {
-    ROS_INFO("map has no stop_line.");
-    return false;
-  }
+  if (stop_line.empty()) return false;
 
   const auto p_start = stop_line.front().front();
   const auto p_end = stop_line.front().back();
