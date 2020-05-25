@@ -29,12 +29,11 @@ double calcDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
 namespace bg = boost::geometry;
 
 DetectionAreaModule::DetectionAreaModule(
-  const int64_t module_id,
-  const lanelet::autoware::DetectionArea &detection_area_reg_elem)
+  const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem)
 : SceneModuleInterface(module_id),
   detection_area_reg_elem_(detection_area_reg_elem),
   state_(State::APPROARCH)
-{ 
+{
 }
 
 bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -44,7 +43,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
 
-  if(state_ == State::PASS) {
+  if (state_ == State::PASS) {
     return true;
   }
 
@@ -55,8 +54,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
   // get pointcloud
   const auto no_ground_pointcloud_ptr = planner_data_->no_ground_pointcloud;
 
-  if(!isPointsWithinDetectionArea(no_ground_pointcloud_ptr, detection_areas))
-  {
+  if (!isPointsWithinDetectionArea(no_ground_pointcloud_ptr, detection_areas)) {
     return true;
   }
 
@@ -69,10 +67,10 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // insert stop point
-  for(size_t stop_line_id = 0; stop_line_id < lanelet_stop_line.size() - 1; ++stop_line_id)
-  {
-    const Line stop_line = {{lanelet_stop_line[stop_line_id].x(), lanelet_stop_line[stop_line_id].y()},
-                              {lanelet_stop_line[stop_line_id + 1].x(), lanelet_stop_line[stop_line_id + 1].y()}};
+  for (size_t stop_line_id = 0; stop_line_id < lanelet_stop_line.size() - 1; ++stop_line_id) {
+    const Line stop_line = {
+      {lanelet_stop_line[stop_line_id].x(), lanelet_stop_line[stop_line_id].y()},
+      {lanelet_stop_line[stop_line_id + 1].x(), lanelet_stop_line[stop_line_id + 1].y()}};
     Eigen::Vector2d stop_line_point;
     size_t stop_line_point_idx;
     if (!createTargetPoint(
@@ -96,26 +94,21 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
 }
 
 bool DetectionAreaModule::isPointsWithinDetectionArea(
-    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
-    const lanelet::ConstPolygons3d & detection_areas
-)
+  const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
+  const lanelet::ConstPolygons3d & detection_areas)
 {
-  for(const auto & da : detection_areas)
-  {
-    for (size_t i = 0; i < no_ground_pointcloud_ptr->size(); ++i)
-    {
+  for (const auto & da : detection_areas) {
+    for (size_t i = 0; i < no_ground_pointcloud_ptr->size(); ++i) {
       // create polygon
       Polygon polygon;
       const auto da_polygon = da.basicPolygon();
-      for (const auto & da_point : da_polygon)
-      {
+      for (const auto & da_point : da_polygon) {
         polygon.outer().push_back(bg::make<Point>(da_point.x(), da_point.y()));
       }
       polygon.outer().push_back(polygon.outer().front());
 
       Point point(no_ground_pointcloud_ptr->at(i).x, no_ground_pointcloud_ptr->at(i).y);
-      if(bg::within(point, polygon))
-      {
+      if (bg::within(point, polygon)) {
         return true;
       }
     }

@@ -19,12 +19,11 @@
 
 namespace
 {
-std::unordered_map<int64_t, lanelet::DetectionAreaConstPtr>
-getDetectionAreaRegElemsOnPath(
+std::unordered_map<int64_t, lanelet::DetectionAreaConstPtr> getDetectionAreaRegElemsOnPath(
   const autoware_planning_msgs::PathWithLaneId & path, const lanelet::LaneletMapPtr lanelet_map)
 {
   std::unordered_map<int64_t, lanelet::DetectionAreaConstPtr> detection_area_reg_elems;
-  
+
   for (const auto & p : path.points) {
     const auto lane_id = p.lane_ids.at(0);
     const auto ll = lanelet_map->laneletLayer.get(lane_id);
@@ -46,7 +45,7 @@ std::set<int64_t> getLaneletIdSetOnPath(
   }
   return lanelet_id_set;
 }
-}
+}  // namespace
 
 void DetectionAreaModuleManager::launchNewModules(
   const autoware_planning_msgs::PathWithLaneId & path)
@@ -56,8 +55,8 @@ void DetectionAreaModuleManager::launchNewModules(
     // Use lanelet_id to unregister module when the route is changed
     const auto module_id = detection_area_reg_elem.first;
     if (!isModuleRegistered(module_id)) {
-      registerModule(std::make_shared<DetectionAreaModule>(
-        module_id, *(detection_area_reg_elem.second)));
+      registerModule(
+        std::make_shared<DetectionAreaModule>(module_id, *(detection_area_reg_elem.second)));
     }
   }
 }

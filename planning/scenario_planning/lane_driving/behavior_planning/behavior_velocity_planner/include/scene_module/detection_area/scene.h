@@ -31,8 +31,8 @@
 #include <ros/ros.h>
 
 #include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/regulatory_elements/detection_area.h>
+#include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
 #include <scene_module/scene_module_interface.h>
@@ -50,8 +50,7 @@ public:
 
 public:
   DetectionAreaModule(
-    const int64_t module_id,
-    const lanelet::autoware::DetectionArea &detection_area_reg_elem);
+    const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -64,8 +63,7 @@ private:
 
   bool isPointsWithinDetectionArea(
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
-    const lanelet::ConstPolygons3d & detection_areas
-  );
+    const lanelet::ConstPolygons3d & detection_areas);
 
   bool getBackwordPointFromBasePoint(
     const Eigen::Vector2d & line_point1, const Eigen::Vector2d & line_point2,

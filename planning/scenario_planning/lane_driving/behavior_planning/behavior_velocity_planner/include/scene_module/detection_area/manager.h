@@ -30,12 +30,12 @@
 #include <ros/ros.h>
 
 #include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_extension/utility/query.h>
 #include <lanelet2_extension/regulatory_elements/detection_area.h>
+#include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/scene_module_interface.h>
 #include <scene_module/detection_area/scene.h>
+#include <scene_module/scene_module_interface.h>
 
 class DetectionAreaModuleManager : public SceneModuleManagerInterface
 {
