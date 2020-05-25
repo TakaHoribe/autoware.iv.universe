@@ -48,9 +48,10 @@ void RoiClusterFusionNodelet::onInit()
   nh_ = getNodeHandle();
   private_nh_ = getPrivateNodeHandle();
 
-  private_nh_.param<bool>("use_iou_x_", use_iou_x_, true);
-  private_nh_.param<bool>("use_iou_y_", use_iou_y_, false);
-  private_nh_.param<bool>("use_iou_", use_iou_, false);
+  private_nh_.param<bool>("use_iou_x", use_iou_x_, true);
+  private_nh_.param<bool>("use_iou_y", use_iou_y_, false);
+  private_nh_.param<bool>("use_iou", use_iou_, false);
+  private_nh_.param<bool>("use_cluster_semantic_type", use_cluster_semantic_type_, false);
   private_nh_.param<double>("iou_threshold", iou_threshold_, 0.1);
   private_nh_.param<int>("rois_number", rois_number_, 1);
   if (rois_number_ < 1) {
@@ -157,6 +158,15 @@ void RoiClusterFusionNodelet::fusionCallback(
   autoware_perception_msgs::DynamicObjectWithFeatureArray output_msg;
   output_msg = *input_cluster_msg;
 
+  // reset cluster semantic type
+  if (!use_cluster_semantic_type_) {
+    for (auto & feature_object : output_msg.feature_objects) {
+      feature_object.object.semantic.type = autoware_perception_msgs::Semantic::UNKNOWN;
+      feature_object.object.semantic.confidence = 0.0;
+    }
+  }
+
+  // check camera info
   for (int id = 0; id < (int)v_roi_sub_.size(); ++id) {
     // cannot find camera info
     if (m_camera_info_.find(id) == m_camera_info_.end()) {

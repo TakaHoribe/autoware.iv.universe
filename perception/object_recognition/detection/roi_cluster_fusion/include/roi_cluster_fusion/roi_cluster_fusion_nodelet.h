@@ -93,6 +93,7 @@ private:
   bool use_iou_x_;
   bool use_iou_y_;
   bool use_iou_;
+  bool use_cluster_semantic_type_;
   double iou_threshold_;
   int rois_number_;
   std::map<int, sensor_msgs::CameraInfo> m_camera_info_;
