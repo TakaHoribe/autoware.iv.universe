@@ -33,7 +33,6 @@
 #include <scene_module/scene_module_interface.h>
 #include "utilization/boost_geometry_helper.h"
 
-
 class IntersectionModule : public SceneModuleInterface
 {
 public:
@@ -81,7 +80,9 @@ public:
   };
 
 public:
-  IntersectionModule(const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data);
+  IntersectionModule(
+    const int64_t module_id, const int64_t lane_id,
+    std::shared_ptr<const PlannerData> planner_data);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path

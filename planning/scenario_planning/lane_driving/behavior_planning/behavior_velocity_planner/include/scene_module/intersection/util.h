@@ -25,11 +25,8 @@
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Float32MultiArray.h>
 
-
-
 namespace util
 {
-
 bool setVelocityFrom(
   const size_t idx, const double vel, autoware_planning_msgs::PathWithLaneId * input);
 

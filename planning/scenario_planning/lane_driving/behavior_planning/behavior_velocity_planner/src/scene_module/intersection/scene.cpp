@@ -45,7 +45,6 @@ IntersectionModule::IntersectionModule(
   stuck_vehicle_vel_thr_ = 3.0 / 3.6;
   intersection_velocity_ = 10.0 / 3.6;
 
-
   const auto & assigned_lanelet = planner_data->lanelet_map->laneletLayer.get(lane_id);
   turn_direction_ = assigned_lanelet.attributeOr("turn_direction", "else");
   has_traffic_light_ =
@@ -294,7 +293,7 @@ void IntersectionModule::cutPredictPathWithDuration(
   autoware_perception_msgs::DynamicObjectArray * objects_ptr, const double time_thr) const
 {
   const ros::Time current_time = ros::Time::now();
-  for (auto & object : objects_ptr->objects) {                        // each objects
+  for (auto & object : objects_ptr->objects) {                    // each objects
     for (auto & predicted_path : object.state.predicted_paths) {  // each predicted paths
       std::vector<geometry_msgs::PoseWithCovarianceStamped> vp;
       for (auto & predicted_pose : predicted_path.path) {  // each path points

@@ -22,10 +22,8 @@
 
 namespace interpolation
 {
-
 // template <class T>
 // bool splineInterpolateWithFixInterval(const T & input, const double interval, T * output);
-
 
 class LinearInterpolate
 {
@@ -65,7 +63,7 @@ bool isIncrease(const std::vector<double> & x);
 bool isValidInput(
   const std::vector<double> & base_index, const std::vector<double> & base_value,
   const std::vector<double> & return_index, std::vector<double> & return_value);
-std::vector<double> calcEuclidDist(const std::vector<double> & x, const std::vector<double> &y);
+std::vector<double> calcEuclidDist(const std::vector<double> & x, const std::vector<double> & y);
 
 }  // namespace interpolation
 
