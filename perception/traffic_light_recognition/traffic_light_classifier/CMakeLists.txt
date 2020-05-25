@@ -76,22 +76,22 @@ generate_dynamic_reconfigure_options(cfg/HSVFilter.cfg)
 
 find_package(OpenCV REQUIRED)
 
-include_directories(
-  include
-  utils
-  ${OpenCV_INCLUDE_DIRS}
-  ${CUDA_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
-  )
-
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS
-  )
-
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   add_definitions(-DENABLE_GPU)
+
+  include_directories(
+    include
+    utils
+    ${OpenCV_INCLUDE_DIRS}
+    ${CUDA_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    )
+
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS
+    )
 
   # Download caffemodel and prototxt
   set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
@@ -110,7 +110,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     message(STATUS "... file does not exist. Downloading now ...")
     execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
   endif()
-
 
   ###########
   ## Build ##
@@ -132,7 +131,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   add_dependencies(libutils
     ${catkin_EXPORTED_TARGETS})
 
-
   add_executable(traffic_light_classifier_node
     src/color_classifier.cpp
     src/cnn_classifier.cpp
@@ -147,8 +145,28 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
+
+  install(
+    DIRECTORY
+    launch
+    data
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    )
+
 else()
   message("CUDA and/or TensorRT were not found. build only color classifier")
+
+  include_directories(
+    include
+    ${OpenCV_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    )
+
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS
+    )
 
   ###########
   ## Build ##
@@ -166,6 +184,13 @@ else()
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     )
+
+  install(
+    DIRECTORY
+    launch
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    )
+
 endif()
 
 #############
@@ -178,11 +203,4 @@ install(
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-
-install(
-  DIRECTORY
-  launch
-  data
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
