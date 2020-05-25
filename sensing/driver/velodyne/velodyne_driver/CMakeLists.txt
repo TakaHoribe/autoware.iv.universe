@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(velodyne_driver)
 
-# Set minimum C++ standard to C++11
+# Set minimum C++ standard to C++14
 if (NOT "${CMAKE_CXX_STANDARD_COMPUTED_DEFAULT}")
-  message(STATUS "Changing CXX_STANDARD from C++98 to C++11")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  message(STATUS "Changing CXX_STANDARD from C++98 to C++14")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 elseif ("${CMAKE_CXX_STANDARD_COMPUTED_DEFAULT}" STREQUAL "98")
-  message(STATUS "Changing CXX_STANDARD from C++98 to C++11")
-  set(CMAKE_CXX_STANDARD 11)
+  message(STATUS "Changing CXX_STANDARD from C++98 to C++14")
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
-set(${PROJECT_NAME}_CATKIN_DEPS 
+set(${PROJECT_NAME}_CATKIN_DEPS
     diagnostic_updater
     dynamic_reconfigure
     nodelet
@@ -74,7 +74,7 @@ if (CATKIN_ENABLE_TESTING)
     http://download.ros.org/data/velodyne/vlp16.pcap
     DESTINATION ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/tests
     MD5 f45c2bb1d7ee358274e423ea3b66fd73)
-  
+
   # unit tests
   add_rostest(tests/pcap_node_hertz.test)
   add_rostest(tests/pcap_nodelet_hertz.test)
@@ -82,7 +82,7 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(tests/pcap_32e_nodelet_hertz.test)
   add_rostest(tests/pcap_vlp16_node_hertz.test)
   add_rostest(tests/pcap_vlp16_nodelet_hertz.test)
-  
+
   # parse check all the launch/*.launch files
   roslaunch_add_file_check(launch)
 
