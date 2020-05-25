@@ -120,35 +120,36 @@ private:
    * @param path             ego-car lane
    * @param detection_areas  collidion check is performed for vehicles that exist in this area
    * @param objects_ptr      target objects
-   * @param closest          ego-car position index on the lane
+   * @param closest_idx      ego-car position index on the lane
    * @return true if collision is detected
    */
   bool checkCollision(
     const autoware_planning_msgs::PathWithLaneId & path,
     const std::vector<lanelet::CompoundPolygon3d> & detection_areas,
-    const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr, const int closest);
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr,
+    const int closest_idx);
 
   /**
    * @brief Check if there is a stopped vehicle on the ego-lane.
-   * @param path        ego-car lane
-   * @param closest     ego-car position on the lane
-   * @param objects_ptr target objects
+   * @param path            ego-car lane
+   * @param closest_idx     ego-car position on the lane
+   * @param objects_ptr     target objects
    * @return true if exists
    */
   bool checkStuckVehicleInIntersection(
-    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest_idx,
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr) const;
 
   /**
    * @brief Calculate the polygon of the path from the ego-car position to the end of the
    * intersection lanelet (+ extra distance).
-   * @param path       ego-car lane
-   * @param closest    ego-car position index on the lane
-   * @param extra_dist extra distance from the end point of the intersection lanelet
+   * @param path           ego-car lane
+   * @param closest_idx    ego-car position index on the lane
+   * @param extra_dist     extra distance from the end point of the intersection lanelet
    * @return generated polygon
    */
   Polygon2d generateEgoIntersectionLanePolygon(
-    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest_idx,
     const double extra_dist) const;
 
   /**
@@ -192,12 +193,12 @@ private:
   /**
    * @brief Calculate time that is needed for ego-vehicle to cross the intersection. (to be updated)
    * @param path              ego-car lane
-   * @param closest           ego-car position index on the lane
+   * @param closest_idx       ego-car position index on the lane
    * @param objective_lane_id lanelet id on ego-car
    * @return calculated time [s]
    */
   double calcIntersectionPassingTime(
-    const autoware_planning_msgs::PathWithLaneId & path, const int closest,
+    const autoware_planning_msgs::PathWithLaneId & path, const int closest_idx,
     const int objective_lane_id) const;
 
   /**

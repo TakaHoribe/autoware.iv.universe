@@ -30,17 +30,17 @@ int insertPoint(
 {
   static constexpr double dist_thr = 10.0;
   static constexpr double angle_thr = M_PI / 1.5;
-  int closest = -1;
-  if (!planning_utils::calcClosestIndex(*inout_path, in_pose, closest, dist_thr, angle_thr)) {
+  int closest_idx = -1;
+  if (!planning_utils::calcClosestIndex(*inout_path, in_pose, closest_idx, dist_thr, angle_thr)) {
     return -1;
   }
-  int insert_idx = closest;
-  if (isAheadOf(in_pose, inout_path->points.at(closest).point.pose)) {
+  int insert_idx = closest_idx;
+  if (isAheadOf(in_pose, inout_path->points.at(closest_idx).point.pose)) {
     ++insert_idx;
   }
 
   autoware_planning_msgs::PathPointWithLaneId inserted_point;
-  inserted_point = inout_path->points.at(closest);
+  inserted_point = inout_path->points.at(closest_idx);
   inserted_point.point.pose = in_pose;
 
   auto it = inout_path->points.begin() + insert_idx;
