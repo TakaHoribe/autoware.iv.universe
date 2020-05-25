@@ -32,7 +32,8 @@ DetectionAreaModule::DetectionAreaModule(
   const int64_t module_id,
   const lanelet::autoware::DetectionArea &detection_area_reg_elem)
 : SceneModuleInterface(module_id),
-  detection_area_reg_elem_(detection_area_reg_elem)
+  detection_area_reg_elem_(detection_area_reg_elem),
+  state_(State::APPROARCH)
 { 
 }
 
@@ -42,6 +43,10 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
 
   debug_data_ = {};
   debug_data_.base_link2front = planner_data_->base_link2front;
+
+  if(state_ == State::PASS) {
+    return true;
+  }
 
   // get stop line and detection_area
   lanelet::ConstLineString3d lanelet_stop_line = detection_area_reg_elem_.stopLine();
@@ -55,7 +60,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     return true;
   }
 
-  // get vehicle info
+  // get vehicle info and compute stop border distance
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
 
   const double stop_border_distance_threshold =
@@ -76,7 +81,8 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     }
 
     if (calcDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
-      ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
+      ROS_WARN_THROTTLE(1.0, "[detection_area] vehicle is over stop border");
+      state_ = State::PASS;
       return true;
     }
 
@@ -84,7 +90,6 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
       continue;
     }
-
     return true;
   }
   return false;
