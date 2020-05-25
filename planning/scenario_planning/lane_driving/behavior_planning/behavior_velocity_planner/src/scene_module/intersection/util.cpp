@@ -19,10 +19,6 @@
 #include "utilization/interpolate.h"
 #include "utilization/util.h"
 
-// clang-format off
-#define DEBUG_INFO(...) { ROS_INFO_COND(show_debug_info_, __VA_ARGS__); }
-
-// clang-format on
 namespace util
 {
 int insertPoint(
