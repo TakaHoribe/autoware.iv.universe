@@ -91,7 +91,6 @@ private:
 
   // Parameter
   const double stop_margin_ = 0.0;
-  const double tl_state_timeout_ = 1.0;
   const double max_stop_acceleration_threshold_ = -5.0;
 
   // Debug
