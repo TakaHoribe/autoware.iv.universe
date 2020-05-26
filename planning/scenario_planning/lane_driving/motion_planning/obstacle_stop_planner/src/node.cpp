@@ -125,7 +125,7 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   expand_slow_down_range_ = getParam<double>(pnh_, "expand_slow_down_range", 1.0);
   max_slow_down_vel_ = getParam<double>(pnh_, "max_slow_down_vel", 4.0);
   min_slow_down_vel_ = getParam<double>(pnh_, "min_slow_down_vel", 2.0);
-  max_decellation_ = getParam<double>(pnh_, "max_decellation", 2.0);
+  max_deceleration_ = getParam<double>(pnh_, "max_deceleration", 2.0);
   enable_slow_down_ = getParam<bool>(pnh_, "enable_slow_down", false);
   stop_margin_ += wheel_base_ + front_overhang_;
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
@@ -490,7 +490,7 @@ void ObstacleStopPlannerNode::pathCallback(
             slow_down_start_point);
           slow_down_vel = std::max(
             std::sqrt(
-              slow_down_target_vel * slow_down_target_vel + 2 * max_decellation_ * length_sum),
+              slow_down_target_vel * slow_down_target_vel + 2 * max_deceleration_ * length_sum),
             current_velocity_ptr_->twist.linear.x);
         }
 
@@ -511,7 +511,7 @@ void ObstacleStopPlannerNode::pathCallback(
             output_msg.points.at(j).pose.position.y - output_msg.points.at(j + 1).pose.position.y);
           slow_down_vel = std::max(
             slow_down_target_vel,
-            std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_decellation_ * dist, 0.0)));
+            std::sqrt(std::max(slow_down_vel * slow_down_vel - 2 * max_deceleration_ * dist, 0.0)));
           if (!is_slow_down_end && slow_down_vel <= slow_down_target_vel) {
             slow_down_end_trajectory_point = output_msg.points.at(j + 1);
             is_slow_down_end = true;

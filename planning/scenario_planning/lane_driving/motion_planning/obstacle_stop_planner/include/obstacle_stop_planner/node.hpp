@@ -66,7 +66,7 @@ private:
   double expand_slow_down_range_;
   double max_slow_down_vel_;
   double min_slow_down_vel_;
-  double max_decellation_;
+  double max_deceleration_;
   bool enable_slow_down_;
   void obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
