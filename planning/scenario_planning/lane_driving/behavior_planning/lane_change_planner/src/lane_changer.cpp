@@ -72,6 +72,8 @@ void LaneChanger::init()
   // publisher
   path_publisher_ =
     pnh_.advertise<autoware_planning_msgs::PathWithLaneId>("output/lane_change_path", 1);
+  candidate_path_publisher_ =
+    pnh_.advertise<autoware_planning_msgs::Path>("debug/lane_change_candidate_path", 1);
   path_marker_publisher_ =
     pnh_.advertise<visualization_msgs::MarkerArray>("debug/predicted_path_markers", 1);
   drivable_area_publisher_ = pnh_.advertise<nav_msgs::OccupancyGrid>("debug/drivable_area", 1);
@@ -143,6 +145,11 @@ void LaneChanger::run(const ros::TimerEvent & event)
   std_msgs::Bool lane_change_available_msg;
   lane_change_available_msg.data = lane_change_status.lane_change_available;
   lane_change_available_publisher_.publish(lane_change_available_msg);
+
+  auto candidate_path = util::convertToPathFromPathWithLaneId(lane_change_status.lane_change_path);
+  candidate_path.header.frame_id = "map";
+  candidate_path.header.stamp = ros::Time::now();
+  candidate_path_publisher_.publish(candidate_path);
 }
 
 void LaneChanger::publishDrivableArea(const autoware_planning_msgs::PathWithLaneId & path)
