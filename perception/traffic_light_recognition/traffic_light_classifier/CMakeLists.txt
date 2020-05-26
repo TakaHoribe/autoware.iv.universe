@@ -62,6 +62,24 @@ else()
   set(CUDNN_AVAIL OFF)
 endif()
 
+# Download caffemodel and prototxt
+set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
+if (NOT EXISTS "${PATH}")
+  execute_process(COMMAND mkdir -p ${PATH})
+endif()
+set(FILE "${PATH}/traffic_light_classifier_mobilenetv2.onnx")
+message(STATUS "Checking and downloading traffic_light_classifier_mobilenetv2.onnx")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1Q-pZNTUBDNWddcURARrvtz2jmTiqV5T7" -O ${PATH}/traffic_light_classifier_mobilenetv2.onnx)
+endif()
+set(FILE "${PATH}/lamp_labels.txt")
+message(STATUS "Checking and downloading lamp_labels.txt")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   cv_bridge
@@ -92,28 +110,6 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
     )
-
-  # Download caffemodel and prototxt
-  set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
-  if (NOT EXISTS "${PATH}")
-    execute_process(COMMAND mkdir -p ${PATH})
-  endif()
-  set(FILE "${PATH}/traffic_light_classifier_mobilenetv2.onnx")
-  message(STATUS "Checking and downloading traffic_light_classifier_mobilenetv2.onnx")
-  if (NOT EXISTS "${FILE}")
-    message(STATUS "... file does not exist. Downloading now ...")
-    execute_process(COMMAND gdown "https://drive.google.com/uc?id=1Q-pZNTUBDNWddcURARrvtz2jmTiqV5T7" -O ${PATH}/traffic_light_classifier_mobilenetv2.onnx)
-  endif()
-  set(FILE "${PATH}/lamp_labels.txt")
-  message(STATUS "Checking and downloading lamp_labels.txt")
-  if (NOT EXISTS "${FILE}")
-    message(STATUS "... file does not exist. Downloading now ...")
-    execute_process(COMMAND gdown "https://drive.google.com/uc?id=15fxhS2zDAU0aa_cLkrhMKo_1ZY-JnWTE" -O ${PATH}/lamp_labels.txt)
-  endif()
-
-  ###########
-  ## Build ##
-  ###########
 
   add_library(libutils
     utils/trt_common.cpp
@@ -147,6 +143,15 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     )
 
   install(
+    TARGETS
+    traffic_light_classifier_node
+    libutils
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+  install(
     DIRECTORY
     launch
     data
@@ -168,10 +173,6 @@ else()
     CATKIN_DEPENDS
     )
 
-  ###########
-  ## Build ##
-  ###########
-
   add_executable(traffic_light_classifier_node
     src/color_classifier.cpp
     src/node.cpp
@@ -186,21 +187,17 @@ else()
     )
 
   install(
+    TARGETS
+    traffic_light_classifier_node
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+  install(
     DIRECTORY
     launch
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
     )
 
 endif()
-
-#############
-## Install ##
-#############
-
-install(
-  TARGETS
-  traffic_light_classifier_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
