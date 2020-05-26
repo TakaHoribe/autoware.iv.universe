@@ -16,7 +16,6 @@
 #pragma once
 
 #include <autoware_perception_msgs/LampState.h>
-#include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
