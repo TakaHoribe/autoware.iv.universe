@@ -33,6 +33,7 @@
 #include <scene_module/intersection/manager.h>
 #include <scene_module/stop_line/manager.h>
 #include <scene_module/traffic_light/manager.h>
+#include <scene_module/detection_area/manager.h>
 
 namespace
 {
@@ -165,6 +166,8 @@ BehaviorVelocityPlannerNode::BehaviorVelocityPlannerNode()
     planner_manager_.launchSceneModule(std::make_shared<IntersectionModuleManager>());
   if (getParam<bool>(pnh_, "launch_blind_spot", true))
     planner_manager_.launchSceneModule(std::make_shared<BlindSpotModuleManager>());
+  if (getParam<bool>(pnh_, "launch_detection_area", true))
+    planner_manager_.launchSceneModule(std::make_shared<DetectionAreaModuleManager>());
 }
 
 geometry_msgs::PoseStamped BehaviorVelocityPlannerNode::getCurrentPose()
