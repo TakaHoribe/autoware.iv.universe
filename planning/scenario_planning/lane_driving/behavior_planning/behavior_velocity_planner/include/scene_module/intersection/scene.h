@@ -104,7 +104,6 @@ private:
   double stuck_vehicle_detect_dist_;  //! distance from intersection for stuck vehicle check
   double stuck_vehicle_vel_thr_;      //! Threshold of the speed to be recognized as stopped
   double intersection_velocity_;      //! used for intersection passing time
-  bool show_debug_info_ = false;
 
   /**
    * @brief get objective polygons for detection area

@@ -26,10 +26,6 @@
 #include "utilization/interpolate.h"
 #include "utilization/util.h"
 
-// clang-format off
-#define DEBUG_INFO(...) { ROS_INFO_COND(show_debug_info_, __VA_ARGS__); }
-
-// clang-format on
 namespace bg = boost::geometry;
 
 IntersectionModule::IntersectionModule(
@@ -37,7 +33,6 @@ IntersectionModule::IntersectionModule(
 : SceneModuleInterface(module_id), lane_id_(lane_id)
 {
   state_machine_.setMarginTime(2.0);  // [sec]
-  show_debug_info_ = false;
   path_expand_width_ = 2.0;
   stop_line_margin_ = 1.0;
   decel_velocoity_ = 30.0 / 3.6;
@@ -59,7 +54,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   debug_data_.path_raw = input_path;
 
   State current_state = state_machine_.getState();
-  DEBUG_INFO("[Intersection] lane_id = %ld, state = %d", lane_id_, static_cast<int>(current_state));
+  ROS_DEBUG("[Intersection] lane_id = %ld, state = %d", lane_id_, static_cast<int>(current_state));
 
   /* get current pose */
   geometry_msgs::PoseStamped current_pose = planner_data_->current_pose;
@@ -72,7 +67,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   std::vector<lanelet::CompoundPolygon3d> detection_areas;
   getObjectivePolygons(lanelet_map_ptr, routing_graph_ptr, lane_id_, &detection_areas);
   if (detection_areas.empty()) {
-    DEBUG_INFO("[Intersection] no detection area. skip computation.");
+    ROS_DEBUG("[Intersection] no detection area. skip computation.");
     return true;
   }
 
@@ -85,7 +80,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   }
 
   if (stop_line_idx <= 0 || judge_line_idx <= 0) {
-    DEBUG_INFO("[Intersection] stop line or judge line is at path[0], ignore planning.");
+    ROS_DEBUG("[Intersection] stop line or judge line is at path[0], ignore planning.");
     return true;
   }
 
@@ -108,7 +103,7 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
     is_over_judge_line = util::isAheadOf(current_pose.pose, judge_line);
   }
   if (current_state == State::GO && is_over_judge_line) {
-    DEBUG_INFO("[Intersection] over the judge line. no plan needed.");
+    ROS_DEBUG("[Intersection] over the judge line. no plan needed.");
     return true;  // no plan needed.
   }
 
@@ -183,7 +178,7 @@ bool IntersectionModule::generateStopLine(
   } else {
     int first_idx_inside_lane = getFirstPointInsidePolygons(path_ip, detection_areas);
     if (first_idx_inside_lane == -1) {
-      DEBUG_INFO("[intersection] generate stopline, but no intersect line found.");
+      ROS_DEBUG("[intersection] generate stopline, but no intersect line found.");
       return false;
     }
     stop_idx_ip = std::max(first_idx_inside_lane - 1 - margin_idx_dist - base2front_idx_dist, 0);
@@ -212,7 +207,7 @@ bool IntersectionModule::generateStopLine(
     ++(*stop_line_idx);  // stop index is incremented by judge line insertion
   }
 
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[intersection] generateStopLine() : stop_idx = %d, judge_idx = %d, stop_idx_ip = %d, "
     "judge_idx_ip = %d, has_prior_stopline = %d",
     *stop_line_idx, *judge_line_idx, stop_idx_ip, judge_idx_ip, has_prior_stopline);
@@ -423,7 +418,7 @@ double IntersectionModule::calcIntersectionPassingTime(
 
   const double passing_time = dist_sum / intersection_velocity_;  // TODO set to be reasonable
 
-  DEBUG_INFO("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
+  ROS_DEBUG("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
 
   return passing_time;
 }
@@ -470,7 +465,7 @@ bool IntersectionModule::checkStuckVehicleInIntersection(
     }
     const auto object_pos = object.state.pose_covariance.pose.position;
     if (bg::within(to_bg2d(object_pos), stuck_vehicle_detect_area)) {
-      DEBUG_INFO("[intersection] stuck vehicle found.");
+      ROS_DEBUG("[intersection] stuck vehicle found.");
       debug_data_.stuck_targets.objects.push_back(object);
       return true;
     }
