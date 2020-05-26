@@ -23,7 +23,6 @@
 #include <traffic_light_classifier/HSVFilterConfig.h>
 #include <traffic_light_classifier/classifier_interface.hpp>
 
-#include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
