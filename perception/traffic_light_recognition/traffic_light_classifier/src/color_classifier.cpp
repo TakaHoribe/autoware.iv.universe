@@ -15,6 +15,8 @@
  */
 #include "traffic_light_classifier/color_classifier.hpp"
 
+#include <opencv2/imgproc/imgproc_c.h>
+
 namespace traffic_light
 {
 ColorClassifier::ColorClassifier()
