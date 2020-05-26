@@ -49,7 +49,7 @@ bool calcClosestIndex(
   double yaw_pose = tf2::getYaw(pose.orientation);
   closest = -1;
 
-  for (int i = 0; i < (int)path.points.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(path.points.size()); ++i) {
     const double dist_squared = calcSquaredDist2d(getPose(path, i), pose);
 
     /* check distance threshold */
@@ -79,6 +79,38 @@ template bool calcClosestIndex<autoware_planning_msgs::PathWithLaneId>(
 template bool calcClosestIndex<autoware_planning_msgs::Path>(
   const autoware_planning_msgs::Path & path, const geometry_msgs::Pose & pose, int & closest,
   double dist_thr, double angle_thr);
+
+
+template <class T>
+bool calcClosestIndex(
+  const T & path, const geometry_msgs::Point & point, int & closest, double dist_thr)
+{
+  double dist_squared_min = std::numeric_limits<double>::max();
+  closest = -1;
+
+  for (int i = 0; i < static_cast<int>(path.points.size()); ++i) {
+    const double dist_squared = calcSquaredDist2d(getPose(path, i), point);
+
+    /* check distance threshold */
+    if (dist_squared > dist_thr * dist_thr) continue;
+
+    if (dist_squared < dist_squared_min) {
+      dist_squared_min = dist_squared;
+      closest = i;
+    }
+  }
+
+  return closest == -1 ? false : true;
+}
+template bool calcClosestIndex<autoware_planning_msgs::Trajectory>(
+  const autoware_planning_msgs::Trajectory & path, const geometry_msgs::Point & point,
+  int & closest, double dist_thr);
+template bool calcClosestIndex<autoware_planning_msgs::PathWithLaneId>(
+  const autoware_planning_msgs::PathWithLaneId & path, const geometry_msgs::Point & point,
+  int & closest, double dist_thr);
+template bool calcClosestIndex<autoware_planning_msgs::Path>(
+  const autoware_planning_msgs::Path & path, const geometry_msgs::Point & point, int & closest,
+  double dist_thr);
 
 geometry_msgs::Pose transformRelCoordinate2D(
   const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin)

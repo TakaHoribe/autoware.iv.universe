@@ -39,6 +39,10 @@ inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPoint & p
 {
   return p.pose.position;
 }
+inline geometry_msgs::Point getPoint(const autoware_planning_msgs::PathPointWithLaneId & p)
+{
+  return p.point.pose.position;
+}
 inline geometry_msgs::Point getPoint(const autoware_planning_msgs::TrajectoryPoint & p)
 {
   return p.pose.position;
@@ -76,6 +80,10 @@ template <class T>
 bool calcClosestIndex(
   const T & path, const geometry_msgs::Pose & pose, int & closest, double dist_thr = 3.0,
   double angle_thr = M_PI_4);
+
+template <class T>
+bool calcClosestIndex(
+  const T & path, const geometry_msgs::Point & point, int & closest, double dist_thr = 3.0);
 
 geometry_msgs::Pose transformRelCoordinate2D(
   const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin);

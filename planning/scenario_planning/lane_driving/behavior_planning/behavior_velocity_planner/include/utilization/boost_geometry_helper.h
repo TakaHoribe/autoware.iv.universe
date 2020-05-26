@@ -26,6 +26,7 @@
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/Polygon.h>
 
 #include <autoware_planning_msgs/PathPoint.h>
 #include <autoware_planning_msgs/PathPointWithLaneId.h>
@@ -103,4 +104,16 @@ inline std::vector<Segment2d> makeSegments(const LineString2d & ls)
     segments.emplace_back(ls.at(i), ls.at(i + 1));
   }
   return segments;
+}
+
+inline geometry_msgs::Polygon toGeomMsg(const Polygon2d & polygon)
+{
+  geometry_msgs::Polygon polygon_msg;
+  geometry_msgs::Point32 point_msg;
+  for (const auto & p : polygon.outer()) {
+    point_msg.x = p.x();
+    point_msg.y = p.y();
+    polygon_msg.points.push_back(point_msg);
+  }
+  return polygon_msg;
 }

@@ -49,7 +49,108 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(
       point.z = p.z();
       marker.points.push_back(point);
     }
+    if (!marker.points.empty())
+      marker.points.push_back(marker.points.front());
+    msg.markers.push_back(marker);
+  }
+
+  return msg;
+}
+
+
+visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
+  const std::vector<lanelet::CompoundPolygon3d> & polygons, const std::string & ns,
+  const int64_t lane_id)
+{
+  const auto current_time = ros::Time::now();
+  visualization_msgs::MarkerArray msg;
+
+  int32_t i = 0;
+  int32_t uid = (lane_id << (sizeof(visualization_msgs::Marker::id) * 8 / 2));
+  for (const auto & polygon : polygons) {
+    visualization_msgs::Marker marker{};
+    marker.header.frame_id = "map";
+    marker.header.stamp = current_time;
+
+    marker.ns = ns;
+    marker.id = uid + i++;
+    marker.lifetime = ros::Duration(0.3);
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+    marker.scale = createMarkerScale(0.1, 0.0, 0.0);
+    marker.color = createMarkerColor(0.0, 1.0, 0.0, 0.999);
+    for (const auto & p : polygon) {
+      geometry_msgs::Point point;
+      point.x = p.x();
+      point.y = p.y();
+      point.z = p.z();
+      marker.points.push_back(point);
+    }
+    if (!marker.points.empty())
+      marker.points.push_back(marker.points.front());
+    msg.markers.push_back(marker);
+  }
+
+  return msg;
+}
+
+visualization_msgs::MarkerArray createPolygonMarkerArray(
+  const geometry_msgs::Polygon & polygon, const std::string & ns,
+  const int64_t lane_id, const double r, const double g, const double b)
+{
+  const auto current_time = ros::Time::now();
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker{};
+  marker.header.frame_id = "map";
+  marker.header.stamp = current_time;
+
+  marker.ns = ns;
+  marker.id = lane_id;
+  marker.lifetime = ros::Duration(0.3);
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+  marker.scale = createMarkerScale(0.3, 0.0, 0.0);
+  marker.color = createMarkerColor(r, g, b, 0.8);
+  for (const auto & p : polygon.points) {
+    geometry_msgs::Point point;
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    marker.points.push_back(point);
+  }
+  if (!marker.points.empty())
     marker.points.push_back(marker.points.front());
+  msg.markers.push_back(marker);
+
+  return msg;
+}
+
+visualization_msgs::MarkerArray createObjectsMarkerArray(
+  const autoware_perception_msgs::DynamicObjectArray & objects, const std::string & ns,
+  const int64_t lane_id, const double r, const double g, const double b)
+{
+  const auto current_time = ros::Time::now();
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker{};
+  marker.header.frame_id = "map";
+  marker.header.stamp = current_time;
+  marker.ns = ns;
+
+  int32_t uid = (lane_id << (sizeof(visualization_msgs::Marker::id) * 8 / 2));
+  int32_t i = 0;
+  for (const auto & object : objects.objects)
+  {
+    marker.id = uid + i++;
+    marker.lifetime = ros::Duration(1.0);
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = object.state.pose_covariance.pose;
+    marker.scale = createMarkerScale(3.0, 1.0, 1.0);
+    marker.color = createMarkerColor(r, g, b, 0.8);
     msg.markers.push_back(marker);
   }
 
@@ -185,21 +286,27 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
     &debug_marker_array);
 
   appendMarkerArray(
-    createPathMarkerArray(
-      debug_data_.path_with_judgeline, "path_with_judgeline", lane_id_, 0.0, 0.5, 1.0),
+    createLaneletPolygonsMarkerArray(debug_data_.detection_area, "detection_area", lane_id_),
     &debug_marker_array);
 
   appendMarkerArray(
-    createLaneletsAreaMarkerArray(
-      debug_data_.intersection_detection_lanelets, "intersection_detection_lanelets", lane_id_),
-    &debug_marker_array);
+  createPolygonMarkerArray(debug_data_.ego_lane_polygon, "ego_lane", lane_id_, 0.0, 0.3, 0.7),
+  &debug_marker_array);
 
   appendMarkerArray(
-    createPathMarkerArray(debug_data_.path_right_edge, "path_right_edge", lane_id_, 0.5, 0.0, 0.5),
-    &debug_marker_array);
+  createPolygonMarkerArray(debug_data_.stuck_vehicle_detect_area, "stuck_vehicle_detect_area", lane_id_, 0.0, 0.5, 0.5),
+  &debug_marker_array);
 
   appendMarkerArray(
-    createPathMarkerArray(debug_data_.path_left_edge, "path_left_edge", lane_id_, 0.0, 0.5, 0.5),
+  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.4, 0.0),
+  &debug_marker_array);
+
+  appendMarkerArray(
+  createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.99, 0.99, 0.2),
+  &debug_marker_array);
+
+  appendMarkerArray(
+    createPathMarkerArray(debug_data_.spline_path, "spline", lane_id_, 0.5, 0.5, 0.5),
     &debug_marker_array);
 
   if (state == IntersectionModule::State::STOP) {
