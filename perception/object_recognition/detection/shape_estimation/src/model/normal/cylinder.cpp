@@ -29,7 +29,7 @@
 namespace normal {
 bool CylinderModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-  geometry_msgs::Pose & pose_output, bool & orientation_output)
+  geometry_msgs::Pose & pose_output)
 {
   // calc centroid point for cylinder height(z)
   pcl::PointXYZ centroid;
@@ -73,7 +73,6 @@ bool CylinderModel::estimate(
   pose_output.orientation.y = 0;
   pose_output.orientation.z = 0;
   pose_output.orientation.w = 1;
-  orientation_output = false;
   shape_output.dimensions.x = (double)radius * 2.0;
   shape_output.dimensions.y = (double)radius * 2.0;
   shape_output.dimensions.z = std::max((max_z - min_z), ep);

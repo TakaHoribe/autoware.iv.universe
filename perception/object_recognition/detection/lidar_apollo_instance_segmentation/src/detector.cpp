@@ -143,7 +143,7 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
     true /*use all grids for clustering*/);
   const float height_thresh = 0.5;
   const int min_pts_num = 3;
-  cluster2d_->getObjects(score_threshold_, height_thresh, min_pts_num, output, input.header);
+  cluster2d_->getObjects(score_threshold_, height_thresh, min_pts_num, output, transformed_cloud.header);
 
   // move down pointcloud z_offset in z axis
   for (int i=0; i<output.feature_objects.size(); i++) {
@@ -152,6 +152,6 @@ bool LidarApolloInstanceSegmentation::detectDynamicObjects(
     output.feature_objects.at(i).feature.cluster = transformed_cloud;
   }
 
-  output.header = input.header;
+  output.header = transformed_cloud.header;
   return true;
 }

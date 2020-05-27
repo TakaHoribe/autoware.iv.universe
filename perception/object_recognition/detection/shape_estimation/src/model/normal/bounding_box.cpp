@@ -35,7 +35,7 @@
 namespace normal {
 bool BoundingBoxModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-  geometry_msgs::Pose & pose_output, bool & orientation_output)
+  geometry_msgs::Pose & pose_output)
 {
   // calc centroid point for height(z)
   pcl::PointXYZ centroid;
@@ -147,7 +147,6 @@ bool BoundingBoxModel::estimate(
   pose_output.position.y = (intersection_y_1 + intersection_y_2) / 2.0;
   pose_output.position.z = centroid.z;
   pose_output.orientation = tf2::toMsg(quat);
-  orientation_output = false;
   constexpr double ep = 0.001;
   shape_output.dimensions.x = std::fabs(e_x.dot(diagonal_vec));
   shape_output.dimensions.y = std::fabs(e_y.dot(diagonal_vec));

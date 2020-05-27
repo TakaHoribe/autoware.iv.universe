@@ -39,7 +39,7 @@ namespace yaw_fixed {
 
 bool BoundingBoxModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-  geometry_msgs::Pose & pose_output, bool & orientation_output)
+  geometry_msgs::Pose & pose_output)
 {
   // calc centroid point for height(z)
   pcl::PointXYZ centroid;
@@ -221,7 +221,6 @@ bool BoundingBoxModel::estimate(
   shape_output.type = autoware_perception_msgs::Shape::BOUNDING_BOX;
   pose_output = refined_pose;
   shape_output = refined_shape;
-  orientation_output = true;
 
   // check wrong output
   if (shape_output.dimensions.x < ep && shape_output.dimensions.y < ep) return false;
