@@ -1,0 +1,44 @@
+<launch>
+  <arg name="input_cloud" default="/sensing/lidar/no_ground/pointcloud" />
+
+  <arg name="grid_size" default="0.1" />
+  <arg name="point_radius" default="50" />
+  <arg name="z_max" default="3" />
+  <arg name="z_min" default="0" />
+  <arg name="num_split" default="3" />
+  <arg name="debug" default="false" />
+  <arg name="world_frame" default="map" />
+  <arg name="target_frame" default="base_link" />
+
+  <!-- keypoint method {0: Naive, 1: Corner} -->
+  <arg name="keypoint_method" default="1" />
+
+  <group ns="optical_flow_node" if="$(eval keypoint_method==1)">
+    <param name="quality_level" value="0.01" />
+    <param name="min_distance" value="10" />
+    <param name="block_size" value="3" />
+    <param name="harris_k" value="0.04" />
+    <param name="max_corners" value="10000" />
+  </group>
+  <group ns="optical_flow_node" if="$(eval keypoint_method==0)">
+    <param name="sparce_size" value="4" />
+  </group>
+
+  <node name="optical_flow_node"
+        pkg="bev_optical_flow" type="optical_flow_node"
+        output="screen">
+    <remap from="~input_cloud" to="$(arg input_cloud)" />
+    <rosparam subst_value="true">
+      num_split: $(arg num_split)
+      debug: $(arg debug)
+      keypoint_method: $(arg keypoint_method)
+      grid_size: $(arg grid_size)
+      point_radius: $(arg point_radius)
+      z_max: $(arg z_max)
+      z_min: $(arg z_min)
+      world_frame: $(arg world_frame)
+      target_frame: $(arg target_frame)
+    </rosparam>
+  </node>
+
+</launch>
