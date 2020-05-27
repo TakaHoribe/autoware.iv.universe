@@ -65,7 +65,6 @@ void ShapeEstimationNode::callback(
     output_msg.feature_objects.push_back(feature_object);
     output_msg.feature_objects.back().object.shape = shape;
     output_msg.feature_objects.back().object.state.pose_covariance.pose = pose;
-    output_msg.feature_objects.back().object.state.orientation_reliable = feature_object.object.state.orientation_reliable;
   }
   // if (use_map_correct_)
   // {
