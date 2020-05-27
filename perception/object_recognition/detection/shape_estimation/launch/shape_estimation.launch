@@ -8,7 +8,7 @@
   <arg name="map_corrector/rad_threshold" default="1.2217304763960306"/>
   <arg name="node_name" default="shape_estimation"/>
   <arg name="l_shape_fitting_search_angle_range" default="3"/>
-  <arg name="orientation_reliable" default="false"/>
+  <arg name="orientation_reliable" default="true"/>
   <!-- 70 deg -->
   <node pkg="shape_estimation" type="shape_estimation" name="$(arg node_name)" output="screen">
     <remap from="input" to="$(arg input/objects)" />
