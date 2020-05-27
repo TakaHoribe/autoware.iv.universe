@@ -53,7 +53,7 @@ bool ShapeEstimator::getShapeAndPose(
 {
   autoware_perception_msgs::Shape shape;
   geometry_msgs::Pose pose;
-  if (!process(type, cluster, shape, pose, orientation)) {
+  if (!process(type, cluster, shape, pose)) {
     return false;
   }
   shape_output = shape;
@@ -68,7 +68,7 @@ bool ShapeEstimator::getShapeAndPose(
 {
   autoware_perception_msgs::Shape shape;
   geometry_msgs::Pose pose = state.pose_covariance.pose;
-  if (!process(type, cluster, shape, pose, orientation)) {
+  if (!process(type, cluster, shape, pose)) {
     return false;
   }
   shape_output = shape;
