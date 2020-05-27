@@ -29,6 +29,5 @@ public:
   ~NoFilter(){};
 
   bool filter(
-    const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-    const bool & orientation) override;
+    const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose) override;
 };

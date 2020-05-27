@@ -27,7 +27,6 @@ public:
   ~TruckCorrector(){};
 
   bool correct(
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientaion_output) override;
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output) override;
 };
 }

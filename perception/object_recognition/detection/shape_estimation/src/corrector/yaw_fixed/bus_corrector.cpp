@@ -19,8 +19,7 @@
 
 namespace yaw_fixed {
 bool BusCorrector::correct(
-  autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-  bool & orientaion_output)
+  autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output)
 {
   double min_width = 2.0;
   double max_width = 2.9;

@@ -34,5 +34,5 @@ public:
 
   virtual bool estimate(
     const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-    geometry_msgs::Pose & pose_output, bool & orientation_output) = 0;
+    geometry_msgs::Pose & pose_output) = 0;
 };

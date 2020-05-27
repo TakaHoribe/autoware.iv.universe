@@ -30,7 +30,7 @@
 namespace normal {
 bool ConvexHullModel::estimate(
   const pcl::PointCloud<pcl::PointXYZ> & cluster, autoware_perception_msgs::Shape & shape_output,
-  geometry_msgs::Pose & pose_output, bool & orientation_output)
+  geometry_msgs::Pose & pose_output)
 {
   // calc centroid point for convex hull height(z)
   pcl::PointXYZ centroid;
@@ -89,7 +89,6 @@ bool ConvexHullModel::estimate(
   pose_output.orientation.y = 0;
   pose_output.orientation.z = 0;
   pose_output.orientation.w = 1;
-  orientation_output = false;
   shape_output.dimensions.x = 0.0;
   shape_output.dimensions.y = 0.0;
   shape_output.dimensions.z = std::max((max_z - min_z), ep);

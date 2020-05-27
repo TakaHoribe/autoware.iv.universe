@@ -312,7 +312,7 @@ autoware_perception_msgs::DynamicObjectWithFeature Cluster2D::obstacleToObject(
   height = max_point.z - min_point.z;
 
   resulting_object.object.state.pose_covariance.pose.orientation = getQuaternionFromRPY(0.0, 0.0, in_obstacle.heading);
-  resulting_object.object.state.orientation_reliable = true;
+  resulting_object.object.state.orientation_reliable = false;
 
   resulting_object.object.state.pose_covariance.pose.position.x = min_point.x + length / 2;
   resulting_object.object.state.pose_covariance.pose.position.y = min_point.y + width / 2;

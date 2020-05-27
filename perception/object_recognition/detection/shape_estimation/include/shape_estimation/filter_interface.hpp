@@ -30,6 +30,5 @@ public:
   virtual ~ShapeEstimationFilterInterface(){};
 
   virtual bool filter(
-    const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose,
-    const bool & orientation) = 0;
+    const autoware_perception_msgs::Shape & shape, const geometry_msgs::Pose & pose) = 0;
 };

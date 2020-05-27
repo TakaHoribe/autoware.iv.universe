@@ -31,36 +31,33 @@ class ShapeEstimator
 private:
   bool estimateShape(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output);
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output);
   bool applyFilter(
     const int type, const autoware_perception_msgs::Shape & shape_output,
-    const geometry_msgs::Pose & pose_output, const bool & orientation_output);
+    const geometry_msgs::Pose & pose_output);
   bool applyCorrector(
     const int type, autoware_perception_msgs::Shape & shape_output,
-    geometry_msgs::Pose & pose_output, bool & orientation_output);
+    geometry_msgs::Pose & pose_output);
   bool process(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output);
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output);
 
   double l_shape_fitting_search_angle_range_;
   bool use_corrector_;
+  bool orientation_reliable_;
 
 public:
   ShapeEstimator();
 
-  ShapeEstimator(double l_shape_fitting_search_angle_range, bool use_corrector);
+  ShapeEstimator(double l_shape_fitting_search_angle_range, bool use_corrector, bool orientation_reliable);
 
   ~ShapeEstimator(){};
 
   bool getShapeAndPose(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output);
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output);
   bool getShapeAndPose(
     const int type, const pcl::PointCloud<pcl::PointXYZ> & cluster,
     const autoware_perception_msgs::State & state,
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output);
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output);
 };
