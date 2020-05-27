@@ -55,9 +55,11 @@ bool splineInterpolate(
   // calc arclength for path
   std::vector<double> base_x;
   std::vector<double> base_y;
+  std::vector<double> base_z;
   for (const auto & p : input.points) {
     base_x.push_back(p.point.pose.position.x);
     base_y.push_back(p.point.pose.position.y);
+    base_z.push_back(p.point.pose.position.z);
   }
   std::vector<double> base_s = interpolation::calcEuclidDist(base_x, base_y);
   std::vector<double> resampled_s;
@@ -69,9 +71,11 @@ bool splineInterpolate(
   interpolation::SplineInterpolate spline;
   std::vector<double> resampled_x;
   std::vector<double> resampled_y;
+  std::vector<double> resampled_z;
   if (
     !spline.interpolate(base_s, base_x, resampled_s, resampled_x) ||
-    !spline.interpolate(base_s, base_y, resampled_s, resampled_y)) {
+    !spline.interpolate(base_s, base_y, resampled_s, resampled_y) ||
+    !spline.interpolate(base_s, base_z, resampled_s, resampled_z)) {
     ROS_ERROR("[IntersectionModule::splineInterpolate] spline interpolation failed.");
     return false;
   }
@@ -82,6 +86,7 @@ bool splineInterpolate(
     autoware_planning_msgs::PathPointWithLaneId p;
     p.point.pose.position.x = resampled_x.at(i);
     p.point.pose.position.y = resampled_y.at(i);
+    p.point.pose.position.z = resampled_z.at(i);
     output->points.push_back(p);
   }
 
