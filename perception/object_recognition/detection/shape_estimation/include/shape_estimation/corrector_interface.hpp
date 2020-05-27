@@ -30,6 +30,5 @@ public:
   virtual ~ShapeEstimationCorrectorInterface(){};
 
   virtual bool correct(
-    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output,
-    bool & orientation_output) = 0;
+    autoware_perception_msgs::Shape & shape_output, geometry_msgs::Pose & pose_output) = 0;
 };
