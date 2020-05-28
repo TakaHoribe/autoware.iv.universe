@@ -228,6 +228,7 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   turn_signal_msg.data = autoware_vehicle_msgs::TurnSignal::NONE;
   if (current_turn_signal_cmd_ptr_) {
     const auto cmd = current_turn_signal_cmd_ptr_->data;
+    // ignore invalid data such as cmd=999
     if (
       cmd == autoware_vehicle_msgs::TurnSignal::LEFT ||
       cmd == autoware_vehicle_msgs::TurnSignal::RIGHT ||
