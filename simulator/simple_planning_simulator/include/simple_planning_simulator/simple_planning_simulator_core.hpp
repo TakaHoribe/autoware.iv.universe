@@ -87,16 +87,14 @@ private:
   tf2_ros::TransformBroadcaster tf_broadcaster_;  //!< @brief tf broadcaster
 
   /* received & published topics */
-  geometry_msgs::Pose
-    current_pose_;  //!< @brief current vehicle position ang angle with pose message class
-  geometry_msgs::Twist
-    current_twist_;  //!< @brief current vehicle velocity with twist message class
-  std::shared_ptr<autoware_vehicle_msgs::VehicleCommand>
+  geometry_msgs::Pose current_pose_;    //!< @brief current vehicle position ang angle
+  geometry_msgs::Twist current_twist_;  //!< @brief current vehicle velocity
+  autoware_vehicle_msgs::VehicleCommandConstPtr
     current_vehicle_cmd_ptr_;  //!< @brief latest received vehicle_cmd
-  std::shared_ptr<autoware_planning_msgs::Trajectory>
+  autoware_planning_msgs::TrajectoryConstPtr
     current_trajectory_ptr_;  //!< @brief latest received trajectory
   double closest_pos_z_;      //!< @brief z position on closest trajectory
-  std::shared_ptr<autoware_vehicle_msgs::TurnSignal> current_turn_signal_cmd_ptr_;
+  autoware_vehicle_msgs::TurnSignalConstPtr current_turn_signal_cmd_ptr_;
 
   /* frame_id */
   std::string

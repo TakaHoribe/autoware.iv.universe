@@ -140,7 +140,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
 
 void Simulator::callbackTrajectory(const autoware_planning_msgs::TrajectoryConstPtr & msg)
 {
-  current_trajectory_ptr_ = std::make_shared<autoware_planning_msgs::Trajectory>(*msg);
+  current_trajectory_ptr_ = msg;
 }
 void Simulator::callbackInitialPoseWithCov(
   const geometry_msgs::PoseWithCovarianceStampedConstPtr & msg)
@@ -248,7 +248,7 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
 
 void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg)
 {
-  current_vehicle_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::VehicleCommand>(*msg);
+  current_vehicle_cmd_ptr_ = msg;
 
   if (
     vehicle_model_type_ == VehicleModelType::IDEAL_STEER ||
@@ -267,7 +267,7 @@ void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandCo
 }
 void Simulator::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr & msg)
 {
-  current_turn_signal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::TurnSignal>(*msg);
+  current_turn_signal_cmd_ptr_ = msg;
 }
 
 void Simulator::setInitialStateWithPoseTransform(
