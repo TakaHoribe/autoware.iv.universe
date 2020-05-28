@@ -75,7 +75,8 @@ private:
   ros::Publisher pub_turn_signal_;
   ros::Publisher pub_shift_;
 
-  ros::Subscriber sub_vehicle_cmd_;  //!< @brief topic subscriber for vehicle_cmd
+  ros::Subscriber sub_vehicle_cmd_;      //!< @brief topic subscriber for vehicle_cmd
+  ros::Subscriber sub_turn_signal_cmd_;  //!< @brief topic subscriber for turn_signal_cmd
   ros::Subscriber sub_trajectory_;   //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;  //!< @brief topic subscriber for initialpose topic
   ros::Timer timer_simulation_;      //!< @brief timer for simulation
@@ -95,6 +96,7 @@ private:
   std::shared_ptr<autoware_planning_msgs::Trajectory>
     current_trajectory_ptr_;  //!< @brief latest received trajectory
   double closest_pos_z_;      //!< @brief z position on closest trajectory
+  std::shared_ptr<autoware_vehicle_msgs::TurnSignal> current_turn_signal_cmd_ptr_;
 
   /* frame_id */
   std::string
@@ -144,6 +146,11 @@ private:
    * @brief set current_vehicle_cmd_ptr_ with received message
    */
   void callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg);
+
+  /**
+   * @brief set current_turn_signal_cmd_ptr with received message
+   */
+  void callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr & msg);
 
   /**
    * @brief set current_trajectory_ptr_ with received message

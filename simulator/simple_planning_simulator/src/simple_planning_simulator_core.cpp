@@ -39,6 +39,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
   pub_shift_ = nh_.advertise<autoware_vehicle_msgs::ShiftStamped>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
+  sub_turn_signal_cmd_ = pnh_.subscribe("input/turn_signal_cmd", 1, &Simulator::callbackTurnSignalCmd, this);
   timer_simulation_ =
     nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
 
@@ -225,6 +226,15 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   turn_signal_msg.header.frame_id = simulation_frame_id_;
   turn_signal_msg.header.stamp = ros::Time::now();
   turn_signal_msg.data = autoware_vehicle_msgs::TurnSignal::NONE;
+  if (current_turn_signal_cmd_ptr_) {
+    const auto cmd = current_turn_signal_cmd_ptr_->data;
+    if (
+      cmd == autoware_vehicle_msgs::TurnSignal::LEFT ||
+      cmd == autoware_vehicle_msgs::TurnSignal::RIGHT ||
+      cmd == autoware_vehicle_msgs::TurnSignal::HAZARD) {
+      turn_signal_msg.data = cmd;
+    }
+  }
   pub_turn_signal_.publish(turn_signal_msg);
 
   autoware_vehicle_msgs::ShiftStamped shift_msg;
@@ -253,6 +263,10 @@ void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandCo
   } else {
     ROS_WARN("[%s] : invalid vehicle_model_type_  error.", __func__);
   }
+}
+void Simulator::callbackTurnSignalCmd(const autoware_vehicle_msgs::TurnSignalConstPtr & msg)
+{
+  current_turn_signal_cmd_ptr_ = std::make_shared<autoware_vehicle_msgs::TurnSignal>(*msg);
 }
 
 void Simulator::setInitialStateWithPoseTransform(
