@@ -18,7 +18,6 @@
 
 #include <iostream>
 #include <math.h>
-
 #include <ros/ros.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -26,49 +25,47 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include "utils.h"
 
 namespace object_flow_fusion
 {
-  class ObjectFlowFusion {
-  public:
-    ObjectFlowFusion();
-    void fusion
-      (const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& object_msg,
-       const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& flow_msg,
-       bool use_flow_pose, float flow_vel_thresh_,
-       autoware_perception_msgs::DynamicObjectWithFeatureArray& fusioned_msg);
-  private:
+class ObjectFlowFusion
+{
+public:
+  ObjectFlowFusion();
+  void fusion(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& object_msg,
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& flow_msg,
+    bool use_flow_pose, float flow_vel_thresh_,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& fusioned_msg);
+private:
 
-    bool getPolygon
-      (const autoware_perception_msgs::DynamicObject& object,
-       const geometry_msgs::Polygon& input_footprint,
-       geometry_msgs::Polygon& output_footprint);
+  bool getPolygon(
+    const autoware_perception_msgs::DynamicObject& object,
+    const geometry_msgs::Polygon& input_footprint,
+    geometry_msgs::Polygon& output_footprint);
 
-    bool isInsidePolygon
-      (const geometry_msgs::Pose& pose,
-       const geometry_msgs::Polygon& footprint,
-       const geometry_msgs::Point& flow_point);
+  bool isInsidePolygon(
+    const geometry_msgs::Pose& pose,
+    const geometry_msgs::Polygon& footprint,
+    const geometry_msgs::Point& flow_point);
 
-    bool isInsideCylinder
-      (const geometry_msgs::Pose& pose,
-       const autoware_perception_msgs::Shape& shape,
-       const geometry_msgs::Point& flow_point);
+  bool isInsideCylinder(
+    const geometry_msgs::Pose& pose,
+    const autoware_perception_msgs::Shape& shape,
+    const geometry_msgs::Point& flow_point);
 
-    bool isInsideShape
-      (const autoware_perception_msgs::DynamicObject& object,
-       const geometry_msgs::Point& flow_point,
-       const geometry_msgs::Polygon& footprint);
+  bool isInsideShape(
+    const autoware_perception_msgs::DynamicObject& object,
+    const geometry_msgs::Point& flow_point,
+    const geometry_msgs::Polygon& footprint);
 
-    geometry_msgs::Twist getLocalTwist
-      (const geometry_msgs::Pose& obj_pose, const geometry_msgs::Twist& base_coords_twist);
+  geometry_msgs::Twist getLocalTwist(
+    const geometry_msgs::Pose& obj_pose, const geometry_msgs::Twist& base_coords_twist);
 
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
-
-    float point_radius_;
-    std::shared_ptr<Utils> utils_;
-  };
-
-} // namespace object_flow_fusion
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  float point_radius_;
+  std::shared_ptr<Utils> utils_;
+};
+} // object_flow_fusion

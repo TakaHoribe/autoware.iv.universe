@@ -28,36 +28,36 @@
 
 namespace object_flow_fusion
 {
-  class ObjectFlowFusionNode {
-  public:
-    ObjectFlowFusionNode();
-    void callback
-      (const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& object_msg,
-       const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& flow_msg);
-  private:
-    typedef message_filters::sync_policies::ApproximateTime<
-      autoware_perception_msgs::DynamicObjectWithFeatureArray,
-      autoware_perception_msgs::DynamicObjectWithFeatureArray
-      > ApproximateSync;
+class ObjectFlowFusionNode
+{
+public:
+  ObjectFlowFusionNode();
+  void callback(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& object_msg,
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray::ConstPtr& flow_msg);
+private:
+  typedef message_filters::sync_policies::ApproximateTime<
+  autoware_perception_msgs::DynamicObjectWithFeatureArray,
+  autoware_perception_msgs::DynamicObjectWithFeatureArray
+  > ApproximateSync;
 
-    typedef message_filters::sync_policies::ExactTime<
-      autoware_perception_msgs::DynamicObjectWithFeatureArray,
-      autoware_perception_msgs::DynamicObjectWithFeatureArray
-      > Sync;
+  typedef message_filters::sync_policies::ExactTime<
+    autoware_perception_msgs::DynamicObjectWithFeatureArray,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray
+    > Sync;
 
-    boost::shared_ptr<message_filters::Synchronizer<ApproximateSync> > approximate_sync_;
-    boost::shared_ptr<message_filters::Synchronizer<Sync> > sync_;
-    message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> object_sub_;
-    message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> flow_sub_;
+  boost::shared_ptr<message_filters::Synchronizer<ApproximateSync> > approximate_sync_;
+  boost::shared_ptr<message_filters::Synchronizer<Sync> > sync_;
+  message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> object_sub_;
+  message_filters::Subscriber<autoware_perception_msgs::DynamicObjectWithFeatureArray> flow_sub_;
 
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
-    ros::Publisher pub_;
-    bool is_approximate_sync_;
-    bool use_flow_pose_;
-    float flow_vel_thresh_;
-    std::shared_ptr<ObjectFlowFusion> object_flow_fusion_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  ros::Publisher pub_;
+  bool is_approximate_sync_;
+  bool use_flow_pose_;
+  float flow_vel_thresh_;
+  std::shared_ptr<ObjectFlowFusion> object_flow_fusion_;
 
-  };
-
-} // namespace object_flow_fusion
+};
+} // object_flow_fusion
