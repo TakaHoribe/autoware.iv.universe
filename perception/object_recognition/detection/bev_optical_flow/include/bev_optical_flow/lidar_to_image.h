@@ -31,27 +31,27 @@
 
 namespace bev_optical_flow
 {
-  class LidarToBEVImage {
-  public:
-    LidarToBEVImage();
-    void getBEVImage(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg,
-                     cv::Mat& bev_image);
+class LidarToBEVImage
+{
+public:
+  LidarToBEVImage();
+  void getBEVImage(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg,
+    cv::Mat& bev_image);
 
-  private:
-    float pointToPixel(const pcl::PointXYZ& point, cv::Point2d& px);
+private:
+  float pointToPixel(const pcl::PointXYZ& point, cv::Point2d& px);
 
-    std::shared_ptr<Utils> utils_;
+  std::shared_ptr<Utils> utils_;
 
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
 
-    int image_size_;
-    float grid_size_;
-    float point_radius_;
-    float z_max_;
-    float z_min_;
-    int depth_max_;
-    int depth_min_;
-  };
-
-} // namespace bev_optical_flow
+  int image_size_;
+  float grid_size_;
+  float point_radius_;
+  float z_max_;
+  float z_min_;
+  int depth_max_;
+  int depth_min_;
+};
+} // bev_optical_flow

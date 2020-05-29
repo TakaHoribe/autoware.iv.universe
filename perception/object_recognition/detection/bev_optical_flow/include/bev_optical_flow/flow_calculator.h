@@ -18,67 +18,68 @@
 
 #include <iostream>
 #include <ros/ros.h>
-
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
-
 #include "utils.h"
 #include "lidar_to_image.h"
 #include "debugger.h"
 
 namespace bev_optical_flow
 {
-  class FlowCalculator {
-  public:
-    FlowCalculator();
-    bool getOpticalFlowArray(autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg);
-    bool getSceneFlowArray
-      (const autoware_perception_msgs::DynamicObjectWithFeatureArray& optical_flow_array,
-       autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
-    void setup(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
-    bool isInitialized();
-    void run(autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
+class FlowCalculator
+{
+public:
+  FlowCalculator();
+  bool getOpticalFlowArray(
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg);
+  bool getSceneFlowArray(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray& optical_flow_array,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
+  void setup(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
+  bool isInitialized();
+  void run(autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
 
-  private:
-    typedef std::vector< std::vector<cv::Point2f> > PointsArray;
+private:
+  typedef std::vector< std::vector<cv::Point2f> > PointsArray;
 
-    int get_layer(int depth);
-    bool calcOpticalFlow(cv::Mat& current_image,
-                         cv::Mat& prev_image,
-                         std::vector<cv::Point2f>& prev_points,
-                         autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg,
-                         const cv::Mat& depth_image);
-    bool calcSceneFlow(const autoware_perception_msgs::DynamicObjectWithFeature& optical_flow,
-                       autoware_perception_msgs::DynamicObjectWithFeature& scene_flow);
+  int get_layer(int depth);
+  bool calcOpticalFlow(
+    cv::Mat& current_image,
+    cv::Mat& prev_image,
+    std::vector<cv::Point2f>& prev_points,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg,
+    const cv::Mat& depth_image);
+  bool calcSceneFlow(
+    const autoware_perception_msgs::DynamicObjectWithFeature& optical_flow,
+    autoware_perception_msgs::DynamicObjectWithFeature& scene_flow);
 
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
 
-    float quality_level_;
-    int min_distance_;
-    int block_size_;
-    float harris_k_;
-    int max_corners_;
-    int sparce_size_;
-    int num_split_;
-    bool debug_;
+  float quality_level_;
+  int min_distance_;
+  int block_size_;
+  float harris_k_;
+  int max_corners_;
+  int sparce_size_;
+  int num_split_;
+  bool debug_;
 
-    std::vector<cv::Mat> current_images_;
-    std::vector<cv::Mat> prev_images_;
-    PointsArray prev_points_array_;
+  std::vector<cv::Mat> current_images_;
+  std::vector<cv::Mat> prev_images_;
+  PointsArray prev_points_array_;
 
-    cv::Mat image_;
-    ros::Time current_stamp_;
-    ros::Time prev_stamp_;
-    cv::Point2f vehicle_vel_;
-    double topic_rate_;
-    bool setup_;
+  cv::Mat image_;
+  ros::Time current_stamp_;
+  ros::Time prev_stamp_;
+  cv::Point2f vehicle_vel_;
+  double topic_rate_;
+  bool setup_;
 
-    std::shared_ptr<LidarToBEVImage> lidar_to_image_;
-    std::shared_ptr<Utils> utils_;
+  std::shared_ptr<LidarToBEVImage> lidar_to_image_;
+  std::shared_ptr<Utils> utils_;
 
-    Debugger debugger_;
-  };
-
-} // namespace bev_optical_flow
+  Debugger debugger_;
+};
+} // bev_optical_flow
