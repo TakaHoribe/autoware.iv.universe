@@ -16,13 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_perception_msgs
   eigen_conversions
   )
-
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
-
-find_package(PCL 1.7 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
 
 include_directories(
   include
@@ -50,7 +45,7 @@ add_executable(optical_flow_node
   )
 target_link_libraries(optical_flow_node
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
+  ${OpenCV_LIBRARIES}
   )
 
 install(
