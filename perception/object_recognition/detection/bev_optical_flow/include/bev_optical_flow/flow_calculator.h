@@ -41,11 +41,6 @@ namespace bev_optical_flow
     void run(autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
 
   private:
-    enum KEYPOINT {
-      Naive = 0,
-      Corner = 1,
-    };
-
     typedef std::vector< std::vector<cv::Point2f> > PointsArray;
 
     int get_layer(int depth);
@@ -60,7 +55,6 @@ namespace bev_optical_flow
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
 
-    int keypoint_method_;
     float quality_level_;
     int min_distance_;
     int block_size_;

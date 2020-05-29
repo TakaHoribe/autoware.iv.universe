@@ -20,7 +20,6 @@ namespace bev_optical_flow
 {
   FlowCalculator::FlowCalculator() : nh_(""), pnh_("~")
   {
-    pnh_.param<int>("keypoint_method", keypoint_method_, FlowCalculator::KEYPOINT::Corner);
     pnh_.param<float>("quality_level", quality_level_, 0.01);
     pnh_.param<int>("min_distance", min_distance_, 10);
     pnh_.param<int>("block_size", block_size_, 3);
@@ -65,25 +64,10 @@ namespace bev_optical_flow
       current_image.copyTo(prev_image);
 
     std::vector<cv::Point2f> current_points;
-    if (keypoint_method_ == FlowCalculator::KEYPOINT::Corner) {
-      cv::goodFeaturesToTrack(current_image, current_points,
-                              max_corners_, quality_level_, min_distance_,
-                              cv::Mat(), block_size_, false, harris_k_);
-    } else if (keypoint_method_ == FlowCalculator::KEYPOINT::Naive) {
-      // use all pixels as keypoints
-      for (int i=0; i<current_image.cols; i+=sparce_size_) {
-        for (int j=0; j<current_image.rows; j+=sparce_size_) {
-          int depth = static_cast<int>(current_image.at<unsigned char>(j,i));
-          if ( depth > 0) {
-            current_points.push_back(cv::Point2f(i,j));
-          }
-        }
-      }
-    } else {
-      return false;
-    }
-
-    cv::TermCriteria termcrit(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 20, 0.03);
+    cv::goodFeaturesToTrack(current_image, current_points,
+                            max_corners_, quality_level_, min_distance_,
+                            cv::Mat(), block_size_, false, harris_k_);
+    cv::TermCriteria termcrit(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 30, 0.01);
     cv::cornerSubPix(current_image, current_points, cv::Size(10, 10), cv::Size(-1, -1), termcrit);
 
     if ( !prev_points.empty() ) {
@@ -91,7 +75,7 @@ namespace bev_optical_flow
       std::vector<float> err;
       cv::calcOpticalFlowPyrLK
         (prev_image, current_image, current_points, prev_points,
-         status, err, cv::Size(31, 31), 3, termcrit, 0, 0.001);
+         status, err, cv::Size(15, 15), 3, termcrit, 0, 0.001);
 
       for (size_t i=0; i<current_points.size(); i++) {
         if (!status[i]) {
