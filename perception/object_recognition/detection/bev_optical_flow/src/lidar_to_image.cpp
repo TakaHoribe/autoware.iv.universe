@@ -50,6 +50,8 @@ namespace bev_optical_flow
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*cloud_msg, *cloud);
     bev_image = cv::Mat::zeros(cv::Size(image_size_, image_size_), CV_8UC1);
+    cv::Mat px_cnt = cv::Mat::zeros(cv::Size(image_size_, image_size_), CV_32FC1);
+    cv::Mat depth_sum = cv::Mat::zeros(cv::Size(image_size_, image_size_), CV_32FC1);
 
     for (int i=0; i<cloud->points.size(); i++) {
       auto p = cloud->points.at(i);
@@ -60,7 +62,16 @@ namespace bev_optical_flow
       }
       cv::Point2d px;
       float depth = pointToPixel(p, px);
-      cv::circle(bev_image, px, 0, depth, -1);
+      px_cnt.at<float>(px.y, px.x) += 1;
+      depth_sum.at<float>(px.y, px.x) += depth;
+    }
+
+    cv::Mat depth_ave = depth_sum / px_cnt;
+    for (int i=0; i<depth_ave.cols; i++) {
+      for (int j=0; j<depth_ave.rows; j++) {
+        cv::circle(bev_image, cv::Point2d(i,j), 0,
+                   static_cast<int>(depth_ave.at<float>(j,i)), -1);
+      }
     }
 
     // rotate bev image to fixing on map coords
