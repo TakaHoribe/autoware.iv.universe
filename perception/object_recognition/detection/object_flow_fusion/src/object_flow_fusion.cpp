@@ -200,6 +200,9 @@ namespace object_flow_fusion
                                std::pow(twist_average.linear.y, 2) +
                                std::pow(twist_average.linear.z, 2));
         if ( use_flow_pose && vel > flow_vel_thresh_ ) {
+          // TODO: fusion orientation_reliable the detection result and flow pose wisely.
+          // (now just overwrite the flow pose to the detection result)
+
           double flow_yaw = std::atan2(mps_twist_average.linear.y, mps_twist_average.linear.x);
           Eigen::Quaterniond eigen_quaternion(Eigen::AngleAxisd(flow_yaw, Eigen::Vector3d::UnitZ()));
           geometry_msgs::Quaternion q;
