@@ -26,7 +26,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <jsk_recognition_msgs/PolygonArray.h>
 
 #include "utils.h"
 
@@ -67,8 +66,6 @@ namespace object_flow_fusion
 
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
-
-    ros::Publisher polygon_array_pub_;
 
     float point_radius_;
     std::shared_ptr<Utils> utils_;

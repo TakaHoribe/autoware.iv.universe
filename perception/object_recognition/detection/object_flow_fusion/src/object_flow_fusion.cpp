@@ -21,7 +21,6 @@ namespace object_flow_fusion
 {
   ObjectFlowFusion::ObjectFlowFusion() : nh_(""), pnh_("~")
   {
-    polygon_array_pub_ = pnh_.advertise<jsk_recognition_msgs::PolygonArray>("debug_polygon_array", 1);
     utils_ = std::make_shared<Utils>();
   }
 
@@ -50,7 +49,6 @@ namespace object_flow_fusion
       formed_angle_sum += formed_angle;
     }
 
-    // ROS_INFO("formed_angle_sum: %lf", formed_angle_sum);
     double min_angle_range = 358.0 * M_PI / 180.0;
     double max_angle_range = 362.0 * M_PI / 180.0;
     if ( min_angle_range < formed_angle_sum && formed_angle_sum < max_angle_range) {
@@ -167,21 +165,14 @@ namespace object_flow_fusion
    bool use_flow_pose, float flow_vel_thresh_,
    autoware_perception_msgs::DynamicObjectWithFeatureArray& fusioned_msg)
   {
-    jsk_recognition_msgs::PolygonArray debug_polygon_array;
-    debug_polygon_array.header = object_msg->header;
-
     for (auto detected_object : object_msg->feature_objects) {
       geometry_msgs::Polygon footprint;
       bool has_polygon = getPolygon(detected_object.object,
                                     detected_object.object.shape.footprint,
                                     footprint);
-
-      /// debug
-      int polygon_label = 0;
-      geometry_msgs::PolygonStamped polygon_stamped;
-      polygon_stamped.header = object_msg->header;
-      polygon_stamped.polygon = footprint;
-
+      if (!has_polygon) {
+        continue;
+      }
       geometry_msgs::Twist twist_sum;
       size_t flow_count = 0;
       for (auto flow : flow_msg->feature_objects) {
@@ -200,18 +191,15 @@ namespace object_flow_fusion
       feature_object.object.state.twist_reliable = false;
 
       if ( flow_count > 0 ) {
-        polygon_label = 4;
         geometry_msgs::Twist twist_average;
         twist_average.linear.x = twist_sum.linear.x / flow_count;
         twist_average.linear.y = twist_sum.linear.y / flow_count;
         twist_average.linear.z = twist_sum.linear.z / flow_count;
         auto mps_twist_average = utils_->kph2mps(twist_average);
-
         double vel = std::sqrt(std::pow(twist_average.linear.x, 2) +
                                std::pow(twist_average.linear.y, 2) +
                                std::pow(twist_average.linear.z, 2));
         if ( use_flow_pose && vel > flow_vel_thresh_ ) {
-          polygon_label = 6;
           double flow_yaw = std::atan2(mps_twist_average.linear.y, mps_twist_average.linear.x);
           Eigen::Quaterniond eigen_quaternion(Eigen::AngleAxisd(flow_yaw, Eigen::Vector3d::UnitZ()));
           geometry_msgs::Quaternion q;
@@ -225,15 +213,7 @@ namespace object_flow_fusion
         feature_object.object.state.twist_reliable = true;
       }
       fusioned_msg.feature_objects.push_back(feature_object);
-
-      if (has_polygon) {
-        debug_polygon_array.polygons.push_back(polygon_stamped);
-        debug_polygon_array.labels.push_back(polygon_label);
-      }
-
     }
-
-    polygon_array_pub_.publish(debug_polygon_array);
   }
 
 } // object_flow_fusion
