@@ -41,6 +41,7 @@
     <remap from="~output/current_twist" to="/vehicle/status/twist" />
     <remap from="~output/status" to="/vehicle/status" />
     <remap from="~input/vehicle_cmd" to="/control/vehicle_cmd" />
+    <remap from="~input/turn_signal_cmd" to="/vehicle/turn_signal_cmd" />
 
     <param name="loop_rate" value="$(arg loop_rate)"/>
     <param name="simulation_frame_id" value="$(arg simulation_frame_id)"/>
