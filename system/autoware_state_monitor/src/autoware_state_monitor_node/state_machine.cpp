@@ -66,11 +66,13 @@ std::vector<T> filterConfigByModuleName(const std::vector<T> & configs, const ch
 
 struct ModuleName
 {
-  static constexpr const char * Sensing = "sensing";
-  static constexpr const char * Localization = "localization";
-  static constexpr const char * Perception = "perception";
-  static constexpr const char * Planning = "planning";
-  static constexpr const char * Control = "control";
+  static constexpr const char * map = "map";
+  static constexpr const char * sensing = "sensing";
+  static constexpr const char * localization = "localization";
+  static constexpr const char * perception = "perception";
+  static constexpr const char * planning = "planning";
+  static constexpr const char * control = "control";
+  static constexpr const char * vehicle = "vehicle";
 };
 
 bool StateMachine::isModuleInitialized(const char * module_name) const
@@ -117,15 +119,19 @@ bool StateMachine::isModuleInitialized(const char * module_name) const
 
 bool StateMachine::isVehicleInitialized() const
 {
-  if (!isModuleInitialized(ModuleName::Sensing)) {
+  if (!isModuleInitialized(ModuleName::vehicle)) {
     return false;
   }
 
-  if (!isModuleInitialized(ModuleName::Localization)) {
+  if (!isModuleInitialized(ModuleName::sensing)) {
     return false;
   }
 
-  if (!isModuleInitialized(ModuleName::Perception)) {
+  if (!isModuleInitialized(ModuleName::localization)) {
+    return false;
+  }
+
+  if (!isModuleInitialized(ModuleName::perception)) {
     return false;
   }
 
@@ -138,11 +144,11 @@ bool StateMachine::isNewRouteReceived() const { return state_input_.route != exe
 
 bool StateMachine::isPlanningCompleted() const
 {
-  if (!isModuleInitialized(ModuleName::Planning)) {
+  if (!isModuleInitialized(ModuleName::planning)) {
     return false;
   }
 
-  if (!isModuleInitialized(ModuleName::Control)) {
+  if (!isModuleInitialized(ModuleName::control)) {
     return false;
   }
 
@@ -205,7 +211,9 @@ AutowareState StateMachine::judgeAutowareState() const
 {
   switch (autoware_state_) {
     case (AutowareState::InitializingVehicle): {
-      msgs_.push_back("[InitializingVehicle] Please wait for a while.");
+      msgs_.push_back(
+        "[InitializingVehicle] Please wait for a while. If the current pose is not estimated "
+        "automatically, please set manually.");
 
       if (!isVehicleInitialized()) {
         break;

@@ -4,21 +4,6 @@
 ## timeout[s]: double (0: none)
 ## warn_rate[hz]: double (0: none)
 topic_configs:
-  - module: "sensing"
-    name: "/sensing/lidar/pointcloud"
-    timeout: 1.0
-    warn_rate: 5.0
-
-  - module: "sensing"
-    name: "/sensing/lidar/no_ground/pointcloud"
-    timeout: 1.0
-    warn_rate: 5.0
-
-  - module: "localization"
-    name: "/localization/pose_twist_fusion_filter/pose"
-    timeout: 1.0
-    warn_rate: 5.0
-
   - module: "perception"
     name: "/perception/object_recognition/detection/objects"
     timeout: 1.0
@@ -72,9 +57,4 @@ tf_configs:
   - module: "localization"
     from: "map"
     to: "base_link"
-    timeout: 1.0
-
-  - module: "localization"
-    from: "base_link"
-    to: "gnss_link"
     timeout: 1.0

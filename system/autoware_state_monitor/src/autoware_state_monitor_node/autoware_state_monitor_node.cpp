@@ -16,7 +16,6 @@
 #include <autoware_state_monitor/autoware_state_monitor_node.h>
 
 #include <numeric>
-#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,17 +28,6 @@
 
 namespace
 {
-bool isBlacklistName(
-  const std::vector<std::string> & regex_blacklist_names, const std::string & name)
-{
-  for (const auto & regex_blacklist_name : regex_blacklist_names) {
-    if (std::regex_search(name, std::regex(regex_blacklist_name))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 template <class Config>
 std::vector<Config> getConfigs(const ros::NodeHandle & nh, const std::string & config_name)
 {
@@ -221,31 +209,12 @@ void AutowareStateMonitorNode::registerTopicCallback(const std::string & topic_n
   sub_topic_map_[topic_name] = nh_.subscribe(topic_name, 10, callback);
 }
 
-void AutowareStateMonitorNode::registerTopicCallbacks(
-  const std::vector<TopicConfig> & topic_configs)
-{
-  for (const auto & topic_config : topic_configs) {
-    const auto & topic_name = topic_config.name;
-
-    if (isBlacklistName(regex_blacklist_topics_, topic_name)) {
-      ROS_INFO("topic `%s` is ignored", topic_name.c_str());
-      continue;
-    }
-
-    registerTopicCallback(topic_name);
-  }
-}
-
 TopicStats AutowareStateMonitorNode::getTopicStats() const
 {
   TopicStats topic_stats;
   topic_stats.checked_time = ros::Time::now();
 
   for (const auto & topic_config : topic_configs_) {
-    if (isBlacklistName(regex_blacklist_topics_, topic_config.name)) {
-      continue;
-    }
-
     // Alias
     const auto & buf = topic_received_time_buffer_.at(topic_config.name);
 
@@ -281,10 +250,6 @@ ParamStats AutowareStateMonitorNode::getParamStats() const
   param_stats.checked_time = ros::Time::now();
 
   for (const auto & param_config : param_configs_) {
-    if (isBlacklistName(regex_blacklist_params_, param_config.name)) {
-      continue;
-    }
-
     XmlRpc::XmlRpcValue xml;
     const auto result = nh_.getParam(param_config.name, xml);
     if (!result) {
@@ -301,12 +266,6 @@ TfStats AutowareStateMonitorNode::getTfStats() const
   tf_stats.checked_time = ros::Time::now();
 
   for (const auto & tf_config : tf_configs_) {
-    if (
-      isBlacklistName(regex_blacklist_tfs_, tf_config.from) ||
-      isBlacklistName(regex_blacklist_tfs_, tf_config.to)) {
-      continue;
-    }
-
     try {
       const auto transform =
         tf_buffer_.lookupTransform(tf_config.from, tf_config.to, ros::Time(0), ros::Duration(0));
@@ -402,13 +361,10 @@ AutowareStateMonitorNode::AutowareStateMonitorNode()
   param_configs_ = getConfigs<ParamConfig>(private_nh_, "param_configs");
   tf_configs_ = getConfigs<TfConfig>(private_nh_, "tf_configs");
 
-  // Blacklist
-  private_nh_.param("regex_blacklist_topics", regex_blacklist_topics_, {});
-  private_nh_.param("regex_blacklist_params", regex_blacklist_params_, {});
-  private_nh_.param("regex_blacklist_tfs", regex_blacklist_tfs_, {});
-
   // Topic Callback
-  registerTopicCallbacks(topic_configs_);
+  for (const auto & topic_config : topic_configs_) {
+    registerTopicCallback(topic_config.name);
+  }
 
   // Subscriber
   sub_autoware_engage_ = private_nh_.subscribe(
