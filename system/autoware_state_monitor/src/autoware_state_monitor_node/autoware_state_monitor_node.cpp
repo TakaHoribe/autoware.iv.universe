@@ -349,7 +349,7 @@ std::vector<std::string> AutowareStateMonitorNode::generateErrorMessages() const
     const auto & topic_rate = topic_config_pair.second;
 
     const auto msg = fmt::format(
-      "topic `{}` is slow rate: warn_rate = {}, acctual_rate = {}", topic_config.name,
+      "topic `{}` is slow rate: warn_rate = {}, actual_rate = {}", topic_config.name,
       topic_config.warn_rate, topic_rate);
 
     error_msgs.push_back(msg);

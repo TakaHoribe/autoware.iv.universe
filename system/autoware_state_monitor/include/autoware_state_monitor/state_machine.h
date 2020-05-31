@@ -83,7 +83,7 @@ private:
   bool isNewRouteReceived() const;
   bool isPlanningCompleted() const;
   bool isEngaged() const;
-  bool isOverrided() const;
+  bool isOverridden() const;
   bool hasArrivedGoal() const;
   bool hasFailedToArriveGoal() const;
 };

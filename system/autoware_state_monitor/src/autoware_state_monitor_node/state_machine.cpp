@@ -171,7 +171,7 @@ bool StateMachine::isEngaged() const
   return true;
 }
 
-bool StateMachine::isOverrided() const { return !isEngaged(); }
+bool StateMachine::isOverridden() const { return !isEngaged(); }
 
 bool StateMachine::hasArrivedGoal() const
 {
@@ -258,7 +258,7 @@ AutowareState StateMachine::judgeAutowareState() const
     case (AutowareState::Driving): {
       msgs_.push_back("[Driving] Under autonomous driving. Have fun!");
 
-      if (isOverrided()) {
+      if (isOverridden()) {
         return AutowareState::WaitingForEngage;
       }
 
@@ -281,7 +281,7 @@ AutowareState StateMachine::judgeAutowareState() const
     case (AutowareState::ArrivedGoal): {
       msgs_.push_back("[ArrivedGoal] Autonomous driving has completed. Thank you!");
 
-      if (isOverrided()) {
+      if (isOverridden()) {
         return AutowareState::WaitingForEngage;
       }
 
@@ -297,7 +297,7 @@ AutowareState StateMachine::judgeAutowareState() const
     case (AutowareState::FailedToArriveGoal): {
       msgs_.push_back("[FailedToArriveGoal] Autonomous driving has failed. Please override.");
 
-      if (isOverrided()) {
+      if (isOverridden()) {
         return AutowareState::WaitingForEngage;
       }
 
@@ -313,7 +313,7 @@ AutowareState StateMachine::judgeAutowareState() const
     case (AutowareState::Error): {
       msgs_.push_back("[Error] An error has occurred. Please override.");
 
-      if (isOverrided()) {
+      if (isOverridden()) {
         return AutowareState::WaitingForEngage;
       }
 
