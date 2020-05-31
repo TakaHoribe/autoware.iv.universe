@@ -1,0 +1,10 @@
+analyzers:
+  monitoring:
+    type: diagnostic_aggregator/AnalyzerGroup
+    path: monitoring
+    analyzers:
+      dummy:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: dummy
+        contains: "__dummy__"
+        num_items: 0

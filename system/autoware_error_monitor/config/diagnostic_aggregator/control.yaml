@@ -1,0 +1,16 @@
+analyzers:
+  control:
+    type: diagnostic_aggregator/AnalyzerGroup
+    path: control
+    analyzers:
+      topic_timeout:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: topic_timeout
+        contains: ": control_topic_timeout"
+        num_items: 0
+
+      topic_rate:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: topic_rate
+        contains: ": control_topic_rate"
+        num_items: 0

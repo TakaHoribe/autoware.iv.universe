@@ -1,0 +1,22 @@
+analyzers:
+  localization:
+    type: diagnostic_aggregator/AnalyzerGroup
+    path: localization
+    analyzers:
+      topic_timeout:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: topic_timeout
+        contains: ": localization_topic_timeout"
+        num_items: 0
+
+      topic_rate:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: topic_rate
+        contains: ": localization_topic_rate"
+        num_items: 0
+
+      tf_timeout:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: tf_timeout
+        contains: ": localization_tf_timeout"
+        num_items: 0
