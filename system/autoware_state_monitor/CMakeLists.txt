@@ -6,6 +6,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
   autoware_system_msgs
+  diagnostic_updater
   roscpp
   topic_tools
   tf2
@@ -21,6 +22,7 @@ catkin_package(
   CATKIN_DEPENDS
     autoware_planning_msgs
     autoware_system_msgs
+    diagnostic_updater
     topic_tools
     tf2
     tf2_ros
@@ -38,6 +40,7 @@ add_executable(autoware_state_monitor
   src/autoware_state_monitor_node/main.cpp
   src/autoware_state_monitor_node/autoware_state_monitor_node.cpp
   src/autoware_state_monitor_node/state_machine.cpp
+  src/autoware_state_monitor_node/diagnostics.cpp
 )
 
 target_link_libraries(autoware_state_monitor

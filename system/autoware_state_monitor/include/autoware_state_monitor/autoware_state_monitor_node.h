@@ -28,6 +28,8 @@
 
 #include <topic_tools/shape_shifter.h>
 
+#include <diagnostic_updater/diagnostic_updater.h>
+
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_system_msgs/AutowareState.h>
@@ -84,6 +86,7 @@ private:
 
   // Publisher
   ros::Publisher pub_autoware_state_;
+  ros::Publisher pub_diag_array_;
   ros::Publisher pub_autoware_engage_;
 
   void setDisengage();
@@ -101,5 +104,15 @@ private:
   std::shared_ptr<StateMachine> state_machine_;
   StateInput state_input_;
   StateParam state_param_;
-  std::vector<std::string> generateErrorMessages() const;
+
+  // Diagnostic Updater
+  diagnostic_updater::Updater updater_;
+
+  void setupDiagnosticUpdater();
+  void checkTopicTimeout(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
+  void checkTopicRate(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
+  void checkTfTimeout(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
 };
