@@ -37,10 +37,36 @@ namespace Tn
 class Logger : public nvinfer1::ILogger
 {
 public:
+  Logger() : Logger(Severity::kINFO) {}
+
+  Logger(Severity severity) : reportableSeverity(severity) {}
+
   void log(Severity severity, const char * msg) override
   {
-    if (severity != Severity::kINFO) std::cout << msg << std::endl;
+    // suppress messages with severity enum value greater than the reportable
+    if (severity > reportableSeverity) return;
+
+    switch (severity) {
+      case Severity::kINTERNAL_ERROR:
+        std::cerr << "[TRT_COMMON][INTERNAL_ERROR]: ";
+        break;
+      case Severity::kERROR:
+        std::cerr << "[TRT_COMMON][ERROR]: ";
+        break;
+      case Severity::kWARNING:
+        std::cerr << "[TRT_COMMON][WARNING]: ";
+        break;
+      case Severity::kINFO:
+        std::cerr << "[TRT_COMMON][INFO]: ";
+        break;
+      default:
+        std::cerr << "[TRT_COMMON][UNKNOWN]: ";
+        break;
+    }
+    std::cerr << msg << std::endl;
   }
+
+  Severity reportableSeverity{Severity::kWARNING};
 };
 
 struct InferDeleter

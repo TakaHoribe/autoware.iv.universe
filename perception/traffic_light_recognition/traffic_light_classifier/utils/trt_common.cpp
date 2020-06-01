@@ -42,7 +42,9 @@ void TrtCommon::setup()
       if (boost::filesystem::exists(cache_path)) {
         loadEngine(cache_engine_path);
       } else {
+        logger_.log(nvinfer1::ILogger::Severity::kINFO, "start build engine");
         buildEngineFromOnnx(model_file_path_, cache_engine_path);
+        logger_.log(nvinfer1::ILogger::Severity::kINFO, "end build engine");
       }
     } else {
       is_initialized_ = false;
