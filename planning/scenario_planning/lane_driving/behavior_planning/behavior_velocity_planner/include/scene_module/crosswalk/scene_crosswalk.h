@@ -43,22 +43,29 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_routing/RoutingGraphContainer.h>
 
-#include <scene_module/scene_module_interface.h>
 #include <scene_module/crosswalk/util.h>
+#include <scene_module/scene_module_interface.h>
 
 class CrosswalkModule : public SceneModuleInterface
 {
 public:
+  struct PlannerParam
+  {
+    double stop_margin;
+    double slow_margin;
+    double slow_velocity;
+    double stop_dynamic_object_prediction_time_margin;
+  };
 
-public:
-  CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet & crosswalk);
+  CrosswalkModule(
+    const int64_t module_id, const lanelet::ConstLanelet & crosswalk,
+    const PlannerParam & planner_param);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
   visualization_msgs::MarkerArray createDebugMarkerArray() override;
 
 private:
-
   bool checkSlowArea(
     const autoware_planning_msgs::PathWithLaneId & input,
     const boost::geometry::model::polygon<boost::geometry::model::d2::point_xy<double>, false> &
@@ -81,9 +88,7 @@ private:
   State state_;
 
   // Parameter
-  const double stop_margin_ = 1.0;
-  const double stop_dynamic_object_prediction_time_margin_ = 3.0;
-  const double slow_margin_ = 2.0;
+  PlannerParam planner_param_;
 
   // Debug
   DebugData debug_data_;
