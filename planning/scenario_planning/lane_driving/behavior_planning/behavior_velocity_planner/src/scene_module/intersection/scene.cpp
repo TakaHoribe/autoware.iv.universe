@@ -29,17 +29,11 @@
 namespace bg = boost::geometry;
 
 IntersectionModule::IntersectionModule(
-  const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data)
+  const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), lane_id_(lane_id)
 {
-  state_machine_.setMarginTime(2.0);  // [sec]
-  path_expand_width_ = 2.0;
-  stop_line_margin_ = 1.0;
-  decel_velocoity_ = 30.0 / 3.6;
-  stuck_vehicle_detect_dist_ = 5.0;
-  stuck_vehicle_vel_thr_ = 3.0 / 3.6;
-  intersection_velocity_ = 10.0 / 3.6;
-
+  planner_param_ = planner_param;
   const auto & assigned_lanelet = planner_data->lanelet_map->laneletLayer.get(lane_id);
   turn_direction_ = assigned_lanelet.attributeOr("turn_direction", "else");
   has_traffic_light_ =
@@ -119,7 +113,8 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   /* set stop speed : TODO behavior on straight lane should be improved*/
   if (state_machine_.getState() == State::STOP) {
     constexpr double stop_vel = 0.0;
-    double v = (has_traffic_light_ && turn_direction_ == "straight") ? decel_velocoity_ : stop_vel;
+    const double decel_vel = planner_param_.decel_velocoity;
+    double v = (has_traffic_light_ && turn_direction_ == "straight") ? decel_vel : stop_vel;
     util::setVelocityFrom(stop_line_idx, v, path);
   }
 
@@ -158,7 +153,7 @@ bool IntersectionModule::generateStopLine(
 
   /* set parameters */
   constexpr double interval = 0.2;
-  const int margin_idx_dist = std::ceil(stop_line_margin_ / interval);
+  const int margin_idx_dist = std::ceil(planner_param_.stop_line_margin / interval);
   const int base2front_idx_dist = std::ceil(planner_data_->base_link2front / interval);
   const int judge_idx_dist = std::ceil(judge_line_dist / interval);
 
@@ -382,16 +377,17 @@ Polygon2d IntersectionModule::generateEgoIntersectionLanePolygon(
   }
 
   Polygon2d ego_area;  // open polygon
+  const auto width = planner_param_.path_expand_width;
   for (int i = closest_idx; i <= ego_area_end_idx; ++i) {
     double yaw = tf2::getYaw(path.points.at(i).point.pose.orientation);
-    double x = path.points.at(i).point.pose.position.x + path_expand_width_ * std::sin(yaw);
-    double y = path.points.at(i).point.pose.position.y - path_expand_width_ * std::cos(yaw);
+    double x = path.points.at(i).point.pose.position.x + width * std::sin(yaw);
+    double y = path.points.at(i).point.pose.position.y - width * std::cos(yaw);
     ego_area.outer().push_back(Point2d(x, y));
   }
   for (int i = ego_area_end_idx; i >= closest_idx; --i) {
     double yaw = tf2::getYaw(path.points.at(i).point.pose.orientation);
-    double x = path.points.at(i).point.pose.position.x - path_expand_width_ * std::sin(yaw);
-    double y = path.points.at(i).point.pose.position.y + path_expand_width_ * std::cos(yaw);
+    double x = path.points.at(i).point.pose.position.x - width * std::sin(yaw);
+    double y = path.points.at(i).point.pose.position.y + width * std::cos(yaw);
     ego_area.outer().push_back(Point2d(x, y));
   }
 
@@ -416,7 +412,8 @@ double IntersectionModule::calcIntersectionPassingTime(
   }
   if (!assigned_lane_found) return 0.0;  // has already passed the intersection.
 
-  const double passing_time = dist_sum / intersection_velocity_;  // TODO set to be reasonable
+  // TODO set to be reasonable
+  const double passing_time = dist_sum / planner_param_.intersection_velocity;
 
   ROS_DEBUG("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
 
@@ -453,14 +450,15 @@ bool IntersectionModule::checkStuckVehicleInIntersection(
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr objects_ptr) const
 {
   const Polygon2d stuck_vehicle_detect_area =
-    generateEgoIntersectionLanePolygon(path, closest_idx, stuck_vehicle_detect_dist_);
+    generateEgoIntersectionLanePolygon(path, closest_idx, planner_param_.stuck_vehicle_detect_dist);
   debug_data_.stuck_vehicle_detect_area = toGeomMsg(stuck_vehicle_detect_area);
 
   for (const auto & object : objects_ptr->objects) {
     if (!isTargetVehicleType(object)) {
       continue;  // not target vehicle type
     }
-    if (std::fabs(object.state.twist_covariance.twist.linear.x) > stuck_vehicle_vel_thr_) {
+    const auto obj_v = std::fabs(object.state.twist_covariance.twist.linear.x);
+    if (obj_v > planner_param_.stuck_vehicle_vel_thr) {
       continue;  // not stop vehicle
     }
     const auto object_pos = object.state.pose_covariance.pose.position;
