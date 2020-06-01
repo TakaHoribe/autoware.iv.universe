@@ -1,0 +1,5 @@
+analyzers:
+  speaker:
+    type: diagnostic_aggregator/DiscardAnalyzer
+    path: speaker
+    contains: ": speaker"

@@ -1,0 +1,10 @@
+analyzers:
+  internet_connection:
+    type: diagnostic_aggregator/AnalyzerGroup
+    path: internet_connection
+    analyzers:
+      dummy:
+        type: diagnostic_aggregator/GenericAnalyzer
+        path: dummy
+        contains: "__dummy__"
+        num_items: 0
