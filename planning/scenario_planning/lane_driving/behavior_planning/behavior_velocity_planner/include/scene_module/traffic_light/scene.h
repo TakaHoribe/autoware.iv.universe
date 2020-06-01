@@ -51,10 +51,18 @@ public:
     std::vector<geometry_msgs::Pose> judge_poses;
   };
 
+  struct PlannerParam
+  {
+    double stop_margin;
+    double tl_state_timeout;
+    double max_stop_acceleration_threshold;
+    double delay_response_time;
+  };
+
 public:
   TrafficLightModule(
     const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem,
-    lanelet::ConstLanelet lane);
+    lanelet::ConstLanelet lane, const PlannerParam & planner_param);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -101,10 +109,8 @@ private:
   State state_;
 
   // Parameter
-  const double stop_margin_ = 0.0;
-  const double tl_state_timeout_ = 1.0;
-  const double max_stop_acceleration_threshold_ = -4.0;
-  const double delay_response_time_ = 0.3;
+  PlannerParam planner_param_;
+
 
   // Debug
   DebugData debug_data_;

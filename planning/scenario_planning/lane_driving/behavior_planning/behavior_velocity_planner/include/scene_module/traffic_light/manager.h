@@ -39,11 +39,12 @@
 class TrafficLightModuleManager : public SceneModuleManagerInterface
 {
 public:
-  TrafficLightModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+  TrafficLightModuleManager();
 
   const char * getModuleName() override { return "traffic_light"; }
 
 private:
+  TrafficLightModule::PlannerParam planner_param_;
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
   std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(

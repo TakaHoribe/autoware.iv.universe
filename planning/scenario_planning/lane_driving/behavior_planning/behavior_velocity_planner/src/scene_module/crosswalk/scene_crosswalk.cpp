@@ -22,9 +22,12 @@ using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 using Line = bg::model::linestring<Point>;
 
-CrosswalkModule::CrosswalkModule(const int64_t module_id, const lanelet::ConstLanelet & crosswalk)
+CrosswalkModule::CrosswalkModule(
+  const int64_t module_id, const lanelet::ConstLanelet & crosswalk,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), crosswalk_(crosswalk), state_(State::APPROARCH)
 {
+  planner_param_ = planner_param;
 }
 
 bool CrosswalkModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -156,7 +159,7 @@ bool CrosswalkModule::checkStopArea(
         for (size_t k = 0; k < object_path.path.size() - 1; ++k) {
           if (
             (current_time - object_path.path.at(k).header.stamp).toSec() <
-            stop_dynamic_object_prediction_time_margin_) {
+            planner_param_.stop_dynamic_object_prediction_time_margin) {
             Line line = {{object_path.path.at(k).pose.pose.position.x,
                           object_path.path.at(k).pose.pose.position.y},
                          {object_path.path.at(k + 1).pose.pose.position.x,
@@ -174,8 +177,8 @@ bool CrosswalkModule::checkStopArea(
 
   // insert stop point
   if (!insertTargetVelocityPoint(
-        input, crosswalk_polygon, stop_margin_, 0.0, *planner_data_, output, debug_data_,
-        first_stop_path_point_index_))
+        input, crosswalk_polygon, planner_param_.stop_margin, 0.0, *planner_data_, output,
+        debug_data_, first_stop_path_point_index_))
     return false;
   return true;
 }
@@ -188,7 +191,6 @@ bool CrosswalkModule::checkSlowArea(
   const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
   autoware_planning_msgs::PathWithLaneId & output)
 {
-  const double slow_velocity = 1.39;  // 5kmph
   output = input;
   bool pedestrian_found = false;
   for (size_t i = 0; i < objects_ptr->objects.size(); ++i) {
@@ -217,8 +219,8 @@ bool CrosswalkModule::checkSlowArea(
 
   // insert slow point
   if (!insertTargetVelocityPoint(
-        input, polygon, slow_margin_, slow_velocity, *planner_data_, output, debug_data_,
-        first_stop_path_point_index_))
+        input, polygon, planner_param_.slow_margin, planner_param_.slow_velocity, *planner_data_,
+        output, debug_data_, first_stop_path_point_index_))
     return false;
   return true;
 }

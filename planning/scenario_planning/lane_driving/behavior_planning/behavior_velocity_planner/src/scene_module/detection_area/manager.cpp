@@ -47,6 +47,16 @@ std::set<int64_t> getLaneletIdSetOnPath(
 }
 }  // namespace
 
+DetectionAreaModuleManager::DetectionAreaModuleManager()
+: SceneModuleManagerInterface(getModuleName())
+{
+  ros::NodeHandle pnh("~");
+  const std::string ns(getModuleName());
+  auto & p = planner_param_;
+  pnh.param(ns + "/stop_margin", p.stop_margin, 0.0);
+  pnh.param(ns + "/max_stop_acceleration_threshold", p.max_stop_acceleration_threshold, -5.0);
+}
+
 void DetectionAreaModuleManager::launchNewModules(
   const autoware_planning_msgs::PathWithLaneId & path)
 {
@@ -55,8 +65,8 @@ void DetectionAreaModuleManager::launchNewModules(
     // Use lanelet_id to unregister module when the route is changed
     const auto module_id = detection_area_reg_elem.first;
     if (!isModuleRegistered(module_id)) {
-      registerModule(
-        std::make_shared<DetectionAreaModule>(module_id, *(detection_area_reg_elem.second)));
+      registerModule(std::make_shared<DetectionAreaModule>(
+        module_id, *(detection_area_reg_elem.second), planner_param_));
     }
   }
 }

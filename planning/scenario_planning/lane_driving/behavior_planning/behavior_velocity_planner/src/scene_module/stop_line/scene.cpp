@@ -20,9 +20,11 @@ using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point>;
 
 StopLineModule::StopLineModule(
-  const int64_t module_id, const lanelet::ConstLineString3d & stop_line)
+  const int64_t module_id, const lanelet::ConstLineString3d & stop_line,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), stop_line_(stop_line), state_(State::APPROARCH)
 {
+  planner_param_ = planner_param;
 }
 
 bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -50,7 +52,7 @@ bool StopLineModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId *
       const double base_link2front = planner_data_->base_link2front;
       double length_sum = 0;
 
-      const double stop_length = stop_margin_ + base_link2front;
+      const double stop_length = planner_param_.stop_margin + base_link2front;
       Eigen::Vector2d point1, point2;
       point1 << collision_points.at(0).x(), collision_points.at(0).y();
       point2 << path->points.at(i).point.pose.position.x, path->points.at(i).point.pose.position.y;

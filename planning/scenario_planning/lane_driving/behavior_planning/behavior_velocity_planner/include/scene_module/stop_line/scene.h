@@ -44,8 +44,15 @@ public:
     std::vector<geometry_msgs::Pose> stop_poses;
   };
 
+  struct PlannerParam
+  {
+    double stop_margin;
+  };
+
 public:
-  StopLineModule(const int64_t module_id, const lanelet::ConstLineString3d & stop_line);
+  StopLineModule(
+    const int64_t module_id, const lanelet::ConstLineString3d & stop_line,
+    const PlannerParam & planner_param);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -61,7 +68,7 @@ private:
   State state_;
 
   // Paramter
-  const double stop_margin_ = 0.0;
+  PlannerParam planner_param_;
 
   // Debug
   DebugData debug_data_;

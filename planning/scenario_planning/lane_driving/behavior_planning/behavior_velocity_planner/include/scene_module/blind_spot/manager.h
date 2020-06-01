@@ -42,11 +42,13 @@
 class BlindSpotModuleManager : public SceneModuleManagerInterface
 {
 public:
-  BlindSpotModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+  BlindSpotModuleManager();
 
   const char * getModuleName() override { return "blind_spot"; }
 
 private:
+  BlindSpotModule::PlannerParam planner_param_;
+
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
   std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(

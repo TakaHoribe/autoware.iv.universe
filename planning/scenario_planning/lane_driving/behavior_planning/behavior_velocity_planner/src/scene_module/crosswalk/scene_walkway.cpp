@@ -22,9 +22,12 @@ using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 using Line = bg::model::linestring<Point>;
 
-WalkwayModule::WalkwayModule(const int64_t module_id, const lanelet::ConstLanelet & walkway)
+WalkwayModule::WalkwayModule(
+  const int64_t module_id, const lanelet::ConstLanelet & walkway,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), walkway_(walkway), state_(State::APPROACH)
 {
+  planner_param_ = planner_param;
 }
 
 bool WalkwayModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -44,13 +47,17 @@ bool WalkwayModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * 
     }
     polygon.outer().push_back(polygon.outer().front());
 
-    if (!insertTargetVelocityPoint(input, polygon, stop_margin_, 0.0, *planner_data_, *path, debug_data_, first_stop_path_point_index_)) return false;
+    if (!insertTargetVelocityPoint(
+          input, polygon, planner_param_.stop_margin, 0.0, *planner_data_, *path, debug_data_,
+          first_stop_path_point_index_))
+      return false;
 
     // update state
     const Point self_pose = {planner_data_->current_pose.pose.position.x,
                              planner_data_->current_pose.pose.position.y};
     const double distance = bg::distance(polygon, self_pose);
-    const double distance_threshold = stop_margin_ + planner_data_->base_link2front + 1.0;
+    const double distance_threshold =
+      planner_param_.stop_margin + planner_data_->base_link2front + 1.0;
     if (distance < distance_threshold && planner_data_->isVehicleStopping()) state_ = State::STOP;
     return true;
   } else if (state_ == State::STOP) {

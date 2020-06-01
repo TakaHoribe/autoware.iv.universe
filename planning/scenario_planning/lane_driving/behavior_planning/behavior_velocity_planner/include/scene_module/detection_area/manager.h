@@ -40,11 +40,12 @@
 class DetectionAreaModuleManager : public SceneModuleManagerInterface
 {
 public:
-  DetectionAreaModuleManager() : SceneModuleManagerInterface(getModuleName()) {}
+  DetectionAreaModuleManager();
 
   const char * getModuleName() override { return "detection_area"; }
 
 private:
+  DetectionAreaModule::PlannerParam planner_param_;
   void launchNewModules(const autoware_planning_msgs::PathWithLaneId & path) override;
 
   std::function<bool(const std::shared_ptr<SceneModuleInterface> &)> getModuleExpiredFunction(

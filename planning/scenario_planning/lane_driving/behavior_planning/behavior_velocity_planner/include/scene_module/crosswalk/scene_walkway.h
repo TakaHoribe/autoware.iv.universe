@@ -52,7 +52,13 @@ class WalkwayModule : public SceneModuleInterface
 public:
 
 public:
-  WalkwayModule(const int64_t module_id, const lanelet::ConstLanelet & walkway);
+  struct PlannerParam
+  {
+    double stop_margin;
+  };
+  WalkwayModule(
+    const int64_t module_id, const lanelet::ConstLanelet & walkway,
+    const PlannerParam & planner_param);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -66,7 +72,7 @@ private:
   State state_;
 
   // Parameter
-  const double stop_margin_ = 1.0;
+  PlannerParam planner_param_;
 
   // Debug
   DebugData debug_data_;
