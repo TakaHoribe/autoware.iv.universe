@@ -18,6 +18,7 @@
 #include <map>
 
 #include <tf2/utils.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 namespace
 {
@@ -27,6 +28,14 @@ double calcDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
   const auto dy = p1.position.y - p2.y();
 
   return std::hypot(dx, dy);
+}
+
+double calcSignedDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
+{
+  Eigen::Affine3d map2p1;
+  tf2::fromMsg(p1, map2p1);
+  auto basecoords_p2 = map2p1 * Eigen::Vector3d(p2.x(), p2.y(), p1.position.z);
+  return basecoords_p2.x() >= 0 ? basecoords_p2.norm() : -basecoords_p2.norm();
 }
 }  // namespace
 
@@ -59,10 +68,11 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   // get vehicle info
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
-
   const double stop_border_distance_threshold =
     (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-    (2.0 * max_stop_acceleration_threshold_);
+    (2.0 * max_stop_acceleration_threshold_) +
+    (delay_response_time_ * self_twist_ptr->twist.linear.x);
+
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // check state
@@ -96,7 +106,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           continue;
         }
 
-        if (calcDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
+        if (calcSignedDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
           ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
           return true;
         }
