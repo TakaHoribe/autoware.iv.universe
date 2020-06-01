@@ -177,4 +177,10 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
 else()
   find_package(catkin REQUIRED)
   catkin_package()
+
+  # to avoid launch file missing without a gpu
+  install(DIRECTORY launch/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  )
+
 endif()
