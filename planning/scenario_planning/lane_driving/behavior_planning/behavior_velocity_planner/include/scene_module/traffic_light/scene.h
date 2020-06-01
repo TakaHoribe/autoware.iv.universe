@@ -56,6 +56,7 @@ public:
     double stop_margin;
     double tl_state_timeout;
     double max_stop_acceleration_threshold;
+    double delay_response_time;
   };
 
 public:
