@@ -46,6 +46,14 @@ std::set<int64_t> getLaneIdSetOnPath(const autoware_planning_msgs::PathWithLaneI
 
 }  // namespace
 
+BlindSpotModuleManager::BlindSpotModuleManager() : SceneModuleManagerInterface(getModuleName())
+{
+  ros::NodeHandle pnh("~");
+  const std::string ns(getModuleName());
+  auto & p = planner_param_;
+  pnh.param(ns + "/path_expand_width", p.path_expand_width, 2.0);
+}
+
 void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::PathWithLaneId & path)
 {
   for (const auto & ll : getLaneletsOnPath(path, planner_data_->lanelet_map)) {
@@ -62,7 +70,7 @@ void BlindSpotModuleManager::launchNewModules(const autoware_planning_msgs::Path
       continue;
     }
 
-    registerModule(std::make_shared<BlindSpotModule>(module_id, lane_id, turn_direction));
+    registerModule(std::make_shared<BlindSpotModule>(module_id, lane_id, turn_direction, planner_param_));
   }
 }
 

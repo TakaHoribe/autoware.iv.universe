@@ -101,8 +101,14 @@ public:
   };
 
 public:
+  struct PlannerParam
+  {
+    double path_expand_width;  //! path width to calculate the edge line for both side
+  };
+
   BlindSpotModule(
-    const int64_t module_id, const int64_t lane_id, const std::string & turn_direction);
+    const int64_t module_id, const int64_t lane_id, const std::string & turn_direction,
+    const PlannerParam & planner_param);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
@@ -120,8 +126,7 @@ private:
   int judge_line_idx_;  //! stop-judgement-line index
 
   // Parameter
-  double judge_line_dist_ = 0.0;          //! distance from stop-line to stop-judgement line
-  const double path_expand_width_ = 2.0;  //! path width to calculate the edge line for both side
+  PlannerParam planner_param_;
   const bool show_debug_info_ = false;
 
   // Debug

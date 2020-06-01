@@ -23,9 +23,11 @@ using Point = bg::model::d2::point_xy<double>;
 using Polygon = bg::model::polygon<Point, false>;
 
 BlindSpotModule::BlindSpotModule(
-  const int64_t module_id, const int64_t lane_id, const std::string & turn_direction)
+  const int64_t module_id, const int64_t lane_id, const std::string & turn_direction,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id), lane_id_(lane_id), turn_direction_(turn_direction)
 {
+  planner_param_ = planner_param;
   constexpr double state_change_margin_time = 2.0;
   state_machine_.setMarginTime(state_change_margin_time);  // [sec]
 }
@@ -54,10 +56,10 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId 
   /* set judge line dist */
   double current_velocity = planner_data_->current_velocity->twist.linear.x;
   double max_accel = planner_data_->max_stop_acceleration_threshold_;
-  judge_line_dist_ = planning_utils::calcJudgeLineDist(current_velocity, max_accel, 0.0);
+  double judge_line_dist = planning_utils::calcJudgeLineDist(current_velocity, max_accel, 0.0);
 
   /* set stop-line and stop-judgement-line */
-  if (!setStopLineIdx(closest, judge_line_dist_, *path, stop_line_idx_, judge_line_idx_)) {
+  if (!setStopLineIdx(closest, judge_line_dist, *path, stop_line_idx_, judge_line_idx_)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] setStopLineIdx fail");
     return false;
   }
@@ -107,7 +109,8 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId 
   const auto objects_ptr = planner_data_->dynamic_objects;
 
   /* calculate dynamic collision around detection area */
-  const bool is_collision = checkCollision(*path, detection_area, objects_ptr, path_expand_width_);
+  const bool is_collision =
+    checkCollision(*path, detection_area, objects_ptr, planner_param_.path_expand_width);
   if (is_collision) {
     state_machine_.setStateWithMarginTime(State::STOP);
   } else {
