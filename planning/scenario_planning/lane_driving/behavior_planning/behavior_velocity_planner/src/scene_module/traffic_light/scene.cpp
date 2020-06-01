@@ -37,12 +37,13 @@ using Polygon = bg::model::polygon<Point, false>;
 
 TrafficLightModule::TrafficLightModule(
   const int64_t module_id, const lanelet::TrafficLight & traffic_light_reg_elem,
-  lanelet::ConstLanelet lane)
+  lanelet::ConstLanelet lane, const PlannerParam & planner_param)
 : SceneModuleInterface(module_id),
   traffic_light_reg_elem_(traffic_light_reg_elem),
   lane_(lane),
   state_(State::APPROARCH)
 {
+  planner_param_ = planner_param;
 }
 
 bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -62,7 +63,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   const double stop_border_distance_threshold =
     (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-    (2.0 * max_stop_acceleration_threshold_);
+    (2.0 * planner_param_.max_stop_acceleration_threshold);
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // check state
@@ -92,7 +93,8 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         Eigen::Vector2d stop_line_point;
         size_t stop_line_point_idx;
         if (!createTargetPoint(
-              input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) {
+              input_path, stop_line, planner_param_.stop_margin, stop_line_point_idx,
+              stop_line_point)) {
           continue;
         }
 
@@ -108,7 +110,8 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       }
 
       // Add Stop WayPoint
-      if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
+      if (!insertTargetVelocityPoint(
+            input_path, stop_line, planner_param_.stop_margin, 0.0, *path)) {
         continue;
       }
 
@@ -220,7 +223,7 @@ bool TrafficLightModule::getHighestConfidenceTrafficLightState(
 
     const auto header = tl_state_stamped->header;
     const auto tl_state = tl_state_stamped->traffic_light_state;
-    if (!((ros::Time::now() - header.stamp).toSec() < tl_state_timeout_)) {
+    if (!((ros::Time::now() - header.stamp).toSec() < planner_param_.tl_state_timeout)) {
       reason = "TimeOut";
       continue;
     }
