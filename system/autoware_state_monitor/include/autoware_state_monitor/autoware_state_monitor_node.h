@@ -59,10 +59,6 @@ private:
   std::vector<ParamConfig> param_configs_;
   std::vector<TfConfig> tf_configs_;
 
-  std::vector<std::string> regex_blacklist_topics_;
-  std::vector<std::string> regex_blacklist_params_;
-  std::vector<std::string> regex_blacklist_tfs_;
-
   // TF
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_{tf_buffer_};
@@ -82,7 +78,6 @@ private:
   // Topic Buffer
   void onTopic(const topic_tools::ShapeShifter::ConstPtr & msg, const std::string & topic_name);
   void registerTopicCallback(const std::string & topic_name);
-  void registerTopicCallbacks(const std::vector<TopicConfig> & topic_configs);
 
   std::map<std::string, ros::Subscriber> sub_topic_map_;
   std::map<std::string, std::deque<ros::Time>> topic_received_time_buffer_;
