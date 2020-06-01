@@ -29,11 +29,13 @@ double calcDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
 namespace bg = boost::geometry;
 
 DetectionAreaModule::DetectionAreaModule(
-  const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem)
+  const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem,
+  const PlannerParam & planner_param)
 : SceneModuleInterface(module_id),
   detection_area_reg_elem_(detection_area_reg_elem),
   state_(State::APPROARCH)
 {
+  planner_param_ = planner_param;
 }
 
 bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path)
@@ -63,7 +65,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
 
   const double stop_border_distance_threshold =
     (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-    (2.0 * max_stop_acceleration_threshold_);
+    (2.0 * planner_param_.max_stop_acceleration_threshold);
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // insert stop point
@@ -74,7 +76,8 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     Eigen::Vector2d stop_line_point;
     size_t stop_line_point_idx;
     if (!createTargetPoint(
-          input_path, stop_line, stop_margin_, stop_line_point_idx, stop_line_point)) {
+          input_path, stop_line, planner_param_.stop_margin, stop_line_point_idx,
+          stop_line_point)) {
       continue;
     }
 
@@ -85,7 +88,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     }
 
     // Add Stop WayPoint
-    if (!insertTargetVelocityPoint(input_path, stop_line, stop_margin_, 0.0, *path)) {
+    if (!insertTargetVelocityPoint(input_path, stop_line, planner_param_.stop_margin, 0.0, *path)) {
       continue;
     }
     return true;

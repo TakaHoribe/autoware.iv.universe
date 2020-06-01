@@ -48,9 +48,15 @@ public:
     std::vector<geometry_msgs::Pose> stop_poses;
   };
 
+  struct PlannerParam {
+    double stop_margin;
+    double max_stop_acceleration_threshold;
+  };
+
 public:
   DetectionAreaModule(
-    const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem);
+    const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem,
+    const PlannerParam & planner_param);
 
   bool modifyPathVelocity(autoware_planning_msgs::PathWithLaneId * path) override;
 
@@ -90,8 +96,7 @@ private:
   State state_;
 
   // Parameter
-  const double stop_margin_ = 0.0;
-  const double max_stop_acceleration_threshold_ = -5.0;
+  PlannerParam planner_param_;
 
   // Debug
   DebugData debug_data_;
