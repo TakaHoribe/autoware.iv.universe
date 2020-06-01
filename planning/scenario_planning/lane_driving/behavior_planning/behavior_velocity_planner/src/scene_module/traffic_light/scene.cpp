@@ -72,7 +72,6 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
     (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
     (2.0 * max_stop_acceleration_threshold_) +
     (delay_response_time_ * self_twist_ptr->twist.linear.x);
-  ROS_INFO(" --- stop_border_distance_threshold: %f\ntwist x: %f", stop_border_distance_threshold, self_twist_ptr->twist.linear.x);
 
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
