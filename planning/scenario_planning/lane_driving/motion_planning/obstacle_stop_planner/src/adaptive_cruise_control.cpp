@@ -196,7 +196,7 @@ void AdaptiveCruiseController::insertAdaptiveCruiseVelocity(
 
   if (!success_estm_vel) {
     //if failed to estimate velocity, need to stop
-    ROS_WARN("Failed to estimate velocity of forward vehicle. Insert stop line.");
+    ROS_DEBUG_THROTTLE(1.0, "Failed to estimate velocity of forward vehicle. Insert stop line.");
     *need_to_stop = true;
     return;
   }
@@ -207,7 +207,7 @@ void AdaptiveCruiseController::insertAdaptiveCruiseVelocity(
 
   if (upper_velocity <= param_.thresh_vel_to_stop) {
     //if upper velocity is too low, need to stop
-    ROS_WARN("Upper velocity is too low. Insert stop line.");
+    ROS_DEBUG_THROTTLE(1.0, "Upper velocity is too low. Insert stop line.");
     *need_to_stop = true;
     return;
   }
@@ -225,7 +225,7 @@ void AdaptiveCruiseController::calcDistanceToNearestPointOnPath(
   double * distance)
 {
   if (trajectory.points.size() == 0) {
-    ROS_WARN_STREAM("input path is too short(size=0)");
+    ROS_DEBUG_THROTTLE(1.0, "input path is too short(size=0)");
     *distance = 0;
     return;
   }
@@ -359,14 +359,14 @@ double AdaptiveCruiseController::calcUpperVelocity(
 {
   if (obj_vel < param_.obstacle_stop_velocity_thresh) {
     // stop by static obstacle
-    ROS_WARN("The velocity of forward vehicle is too low. Insert stop line.");
+    ROS_DEBUG_THROTTLE(1.0, "The velocity of forward vehicle is too low. Insert stop line.");
     return 0.0;
   }
 
   const double thresh_dist = calcThreshDistToForwardObstacle(self_vel, obj_vel);
   if (thresh_dist >= dist_to_col) {
     // emergency stop
-    ROS_WARN("Forward vehicle is too close. Insert stop line.");
+    ROS_DEBUG_THROTTLE(1.0, "Forward vehicle is too close. Insert stop line.");
     return 0.0;
   }
   return calcTargetVelocityByPID(self_vel, dist_to_col, obj_vel);
