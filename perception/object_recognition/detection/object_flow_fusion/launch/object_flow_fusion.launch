@@ -1,7 +1,7 @@
 <launch>
   <arg name="input_object" default="labeled_clusters" />
   <arg name="input_flows" default="optical_flow_node/output/flows" />
-  <arg name="use_flow_pose" default="true" />
+  <arg name="use_flow_pose" default="false" />
   <arg name="flow_vel_thresh" default="10.0" />
 
   <node name="object_flow_fusion_node"
