@@ -139,6 +139,13 @@ struct ConstrainParam
   double keep_space_shape_y;
 };
 
+struct FOAData
+{
+  bool is_avoidance_possible = true;
+  std::vector<autoware_planning_msgs::TrajectoryPoint> avoiding_traj_points;
+  std::vector<ConstrainRectangle> constrain_rectangles;
+};
+
 struct DebugData
 {
   std::vector<geometry_msgs::Point> interpolated_points;
@@ -148,6 +155,13 @@ struct DebugData
   std::vector<ConstrainRectangle> constrain_rectangles;
   cv::Mat clearance_map;
   cv::Mat only_object_clearance_map;
+  FOAData foa_data;
+};
+
+enum class OptMode : int {
+  Normal = 0,
+  Extending = 1,
+  Visualizing = 2,
 };
 
 class EBPathOptimizer
@@ -233,7 +247,7 @@ private:
     const bool enable_avoidance, const autoware_planning_msgs::Path & input_path,
     const std::vector<geometry_msgs::Point> & interpolated_points, const int num_fixed_points,
     const int farrest_point_idx, const int straight_idx, const cv::Mat & clearnce_map,
-    const cv::Mat & only_objects_clearance_map);
+    const cv::Mat & only_objects_clearance_map, FOAData * foa_data);
 
   std::vector<ConstrainRectangle> getConstrainRectangleVec(
     const std::vector<autoware_planning_msgs::PathPoint> & input_path,
@@ -295,9 +309,16 @@ private:
   CandidatePoints getDefaultCandidatePoints(
     const std::vector<autoware_planning_msgs::PathPoint> & path_points);
 
-  std::vector<double> solveQP(const bool is_extending);
+  std::vector<double> solveQP(const OptMode & opt_mode);
 
   bool isFixingPathPoint(const std::vector<autoware_planning_msgs::PathPoint> & path_points);
+
+  std::vector<autoware_planning_msgs::TrajectoryPoint> calculateTrajectory(
+    const std::vector<geometry_msgs::Point> & padded_interpolated_points,
+    const std::vector<ConstrainRectangle> & constrain_rectangles, const int farrest_idx,
+    const OptMode & opt_mode);
+
+  FOAData processObjectConstrain(const std::vector<ConstrainRectangle> & rectangles);
 
 public:
   EBPathOptimizer(

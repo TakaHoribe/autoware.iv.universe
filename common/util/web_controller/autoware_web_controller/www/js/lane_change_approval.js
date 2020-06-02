@@ -18,7 +18,7 @@ if (!LaneChangeApprovalPublisher) {
         send: function() {
             var pub = new ROSLIB.Topic({
                 ros: this.ros,
-                name: '/lane_change_approval',
+                name: '/planning/scenario_planning/lane_driving/lane_change_approval',
                 messageType: 'std_msgs/Bool'
             });
             var str = new ROSLIB.Message({
@@ -53,7 +53,7 @@ if (!LaneChangeApprovalStateSubscriber) {
 
             var sub = new ROSLIB.Topic({
                 ros: this.ros,
-                name: '/lane_change_approval',
+                name: '/planning/scenario_planning/lane_driving/lane_change_approval',
                 messageType: 'std_msgs/Bool'
             });
             sub.subscribe(function(message) {

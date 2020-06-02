@@ -48,6 +48,10 @@ ObstacleAvoidancePlanner::ObstacleAvoidancePlanner()
   tf_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_ptr_);
 
   trajectory_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/path", 1);
+  avoiding_traj_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>(
+    "/planning/scenario_planning/lane_driving/obstacle_avoidance_candidate_trajectory", 1, true);
+  is_avoidance_possible_pub_ = pnh_.advertise<std_msgs::Bool>(
+    "/planning/scenario_planning/lane_driving/obstacle_avoidance_ready", 1, true);
   debug_markers_pub_ = pnh_.advertise<visualization_msgs::MarkerArray>("debug/marker", 1, true);
   debug_clearance_map_pub_ =
     pnh_.advertise<nav_msgs::OccupancyGrid>("debug/clearance_map", 1, true);
@@ -60,7 +64,8 @@ ObstacleAvoidancePlanner::ObstacleAvoidancePlanner()
   state_sub_ =
     pnh_.subscribe("/autoware/state", 10, &ObstacleAvoidancePlanner::stateCallback, this);
   is_avoidance_sub_ = pnh_.subscribe(
-    "enable_avoidance", 10, &ObstacleAvoidancePlanner::enableAvoidanceCallback, this);
+    "/planning/scenario_planning/lane_driving/obstacle_avoidance_approval", 10,
+    &ObstacleAvoidancePlanner::enableAvoidanceCallback, this);
 
   pnh_.param<bool>("is_publishing_clearance_map", is_publishing_clearance_map_, false);
   pnh_.param<bool>("is_showing_debug_info", is_showing_debug_info_, true);
@@ -203,14 +208,7 @@ ObstacleAvoidancePlanner::generateOptimizedTrajectory(
   const auto trajectory_points = eb_path_optimizer_ptr_->generateOptimizedTrajectory(
     enable_avoidance_, ego_pose, path, prev_traj_points_ptr_, in_objects_ptr_->objects, debug_data);
 
-  debug_markers_pub_.publish(getDebugVisualizationMarker(
-    debug_data.interpolated_points, trajectory_points, debug_data.straight_points,
-    debug_data.fixed_points, debug_data.non_fixed_points, debug_data.constrain_rectangles));
-  if (is_publishing_clearance_map_) {
-    debug_clearance_map_pub_.publish(getDebugCostmap(debug_data.clearance_map, path.drivable_area));
-    debug_object_clearance_map_pub_.publish(
-      getDebugCostmap(debug_data.only_object_clearance_map, path.drivable_area));
-  }
+  publishingDebugData(debug_data, path, trajectory_points);
   return trajectory_points;
 }
 
@@ -452,5 +450,28 @@ std::shared_ptr<geometry_msgs::Point> ObstacleAvoidancePlanner::getExtendedPoint
     return point_ptr;
   } else {
     return nullptr;
+  }
+}
+
+void ObstacleAvoidancePlanner::publishingDebugData(
+  const DebugData & debug_data, const autoware_planning_msgs::Path & path,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & traj_points)
+{
+  autoware_planning_msgs::Trajectory traj;
+  traj.header = path.header;
+  traj.points = debug_data.foa_data.avoiding_traj_points;
+  avoiding_traj_pub_.publish(traj);
+
+  std_msgs::Bool is_avoidance_possible;
+  is_avoidance_possible.data = debug_data.foa_data.is_avoidance_possible;
+  is_avoidance_possible_pub_.publish(is_avoidance_possible);
+
+  debug_markers_pub_.publish(getDebugVisualizationMarker(
+    debug_data.interpolated_points, traj_points, debug_data.straight_points,
+    debug_data.fixed_points, debug_data.non_fixed_points, debug_data.constrain_rectangles));
+  if (is_publishing_clearance_map_) {
+    debug_clearance_map_pub_.publish(getDebugCostmap(debug_data.clearance_map, path.drivable_area));
+    debug_object_clearance_map_pub_.publish(
+      getDebugCostmap(debug_data.only_object_clearance_map, path.drivable_area));
   }
 }

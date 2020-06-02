@@ -61,6 +61,7 @@ class EBPathOptimizer;
 struct QPParam;
 struct TrajectoryParam;
 struct ConstrainParam;
+struct DebugData;
 
 class ObstacleAvoidancePlanner
 {
@@ -98,6 +99,8 @@ private:
   // ROS
   ros::NodeHandle nh_, pnh_;
   ros::Publisher trajectory_pub_;
+  ros::Publisher avoiding_traj_pub_;
+  ros::Publisher is_avoidance_possible_pub_;
   ros::Publisher debug_markers_pub_;
   ros::Publisher debug_clearance_map_pub_;
   ros::Publisher debug_object_clearance_map_pub_;
@@ -147,6 +150,10 @@ private:
   std::shared_ptr<geometry_msgs::Point> getExtendedPoint(
     const std::vector<autoware_planning_msgs::PathPoint> & path_points,
     const std::vector<geometry_msgs::Point> & interpolated_points);
+
+  void publishingDebugData(
+    const DebugData & debug_data, const autoware_planning_msgs::Path & path,
+    const std::vector<autoware_planning_msgs::TrajectoryPoint> & traj_points);
 
 public:
   ObstacleAvoidancePlanner();

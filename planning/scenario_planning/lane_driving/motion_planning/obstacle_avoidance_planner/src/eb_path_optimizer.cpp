@@ -177,25 +177,20 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathOptimizer::getOptimiz
   std::vector<geometry_msgs::Point> padded_interpolated_points =
     getPaddedInterpolatedPoints(interpolated_points, farrest_idx);
   auto t_start1 = std::chrono::high_resolution_clock::now();
+  FOAData foa_data;
   std::vector<ConstrainRectangle> rectangles = getConstrainRectangleVec(
     enable_avoidance, path, padded_interpolated_points, num_fixed_points, farrest_idx,
-    straight_line_idx, clearance_map, only_objects_clearance_map);
+    straight_line_idx, clearance_map, only_objects_clearance_map, &foa_data);
   debug_data.constrain_rectangles = rectangles;
   auto t_end1 = std::chrono::high_resolution_clock::now();
   float elapsed_ms1 = std::chrono::duration<float, std::milli>(t_end1 - t_start1).count();
   ROS_INFO_COND(is_showing_debug_info_, "Make constrain rectangle time: = %f [ms]", elapsed_ms1);
 
-  // update constrain for QP based on constrain rectangles
-  updateConstrain(padded_interpolated_points, rectangles);
-
-  // solve QP and get optimized trajectory
-  auto t_start2 = std::chrono::high_resolution_clock::now();
-  const bool is_extending = false;
-  std::vector<double> optimized_points = solveQP(is_extending);
-  auto t_end2 = std::chrono::high_resolution_clock::now();
-  float elapsed_ms2 = std::chrono::duration<float, std::milli>(t_end2 - t_start2).count();
-  ROS_INFO_COND(is_showing_debug_info_, "Optimization time: = %f [ms]", elapsed_ms2);
-  const auto traj_points = convertOptimizedPointsToTrajectory(optimized_points, farrest_idx);
+  const auto traj_points =
+    calculateTrajectory(padded_interpolated_points, rectangles, farrest_idx, OptMode::Normal);
+  foa_data.avoiding_traj_points = calculateTrajectory(
+    padded_interpolated_points, foa_data.constrain_rectangles, farrest_idx, OptMode::Visualizing);
+  debug_data.foa_data = foa_data;
   return traj_points;
 }
 
@@ -240,12 +235,8 @@ EBPathOptimizer::getExtendedOptimizedTrajectory(
   std::vector<ConstrainRectangle> constrain_rectangles = getConstrainRectangleVec(
     path_points, padded_interpolated_points, traj_param_.num_fix_points_for_extending, farrest_idx);
 
-  updateConstrain(padded_interpolated_points, constrain_rectangles);
-  const bool is_extending = true;
-  std::vector<double> extended_optimized_points = solveQP(is_extending);
-
-  const auto extended_traj_points =
-    convertOptimizedPointsToTrajectory(extended_optimized_points, farrest_idx);
+  const auto extended_traj_points = calculateTrajectory(
+    padded_interpolated_points, constrain_rectangles, farrest_idx, OptMode::Extending);
   auto merged_points = optimized_points;
   for (int i = traj_param_.num_fix_points_for_extending; i < extended_traj_points.size(); i++) {
     merged_points.push_back(extended_traj_points[i]);
@@ -253,14 +244,32 @@ EBPathOptimizer::getExtendedOptimizedTrajectory(
   return merged_points;
 }
 
-std::vector<double> EBPathOptimizer::solveQP(const bool is_extending)
+std::vector<autoware_planning_msgs::TrajectoryPoint> EBPathOptimizer::calculateTrajectory(
+  const std::vector<geometry_msgs::Point> & padded_interpolated_points,
+  const std::vector<ConstrainRectangle> & constrain_rectangles, const int farrest_idx,
+  const OptMode & opt_mode)
+{
+  // update constrain for QP based on constrain rectangles
+  updateConstrain(padded_interpolated_points, constrain_rectangles);
+
+  // solve QP and get optimized trajectory
+  auto t_start2 = std::chrono::high_resolution_clock::now();
+  std::vector<double> optimized_points = solveQP(opt_mode);
+  auto t_end2 = std::chrono::high_resolution_clock::now();
+  float elapsed_ms2 = std::chrono::duration<float, std::milli>(t_end2 - t_start2).count();
+  ROS_INFO_COND(is_showing_debug_info_, "Optimization time: = %f [ms]", elapsed_ms2);
+  const auto traj_points = convertOptimizedPointsToTrajectory(optimized_points, farrest_idx);
+  return traj_points;
+}
+
+std::vector<double> EBPathOptimizer::solveQP(const OptMode & opt_mode)
 {
   double eps_abs = 0;
   double eps_rel = 0;
-  if (is_extending) {
+  if (opt_mode == OptMode::Extending || opt_mode == OptMode::Visualizing) {
     eps_abs = qp_param_.eps_abs_for_extending;
     eps_rel = qp_param_.eps_rel_for_extending;
-  } else {
+  } else if (opt_mode == OptMode::Normal) {
     eps_abs = qp_param_.eps_abs;
     eps_rel = qp_param_.eps_rel;
   }
@@ -516,7 +525,7 @@ std::vector<ConstrainRectangle> EBPathOptimizer::getConstrainRectangleVec(
   const bool enable_avoidance, const autoware_planning_msgs::Path & path,
   const std::vector<geometry_msgs::Point> & interpolated_points, const int num_fixed_points,
   const int farrest_point_idx, const int straight_idx, const cv::Mat & clearance_map,
-  const cv::Mat & only_objects_clearance_map)
+  const cv::Mat & only_objects_clearance_map, FOAData * foa_data)
 {
   std::vector<ConstrainRectangle> object_road_constrain_ranges(traj_param_.num_sampling_points);
   std::vector<ConstrainRectangle> road_constrain_ranges(traj_param_.num_sampling_points);
@@ -552,6 +561,7 @@ std::vector<ConstrainRectangle> EBPathOptimizer::getConstrainRectangleVec(
         getConstrainRectangle(origin_pose, constrain_param_.clearance_for_only_smoothing);
     }
   }
+  *foa_data = processObjectConstrain(object_road_constrain_ranges);
   std::vector<ConstrainRectangle> constrain_ranges = getPostProcessedConstrainRectangles(
     enable_avoidance, object_road_constrain_ranges, road_constrain_ranges,
     only_smooth_constrain_ranges, interpolated_points, path.points, farrest_point_idx,
@@ -1194,4 +1204,16 @@ bool EBPathOptimizer::isFixingPathPoint(
     }
   }
   return false;
+}
+
+FOAData EBPathOptimizer::processObjectConstrain(const std::vector<ConstrainRectangle> & rectangles)
+{
+  FOAData foa_data;
+  for (const auto & rect : rectangles) {
+    if (rect.is_dynamic_joint_rectangle) {
+      foa_data.is_avoidance_possible = false;
+    }
+  }
+  foa_data.constrain_rectangles = rectangles;
+  return foa_data;
 }
