@@ -18,7 +18,6 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
-#include <opencv/cv.hpp>
 #include <geometry_msgs/TwistStamped.h>
 #include <autoware_perception_msgs/DynamicObjectWithFeatureArray.h>
 #include <tf2_ros/transform_listener.h>

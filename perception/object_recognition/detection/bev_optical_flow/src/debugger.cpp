@@ -140,4 +140,5 @@ bool Debugger::publishDebugVisualizations(
 
   publishOpticalFlowImage(vehicle_vel);
   publishSceneFlowMarker(topic_rate);
+  return true;
 }

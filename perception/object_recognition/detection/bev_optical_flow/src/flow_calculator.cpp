@@ -96,6 +96,7 @@ bool FlowCalculator::calcOpticalFlow(
     prev_points = current_points;
   }
   cv::swap(current_image, prev_image);
+  return true;
 }
 
 bool FlowCalculator::calcSceneFlow(

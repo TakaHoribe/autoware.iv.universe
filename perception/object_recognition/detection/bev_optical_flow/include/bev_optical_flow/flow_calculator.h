@@ -17,6 +17,7 @@
 #pragma once
 
 #include <iostream>
+#include <opencv2/video/tracking.hpp>
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
