@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include <autoware_perception_msgs/DynamicObjectArray.h>
 #include <autoware_planning_msgs/Trajectory.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <pcl/point_types.h>
@@ -28,6 +29,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include "obstacle_stop_planner/adaptive_cruise_control.hpp"
 #include "obstacle_stop_planner/debug_marker.hpp"
 
 namespace motion_planning
@@ -47,6 +49,7 @@ private:
   ros::Subscriber path_sub_;
   ros::Subscriber obstacle_pointcloud_sub_;
   ros::Subscriber current_velocity_sub_;
+  ros::Subscriber dynamic_object_sub_;
   ros::Publisher path_pub_;
   ros::Publisher stop_reason_diag_pub_;
   std::shared_ptr<ObstacleStopPlannerDebugNode> debug_ptr_;
@@ -56,13 +59,17 @@ private:
   /*
    * Parameter
    */
+  std::unique_ptr<motion_planning::AdaptiveCruiseController> acc_controller_;
   sensor_msgs::PointCloud2::Ptr obstacle_ros_pointcloud_ptr_;
   geometry_msgs::TwistStamped::ConstPtr current_velocity_ptr_;
+  autoware_perception_msgs::DynamicObjectArray::ConstPtr object_ptr_;
   double wheel_base_, front_overhang_, rear_overhang_, left_overhang_, right_overhang_,
-    vehicle_width_;
+    vehicle_width_, vehicle_length_;
   double stop_margin_;
   double slow_down_margin_;
   double min_behavior_stop_margin_;
+  ros::Time prev_col_point_time_;
+  pcl::PointXYZ prev_col_point_;
   double expand_slow_down_range_;
   double max_slow_down_vel_;
   double min_slow_down_vel_;
@@ -70,6 +77,8 @@ private:
   bool enable_slow_down_;
   void obstaclePointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
+  void dynamicObjectCallback(
+    const autoware_perception_msgs::DynamicObjectArray::ConstPtr & input_msg);
   void currentVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_msg);
 
 private:
@@ -105,7 +114,7 @@ private:
     Eigen::Vector2d & output_point);
   void getNearestPoint(
     const pcl::PointCloud<pcl::PointXYZ> & pointcloud, const geometry_msgs::Pose & base_pose,
-    pcl::PointXYZ & nearest_collision_point);
+    pcl::PointXYZ * nearest_collision_point, ros::Time * nearest_collision_point_time);
   void getLateralNearestPoint(
     const pcl::PointCloud<pcl::PointXYZ> & pointcloud, const geometry_msgs::Pose & base_pose,
     pcl::PointXYZ & lateral_nearest_point, double & deviation);

@@ -4,6 +4,7 @@ project(obstacle_stop_planner)
 add_compile_options(-std=c++14 -O3)
 
 find_package(catkin REQUIRED COMPONENTS
+  autoware_perception_msgs
   autoware_planning_msgs
   roscpp
   sensor_msgs
@@ -23,6 +24,7 @@ find_package(OpenCV REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
+  autoware_perception_msgs
     autoware_planning_msgs
     roscpp
     sensor_msgs
@@ -46,6 +48,7 @@ add_executable(obstacle_stop_planner_node
   src/debug_marker.cpp
   src/node.cpp
   src/main.cpp
+  src/adaptive_cruise_control.cpp
 )
 add_dependencies(obstacle_stop_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

@@ -99,18 +99,6 @@ using Line = bg::model::linestring<Point>;
 
 ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 {
-  // Subscribers
-  obstacle_pointcloud_sub_ = pnh_.subscribe(
-    "input/pointcloud", 1, &ObstacleStopPlannerNode::obstaclePointcloudCallback, this);
-  path_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
-  current_velocity_sub_ =
-    pnh_.subscribe("input/twist", 1, &ObstacleStopPlannerNode::currentVelocityCallback, this);
-
-  // Publishers
-  path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
-  stop_reason_diag_pub_ =
-    pnh_.advertise<diagnostic_msgs::DiagnosticStatus>("output/stop_reason", 1);
-
   // Vehicle Parameters
   wheel_base_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
   front_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/front_overhang");
@@ -118,6 +106,8 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   left_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/left_overhang");
   right_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/right_overhang");
   vehicle_width_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
+  vehicle_length_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_length");
+
   // Parameters
   stop_margin_ = getParam<double>(pnh_, "stop_margin", 5.0);
   slow_down_margin_ = getParam<double>(pnh_, "slow_down_margin", 5.0);
@@ -131,6 +121,24 @@ ObstacleStopPlannerNode::ObstacleStopPlannerNode() : nh_(), pnh_("~"), tf_listen
   min_behavior_stop_margin_ += wheel_base_ + front_overhang_;
   slow_down_margin_ += wheel_base_ + front_overhang_;
   debug_ptr_ = std::make_shared<ObstacleStopPlannerDebugNode>(wheel_base_ + front_overhang_);
+
+  // Initializer
+  acc_controller_ = std::make_unique<motion_planning::AdaptiveCruiseController>(
+    vehicle_width_, vehicle_length_, wheel_base_, front_overhang_);
+
+  // Publishers
+  path_pub_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
+  stop_reason_diag_pub_ =
+    pnh_.advertise<diagnostic_msgs::DiagnosticStatus>("output/stop_reason", 1);
+
+  // Subscribers
+  obstacle_pointcloud_sub_ = pnh_.subscribe(
+    "input/pointcloud", 1, &ObstacleStopPlannerNode::obstaclePointcloudCallback, this);
+  path_sub_ = pnh_.subscribe("input/trajectory", 1, &ObstacleStopPlannerNode::pathCallback, this);
+  current_velocity_sub_ =
+    pnh_.subscribe("input/twist", 1, &ObstacleStopPlannerNode::currentVelocityCallback, this);
+  dynamic_object_sub_ =
+    pnh_.subscribe("input/objects", 1, &ObstacleStopPlannerNode::dynamicObjectCallback, this);
 }
 
 void ObstacleStopPlannerNode::obstaclePointcloudCallback(
@@ -216,6 +224,7 @@ void ObstacleStopPlannerNode::pathCallback(
     searchPointcloudNearTrajectory(
       trajectory, search_range, transformed_obstacle_pointcloud_ptr,
       obstacle_candidate_pointcloud_ptr);
+    obstacle_candidate_pointcloud_ptr->header = transformed_obstacle_pointcloud_ptr->header;
   }
 
   /*
@@ -224,6 +233,7 @@ void ObstacleStopPlannerNode::pathCallback(
   bool is_collision = false;
   size_t decimate_trajectory_collision_index;
   pcl::PointXYZ nearest_collision_point;
+  ros::Time nearest_collision_point_time;
 
   /*
    * check slow_down
@@ -279,6 +289,7 @@ void ObstacleStopPlannerNode::pathCallback(
     // check within polygon
     pcl::PointCloud<pcl::PointXYZ>::Ptr collision_pointcloud_ptr(
       new pcl::PointCloud<pcl::PointXYZ>);
+    collision_pointcloud_ptr->header = obstacle_candidate_pointcloud_ptr->header;
 
     if (!is_slow_down && enable_slow_down_) {
       for (size_t j = 0; j < obstacle_candidate_pointcloud_ptr->size(); ++j) {
@@ -309,7 +320,8 @@ void ObstacleStopPlannerNode::pathCallback(
         one_step_move_slow_down_range_polygon, trajectory.points.at(i).pose.position.z,
         PolygonType::SlowDown);
       getNearestPoint(
-        *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, nearest_slow_down_point);
+        *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, &nearest_slow_down_point,
+        &nearest_collision_point_time);
       getLateralNearestPoint(
         *slow_down_pointcloud_ptr, trajectory.points.at(i).pose, lateral_nearest_slow_down_point,
         lateral_deviation);
@@ -321,16 +333,26 @@ void ObstacleStopPlannerNode::pathCallback(
      */
     if (is_collision) {
       getNearestPoint(
-        *collision_pointcloud_ptr, trajectory.points.at(i).pose, nearest_collision_point);
+        *collision_pointcloud_ptr, trajectory.points.at(i).pose, &nearest_collision_point,
+        &nearest_collision_point_time);
       debug_ptr_->pushObstaclePoint(nearest_collision_point, PointType::Stop);
       decimate_trajectory_collision_index = i;
       break;
     }
   }
+
+  /*
+   * insert max velocity and judge if there is a need to stop
+   */
+  bool need_to_stop = is_collision;
+  acc_controller_->insertAdaptiveCruiseVelocity(
+    decimate_trajectory, decimate_trajectory_collision_index, self_pose, nearest_collision_point,
+    nearest_collision_point_time, object_ptr_, current_velocity_ptr_, &need_to_stop, &output_msg);
+
   /*
    * insert stop point
    */
-  if (is_collision) {
+  if (need_to_stop) {
     for (int i = decimate_trajectory_index_map.at(decimate_trajectory_collision_index);
          i < (int)base_path.points.size(); ++i) {
       Eigen::Vector2d trajectory_vec;
@@ -529,6 +551,12 @@ void ObstacleStopPlannerNode::pathCallback(
   path_pub_.publish(output_msg);
   stop_reason_diag_pub_.publish(stop_reason_diag);
   debug_ptr_->publish();
+}
+
+void ObstacleStopPlannerNode::dynamicObjectCallback(
+  const autoware_perception_msgs::DynamicObjectArrayConstPtr & input_msg)
+{
+  object_ptr_ = input_msg;
 }
 
 void ObstacleStopPlannerNode::currentVelocityCallback(
@@ -762,7 +790,7 @@ bool ObstacleStopPlannerNode::getBackwordPointFromBasePoint(
 
 void ObstacleStopPlannerNode::getNearestPoint(
   const pcl::PointCloud<pcl::PointXYZ> & pointcloud, const geometry_msgs::Pose & base_pose,
-  pcl::PointXYZ & nearest_collision_point)
+  pcl::PointXYZ * nearest_collision_point, ros::Time * nearest_collision_point_time)
 {
   double min_norm;
   bool is_init = false;
@@ -777,7 +805,8 @@ void ObstacleStopPlannerNode::getNearestPoint(
     double norm = base_pose_vec.dot(pointcloud_vec);
     if (norm < min_norm || !is_init) {
       min_norm = norm;
-      nearest_collision_point = pointcloud.at(i);
+      *nearest_collision_point = pointcloud.at(i);
+      *nearest_collision_point_time = pcl_conversions::fromPCL(pointcloud.header).stamp;
       is_init = true;
     }
   }
