@@ -25,44 +25,40 @@
 // clang-format on
 MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
-  pnh_.param<double>("max_velocity", planning_param_.max_velocity, 20.0);  // 72.0 kmph
-  pnh_.param<double>("max_accel", planning_param_.max_accel, 2.0);         // 0.11G
-  pnh_.param<double>("min_decel", planning_param_.min_decel, -3.0);        // -0.2G
+  auto & p = planning_param_;
+  pnh_.param<double>("max_velocity", p.max_velocity, 20.0);  // 72.0 kmph
+  pnh_.param<double>("max_accel", p.max_accel, 2.0);         // 0.11G
+  pnh_.param<double>("min_decel", p.min_decel, -3.0);        // -0.2G
 
-  pnh_.param<double>("max_lateral_accel", planning_param_.max_lateral_accel, 0.2);  //
-  pnh_.param<double>(
-    "decel_distance_before_curve", planning_param_.decel_distance_before_curve, 3.5);
-  pnh_.param<double>("decel_distance_after_curve", planning_param_.decel_distance_after_curve, 0.0);
-  pnh_.param<double>("min_curve_velocity", planning_param_.min_curve_velocity, 1.38);
+  pnh_.param<double>("max_lateral_accel", p.max_lateral_accel, 0.2);  //
+  pnh_.param<double>("decel_distance_before_curve", p.decel_distance_before_curve, 3.5);
+  pnh_.param<double>("decel_distance_after_curve", p.decel_distance_after_curve, 0.0);
+  pnh_.param<double>("min_curve_velocity", p.min_curve_velocity, 1.38);
 
-  pnh_.param<double>("replan_vel_deviation", planning_param_.replan_vel_deviation, 3.0);
-  pnh_.param<double>("engage_velocity", planning_param_.engage_velocity, 0.3);
-  pnh_.param<double>("engage_acceleration", planning_param_.engage_acceleration, 0.1);
-  pnh_.param<double>("engage_exit_ratio", planning_param_.engage_exit_ratio, 0.5);
-  planning_param_.engage_exit_ratio =
-    std::min(std::max(planning_param_.engage_exit_ratio, 0.0), 1.0);
+  pnh_.param<double>("replan_vel_deviation", p.replan_vel_deviation, 3.0);
+  pnh_.param<double>("engage_velocity", p.engage_velocity, 0.3);
+  pnh_.param<double>("engage_acceleration", p.engage_acceleration, 0.1);
+  pnh_.param<double>("engage_exit_ratio", p.engage_exit_ratio, 0.5);
+  p.engage_exit_ratio = std::min(std::max(p.engage_exit_ratio, 0.0), 1.0);
 
-  pnh_.param<double>("extract_ahead_dist", planning_param_.extract_ahead_dist, 200.0);
-  pnh_.param<double>("extract_behind_dist", planning_param_.extract_behind_dist, 3.0);
-  pnh_.param<double>("max_trajectory_length", planning_param_.max_trajectory_length, 200.0);
-  pnh_.param<double>("min_trajectory_length", planning_param_.min_trajectory_length, 30.0);
-  pnh_.param<double>("resample_time", planning_param_.resample_time, 10.0);
-  pnh_.param<double>("resample_dt", planning_param_.resample_dt, 0.1);
-  pnh_.param<double>(
-    "min_trajectory_interval_distance", planning_param_.min_trajectory_interval_distance, 0.1);
-  pnh_.param<double>(
-    "stop_dist_to_prohibit_engage", planning_param_.stop_dist_to_prohibit_engage, 1.5);
-  pnh_.param<double>("delta_yaw_threshold", planning_param_.delta_yaw_threshold, M_PI / 3.0);
+  pnh_.param<double>("extract_ahead_dist", p.extract_ahead_dist, 200.0);
+  pnh_.param<double>("extract_behind_dist", p.extract_behind_dist, 3.0);
+  pnh_.param<double>("max_trajectory_length", p.max_trajectory_length, 200.0);
+  pnh_.param<double>("min_trajectory_length", p.min_trajectory_length, 30.0);
+  pnh_.param<double>("resample_time", p.resample_time, 10.0);
+  pnh_.param<double>("resample_dt", p.resample_dt, 0.1);
+  pnh_.param<double>("min_trajectory_interval_distance", p.min_trajectory_interval_distance, 0.1);
+  pnh_.param<double>("stop_dist_to_prohibit_engage", p.stop_dist_to_prohibit_engage, 1.5);
+  pnh_.param<double>("delta_yaw_threshold", p.delta_yaw_threshold, M_PI / 3.0);
 
-  pnh_.param<std::string>("algorithm_type", planning_param_.algorithm_type, "L2");
-  if (planning_param_.algorithm_type != "L2" && planning_param_.algorithm_type != "Linf") {
+  pnh_.param<std::string>("algorithm_type", p.algorithm_type, "L2");
+  if (p.algorithm_type != "L2" && p.algorithm_type != "Linf") {
     ROS_WARN("[MotionVelocityOptimizer] undesired algorithm is selected. set L2.");
-    planning_param_.algorithm_type = "L2";
+    p.algorithm_type = "L2";
   }
 
   pnh_.param<bool>("show_debug_info", show_debug_info_, true);
   pnh_.param<bool>("show_debug_info_all", show_debug_info_all_, false);
-  pnh_.param<bool>("show_figure", show_figure_, false);
   pnh_.param<bool>("publish_debug_trajs", publish_debug_trajs_, false);
 
   pnh_.param<double>("pseudo_jerk_weight", qp_param_.pseudo_jerk_weight, 1000.0);

@@ -69,7 +69,6 @@ private:
 
   bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
-  bool show_figure_;          // for plot visualize
   bool publish_debug_trajs_;  // publish planned trajectories
 
   struct MotionVelocityOptimizerParam
