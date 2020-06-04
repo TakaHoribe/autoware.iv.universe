@@ -89,6 +89,7 @@ public:
     double stuck_vehicle_detect_dist;  //! distance from intersection for stuck vehicle check
     double stuck_vehicle_vel_thr;      //! Threshold of the speed to be recognized as stopped
     double intersection_velocity;      //! used for intersection passing time
+    double detection_area_length;      //! used to create detection area polygon
   };
 
   IntersectionModule(

@@ -259,7 +259,7 @@ bool IntersectionModule::getObjectivePolygons(
   }
 
   // get possible lanelet path that reaches conflicting_lane longer than given length
-  double length = 100;
+  const double length = planner_param_.detection_area_length;
   std::vector<lanelet::ConstLanelets> objective_lanelets_sequences;
   for (const auto & ll : objective_lanelets) {
     const auto & lanelet_sequences =
