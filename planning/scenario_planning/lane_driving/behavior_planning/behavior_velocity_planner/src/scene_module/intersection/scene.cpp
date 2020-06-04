@@ -218,13 +218,17 @@ bool IntersectionModule::getObjectivePolygons(
 
   lanelet::ConstLanelets exclude_lanelets;
 
-  // for non-priority roads.
+  // for low priority lane
+  // If ego_lane has right of way (i.e. is high priority),
+  // ignore yieldLanelets (i.e. low priority lanes)
   const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
   for (const auto & right_of_way : right_of_ways) {
-    for (const auto & yield_lanelets : right_of_way->yieldLanelets()) {
-      exclude_lanelets.push_back(yield_lanelets);
-      for (const auto & previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
-        exclude_lanelets.push_back(previous_lanelet);
+    if (lanelet::utils::contains(right_of_way->rightOfWayLanelets(), assigned_lanelet)) {
+      for (const auto & yield_lanelets : right_of_way->yieldLanelets()) {
+        exclude_lanelets.push_back(yield_lanelets);
+        for (const auto & previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
+          exclude_lanelets.push_back(previous_lanelet);
+        }
       }
     }
   }
