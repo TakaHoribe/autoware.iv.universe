@@ -153,7 +153,8 @@ void SSCInterface::callbackFromSSCFeedbacks(
 
   // update adaptive gear ratio (avoiding zero divizion)
   adaptive_gear_ratio_ = std::max(
-    1e-5, agr_coef_a_ + agr_coef_b_ * speed * speed - agr_coef_c_ * msg_steering_wheel->output);
+    1e-5, agr_coef_a_ + agr_coef_b_ * speed * speed -
+            agr_coef_c_ * std::fabs(msg_steering_wheel->output));
   // current steering curvature
   double curvature =
     !use_adaptive_gear_ratio_

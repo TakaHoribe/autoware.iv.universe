@@ -331,7 +331,8 @@ double PacmodInterface::calculateVehicleVelocity(
 
 double PacmodInterface::calculateVariableGearRatio(const double vel, const double steer_wheel)
 {
-  return std::max(1e-5, vgr_coef_a_ + vgr_coef_b_ * vel * vel - vgr_coef_c_ * steer_wheel);
+  return std::max(
+    1e-5, vgr_coef_a_ + vgr_coef_b_ * vel * vel - vgr_coef_c_ * std::fabs(steer_wheel));
 }
 
 uint16_t PacmodInterface::toPacmodShiftCmd(const autoware_vehicle_msgs::Shift & shift)
