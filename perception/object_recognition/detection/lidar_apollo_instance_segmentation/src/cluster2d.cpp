@@ -261,8 +261,8 @@ autoware_perception_msgs::DynamicObjectWithFeature Cluster2D::obstacleToObject(
   } else if (in_obstacle.meta_type == MetaType::META_BIGMOT) {
     resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::BUS;
   } else {
-    // d_object.object.semantic.type = d_object.object.semantic.UNKNOWN;
-    resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
+    // resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
+    resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::UNKNOWN;
   }
 
   float min_x = std::numeric_limits<float>::max();
