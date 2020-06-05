@@ -374,7 +374,8 @@ bool UbloxNode::configureUblox() {
       if (!gps.configure(load_)) throw std::runtime_error(std::string("Failed to load configuration ") + "from memory");
       if (load_.loadMask & load_.MASK_IO_PORT) {
         ROS_DEBUG("Loaded I/O configuration from memory, resetting serial %s", "communications.");
-        boost::posix_time::seconds wait(kResetWait);
+        const int resetWait = kResetWait;
+        boost::posix_time::seconds wait(resetWait);
         gps.reset(wait);
         if (!gps.isConfigured())
           throw std::runtime_error(std::string("Failed to reset serial I/O") +

@@ -132,7 +132,8 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate, uint16_t uar
     // Don't step down, unless the desired baudrate is lower
     if (current_baudrate.value() > kBaudrates[i] && baudrate > kBaudrates[i]) continue;
     serial->set_option(boost::asio::serial_port_base::baud_rate(kBaudrates[i]));
-    boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+    const int setBaudrateSleepMs = kSetBaudrateSleepMs;
+    boost::this_thread::sleep(boost::posix_time::milliseconds(setBaudrateSleepMs));
     serial->get_option(current_baudrate);
     ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
