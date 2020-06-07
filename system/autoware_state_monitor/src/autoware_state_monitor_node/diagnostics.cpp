@@ -66,7 +66,6 @@ void AutowareStateMonitorNode::checkTopicStatus(
     const auto msg = fmt::format("topic `{}` is not received", topic_config.name);
 
     error_msgs.push_back(msg);
-    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
     level = diagnostic_msgs::DiagnosticStatus::WARN;
   }
 
@@ -84,7 +83,6 @@ void AutowareStateMonitorNode::checkTopicStatus(
       topic_config.warn_rate, topic_rate);
 
     error_msgs.push_back(msg);
-    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
     level = diagnostic_msgs::DiagnosticStatus::WARN;
   }
 
@@ -103,7 +101,6 @@ void AutowareStateMonitorNode::checkTopicStatus(
       last_received_time.toSec());
 
     error_msgs.push_back(msg);
-    logThrottleNamed(ros::console::levels::Error, 1.0, topic_config.name, msg);
     level = diagnostic_msgs::DiagnosticStatus::ERROR;
   }
 
@@ -141,8 +138,6 @@ void AutowareStateMonitorNode::checkTfStatus(
       last_received_time.toSec());
 
     error_msgs.push_back(msg);
-    logThrottleNamed(
-      ros::console::levels::Error, 1.0, fmt::format("{}-{}", tf_config.from, tf_config.to), msg);
     level = diagnostic_msgs::DiagnosticStatus::ERROR;
   }
 
