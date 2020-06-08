@@ -34,7 +34,7 @@ double calcSignedDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d 
 {
   Eigen::Affine3d map2p1;
   tf2::fromMsg(p1, map2p1);
-  auto basecoords_p2 = map2p1 * Eigen::Vector3d(p2.x(), p2.y(), p1.position.z);
+  auto basecoords_p2 = map2p1.inverse() * Eigen::Vector3d(p2.x(), p2.y(), p1.position.z);
   return basecoords_p2.x() >= 0 ? basecoords_p2.norm() : -basecoords_p2.norm();
 }
 }  // namespace
@@ -70,7 +70,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   // get vehicle info
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
   const double stop_border_distance_threshold =
-    (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
+    (1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
       (2.0 * planner_param_.max_stop_acceleration_threshold) +
     (planner_param_.delay_response_time * self_twist_ptr->twist.linear.x);
 
