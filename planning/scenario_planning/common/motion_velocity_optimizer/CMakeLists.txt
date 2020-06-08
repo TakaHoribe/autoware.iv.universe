@@ -37,7 +37,15 @@ include
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(motion_velocity_optimizer src/motion_velocity_optimizer.cpp src/motion_velocity_optimizer_utils.cpp src/interpolate.cpp)
+
+set(MOTION_VELOCITY_OPTIMIZER_SRC
+  src/motion_velocity_optimizer_utils.cpp
+  src/interpolate.cpp
+  src/optimizer/pseudo_jerk_l2_optimizer.cpp
+  src/optimizer/pseudo_jerk_linf_optimizer.cpp
+)
+
+add_executable(motion_velocity_optimizer src/motion_velocity_optimizer.cpp ${MOTION_VELOCITY_OPTIMIZER_SRC})
 add_dependencies(motion_velocity_optimizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} motion_velocity_optimizer_gencfg)
 target_link_libraries(motion_velocity_optimizer ${catkin_LIBRARIES} ${PYTHON_LIBRARIES})
 
