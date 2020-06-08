@@ -250,6 +250,7 @@ bool VehicleTracker::getEstimatedDynamicObject(
   if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX) {
     object.state.twist_covariance.twist.linear.x =
       filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
+    object.state.twist_covariance.twist.linear.y = 0.0;
   } else {
     object.state.twist_covariance.twist.linear.x =
       filtered_vx_ * std::cos(-yaw) - filtered_vy_ * std::sin(-yaw);
