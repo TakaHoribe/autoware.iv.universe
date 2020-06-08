@@ -83,6 +83,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
     for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
       const Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
                               {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
+      constexpr double range = 5.0;
       // Check Judge Line
       {
         Eigen::Vector2d judge_point;
@@ -92,7 +93,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           continue;
         }
 
-        if (isOverJudgePoint(self_pose.pose, input_path, judge_point_idx, judge_point)) {
+        if (isOverJudgePoint(self_pose.pose, input_path, judge_point_idx, judge_point, range)) {
           state_ = State::GO_OUT;
           return true;
         }
@@ -108,7 +109,9 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           continue;
         }
 
-        if (calcSignedDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
+        if (
+          calcDistance(self_pose.pose, stop_line_point) < range &&
+          calcSignedDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
           ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
           return true;
         }
@@ -134,10 +137,9 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
 bool TrafficLightModule::isOverJudgePoint(
   const geometry_msgs::Pose & self_pose, const autoware_planning_msgs::PathWithLaneId & input_path,
-  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point)
+  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point, const double range)
 {
-  constexpr double range = 5.0;
-  if (calcDistance(self_pose, judge_point) < range) {
+  if (calcDistance(self_pose, judge_point) > range) {
     return false;
   }
 
