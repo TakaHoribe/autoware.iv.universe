@@ -482,7 +482,8 @@ bool IntersectionModule::isTargetVehicleType(
     object.semantic.type == autoware_perception_msgs::Semantic::CAR ||
     object.semantic.type == autoware_perception_msgs::Semantic::BUS ||
     object.semantic.type == autoware_perception_msgs::Semantic::TRUCK ||
-    object.semantic.type == autoware_perception_msgs::Semantic::MOTORBIKE) {
+    object.semantic.type == autoware_perception_msgs::Semantic::MOTORBIKE ||
+    object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE) {
     return true;
   }
   return false;
