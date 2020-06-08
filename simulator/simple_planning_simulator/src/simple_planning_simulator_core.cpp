@@ -258,7 +258,7 @@ void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandCo
     vehicle_model_ptr_->setInput(input);
   } else if (vehicle_model_type_ == VehicleModelType::DELAY_STEER_ACC) {
     Eigen::VectorXd input(3);
-    double drive_shift = (msg->shift.data == autoware_vehicle_msgs::Shift::DRIVE) ? 1.0 : -1.0;
+    double drive_shift = (msg->shift.data == autoware_vehicle_msgs::Shift::REVERSE) ? -1.0 : 1.0;
     input << msg->control.acceleration, msg->control.steering_angle, drive_shift;
     vehicle_model_ptr_->setInput(input);
   } else {
