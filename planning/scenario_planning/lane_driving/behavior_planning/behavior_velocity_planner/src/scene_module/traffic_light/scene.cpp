@@ -113,6 +113,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           calcDistance(self_pose.pose, stop_line_point) < range &&
           calcSignedDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
           ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
+          state_ = State::GO_OUT;
           return true;
         }
       }
