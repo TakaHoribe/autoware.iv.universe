@@ -66,7 +66,7 @@ void AutowareStateMonitorNode::checkTopicStatus(
     const auto msg = fmt::format("topic `{}` is not received", topic_config.name);
 
     error_msgs.push_back(msg);
-    level = diagnostic_msgs::DiagnosticStatus::WARN;
+    level = diagnostic_msgs::DiagnosticStatus::ERROR;
   }
 
   // Check topic rate
