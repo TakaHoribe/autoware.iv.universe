@@ -85,6 +85,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
                               {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
       // Check Judge Line
       {
+        constexpr double judge_range = 5.0;
         Eigen::Vector2d judge_point;
         size_t judge_point_idx;
         if (!createTargetPoint(
@@ -92,7 +93,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
           continue;
         }
 
-        if (isOverJudgePoint(self_pose.pose, input_path, judge_point_idx, judge_point)) {
+        if (isOverJudgePoint(self_pose.pose, input_path, judge_point_idx, judge_point, judge_range)) {
           state_ = State::GO_OUT;
           return true;
         }
@@ -134,10 +135,9 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
 bool TrafficLightModule::isOverJudgePoint(
   const geometry_msgs::Pose & self_pose, const autoware_planning_msgs::PathWithLaneId & input_path,
-  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point)
+  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point, const double judge_range)
 {
-  constexpr double range = 5.0;
-  if (calcDistance(self_pose, judge_point) < range) {
+  if (calcDistance(self_pose, judge_point) > judge_range) {
     return false;
   }
 

@@ -88,7 +88,7 @@ private:
   bool isOverJudgePoint(
     const geometry_msgs::Pose & self_pose,
     const autoware_planning_msgs::PathWithLaneId & input_path, const size_t & judge_point_idx,
-    const Eigen::Vector2d & judge_point);
+    const Eigen::Vector2d & judge_point, const double judge_range);
 
   bool isStopRequired(const lanelet::ConstLineStringsOrPolygons3d & traffic_lights);
 
@@ -110,7 +110,6 @@ private:
 
   // Parameter
   PlannerParam planner_param_;
-
 
   // Debug
   DebugData debug_data_;
