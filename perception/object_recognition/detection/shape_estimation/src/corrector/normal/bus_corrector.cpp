@@ -96,7 +96,7 @@ bool BusCorrector::correct(
   constexpr double min_width = 2.0;
   constexpr double max_width = 2.9;
   constexpr double min_length = 5.0;
-  constexpr double max_length = 12.0;
+  constexpr double max_length = 17.0;
 
   if ((int)std::abs((int)first_most_distant_index - (int)second_most_distant_index) % 2 == 0) {
     if (

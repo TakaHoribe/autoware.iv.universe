@@ -24,7 +24,7 @@ bool BusCorrector::correct(
   double min_width = 2.0;
   double max_width = 2.9;
   double min_length = 5.0;
-  double max_length = 12.0;
+  double max_length = 17.0;
 
   /*
     c1 is nearest point and other points are arranged like below

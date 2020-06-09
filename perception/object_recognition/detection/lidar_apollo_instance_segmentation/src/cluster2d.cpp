@@ -244,13 +244,8 @@ autoware_perception_msgs::DynamicObjectWithFeature Cluster2D::obstacleToObject(
   const Obstacle & in_obstacle, const std_msgs::Header & in_header)
 {
   autoware_perception_msgs::DynamicObjectWithFeature resulting_object;
+  // pcl::PointCloud<pcl::PointXYZI> in_cluster = *(in_obstacle.cloud_ptr);
 
-  sensor_msgs::PointCloud2 ros_pc;
-  pcl::PointCloud<pcl::PointXYZI> in_cluster = *in_obstacle.cloud_ptr;
-  pcl::toROSMsg(in_cluster, ros_pc);
-
-  resulting_object.feature.cluster = ros_pc;
-  resulting_object.feature.cluster.header = in_header;
   resulting_object.object.semantic.confidence = in_obstacle.score;
   if (in_obstacle.meta_type == MetaType::META_PEDESTRIAN) {
     resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::PEDESTRIAN;
@@ -265,58 +260,47 @@ autoware_perception_msgs::DynamicObjectWithFeature Cluster2D::obstacleToObject(
     resulting_object.object.semantic.type = autoware_perception_msgs::Semantic::UNKNOWN;
   }
 
-  float min_x = std::numeric_limits<float>::max();
-  float max_x = -std::numeric_limits<float>::max();
-  float min_y = std::numeric_limits<float>::max();
-  float max_y = -std::numeric_limits<float>::max();
-  float min_z = std::numeric_limits<float>::max();
-  float max_z = -std::numeric_limits<float>::max();
-  float average_x = 0, average_y = 0, average_z = 0;
-  float length, width, height;
-
   pcl::PointXYZ min_point;
   pcl::PointXYZ max_point;
-  pcl::PointXYZ average_point;
-  pcl::PointXYZ centroid;
-
-  for (auto pit = in_cluster.points.begin(); pit != in_cluster.points.end(); ++pit) {
-    average_x += pit->x;
-    average_y += pit->y;
-    average_z += pit->z;
-    centroid.x += pit->x;
-    centroid.y += pit->y;
-    centroid.z += pit->z;
-
-    if (pit->x < min_x) min_x = pit->x;
-    if (pit->y < min_y) min_y = pit->y;
-    if (pit->z < min_z) min_z = pit->z;
-    if (pit->x > max_x) max_x = pit->x;
-    if (pit->y > max_y) max_y = pit->y;
-    if (pit->z > max_z) max_z = pit->z;
+  for (auto pit = in_obstacle.cloud_ptr->points.begin(); pit != in_obstacle.cloud_ptr->points.end(); ++pit) {
+    if (pit->x < min_point.x) min_point.x = pit->x;
+    if (pit->y < min_point.y) min_point.y = pit->y;
+    if (pit->z < min_point.z) min_point.z = pit->z;
+    if (pit->x > max_point.x) max_point.x = pit->x;
+    if (pit->y > max_point.y) max_point.y = pit->y;
+    if (pit->z > max_point.z) max_point.z = pit->z;
   }
-  // min, max points
-  min_point.x = min_x;
-  min_point.y = min_y;
-  min_point.z = min_z;
-  max_point.x = max_x;
-  max_point.y = max_y;
-  max_point.z = max_z;
 
-  if (in_cluster.points.size() > 0) {
-    centroid.x /= in_cluster.points.size();
-    centroid.y /= in_cluster.points.size();
-    centroid.z /= in_cluster.points.size();
+
+  // cluster and ground filtering
+  pcl::PointCloud<pcl::PointXYZI> cluster;
+  const float min_height = min_point.z + ((max_point.z - min_point.z) * 0.1f);
+  for (auto pit = in_obstacle.cloud_ptr->points.begin();
+       pit != in_obstacle.cloud_ptr->points.end(); ++pit) {
+    if (min_height < pit->z) cluster.points.push_back(*pit);
   }
-  length = max_point.x - min_point.x;
-  width = max_point.y - min_point.y;
-  height = max_point.z - min_point.z;
+  min_point.z = 0.0;
+  max_point.z = 0.0;
+  for (auto pit = cluster.points.begin(); pit != cluster.points.end(); ++pit) {
+    if (pit->z < min_point.z) min_point.z = pit->z;
+    if (pit->z > max_point.z) max_point.z = pit->z;
+  }
+  sensor_msgs::PointCloud2 ros_pc;
+  pcl::toROSMsg(cluster, ros_pc);
+  resulting_object.feature.cluster = ros_pc;
+  resulting_object.feature.cluster.header = in_header;
 
-  resulting_object.object.state.pose_covariance.pose.orientation = getQuaternionFromRPY(0.0, 0.0, in_obstacle.heading);
-  resulting_object.object.state.orientation_reliable = false;
-
+  // position
+  const float height =  max_point.z - min_point.z;
+  const float length = max_point.x - min_point.x;
+  const float width = max_point.y - min_point.y;
   resulting_object.object.state.pose_covariance.pose.position.x = min_point.x + length / 2;
   resulting_object.object.state.pose_covariance.pose.position.y = min_point.y + width / 2;
   resulting_object.object.state.pose_covariance.pose.position.z = min_point.z + height / 2;
+
+
+  resulting_object.object.state.pose_covariance.pose.orientation = getQuaternionFromRPY(0.0, 0.0, in_obstacle.heading);
+  resulting_object.object.state.orientation_reliable = false;
   return resulting_object;
 }
 
