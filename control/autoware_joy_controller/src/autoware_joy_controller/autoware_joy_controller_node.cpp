@@ -158,6 +158,10 @@ void AutowareJoyControllerNode::onTimer(const ros::TimerEvent & event)
 
   publishControlCommand();
   publishRawControlCommand();
+
+  // tmp
+  publishVehicleCommand();
+  publishRawVehicleCommand();
 }
 
 void AutowareJoyControllerNode::publishControlCommand()
@@ -303,6 +307,27 @@ void AutowareJoyControllerNode::publishEngage()
   pub_vehicle_engage_.publish(engage);
 }
 
+// tmp
+void AutowareJoyControllerNode::publishVehicleCommand()
+{
+  autoware_vehicle_msgs::VehicleCommand vehicle_cmd;
+  vehicle_cmd.header.stamp = ros::Time::now();
+  vehicle_cmd.control = prev_control_command_;
+  vehicle_cmd.shift.data = prev_shift_;
+
+  pub_vehicle_command_.publish(vehicle_cmd);
+}
+
+void AutowareJoyControllerNode::publishRawVehicleCommand()
+{
+  autoware_vehicle_msgs::RawVehicleCommand vehicle_cmd;
+  vehicle_cmd.header.stamp = ros::Time::now();
+  vehicle_cmd.control = prev_raw_control_command_;
+  vehicle_cmd.shift.data = prev_shift_;
+
+  pub_raw_vehicle_command_.publish(vehicle_cmd);
+}
+
 AutowareJoyControllerNode::AutowareJoyControllerNode()
 {
   // Parameter
@@ -332,6 +357,12 @@ AutowareJoyControllerNode::AutowareJoyControllerNode()
   pub_emergency_ = private_nh_.advertise<std_msgs::Bool>("output/emergency", 1);
   pub_autoware_engage_ = private_nh_.advertise<std_msgs::Bool>("output/autoware_engage", 1);
   pub_vehicle_engage_ = private_nh_.advertise<std_msgs::Bool>("output/vehicle_engage", 1);
+
+  // tmp
+  pub_vehicle_command_ =
+    private_nh_.advertise<autoware_vehicle_msgs::VehicleCommand>("output/vehicle_cmd", 1);
+  pub_raw_vehicle_command_ =
+    private_nh_.advertise<autoware_vehicle_msgs::RawVehicleCommand>("output/raw_vehicle_cmd", 1);
 
   // Timer
   timer_ =
