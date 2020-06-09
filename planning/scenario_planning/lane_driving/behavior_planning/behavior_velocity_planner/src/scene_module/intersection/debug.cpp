@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/intersection/scene.h>
+#include <scene_module/intersection/scene_intersection.h>
+#include <scene_module/intersection/scene_merge_from_private_road.h>
 
 #include "utilization/marker_helper.h"
 #include "utilization/util.h"
@@ -49,14 +50,12 @@ visualization_msgs::MarkerArray createLaneletsAreaMarkerArray(
       point.z = p.z();
       marker.points.push_back(point);
     }
-    if (!marker.points.empty())
-      marker.points.push_back(marker.points.front());
+    if (!marker.points.empty()) marker.points.push_back(marker.points.front());
     msg.markers.push_back(marker);
   }
 
   return msg;
 }
-
 
 visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
   const std::vector<lanelet::CompoundPolygon3d> & polygons, const std::string & ns,
@@ -87,8 +86,7 @@ visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
       point.z = p.z();
       marker.points.push_back(point);
     }
-    if (!marker.points.empty())
-      marker.points.push_back(marker.points.front());
+    if (!marker.points.empty()) marker.points.push_back(marker.points.front());
     msg.markers.push_back(marker);
   }
 
@@ -96,8 +94,8 @@ visualization_msgs::MarkerArray createLaneletPolygonsMarkerArray(
 }
 
 visualization_msgs::MarkerArray createPolygonMarkerArray(
-  const geometry_msgs::Polygon & polygon, const std::string & ns,
-  const int64_t lane_id, const double r, const double g, const double b)
+  const geometry_msgs::Polygon & polygon, const std::string & ns, const int64_t lane_id,
+  const double r, const double g, const double b)
 {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
@@ -121,8 +119,7 @@ visualization_msgs::MarkerArray createPolygonMarkerArray(
     point.z = p.z;
     marker.points.push_back(point);
   }
-  if (!marker.points.empty())
-    marker.points.push_back(marker.points.front());
+  if (!marker.points.empty()) marker.points.push_back(marker.points.front());
   msg.markers.push_back(marker);
 
   return msg;
@@ -142,8 +139,7 @@ visualization_msgs::MarkerArray createObjectsMarkerArray(
 
   int32_t uid = (lane_id << (sizeof(visualization_msgs::Marker::id) * 8 / 2));
   int32_t i = 0;
-  for (const auto & object : objects.objects)
-  {
+  for (const auto & object : objects.objects) {
     marker.id = uid + i++;
     marker.lifetime = ros::Duration(1.0);
     marker.type = visualization_msgs::Marker::CUBE;
@@ -186,7 +182,7 @@ visualization_msgs::MarkerArray createPathMarkerArray(
 }
 
 visualization_msgs::MarkerArray createVirtualWallMarkerArray(
-  const geometry_msgs::Pose & pose, const int64_t lane_id)
+  const geometry_msgs::Pose & pose, const int64_t lane_id, const std::string & stop_factor)
 {
   visualization_msgs::MarkerArray msg;
 
@@ -216,49 +212,47 @@ visualization_msgs::MarkerArray createVirtualWallMarkerArray(
   marker_factor_text.pose.position.z += 2.0;
   marker_factor_text.scale = createMarkerScale(0.0, 0.0, 1.0);
   marker_factor_text.color = createMarkerColor(1.0, 1.0, 1.0, 0.999);
-  marker_factor_text.text = "intersection";
+  marker_factor_text.text = stop_factor;
   msg.markers.push_back(marker_factor_text);
 
   return msg;
 }
 
 visualization_msgs::MarkerArray createPoseMarkerArray(
-  const geometry_msgs::Pose & pose, const State & state, const std::string & ns, const int64_t id,
-  const double r, const double g, const double b)
+  const geometry_msgs::Pose & pose, const std::string & ns, const int64_t id, const double r,
+  const double g, const double b)
 {
   const auto current_time = ros::Time::now();
   visualization_msgs::MarkerArray msg;
 
-  if (state == State::STOP) {
-    visualization_msgs::Marker marker_line{};
-    marker_line.header.frame_id = "map";
-    marker_line.header.stamp = current_time;
-    marker_line.ns = ns + "_line";
-    marker_line.id = id;
-    marker_line.lifetime = ros::Duration(0.3);
-    marker_line.type = visualization_msgs::Marker::LINE_STRIP;
-    marker_line.action = visualization_msgs::Marker::ADD;
-    marker_line.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
-    marker_line.scale = createMarkerScale(0.1, 0.0, 0.0);
-    marker_line.color = createMarkerColor(r, g, b, 0.999);
+  visualization_msgs::Marker marker_line{};
+  marker_line.header.frame_id = "map";
+  marker_line.header.stamp = current_time;
+  marker_line.ns = ns + "_line";
+  marker_line.id = id;
+  marker_line.lifetime = ros::Duration(0.3);
+  marker_line.type = visualization_msgs::Marker::LINE_STRIP;
+  marker_line.action = visualization_msgs::Marker::ADD;
+  marker_line.pose.orientation = createMarkerOrientation(0, 0, 0, 1.0);
+  marker_line.scale = createMarkerScale(0.1, 0.0, 0.0);
+  marker_line.color = createMarkerColor(r, g, b, 0.999);
 
-    const double yaw = tf2::getYaw(pose.orientation);
+  const double yaw = tf2::getYaw(pose.orientation);
 
-    const double a = 3.0;
-    geometry_msgs::Point p0;
-    p0.x = pose.position.x - a * std::sin(yaw);
-    p0.y = pose.position.y + a * std::cos(yaw);
-    p0.z = pose.position.z;
-    marker_line.points.push_back(p0);
+  const double a = 3.0;
+  geometry_msgs::Point p0;
+  p0.x = pose.position.x - a * std::sin(yaw);
+  p0.y = pose.position.y + a * std::cos(yaw);
+  p0.z = pose.position.z;
+  marker_line.points.push_back(p0);
 
-    geometry_msgs::Point p1;
-    p1.x = pose.position.x + a * std::sin(yaw);
-    p1.y = pose.position.y - a * std::cos(yaw);
-    p1.z = pose.position.z;
-    marker_line.points.push_back(p1);
+  geometry_msgs::Point p1;
+  p1.x = pose.position.x + a * std::sin(yaw);
+  p1.y = pose.position.y - a * std::cos(yaw);
+  p1.z = pose.position.z;
+  marker_line.points.push_back(p1);
 
-    msg.markers.push_back(marker_line);
-  }
+  msg.markers.push_back(marker_line);
 
   return msg;
 }
@@ -276,42 +270,62 @@ visualization_msgs::MarkerArray IntersectionModule::createDebugMarkerArray()
     &debug_marker_array);
 
   appendMarkerArray(
-    createPoseMarkerArray(
-      debug_data_.stop_point_pose, state, "stop_point_pose", lane_id_, 1.0, 0.0, 0.0),
-    &debug_marker_array);
-
-  appendMarkerArray(
-    createPoseMarkerArray(
-      debug_data_.judge_point_pose, state, "judge_point_pose", lane_id_, 1.0, 1.0, 0.5),
-    &debug_marker_array);
-
-  appendMarkerArray(
     createLaneletPolygonsMarkerArray(debug_data_.detection_area, "detection_area", lane_id_),
     &debug_marker_array);
 
   appendMarkerArray(
-  createPolygonMarkerArray(debug_data_.ego_lane_polygon, "ego_lane", lane_id_, 0.0, 0.3, 0.7),
-  &debug_marker_array);
+    createPolygonMarkerArray(debug_data_.ego_lane_polygon, "ego_lane", lane_id_, 0.0, 0.3, 0.7),
+    &debug_marker_array);
 
   appendMarkerArray(
-  createPolygonMarkerArray(debug_data_.stuck_vehicle_detect_area, "stuck_vehicle_detect_area", lane_id_, 0.0, 0.5, 0.5),
-  &debug_marker_array);
+    createPolygonMarkerArray(
+      debug_data_.stuck_vehicle_detect_area, "stuck_vehicle_detect_area", lane_id_, 0.0, 0.5, 0.5),
+    &debug_marker_array);
 
   appendMarkerArray(
-  createObjectsMarkerArray(debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.4, 0.0),
-  &debug_marker_array);
+    createObjectsMarkerArray(
+      debug_data_.conflicting_targets, "conflicting_targets", lane_id_, 0.99, 0.4, 0.0),
+    &debug_marker_array);
 
   appendMarkerArray(
-  createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.99, 0.99, 0.2),
-  &debug_marker_array);
-
-  appendMarkerArray(
-    createPathMarkerArray(debug_data_.spline_path, "spline", lane_id_, 0.5, 0.5, 0.5),
+    createObjectsMarkerArray(debug_data_.stuck_targets, "stuck_targets", lane_id_, 0.99, 0.99, 0.2),
     &debug_marker_array);
 
   if (state == IntersectionModule::State::STOP) {
     appendMarkerArray(
-      createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_), &debug_marker_array);
+      createPoseMarkerArray(
+        debug_data_.stop_point_pose, "stop_point_pose", lane_id_, 1.0, 0.0, 0.0),
+      &debug_marker_array);
+
+    appendMarkerArray(
+      createPoseMarkerArray(
+        debug_data_.judge_point_pose, "judge_point_pose", lane_id_, 1.0, 1.0, 0.5),
+      &debug_marker_array);
+
+    appendMarkerArray(
+      createVirtualWallMarkerArray(debug_data_.virtual_wall_pose, lane_id_, "intersection"),
+      &debug_marker_array);
+  }
+
+  return debug_marker_array;
+}
+
+visualization_msgs::MarkerArray MergeFromPrivateRoadModule::createDebugMarkerArray()
+{
+  visualization_msgs::MarkerArray debug_marker_array;
+
+  const auto state = state_machine_.getState();
+
+  if (state == MergeFromPrivateRoadModule::State::STOP) {
+    appendMarkerArray(
+      createPoseMarkerArray(
+        debug_data_.stop_point_pose, "stop_point_pose", lane_id_, 1.0, 0.0, 0.0),
+      &debug_marker_array);
+
+    appendMarkerArray(
+      createVirtualWallMarkerArray(
+        debug_data_.virtual_wall_pose, lane_id_, "merge_from_private_road"),
+      &debug_marker_array);
   }
 
   return debug_marker_array;

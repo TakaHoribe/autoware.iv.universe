@@ -74,7 +74,6 @@ public:
     geometry_msgs::Polygon stuck_vehicle_detect_area;
     std::vector<lanelet::ConstLanelet> intersection_detection_lanelets;
     std::vector<lanelet::CompoundPolygon3d> detection_area;
-    autoware_planning_msgs::PathWithLaneId spline_path;
     autoware_perception_msgs::DynamicObjectArray conflicting_targets;
     autoware_perception_msgs::DynamicObjectArray stuck_targets;
   };
@@ -111,15 +110,6 @@ private:
 
   // Parameter
   PlannerParam planner_param_;
-
-
-  /**
-   * @brief get objective polygons for detection area
-   */
-  bool getObjectivePolygons(
-    lanelet::LaneletMapConstPtr lanelet_map_ptr,
-    lanelet::routing::RoutingGraphPtr routing_graph_ptr, const int lane_id,
-    std::vector<lanelet::CompoundPolygon3d> * polygons);
 
   /**
    * @brief check collision for all lanelet area & dynamic objects (call checkPathCollision() as
@@ -158,36 +148,6 @@ private:
   Polygon2d generateEgoIntersectionLanePolygon(
     const autoware_planning_msgs::PathWithLaneId & path, const int closest_idx,
     const double extra_dist) const;
-
-  /**
-   * @brief Generate a stop line and insert it into the path. If the stop line is defined in the map,
-   * read it from the map; otherwise, generate a stop line at a position where it will not collide.
-   * @param detection_areas used to generate stop line
-   * @param path            ego-car lane
-   * @param stop_line_idx   generated stop line index
-   * @param judge_line_idx  generated stpo line index
-   * @return false when generation failed
-   */
-  bool generateStopLine(
-    const std::vector<lanelet::CompoundPolygon3d> detection_areas,
-    autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
-
-  /**
-   * @brief Calculate first path index that is in the polygon.
-   * @param path     target path
-   * @param polygons target polygon
-   * @return path point index
-   */
-  int getFirstPointInsidePolygons(
-    const autoware_planning_msgs::PathWithLaneId & path,
-    const std::vector<lanelet::CompoundPolygon3d> & polygons) const;
-
-  /**
-   * @brief Get stop point from map if exists
-   * @param stop_pose stop point defined on map
-   * @return true when the stop point is defined on map.
-   */
-  bool getStopPoseFromMap(const int lane_id, geometry_msgs::Point * stop_pose) const;
 
   /**
    * @brief Modify objects predicted path. remove path point if the time exceeds timer_thr.

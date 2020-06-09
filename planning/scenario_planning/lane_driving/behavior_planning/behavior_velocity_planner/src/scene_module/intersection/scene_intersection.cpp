@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <scene_module/intersection/scene.h>
+#include <scene_module/intersection/scene_intersection.h>
 
 #include <lanelet2_core/geometry/Polygon.h>
 #include <lanelet2_core/primitives/BasicRegulatoryElements.h>
@@ -59,16 +59,20 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   /* get detection area */
   std::vector<lanelet::CompoundPolygon3d> detection_areas;
-  getObjectivePolygons(lanelet_map_ptr, routing_graph_ptr, lane_id_, &detection_areas);
+  util::getObjectivePolygons(
+    lanelet_map_ptr, routing_graph_ptr, lane_id_, planner_param_, &detection_areas);
   if (detection_areas.empty()) {
     ROS_DEBUG("[Intersection] no detection area. skip computation.");
     return true;
   }
+  debug_data_.detection_area = detection_areas;
 
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
   int judge_line_idx = -1;
-  if (!generateStopLine(detection_areas, path, &stop_line_idx, &judge_line_idx)) {
+  if (!util::generateStopLine(
+        lane_id_, detection_areas, planner_data_, planner_param_, path, &stop_line_idx,
+        &judge_line_idx)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     return false;
   }
@@ -117,168 +121,6 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
     double v = (has_traffic_light_ && turn_direction_ == "straight") ? decel_vel : stop_vel;
     util::setVelocityFrom(stop_line_idx, v, path);
   }
-
-  return true;
-}
-
-int IntersectionModule::getFirstPointInsidePolygons(
-  const autoware_planning_msgs::PathWithLaneId & path,
-  const std::vector<lanelet::CompoundPolygon3d> & polygons) const
-{
-  int first_idx_inside_lanelet = -1;
-  for (size_t i = 0; i < path.points.size(); ++i) {
-    bool is_in_lanelet = false;
-    auto p = path.points.at(i).point.pose.position;
-    for (const auto & polygon : polygons) {
-      const auto polygon_2d = lanelet::utils::to2D(polygon);
-      is_in_lanelet = bg::within(to_bg2d(p), polygon_2d);
-      if (is_in_lanelet) {
-        first_idx_inside_lanelet = static_cast<int>(i);
-        break;
-      }
-    }
-    if (is_in_lanelet) break;
-  }
-  return first_idx_inside_lanelet;
-}
-
-bool IntersectionModule::generateStopLine(
-  const std::vector<lanelet::CompoundPolygon3d> detection_areas,
-  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const
-{
-  /* set judge line dist */
-  const double current_vel = planner_data_->current_velocity->twist.linear.x;
-  const double max_acc = planner_data_->max_stop_acceleration_threshold_;
-  const double judge_line_dist = planning_utils::calcJudgeLineDist(current_vel, max_acc, 0.0);
-
-  /* set parameters */
-  constexpr double interval = 0.2;
-  const int margin_idx_dist = std::ceil(planner_param_.stop_line_margin / interval);
-  const int base2front_idx_dist = std::ceil(planner_data_->base_link2front / interval);
-  const int judge_idx_dist = std::ceil(judge_line_dist / interval);
-
-  /* spline interpolation */
-  autoware_planning_msgs::PathWithLaneId path_ip;
-  if (!util::splineInterpolate(*path, interval, &path_ip)) return false;
-  debug_data_.spline_path = path_ip;
-
-  /* generate stop point */
-  // If a stop_line is defined in lanelet_map, use it.
-  // else, generates a local stop_line with considering the lane conflictions.
-  int stop_idx_ip;  // stop point index for interpolated path.
-  geometry_msgs::Point stop_point_from_map;
-  if (getStopPoseFromMap(lane_id_, &stop_point_from_map)) {
-    planning_utils::calcClosestIndex(path_ip, stop_point_from_map, stop_idx_ip, 10.0);
-    stop_idx_ip = std::max(stop_idx_ip - base2front_idx_dist, 0);
-  } else {
-    int first_idx_inside_lane = getFirstPointInsidePolygons(path_ip, detection_areas);
-    if (first_idx_inside_lane == -1) {
-      ROS_DEBUG("[intersection] generate stopline, but no intersect line found.");
-      return false;
-    }
-    stop_idx_ip = std::max(first_idx_inside_lane - 1 - margin_idx_dist - base2front_idx_dist, 0);
-  }
-
-  /* insert stop_point */
-  const auto inserted_stop_point = path_ip.points.at(stop_idx_ip).point.pose;
-  *stop_line_idx = util::insertPoint(inserted_stop_point, path);
-
-  /* if another stop point exist before intersection stop_line, disable judge_line. */
-  bool has_prior_stopline = false;
-  for (int i = 0; i < *stop_line_idx; ++i) {
-    if (std::fabs(path->points.at(i).point.twist.linear.x) < 0.1) {
-      has_prior_stopline = true;
-      break;
-    }
-  }
-
-  /* insert judge point */
-  const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
-  if (has_prior_stopline || stop_idx_ip == judge_idx_ip) {
-    *judge_line_idx = *stop_line_idx;
-  } else {
-    const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
-    *judge_line_idx = util::insertPoint(inserted_judge_point, path);
-    ++(*stop_line_idx);  // stop index is incremented by judge line insertion
-  }
-
-  ROS_DEBUG(
-    "[intersection] generateStopLine() : stop_idx = %d, judge_idx = %d, stop_idx_ip = %d, "
-    "judge_idx_ip = %d, has_prior_stopline = %d",
-    *stop_line_idx, *judge_line_idx, stop_idx_ip, judge_idx_ip, has_prior_stopline);
-
-  return true;
-}
-
-bool IntersectionModule::getObjectivePolygons(
-  lanelet::LaneletMapConstPtr lanelet_map_ptr, lanelet::routing::RoutingGraphPtr routing_graph_ptr,
-  const int lane_id, std::vector<lanelet::CompoundPolygon3d> * polygons)
-{
-  const auto & assigned_lanelet = lanelet_map_ptr->laneletLayer.get(lane_id);
-
-  lanelet::ConstLanelets exclude_lanelets;
-
-  // for low priority lane
-  // If ego_lane has right of way (i.e. is high priority),
-  // ignore yieldLanelets (i.e. low priority lanes)
-  const auto right_of_ways = assigned_lanelet.regulatoryElementsAs<lanelet::RightOfWay>();
-  for (const auto & right_of_way : right_of_ways) {
-    if (lanelet::utils::contains(right_of_way->rightOfWayLanelets(), assigned_lanelet)) {
-      for (const auto & yield_lanelets : right_of_way->yieldLanelets()) {
-        exclude_lanelets.push_back(yield_lanelets);
-        for (const auto & previous_lanelet : routing_graph_ptr->previous(yield_lanelets)) {
-          exclude_lanelets.push_back(previous_lanelet);
-        }
-      }
-    }
-  }
-
-  // for the behind ego-car lane.
-  for (const auto & previous_lanelet : routing_graph_ptr->previous(assigned_lanelet)) {
-    exclude_lanelets.push_back(previous_lanelet);
-    for (const auto & following_lanelet : routing_graph_ptr->following(previous_lanelet)) {
-      if (lanelet::utils::contains(exclude_lanelets, following_lanelet)) {
-        continue;
-      }
-      exclude_lanelets.push_back(following_lanelet);
-    }
-  }
-
-  // get conflicting lanes on assigned lanelet
-  const auto & conflicting_lanelets =
-    lanelet::utils::getConflictingLanelets(routing_graph_ptr, assigned_lanelet);
-
-  lanelet::ConstLanelets objective_lanelets;  // final objective lanelets
-
-  // remove exclude_lanelets from candidates
-  for (const auto & conflicting_lanelet : conflicting_lanelets) {
-    if (lanelet::utils::contains(exclude_lanelets, conflicting_lanelet)) {
-      continue;
-    }
-    objective_lanelets.push_back(conflicting_lanelet);
-  }
-
-  // get possible lanelet path that reaches conflicting_lane longer than given length
-  const double length = planner_param_.detection_area_length;
-  std::vector<lanelet::ConstLanelets> objective_lanelets_sequences;
-  for (const auto & ll : objective_lanelets) {
-    const auto & lanelet_sequences =
-      lanelet::utils::query::getPreceedingLaneletSequences(routing_graph_ptr, ll, length);
-    for (const auto & l : lanelet_sequences) {
-      objective_lanelets_sequences.push_back(l);
-    }
-  }
-
-  // get exact polygon of interest with exact length
-  polygons->clear();
-  for (const auto & ll : objective_lanelets_sequences) {
-    const double path_length = lanelet::utils::getLaneletLength3d(ll);
-    const auto polygon3d =
-      lanelet::utils::getPolygonFromArcLength(ll, path_length - length, path_length);
-    polygons->push_back(polygon3d);
-  }
-
-  debug_data_.detection_area = *polygons;
 
   return true;
 }
@@ -422,31 +264,6 @@ double IntersectionModule::calcIntersectionPassingTime(
   ROS_DEBUG("[intersection] intersection dist = %f, passing_time = %f", dist_sum, passing_time);
 
   return passing_time;
-}
-
-bool IntersectionModule::getStopPoseFromMap(
-  const int lane_id, geometry_msgs::Point * stop_point) const
-{
-  lanelet::ConstLanelet lanelet = planner_data_->lanelet_map->laneletLayer.get(lane_id);
-  const auto road_markings = lanelet.regulatoryElementsAs<lanelet::autoware::RoadMarking>();
-  lanelet::ConstLineStrings3d stop_line;
-  for (const auto & road_marking : road_markings) {
-    const std::string type =
-      road_marking->roadMarking().attributeOr(lanelet::AttributeName::Type, "none");
-    if (type == lanelet::AttributeValueString::StopLine) {
-      stop_line.push_back(road_marking->roadMarking());
-      break;  // only one stop_line exists.
-    }
-  }
-  if (stop_line.empty()) return false;
-
-  const auto p_start = stop_line.front().front();
-  const auto p_end = stop_line.front().back();
-  stop_point->x = 0.5 * (p_start.x() + p_end.x());
-  stop_point->y = 0.5 * (p_start.y() + p_end.y());
-  stop_point->z = 0.5 * (p_start.z() + p_end.z());
-
-  return true;
 }
 
 bool IntersectionModule::checkStuckVehicleInIntersection(

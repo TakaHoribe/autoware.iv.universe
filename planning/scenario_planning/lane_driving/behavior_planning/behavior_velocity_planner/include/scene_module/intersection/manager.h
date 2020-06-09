@@ -31,7 +31,8 @@
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_routing/RoutingGraph.h>
 
-#include <scene_module/intersection/scene.h>
+#include <scene_module/intersection/scene_intersection.h>
+#include <scene_module/intersection/scene_merge_from_private_road.h>
 #include <scene_module/scene_module_interface.h>
 
 class IntersectionModuleManager : public SceneModuleManagerInterface

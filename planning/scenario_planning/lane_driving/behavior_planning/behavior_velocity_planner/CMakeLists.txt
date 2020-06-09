@@ -101,7 +101,8 @@ target_link_libraries(scene_module_crosswalk
 # Scene Module: Intersection
 add_library(scene_module_intersection STATIC
   src/scene_module/intersection/manager.cpp
-  src/scene_module/intersection/scene.cpp
+  src/scene_module/intersection/scene_intersection.cpp
+  src/scene_module/intersection/scene_merge_from_private_road.cpp
   src/scene_module/intersection/debug.cpp
   src/scene_module/intersection/util.cpp
 )

@@ -21,7 +21,8 @@
 
 #include <ros/ros.h>
 
-#include <autoware_planning_msgs/PathWithLaneId.h>
+#include <scene_module/intersection/scene_intersection.h>
+
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Float32MultiArray.h>
 
@@ -43,4 +44,47 @@ geometry_msgs::Pose getAheadPose(
 
 bool isAheadOf(const geometry_msgs::Pose & target, const geometry_msgs::Pose & origin);
 bool hasLaneId(const autoware_planning_msgs::PathPointWithLaneId & p, const int id);
+
+/**
+   * @brief get objective polygons for detection area
+   */
+bool getObjectivePolygons(
+  lanelet::LaneletMapConstPtr lanelet_map_ptr, lanelet::routing::RoutingGraphPtr routing_graph_ptr,
+  const int lane_id, const IntersectionModule::PlannerParam & planner_param,
+  std::vector<lanelet::CompoundPolygon3d> * polygons);
+
+/**
+   * @brief Generate a stop line and insert it into the path. If the stop line is defined in the map,
+   * read it from the map; otherwise, generate a stop line at a position where it will not collide.
+   * @param detection_areas used to generate stop line
+   * @param path            ego-car lane
+   * @param stop_line_idx   generated stop line index
+   * @param judge_line_idx  generated stpo line index
+   * @return false when generation failed
+   */
+bool generateStopLine(
+  const int lane_id, const std::vector<lanelet::CompoundPolygon3d> detection_areas,
+  const std::shared_ptr<const PlannerData> & planner_data,
+  const IntersectionModule::PlannerParam & planner_param,
+  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx);
+
+/**
+   * @brief Calculate first path index that is in the polygon.
+   * @param path     target path
+   * @param polygons target polygon
+   * @return path point index
+   */
+int getFirstPointInsidePolygons(
+  const autoware_planning_msgs::PathWithLaneId & path,
+  const std::vector<lanelet::CompoundPolygon3d> & polygons);
+
+/**
+   * @brief Get stop point from map if exists
+   * @param stop_pose stop point defined on map
+   * @return true when the stop point is defined on map.
+   */
+bool getStopPoseFromMap(
+  const int lane_id, geometry_msgs::Point * stop_pose,
+  const std::shared_ptr<const PlannerData> & planner_data);
+
 }  // namespace util
