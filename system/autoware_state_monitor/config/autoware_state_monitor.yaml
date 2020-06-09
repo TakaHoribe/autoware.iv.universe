@@ -1,5 +1,16 @@
+module_names:
+  - "map"
+  - "sensing"
+  - "perception"
+  - "localization"
+  - "planning"
+  - "control"
+  - "vehicle"
+  - "emergency_system"
+  - "remote_control"
+
 # Topic Config
-## module: string (map/sensing/localization/perception/planning/control/vehicle)
+## module: string
 ## name: string
 ## timeout[s]: double (0: none)
 ## warn_rate[hz]: double (0: none)
@@ -56,6 +67,16 @@ topic_configs:
 
   - module: "vehicle"
     name: "/vehicle/status/steering"
+    timeout: 1.0
+    warn_rate: 5.0
+
+  - module: "emergency_system"
+    name: "/system/emergency/control_cmd"
+    timeout: 1.0
+    warn_rate: 5.0
+
+  - module: "remote_control"
+    name: "/remote/control_cmd"
     timeout: 1.0
     warn_rate: 5.0
 

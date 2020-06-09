@@ -109,10 +109,8 @@ private:
   diagnostic_updater::Updater updater_;
 
   void setupDiagnosticUpdater();
-  void checkTopicTimeout(
+  void checkTopicStatus(
     diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
-  void checkTopicRate(
-    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
-  void checkTfTimeout(
+  void checkTfStatus(
     diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name);
 };
