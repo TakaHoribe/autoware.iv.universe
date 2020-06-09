@@ -3,3 +3,7 @@ analyzers:
     type: diagnostic_aggregator/DiscardAnalyzer
     path: speaker
     contains: ": speaker"
+  joystick:
+    type: diagnostic_aggregator/DiscardAnalyzer
+    path: joystick
+    contains: ": Joystick"
