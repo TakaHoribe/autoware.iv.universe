@@ -31,9 +31,8 @@ void AutowareStateMonitorNode::setupDiagnosticUpdater()
 {
   updater_.setHardwareID("autoware_state_monitor");
 
-  const auto module_names = {
-    "map", "sensing", "perception", "localization", "planning", "control", "vehicle",
-  };
+  std::vector<std::string> module_names;
+  private_nh_.param("module_names", module_names, {});
 
   // Topic Timeout
   for (const auto & module_name : module_names) {
