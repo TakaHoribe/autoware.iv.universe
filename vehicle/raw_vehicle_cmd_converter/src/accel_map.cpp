@@ -99,3 +99,47 @@ bool AccelMap::getThrottle(double acc, double vel, double & throttle)
 
   return true;
 }
+
+bool AccelMap::getAcceleration(double throttle, double vel, double & acc)
+{
+  LinearInterpolate linear_interp;
+  std::vector<double> accs_interpolated;
+
+  if (vel < vel_index_.front()) {
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0,
+      "[Accel Map] Exceeding the vel range. Current vel: %f < min vel on map: %f. Use min "
+      "velocity.",
+      vel, vel_index_.front());
+    vel = vel_index_.front();
+  } else if (vel_index_.back() < vel) {
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0,
+      "[Accel Map] Exceeding the vel range. Current vel: %f > max vel on map: %f. Use max "
+      "velocity.",
+      vel, vel_index_.back());
+    vel = vel_index_.back();
+  }
+
+  // (throttle, vel, acc) map => (throttle, acc) map by fixing vel
+  for (std::vector<double> accs : accel_map_) {
+    double acc_interpolated;
+    linear_interp.interpolate(vel_index_, accs, vel, acc_interpolated);
+    accs_interpolated.push_back(acc_interpolated);
+  }
+
+  // calculate throttle
+  // When the desired acceleration is smaller than the throttle area, return false => brake sequence
+  // When the desired acceleration is greater than the throttle area, return max throttle
+  const double max_throttle = throttle_index_.back();
+  const double min_throttle = throttle_index_.front();
+  if (throttle < min_throttle || max_throttle < throttle) {
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0, "[Accel Map] Input throttle: %f is out off range. use closest value.", throttle);
+    throttle = std::min(std::max(throttle, min_throttle), max_throttle);
+  }
+
+  linear_interp.interpolate(throttle_index_, accs_interpolated, throttle, acc);
+
+  return true;
+}

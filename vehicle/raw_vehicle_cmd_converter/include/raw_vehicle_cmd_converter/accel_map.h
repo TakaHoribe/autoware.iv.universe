@@ -35,6 +35,7 @@ public:
 
   bool readAccelMapFromCSV(std::string csv_path);
   bool getThrottle(double acc, double vel, double & throttle);
+  bool getAcceleration(double throttle, double vel, double & acc);
 
 private:
   std::string vehicle_name_;

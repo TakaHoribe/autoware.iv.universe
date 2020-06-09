@@ -20,6 +20,7 @@ add_message_files(
     Steering.msg
     RawVehicleCommand.msg
     RawControlCommand.msg
+    RawControlCommandStamped.msg
 )
 
 ## Generate added messages and services with any dependencies listed here

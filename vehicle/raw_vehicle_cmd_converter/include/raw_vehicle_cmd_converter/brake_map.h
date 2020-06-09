@@ -35,6 +35,7 @@ public:
 
   bool readBrakeMapFromCSV(std::string csv_path);
   bool getBrake(double acc, double vel, double & brake);
+  bool getAcceleration(double throttle, double vel, double & acc);
 
 private:
   std::string vehicle_name_;
