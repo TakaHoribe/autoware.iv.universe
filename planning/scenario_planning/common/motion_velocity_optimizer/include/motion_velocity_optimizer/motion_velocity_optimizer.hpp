@@ -27,8 +27,8 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <motion_velocity_optimizer/MotionVelocityOptimizerConfig.h>
-
 #include <motion_velocity_optimizer/motion_velocity_optimizer_utils.hpp>
+#include <motion_velocity_optimizer/optimizer/optimizer_base.hpp>
 
 #include <osqp_interface/osqp_interface.h>
 
@@ -65,11 +65,10 @@ private:
   };
   InitializeType initialize_type_;
 
-  osqp::OSQPInterface qp_solver_;
+  boost::shared_ptr<OptimizerBase> optimizer_;
 
   bool show_debug_info_;      // printF level 1
   bool show_debug_info_all_;  // print level 2
-  bool show_figure_;          // for plot visualize
   bool publish_debug_trajs_;  // publish planned trajectories
 
   struct MotionVelocityOptimizerParam
@@ -97,13 +96,6 @@ private:
     std::string algorithm_type;               // Option : Linf, L2
   } planning_param_;
 
-  struct QPParam
-  {
-    double pseudo_jerk_weight;
-    double over_v_weight;
-    double over_a_weight;
-  } qp_param_;
-
   /* topic callback */
   void callbackCurrentVelocity(const geometry_msgs::TwistStamped::ConstPtr msg);
   void callbackCurrentTrajectory(const autoware_planning_msgs::Trajectory::ConstPtr msg);
@@ -127,16 +119,6 @@ private:
     const double & base_speed, const autoware_planning_msgs::Trajectory & base_waypoints,
     const int base_closest, const autoware_planning_msgs::Trajectory & prev_replanned_traj,
     const int prev_replanned_traj_closest, double & initial_vel, double & initial_acc);
-
-  void solveOptimizationL2(
-    const double initial_vel, const double initial_acc,
-    const autoware_planning_msgs::Trajectory & input, const int closest,
-    autoware_planning_msgs::Trajectory & output);
-
-  void solveOptimizationLinf(
-    const double initial_vel, const double initial_acc,
-    const autoware_planning_msgs::Trajectory & input, const int closest,
-    autoware_planning_msgs::Trajectory & output);
 
   /* const methods */
   bool resampleTrajectory(
@@ -194,12 +176,6 @@ private:
     planning_param_.max_trajectory_length = config.max_trajectory_length;
     planning_param_.min_trajectory_length = config.min_trajectory_length;
     planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
-
-    planning_param_.algorithm_type = config.algorithm_type;
-
-    qp_param_.pseudo_jerk_weight = config.pseudo_jerk_weight;
-    qp_param_.over_v_weight = config.over_v_weight;
-    qp_param_.over_a_weight = config.over_a_weight;
 
     show_debug_info_ = config.show_debug_info;
   }
