@@ -45,10 +45,10 @@ void AutowareStateMonitorNode::setupDiagnosticUpdater()
 
   // Topic Rate
   for (const auto & module_name : module_names) {
-    const auto diag_name = fmt::format("{}_topic_timeout", module_name);
+    const auto diag_name = fmt::format("{}_topic_rate", module_name);
 
     updater_.add(
-      diag_name, boost::bind(&AutowareStateMonitorNode::checkTopicTimeout, this, _1, module_name));
+      diag_name, boost::bind(&AutowareStateMonitorNode::checkTopicRate, this, _1, module_name));
   }
 
   // TF Timeout
