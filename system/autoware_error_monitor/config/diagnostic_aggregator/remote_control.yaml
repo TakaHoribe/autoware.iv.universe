@@ -1,16 +1,16 @@
 analyzers:
-  localization:
+  remote_control:
     type: diagnostic_aggregator/AnalyzerGroup
-    path: localization
+    path: remote_control
     analyzers:
       topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
         path: topic_status
-        contains: ": localization_topic_status"
+        contains: ": remote_control_topic_status"
         num_items: 0
 
-      tf_status:
+      internet_connection:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: tf_status
-        contains: ": localization_tf_status"
+        path: internet_connection
+        contains: ": internet_connection"
         num_items: 0

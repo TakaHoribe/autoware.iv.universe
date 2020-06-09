@@ -3,8 +3,8 @@ analyzers:
     type: diagnostic_aggregator/AnalyzerGroup
     path: map
     analyzers:
-      dummy:
+      topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: dummy
-        contains: "__dummy__"
+        path: topic_status
+        contains: ": map_topic_status"
         num_items: 0

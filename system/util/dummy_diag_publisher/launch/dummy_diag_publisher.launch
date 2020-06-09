@@ -29,6 +29,16 @@
     <arg name="diag_name" value="off_course"/>
   </include>
 
+  <!-- vehicle mcu -->
+  <include file="$(find dummy_diag_publisher)/launch/dummy_diag_publisher_node.launch">
+    <arg name="diag_name" value="vehicle_mcu_connection"/>
+  </include>
+
+  <!-- internet connection -->
+  <include file="$(find dummy_diag_publisher)/launch/dummy_diag_publisher_node.launch">
+    <arg name="diag_name" value="internet_connection"/>
+  </include>
+
   <!-- speaker -->
   <include file="$(find dummy_diag_publisher)/launch/dummy_diag_publisher_node.launch">
     <arg name="diag_name" value="speaker"/>

@@ -1,10 +1,10 @@
 analyzers:
-  planning:
+  emergency_system:
     type: diagnostic_aggregator/AnalyzerGroup
-    path: planning
+    path: emergency_system
     analyzers:
       topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
         path: topic_status
-        contains: ": planning_topic_status"
+        contains: ": emergency_system_topic_status"
         num_items: 0

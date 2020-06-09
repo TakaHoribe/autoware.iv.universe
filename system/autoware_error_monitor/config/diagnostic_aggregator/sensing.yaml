@@ -3,16 +3,10 @@ analyzers:
     type: diagnostic_aggregator/AnalyzerGroup
     path: sensing
     analyzers:
-      topic_timeout:
+      topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_timeout
-        contains: ": sensing_topic_timeout"
-        num_items: 0
-
-      topic_rate:
-        type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_rate
-        contains: ": sensing_topic_rate"
+        path: topic_status
+        contains: ": sensing_topic_status"
         num_items: 0
 
       velodyne:

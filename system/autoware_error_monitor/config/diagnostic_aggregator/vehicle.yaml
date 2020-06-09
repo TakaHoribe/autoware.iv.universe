@@ -3,14 +3,14 @@ analyzers:
     type: diagnostic_aggregator/AnalyzerGroup
     path: vehicle
     analyzers:
-      topic_timeout:
+      topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_timeout
-        contains: ": vehicle_topic_timeout"
+        path: topic_status
+        contains: ": vehicle_topic_status"
         num_items: 0
 
-      topic_rate:
+      vehicle_mcu_connection:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_rate
-        contains: ": vehicle_topic_rate"
+        path: vehicle_mcu_connection
+        contains: ": vehicle_mcu_connection"
         num_items: 0

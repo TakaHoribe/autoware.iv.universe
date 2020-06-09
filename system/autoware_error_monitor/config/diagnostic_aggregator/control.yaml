@@ -3,14 +3,8 @@ analyzers:
     type: diagnostic_aggregator/AnalyzerGroup
     path: control
     analyzers:
-      topic_timeout:
+      topic_status:
         type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_timeout
-        contains: ": control_topic_timeout"
-        num_items: 0
-
-      topic_rate:
-        type: diagnostic_aggregator/GenericAnalyzer
-        path: topic_rate
-        contains: ": control_topic_rate"
+        path: topic_status
+        contains: ": control_topic_status"
         num_items: 0
