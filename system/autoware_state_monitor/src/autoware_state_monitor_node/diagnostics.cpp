@@ -34,29 +34,21 @@ void AutowareStateMonitorNode::setupDiagnosticUpdater()
   std::vector<std::string> module_names;
   private_nh_.param("module_names", module_names, {});
 
-  // Topic Timeout
+  // Topic
   for (const auto & module_name : module_names) {
-    const auto diag_name = fmt::format("{}_topic_timeout", module_name);
+    const auto diag_name = fmt::format("{}_topic_status", module_name);
 
     updater_.add(
-      diag_name, boost::bind(&AutowareStateMonitorNode::checkTopicTimeout, this, _1, module_name));
+      diag_name, boost::bind(&AutowareStateMonitorNode::checkTopicStatus, this, _1, module_name));
   }
 
-  // Topic Rate
-  for (const auto & module_name : module_names) {
-    const auto diag_name = fmt::format("{}_topic_rate", module_name);
-
-    updater_.add(
-      diag_name, boost::bind(&AutowareStateMonitorNode::checkTopicRate, this, _1, module_name));
-  }
-
-  // TF Timeout
+  // TF
   updater_.add(
-    "localization_tf_timeout",
-    boost::bind(&AutowareStateMonitorNode::checkTfTimeout, this, _1, "localization"));
+    "localization_tf_status",
+    boost::bind(&AutowareStateMonitorNode::checkTfStatus, this, _1, "localization"));
 }
 
-void AutowareStateMonitorNode::checkTopicTimeout(
+void AutowareStateMonitorNode::checkTopicStatus(
   diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name)
 {
   int8_t level = diagnostic_msgs::DiagnosticStatus::OK;
@@ -64,6 +56,37 @@ void AutowareStateMonitorNode::checkTopicTimeout(
 
   const auto & topic_stats = state_input_.topic_stats;
   const auto & tf_stats = state_input_.tf_stats;
+
+  // Check topic received
+  for (const auto & topic_config : topic_stats.non_received_list) {
+    if (topic_config.module != module_name) {
+      continue;
+    }
+
+    const auto msg = fmt::format("topic `{}` is not received", topic_config.name);
+
+    error_msgs.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
+    level = diagnostic_msgs::DiagnosticStatus::WARN;
+  }
+
+  // Check topic rate
+  for (const auto & topic_config_pair : topic_stats.slow_rate_list) {
+    const auto & topic_config = topic_config_pair.first;
+    const auto & topic_rate = topic_config_pair.second;
+
+    if (topic_config.module != module_name) {
+      continue;
+    }
+
+    const auto msg = fmt::format(
+      "topic `{}` is slow rate: warn_rate = {}, actual_rate = {}", topic_config.name,
+      topic_config.warn_rate, topic_rate);
+
+    error_msgs.push_back(msg);
+    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
+    level = diagnostic_msgs::DiagnosticStatus::WARN;
+  }
 
   // Check topic timeout
   for (const auto & topic_config_pair : topic_stats.timeout_list) {
@@ -93,43 +116,7 @@ void AutowareStateMonitorNode::checkTopicTimeout(
   stat.summary(level, oss.str());
 }
 
-void AutowareStateMonitorNode::checkTopicRate(
-  diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name)
-{
-  int8_t level = diagnostic_msgs::DiagnosticStatus::OK;
-  std::vector<std::string> error_msgs;
-
-  const auto & topic_stats = state_input_.topic_stats;
-  const auto & tf_stats = state_input_.tf_stats;
-
-  // Check topic rate
-  for (const auto & topic_config_pair : topic_stats.slow_rate_list) {
-    const auto & topic_config = topic_config_pair.first;
-    const auto & topic_rate = topic_config_pair.second;
-
-    if (topic_config.module != module_name) {
-      continue;
-    }
-
-    const auto msg = fmt::format(
-      "topic `{}` is slow rate: warn_rate = {}, actual_rate = {}", topic_config.name,
-      topic_config.warn_rate, topic_rate);
-
-    error_msgs.push_back(msg);
-    logThrottleNamed(ros::console::levels::Warn, 1.0, topic_config.name, msg);
-    level = diagnostic_msgs::DiagnosticStatus::WARN;
-  }
-
-  // Create message
-  std::ostringstream oss;
-  for (const auto & msg : error_msgs) {
-    oss << msg << std::endl;
-  }
-
-  stat.summary(level, oss.str());
-}
-
-void AutowareStateMonitorNode::checkTfTimeout(
+void AutowareStateMonitorNode::checkTfStatus(
   diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & module_name)
 {
   int8_t level = diagnostic_msgs::DiagnosticStatus::OK;
