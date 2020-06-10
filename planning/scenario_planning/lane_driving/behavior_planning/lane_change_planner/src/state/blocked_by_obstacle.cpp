@@ -106,27 +106,33 @@ void BlockedByObstacleState::update()
   status_.lane_change_path = autoware_planning_msgs::PathWithLaneId();  // clear path
   status_.lane_change_lane_ids.clear();
   found_safe_path_ = false;
-  if (!right_lanes.empty()) {
-    const auto lane_change_path = route_handler_ptr_->getLaneChangePath(
-      current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
-      forward_path_length, lane_change_prepare_duration, lane_changing_duration,
-      minimum_lane_change_length);
+  if (!right_lanes.empty() && hasEnoughDistanceToComeBack(right_lanes)) {
+    const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
+      current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, ros_parameters_);
+    debug_data_.lane_change_candidate_paths = lane_change_paths;
     status_.lane_change_lane_ids = util::getIds(right_lanes);
-    status_.lane_change_path = lane_change_path;
-    if (isLaneChangePathSafe(right_lanes, lane_change_path)) {
+    autoware_planning_msgs::PathWithLaneId selected_path;
+    if (state_machine::common_functions::selectLaneChangePath(
+          lane_change_paths, current_lanes_, right_lanes, dynamic_objects_, current_pose_.pose,
+          current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
+    debug_data_.selected_path = selected_path;
+    status_.lane_change_path = selected_path;
   }
-  if (!left_lanes.empty()) {
-    const auto lane_change_path = route_handler_ptr_->getLaneChangePath(
-      current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, backward_path_length,
-      forward_path_length, lane_change_prepare_duration, lane_changing_duration,
-      minimum_lane_change_length);
+  if (!found_safe_path_ && !left_lanes.empty() && hasEnoughDistanceToComeBack(left_lanes)) {
+    const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
+      current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, ros_parameters_);
+    debug_data_.lane_change_candidate_paths = lane_change_paths;
     status_.lane_change_lane_ids = util::getIds(left_lanes);
-    status_.lane_change_path = lane_change_path;
-    if (isLaneChangePathSafe(left_lanes, lane_change_path)) {
+    autoware_planning_msgs::PathWithLaneId selected_path;
+    if (state_machine::common_functions::selectLaneChangePath(
+          lane_change_paths, current_lanes_, left_lanes, dynamic_objects_, current_pose_.pose,
+          current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
+    debug_data_.selected_path = selected_path;
+    status_.lane_change_path = selected_path;
   }
 
   // update lane_change_ready flags
@@ -135,7 +141,7 @@ void BlockedByObstacleState::update()
     status_.lane_change_available = false;
     if (!left_lanes.empty() || !right_lanes.empty()) {
       status_.lane_change_available = true;
-      if (hasEnoughDistance() && foundSafeLaneChangePath()) {
+      if (foundSafeLaneChangePath()) {
         status_.lane_change_ready = true;
       }
     }
@@ -176,6 +182,15 @@ bool BlockedByObstacleState::isOutOfCurrentLanes() const
 
 bool BlockedByObstacleState::isLaneBlocked() const
 {
+  const auto blocking_objects = getBlockingObstacles();
+  return !blocking_objects.empty();
+}
+
+std::vector<autoware_perception_msgs::DynamicObject> BlockedByObstacleState::getBlockingObstacles()
+  const
+{
+  std::vector<autoware_perception_msgs::DynamicObject> blocking_obstacles;
+
   const auto arc = lanelet::utils::getArcCoordinates(current_lanes_, current_pose_.pose);
   constexpr double max_check_distance = 100;
   double static_obj_velocity_thresh = ros_parameters_.static_obstacle_velocity_thresh;
@@ -193,7 +208,7 @@ bool BlockedByObstacleState::isLaneBlocked() const
     ROS_WARN_STREAM(
       "could not get polygon from lanelet with arc lengths: " << arc.length << " to "
                                                               << arc.length + check_distance);
-    return false;
+    return blocking_obstacles;
   }
 
   for (const auto & obj : dynamic_objects_->objects) {
@@ -204,43 +219,30 @@ bool BlockedByObstacleState::isLaneBlocked() const
       const auto distance = boost::geometry::distance(
         lanelet::utils::to2D(position).basicPoint(), lanelet::utils::to2D(polygon).basicPolygon());
       if (distance < std::numeric_limits<double>::epsilon()) {
-        return true;
+        blocking_obstacles.push_back(obj);
       }
     }
   }
-  return false;
+  return blocking_obstacles;
 }
 
 bool BlockedByObstacleState::isLaneChangeApproved() const { return lane_change_approved_; }
 bool BlockedByObstacleState::laneChangeForcedByOperator() const { return force_lane_change_; }
 bool BlockedByObstacleState::isLaneChangeAvailable() const { return status_.lane_change_available; }
 
-bool BlockedByObstacleState::hasEnoughDistance() const
+bool BlockedByObstacleState::hasEnoughDistanceToComeBack(
+  const lanelet::ConstLanelets & target_lanes) const
 {
-  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
-  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
-  const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
-  const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
-  double lane_change_total_distance =
-    lane_change_total_duration * vehicle_speed * 2;  // two is for comming back to original lane
-  const double minimum_lane_change_length = ros_parameters_.minimum_lane_change_length;
-  lane_change_total_distance = std::max(lane_change_total_distance, minimum_lane_change_length * 2);
-  const auto target_lanes = route_handler_ptr_->getLaneletsFromIds(status_.lane_change_lane_ids);
+  if (target_lanes.empty()) return false;
+  const auto static_objects = getBlockingObstacles();
 
-  if (target_lanes.empty()) {
-    return false;
-  }
-  if (
-    lane_change_total_distance >
-    util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_)) {
-    return false;
-  }
-  if (
-    lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, current_lanes_)) {
-    return false;
-  }
-  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, target_lanes)) {
-    return false;
+  // make sure that there is at least minimum lane change length after obstacle.
+  for (const auto & obj : static_objects) {
+    const double remaining_distance =
+      util::getDistanceToEndOfLane(obj.state.pose_covariance.pose, target_lanes);
+    if (remaining_distance < ros_parameters_.minimum_lane_change_length) {
+      return false;
+    }
   }
 
   return true;
@@ -248,18 +250,5 @@ bool BlockedByObstacleState::hasEnoughDistance() const
 
 bool BlockedByObstacleState::foundSafeLaneChangePath() const { return found_safe_path_; }
 bool BlockedByObstacleState::isLaneChangeReady() const { return status_.lane_change_ready; }
-
-bool BlockedByObstacleState::isLaneChangePathSafe(
-  const lanelet::ConstLanelets & target_lanes,
-  const autoware_planning_msgs::PathWithLaneId & path) const
-{
-  if (path.points.empty()) {
-    return false;
-  }
-
-  return state_machine::common_functions::isLaneChangePathSafe(
-    path, current_lanes_, target_lanes, dynamic_objects_, current_pose_.pose, current_twist_->twist,
-    ros_parameters_, false);
-}
 
 }  // namespace lane_change_planner

@@ -44,6 +44,7 @@ public:
   void updateState();
   autoware_planning_msgs::PathWithLaneId getPath() const;
   Status getStatus() const;
+  DebugData getDebugData() const;
 
 private:
   std::unique_ptr<StateBase> state_obj_ptr_;

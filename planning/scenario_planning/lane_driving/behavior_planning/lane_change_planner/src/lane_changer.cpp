@@ -23,6 +23,10 @@ visualization_msgs::Marker convertToMarker(
   const autoware_perception_msgs::PredictedPath & path, const int id, const std::string & ns,
   const double radius);
 
+visualization_msgs::Marker convertToMarker(
+  const autoware_planning_msgs::PathWithLaneId & path, const int id, const std::string & ns,
+  const std_msgs::ColorRGBA & color);
+
 namespace lane_change_planner
 {
 LaneChanger::LaneChanger() : pnh_("~") { init(); }
@@ -59,8 +63,26 @@ void LaneChanger::init()
   pnh_.param("drivable_area_width", parameters.drivable_area_width, 100.0);
   pnh_.param("drivable_area_height", parameters.drivable_area_height, 50.0);
   pnh_.param("static_obstacle_velocity_thresh", parameters.static_obstacle_velocity_thresh, 0.1);
+  pnh_.param("maximum_deceleration", parameters.maximum_deceleration, 1.0);
+  pnh_.param("lane_change_sampling_num", parameters.lane_change_sampling_num, 10);
   pnh_.param("enable_abort_lane_change", parameters.enable_abort_lane_change, true);
   pnh_.param("/vehicle_info/vehicle_width", parameters.vehicle_width, 2.8);
+
+  // validation of parameters
+  if (parameters.lane_change_sampling_num < 1) {
+    ROS_FATAL_STREAM(
+      "lane_change_sampling_num must be positive integer. Given parameter: "
+      << parameters.lane_change_sampling_num << std::endl
+      << "Terminating the program...");
+    exit(EXIT_FAILURE);
+  }
+  if (parameters.maximum_deceleration < 0.0) {
+    ROS_FATAL_STREAM(
+      "maximum_deceleration cannot be negative value. Given parameter: "
+      << parameters.maximum_deceleration << std::endl
+      << "Terminating the progam...");
+    exit(EXIT_FAILURE);
+  }
   data_manager_ptr_->setLaneChangerParameters(parameters);
 
   // route_handler
@@ -174,7 +196,8 @@ void LaneChanger::publishDebugMarkers()
   const auto & status = state_machine_ptr_->getStatus();
   if (!status.lane_change_path.points.empty()) {
     const auto & vehicle_predicted_path = util::convertToPredictedPath(
-      status.lane_change_path, current_twist->twist, current_pose.pose);
+      status.lane_change_path, current_twist->twist, current_pose.pose, prediction_duration,
+      time_resolution, 0);
     const auto & resampled_path =
       util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
@@ -186,7 +209,8 @@ void LaneChanger::publishDebugMarkers()
 
   if (!status.lane_follow_path.points.empty()) {
     const auto & vehicle_predicted_path = util::convertToPredictedPath(
-      status.lane_follow_path, current_twist->twist, current_pose.pose);
+      status.lane_follow_path, current_twist->twist, current_pose.pose, prediction_duration,
+      time_resolution, 0);
     const auto & resampled_path =
       util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
@@ -212,6 +236,25 @@ void LaneChanger::publishDebugMarkers()
       }
     }
   }
+
+  const auto debug_data = state_machine_ptr_->getDebugData();
+  int i = 0;
+  std_msgs::ColorRGBA color;
+  color.r = 1;
+  color.g = 1;
+  color.b = 1;
+  color.a = 0.6;
+  for (const auto & path : debug_data.lane_change_candidate_paths) {
+    const auto marker = convertToMarker(path.path, i++, "candidate_lane_change_path", color);
+    debug_markers.markers.push_back(marker);
+  }
+  color.r = 1;
+  color.g = 0;
+  color.b = 0;
+  color.a = 0.9;
+  const auto marker = convertToMarker(debug_data.selected_path, 1, "selected_path", color);
+  debug_markers.markers.push_back(marker);
+
   path_marker_publisher_.publish(debug_markers);
 }
 
@@ -303,6 +346,40 @@ visualization_msgs::Marker convertToMarker(
   for (std::size_t i = 0; i < path.path.size(); i++) {
     marker.points.push_back(path.path.at(i).pose.pose.position);
     marker.colors.push_back(toRainbow(static_cast<double>(i) / path.path.size()));
+  }
+
+  return marker;
+}
+
+visualization_msgs::Marker convertToMarker(
+  const autoware_planning_msgs::PathWithLaneId & path, const int id, const std::string & ns,
+  const std_msgs::ColorRGBA & color)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = ns;
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0.0;
+  marker.pose.position.y = 0.0;
+  marker.pose.position.z = 0.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+
+  marker.scale.x = 0.2;
+
+  marker.color = color;
+
+  marker.lifetime = ros::Duration(1);
+  marker.frame_locked = true;
+
+  for (std::size_t i = 0; i < path.points.size(); i++) {
+    marker.points.push_back(path.points.at(i).point.pose.position);
   }
 
   return marker;

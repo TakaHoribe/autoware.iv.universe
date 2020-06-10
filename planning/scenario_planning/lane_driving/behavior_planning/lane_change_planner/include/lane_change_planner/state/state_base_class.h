@@ -46,6 +46,12 @@ struct Status
   bool lane_change_ready;
 };
 
+struct DebugData
+{
+  std::vector<LaneChangeCandidatePath> lane_change_candidate_paths;
+  autoware_planning_msgs::PathWithLaneId selected_path;
+};
+
 class StateBase
 {
 protected:
@@ -56,6 +62,7 @@ protected:
   LaneChangerParameters ros_parameters_;
   std::shared_ptr<DataManager> data_manager_ptr_;
   std::shared_ptr<RouteHandler> route_handler_ptr_;
+  DebugData debug_data_;
 
 public:
   virtual void entry() = 0;
@@ -65,6 +72,7 @@ public:
   virtual autoware_planning_msgs::PathWithLaneId getPath() const = 0;
 
   Status getStatus() const;
+  DebugData  getDebugData() const;
 };
 }  // namespace lane_change_planner
 

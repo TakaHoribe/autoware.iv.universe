@@ -27,11 +27,21 @@
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingCost.h>
 
+#include <lane_change_planner/parameters.h>
+
 #include <vector>
 
 namespace lane_change_planner
 {
 enum class LaneChangeDirection { NONE, LEFT, RIGHT };
+
+struct LaneChangeCandidatePath
+{
+  autoware_planning_msgs::PathWithLaneId path;
+  double acceleration = 0.0;
+  double preparation_length = 0.0;
+  double lane_change_length = 0.0;
+};
 
 class RouteHandler
 {
@@ -105,12 +115,10 @@ public:
 
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet & lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped & pose) const;
-  autoware_planning_msgs::PathWithLaneId getLaneChangePath(
+  std::vector<LaneChangeCandidatePath> getLaneChangePaths(
     const lanelet::ConstLanelets & original_lanes, const lanelet::ConstLanelets & target_lanes,
     const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist,
-    const double backward_path_length, const double forward_path_length,
-    const double lane_change_prepare_duration, const double lane_changing_duration,
-    const double minimum_lane_change_length) const;
+    const LaneChangerParameters & parameter) const;
   autoware_planning_msgs::PathWithLaneId getReferencePath(
     const lanelet::ConstLanelets & lanelet_sequence, const geometry_msgs::Pose & pose,
     const double backward_path_length, const double forward_path_length,

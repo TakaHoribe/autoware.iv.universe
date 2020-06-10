@@ -23,12 +23,61 @@ namespace state_machine
 {
 namespace common_functions
 {
+bool selectLaneChangePath(
+  const std::vector<LaneChangeCandidatePath> & paths, const lanelet::ConstLanelets & current_lanes,
+  const lanelet::ConstLanelets & target_lanes,
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr & dynamic_objects,
+  const geometry_msgs::Pose & current_pose, const geometry_msgs::Twist & current_twist,
+  const LaneChangerParameters & ros_parameters,
+  autoware_planning_msgs::PathWithLaneId * selected_path)
+{
+  for (const auto & path : paths) {
+    if (!isLaneChangePathSafe(
+          path.path, current_lanes, target_lanes, dynamic_objects, current_pose, current_twist,
+          ros_parameters, false, path.acceleration)) {
+      continue;
+    }
+    if (!hasEnoughDistance(path, current_lanes, target_lanes, current_pose)) {
+      continue;
+    }
+    *selected_path = path.path;
+    return true;
+  }
+
+  // set first path for force lane change if no valid path found
+  if (!paths.empty()) {
+    *selected_path = paths.front().path;
+    return false;
+  }
+
+  return false;
+}
+
+bool hasEnoughDistance(
+  const LaneChangeCandidatePath & path, const lanelet::ConstLanelets & current_lanes,
+  const lanelet::ConstLanelets & target_lanes, const geometry_msgs::Pose & current_pose)
+{
+  const double lane_change_prepare_distance = path.preparation_length;
+  const double lane_changing_distance = path.lane_change_length;
+  const double lane_change_total_distance = lane_change_prepare_distance + lane_changing_distance;
+
+  if (lane_change_total_distance > util::getDistanceToEndOfLane(current_pose, current_lanes)) {
+    return false;
+  }
+
+  if (
+    lane_change_total_distance > util::getDistanceToNextIntersection(current_pose, current_lanes)) {
+    return false;
+  }
+  return true;
+}
+
 bool isLaneChangePathSafe(
   const autoware_planning_msgs::PathWithLaneId & path, const lanelet::ConstLanelets & current_lanes,
   const lanelet::ConstLanelets & target_lanes,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr & dynamic_objects,
   const geometry_msgs::Pose & current_pose, const geometry_msgs::Twist & current_twist,
-  const LaneChangerParameters & ros_parameters, const bool use_buffer)
+  const LaneChangerParameters & ros_parameters, const bool use_buffer, const double acceleration)
 {
   if (path.points.empty()) {
     return false;
@@ -63,13 +112,13 @@ bool isLaneChangePathSafe(
   const double prediction_duration = ros_parameters.prediction_duration;
   const double current_lane_check_start_time = 0.0;
   const double current_lane_check_end_time =
-    ros_parameters.lane_change_prepare_duration + 0.75 * ros_parameters.lane_changing_duration;
+    ros_parameters.lane_change_prepare_duration + ros_parameters.lane_changing_duration;
   const double target_lane_check_start_time = 0.0;
   const double target_lane_check_end_time =
     ros_parameters.lane_change_prepare_duration + ros_parameters.lane_changing_duration;
 
-  const auto & vehicle_predicted_path =
-    util::convertToPredictedPath(path, current_twist, current_pose);
+  const auto & vehicle_predicted_path = util::convertToPredictedPath(
+    path, current_twist, current_pose, target_lane_check_end_time, time_resolution, acceleration);
 
   for (const auto & i : current_lane_object_indices) {
     const auto & obj = dynamic_objects->objects.at(i);

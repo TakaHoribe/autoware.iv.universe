@@ -54,4 +54,5 @@ StateBase::StateBase(
 }
 
 Status StateBase::getStatus() const { return status_; }
+DebugData StateBase::getDebugData() const { return debug_data_; }
 }  // namespace lane_change_planner

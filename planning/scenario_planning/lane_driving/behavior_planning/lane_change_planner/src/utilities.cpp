@@ -192,7 +192,8 @@ geometry_msgs::PoseArray convertToGeometryPoseArray(const PathWithLaneId & path)
 
 PredictedPath convertToPredictedPath(
   const PathWithLaneId & path, const geometry_msgs::Twist & vehicle_twist,
-  const geometry_msgs::Pose & vehicle_pose)
+  const geometry_msgs::Pose & vehicle_pose, const double duration, const double resolution,
+  const double acceleration)
 {
   PredictedPath predicted_path;
   predicted_path.path.reserve(path.points.size());
@@ -212,25 +213,34 @@ PredictedPath convertToPredictedPath(
       1, "cannot convert PathWithLaneId with zero velocity, using minimum value "
            << min_speed << " [m/s] instead");
   }
-  double accumulated_distance = 0;
 
-  auto prev_pt = path.points.front();
-  for (size_t i = 0; i < path.points.size(); i++) {
-    auto pt = path.points.at(i);
-    FrenetCoordinate3d pt_frenet;
-    if (!convertToFrenetCoordinate3d(geometry_points, pt.point.pose.position, &pt_frenet)) {
-      continue;
+  double length = 0;
+  double prev_vehicle_speed = vehicle_speed;
+
+  // first point
+  const auto pt = lerpByLength(geometry_points, vehicle_pose_frenet.length);
+  geometry_msgs::PoseWithCovarianceStamped predicted_pose;
+  predicted_pose.header.stamp = start_time;
+  predicted_pose.pose.pose.position = pt;
+  predicted_path.path.push_back(predicted_pose);
+
+  for (double t = 0; t < duration; t += resolution) {
+    double accelerated_velocity = prev_vehicle_speed + acceleration * t;
+    double travel_distance = 0;
+    if (accelerated_velocity < min_speed) {
+      travel_distance = min_speed * resolution;
+    } else {
+      travel_distance = prev_vehicle_speed + prev_vehicle_speed * resolution +
+                        0.5 * acceleration * resolution * resolution;
     }
-    double frenet_distance = pt_frenet.length - vehicle_pose_frenet.length;
-    double travel_time = frenet_distance / vehicle_speed;
-    const auto time_stamp = safeAddition(start_time, travel_time);
 
+    length += travel_distance;
+    const auto pt = lerpByLength(geometry_points, vehicle_pose_frenet.length + length);
     geometry_msgs::PoseWithCovarianceStamped predicted_pose;
-    predicted_pose.header.stamp = time_stamp;
-    predicted_pose.pose.pose.position = pt.point.pose.position;
-    predicted_pose.pose.pose.orientation = pt.point.pose.orientation;
+    predicted_pose.header.stamp = safeAddition(start_time, t);
+    predicted_pose.pose.pose.position = pt;
     predicted_path.path.push_back(predicted_pose);
-    prev_pt = pt;
+    prev_vehicle_speed = accelerated_velocity;
   }
   return predicted_path;
 }
@@ -276,6 +286,43 @@ geometry_msgs::Pose lerpByPose(
   pose.position = tf2::toMsg(tf_point, pose.position);
   pose.orientation = tf2::toMsg(tf_quaternion);
   return pose;
+}
+
+geometry_msgs::Point lerpByPoint(
+  const geometry_msgs::Point & p1, const geometry_msgs::Point & p2, const double t)
+{
+  tf2::Vector3 v1, v2;
+  v1.setValue(p1.x, p1.y, p1.z);
+  v2.setValue(p2.x, p2.y, p2.z);
+
+  const auto lerped_point = v1.lerp(v2, t);
+
+  geometry_msgs::Point point;
+  point.x = lerped_point.x();
+  point.y = lerped_point.y();
+  point.z = lerped_point.z();
+  return point;
+}
+
+geometry_msgs::Point lerpByLength(
+  const std::vector<geometry_msgs::Point> & point_array, const double length)
+{
+  geometry_msgs::Point lerped_point;
+  if (point_array.empty()) {
+    return lerped_point;
+  }
+  geometry_msgs::Point prev_pt = point_array.front();
+  double accumulated_length = 0;
+  for (const auto & pt : point_array) {
+    const double distance = getDistance3d(prev_pt, pt);
+    if (accumulated_length + distance > length) {
+      return lerpByPoint(prev_pt, pt, (length - accumulated_length) / length);
+    }
+    accumulated_length += distance;
+    prev_pt = pt;
+  }
+
+  return point_array.back();
 }
 
 bool lerpByTimeStamp(

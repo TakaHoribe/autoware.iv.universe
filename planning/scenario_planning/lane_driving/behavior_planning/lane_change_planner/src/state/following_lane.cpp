@@ -59,6 +59,8 @@ void FollowingLaneState::update()
   lanelet::ConstLanelet current_lane;
   const double backward_path_length = ros_parameters_.backward_path_length;
   const double forward_path_length = ros_parameters_.forward_path_length;
+
+  bool found_safe_path = false;
   // update lanes
   {
     if (!route_handler_ptr_->getClosestLaneletWithinRoute(current_pose_.pose, &current_lane)) {
@@ -86,10 +88,17 @@ void FollowingLaneState::update()
       minimum_lane_change_length);
 
     if (!lane_change_lanes_.empty()) {
-      status_.lane_change_path = route_handler_ptr_->getLaneChangePath(
-        current_lanes_, lane_change_lanes_, current_pose_.pose, current_twist_->twist,
-        backward_path_length, forward_path_length, lane_change_prepare_duration,
-        lane_changing_duration, minimum_lane_change_length);
+      const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
+        current_lanes_, lane_change_lanes_, current_pose_.pose, current_twist_->twist, ros_parameters_);
+      debug_data_.lane_change_candidate_paths = lane_change_paths;
+      autoware_planning_msgs::PathWithLaneId selected_path;
+      if (state_machine::common_functions::selectLaneChangePath(
+            lane_change_paths, current_lanes_, lane_change_lanes_, dynamic_objects_,
+            current_pose_.pose, current_twist_->twist, ros_parameters_, &selected_path)) {
+        found_safe_path = true;
+      }
+      debug_data_.selected_path = selected_path;
+      status_.lane_change_path = selected_path;
     }
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
     status_.lane_change_lane_ids = util::getIds(lane_change_lanes_);
@@ -111,7 +120,7 @@ void FollowingLaneState::update()
 
     if (!lane_change_lanes_.empty()) {
       status_.lane_change_available = true;
-      if (hasEnoughDistance() && isLaneChangePathSafe() && !isLaneBlocked(lane_change_lanes_)) {
+      if (found_safe_path && !isLaneBlocked(lane_change_lanes_)) {
         status_.lane_change_ready = true;
       }
     }
@@ -188,32 +197,5 @@ bool FollowingLaneState::isLaneChangeReady() const { return status_.lane_change_
 
 bool FollowingLaneState::isLaneChangeAvailable() const { return status_.lane_change_available; }
 
-bool FollowingLaneState::hasEnoughDistance() const
-{
-  const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
-  const double lane_changing_duration = ros_parameters_.lane_changing_duration;
-  const double lane_change_total_duration = lane_change_prepare_duration + lane_changing_duration;
-  const double vehicle_speed = util::l2Norm(current_twist_->twist.linear);
-  const double lane_change_total_distance = lane_change_total_duration * vehicle_speed;
-
-  if (
-    lane_change_total_distance > util::getDistanceToEndOfLane(current_pose_.pose, current_lanes_)) {
-    return false;
-  }
-
-  if (
-    lane_change_prepare_duration * vehicle_speed >
-    util::getDistanceToNextIntersection(current_pose_.pose, current_lanes_)) {
-    return false;
-  }
-  return true;
-}
-
-bool FollowingLaneState::isLaneChangePathSafe() const
-{
-  return state_machine::common_functions::isLaneChangePathSafe(
-    status_.lane_change_path, current_lanes_, lane_change_lanes_, dynamic_objects_,
-    current_pose_.pose, current_twist_->twist, ros_parameters_, true);
-}
 
 }  // namespace lane_change_planner

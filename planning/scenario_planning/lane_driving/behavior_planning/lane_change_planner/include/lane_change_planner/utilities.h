@@ -53,7 +53,8 @@ geometry_msgs::PoseArray convertToGeometryPoseArray(
 
 autoware_perception_msgs::PredictedPath convertToPredictedPath(
   const autoware_planning_msgs::PathWithLaneId & path, const geometry_msgs::Twist & vehicle_twist,
-  const geometry_msgs::Pose & vehicle_pose);
+  const geometry_msgs::Pose & vehicle_pose, const double duration, const double resolution,
+  const double acceleration);
 autoware_perception_msgs::PredictedPath resamplePredictedPath(
   const autoware_perception_msgs::PredictedPath & input_path, const double resolution,
   const double duration);
@@ -64,6 +65,9 @@ bool convertToFrenetCoordinate3d(
 
 geometry_msgs::Pose lerpByPose(
   const geometry_msgs::Pose & p1, const geometry_msgs::Pose & p2, const double t);
+
+geometry_msgs::Point lerpByLength(
+  const std::vector<geometry_msgs::Point> & array, const double length);
 bool lerpByTimeStamp(
   const autoware_perception_msgs::PredictedPath & path, const ros::Time & t,
   geometry_msgs::Pose * lerped_pt);

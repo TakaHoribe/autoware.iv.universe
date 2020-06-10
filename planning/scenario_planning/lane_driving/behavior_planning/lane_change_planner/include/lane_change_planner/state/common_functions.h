@@ -28,12 +28,23 @@ namespace state_machine
 {
 namespace common_functions
 {
+bool selectLaneChangePath(
+  const std::vector<LaneChangeCandidatePath> & paths, const lanelet::ConstLanelets & current_lanes,
+  const lanelet::ConstLanelets & target_lanes,
+  const autoware_perception_msgs::DynamicObjectArray::ConstPtr & dynamic_objects,
+  const geometry_msgs::Pose & current_pose, const geometry_msgs::Twist & current_twist,
+  const LaneChangerParameters & ros_parameters, autoware_planning_msgs::PathWithLaneId * path);
+
 bool isLaneChangePathSafe(
   const autoware_planning_msgs::PathWithLaneId & path, const lanelet::ConstLanelets & current_lanes,
   const lanelet::ConstLanelets & target_lanes,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr & dynamic_objects,
   const geometry_msgs::Pose & current_pose, const geometry_msgs::Twist & current_twist,
-  const LaneChangerParameters & ros_parameters, const bool use_buffer = true);
-}
+  const LaneChangerParameters & ros_parameters, const bool use_buffer = true,
+  const double acceleration = 0.0);
+bool hasEnoughDistance(
+  const LaneChangeCandidatePath & path, const lanelet::ConstLanelets & current_lanes,
+  const lanelet::ConstLanelets & target_lanes, const geometry_msgs::Pose & current_pose);
+}  // namespace common_functions
 }  // namespace state_machine
 }  // namespace lane_change_planner
