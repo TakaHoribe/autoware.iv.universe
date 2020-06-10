@@ -50,22 +50,22 @@ void EmergencyHandlerNode::onTwist(const geometry_msgs::TwistStamped::ConstPtr &
 bool EmergencyHandlerNode::isDataReady()
 {
   if (!driving_capability_) {
-    ROS_WARN_THROTTLE(1.0, "waiting for driving_capability msg...");
+    ROS_DEBUG_THROTTLE(1.0, "waiting for driving_capability msg...");
     return false;
   }
 
   if (!prev_control_command_) {
-    ROS_WARN_THROTTLE(1.0, "waiting for prev_control_command msg...");
+    ROS_DEBUG_THROTTLE(1.0, "waiting for prev_control_command msg...");
     return false;
   }
 
   if (!current_gate_mode_) {
-    ROS_WARN_THROTTLE(1.0, "waiting for current_gate_mode msg...");
+    ROS_DEBUG_THROTTLE(1.0, "waiting for current_gate_mode msg...");
     return false;
   }
 
   if (!twist_) {
-    ROS_WARN_THROTTLE(1.0, "waiting for twist msg...");
+    ROS_DEBUG_THROTTLE(1.0, "waiting for twist msg...");
     return false;
   }
 
