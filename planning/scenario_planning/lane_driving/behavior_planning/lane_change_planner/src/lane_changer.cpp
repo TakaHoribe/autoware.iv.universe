@@ -67,6 +67,14 @@ void LaneChanger::init()
   pnh_.param("lane_change_sampling_num", parameters.lane_change_sampling_num, 10);
   pnh_.param("enable_abort_lane_change", parameters.enable_abort_lane_change, true);
   pnh_.param("/vehicle_info/vehicle_width", parameters.vehicle_width, 2.8);
+  pnh_.param("/vehicle_info/max_longitudinal_offset", parameters.base_link2front, 3.74);
+  pnh_.param(
+    "abort_lane_change_velocity_thresh", parameters.abort_lane_change_velocity_thresh, 0.5);
+  pnh_.param(
+    "abort_lane_change_angle_thresh", parameters.abort_lane_change_angle_thresh,
+    0.174533);  // 10 deg
+  pnh_.param(
+    "abort_lane_change_distance_thresh", parameters.abort_lane_change_distance_thresh, 0.3);
 
   // validation of parameters
   if (parameters.lane_change_sampling_num < 1) {

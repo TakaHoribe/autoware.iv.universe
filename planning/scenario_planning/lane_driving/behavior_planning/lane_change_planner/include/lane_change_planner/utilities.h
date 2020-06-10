@@ -43,6 +43,7 @@ struct FrenetCoordinate3d
   FrenetCoordinate3d() : length(0), distance(0) {}
 };
 
+double normalizeRadian(const double radian);
 double l2Norm(const geometry_msgs::Vector3 vector);
 
 Eigen::Vector3d convertToEigenPt(const geometry_msgs::Point geom_pt);
@@ -107,6 +108,10 @@ std::vector<uint64_t> getIds(const lanelet::ConstLanelets & lanelets);
 
 autoware_planning_msgs::Path convertToPathFromPathWithLaneId(
   const autoware_planning_msgs::PathWithLaneId & path_with_lane_id);
+
+lanelet::Polygon3d getVehiclePolygon(
+  const geometry_msgs::Pose & vehicle_pose, const double vehicle_width,
+  const double base_link2front);
 
 }  // namespace util
 }  // namespace lane_change_planner

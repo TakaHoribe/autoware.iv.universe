@@ -77,6 +77,18 @@ namespace util
 using autoware_perception_msgs::PredictedPath;
 using autoware_planning_msgs::PathWithLaneId;
 
+double normalizeRadian(const double radian)
+{
+  double normalized = radian;
+  while (normalized > M_PI) {
+    normalized -= (2 * M_PI);
+  }
+  while (normalized < -M_PI) {
+    normalized += 2 * M_PI;
+  }
+  return normalized;
+}
+
 double l2Norm(const geometry_msgs::Vector3 vector)
 {
   return std::sqrt(std::pow(vector.x, 2) + std::pow(vector.y, 2) + std::pow(vector.z, 2));
@@ -755,6 +767,35 @@ autoware_planning_msgs::Path convertToPathFromPathWithLaneId(
     path.points.push_back(pt_with_lane_id.point);
   }
   return path;
+}
+
+lanelet::Polygon3d getVehiclePolygon(
+  const geometry_msgs::Pose & vehicle_pose, const double vehicle_width,
+  const double base_link2front)
+{
+  tf2::Vector3 front_left, front_right, rear_left, rear_right;
+  front_left.setValue(base_link2front, vehicle_width / 2, 0);
+  front_right.setValue(base_link2front, -vehicle_width / 2, 0);
+  rear_left.setValue(0, vehicle_width / 2, 0);
+  rear_right.setValue(0, -vehicle_width / 2, 0);
+
+  tf2::Transform tf;
+  tf2::fromMsg(vehicle_pose, tf);
+  const auto front_left_transformed = tf * front_left;
+  const auto front_right_transformed = tf * front_right;
+  const auto rear_left_transformed = tf * rear_left;
+  const auto rear_right_transformed = tf * rear_right;
+
+  lanelet::Polygon3d llt_poly;
+  llt_poly.push_back(lanelet::Point3d(
+    0, front_left_transformed.x(), front_left_transformed.y(), front_left_transformed.z()));
+  llt_poly.push_back(lanelet::Point3d(
+    0, front_right_transformed.x(), front_right_transformed.y(), front_right_transformed.z()));
+  llt_poly.push_back(lanelet::Point3d(
+    0, rear_right_transformed.x(), rear_right_transformed.y(), rear_right_transformed.z()));
+  llt_poly.push_back(lanelet::Point3d(
+    0, rear_left_transformed.x(), rear_left_transformed.y(), rear_left_transformed.z()));
+  return llt_poly;
 }
 
 }  // namespace util

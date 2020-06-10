@@ -33,9 +33,13 @@ struct LaneChangerParameters
   double drivable_area_width;
   double drivable_area_height;
   double vehicle_width;
+  double base_link2front;
   double static_obstacle_velocity_thresh;
   double maximum_deceleration;
   int lane_change_sampling_num;
+  double abort_lane_change_velocity_thresh;
+  double abort_lane_change_angle_thresh;
+  double abort_lane_change_distance_thresh;
   bool enable_abort_lane_change;
 };
 

@@ -41,8 +41,7 @@ private:
   lanelet::ConstLanelets target_lanes_;
 
   // State transition conditions
-  bool isStillOnOriginalLane() const;
-  bool isTargetLaneStillClear() const;
+  bool isAbortConditionSatisfied() const;
   bool hasFinishedLaneChange() const;
 
 public:

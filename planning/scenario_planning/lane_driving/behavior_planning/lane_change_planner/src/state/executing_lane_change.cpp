@@ -20,6 +20,9 @@
 #include <lane_change_planner/state/executing_lane_change.h>
 #include <lane_change_planner/utilities.h>
 
+#include <lanelet2_extension/utility/utilities.h>
+#include <tf2/utils.h>
+
 namespace lane_change_planner
 {
 ExecutingLaneChangeState::ExecutingLaneChangeState(
@@ -68,7 +71,7 @@ void ExecutingLaneChangeState::update()
 
 State ExecutingLaneChangeState::getNextState() const
 {
-  if (isStillOnOriginalLane() && !isTargetLaneStillClear()) {
+  if (isAbortConditionSatisfied()) {
     return State::FOLLOWING_LANE;
   }
 
@@ -78,29 +81,73 @@ State ExecutingLaneChangeState::getNextState() const
   return State::EXECUTING_LANE_CHANGE;
 }
 
-bool ExecutingLaneChangeState::isStillOnOriginalLane() const
+bool ExecutingLaneChangeState::isAbortConditionSatisfied() const
 {
-  lanelet::BasicPoint2d vehicle_pose2d(
-    current_pose_.pose.position.x, current_pose_.pose.position.y);
-  for (const auto & llt : original_lanes_) {
-    double distance = lanelet::geometry::distance2d(llt.polygon2d().basicPolygon(), vehicle_pose2d);
-    if (distance < std::numeric_limits<double>::epsilon()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool ExecutingLaneChangeState::isTargetLaneStillClear() const
-{
+  // check abort enable flag
   if (!ros_parameters_.enable_abort_lane_change) {
-    return true;
+    return false;
   }
-  // do not check current lanes
-  return state_machine::common_functions::isLaneChangePathSafe(
+
+  // check if lane change path is still safe
+  bool is_path_safe = state_machine::common_functions::isLaneChangePathSafe(
     status_.lane_change_path, original_lanes_, target_lanes_, dynamic_objects_, current_pose_.pose,
     current_twist_->twist, ros_parameters_, false);
-}
+
+  // check vehicle velocity thresh
+  bool is_velocity_low =
+    util::l2Norm(current_twist_->twist.linear) < ros_parameters_.abort_lane_change_velocity_thresh;
+
+  // find closest lanelet in original lane
+  lanelet::ConstLanelet closest_lanelet;
+  lanelet::BasicPoint2d vehicle_pose2d(
+    current_pose_.pose.position.x, current_pose_.pose.position.y);
+  double min_distance = std::numeric_limits<double>::max();
+  for (const auto & llt : original_lanes_) {
+    double distance = lanelet::geometry::distance2d(llt.polygon2d().basicPolygon(), vehicle_pose2d);
+    if (distance < min_distance) {
+      closest_lanelet = llt;
+      min_distance = distance;
+    }
+  }
+
+  // check if vehicle is within lane
+  const auto lane_length = lanelet::utils::getLaneletLength2d(original_lanes_);
+  const auto lane_poly = lanelet::utils::getPolygonFromArcLength(original_lanes_, 0, lane_length);
+  const auto vehicle_poly = util::getVehiclePolygon(
+    current_pose_.pose, ros_parameters_.vehicle_width, ros_parameters_.base_link2front);
+  bool is_within_original_lane = boost::geometry::within(
+    lanelet::utils::to2D(vehicle_poly).basicPolygon(),
+    lanelet::utils::to2D(lane_poly).basicPolygon());
+
+  // check distance from original lane
+  const auto centerline2d = lanelet::utils::to2D(closest_lanelet.centerline()).basicLineString();
+  double distance = lanelet::geometry::distance2d(centerline2d, vehicle_pose2d);
+  bool is_distance_small = distance < ros_parameters_.abort_lane_change_distance_thresh;
+
+  // check angle thresh from original lane
+  const double lane_angle =
+    lanelet::utils::getLaneletAngle(closest_lanelet, current_pose_.pose.position);
+  const double vehicle_yaw = tf2::getYaw(current_pose_.pose.orientation);
+  const double yaw_diff = util::normalizeRadian(lane_angle - vehicle_yaw);
+  bool is_angle_diff_small = std::abs(yaw_diff) < ros_parameters_.abort_lane_change_angle_thresh;
+
+  // abort only if velocity is low or vehicle pose is close enough
+  if (!is_path_safe) {
+    if (is_velocity_low && is_within_original_lane) {
+      return true;
+    }
+    if (is_distance_small && is_angle_diff_small) {
+      return true;
+    }
+    ROS_WARN_STREAM_THROTTLE(
+      1,
+      "DANGER!!! New danger was detected during lane change, but it is too late to abort! "
+      "Please "
+      "be catious");
+  }
+
+  return false;
+}  // namespace lane_change_planner
 
 bool ExecutingLaneChangeState::hasFinishedLaneChange() const
 {
