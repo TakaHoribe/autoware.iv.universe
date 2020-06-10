@@ -24,7 +24,8 @@ visualization_msgs::MarkerArray getDebugVisualizationMarker(
   const std::vector<geometry_msgs::Point> & straight_points,
   const std::vector<geometry_msgs::Pose> & fixed_points,
   const std::vector<geometry_msgs::Pose> & non_fixed_points,
-  const std::vector<ConstrainRectangle> & constrain_ranges);
+  const std::vector<ConstrainRectangle> & constrain_ranges,
+  const std::vector<autoware_perception_msgs::DynamicObject> & avoiding_objects);
 
 visualization_msgs::MarkerArray getDebugPointsMarkers(
   const std::vector<geometry_msgs::Point> & interpolated_points,
@@ -35,6 +36,10 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
 
 visualization_msgs::MarkerArray getDebugConstrainMarkers(
   const std::vector<ConstrainRectangle> & constrain_ranges);
+
+visualization_msgs::MarkerArray getObjectsMarkerArray(
+  const std::vector<autoware_perception_msgs::DynamicObject> & objects, const std::string & ns,
+  const double r, const double g, const double b);
 
 nav_msgs::OccupancyGrid getDebugCostmap(
   const cv::Mat & clearance_map, const nav_msgs::OccupancyGrid & occupancy_grid);

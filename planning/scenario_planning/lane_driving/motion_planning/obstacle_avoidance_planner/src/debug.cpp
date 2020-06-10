@@ -16,6 +16,7 @@
 
 #include <opencv2/core.hpp>
 
+#include <autoware_perception_msgs/DynamicObject.h>
 #include <autoware_planning_msgs/TrajectoryPoint.h>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -24,6 +25,7 @@
 
 #include "obstacle_avoidance_planner/debug.h"
 #include "obstacle_avoidance_planner/eb_path_optimizer.h"
+#include "obstacle_avoidance_planner/marker_helper.h"
 #include "obstacle_avoidance_planner/process_cv.h"
 
 visualization_msgs::MarkerArray getDebugVisualizationMarker(
@@ -32,21 +34,23 @@ visualization_msgs::MarkerArray getDebugVisualizationMarker(
   const std::vector<geometry_msgs::Point> & straight_points,
   const std::vector<geometry_msgs::Pose> & fixed_points,
   const std::vector<geometry_msgs::Pose> & non_fixed_points,
-  const std::vector<ConstrainRectangle> & constrain_ranges)
+  const std::vector<ConstrainRectangle> & constrain_ranges,
+  const std::vector<autoware_perception_msgs::DynamicObject> & avoiding_objects)
 {
   const auto points_marker_array = getDebugPointsMarkers(
     interpolated_points, optimized_points, straight_points, fixed_points, non_fixed_points);
   const auto constrain_marker_array = getDebugConstrainMarkers(constrain_ranges);
+
   visualization_msgs::MarkerArray vis_marker_array;
-  vis_marker_array.markers.insert(
-    vis_marker_array.markers.end(), points_marker_array.markers.begin(),
-    points_marker_array.markers.end());
-  vis_marker_array.markers.insert(
-    vis_marker_array.markers.end(), constrain_marker_array.markers.begin(),
-    constrain_marker_array.markers.end());
+  appendMarkerArray(points_marker_array, &vis_marker_array);
+  appendMarkerArray(constrain_marker_array, &vis_marker_array);
+  appendMarkerArray(
+    getObjectsMarkerArray(avoiding_objects, "avoiding_objects", 0.99, 0.99, 0.2),
+    &vis_marker_array);
   return vis_marker_array;
 }
 
+//TODO: refactor
 visualization_msgs::MarkerArray getDebugPointsMarkers(
   const std::vector<geometry_msgs::Point> & interpolated_points,
   const std::vector<autoware_planning_msgs::TrajectoryPoint> & optimized_points,
@@ -67,11 +71,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   interpolated_points_marker.pose.orientation.w = 1.0;
   interpolated_points_marker.id = unique_id;
   interpolated_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  interpolated_points_marker.scale.x = .3;
-  interpolated_points_marker.scale.y = .3;
-  interpolated_points_marker.scale.z = .3;
-  interpolated_points_marker.color.r = 1.0f;
-  interpolated_points_marker.color.a = 0.99;
+  interpolated_points_marker.scale = createMarkerScale(.3, .3, .3);
+  interpolated_points_marker.color = createMarkerColor(1.0f, 0, 0, 0.8);
   unique_id++;
   for (const auto & point : interpolated_points) {
     interpolated_points_marker.points.push_back(point);
@@ -90,11 +91,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   optimized_points_marker.pose.orientation.w = 1.0;
   optimized_points_marker.id = unique_id;
   optimized_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  optimized_points_marker.scale.x = 0.35;
-  optimized_points_marker.scale.y = 0.35;
-  optimized_points_marker.scale.z = 0.35;
-  optimized_points_marker.color.g = 1.0f;
-  optimized_points_marker.color.a = 0.99;
+  optimized_points_marker.scale = createMarkerScale(0.35, 0.35, 0.35);
+  optimized_points_marker.color = createMarkerColor(0, 1.0f, 0, 0.99);
   unique_id++;
   for (const auto & point : optimized_points) {
     optimized_points_marker.points.push_back(point.pose.position);
@@ -115,9 +113,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
     optimized_points_text_marker.id = unique_id;
     optimized_points_text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     optimized_points_text_marker.pose.position = optimized_points[i].pose.position;
-    optimized_points_text_marker.scale.z = 0.5;
-    optimized_points_text_marker.color.g = 1.0f;
-    optimized_points_text_marker.color.a = 0.99;
+    optimized_points_text_marker.scale = createMarkerScale(0, 0, 0.5);
+    optimized_points_text_marker.color = createMarkerColor(0, 1.0, 0, 0.99);
     optimized_points_text_marker.text = std::to_string(i);
     unique_id++;
     marker_array.markers.push_back(optimized_points_text_marker);
@@ -135,9 +132,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
     interpolated_points_text_marker.id = unique_id;
     interpolated_points_text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     interpolated_points_text_marker.pose.position = interpolated_points[i];
-    interpolated_points_text_marker.scale.z = 0.5;
-    interpolated_points_text_marker.color.g = 1.0f;
-    interpolated_points_text_marker.color.a = 0.99;
+    interpolated_points_text_marker.scale = createMarkerScale(0, 0, 0.5);
+    interpolated_points_text_marker.color = createMarkerColor(0, 1.0, 0, 0.99);
     interpolated_points_text_marker.text = std::to_string(i);
     unique_id++;
     marker_array.markers.push_back(interpolated_points_text_marker);
@@ -153,12 +149,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   straight_points_marker.pose.orientation.w = 1.0;
   straight_points_marker.id = unique_id;
   straight_points_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  straight_points_marker.scale.x = 1.0;
-  straight_points_marker.scale.y = 1.0;
-  straight_points_marker.scale.z = 1.0;
-  straight_points_marker.color.r = 1.0f;
-  straight_points_marker.color.g = 1.0f;
-  straight_points_marker.color.a = 0.99;
+  straight_points_marker.scale = createMarkerScale(1.0, 1.0, 1.0);
+  straight_points_marker.color = createMarkerColor(1.0, 1.0, 0, 0.99);
   unique_id++;
   for (const auto & point : straight_points) {
     straight_points_marker.points.push_back(point);
@@ -177,11 +169,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   fixed_marker.pose.orientation.w = 1.0;
   fixed_marker.id = unique_id;
   fixed_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  fixed_marker.scale.x = 0.3;
-  fixed_marker.scale.y = 0.3;
-  fixed_marker.scale.z = 0.3;
-  fixed_marker.color.r = 1.0f;
-  fixed_marker.color.a = 0.999;
+  fixed_marker.scale = createMarkerScale(0.3, 0.3, 0.3);
+  fixed_marker.color = createMarkerColor(1.0, 0, 0, 0.99);
   unique_id++;
   for (const auto & point : fixed_points) {
     fixed_marker.points.push_back(point.position);
@@ -197,11 +186,8 @@ visualization_msgs::MarkerArray getDebugPointsMarkers(
   non_fixed_marker.pose.orientation.w = 1.0;
   non_fixed_marker.id = unique_id;
   non_fixed_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  non_fixed_marker.scale.x = 1.0;
-  non_fixed_marker.scale.y = 1.0;
-  non_fixed_marker.scale.z = 1.0;
-  non_fixed_marker.color.g = 1.0f;
-  non_fixed_marker.color.a = 0.99;
+  non_fixed_marker.scale = createMarkerScale(1.0, 1.0, 1.0);
+  non_fixed_marker.color = createMarkerColor(0, 1.0, 0, 0.99);
   unique_id++;
   for (const auto & point : non_fixed_points) {
     non_fixed_marker.points.push_back(point.position);
@@ -227,9 +213,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(
     constrain_rect_marker.pose.orientation.w = 1.0;
     constrain_rect_marker.id = unique_id;
     constrain_rect_marker.type = visualization_msgs::Marker::LINE_STRIP;
-    constrain_rect_marker.scale.x = 0.01;
-    constrain_rect_marker.color.r = 1.0f;
-    constrain_rect_marker.color.a = 0.99;
+    constrain_rect_marker.scale = createMarkerScale(0.01, 0, 0);
+    constrain_rect_marker.color = createMarkerColor(1.0, 0, 0, 0.99);
     unique_id++;
     geometry_msgs::Point top_left_point = constrain_ranges[i].top_left;
     geometry_msgs::Point top_right_point = constrain_ranges[i].top_right;
@@ -255,9 +240,8 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(
     constrain_range_text_marker.id = unique_id;
     constrain_range_text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     constrain_range_text_marker.pose.position = constrain_ranges[i].top_left;
-    constrain_range_text_marker.scale.z = 0.1;
-    constrain_range_text_marker.color.r = 1.0f;
-    constrain_range_text_marker.color.a = 0.99;
+    constrain_range_text_marker.scale = createMarkerScale(0, 0, 0.1);
+    constrain_range_text_marker.color = createMarkerColor(1.0, 0, 0, 0.99);
     constrain_range_text_marker.text = std::to_string(i) + std::string(" x ") +
                                        std::to_string(constrain_range_text_marker.pose.position.x) +
                                        std::string("y ") +
@@ -293,6 +277,33 @@ visualization_msgs::MarkerArray getDebugConstrainMarkers(
     marker_array.markers.push_back(constrain_range_text_marker);
   }
   return marker_array;
+}
+
+visualization_msgs::MarkerArray getObjectsMarkerArray(
+  const std::vector<autoware_perception_msgs::DynamicObject> & objects, const std::string & ns,
+  const double r, const double g, const double b)
+{
+  const auto current_time = ros::Time::now();
+  visualization_msgs::MarkerArray msg;
+
+  visualization_msgs::Marker marker{};
+  marker.header.frame_id = "map";
+  marker.header.stamp = current_time;
+  marker.ns = ns;
+
+  int32_t i = 0;
+  for (const auto & object : objects) {
+    marker.id = i++;
+    marker.lifetime = ros::Duration(1.0);
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = object.state.pose_covariance.pose;
+    marker.scale = createMarkerScale(3.0, 1.0, 1.0);
+    marker.color = createMarkerColor(r, g, b, 0.8);
+    msg.markers.push_back(marker);
+  }
+
+  return msg;
 }
 
 nav_msgs::OccupancyGrid getDebugCostmap(

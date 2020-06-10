@@ -20,6 +20,8 @@
 
 #include <Eigen/Core>
 
+#include <boost/optional/optional_fwd.hpp>
+
 namespace autoware_planning_msgs
 {
 ROS_DECLARE_MESSAGE(PathPoint);
@@ -50,7 +52,7 @@ template <typename T>
 geometry_msgs::Point transformMapToImage(
   const T & map_point, const nav_msgs::MapMetaData & occupancy_grid_info);
 
-std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(
+boost::optional<geometry_msgs::Point> transformMapToOptionalImage(
   const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info);
 
 bool transformMapToImage(
@@ -82,11 +84,33 @@ int getNearestIdx(
   const int default_idx, const double delta_yaw_threshold);
 
 int getNearestIdx(
-  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Pose & pose,
-  const int default_idx);
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & points,
+  const geometry_msgs::Pose & pose, const int default_idx, const double delta_yaw_threshold,
+  const double delta_dist_threshold);
+
+template <typename T>
+int getNearestIdx(const T & points, const geometry_msgs::Point & point, const int default_idx);
+
+int getNearestIdx(
+  const std::vector<geometry_msgs::Point> & points, const geometry_msgs::Point & point);
+
+int getNearestIdx(
+  const std::vector<autoware_planning_msgs::PathPoint> & points,
+  const geometry_msgs::Point & point);
 
 std::vector<autoware_planning_msgs::TrajectoryPoint> convertPathToTrajectory(
   const std::vector<autoware_planning_msgs::PathPoint> & path_points);
+
+std::vector<autoware_planning_msgs::TrajectoryPoint> convertPointsToTrajectoryPoinsWithYaw(
+  const std::vector<geometry_msgs::Point> & points);
+
+std::vector<autoware_planning_msgs::TrajectoryPoint> fillTrajectoryWithVelocity(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & traj_points, const double velocity);
+
+template <typename T>
+std::vector<autoware_planning_msgs::TrajectoryPoint> alignVelocityWithPoints(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & traj_points, const T & points,
+  const int zero_velocity_traj_idx, const int max_skip_comparison_idx);
 
 struct Rectangle
 {

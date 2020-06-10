@@ -17,6 +17,8 @@
 
 #include <stack>
 
+#include <boost/optional.hpp>
+
 #include <autoware_planning_msgs/PathPoint.h>
 #include <autoware_planning_msgs/TrajectoryPoint.h>
 #include <geometry_msgs/Point32.h>
@@ -143,7 +145,7 @@ template geometry_msgs::Point transformMapToImage<geometry_msgs::Point>(
 template geometry_msgs::Point transformMapToImage<geometry_msgs::Point32>(
   const geometry_msgs::Point32 &, const nav_msgs::MapMetaData & map_info);
 
-std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(
+boost::optional<geometry_msgs::Point> transformMapToOptionalImage(
   const geometry_msgs::Point & map_point, const nav_msgs::MapMetaData & occupancy_grid_info)
 {
   geometry_msgs::Point relative_p =
@@ -159,11 +161,9 @@ std::shared_ptr<geometry_msgs::Point> transformMapToImagePtr(
     geometry_msgs::Point image_point;
     image_point.x = image_x;
     image_point.y = image_y;
-    std::shared_ptr<geometry_msgs::Point> image_point_ptr;
-    image_point_ptr = std::make_shared<geometry_msgs::Point>(image_point);
-    return image_point_ptr;
+    return image_point;
   } else {
-    return nullptr;
+    return boost::none;
   }
 }
 
@@ -218,10 +218,11 @@ bool interpolate2DPoints(
   for (double i = 0.0; i < second_base_s.back() - 1e-6; i += resolution) {
     second_new_s.push_back(i);
   }
+  spline::SplineInterpolate re_spline;
   std::vector<double> re_interpolated_x;
   std::vector<double> re_interpolated_y;
-  spline.interpolate(second_base_s, interpolated_x, second_new_s, re_interpolated_x);
-  spline.interpolate(second_base_s, interpolated_y, second_new_s, re_interpolated_y);
+  re_spline.interpolate(second_base_s, interpolated_x, second_new_s, re_interpolated_x);
+  re_spline.interpolate(second_base_s, interpolated_y, second_new_s, re_interpolated_y);
   for (size_t i = 0; i < re_interpolated_x.size(); i++) {
     geometry_msgs::Point point;
     point.x = re_interpolated_x[i];
@@ -312,6 +313,25 @@ template int getNearestIdx<std::vector<autoware_planning_msgs::PathPoint>>(
   const double);
 
 int getNearestIdx(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & points,
+  const geometry_msgs::Pose & pose, const int default_idx, const double delta_yaw_threshold,
+  const double delta_dist_threshold)
+{
+  int nearest_idx = default_idx;
+  const double point_yaw = tf2::getYaw(pose.orientation);
+  for (int i = 0; i < points.size(); i++) {
+    const double dist = calculateSquaredDistance(points[i].pose.position, pose.position);
+    const double points_yaw = tf2::getYaw(points[i].pose.orientation);
+    const double diff_yaw = points_yaw - point_yaw;
+    const double norm_diff_yaw = normalizeRadian(diff_yaw);
+    if (dist < delta_dist_threshold && std::fabs(norm_diff_yaw) < delta_yaw_threshold) {
+      nearest_idx = i;
+    }
+  }
+  return nearest_idx;
+}
+
+int getNearestIdx(
   const std::vector<geometry_msgs::Point> & points, const geometry_msgs::Pose & pose,
   const int default_idx, const double delta_yaw_threshold)
 {
@@ -333,19 +353,18 @@ int getNearestIdx(
   return nearest_idx;
 }
 
-int getNearestIdx(
-  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Pose & pose,
-  const int default_idx)
+template <typename T>
+int getNearestIdx(const T & points, const geometry_msgs::Point & point, const int default_idx)
 {
   double min_dist = std::numeric_limits<double>::max();
   int nearest_idx = default_idx;
   for (int i = 0; i < points.size(); i++) {
     if (i > 0) {
-      const double dist = calculateSquaredDistance(points[i - 1].pose.position, pose.position);
+      const double dist = calculateSquaredDistance(points[i - 1].pose.position, point);
       const double points_dx = points[i].pose.position.x - points[i - 1].pose.position.x;
       const double points_dy = points[i].pose.position.y - points[i - 1].pose.position.y;
-      const double points2pose_dx = pose.position.x - points[i - 1].pose.position.x;
-      const double points2pose_dy = pose.position.y - points[i - 1].pose.position.y;
+      const double points2pose_dx = point.x - points[i - 1].pose.position.x;
+      const double points2pose_dy = point.y - points[i - 1].pose.position.y;
       const double ip = points_dx * points2pose_dx + points_dy * points2pose_dy;
       if (ip < 0) {
         return nearest_idx;
@@ -354,6 +373,42 @@ int getNearestIdx(
         min_dist = dist;
         nearest_idx = i - 1;
       }
+    }
+  }
+  return nearest_idx;
+}
+template int getNearestIdx<std::vector<autoware_planning_msgs::TrajectoryPoint>>(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & points,
+  const geometry_msgs::Point & point, const int default_idx);
+template int getNearestIdx<std::vector<autoware_planning_msgs::PathPoint>>(
+  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Point & point,
+  const int default_idx);
+
+int getNearestIdx(
+  const std::vector<geometry_msgs::Point> & points, const geometry_msgs::Point & point)
+{
+  int nearest_idx = 0;
+  double min_dist = std::numeric_limits<double>::max();
+  for (int i = 0; i < points.size(); i++) {
+    const double dist = calculateSquaredDistance(points[i], point);
+    if (dist < min_dist) {
+      min_dist = dist;
+      nearest_idx = i;
+    }
+  }
+  return nearest_idx;
+}
+
+int getNearestIdx(
+  const std::vector<autoware_planning_msgs::PathPoint> & points, const geometry_msgs::Point & point)
+{
+  int nearest_idx = 0;
+  double min_dist = std::numeric_limits<double>::max();
+  for (int i = 0; i < points.size(); i++) {
+    const double dist = calculateSquaredDistance(points[i].pose.position, point);
+    if (dist < min_dist) {
+      min_dist = dist;
+      nearest_idx = i;
     }
   }
   return nearest_idx;
@@ -371,6 +426,88 @@ std::vector<autoware_planning_msgs::TrajectoryPoint> convertPathToTrajectory(
   }
   return traj_points;
 }
+
+std::vector<autoware_planning_msgs::TrajectoryPoint> convertPointsToTrajectoryPoinsWithYaw(
+  const std::vector<geometry_msgs::Point> & points)
+{
+  std::vector<autoware_planning_msgs::TrajectoryPoint> traj_points;
+  for (size_t i = 0; i < points.size(); i++) {
+    autoware_planning_msgs::TrajectoryPoint traj_point;
+    traj_point.pose.position = points[i];
+    double yaw = 0;
+    if (i > 0) {
+      const double dx = points[i].x - points[i - 1].x;
+      const double dy = points[i].y - points[i - 1].y;
+      yaw = std::atan2(dy, dx);
+    } else if (i == 0 && points.size() > 1) {
+      const double dx = points[i + 1].x - points[i].x;
+      const double dy = points[i + 1].y - points[i].y;
+      yaw = std::atan2(dy, dx);
+    }
+    const double roll = 0;
+    const double pitch = 0;
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(roll, pitch, yaw);
+    traj_point.pose.orientation = tf2::toMsg(quaternion);
+    traj_points.push_back(traj_point);
+  }
+  return traj_points;
+}
+
+std::vector<autoware_planning_msgs::TrajectoryPoint> fillTrajectoryWithVelocity(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & traj_points, const double velocity)
+{
+  std::vector<autoware_planning_msgs::TrajectoryPoint> traj_with_velo;
+  for (const auto & traj_point : traj_points) {
+    auto tmp_point = traj_point;
+    tmp_point.twist.linear.x = velocity;
+    traj_with_velo.push_back(tmp_point);
+  }
+  return traj_with_velo;
+}
+
+template <typename T>
+std::vector<autoware_planning_msgs::TrajectoryPoint> alignVelocityWithPoints(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> & base_traj_points, const T & points,
+  const int zero_velocity_traj_idx, const int max_skip_comparison_idx)
+{
+  auto traj_points = base_traj_points;
+  int prev_begin_idx = 0;
+  for (int i = 0; i < traj_points.size(); i++) {
+    const auto first = points.begin() + prev_begin_idx;
+    const auto last = points.end();
+    const T truncated_points(first, last);
+    const int default_idx = 0;
+    const int nearest_idx =
+      util::getNearestIdx(truncated_points, traj_points[i].pose.position, default_idx);
+    traj_points[i].pose.position.z = truncated_points[nearest_idx].pose.position.z;
+    if (i <= max_skip_comparison_idx) {
+      traj_points[i].twist.linear.x = truncated_points[nearest_idx].twist.linear.x;
+    } else {
+      traj_points[i].twist.linear.x =
+        std::fmin(truncated_points[nearest_idx].twist.linear.x, traj_points[i].twist.linear.x);
+    }
+    if (i >= zero_velocity_traj_idx) {
+      traj_points[i].twist.linear.x = 0;
+    } else if (truncated_points[nearest_idx].twist.linear.x < 1e-6) {
+      if (i > 0) {
+        traj_points[i].twist.linear.x = traj_points[i - 1].twist.linear.x;
+      } else {
+        traj_points[i].twist.linear.x = points.front().twist.linear.x;
+      }
+    }
+    prev_begin_idx += nearest_idx;
+  }
+  return traj_points;
+}
+template std::vector<autoware_planning_msgs::TrajectoryPoint>
+alignVelocityWithPoints<std::vector<autoware_planning_msgs::PathPoint>>(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> &,
+  const std::vector<autoware_planning_msgs::PathPoint> &, const int, const int);
+template std::vector<autoware_planning_msgs::TrajectoryPoint>
+alignVelocityWithPoints<std::vector<autoware_planning_msgs::TrajectoryPoint>>(
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> &,
+  const std::vector<autoware_planning_msgs::TrajectoryPoint> &, const int, const int);
 
 std::vector<std::vector<int>> getHistogramTable(const std::vector<std::vector<int>> & input)
 {
