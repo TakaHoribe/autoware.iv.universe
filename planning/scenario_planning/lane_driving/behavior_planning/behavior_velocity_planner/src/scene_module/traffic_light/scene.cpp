@@ -37,6 +37,12 @@ double calcSignedDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d 
   auto basecoords_p2 = map2p1.inverse() * Eigen::Vector3d(p2.x(), p2.y(), p1.position.z);
   return basecoords_p2.x() >= 0 ? basecoords_p2.norm() : -basecoords_p2.norm();
 }
+
+double getStopBorderDistanceThreshold(double v, double acc, double delay)
+{
+  // acc is negative acceleration, so it has a negative value
+  return (-1.0 * v * v) / (2.0 * acc) + (delay * v);
+}
 }  // namespace
 
 namespace bg = boost::geometry;
@@ -69,10 +75,10 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   // get vehicle info
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
-  const double stop_border_distance_threshold =
-    (1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-      (2.0 * planner_param_.max_stop_acceleration_threshold) +
-    (planner_param_.delay_response_time * self_twist_ptr->twist.linear.x);
+  const double stop_border_distance_threshold = getStopBorderDistanceThreshold(
+    self_twist_ptr->twist.linear.x,
+    planner_param_.max_stop_acceleration_threshold,
+    planner_param_.delay_response_time);
 
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
