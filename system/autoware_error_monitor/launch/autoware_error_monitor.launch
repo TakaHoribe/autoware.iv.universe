@@ -1,11 +1,7 @@
 <launch>
-  <arg name="launch_rqt" default="false"/>
+  <arg name="config_file" default="$(find autoware_error_monitor)/config/autoware_error_monitor.yaml" />
 
   <group ns="/">
-    <group if="$(arg launch_rqt)">
-      <node pkg="rqt_robot_monitor" type="rqt_robot_monitor" name="rqt_robot_monitor"/>
-    </group>
-
     <node pkg="diagnostic_aggregator" type="aggregator_node" name="aggregator_node" output="screen">
       <param name="pub_rate" value="10"/>
       <rosparam command="load" file="$(find autoware_error_monitor)/config/diagnostic_aggregator/_discard.yaml" />
@@ -23,6 +19,6 @@
   </group>
 
   <include file="$(find autoware_error_monitor)/launch/autoware_error_monitor_node.launch">
-    <arg name="config_file" value="$(find autoware_error_monitor)/config/autoware_error_monitor.yaml"/>
+    <arg name="config_file" value="$(arg config_file)"/>
   </include>
 </launch>
