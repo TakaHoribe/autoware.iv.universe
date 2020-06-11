@@ -211,7 +211,7 @@ visualization_msgs::MarkerArray createVirtualWallMarkerArray(
   marker_factor_text.pose.position.z += 2.0;
   marker_factor_text.scale = createMarkerScale(0.0, 0.0, 1.0);
   marker_factor_text.color = createMarkerColor(1.0, 1.0, 1.0, 0.999);
-  marker_factor_text.text = "blind_spot";
+  marker_factor_text.text = "blind spot";
   msg.markers.push_back(marker_factor_text);
 
   return msg;
