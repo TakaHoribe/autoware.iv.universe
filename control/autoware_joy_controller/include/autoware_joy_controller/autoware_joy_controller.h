@@ -42,31 +42,67 @@ public:
 
   const float accel() const
   {
-    const auto button = static_cast<float>(j_.buttons.at(0));  // Cross
-    const auto stick = std::max(0.0f, j_.axes.at(4));          // R Stick
-    const auto trigger = std::max(0.0f, -j_.axes.at(5));       // R Trigger
+    const auto button = static_cast<float>(Cross());
+    const auto stick = std::max(0.0f, RStickUpDown());
+    const auto trigger = std::max(0.0f, -RTrigger());
     return std::max({button, stick, trigger});
   }
 
   const float brake() const
   {
-    const auto button = static_cast<float>(j_.buttons.at(3));  // Square
-    const auto stick = std::max(0.0f, -j_.axes.at(4));         // R Stick
-    const auto trigger = std::max(0.0f, -j_.axes.at(2));       // L Trigger
+    const auto button = static_cast<float>(Square());
+    const auto stick = std::max(0.0f, -RStickUpDown());
+    const auto trigger = std::max(0.0f, -LTrigger());
     return std::max({button, stick, trigger});
   }
 
-  const float steer() const { return j_.axes.at(0); }                                   // L Stick
-  const bool shift_up() const { return static_cast<bool>(j_.axes.at(7) == 1); }         // Up
-  const bool shift_down() const { return static_cast<bool>(j_.axes.at(7) == -1); }      // Down
-  const bool turn_signal_left() const { return static_cast<bool>(j_.buttons.at(4)); }   // L1
-  const bool turn_signal_right() const { return static_cast<bool>(j_.buttons.at(5)); }  // R1
-  const bool gate_mode() const { return static_cast<bool>(j_.buttons.at(1)); }          // Circle
-  const bool emergency() const { return static_cast<bool>(j_.buttons.at(2)); }          // Triangle
-  const bool engage() const { return static_cast<bool>(j_.buttons.at(9)); }             // Options
-  const bool disengage() const { return static_cast<bool>(j_.buttons.at(8)); }          // Share
+  float steer() const { return LStickLeftRight(); }
+
+  bool shift_up() const { return CursorUpDown() == 1; }
+  bool shift_down() const { return CursorUpDown() == -1; }
+  bool shift_drive() const { return CursorLeftRight() == 1; }
+  bool shift_reverse() const { return CursorLeftRight() == -1; }
+
+  bool turn_signal_left() const { return !reverse() && L1(); }
+  bool turn_signal_right() const { return !reverse() && R1(); }
+  bool clear_turn_signal() const { return reverse() && (L1() || R1()); }
+
+  bool gate_mode() const { return Options(); }
+
+  bool emergency() const { return !reverse() && PS(); }
+  bool clear_emergency() const { return reverse() && PS(); }
+
+  bool autoware_engage() const { return !reverse() && Circle(); }
+  bool autoware_disengage() const { return reverse() && Circle(); }
+
+  bool vehicle_engage() const { return !reverse() && Triangle(); }
+  bool vehicle_disengage() const { return reverse() && Triangle(); }
 
 private:
+  float LStickLeftRight() const { return j_.axes.at(0); }
+  float LStickUpDown() const { return j_.axes.at(1); }
+  float LTrigger() const { return j_.axes.at(2); }
+  float RStickLeftRight() const { return j_.axes.at(3); }
+  float RStickUpDown() const { return j_.axes.at(4); }
+  float RTrigger() const { return j_.axes.at(5); }
+  float CursorLeftRight() const { return j_.axes.at(6); }
+  float CursorUpDown() const { return j_.axes.at(7); }
+
+  bool Cross() const { return j_.buttons.at(0); }
+  bool Circle() const { return j_.buttons.at(1); }
+  bool Triangle() const { return j_.buttons.at(2); }
+  bool Square() const { return j_.buttons.at(3); }
+  bool L1() const { return j_.buttons.at(4); }
+  bool R1() const { return j_.buttons.at(5); }
+  bool L2() const { return j_.buttons.at(6); }
+  bool R2() const { return j_.buttons.at(7); }
+  bool Share() const { return j_.buttons.at(8); }
+  bool Options() const { return j_.buttons.at(9); }
+  bool PS() const { return j_.buttons.at(10); }
+
+private:
+  bool reverse() const { return Share(); }
+
   const sensor_msgs::Joy j_;
 };
 
@@ -124,7 +160,8 @@ private:
   void publishTurnSignal();
   void publishGateMode();
   void publishEmergency();
-  void publishEngage();
+  void publishAutowareEngage();
+  void publishVehicleEngage();
 
   // Previous State
   autoware_control_msgs::ControlCommand prev_control_command_;

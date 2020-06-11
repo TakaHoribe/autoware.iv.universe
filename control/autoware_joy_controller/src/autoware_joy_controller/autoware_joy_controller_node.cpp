@@ -89,11 +89,11 @@ void AutowareJoyControllerNode::onJoy(const sensor_msgs::Joy::ConstPtr & msg)
   last_joy_received_time_ = msg->header.stamp;
   joy_ = std::make_shared<const JoyConverter>(*msg);
 
-  if (joy_->shift_up() || joy_->shift_down()) {
+  if (joy_->shift_up() || joy_->shift_down() || joy_->shift_drive() || joy_->shift_reverse()) {
     publishShift();
   }
 
-  if (joy_->turn_signal_left() || joy_->turn_signal_right()) {
+  if (joy_->turn_signal_left() || joy_->turn_signal_right() || joy_->clear_turn_signal()) {
     publishTurnSignal();
   }
 
@@ -101,12 +101,16 @@ void AutowareJoyControllerNode::onJoy(const sensor_msgs::Joy::ConstPtr & msg)
     publishGateMode();
   }
 
-  if (joy_->emergency()) {
+  if (joy_->emergency() || joy_->clear_emergency()) {
     publishEmergency();
   }
 
-  if (joy_->engage() || joy_->disengage()) {
-    publishEngage();
+  if (joy_->autoware_engage() || joy_->autoware_disengage()) {
+    publishAutowareEngage();
+  }
+
+  if (joy_->vehicle_engage() || joy_->vehicle_disengage()) {
+    publishVehicleEngage();
   }
 }
 
@@ -166,8 +170,7 @@ void AutowareJoyControllerNode::onTimer(const ros::TimerEvent & event)
 
 void AutowareJoyControllerNode::publishControlCommand()
 {
-  using autoware_control_msgs::ControlCommandStamped;
-  ControlCommandStamped cmd_stamped;
+  autoware_control_msgs::ControlCommandStamped cmd_stamped;
   cmd_stamped.header.stamp = ros::Time::now();
 
   {
@@ -201,8 +204,7 @@ void AutowareJoyControllerNode::publishControlCommand()
 
 void AutowareJoyControllerNode::publishRawControlCommand()
 {
-  using autoware_vehicle_msgs::RawControlCommandStamped;
-  RawControlCommandStamped cmd_stamped;
+  autoware_vehicle_msgs::RawControlCommandStamped cmd_stamped;
   cmd_stamped.header.stamp = ros::Time::now();
 
   {
@@ -220,8 +222,9 @@ void AutowareJoyControllerNode::publishRawControlCommand()
 
 void AutowareJoyControllerNode::publishShift()
 {
-  using autoware_vehicle_msgs::ShiftStamped;
-  ShiftStamped shift_stamped;
+  using autoware_vehicle_msgs::Shift;
+
+  autoware_vehicle_msgs::ShiftStamped shift_stamped;
   shift_stamped.header.stamp = ros::Time::now();
 
   {
@@ -234,6 +237,14 @@ void AutowareJoyControllerNode::publishShift()
       shift.data = getLowerShift(prev_shift_);
     }
 
+    if (joy_->shift_drive()) {
+      shift.data = Shift::DRIVE;
+    }
+
+    if (joy_->shift_reverse()) {
+      shift.data = Shift::REVERSE;
+    }
+
     ROS_INFO("Shift::%s", getShiftName(shift.data));
   }
 
@@ -244,6 +255,7 @@ void AutowareJoyControllerNode::publishShift()
 void AutowareJoyControllerNode::publishTurnSignal()
 {
   using autoware_vehicle_msgs::TurnSignal;
+
   TurnSignal turn_signal;
   turn_signal.header.stamp = ros::Time::now();
 
@@ -255,6 +267,10 @@ void AutowareJoyControllerNode::publishTurnSignal()
     turn_signal.data = TurnSignal::RIGHT;
   }
 
+  if (joy_->clear_turn_signal()) {
+    turn_signal.data = TurnSignal::NONE;
+  }
+
   ROS_INFO("TurnSignal::%s", getTurnSignalName(turn_signal.data));
 
   pub_turn_signal_.publish(turn_signal);
@@ -263,6 +279,7 @@ void AutowareJoyControllerNode::publishTurnSignal()
 void AutowareJoyControllerNode::publishGateMode()
 {
   using autoware_control_msgs::GateMode;
+
   autoware_control_msgs::GateMode gate_mode;
 
   if (prev_gate_mode_ == GateMode::AUTO) {
@@ -283,27 +300,50 @@ void AutowareJoyControllerNode::publishEmergency()
 {
   std_msgs::Bool emergency;
 
-  emergency.data = true;
-  ROS_INFO("Emergency");
+  if (joy_->emergency()) {
+    emergency.data = true;
+    ROS_INFO("Emergency");
+  }
+
+  if (joy_->clear_emergency()) {
+    emergency.data = false;
+    ROS_INFO("Clear Emergency");
+  }
 
   pub_emergency_.publish(emergency);
 }
 
-void AutowareJoyControllerNode::publishEngage()
+void AutowareJoyControllerNode::publishAutowareEngage()
 {
   std_msgs::Bool engage;
 
-  if (joy_->engage()) {
+  if (joy_->autoware_engage()) {
     engage.data = true;
-    ROS_INFO("Engage");
+    ROS_INFO("Autoware Engage");
   }
 
-  if (joy_->disengage()) {
+  if (joy_->autoware_disengage()) {
     engage.data = false;
-    ROS_INFO("Disengage");
+    ROS_INFO("Autoware Disengage");
   }
 
   pub_autoware_engage_.publish(engage);
+}
+
+void AutowareJoyControllerNode::publishVehicleEngage()
+{
+  std_msgs::Bool engage;
+
+  if (joy_->vehicle_engage()) {
+    engage.data = true;
+    ROS_INFO("Vehicle Engage");
+  }
+
+  if (joy_->vehicle_disengage()) {
+    engage.data = false;
+    ROS_INFO("Vehicle Disengage");
+  }
+
   pub_vehicle_engage_.publish(engage);
 }
 
