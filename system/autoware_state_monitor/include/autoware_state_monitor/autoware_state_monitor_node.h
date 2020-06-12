@@ -33,6 +33,7 @@
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Trajectory.h>
 #include <autoware_system_msgs/AutowareState.h>
+#include <autoware_vehicle_msgs/ControlMode.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
@@ -68,12 +69,12 @@ private:
 
   // Subscriber
   ros::Subscriber sub_autoware_engage_;
-  ros::Subscriber sub_vehicle_engage_;
+  ros::Subscriber sub_vehicle_control_mode_;
   ros::Subscriber sub_route_;
   ros::Subscriber sub_twist_;
 
   void onAutowareEngage(const std_msgs::Bool::ConstPtr & msg);
-  void onVehicleEngage(const std_msgs::Bool::ConstPtr & msg);
+  void onVehicleControlMode(const autoware_vehicle_msgs::ControlMode::ConstPtr & msg);
   void onRoute(const autoware_planning_msgs::Route::ConstPtr & msg);
   void onTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
 

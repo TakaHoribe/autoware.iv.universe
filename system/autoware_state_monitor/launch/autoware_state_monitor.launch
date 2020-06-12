@@ -1,6 +1,6 @@
 <launch>
   <arg name="input_autoware_engage" default="/autoware/engage" />
-  <arg name="input_vehicle_engage" default="/vehicle/engage" />
+  <arg name="input_vehicle_control_mode" default="/vehicle/status/control_mode" />
   <arg name="input_route" default="/planning/mission_planning/route" />
   <arg name="input_twist" default="/localization/twist" />
 
@@ -11,7 +11,7 @@
 
   <node pkg="autoware_state_monitor" type="autoware_state_monitor" name="autoware_state_monitor" output="screen">
     <remap from="~input/autoware_engage" to="$(arg input_autoware_engage)"/>
-    <remap from="~input/vehicle_engage" to="$(arg input_vehicle_engage)"/>
+    <remap from="~input/vehicle_control_mode" to="$(arg input_vehicle_control_mode)"/>
     <remap from="~input/route" to="$(arg input_route)"/>
     <remap from="~input/twist" to="$(arg input_twist)"/>
 

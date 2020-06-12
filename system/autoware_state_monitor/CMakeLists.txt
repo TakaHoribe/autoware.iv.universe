@@ -6,6 +6,7 @@ add_compile_options(-std=c++14)
 find_package(catkin REQUIRED COMPONENTS
   autoware_planning_msgs
   autoware_system_msgs
+  autoware_vehicle_msgs
   diagnostic_updater
   roscpp
   topic_tools
@@ -22,6 +23,7 @@ catkin_package(
   CATKIN_DEPENDS
     autoware_planning_msgs
     autoware_system_msgs
+    autoware_vehicle_msgs
     diagnostic_updater
     topic_tools
     tf2

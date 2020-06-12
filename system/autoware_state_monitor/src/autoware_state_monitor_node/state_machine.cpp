@@ -152,7 +152,6 @@ bool StateMachine::isPlanningCompleted() const
 
 bool StateMachine::isEngaged() const
 {
-  // TODO: Output engage status from controller_interface instead of topic
   if (!state_input_.autoware_engage) {
     return false;
   }
@@ -161,11 +160,11 @@ bool StateMachine::isEngaged() const
     return false;
   }
 
-  if (!state_input_.vehicle_engage) {
+  if (!state_input_.vehicle_control_mode) {
     return false;
   }
 
-  if (state_input_.vehicle_engage->data != 1) {
+  if (state_input_.vehicle_control_mode->data == autoware_vehicle_msgs::ControlMode::MANUAL) {
     return false;
   }
 

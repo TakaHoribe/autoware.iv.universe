@@ -85,9 +85,10 @@ void AutowareStateMonitorNode::onAutowareEngage(const std_msgs::Bool::ConstPtr &
   state_input_.autoware_engage = msg;
 }
 
-void AutowareStateMonitorNode::onVehicleEngage(const std_msgs::Bool::ConstPtr & msg)
+void AutowareStateMonitorNode::onVehicleControlMode(
+  const autoware_vehicle_msgs::ControlMode::ConstPtr & msg)
 {
-  state_input_.vehicle_engage = msg;
+  state_input_.vehicle_control_mode = msg;
 }
 
 void AutowareStateMonitorNode::onRoute(const autoware_planning_msgs::Route::ConstPtr & msg)
@@ -315,8 +316,8 @@ AutowareStateMonitorNode::AutowareStateMonitorNode()
   // Subscriber
   sub_autoware_engage_ = private_nh_.subscribe(
     "input/autoware_engage", 1, &AutowareStateMonitorNode::onAutowareEngage, this);
-  sub_vehicle_engage_ = private_nh_.subscribe(
-    "input/vehicle_engage", 1, &AutowareStateMonitorNode::onVehicleEngage, this);
+  sub_vehicle_control_mode_ = private_nh_.subscribe(
+    "input/vehicle_control_mode", 1, &AutowareStateMonitorNode::onVehicleControlMode, this);
   sub_route_ = private_nh_.subscribe("input/route", 1, &AutowareStateMonitorNode::onRoute, this);
   sub_twist_ = private_nh_.subscribe("input/twist", 100, &AutowareStateMonitorNode::onTwist, this);
 
