@@ -53,29 +53,21 @@ bool insertTargetVelocityPoint(
 {
   output = input;
   for (size_t i = 0; i < output.points.size() - 1; ++i) {
-    Line line = {
-      {output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y},
-      {output.points.at(i + 1).point.pose.position.x,
-       output.points.at(i + 1).point.pose.position.y}};
+    const auto p0 = output.points.at(i).point.pose.position;
+    const auto p1 = output.points.at(i + 1).point.pose.position;
+    const Line line{{p0.x, p0.y}, {p1.x, p1.y}};
     std::vector<Point> collision_points;
     bg::intersection(polygon, line, collision_points);
 
     if (collision_points.empty()) continue;
     // -- debug code --
-    for (const auto & collision_point : collision_points) {
-      Eigen::Vector3d point3d;
-      point3d << collision_point.x(), collision_point.y(),
-        planner_data.current_pose.pose.position.z;
+    for (const auto & cp : collision_points) {
+      Eigen::Vector3d point3d(cp.x(), cp.y(), planner_data.current_pose.pose.position.z);
       debug_data.collision_points.push_back(point3d);
     }
     std::vector<Eigen::Vector3d> line3d;
-    Eigen::Vector3d point3d;
-    point3d << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y,
-      output.points.at(i).point.pose.position.z;
-    line3d.push_back(point3d);
-    point3d << output.points.at(i + 1).point.pose.position.x,
-      output.points.at(i + 1).point.pose.position.y, output.points.at(i + 1).point.pose.position.z;
-    line3d.push_back(point3d);
+    line3d.emplace_back(p0.x, p0.y, p0.z);
+    line3d.emplace_back(p1.x, p1.y, p1.z);
     debug_data.collision_lines.push_back(line3d);
     // ----------------
 
@@ -83,9 +75,7 @@ bool insertTargetVelocityPoint(
     Point nearest_collision_point;
     double min_dist;
     for (size_t j = 0; j < collision_points.size(); ++j) {
-      double dist = bg::distance(
-        Point(output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y),
-        collision_points.at(j));
+      double dist = bg::distance(Point(p0.x, p0.y), collision_points.at(j));
       if (j == 0 || dist < min_dist) {
         min_dist = dist;
         nearest_collision_point = collision_points.at(j);
@@ -100,17 +90,17 @@ bool insertTargetVelocityPoint(
     const double target_length = margin + base_link2front;
     Eigen::Vector2d point1, point2;
     point1 << nearest_collision_point.x(), nearest_collision_point.y();
-    point2 << output.points.at(i).point.pose.position.x, output.points.at(i).point.pose.position.y;
+    point2 << p0.x, p0.y;
     length_sum += (point2 - point1).norm();
     for (size_t j = i; 0 < j; --j) {
       if (target_length < length_sum) {
         insert_target_point_idx = j + 1;
         break;
       }
-      point1 << output.points.at(j).point.pose.position.x,
-        output.points.at(j).point.pose.position.y;
-      point2 << output.points.at(j - 1).point.pose.position.x,
-        output.points.at(j - 1).point.pose.position.y;
+      const auto pj1 = output.points.at(j).point.pose.position;
+      const auto pj2 = output.points.at(j - 1).point.pose.position;
+      point1 << pj1.x, pj1.y;
+      point2 << pj2.x, pj2.y;
       length_sum += (point2 - point1).norm();
     }
 
