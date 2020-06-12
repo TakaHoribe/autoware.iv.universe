@@ -40,17 +40,16 @@ std::pair<int, double> findWayPointAndDistance(
     const double dist_wp = std::hypot(dx_wp, dy_wp);
 
     // check lateral distance
-    if(std::fabs(dist*std::sin(theta)) > max_lateral_dist)
-    {
+    if (std::fabs(dist * std::sin(theta)) > max_lateral_dist) {
       continue;
     }
 
     // if the point p is back of the way point, return negative distance
-    if(dist*std::cos(theta) < 0) {
+    if (dist * std::cos(theta) < 0) {
       return std::make_pair(static_cast<int>(i), -1.0 * dist);
     }
 
-    if (dist*std::cos(theta) < dist_wp) {
+    if (dist * std::cos(theta) < dist_wp) {
       return std::make_pair(static_cast<int>(i), dist);
     }
   }
@@ -154,7 +153,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   // check state
   if (state_ == State::GO_OUT) {
     return true;
-  } else if (state_ == State::APPROARCH) {
+  } else {
     for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
       const Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
                               {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
@@ -186,8 +185,9 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         }
 
         if (
+          state_ != State::STOP &&
           calcSignedArcLength(input_path, self_pose.pose, stop_line_point) <
-          stop_border_distance_threshold) {
+            stop_border_distance_threshold) {
           ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
           return true;
         }
@@ -201,9 +201,10 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
       // Add Stop WayPoint
       if (!insertTargetVelocityPoint(
             input_path, stop_line, planner_param_.stop_margin, 0.0, *path)) {
+        ROS_WARN("[traffic_light] cannot insert stop waypoint");
         continue;
       }
-
+      state_ = State::STOP;
       return true;
     }
   }
@@ -247,6 +248,7 @@ bool TrafficLightModule::isOverJudgePoint(
   }
 
   if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
+    ROS_WARN("[traffic_light] vehicle is over judge point");
     return true;
   }
 
