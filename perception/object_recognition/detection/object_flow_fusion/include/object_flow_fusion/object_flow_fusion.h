@@ -67,5 +67,6 @@ private:
   ros::NodeHandle pnh_;
   float point_radius_;
   std::shared_ptr<Utils> utils_;
+  float fusion_box_offset_;
 };
 } // object_flow_fusion

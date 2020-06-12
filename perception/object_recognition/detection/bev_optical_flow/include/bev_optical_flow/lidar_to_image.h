@@ -39,7 +39,7 @@ public:
     cv::Mat& bev_image);
 
 private:
-  float pointToPixel(const pcl::PointXYZ& point, cv::Point2d& px);
+  float pointToPixel(const pcl::PointXYZ& point, cv::Point2d& px, float map2base_angle);
 
   std::shared_ptr<Utils> utils_;
 

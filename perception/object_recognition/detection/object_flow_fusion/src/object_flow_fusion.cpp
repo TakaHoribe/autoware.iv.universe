@@ -21,6 +21,7 @@ namespace object_flow_fusion
 {
 ObjectFlowFusion::ObjectFlowFusion() : nh_(""), pnh_("~")
 {
+  pnh_.param<float>("fusion_box_offset", fusion_box_offset_, 0.1);
   utils_ = std::make_shared<Utils>();
 }
 
@@ -63,10 +64,14 @@ bool ObjectFlowFusion::isInsideCylinder(
   const autoware_perception_msgs::Shape& shape,
   const geometry_msgs::Point& flow_point)
 {
-  double radius = shape.dimensions.x;
+  Eigen::Affine3d base2obj_transform;
+  tf::poseMsgToEigen(pose, base2obj_transform);
   Eigen::Vector3d eigen_flow_point;
   tf::pointMsgToEigen(flow_point, eigen_flow_point);
-  if (eigen_flow_point.norm() < radius) {
+  auto local_eigen_flow_point = base2obj_transform.inverse() * eigen_flow_point;
+
+  double radius = shape.dimensions.x;
+  if (local_eigen_flow_point.norm() < radius) {
     return true;
   }
   return false;
@@ -120,26 +125,39 @@ bool ObjectFlowFusion::getPolygon(
   Eigen::Affine3d base2obj_transform;
   tf::poseMsgToEigen(pose, base2obj_transform);
 
+  float offset = 0.1;
   if ( shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX ) {
-    auto eigen_c1 = base2obj_transform * Eigen::Vector3d(shape.dimensions.x * 0.5, shape.dimensions.y * 0.5, 0);
+    auto eigen_c1 = base2obj_transform * Eigen::Vector3d(
+      shape.dimensions.x * (0.5 + fusion_box_offset_),
+      shape.dimensions.y * (0.5 + fusion_box_offset_),
+      0);
     geometry_msgs::Point32 c1;
     c1.x = eigen_c1.x();
     c1.y = eigen_c1.y();
     output_footprint.points.push_back(c1);
 
-    auto eigen_c2 = base2obj_transform * Eigen::Vector3d(shape.dimensions.x * 0.5, -shape.dimensions.y * 0.5, 0);
+    auto eigen_c2 = base2obj_transform * Eigen::Vector3d(
+      shape.dimensions.x * (0.5 + fusion_box_offset_),
+      -shape.dimensions.y * (0.5 + fusion_box_offset_),
+      0);
     geometry_msgs::Point32 c2;
     c2.x = eigen_c2.x();
     c2.y = eigen_c2.y();
     output_footprint.points.push_back(c2);
 
-    auto eigen_c3 = base2obj_transform * Eigen::Vector3d(-shape.dimensions.x * 0.5, -shape.dimensions.y * 0.5, 0);
+    auto eigen_c3 = base2obj_transform * Eigen::Vector3d(
+      -shape.dimensions.x * (0.5 + fusion_box_offset_),
+      -shape.dimensions.y * (0.5 + fusion_box_offset_),
+      0);
     geometry_msgs::Point32 c3;
     c3.x = eigen_c3.x();
     c3.y = eigen_c3.y();
     output_footprint.points.push_back(c3);
 
-    auto eigen_c4 = base2obj_transform * Eigen::Vector3d(-shape.dimensions.x * 0.5, shape.dimensions.y * 0.5, 0);
+    auto eigen_c4 = base2obj_transform * Eigen::Vector3d(
+      -shape.dimensions.x * (0.5 + fusion_box_offset_),
+      shape.dimensions.y * (0.5 + fusion_box_offset_),
+      0);
     geometry_msgs::Point32 c4;
     c4.x = eigen_c4.x();
     c4.y = eigen_c4.y();
@@ -153,6 +171,8 @@ bool ObjectFlowFusion::getPolygon(
       basecoords_p.z = eigen_p.z();
       output_footprint.points.push_back(basecoords_p);
     }
+  } else if (shape.type == autoware_perception_msgs::Shape::CYLINDER) {
+    return true;
   } else {
     return false;
   }

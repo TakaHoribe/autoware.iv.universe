@@ -32,25 +32,22 @@ class FlowCalculator
 {
 public:
   FlowCalculator();
-  bool getOpticalFlowArray(
-    autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg);
-  bool getSceneFlowArray(
-    const autoware_perception_msgs::DynamicObjectWithFeatureArray& optical_flow_array,
-    autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
   void setup(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg);
   bool isInitialized();
   void run(autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
 
 private:
-  typedef std::vector< std::vector<cv::Point2f> > PointsArray;
 
-  int get_layer(int depth);
   bool calcOpticalFlow(
     cv::Mat& current_image,
     cv::Mat& prev_image,
     std::vector<cv::Point2f>& prev_points,
-    autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg,
-    const cv::Mat& depth_image);
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg);
+
+  bool getSceneFlowArray(
+    const autoware_perception_msgs::DynamicObjectWithFeatureArray& optical_flow_array,
+    autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array);
+
   bool calcSceneFlow(
     const autoware_perception_msgs::DynamicObjectWithFeature& optical_flow,
     autoware_perception_msgs::DynamicObjectWithFeature& scene_flow);
@@ -67,9 +64,8 @@ private:
   int num_split_;
   bool debug_;
 
-  std::vector<cv::Mat> current_images_;
-  std::vector<cv::Mat> prev_images_;
-  PointsArray prev_points_array_;
+  cv::Mat prev_image_;
+  std::vector<cv::Point2f> prev_points_;
 
   cv::Mat image_;
   ros::Time current_stamp_;

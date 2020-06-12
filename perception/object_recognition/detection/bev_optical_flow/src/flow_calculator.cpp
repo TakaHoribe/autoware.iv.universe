@@ -28,10 +28,7 @@ FlowCalculator::FlowCalculator() : nh_(""), pnh_("~")
 
   pnh_.param<int>("sparce_size", sparce_size_, 4);
   pnh_.param<int>("num_split", num_split_, 3);
-
   pnh_.param<bool>("debug", debug_, false);
-
-  prev_images_.resize(num_split_);
 
   utils_ = std::make_shared<Utils>();
   lidar_to_image_ = std::make_shared<LidarToBEVImage>();
@@ -41,47 +38,35 @@ bool FlowCalculator::isInitialized() {
   return setup_;
 }
 
-int FlowCalculator::get_layer(int depth) {
-  int layer = 0;
-  for (int i=0; i<num_split_; i++) {
-    float layer_min = 255 * static_cast<float>(i) / num_split_;
-    float layer_max = 255 * static_cast<float>(i+1) / num_split_;
-    if (layer_min < depth && depth < layer_max) {
-      layer = i;
-    }
-  }
-  return layer;
-}
-
 bool FlowCalculator::calcOpticalFlow(
   cv::Mat& current_image,
   cv::Mat& prev_image,
   std::vector<cv::Point2f>& prev_points,
-  autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg,
-  const cv::Mat& depth_image)
+  autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg)
 {
   if (prev_image.empty())
     current_image.copyTo(prev_image);
 
   std::vector<cv::Point2f> current_points;
-  cv::goodFeaturesToTrack(current_image, current_points,
-    max_corners_, quality_level_, min_distance_,
-    cv::Mat(), block_size_, false, harris_k_);
+  cv::goodFeaturesToTrack(
+    current_image, current_points, max_corners_, quality_level_, min_distance_,
+    cv::Mat(), block_size_, true, harris_k_);
+
   cv::TermCriteria termcrit(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 30, 0.01);
-  cv::cornerSubPix(current_image, current_points, cv::Size(10, 10), cv::Size(-1, -1), termcrit);
+  // cv::cornerSubPix(current_image, current_points, cv::Size(10, 10), cv::Size(-1, -1), termcrit);
 
   if ( !prev_points.empty() ) {
     std::vector<unsigned char> status;
     std::vector<float> err;
     cv::calcOpticalFlowPyrLK
       (prev_image, current_image, current_points, prev_points,
-        status, err, cv::Size(15, 15), 3, termcrit, 0, 0.001);
+        status, err, cv::Size(15, 15), 2, termcrit, 0, 0.01);
 
     for (size_t i=0; i<current_points.size(); i++) {
       if (!status[i]) {
         continue;
       }
-      int depth = static_cast<int>(depth_image.at<uchar>(current_points[i].y, current_points[i].x));
+      int depth = static_cast<int>(image_.at<uchar>(current_points[i].y, current_points[i].x));
       if ( depth > 0) {
         autoware_perception_msgs::DynamicObjectWithFeature flow;
         flow.object.state.pose_covariance.pose.position.x = current_points[i].x;
@@ -124,34 +109,6 @@ bool FlowCalculator::calcSceneFlow(
   return true;
 }
 
-bool FlowCalculator::getOpticalFlowArray(
-  autoware_perception_msgs::DynamicObjectWithFeatureArray& flow_array_msg)
-{
-  // init layered images
-  std::vector<cv::Mat> current_images(num_split_, cv::Mat::zeros(image_.size(), CV_8UC1));
-  std::vector<cv::Mat> depth_images(num_split_, cv::Mat::zeros(image_.size(), CV_8UC1));
-
-  // create layered images
-  for (int i=0; i<image_.cols; i++) {
-    for (int j=0; j<image_.rows; j++) {
-      int depth = static_cast<int>(image_.at<unsigned char>(j,i));
-      if (depth > 0) {
-        int layer = get_layer(depth);
-        cv::circle(current_images[layer], cv::Point(i,j), 0, 255, -1);
-        cv::circle(depth_images[layer], cv::Point(i,j), 0, depth, -1);
-      }
-    }
-  }
-
-  // calculate optical flow for each layered image
-  prev_points_array_.resize(num_split_);
-  for (int i=0; i<current_images.size(); i++) {
-    calcOpticalFlow(current_images.at(i), prev_images_.at(i),
-      prev_points_array_.at(i), flow_array_msg, depth_images.at(i));
-  }
-  return true;
-}
-
 bool FlowCalculator::getSceneFlowArray(
   const autoware_perception_msgs::DynamicObjectWithFeatureArray& optical_flow_array,
   autoware_perception_msgs::DynamicObjectWithFeatureArray& scene_flow_array) {
@@ -191,7 +148,7 @@ void FlowCalculator::run(
   autoware_perception_msgs::DynamicObjectWithFeatureArray optical_flow_array;
   optical_flow_array.header = scene_flow_array.header;
 
-  getOpticalFlowArray(optical_flow_array);
+  calcOpticalFlow(image_, prev_image_, prev_points_, optical_flow_array);
   getSceneFlowArray(optical_flow_array, scene_flow_array);
 
   prev_stamp_ = current_stamp_;
