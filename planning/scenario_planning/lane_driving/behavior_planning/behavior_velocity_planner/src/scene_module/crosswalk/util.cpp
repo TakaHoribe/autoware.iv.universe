@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 #include <scene_module/crosswalk/util.h>
+#include <utilization/util.h>
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -109,10 +111,14 @@ bool insertTargetVelocityPoint(
     autoware_planning_msgs::PathPointWithLaneId target_point_with_lane_id;
     getBackwordPointFromBasePoint(point2, point1, point2, length_sum - target_length, target_point);
     const int target_velocity_point_idx =
-      std::max(static_cast<int>(insert_target_point_idx - 1), 0);
+      std::max(static_cast<int>(insert_target_point_idx) - 1, 0);
     target_point_with_lane_id = output.points.at(target_velocity_point_idx);
     target_point_with_lane_id.point.pose.position.x = target_point.x();
     target_point_with_lane_id.point.pose.position.y = target_point.y();
+    if ((point1 - point2).norm() > 1.0E-3) {
+      const double yaw = std::atan2(point1.y() - point2.y(), point1.x() - point2.x());
+      target_point_with_lane_id.point.pose.orientation = planning_utils::getQuaternionFromYaw(yaw);
+    }
     target_point_with_lane_id.point.twist.linear.x = velocity;
     if (velocity == 0.0 && target_velocity_point_idx < first_stop_path_point_index) {
       first_stop_path_point_index = target_velocity_point_idx;
