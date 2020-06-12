@@ -50,6 +50,7 @@ struct DebugData
 {
   std::vector<LaneChangeCandidatePath> lane_change_candidate_paths;
   autoware_planning_msgs::PathWithLaneId selected_path;
+  autoware_planning_msgs::PathPointWithLaneId stop_point;
 };
 
 class StateBase

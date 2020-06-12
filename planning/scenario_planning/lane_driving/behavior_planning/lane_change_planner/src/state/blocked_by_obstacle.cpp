@@ -90,6 +90,7 @@ void BlockedByObstacleState::update()
     status_.lane_follow_path = route_handler_ptr_->getReferencePath(
       current_lanes_, current_pose_.pose, backward_path_length, forward_path_length,
       minimum_lane_change_length);
+    status_.lane_follow_path = setStopPointFromObstacle(status_.lane_follow_path);
     status_.lane_follow_lane_ids = util::getIds(current_lanes_);
   }
 
@@ -163,6 +164,48 @@ State BlockedByObstacleState::getNextState() const
     return State::EXECUTING_LANE_CHANGE;
   }
   return State::BLOCKED_BY_OBSTACLE;
+}
+
+autoware_planning_msgs::PathWithLaneId BlockedByObstacleState::setStopPointFromObstacle(
+  const autoware_planning_msgs::PathWithLaneId & path)
+{
+  const auto blocking_objects = getBlockingObstacles();
+
+  const auto path_linestring = util::convertToGeometryPointArray(path);
+
+  util::FrenetCoordinate3d vehicle_frenet;
+  if (!util::convertToFrenetCoordinate3d(
+        path_linestring, current_pose_.pose.position, &vehicle_frenet)) {
+    return path;
+  }
+
+  // find the closest static obstacle in front of ego vehicle
+  autoware_perception_msgs::DynamicObject closest_object;
+  bool found_closest_object = false;
+  double closest_distance = std::numeric_limits<double>::max();
+  for (const auto & object : blocking_objects) {
+    util::FrenetCoordinate3d object_frenet;
+    if (!util::convertToFrenetCoordinate3d(
+          path_linestring, object.state.pose_covariance.pose.position, &object_frenet)) {
+      continue;
+    }
+    if (object_frenet.length > vehicle_frenet.length && object_frenet.length < closest_distance) {
+      closest_distance = object_frenet.length;
+      closest_object = object;
+      found_closest_object = true;
+    }
+  }
+
+  if (!found_closest_object) {
+    return path;
+  }
+
+  double stop_insert_length =
+    closest_distance - ros_parameters_.minimum_lane_change_length - ros_parameters_.base_link2front;
+  stop_insert_length = std::max(stop_insert_length, 0.0);
+  autoware_planning_msgs::PathWithLaneId modified_path = path;
+  debug_data_.stop_point = util::insertStopPoint(stop_insert_length, &modified_path);
+  return modified_path;
 }
 
 bool BlockedByObstacleState::isOutOfCurrentLanes() const

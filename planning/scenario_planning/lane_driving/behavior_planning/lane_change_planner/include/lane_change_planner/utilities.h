@@ -113,6 +113,9 @@ lanelet::Polygon3d getVehiclePolygon(
   const geometry_msgs::Pose & vehicle_pose, const double vehicle_width,
   const double base_link2front);
 
+autoware_planning_msgs::PathPointWithLaneId insertStopPoint(
+  double length, autoware_planning_msgs::PathWithLaneId * path);
+
 }  // namespace util
 }  // namespace lane_change_planner
 

@@ -50,6 +50,8 @@ private:
 
   // utility function
   std::vector<autoware_perception_msgs::DynamicObject> getBlockingObstacles() const;
+  autoware_planning_msgs::PathWithLaneId setStopPointFromObstacle(
+    const autoware_planning_msgs::PathWithLaneId & path);
 
 public:
   BlockedByObstacleState(

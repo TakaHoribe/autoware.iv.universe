@@ -27,6 +27,9 @@ visualization_msgs::Marker convertToMarker(
   const autoware_planning_msgs::PathWithLaneId & path, const int id, const std::string & ns,
   const std_msgs::ColorRGBA & color);
 
+visualization_msgs::MarkerArray createVirtualWall(
+  const geometry_msgs::Pose & pose, const int id, const std::string & factor_text);
+
 namespace lane_change_planner
 {
 LaneChanger::LaneChanger() : pnh_("~") { init(); }
@@ -246,22 +249,44 @@ void LaneChanger::publishDebugMarkers()
   }
 
   const auto debug_data = state_machine_ptr_->getDebugData();
-  int i = 0;
-  std_msgs::ColorRGBA color;
-  color.r = 1;
-  color.g = 1;
-  color.b = 1;
-  color.a = 0.6;
-  for (const auto & path : debug_data.lane_change_candidate_paths) {
-    const auto marker = convertToMarker(path.path, i++, "candidate_lane_change_path", color);
+  // candidate paths
+  {
+    int i = 0;
+    std_msgs::ColorRGBA color;
+    color.r = 1;
+    color.g = 1;
+    color.b = 1;
+    color.a = 0.6;
+    for (const auto & path : debug_data.lane_change_candidate_paths) {
+      const auto marker = convertToMarker(path.path, i++, "candidate_lane_change_path", color);
+      debug_markers.markers.push_back(marker);
+    }
+    color.r = 1;
+    color.g = 0;
+    color.b = 0;
+    color.a = 0.9;
+    const auto marker = convertToMarker(debug_data.selected_path, 1, "selected_path", color);
     debug_markers.markers.push_back(marker);
   }
-  color.r = 1;
-  color.g = 0;
-  color.b = 0;
-  color.a = 0.9;
-  const auto marker = convertToMarker(debug_data.selected_path, 1, "selected_path", color);
-  debug_markers.markers.push_back(marker);
+
+  // stop point
+  {
+    if (state_machine_ptr_->getState() == State::BLOCKED_BY_OBSTACLE) {
+      // calculate virtual wall pose
+      geometry_msgs::Pose wall_pose;
+      tf2::Transform tf_map2base_link;
+      tf2::fromMsg(debug_data.stop_point.point.pose, tf_map2base_link);
+      tf2::Transform tf_base_link2front(
+        tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
+        tf2::Vector3(ros_parameters.base_link2front, 0.0, 0.0));
+      tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+      tf2::toMsg(tf_map2front, wall_pose);
+      const auto virtual_wall_markers = createVirtualWall(wall_pose, 1, "blockedByObstacle");
+      debug_markers.markers.insert(
+        debug_markers.markers.end(), virtual_wall_markers.markers.begin(),
+        virtual_wall_markers.markers.end());
+    }
+  }
 
   path_marker_publisher_.publish(debug_markers);
 }
@@ -391,4 +416,54 @@ visualization_msgs::Marker convertToMarker(
   }
 
   return marker;
+}
+
+visualization_msgs::MarkerArray createVirtualWall(
+  const geometry_msgs::Pose & pose, const int id, const std::string & factor_text)
+{
+  visualization_msgs::MarkerArray msg;
+  {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "stop_virtual_wall";
+    marker.id = id;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = pose;
+    marker.pose.position.z += 1.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 5.0;
+    marker.scale.z = 2.0;
+    marker.color.a = 0.5;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    msg.markers.push_back(marker);
+  }
+  // Factor Text
+  {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "factor_text";
+    marker.id = id;
+    marker.lifetime = ros::Duration(0.5);
+    marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose = pose;
+    marker.pose.position.z += 2.0;
+    marker.scale.x = 0.0;
+    marker.scale.y = 0.0;
+    marker.scale.z = 1.0;
+    marker.color.a = 0.999;  // Don't forget to set the alpha!
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 1.0;
+    marker.text = factor_text;
+    msg.markers.push_back(marker);
+  }
+
+  return msg;
 }

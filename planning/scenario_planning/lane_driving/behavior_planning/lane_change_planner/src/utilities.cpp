@@ -798,5 +798,40 @@ lanelet::Polygon3d getVehiclePolygon(
   return llt_poly;
 }
 
+autoware_planning_msgs::PathPointWithLaneId insertStopPoint(
+  double length, autoware_planning_msgs::PathWithLaneId * path)
+{
+  if (path->points.empty()) {
+    return autoware_planning_msgs::PathPointWithLaneId();
+  }
+
+  double accumulated_length = 0;
+  double insert_idx = 0;
+  geometry_msgs::Pose stop_pose;
+  for (int i = 1; i < path->points.size(); i++) {
+    const auto prev_pose = path->points.at(i - 1).point.pose;
+    const auto curr_pose = path->points.at(i).point.pose;
+    const double segment_length = getDistance3d(prev_pose.position, curr_pose.position);
+    accumulated_length += segment_length;
+    if (accumulated_length > length) {
+      insert_idx = i;
+      const double ratio = 1 - (accumulated_length - length) / segment_length;
+      stop_pose = lerpByPose(prev_pose, curr_pose, ratio);
+      break;
+    }
+  }
+
+  autoware_planning_msgs::PathPointWithLaneId stop_point;
+  stop_point.lane_ids = path->points.at(insert_idx).lane_ids;
+  stop_point.point.pose = stop_pose;
+  stop_point.point.type = path->points.at(insert_idx).point.type;
+  path->points.insert(path->points.begin() + insert_idx, stop_point);
+  for (int i = insert_idx; i < path->points.size(); i++) {
+    geometry_msgs::Twist zero_velocity;
+    path->points.at(insert_idx).point.twist = zero_velocity;
+  }
+  return stop_point;
+}
+
 }  // namespace util
 }  // namespace lane_change_planner

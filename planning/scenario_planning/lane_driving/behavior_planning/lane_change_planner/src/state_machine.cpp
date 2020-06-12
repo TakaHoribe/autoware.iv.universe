@@ -88,5 +88,6 @@ autoware_planning_msgs::PathWithLaneId StateMachine::getPath() const
 
 Status StateMachine::getStatus() const { return state_obj_ptr_->getStatus(); }
 DebugData StateMachine::getDebugData() const { return state_obj_ptr_->getDebugData(); }
+State StateMachine::getState() const { return state_obj_ptr_->getCurrentState(); }
 
 }  // namespace lane_change_planner
