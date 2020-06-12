@@ -41,6 +41,7 @@
     <remap from="~output/current_pose" to="current_pose" />
     <remap from="~output/current_twist" to="/vehicle/status/twist" />
     <remap from="~output/status" to="/vehicle/status" />
+    <remap from="~output/control_mode" to="/vehicle/status/control_mode" />
     <remap from="~input/vehicle_cmd" to="/control/vehicle_cmd" />
     <remap from="~input/turn_signal_cmd" to="/vehicle/turn_signal_cmd" />
     <remap from="~input/initial_twist" to="/initialtwist" />

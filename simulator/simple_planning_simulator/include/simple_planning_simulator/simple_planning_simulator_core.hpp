@@ -75,6 +75,7 @@ private:
   ros::Publisher pub_velocity_;
   ros::Publisher pub_turn_signal_;
   ros::Publisher pub_shift_;
+  ros::Publisher pub_control_mode_;
 
   ros::Subscriber sub_vehicle_cmd_;      //!< @brief topic subscriber for vehicle_cmd
   ros::Subscriber sub_turn_signal_cmd_;  //!< @brief topic subscriber for turn_signal_cmd
@@ -102,6 +103,7 @@ private:
     current_trajectory_ptr_;  //!< @brief latest received trajectory
   double closest_pos_z_;      //!< @brief z position on closest trajectory
   autoware_vehicle_msgs::TurnSignalConstPtr current_turn_signal_cmd_ptr_;
+  autoware_vehicle_msgs::ControlMode control_mode_;
 
   /* frame_id */
   std::string

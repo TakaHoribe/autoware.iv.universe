@@ -33,6 +33,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   /* set pub sub topic name */
   pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("output/current_pose", 1);
   pub_twist_ = pnh_.advertise<geometry_msgs::TwistStamped>("output/current_twist", 1);
+  pub_control_mode_ = pnh_.advertise<autoware_vehicle_msgs::ControlMode>("output/control_mode", 1);
   pub_steer_ = nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
   pub_velocity_ = nh_.advertise<std_msgs::Float32>("/vehicle/status/velocity", 1);
   pub_turn_signal_ =
@@ -207,6 +208,11 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   if (simulator_engage_) {
     /* update vehicle dynamics when simulator_engage_ is true */
     vehicle_model_ptr_->update(dt);
+    /* set control mode */
+    control_mode_.data = autoware_vehicle_msgs::ControlMode::AUTO;
+  } else {
+    /* set control mode */
+    control_mode_.data = autoware_vehicle_msgs::ControlMode::MANUAL;
   }
 
   /* save current vehicle pose & twist */
@@ -280,6 +286,9 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   shift_msg.shift.data = current_twist_.linear.x >= 0.0 ? autoware_vehicle_msgs::Shift::DRIVE
                                                         : autoware_vehicle_msgs::Shift::REVERSE;
   pub_shift_.publish(shift_msg);
+
+  /* publish control mode */
+  pub_control_mode_.publish(control_mode_);
 }
 
 void Simulator::callbackVehicleCmd(const autoware_vehicle_msgs::VehicleCommandConstPtr & msg)
