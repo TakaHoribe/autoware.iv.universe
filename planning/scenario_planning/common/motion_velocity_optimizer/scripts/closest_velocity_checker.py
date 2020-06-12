@@ -27,7 +27,9 @@ LAT_ACC = 4
 VELOCITY_OPTIMIZE = 5
 CONTROL_CMD = 6
 VEHICLE_CMD = 7
-
+CONTROL_CMD_ACC = 8
+VEHICLE_CMD_ACC = 9
+DATA_NUM = 10
 
 
 class VelocityChecker:
@@ -38,7 +40,7 @@ class VelocityChecker:
         self.localization_twist = Twist()
         self.vehicle_twist = Twist()
         self.self_pose = Pose()
-        self.v_arr = [0] * 8
+        self.data_arr = [0] * DATA_NUM
         self.count = 0
 
         self.tfl = tf.TransformListener()  # for get self-position
@@ -98,24 +100,33 @@ class VelocityChecker:
 
 
     def printInfo(self):
-        v_arr_kmph = copy.copy(self.v_arr)
-        for v in v_arr_kmph:
-            v *= 3.6
         self.count = self.count % 30
         if self.count == 0:
             rospy.loginfo("")
             rospy.loginfo(
-                "| Map Limit | Behavior | Obs Avoid | Obs Stop | External Lim | LatAcc Filtered | Optimized | Control Cmd | Vehicle Cmd | Engage | Localization Vel | Vehicle Vel | [km/h]")
-        rospy.loginfo("| {0: 9.2f} | {1: 8.2f} | {2: 9.2f} | {3: 8.2f} | {4: 12.2f} | {5: 15.2f} | {6: 9.2f} | {7: 11.2f} | {8: 11.2f} | {9: 6d} | {10: 16.2f} | {11: 11.2f} |".format(
-            v_arr_kmph[0], v_arr_kmph[1], v_arr_kmph[2], v_arr_kmph[3], self.external_vlim *
-            3.6, v_arr_kmph[4], v_arr_kmph[5], v_arr_kmph[6], v_arr_kmph[7], self.autoware_engage,
-            self.localization_twist.linear.x * 3.6, self.vehicle_twist.linear.x * 3.6))
+                "| Map Limit | Behavior | Obs Avoid | Obs Stop | External Lim | LatAcc Filtered | Optimized | Control VelCmd | Control AccCmd | Vehicle VelCmd | Vehicle AccCmd | Engage | Localization Vel | Vehicle Vel | [km/h]")
+        vel_map_lim = self.data_arr[LANE_CHANGE] * 3.6
+        vel_behavior = self.data_arr[BEHAVIOR_VELOCITY] * 3.6
+        vel_obs_avoid = self.data_arr[OBSTACLE_AVOID] * 3.6
+        vel_obs_stop = self.data_arr[OBSTACLE_STOP] * 3.6
+        vel_external_lim = self.external_vlim * 3.6
+        vel_latacc_filtered = self.data_arr[LAT_ACC] * 3.6
+        vel_optimized = self.data_arr[VELOCITY_OPTIMIZE] * 3.6
+        vel_ctrl_cmd = self.data_arr[CONTROL_CMD_ACC] * 3.6
+        acc_ctrl_cmd = self.data_arr[CONTROL_CMD_ACC]
+        vel_vehicle_cmd = self.data_arr[VEHICLE_CMD] * 3.6
+        acc_vehicle_cmd = self.data_arr[VEHICLE_CMD_ACC]
+        vel_localization = self.localization_twist.linear.x * 3.6
+        vel_vehicle = self.vehicle_twist.linear.x * 3.6
+        rospy.loginfo("| {0: 9.2f} | {1: 8.2f} | {2: 9.2f} | {3: 8.2f} | {4: 12.2f} | {5: 15.2f} | {6: 9.2f} | {7: 14.2f} | {8: 14.2f} | {9: 14.2f} | {10: 14.2f} | {11: 6d} | {12: 16.2f} | {13: 11.2f} |".format(
+            vel_map_lim, vel_behavior, vel_obs_avoid, vel_obs_stop, vel_external_lim, vel_latacc_filtered, vel_optimized,
+            vel_ctrl_cmd, acc_ctrl_cmd, vel_vehicle_cmd, acc_vehicle_cmd,  (bool)(self.autoware_engage), vel_localization, vel_vehicle))
         self.count += 1
 
     def timerCallback(self, t):
         # rospy.loginfo("timer called")
         self.updatePose(REF_LINK, SELF_LINK)
-        self.pub_varr.publish(Float32MultiArray(data=self.v_arr))
+        self.pub_varr.publish(Float32MultiArray(data=self.data_arr))
         self.printInfo()
 
     def CallBackAwEngage(self, msg):
@@ -133,47 +144,49 @@ class VelocityChecker:
     def CallBackBehaviorPathWLid(self, msg):
         # rospy.loginfo("LANE_CHANGE called")
         closest = self.calcClosestPathWLid(msg)
-        self.v_arr[LANE_CHANGE] = msg.points[closest].point.twist.linear.x
+        self.data_arr[LANE_CHANGE] = msg.points[closest].point.twist.linear.x
         return
 
     def CallBackBehaviorPath(self, msg):
         # rospy.loginfo("BEHAVIOR_VELOCITY called")
         closest = self.calcClosestPath(msg)
-        self.v_arr[BEHAVIOR_VELOCITY] = msg.points[closest].twist.linear.x
+        self.data_arr[BEHAVIOR_VELOCITY] = msg.points[closest].twist.linear.x
         return
 
     def CallBackAvoidTrajectory(self, msg):
         # rospy.loginfo("OBSTACLE_AVOID called")
         closest = self.calcClosestTrajectory(msg)
-        self.v_arr[OBSTACLE_AVOID] = msg.points[closest].twist.linear.x
+        self.data_arr[OBSTACLE_AVOID] = msg.points[closest].twist.linear.x
         return
 
     def CallBackLaneDriveTrajectory(self, msg):
         # rospy.loginfo("OBSTACLE_STOP called")
         closest = self.calcClosestTrajectory(msg)
-        self.v_arr[OBSTACLE_STOP] = msg.points[closest].twist.linear.x
+        self.data_arr[OBSTACLE_STOP] = msg.points[closest].twist.linear.x
         return
 
     def CallBackLataccTrajectory(self, msg):
         # rospy.loginfo("LAT_ACC called")
         closest = self.calcClosestTrajectory(msg)
-        self.v_arr[LAT_ACC] = msg.points[closest].twist.linear.x
+        self.data_arr[LAT_ACC] = msg.points[closest].twist.linear.x
         return
 
     def CallBackScenarioTrajectory(self, msg):
         # rospy.loginfo("VELOCITY_OPTIMIZE called")
         closest = self.calcClosestTrajectory(msg)
-        self.v_arr[VELOCITY_OPTIMIZE] = msg.points[closest].twist.linear.x
+        self.data_arr[VELOCITY_OPTIMIZE] = msg.points[closest].twist.linear.x
         return
 
     def CallBackControlCmd(self, msg):
         # rospy.loginfo("CONTROL_CMD called")
-        self.v_arr[CONTROL_CMD] = msg.control.velocity
+        self.data_arr[CONTROL_CMD] = msg.control.velocity
+        self.data_arr[CONTROL_CMD_ACC] = msg.control.acceleration
         return
 
     def CallBackVehicleCmd(self, msg):
         # rospy.loginfo("VEHICLE_CMD called")
-        self.v_arr[VEHICLE_CMD] = msg.control.velocity
+        self.data_arr[VEHICLE_CMD] = msg.control.velocity
+        self.data_arr[VEHICLE_CMD_ACC] = msg.control.acceleration
         return
 
 
