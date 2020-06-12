@@ -28,6 +28,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <ros/ros.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/String.h>
@@ -79,7 +80,9 @@ private:
   ros::Subscriber sub_turn_signal_cmd_;  //!< @brief topic subscriber for turn_signal_cmd
   ros::Subscriber sub_trajectory_;   //!< @brief topic subscriber for trajectory used for z ppsition
   ros::Subscriber sub_initialpose_;  //!< @brief topic subscriber for initialpose topic
-  ros::Timer timer_simulation_;      //!< @brief timer for simulation
+  ros::Subscriber sub_initialtwist_;  //!< @brief topic subscriber for initialtwist topic
+  ros::Subscriber sub_engage_;        //!< @brief topic subscriber for engage topic
+  ros::Timer timer_simulation_;       //!< @brief timer for simulation
 
   /* tf */
   tf2_ros::Buffer tf_buffer_;
@@ -87,7 +90,11 @@ private:
   tf2_ros::TransformBroadcaster tf_broadcaster_;  //!< @brief tf broadcaster
 
   /* received & published topics */
-  geometry_msgs::Pose current_pose_;    //!< @brief current vehicle position ang angle
+  geometry_msgs::PoseStampedConstPtr initial_pose_ptr_;  //!< @brief initial vehicle pose
+  geometry_msgs::PoseWithCovarianceStampedConstPtr
+    initial_pose_with_cov_ptr_;                            //!< @brief initial vehicle pose with cov
+  geometry_msgs::TwistStampedConstPtr initial_twist_ptr_;  //!< @brief initial vehicle velocity
+  geometry_msgs::Pose current_pose_;    //!< @brief current vehicle position and angle
   geometry_msgs::Twist current_twist_;  //!< @brief current vehicle velocity
   autoware_vehicle_msgs::VehicleCommandConstPtr
     current_vehicle_cmd_ptr_;  //!< @brief latest received vehicle_cmd
@@ -109,6 +116,7 @@ private:
   /* flags */
   bool is_initialized_;         //!< @brief flag to check the initial position is set
   bool add_measurement_noise_;  //!< @brief flag to add measurement noise
+  bool simulator_engage_;       //!< @brief flag to engage simulator
 
   /* saved values */
   std::shared_ptr<ros::Time> prev_update_time_ptr_;  //!< @brief previously updated time
@@ -164,6 +172,16 @@ private:
    * @brief set initial pose with received message
    */
   void callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr & msg);
+
+  /**
+   * @brief set initial twist with received message
+   */
+  void callbackInitialTwistStamped(const geometry_msgs::TwistStampedConstPtr & msg);
+
+  /**
+   * @brief set simulator engage with received message
+   */
+  void callbackEngage(const std_msgs::BoolConstPtr & msg);
 
   /**
    * @brief get transform from two frame_ids

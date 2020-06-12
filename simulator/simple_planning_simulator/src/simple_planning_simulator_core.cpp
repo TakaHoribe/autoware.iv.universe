@@ -39,7 +39,11 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
     nh_.advertise<autoware_vehicle_msgs::TurnSignal>("/vehicle/status/turn_signal", 1);
   pub_shift_ = nh_.advertise<autoware_vehicle_msgs::ShiftStamped>("/vehicle/status/shift", 1);
   sub_vehicle_cmd_ = pnh_.subscribe("input/vehicle_cmd", 1, &Simulator::callbackVehicleCmd, this);
-  sub_turn_signal_cmd_ = pnh_.subscribe("input/turn_signal_cmd", 1, &Simulator::callbackTurnSignalCmd, this);
+  sub_turn_signal_cmd_ =
+    pnh_.subscribe("input/turn_signal_cmd", 1, &Simulator::callbackTurnSignalCmd, this);
+  sub_initialtwist_ =
+    pnh_.subscribe("input/initial_twist", 1, &Simulator::callbackInitialTwistStamped, this);
+  sub_engage_ = pnh_.subscribe("input/engage", 1, &Simulator::callbackEngage, this);
   timer_simulation_ =
     nh_.createTimer(ros::Duration(1.0 / loop_rate_), &Simulator::timerCallbackSimulation, this);
 
@@ -69,6 +73,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
   pnh_.param("angvel_time_constant", angvel_time_constant, double(0.5));
   pnh_.param("acc_time_delay", acc_time_delay, double(0.3));
   pnh_.param("acc_time_constant", acc_time_constant, double(0.3));
+  pnh_.param("initial_engage_state", simulator_engage_, bool(true));
   const double dt = 1.0 / loop_rate_;
 
   /* set vehicle model type */
@@ -146,13 +151,42 @@ void Simulator::callbackInitialPoseWithCov(
   const geometry_msgs::PoseWithCovarianceStampedConstPtr & msg)
 {
   geometry_msgs::Twist initial_twist;  // initialized with zero for all components
-  setInitialStateWithPoseTransform(*msg, initial_twist);
+  if (initial_twist_ptr_) {
+    initial_twist = initial_twist_ptr_->twist;
+  }
+  //save initial pose
+  initial_pose_with_cov_ptr_ = msg;
+  setInitialStateWithPoseTransform(*initial_pose_with_cov_ptr_, initial_twist);
 }
 
 void Simulator::callbackInitialPoseStamped(const geometry_msgs::PoseStampedConstPtr & msg)
 {
   geometry_msgs::Twist initial_twist;  // initialized with zero for all components
-  setInitialStateWithPoseTransform(*msg, initial_twist);
+  if (initial_twist_ptr_) {
+    initial_twist = initial_twist_ptr_->twist;
+  }
+  //save initial pose
+  initial_pose_ptr_ = msg;
+  setInitialStateWithPoseTransform(*initial_pose_ptr_, initial_twist);
+}
+
+void Simulator::callbackInitialTwistStamped(const geometry_msgs::TwistStampedConstPtr & msg)
+{
+  //save initial pose
+  initial_twist_ptr_ = msg;
+  if (initial_pose_ptr_) {
+    setInitialStateWithPoseTransform(*initial_pose_ptr_, initial_twist_ptr_->twist);
+    //input twist to simulator's internal parameter
+    current_pose_ = initial_pose_ptr_->pose;
+    current_twist_ = initial_twist_ptr_->twist;
+  } else if (initial_pose_with_cov_ptr_) {
+    setInitialStateWithPoseTransform(*initial_pose_with_cov_ptr_, initial_twist_ptr_->twist);
+  }
+}
+
+void Simulator::callbackEngage(const std_msgs::BoolConstPtr & msg)
+{
+  simulator_engage_ = msg->data;
 }
 
 void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
@@ -170,8 +204,10 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   const double dt = (ros::Time::now() - *prev_update_time_ptr_).toSec();
   *prev_update_time_ptr_ = ros::Time::now();
 
-  /* update vehicle dynamics */
-  vehicle_model_ptr_->update(dt);
+  if (simulator_engage_) {
+    /* update vehicle dynamics when simulator_engage_ is true */
+    vehicle_model_ptr_->update(dt);
+  }
 
   /* save current vehicle pose & twist */
   current_pose_.position.x = vehicle_model_ptr_->getX();
@@ -186,7 +222,7 @@ void Simulator::timerCallbackSimulation(const ros::TimerEvent & e)
   current_twist_.linear.x = vehicle_model_ptr_->getVx();
   current_twist_.angular.z = vehicle_model_ptr_->getWz();
 
-  if (add_measurement_noise_) {
+  if (simulator_engage_ && add_measurement_noise_) {
     current_pose_.position.x += (*pos_norm_dist_ptr_)(*rand_engine_ptr_);
     current_pose_.position.y += (*pos_norm_dist_ptr_)(*rand_engine_ptr_);
     current_pose_.position.z += (*pos_norm_dist_ptr_)(*rand_engine_ptr_);

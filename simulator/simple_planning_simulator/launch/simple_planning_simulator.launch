@@ -33,6 +33,7 @@
   <arg name="angvel_noise_stddev" default="0.00"/>
   <arg name="steer_noise_stddev" default="0.0001"/>
 
+  <arg name="initial_engage_state" default="true"/>
 
   <!-- simple_planning_simulator node -->
   <node pkg="simple_planning_simulator" type="simple_planning_simulator" name="simple_planning_simulator" output="screen">
@@ -42,6 +43,8 @@
     <remap from="~output/status" to="/vehicle/status" />
     <remap from="~input/vehicle_cmd" to="/control/vehicle_cmd" />
     <remap from="~input/turn_signal_cmd" to="/vehicle/turn_signal_cmd" />
+    <remap from="~input/initial_twist" to="/initialtwist" />
+    <remap from="~input/engage" to="/vehicle/engage" />
 
     <param name="loop_rate" value="$(arg loop_rate)"/>
     <param name="simulation_frame_id" value="$(arg simulation_frame_id)"/>
@@ -73,6 +76,8 @@
     <param name="rpy_noise_stddev" value="$(arg rpy_noise_stddev)"/>
     <param name="angvel_noise_stddev" value="$(arg angvel_noise_stddev)"/>
     <param name="steer_noise_stddev" value="$(arg steer_noise_stddev)"/>
+
+    <param name="initial_engage_state" value="$(arg initial_engage_state)"/>
   </node>
 
   <node pkg="topic_tools" type="relay" name="relay" args="/vehicle/status/twist /localization/twist" />
