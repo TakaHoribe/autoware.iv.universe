@@ -19,13 +19,13 @@ analyzers:
             path: connection
             contains: ": velodyne_connection"
             timeout: 1.0
-            num_items: 1
+            num_items: 0
           temperature:
             type: diagnostic_aggregator/GenericAnalyzer
             path: temperature
             contains: ": velodyne_temperature"
             timeout: 1.0
-            num_items: 1
+            num_items: 0
 
       camera:
         type: diagnostic_aggregator/AnalyzerGroup
@@ -37,4 +37,4 @@ analyzers:
             path: connection
             contains: ": camera_connection"
             timeout: 1.0
-            num_items: 1
+            num_items: 0

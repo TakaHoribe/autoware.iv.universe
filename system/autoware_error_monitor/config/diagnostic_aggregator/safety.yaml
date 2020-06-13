@@ -8,11 +8,11 @@ analyzers:
         path: bumper_pushed
         contains: ": bumper_pushed"
         timeout: 1.0
-        num_items: 1
+        num_items: 0
 
       off_course:
         type: diagnostic_aggregator/GenericAnalyzer
         path: off_course
         contains: ": off_course"
         timeout: 1.0
-        num_items: 1
+        num_items: 0
