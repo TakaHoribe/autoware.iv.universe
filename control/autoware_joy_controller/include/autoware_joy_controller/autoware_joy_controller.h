@@ -63,9 +63,9 @@ public:
   bool shift_drive() const { return CursorLeftRight() == 1; }
   bool shift_reverse() const { return CursorLeftRight() == -1; }
 
-  bool turn_signal_left() const { return !reverse() && L1(); }
-  bool turn_signal_right() const { return !reverse() && R1(); }
-  bool clear_turn_signal() const { return reverse() && (L1() || R1()); }
+  bool turn_signal_left() const { return L1(); }
+  bool turn_signal_right() const { return R1(); }
+  bool clear_turn_signal() const { return Share(); }
 
   bool gate_mode() const { return Options(); }
 
