@@ -82,6 +82,8 @@ private:
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr & no_ground_pointcloud_ptr,
     autoware_planning_msgs::PathWithLaneId & output);
 
+  bool isTargetType(const autoware_perception_msgs::DynamicObject & obj);
+
   enum class State { APPROARCH, INSIDE, GO_OUT };
 
   lanelet::ConstLanelet crosswalk_;

@@ -139,9 +139,7 @@ bool CrosswalkModule::checkStopArea(
 
   // check pedestrian
   for (const auto & object : objects_ptr->objects) {
-    if (
-      object.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
-      object.semantic.type == autoware_perception_msgs::Semantic::BICYCLE) {
+    if (isTargetType(object)) {
       Point point(
         object.state.pose_covariance.pose.position.x, object.state.pose_covariance.pose.position.y);
       if (bg::within(point, stop_polygon)) {
@@ -183,8 +181,7 @@ bool CrosswalkModule::checkSlowArea(
   output = input;
   bool pedestrian_found = false;
   for (size_t i = 0; i < objects_ptr->objects.size(); ++i) {
-    if (
-      objects_ptr->objects.at(i).semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN) {
+    if (isTargetType(objects_ptr->objects.at(i))) {
       Point point(
         objects_ptr->objects.at(i).state.pose_covariance.pose.position.x,
         objects_ptr->objects.at(i).state.pose_covariance.pose.position.y);
@@ -212,4 +209,14 @@ bool CrosswalkModule::checkSlowArea(
         output, debug_data_, first_stop_path_point_index_))
     return false;
   return true;
+}
+
+bool CrosswalkModule::isTargetType(const autoware_perception_msgs::DynamicObject & obj)
+{
+  if (
+    obj.semantic.type == autoware_perception_msgs::Semantic::PEDESTRIAN ||
+    obj.semantic.type == autoware_perception_msgs::Semantic::BICYCLE) {
+    return true;
+  }
+  return false;
 }
