@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #include <deque>
@@ -27,8 +28,8 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 
-#include "autoware_state.h"
-#include "config.h"
+#include <autoware_state_monitor/autoware_state.h>
+#include <autoware_state_monitor/config.h>
 
 struct StateInput
 {

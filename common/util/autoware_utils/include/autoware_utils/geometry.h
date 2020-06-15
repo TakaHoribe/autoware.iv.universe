@@ -16,13 +16,11 @@
 
 #pragma once
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Quaternion.h>
-
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/Trajectory.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace autoware_utils
 {
@@ -75,5 +73,4 @@ double calcDistance3d(const Point1 & point1, const Point2 & point2)
   // To be replaced by std::hypot(dx, dy, dz) in C++17
   return std::hypot(std::hypot(p1.x - p2.x, p1.y - p2.y), p1.z - p2.z);
 }
-
 }  // namespace autoware_utils

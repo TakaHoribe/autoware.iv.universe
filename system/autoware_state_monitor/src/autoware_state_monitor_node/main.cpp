@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <ros/ros.h>
 
 #include <autoware_state_monitor/autoware_state_monitor_node.h>

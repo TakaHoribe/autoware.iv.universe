@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <autoware_state_monitor/state_machine.h>
 
 #include <autoware_state_monitor/rosconsole_wrapper.h>

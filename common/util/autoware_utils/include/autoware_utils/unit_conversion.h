@@ -25,5 +25,4 @@ constexpr double rad2deg(const double rad) { return rad * 180.0 / pi; }
 
 constexpr double kmph2mps(const double kmph) { return kmph * 1000.0 / 3600.0; }
 constexpr double mps2kmph(const double mps) { return mps * 3600.0 / 1000.0; }
-
 }  // namespace autoware_utils

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #include <deque>
@@ -21,14 +22,11 @@
 #include <string>
 #include <vector>
 
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <ros/ros.h>
-
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
-
 #include <topic_tools/shape_shifter.h>
-
-#include <diagnostic_updater/diagnostic_updater.h>
 
 #include <autoware_planning_msgs/Route.h>
 #include <autoware_planning_msgs/Trajectory.h>
@@ -38,9 +36,9 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Bool.h>
 
-#include "autoware_state.h"
-#include "config.h"
-#include "state_machine.h"
+#include <autoware_state_monitor/autoware_state.h>
+#include <autoware_state_monitor/config.h>
+#include <autoware_state_monitor/state_machine.h>
 
 class AutowareStateMonitorNode
 {

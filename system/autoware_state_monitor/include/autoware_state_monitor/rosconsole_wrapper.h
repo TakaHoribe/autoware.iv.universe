@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #include <string>
@@ -20,9 +21,9 @@
 #include <utility>
 #include <vector>
 
-#include <ros/ros.h>
-
 #include <fmt/format.h>
+#include <ros/console.h>
+#include <ros/time.h>
 
 inline void logThrottleNamed(
   const ros::console::levels::Level & log_level, const double duration,
