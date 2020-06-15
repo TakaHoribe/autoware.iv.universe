@@ -178,12 +178,12 @@ private:
    * @param detection_areas used to generate stop line
    * @param path            ego-car lane
    * @param stop_line_idx   generated stop line index
-   * @param judge_line_idx  generated stpo line index
+   * @param pass_judge_line_idx  generated stpo line index
    * @return false when generation failed
    */
   bool generateStopLine(
     const std::vector<lanelet::CompoundPolygon3d> detection_areas,
-    autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const;
+    autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * pass_judge_line_idx) const;
 
   /**
    * @brief Calculate first path index that is in the polygon.

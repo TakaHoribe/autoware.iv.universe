@@ -48,15 +48,13 @@ public:
       std::shared_ptr<const lanelet::TrafficLight>, autoware_perception_msgs::TrafficLightState>>
       tl_state;  // TODO: replace tuple with struct
     std::vector<geometry_msgs::Pose> stop_poses;
-    std::vector<geometry_msgs::Pose> judge_poses;
+    std::vector<geometry_msgs::Pose> dead_line_poses;
   };
 
   struct PlannerParam
   {
     double stop_margin;
     double tl_state_timeout;
-    double max_stop_acceleration_threshold;
-    double delay_response_time;
   };
 
 public:
@@ -85,10 +83,10 @@ private:
     const lanelet::ConstLineStringsOrPolygons3d & traffic_lights,
     autoware_perception_msgs::TrafficLightState & highest_confidence_tl_state);
 
-  bool isOverJudgePoint(
+  bool isOverDeadLine(
     const geometry_msgs::Pose & self_pose,
-    const autoware_planning_msgs::PathWithLaneId & input_path, const size_t & judge_point_idx,
-    const Eigen::Vector2d & judge_point, const double judge_range);
+    const autoware_planning_msgs::PathWithLaneId & input_path, const size_t & dead_line_point_idx,
+    const Eigen::Vector2d & dead_line_point, const double dead_line_range);
 
   bool isStopRequired(const lanelet::ConstLineStringsOrPolygons3d & traffic_lights);
 

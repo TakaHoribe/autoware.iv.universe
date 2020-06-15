@@ -58,9 +58,6 @@ TrafficLightModuleManager::TrafficLightModuleManager()
   auto & p = planner_param_;
   pnh.param(ns + "/stop_margin", p.stop_margin, 0.0);
   pnh.param(ns + "/tl_state_timeout", p.tl_state_timeout, 1.0);
-  pnh.param(ns + "/max_stop_acceleration_threshold", p.max_stop_acceleration_threshold, -5.0);
-  pnh.param(ns + "/delay_response_time", p.delay_response_time, 0.3);
-
 }
 
 void TrafficLightModuleManager::launchNewModules(

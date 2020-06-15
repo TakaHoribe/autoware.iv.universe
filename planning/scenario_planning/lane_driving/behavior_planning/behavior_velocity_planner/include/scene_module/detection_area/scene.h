@@ -48,9 +48,9 @@ public:
     std::vector<geometry_msgs::Pose> stop_poses;
   };
 
-  struct PlannerParam {
+  struct PlannerParam
+  {
     double stop_margin;
-    double max_stop_acceleration_threshold;
   };
 
 public:

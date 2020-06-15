@@ -196,19 +196,19 @@ bool generateStopLine(
   const int lane_id, const std::vector<lanelet::CompoundPolygon3d> detection_areas,
   const std::shared_ptr<const PlannerData> & planner_data,
   const IntersectionModule::PlannerParam & planner_param,
-  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx)
+  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * pass_judge_line_idx)
 {
   /* set judge line dist */
   const double current_vel = planner_data->current_velocity->twist.linear.x;
   const double max_acc = planner_data->max_stop_acceleration_threshold_;
-  const double judge_line_dist = planning_utils::calcJudgeLineDist(current_vel, max_acc, 0.0);
+  const double pass_judge_line_dist = planning_utils::calcJudgeLineDist(current_vel);
 
   /* set parameters */
   constexpr double interval = 0.2;
 
   const int margin_idx_dist = std::ceil(planner_param.stop_line_margin / interval);
   const int base2front_idx_dist = std::ceil(planner_data->base_link2front / interval);
-  const int judge_idx_dist = std::ceil(judge_line_dist / interval);
+  const int pass_judge_idx_dist = std::ceil(pass_judge_line_dist / interval);
 
   /* spline interpolation */
   autoware_planning_msgs::PathWithLaneId path_ip;
@@ -245,19 +245,20 @@ bool generateStopLine(
   }
 
   /* insert judge point */
-  const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
-  if (has_prior_stopline || stop_idx_ip == judge_idx_ip) {
-    *judge_line_idx = *stop_line_idx;
+  const int pass_judge_idx_ip = std::max(stop_idx_ip - pass_judge_idx_dist, 0);
+  if (has_prior_stopline || stop_idx_ip == pass_judge_idx_ip) {
+    *pass_judge_line_idx = *stop_line_idx;
   } else {
-    const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
-    *judge_line_idx = util::insertPoint(inserted_judge_point, path);
+    const auto inserted_pass_judge_point = path_ip.points.at(pass_judge_idx_ip).point.pose;
+    *pass_judge_line_idx = util::insertPoint(inserted_pass_judge_point, path);
     ++(*stop_line_idx);  // stop index is incremented by judge line insertion
   }
 
   ROS_DEBUG(
-    "[MergeFromPrivateRoad] generateStopLine() : stop_idx = %d, judge_idx = %d, stop_idx_ip = %d, "
-    "judge_idx_ip = %d, has_prior_stopline = %d",
-    *stop_line_idx, *judge_line_idx, stop_idx_ip, judge_idx_ip, has_prior_stopline);
+    "[MergeFromPrivateRoad] generateStopLine() : stop_idx = %d, pass_judge_idx = %d, stop_idx_ip = "
+    "%d, "
+    "pass_judge_idx_ip = %d, has_prior_stopline = %d",
+    *stop_line_idx, *pass_judge_line_idx, stop_idx_ip, pass_judge_idx_ip, has_prior_stopline);
 
   return true;
 }

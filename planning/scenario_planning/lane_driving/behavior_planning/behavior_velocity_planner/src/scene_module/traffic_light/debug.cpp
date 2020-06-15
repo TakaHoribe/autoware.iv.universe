@@ -80,18 +80,18 @@ visualization_msgs::MarkerArray createMarkerArray(const DebugData & debug_data)
     marker.text = "traffic light";
     msg.markers.push_back(marker);
   }
-  // Judge VirtualWall
-  for (size_t j = 0; j < debug_data.judge_poses.size(); ++j) {
+  // Dead VirtualWall
+  for (size_t j = 0; j < debug_data.dead_line_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "judge virtual_wall";
+    marker.ns = "dead line virtual_wall";
     marker.id = j;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(debug_data.judge_poses.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.dead_line_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 1.0;
@@ -105,17 +105,17 @@ visualization_msgs::MarkerArray createMarkerArray(const DebugData & debug_data)
     msg.markers.push_back(marker);
   }
   // Facto Text
-  for (size_t j = 0; j < debug_data.judge_poses.size(); ++j) {
+  for (size_t j = 0; j < debug_data.dead_line_poses.size(); ++j) {
     visualization_msgs::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = current_time;
-    marker.ns = "judge factor_text";
+    marker.ns = "dead line factor_text";
     marker.id = j;
     marker.lifetime = ros::Duration(0.5);
     marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::Marker::ADD;
     tf2::Transform tf_map2base_link;
-    tf2::fromMsg(debug_data.judge_poses.at(j), tf_map2base_link);
+    tf2::fromMsg(debug_data.dead_line_poses.at(j), tf_map2base_link);
     tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
     tf2::toMsg(tf_map2front, marker.pose);
     marker.pose.position.z += 2.0;
@@ -126,7 +126,7 @@ visualization_msgs::MarkerArray createMarkerArray(const DebugData & debug_data)
     marker.color.r = 1.0;
     marker.color.g = 1.0;
     marker.color.b = 1.0;
-    marker.text = "traffic light (judge)";
+    marker.text = "traffic light (dead line)";
     msg.markers.push_back(marker);
   }
 

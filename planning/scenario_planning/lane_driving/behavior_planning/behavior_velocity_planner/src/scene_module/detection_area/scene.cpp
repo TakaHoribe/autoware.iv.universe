@@ -15,6 +15,8 @@
  */
 #include <scene_module/detection_area/scene.h>
 
+#include <utilization/util.h>
+
 namespace
 {
 double calcDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d & p2)
@@ -60,12 +62,12 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
     return true;
   }
 
-  // get vehicle info and compute stop border distance
+  // get vehicle info and compute pass_judge_line_distance
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
 
-  const double stop_border_distance_threshold =
-    (-1.0 * self_twist_ptr->twist.linear.x * self_twist_ptr->twist.linear.x) /
-    (2.0 * planner_param_.max_stop_acceleration_threshold);
+  const double pass_judge_line_distance =
+    planning_utils::calcJudgeLineDist(self_twist_ptr->twist.linear.x);
+
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
   // insert stop point
@@ -81,7 +83,7 @@ bool DetectionAreaModule::modifyPathVelocity(autoware_planning_msgs::PathWithLan
       continue;
     }
 
-    if (calcDistance(self_pose.pose, stop_line_point) < stop_border_distance_threshold) {
+    if (calcDistance(self_pose.pose, stop_line_point) < pass_judge_line_distance) {
       ROS_WARN_THROTTLE(1.0, "[detection_area] vehicle is over stop border");
       state_ = State::PASS;
       return true;

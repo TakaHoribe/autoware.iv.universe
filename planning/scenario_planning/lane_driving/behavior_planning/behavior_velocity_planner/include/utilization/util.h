@@ -90,7 +90,7 @@ geometry_msgs::Pose transformRelCoordinate2D(
 geometry_msgs::Pose transformAbsCoordinate2D(
   const geometry_msgs::Pose & relative, const geometry_msgs::Pose & origin);
 
-double calcJudgeLineDist(double velocity, double max_accel, double margin);
+double calcJudgeLineDist(double velocity);
 
 }  // namespace planning_utils
 

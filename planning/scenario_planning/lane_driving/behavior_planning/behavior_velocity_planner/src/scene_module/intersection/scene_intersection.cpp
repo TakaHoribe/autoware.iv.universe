@@ -69,16 +69,16 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
-  int judge_line_idx = -1;
+  int pass_judge_line_idx = -1;
   if (!util::generateStopLine(
         lane_id_, detection_areas, planner_data_, planner_param_, path, &stop_line_idx,
-        &judge_line_idx)) {
+        &pass_judge_line_idx)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[IntersectionModule::run] setStopLineIdx fail");
     return false;
   }
 
-  if (stop_line_idx <= 0 || judge_line_idx <= 0) {
-    ROS_DEBUG("[Intersection] stop line or judge line is at path[0], ignore planning.");
+  if (stop_line_idx <= 0 || pass_judge_line_idx <= 0) {
+    ROS_DEBUG("[Intersection] stop line or pass judge line is at path[0], ignore planning.");
     return true;
   }
 
@@ -92,16 +92,16 @@ bool IntersectionModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   debug_data_.virtual_wall_pose =
     util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
   debug_data_.stop_point_pose = path->points.at(stop_line_idx).point.pose;
-  debug_data_.judge_point_pose = path->points.at(judge_line_idx).point.pose;
+  debug_data_.judge_point_pose = path->points.at(pass_judge_line_idx).point.pose;
 
   /* if current_state = GO, and current_pose is in front of stop_line, ignore planning. */
-  bool is_over_judge_line = static_cast<bool>(closest_idx > judge_line_idx);
-  if (closest_idx == judge_line_idx) {
-    geometry_msgs::Pose judge_line = path->points.at(judge_line_idx).point.pose;
-    is_over_judge_line = util::isAheadOf(current_pose.pose, judge_line);
+  bool is_over_pass_judge_line = static_cast<bool>(closest_idx > pass_judge_line_idx);
+  if (closest_idx == pass_judge_line_idx) {
+    geometry_msgs::Pose pass_judge_line = path->points.at(pass_judge_line_idx).point.pose;
+    is_over_pass_judge_line = util::isAheadOf(current_pose.pose, pass_judge_line);
   }
-  if (current_state == State::GO && is_over_judge_line) {
-    ROS_DEBUG("[Intersection] over the judge line. no plan needed.");
+  if (current_state == State::GO && is_over_pass_judge_line) {
+    ROS_DEBUG("[Intersection] over the pass judge line. no plan needed.");
     return true;  // no plan needed.
   }
 

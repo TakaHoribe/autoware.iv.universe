@@ -80,7 +80,6 @@ template bool calcClosestIndex<autoware_planning_msgs::Path>(
   const autoware_planning_msgs::Path & path, const geometry_msgs::Pose & pose, int & closest,
   double dist_thr, double angle_thr);
 
-
 template <class T>
 bool calcClosestIndex(
   const T & path, const geometry_msgs::Point & point, int & closest, double dist_thr)
@@ -151,10 +150,12 @@ geometry_msgs::Pose transformAbsCoordinate2D(
   return absolute;
 }
 
-double calcJudgeLineDist(
-  double velocity, double max_accel, double margin)  // TODO: also consider jerk
+double calcJudgeLineDist(double velocity)  // TODO: also consider jerk
 {
-  double judge_line_dist = (velocity * velocity) / (2.0 * (-max_accel)) + margin;
+  constexpr double max_stop_acceleration = -4.0;
+  constexpr double delay_response_time = 0.5;
+  double judge_line_dist =
+    (velocity * velocity) / (2.0 * (-max_stop_acceleration)) + delay_response_time * velocity;
   return judge_line_dist;
 }
 

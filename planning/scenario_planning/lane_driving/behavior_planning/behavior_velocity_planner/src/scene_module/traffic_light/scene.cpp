@@ -20,6 +20,8 @@
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 
+#include <utilization/util.h>
+
 namespace
 {
 std::pair<int, double> findWayPointAndDistance(
@@ -106,12 +108,6 @@ double calcSignedDistance(const geometry_msgs::Pose & p1, const Eigen::Vector2d 
   auto basecoords_p2 = map2p1.inverse() * Eigen::Vector3d(p2.x(), p2.y(), p1.position.z);
   return basecoords_p2.x() >= 0 ? basecoords_p2.norm() : -basecoords_p2.norm();
 }
-
-double getStopBorderDistanceThreshold(double v, double acc, double delay)
-{
-  // acc is negative acceleration, so it has a negative value
-  return (-1.0 * v * v) / (2.0 * acc) + (delay * v);
-}
 }  // namespace
 
 namespace bg = boost::geometry;
@@ -144,9 +140,8 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
 
   // get vehicle info
   geometry_msgs::TwistStamped::ConstPtr self_twist_ptr = planner_data_->current_velocity;
-  const double stop_border_distance_threshold = getStopBorderDistanceThreshold(
-    self_twist_ptr->twist.linear.x, planner_param_.max_stop_acceleration_threshold,
-    planner_param_.delay_response_time);
+  const double pass_judge_line_distance =
+    planning_utils::calcJudgeLineDist(self_twist_ptr->twist.linear.x);
 
   geometry_msgs::PoseStamped self_pose = planner_data_->current_pose;
 
@@ -157,18 +152,19 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
     for (size_t i = 0; i < lanelet_stop_line.size() - 1; i++) {
       const Line stop_line = {{lanelet_stop_line[i].x(), lanelet_stop_line[i].y()},
                               {lanelet_stop_line[i + 1].x(), lanelet_stop_line[i + 1].y()}};
-      // Check Judge Line
+      // Check Dead Line
       {
-        constexpr double judge_range = 5.0;
-        Eigen::Vector2d judge_point;
-        size_t judge_point_idx;
+        constexpr double dead_line_range = 5.0;
+        Eigen::Vector2d dead_line_point;
+        size_t dead_line_point_idx;
         if (!createTargetPoint(
-              input_path, stop_line, -2.0 /*overline margin*/, judge_point_idx, judge_point)) {
+              input_path, stop_line, -2.0 /*overline margin*/, dead_line_point_idx,
+              dead_line_point)) {
           continue;
         }
 
-        if (isOverJudgePoint(
-              self_pose.pose, input_path, judge_point_idx, judge_point, judge_range)) {
+        if (isOverDeadLine(
+              self_pose.pose, input_path, dead_line_point_idx, dead_line_point, dead_line_range)) {
           state_ = State::GO_OUT;
           return true;
         }
@@ -187,7 +183,7 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
         if (
           state_ != State::STOP &&
           calcSignedArcLength(input_path, self_pose.pose, stop_line_point) <
-            stop_border_distance_threshold) {
+            pass_judge_line_distance) {
           ROS_WARN_THROTTLE(1.0, "[traffic_light] vehicle is over stop border");
           return true;
         }
@@ -212,43 +208,44 @@ bool TrafficLightModule::modifyPathVelocity(autoware_planning_msgs::PathWithLane
   return false;
 }
 
-bool TrafficLightModule::isOverJudgePoint(
+bool TrafficLightModule::isOverDeadLine(
   const geometry_msgs::Pose & self_pose, const autoware_planning_msgs::PathWithLaneId & input_path,
-  const size_t & judge_point_idx, const Eigen::Vector2d & judge_point, const double judge_range)
+  const size_t & dead_line_point_idx, const Eigen::Vector2d & dead_line_point,
+  const double dead_line_range)
 {
-  if (calcSignedArcLength(input_path, self_pose, judge_point) > judge_range) {
+  if (calcSignedArcLength(input_path, self_pose, dead_line_point) > dead_line_range) {
     return false;
   }
 
   double yaw;
-  if (judge_point_idx == 0)
+  if (dead_line_point_idx == 0)
     yaw = std::atan2(
-      input_path.points.at(judge_point_idx + 1).point.pose.position.y - judge_point.y(),
-      input_path.points.at(judge_point_idx + 1).point.pose.position.x - judge_point.x());
+      input_path.points.at(dead_line_point_idx + 1).point.pose.position.y - dead_line_point.y(),
+      input_path.points.at(dead_line_point_idx + 1).point.pose.position.x - dead_line_point.x());
   else
     yaw = std::atan2(
-      judge_point.y() - input_path.points.at(judge_point_idx - 1).point.pose.position.y,
-      judge_point.x() - input_path.points.at(judge_point_idx - 1).point.pose.position.x);
+      dead_line_point.y() - input_path.points.at(dead_line_point_idx - 1).point.pose.position.y,
+      dead_line_point.x() - input_path.points.at(dead_line_point_idx - 1).point.pose.position.x);
 
-  // Calculate transform from judge_pose to self_pose
-  tf2::Transform tf_judge_pose2self_pose;
+  // Calculate transform from dead_line_pose to self_pose
+  tf2::Transform tf_dead_line_pose2self_pose;
   {
     tf2::Quaternion quat;
     quat.setRPY(0, 0, yaw);
-    tf2::Transform tf_map2judge_pose(
-      quat, tf2::Vector3(judge_point.x(), judge_point.y(), self_pose.position.z));
+    tf2::Transform tf_map2dead_line_pose(
+      quat, tf2::Vector3(dead_line_point.x(), dead_line_point.y(), self_pose.position.z));
     tf2::Transform tf_map2self_pose;
     tf2::fromMsg(self_pose, tf_map2self_pose);
-    tf_judge_pose2self_pose = tf_map2judge_pose.inverse() * tf_map2self_pose;
+    tf_dead_line_pose2self_pose = tf_map2dead_line_pose.inverse() * tf_map2self_pose;
 
     // debug code
-    geometry_msgs::Pose judge_pose;
-    tf2::toMsg(tf_map2judge_pose, judge_pose);
-    debug_data_.judge_poses.push_back(judge_pose);
+    geometry_msgs::Pose dead_line_pose;
+    tf2::toMsg(tf_map2dead_line_pose, dead_line_pose);
+    debug_data_.dead_line_poses.push_back(dead_line_pose);
   }
 
-  if (0 < tf_judge_pose2self_pose.getOrigin().x()) {
-    ROS_WARN("[traffic_light] vehicle is over judge point");
+  if (0 < tf_dead_line_pose2self_pose.getOrigin().x()) {
+    ROS_WARN("[traffic_light] vehicle is over dead line");
     return true;
   }
 

@@ -54,7 +54,6 @@ DetectionAreaModuleManager::DetectionAreaModuleManager()
   const std::string ns(getModuleName());
   auto & p = planner_param_;
   pnh.param(ns + "/stop_margin", p.stop_margin, 0.0);
-  pnh.param(ns + "/max_stop_acceleration_threshold", p.max_stop_acceleration_threshold, -5.0);
 }
 
 void DetectionAreaModuleManager::launchNewModules(

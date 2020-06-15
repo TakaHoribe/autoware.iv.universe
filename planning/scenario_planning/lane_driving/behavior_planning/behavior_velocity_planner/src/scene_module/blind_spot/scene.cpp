@@ -68,14 +68,14 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId 
 
   /* set stop-line and stop-judgement-line for base_link */
   int stop_line_idx = -1;
-  int judge_line_idx = -1;
-  if (!generateStopLine(detection_areas, path, &stop_line_idx, &judge_line_idx)) {
+  int pass_judge_line_idx = -1;
+  if (!generateStopLine(detection_areas, path, &stop_line_idx, &pass_judge_line_idx)) {
     ROS_WARN_DELAYED_THROTTLE(1.0, "[BlindSpotModule::run] setStopLineIdx fail");
     return false;
   }
 
-  if (stop_line_idx <= 0 || judge_line_idx <= 0) {
-    ROS_DEBUG("[Blind Spot] stop line or judge line is at path[0], ignore planning.");
+  if (stop_line_idx <= 0 || pass_judge_line_idx <= 0) {
+    ROS_DEBUG("[Blind Spot] stop line or pass judge line is at path[0], ignore planning.");
     return true;
   }
 
@@ -89,16 +89,16 @@ bool BlindSpotModule::modifyPathVelocity(autoware_planning_msgs::PathWithLaneId 
   debug_data_.virtual_wall_pose =
     util::getAheadPose(stop_line_idx, planner_data_->base_link2front, *path);
   debug_data_.stop_point_pose = path->points.at(stop_line_idx).point.pose;
-  debug_data_.judge_point_pose = path->points.at(judge_line_idx).point.pose;
+  debug_data_.judge_point_pose = path->points.at(pass_judge_line_idx).point.pose;
 
   /* if current_state = GO, and current_pose is over judge_line, ignore planning. */
-  bool is_over_judge_line = static_cast<bool>(closest_idx > judge_line_idx);
-  if (closest_idx == judge_line_idx) {
-    geometry_msgs::Pose judge_line = path->points.at(judge_line_idx).point.pose;
-    is_over_judge_line = util::isAheadOf(current_pose.pose, judge_line);
+  bool is_over_pass_judge_line = static_cast<bool>(closest_idx > pass_judge_line_idx);
+  if (closest_idx == pass_judge_line_idx) {
+    geometry_msgs::Pose pass_judge_line = path->points.at(pass_judge_line_idx).point.pose;
+    is_over_pass_judge_line = util::isAheadOf(current_pose.pose, pass_judge_line);
   }
-  if (current_state == State::GO && is_over_judge_line) {
-    ROS_DEBUG("[Blind Spot] over the judge line. no plan needed.");
+  if (current_state == State::GO && is_over_pass_judge_line) {
+    ROS_DEBUG("[Blind Spot] over the pass judge line. no plan needed.");
     return true;  // no plan needed.
   }
 
@@ -141,18 +141,19 @@ int BlindSpotModule::getFirstPointInsidePolygons(
 
 bool BlindSpotModule::generateStopLine(
   const std::vector<lanelet::CompoundPolygon3d> detection_areas,
-  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx, int * judge_line_idx) const
+  autoware_planning_msgs::PathWithLaneId * path, int * stop_line_idx,
+  int * pass_judge_line_idx) const
 {
   /* set judge line dist */
   const double current_vel = planner_data_->current_velocity->twist.linear.x;
   const double max_acc = planner_data_->max_stop_acceleration_threshold_;
-  const double judge_line_dist = planning_utils::calcJudgeLineDist(current_vel, max_acc, 0.0);
+  const double pass_judge_line_dist = planning_utils::calcJudgeLineDist(current_vel);
 
   /* set parameters */
   constexpr double interval = 0.2;
   const int margin_idx_dist = std::ceil(planner_param_.stop_line_margin / interval);
   const int base2front_idx_dist = std::ceil(planner_data_->base_link2front / interval);
-  const int judge_idx_dist = std::ceil(judge_line_dist / interval);
+  const int pass_judge_idx_dist = std::ceil(pass_judge_line_dist / interval);
 
   /* spline interpolation */
   autoware_planning_msgs::PathWithLaneId path_ip;
@@ -190,19 +191,19 @@ bool BlindSpotModule::generateStopLine(
   }
 
   /* insert judge point */
-  const int judge_idx_ip = std::max(stop_idx_ip - judge_idx_dist, 0);
-  if (has_prior_stopline || stop_idx_ip == judge_idx_ip) {
-    *judge_line_idx = *stop_line_idx;
+  const int pass_judge_idx_ip = std::max(stop_idx_ip - pass_judge_idx_dist, 0);
+  if (has_prior_stopline || stop_idx_ip == pass_judge_idx_ip) {
+    *pass_judge_line_idx = *stop_line_idx;
   } else {
-    const auto inserted_judge_point = path_ip.points.at(judge_idx_ip).point.pose;
-    *judge_line_idx = util::insertPoint(inserted_judge_point, path);
+    const auto inserted_pass_judge_point = path_ip.points.at(pass_judge_idx_ip).point.pose;
+    *pass_judge_line_idx = util::insertPoint(inserted_pass_judge_point, path);
     ++(*stop_line_idx);  // stop index is incremented by judge line insertion
   }
 
   ROS_DEBUG(
-    "[intersection] generateStopLine() : stop_idx = %d, judge_idx = %d, stop_idx_ip = %d, "
-    "judge_idx_ip = %d, has_prior_stopline = %d",
-    *stop_line_idx, *judge_line_idx, stop_idx_ip, judge_idx_ip, has_prior_stopline);
+    "[intersection] generateStopLine() : stop_idx = %d, pass_judge_idx = %d, stop_idx_ip = %d, "
+    "pass_judge_idx_ip = %d, has_prior_stopline = %d",
+    *stop_line_idx, *pass_judge_line_idx, stop_idx_ip, pass_judge_idx_ip, has_prior_stopline);
 
   return true;
 }
