@@ -224,8 +224,8 @@ void DummyPerceptionPublisherNode::createObjectPointcloud(
   const double horizontal_min_theta = (-180.0 / 180.0) * M_PI;
   const double horizontal_max_theta = (180.0 / 180.0) * M_PI;
 
-  const double min_z = -1.0 * (height / 2.0);
-  const double max_z = 1.0 * (height / 2.0);
+  const double min_z = -1.0 * (height / 2.0) + tf_base_link2moved_object.getOrigin().z();
+  const double max_z = 1.0 * (height / 2.0) + tf_base_link2moved_object.getOrigin().z();
   pcl::PointCloud<pcl::PointXYZ> horizontal_candidate_pointcloud;
   pcl::PointCloud<pcl::PointXYZ> horizontal_pointcloud;
   {
