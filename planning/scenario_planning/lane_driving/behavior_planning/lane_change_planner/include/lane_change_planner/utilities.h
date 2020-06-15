@@ -28,6 +28,7 @@
 #include <autoware_planning_msgs/PathWithLaneId.h>
 
 #include <lanelet2_core/geometry/Lanelet.h>
+#include <lanelet2_routing/Route.h>
 
 #include <limits>
 #include <vector>
@@ -82,8 +83,12 @@ double getDistanceBetweenPredictedPaths(
 
 std::vector<size_t> filterObjectsByLanelets(
   const autoware_perception_msgs::DynamicObjectArray & objects,
-  const lanelet::ConstLanelets & lanelets, const double start_arc_length = 0,
-  const double end_arc_length = std::numeric_limits<double>::max());
+  const lanelet::ConstLanelets & lanelets, const double start_arc_length,
+  const double end_arc_length);
+
+std::vector<size_t> filterObjectsByLanelets(
+  const autoware_perception_msgs::DynamicObjectArray & objects,
+  const lanelet::ConstLanelets & target_lanelets);
 
 const geometry_msgs::Pose refineGoal(
   const geometry_msgs::Pose & goal, const lanelet::ConstLanelet & goal_lanelet);

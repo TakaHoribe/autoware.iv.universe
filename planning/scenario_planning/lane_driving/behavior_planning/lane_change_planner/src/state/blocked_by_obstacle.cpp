@@ -107,31 +107,57 @@ void BlockedByObstacleState::update()
   status_.lane_change_path = autoware_planning_msgs::PathWithLaneId();  // clear path
   status_.lane_change_lane_ids.clear();
   found_safe_path_ = false;
+  constexpr double check_distance = 100.0;
+
+  // can we avoid right?
   if (!right_lanes.empty() && hasEnoughDistanceToComeBack(right_lanes)) {
+    // find candidate paths
     const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
       current_lanes_, right_lanes, current_pose_.pose, current_twist_->twist, ros_parameters_);
     debug_data_.lane_change_candidate_paths = lane_change_paths;
     status_.lane_change_lane_ids = util::getIds(right_lanes);
+
+    // get lanes used for detection
+    lanelet::ConstLanelets check_lanes;
+    if (!lane_change_paths.empty()) {
+      check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
+        lane_change_paths.front().path, right_lanes, check_distance);
+    }
+
+    // select valid path
     autoware_planning_msgs::PathWithLaneId selected_path;
     if (state_machine::common_functions::selectLaneChangePath(
-          lane_change_paths, current_lanes_, right_lanes, dynamic_objects_, current_pose_.pose,
+          lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
           current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
     debug_data_.selected_path = selected_path;
     status_.lane_change_path = selected_path;
   }
+
+  // can we avoid left?
   if (!found_safe_path_ && !left_lanes.empty() && hasEnoughDistanceToComeBack(left_lanes)) {
+    // find candidate paths
     const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
       current_lanes_, left_lanes, current_pose_.pose, current_twist_->twist, ros_parameters_);
     debug_data_.lane_change_candidate_paths = lane_change_paths;
     status_.lane_change_lane_ids = util::getIds(left_lanes);
+
+    // get lanes used for detection
+    lanelet::ConstLanelets check_lanes;
+    if (!lane_change_paths.empty()) {
+      check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
+        lane_change_paths.front().path, left_lanes, check_distance);
+    }
+
+    // select valid path
     autoware_planning_msgs::PathWithLaneId selected_path;
     if (state_machine::common_functions::selectLaneChangePath(
-          lane_change_paths, current_lanes_, left_lanes, dynamic_objects_, current_pose_.pose,
+          lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
           current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
+
     debug_data_.selected_path = selected_path;
     status_.lane_change_path = selected_path;
   }

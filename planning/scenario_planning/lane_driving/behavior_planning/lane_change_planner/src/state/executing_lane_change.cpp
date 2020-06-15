@@ -98,9 +98,17 @@ bool ExecutingLaneChangeState::isAbortConditionSatisfied() const
   }
 
   // check if lane change path is still safe
-  const bool is_path_safe = state_machine::common_functions::isLaneChangePathSafe(
-    status_.lane_change_path, original_lanes_, target_lanes_, dynamic_objects_, current_pose_.pose,
-    current_twist_->twist, ros_parameters_, false);
+  bool is_path_safe = false;
+  {
+    constexpr double check_distance = 100.0;
+    // get lanes used for detection
+    const auto & check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
+      status_.lane_change_path, target_lanes_, check_distance);
+
+    is_path_safe = state_machine::common_functions::isLaneChangePathSafe(
+      status_.lane_change_path, original_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
+      current_twist_->twist, ros_parameters_, false);
+  }
 
   // check vehicle velocity thresh
   const bool is_velocity_low =

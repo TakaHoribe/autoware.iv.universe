@@ -428,6 +428,7 @@ double getDistanceBetweenPredictedPaths(
   return min_distance;
 }
 
+// only works with consecutive lanes
 std::vector<size_t> filterObjectsByLanelets(
   const autoware_perception_msgs::DynamicObjectArray & objects,
   const lanelet::ConstLanelets & target_lanelets, const double start_arc_length,
@@ -447,6 +448,31 @@ std::vector<size_t> filterObjectsByLanelets(
     double distance = boost::geometry::distance(polygon2d, obj_position2d);
     if (distance < std::numeric_limits<double>::epsilon()) {
       indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+// works with random lanelets
+std::vector<size_t> filterObjectsByLanelets(
+  const autoware_perception_msgs::DynamicObjectArray & objects,
+  const lanelet::ConstLanelets & target_lanelets)
+{
+  std::vector<size_t> indices;
+  if (target_lanelets.empty()) {
+    return indices;
+  }
+
+  for (size_t i = 0; i < objects.objects.size(); i++) {
+    const auto & obj_position = objects.objects.at(i).state.pose_covariance.pose.position;
+    lanelet::BasicPoint2d obj_position2d(obj_position.x, obj_position.y);
+
+    for (const auto & llt : target_lanelets) {
+      const auto polygon2d = llt.polygon2d().basicPolygon();
+      double distance = boost::geometry::distance(polygon2d, obj_position2d);
+      if (distance < std::numeric_limits<double>::epsilon()) {
+        indices.push_back(i);
+      }
     }
   }
   return indices;

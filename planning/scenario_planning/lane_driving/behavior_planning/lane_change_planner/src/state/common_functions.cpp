@@ -90,8 +90,13 @@ bool isLaneChangePathSafe(
   }
   const auto arc = lanelet::utils::getArcCoordinates(current_lanes, current_pose);
   constexpr double check_distance = 100.0;
+
+  // find obstacle in lane change target lanes
+  // retrieve lanes that are merging target lanes as well
   const auto target_lane_object_indices =
     util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
+
+  // find objects in current lane
   const auto current_lane_object_indices = util::filterObjectsByLanelets(
     *dynamic_objects, current_lanes, arc.length, arc.length + check_distance);
 
@@ -119,7 +124,6 @@ bool isLaneChangePathSafe(
 
   const auto & vehicle_predicted_path = util::convertToPredictedPath(
     path, current_twist, current_pose, target_lane_check_end_time, time_resolution, acceleration);
-
   for (const auto & i : current_lane_object_indices) {
     const auto & obj = dynamic_objects->objects.at(i);
     for (const auto & obj_path : obj.state.predicted_paths) {

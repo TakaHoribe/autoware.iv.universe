@@ -132,6 +132,10 @@ public:
 
   double getLaneChangeableDistance(
     const geometry_msgs::Pose & current_pose, const LaneChangeDirection & direction);
+
+  lanelet::ConstLanelets getCheckTargetLanesFromPath(
+    const autoware_planning_msgs::PathWithLaneId & path,
+    const lanelet::ConstLanelets & target_lanes, const double check_length);
 };
 }  // namespace lane_change_planner
 #endif  // LANE_CHANGE_PLANNER_ROUTE_HANDLER_H

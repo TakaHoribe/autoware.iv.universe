@@ -80,6 +80,7 @@ void FollowingLaneState::update()
   }
   // update lane_follow_path
   {
+    constexpr double check_distance = 100.0;
     const double lane_change_prepare_duration = ros_parameters_.lane_change_prepare_duration;
     const double lane_changing_duration = ros_parameters_.lane_changing_duration;
     const double minimum_lane_change_length = ros_parameters_.minimum_lane_change_length;
@@ -88,13 +89,24 @@ void FollowingLaneState::update()
       minimum_lane_change_length);
 
     if (!lane_change_lanes_.empty()) {
+      // find candidate paths
       const auto lane_change_paths = route_handler_ptr_->getLaneChangePaths(
-        current_lanes_, lane_change_lanes_, current_pose_.pose, current_twist_->twist, ros_parameters_);
+        current_lanes_, lane_change_lanes_, current_pose_.pose, current_twist_->twist,
+        ros_parameters_);
       debug_data_.lane_change_candidate_paths = lane_change_paths;
+
+      // get lanes used for detection
+      lanelet::ConstLanelets check_lanes;
+      if (!lane_change_paths.empty()) {
+        check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
+          lane_change_paths.front().path, lane_change_lanes_, check_distance);
+      }
+
+      // select valid path
       autoware_planning_msgs::PathWithLaneId selected_path;
       if (state_machine::common_functions::selectLaneChangePath(
-            lane_change_paths, current_lanes_, lane_change_lanes_, dynamic_objects_,
-            current_pose_.pose, current_twist_->twist, ros_parameters_, &selected_path)) {
+            lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
+            current_twist_->twist, ros_parameters_, &selected_path)) {
         found_safe_path = true;
       }
       debug_data_.selected_path = selected_path;
@@ -196,6 +208,5 @@ bool FollowingLaneState::laneChangeForcedByOperator() const { return force_lane_
 bool FollowingLaneState::isLaneChangeReady() const { return status_.lane_change_ready; }
 
 bool FollowingLaneState::isLaneChangeAvailable() const { return status_.lane_change_available; }
-
 
 }  // namespace lane_change_planner

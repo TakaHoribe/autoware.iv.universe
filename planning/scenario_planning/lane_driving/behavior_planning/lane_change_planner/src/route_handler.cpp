@@ -717,4 +717,53 @@ double RouteHandler::getLaneChangeableDistance(
   return accumulated_distance;
 }
 
+lanelet::ConstLanelets RouteHandler::getCheckTargetLanesFromPath(
+  const autoware_planning_msgs::PathWithLaneId & path, const lanelet::ConstLanelets & target_lanes,
+  const double check_length)
+{
+  std::vector<int64_t> target_lane_ids;
+  target_lane_ids.reserve(target_lanes.size());
+  for (const auto & llt : target_lanes) {
+    target_lane_ids.push_back(llt.id());
+  }
+
+  // find first lanelet in target lanes along path
+  int64_t root_lane_id = lanelet::InvalId;
+  for (const auto & point : path.points) {
+    for (const auto & lane_id : point.lane_ids) {
+      if (exists(target_lane_ids, lane_id)) {
+        root_lane_id = lane_id;
+      }
+    }
+  }
+  // return emtpy lane if failed to find root lane_id
+  if(root_lane_id == lanelet::InvalId)
+  {
+    return target_lanes;
+  }
+  lanelet::ConstLanelet root_lanelet;
+  for (const auto & llt : target_lanes) {
+    if (llt.id() == root_lane_id) {
+      root_lanelet = llt;
+    }
+  }
+
+  const auto sequences = lanelet::utils::query::getPreceedingLaneletSequences(
+    routing_graph_ptr_, root_lanelet, check_length);
+  lanelet::ConstLanelets check_lanelets;
+  for (const auto & sequence : sequences) {
+    for (const auto & llt : sequence) {
+      if (!lanelet::utils::contains(check_lanelets, llt)) {
+        check_lanelets.push_back(llt);
+      }
+    }
+  }
+  for (const auto & llt : target_lanes) {
+    if (!lanelet::utils::contains(check_lanelets, llt)) {
+      check_lanelets.push_back(llt);
+    }
+  }
+  return check_lanelets;
+}
+
 }  // namespace lane_change_planner

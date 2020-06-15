@@ -233,8 +233,13 @@ void LaneChanger::publishDebugMarkers()
 
   // get obstacle path marker
   {
-    const auto & target_lanes = route_handler_ptr_->getLaneChangeTarget(current_pose.pose);
-    auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, target_lanes);
+    const auto & target_lanes = route_handler_ptr_->getLaneletsFromIds(status.lane_change_lane_ids);
+    constexpr double check_distance = 100.0;
+    // get lanes used for detection
+    const auto & check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
+      status.lane_change_path, target_lanes, check_distance);
+
+    const auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, check_lanes);
     for (const auto & i : object_indices) {
       const auto & obj = dynamic_objects->objects.at(i);
       for (const auto & obj_path : obj.state.predicted_paths) {
