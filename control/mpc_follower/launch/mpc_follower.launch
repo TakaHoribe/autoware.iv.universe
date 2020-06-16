@@ -14,7 +14,7 @@
   </node>
 
   <!-- steering dynamics simulator for turning -->
-  <node pkg="mpc_follower" type="steer_simulator.py" name="steer_simulator" output="log" />
+  <!-- <node pkg="mpc_follower" type="steer_simulator.py" name="steer_simulator" output="log" /> -->
 
 
 </launch>
