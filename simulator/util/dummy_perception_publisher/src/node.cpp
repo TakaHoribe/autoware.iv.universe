@@ -52,7 +52,7 @@ void DummyPerceptionPublisherNode::timerCallback(const ros::TimerEvent &)
       /*target*/ "base_link", /*src*/ "map", current_time, ros::Duration(0.5));
     tf2::fromMsg(ros_base_link2map.transform, tf_base_link2map);
   } catch (tf2::TransformException & ex) {
-    ROS_WARN("%s", ex.what());
+    ROS_WARN_THROTTLE(5.0, "%s", ex.what());
     return;
   }
 
@@ -312,7 +312,7 @@ void DummyPerceptionPublisherNode::objectCallback(
           /*target*/ msg->header.frame_id, /*src*/ "map", msg->header.stamp, ros::Duration(0.5));
         tf2::fromMsg(ros_input2map.transform, tf_input2map);
       } catch (tf2::TransformException & ex) {
-        ROS_WARN("%s", ex.what());
+        ROS_WARN_THROTTLE(5.0, "%s", ex.what());
         return;
       }
       tf2::fromMsg(msg->initial_state.pose_covariance.pose, tf_input2object_origin);
@@ -345,7 +345,7 @@ void DummyPerceptionPublisherNode::objectCallback(
               ros::Duration(0.5));
             tf2::fromMsg(ros_input2map.transform, tf_input2map);
           } catch (tf2::TransformException & ex) {
-            ROS_WARN("%s", ex.what());
+            ROS_WARN_THROTTLE(5.0, "%s", ex.what());
             return;
           }
           tf2::fromMsg(msg->initial_state.pose_covariance.pose, tf_input2object_origin);
