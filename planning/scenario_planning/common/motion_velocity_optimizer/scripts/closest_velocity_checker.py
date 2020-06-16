@@ -78,7 +78,7 @@ class VelocityChecker:
             "/autoware/engage", Bool, self.CallBackAwEngage, queue_size=1, tcp_nodelay=True
         )
         self.sub_external_vlim = rospy.Subscriber(
-            "/planning/scenario_planning/motion_velocity_optimizer/external_velocity_limit_mps", Bool, self.CallBackExternalVelLim, queue_size=1, tcp_nodelay=True
+            "/planning/scenario_planning/max_velocity", Float32, self.CallBackExternalVelLim, queue_size=1, tcp_nodelay=True
         )
 
         # self twist
@@ -112,7 +112,7 @@ class VelocityChecker:
         vel_external_lim = self.external_vlim * 3.6
         vel_latacc_filtered = self.data_arr[LAT_ACC] * 3.6
         vel_optimized = self.data_arr[VELOCITY_OPTIMIZE] * 3.6
-        vel_ctrl_cmd = self.data_arr[CONTROL_CMD_ACC] * 3.6
+        vel_ctrl_cmd = self.data_arr[CONTROL_CMD] * 3.6
         acc_ctrl_cmd = self.data_arr[CONTROL_CMD_ACC]
         vel_vehicle_cmd = self.data_arr[VEHICLE_CMD] * 3.6
         acc_vehicle_cmd = self.data_arr[VEHICLE_CMD_ACC]

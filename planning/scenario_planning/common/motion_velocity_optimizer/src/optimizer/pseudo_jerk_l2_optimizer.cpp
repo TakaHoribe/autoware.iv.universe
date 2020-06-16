@@ -183,12 +183,13 @@ bool L2PseudoJerkOptimizer::solve(
     output->points.at(i).accel.linear.x = 0.0;
   }
 
-  ROS_DEBUG("[after optimize L2] idx, vel, acc, over_vel, over_acc ");
-  for (unsigned int i = 0; i < N; ++i) {
-    ROS_DEBUG(
-      "i = %d, v: %f, vmax: %f a: %f, b: %f, delta: %f, sigma: %f\n", i, std::sqrt(optval.at(i)),
-      vmax[i], optval.at(i + N), optval.at(i), optval.at(i + 2 * N), optval.at(i + 3 * N));
-  }
+  // -- to check the all optimization variables --
+  // ROS_DEBUG("[after optimize Linf] idx, vel, acc, over_vel, over_acc ");
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   ROS_DEBUG(
+  //     "i = %d, v: %f, vmax: %f a: %f, b: %f, delta: %f, sigma: %f\n", i, std::sqrt(optval.at(i)),
+  //     vmax[i], optval.at(i + N), optval.at(i), optval.at(i + 2 * N), optval.at(i + 3 * N));
+  // }
 
   auto tf2 = std::chrono::system_clock::now();
   double dt_ms2 = std::chrono::duration_cast<std::chrono::nanoseconds>(tf2 - ts2).count() * 1.0e-6;

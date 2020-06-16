@@ -67,8 +67,6 @@ private:
 
   boost::shared_ptr<OptimizerBase> optimizer_;
 
-  bool show_debug_info_;      // printF level 1
-  bool show_debug_info_all_;  // print level 2
   bool publish_debug_trajs_;  // publish planned trajectories
 
   struct MotionVelocityOptimizerParam
@@ -176,8 +174,6 @@ private:
     planning_param_.max_trajectory_length = config.max_trajectory_length;
     planning_param_.min_trajectory_length = config.min_trajectory_length;
     planning_param_.min_trajectory_interval_distance = config.min_trajectory_interval_distance;
-
-    show_debug_info_ = config.show_debug_info;
   }
 
   /* debug */

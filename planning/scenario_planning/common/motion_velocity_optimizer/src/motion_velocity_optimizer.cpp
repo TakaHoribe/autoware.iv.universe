@@ -19,11 +19,6 @@
 #include <motion_velocity_optimizer/optimizer/l2_pseudo_jerk_optimizer.hpp>
 #include <motion_velocity_optimizer/optimizer/linf_pseudo_jerk_optimizer.hpp>
 
-// clang-format off
-#define DEBUG_INFO(...) { if (show_debug_info_) {ROS_INFO(__VA_ARGS__); } }
-#define DEBUG_WARN(...) { if (show_debug_info_) {ROS_WARN(__VA_ARGS__); } }
-#define DEBUG_INFO_ALL(...) { if (show_debug_info_all_) {ROS_INFO(__VA_ARGS__); } }
-
 // clang-format on
 MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_)
 {
@@ -59,8 +54,6 @@ MotionVelocityOptimizer::MotionVelocityOptimizer() : nh_(""), pnh_("~"), tf_list
     p.algorithm_type = "L2";
   }
 
-  pnh_.param<bool>("show_debug_info", show_debug_info_, true);
-  pnh_.param<bool>("show_debug_info_all", show_debug_info_all_, false);
   pnh_.param<bool>("publish_debug_trajs", publish_debug_trajs_, false);
 
   pub_trajectory_ = pnh_.advertise<autoware_planning_msgs::Trajectory>("output/trajectory", 1);
@@ -172,19 +165,19 @@ void MotionVelocityOptimizer::updateCurrentPose()
 void MotionVelocityOptimizer::run()
 {
   auto t_start = std::chrono::system_clock::now();
-  DEBUG_INFO("============================== run() start ==============================");
+  ROS_DEBUG("============================== run() start ==============================");
 
   updateCurrentPose();
 
   /* guard */
   if (!current_pose_ptr_ || !current_velocity_ptr_ || !base_traj_raw_ptr_) {
-    DEBUG_INFO(
+    ROS_DEBUG(
       "wait topics : current_pose = %d, current_vel = %d, base_traj = %d", (bool)current_pose_ptr_,
       (bool)current_velocity_ptr_, (bool)base_traj_raw_ptr_);
     return;
   }
   if (base_traj_raw_ptr_->points.empty()) {
-    DEBUG_INFO("received trajectory is empty");
+    ROS_DEBUG("received trajectory is empty");
     return;
   }
 
@@ -199,8 +192,8 @@ void MotionVelocityOptimizer::run()
 
   auto t_end = std::chrono::system_clock::now();
   double elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count();
-  DEBUG_INFO("run: calculation time = %f [ms]", elapsed * 1.0e-6);
-  DEBUG_INFO("============================== run() end ==============================\n\n");
+  ROS_DEBUG("run: calculation time = %f [ms]", elapsed * 1.0e-6);
+  ROS_DEBUG("============================== run() end ==============================\n\n");
 }
 
 autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVelocity(
@@ -256,7 +249,7 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   /* Calculate the closest point on the previously planned traj (used to get initial planning speed) */
   int prev_output_closest = vpu::calcClosestWaypoint(
     prev_output_, current_pose_ptr_->pose, planning_param_.delta_yaw_threshold);
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[calcClosestWaypoint] base_resampled.size() = %lu, prev_planned_closest_ = %d",
     traj_resampled.points.size(), prev_output_closest);
 
@@ -400,7 +393,7 @@ void MotionVelocityOptimizer::calcInitialMotion(
     initialize_type_ = InitializeType::LARGE_DEVIATION_REPLAN;
     initial_vel = vehicle_speed;  // use current vehicle speed
     initial_acc = prev_output.points.at(prev_output_closest).accel.linear.x;
-    DEBUG_WARN(
+    ROS_DEBUG(
       "[calcInitialMotion] : Large deviation error for speed control. Use current speed for "
       "initial value, desired_vel = %f, vehicle_speed = %f, vel_error = %f, error_thr = %f",
       desired_vel, vehicle_speed, vel_error, planning_param_.replan_vel_deviation);
@@ -420,22 +413,27 @@ void MotionVelocityOptimizer::calcInitialMotion(
       initialize_type_ = InitializeType::ENGAGING;
       initial_vel = planning_param_.engage_velocity;
       initial_acc = planning_param_.engage_acceleration;
-      DEBUG_INFO(
-        "[calcInitialMotion]: vehicle speed is low (%3.3f [m/s]), but desired speed is high (%3.3f "
-        "[m/s]). Use engage speed (%3.3f [m/s]) until vehicle speed reaches engage_vel_thr (%3.3f "
-        "[m/s]), stop_dist = %3.3f",
+      ROS_DEBUG(
+        "[calcInitialMotion]: vehicle speed is low (%.3f), and desired speed is high (%.3f). Use "
+        "engage speed (%.3f) until vehicle speed reaches engage_vel_thr (%.3f). stop_dist = %.3f",
         vehicle_speed, target_vel, planning_param_.engage_velocity, engage_vel_thr, stop_dist);
       return;
     } else {
-      DEBUG_INFO("[calcInitialMotion]: stop point is close (%.3f[m]). no engage.", stop_dist);
+      ROS_DEBUG("[calcInitialMotion]: stop point is close (%.3f[m]). no engage.", stop_dist);
     }
+  }
+
+  if (vehicle_speed < engage_vel_thr && target_vel <= planning_param_.engage_velocity) {
+    ROS_WARN_DELAYED_THROTTLE(
+      1.0, "target velocity (%.3f) is lower than engage_velocity (%.3f). not engaged.", target_vel,
+      planning_param_.engage_velocity);
   }
 
   /* normal update: use closest in prev_output */
   initialize_type_ = InitializeType::NORMAL;
   initial_vel = prev_output.points.at(prev_output_closest).twist.linear.x;
   initial_acc = prev_output.points.at(prev_output_closest).accel.linear.x;
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[calcInitialMotion]: normal update. v0 = %f, a0 = %f, vehicle_speed = %f, target_vel = %f",
     initial_vel, initial_acc, vehicle_speed, target_vel);
   return;
@@ -463,7 +461,7 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::optimizeVelocity(
   /* find stop point for stopVelocityFilter */
   int stop_idx = -1;
   bool stop_point_exists = vpu::searchZeroVelocityIdx(input, stop_idx);
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[replan]: target_vel = %f, stop_idx = %d, closest = %d, stop_point_exists = %d", target_vel,
     stop_idx, input_closest, (int)stop_point_exists);
 
@@ -473,7 +471,7 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::optimizeVelocity(
   }
 
   /* set output trajectory */
-  DEBUG_INFO("[optimizeVelocity]: optimized_traj.size() = %lu", optimized_traj.points.size());
+  ROS_DEBUG("[optimizeVelocity]: optimized_traj.size() = %lu", optimized_traj.points.size());
   return optimized_traj;
 }
 
@@ -543,7 +541,7 @@ bool MotionVelocityOptimizer::externalVelocityLimitFilter(
   if (!external_velocity_limit_filtered_) return false;
 
   vpu::maximumVelocityFilter(*external_velocity_limit_filtered_, output);
-  DEBUG_INFO("[externalVelocityLimit]: limit_vel = %.3f", *external_velocity_limit_filtered_);
+  ROS_DEBUG("[externalVelocityLimit]: limit_vel = %.3f", *external_velocity_limit_filtered_);
   return true;
 }
 
@@ -567,7 +565,7 @@ void MotionVelocityOptimizer::preventMoveToCloseStopLine(
     debug_msg = "curr_vel is low, but stop point is far. move.";
   }
 
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[preventMoveToCloseStopLine] %s curr_vel = %.3f, dist_to_stopline = %.3f, move_dist_min = "
     "%.3f, stop_idx = %d, closest = %d",
     debug_msg.c_str(), current_velocity_ptr_->twist.linear.x, dist_to_stopline,
@@ -618,7 +616,7 @@ bool MotionVelocityOptimizer::extractPathAroundIndex(
   }
   output.header = input.header;
 
-  DEBUG_INFO(
+  ROS_DEBUG(
     "[extractPathAroundIndex] : input.size() = %lu, extract_base_index = %d, output.size() = %lu",
     input.points.size(), index, output.points.size());
   return true;
