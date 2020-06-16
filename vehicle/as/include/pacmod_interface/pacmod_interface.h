@@ -38,6 +38,7 @@
 #include <pacmod_msgs/SystemRptInt.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
+#include <autoware_vehicle_msgs/ControlMode.h>
 #include <autoware_vehicle_msgs/RawVehicleCommand.h>
 #include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/Steering.h>
@@ -85,6 +86,7 @@ private:
   ros::Publisher turn_cmd_pub_;
 
   // To Autoware
+  ros::Publisher control_mode_pub_;
   ros::Publisher vehicle_twist_pub_;
   ros::Publisher steering_status_pub_;
   ros::Publisher shift_status_pub_;

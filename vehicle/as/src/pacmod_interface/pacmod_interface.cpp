@@ -89,6 +89,8 @@ PacmodInterface::PacmodInterface()
   turn_cmd_pub_ = nh_.advertise<pacmod_msgs::SystemCmdInt>("pacmod/as_rx/turn_cmd", 1);
 
   // To Autoware
+  control_mode_pub_ =
+    nh_.advertise<autoware_vehicle_msgs::ControlMode>("/vehicle/status/control_mode", 10);
   vehicle_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("/vehicle/status/twist", 1);
   steering_status_pub_ =
     nh_.advertise<autoware_vehicle_msgs::Steering>("/vehicle/status/steering", 1);
@@ -157,6 +159,24 @@ void PacmodInterface::callbackPacmodRpt(
   std_msgs::Header header;
   header.frame_id = base_frame_id_;
   header.stamp = ros::Time::now();
+
+  /* publish vehicle status control_mode */
+  {
+    autoware_vehicle_msgs::ControlMode control_mode_msg;
+    control_mode_msg.header = header;
+
+    if (!global_rpt->enabled) {
+      control_mode_msg.data = autoware_vehicle_msgs::ControlMode::MANUAL;
+    } else if (is_pacmod_enabled_) {
+      control_mode_msg.data = autoware_vehicle_msgs::ControlMode::AUTO;
+    } else if (!steer_wheel_rpt_ptr_->enabled) {
+      control_mode_msg.data = autoware_vehicle_msgs::ControlMode::AUTO_PEDAL_ONLY;
+    } else {
+      control_mode_msg.data = autoware_vehicle_msgs::ControlMode::AUTO_STEER_ONLY;
+    }
+
+    control_mode_pub_.publish(control_mode_msg);
+  }
 
   /* publish vehicle status twist */
   geometry_msgs::TwistStamped twist;
