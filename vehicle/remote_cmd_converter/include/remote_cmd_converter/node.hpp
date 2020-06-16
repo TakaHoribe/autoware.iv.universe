@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef REMOTE_CMD_CONVERTER_REMOTE_CMD_CONVERTER_NODE_HPP_
-#define REMOTE_CMD_CONVERTER_REMOTE_CMD_CONVERTER_NODE_HPP_
+#pragma once
 
 #include <memory>
 #include <string>
 
-#include <geometry_msgs/TwistStamped.h>
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <ros/ros.h>
-#include <std_msgs/Bool.h>
 
 #include <autoware_control_msgs/ControlCommandStamped.h>
 #include <autoware_control_msgs/GateMode.h>
@@ -30,57 +28,64 @@
 #include <autoware_vehicle_msgs/RawControlCommandStamped.h>
 #include <autoware_vehicle_msgs/ShiftStamped.h>
 #include <autoware_vehicle_msgs/VehicleCommand.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <std_msgs/Bool.h>
 
 #include <raw_vehicle_cmd_converter/accel_map.h>
 #include <raw_vehicle_cmd_converter/brake_map.h>
-
-#include <diagnostic_updater/diagnostic_updater.h>
 
 class RemoteCmdConverter
 {
 public:
   RemoteCmdConverter();
-  ~RemoteCmdConverter() = default;
 
 private:
-  ros::NodeHandle nh_;              //!< @brief ros node handle
-  ros::NodeHandle pnh_;             //!< @brief private ros node handle
-  ros::Publisher pub_cmd_;          //!< @brief topic publisher for tlow level vehicle command
-  ros::Publisher pub_current_cmd_;  //!< @brief for remote to check received time.
-  ros::Subscriber sub_velocity_;    //!< @brief subscriber for currrent velocity
-  ros::Subscriber sub_cmd_;         //!< @brief subscriber for vehicle command
-  ros::Subscriber sub_emergency_;
+  // NodeHandle
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+
+  // Publisher
+  ros::Publisher pub_cmd_;
+  ros::Publisher pub_current_cmd_;
+
+  // Subscriber
+  ros::Subscriber sub_velocity_;
+  ros::Subscriber sub_control_cmd_;
   ros::Subscriber sub_shift_cmd_;
   ros::Subscriber sub_gate_mode_;
+  ros::Subscriber sub_emergency_;
+
+  void onVelocity(const geometry_msgs::TwistStamped::ConstPtr msg);
+  void onRemoteCmd(const autoware_vehicle_msgs::RawControlCommandStamped::ConstPtr remote_cmd_ptr);
+  void onShiftCmd(const autoware_vehicle_msgs::ShiftStamped::ConstPtr msg);
+  void onGateMode(const autoware_control_msgs::GateMode::ConstPtr msg);
+  void onEmergency(const std_msgs::Bool::ConstPtr msg);
 
   std::shared_ptr<double> current_velocity_ptr_;  // [m/s]
-  autoware_vehicle_msgs::ShiftStampedConstPtr current_shift_cmd_;
-  bool current_emergency_cmd_;
+  std::shared_ptr<ros::Time> latest_cmd_received_time_;
+  autoware_vehicle_msgs::ShiftStamped::ConstPtr current_shift_cmd_;
+  autoware_control_msgs::GateMode::ConstPtr current_gate_mode_;
+  bool current_emergency_cmd_ = false;
 
+  // Timer
+  ros::Timer rate_check_timer_;
+  void onTimer(const ros::TimerEvent & event);
+
+  // Parameter
+  double ref_vel_gain_;  // reference velocity = current velocity + desired acceleration * gain
+  double time_threshold_;
+
+  // Diagnostics
+  diagnostic_updater::Updater updater_;
+
+  void produceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  bool checkRemoteTopicRate();
+
+  // Algorithm
   AccelMap accel_map_;
   BrakeMap brake_map_;
   bool acc_map_initialized_;
 
-  double ref_vel_gain_;  // reference velocity = current velocity + desired acceleration * gain
-
-  void onRemoteCmd(const autoware_vehicle_msgs::RawControlCommandStampedConstPtr remote_cmd_ptr);
-  void onVelocity(const geometry_msgs::TwistStampedConstPtr msg);
-  void onShiftCmd(const autoware_vehicle_msgs::ShiftStampedConstPtr msg);
-  void onEmergency(const std_msgs::Bool msg);
-  void onGateMode(const autoware_control_msgs::GateModeConstPtr msg);
   double calculateAcc(const autoware_vehicle_msgs::RawControlCommand & cmd, const double vel);
   double getShiftVelocitySign(const autoware_vehicle_msgs::ShiftStamped & cmd);
-
-  /* for Hz check */
-  ros::Timer rate_check_timer_;
-  diagnostic_updater::Updater updater_;  // for emergency handling
-  autoware_control_msgs::GateModeConstPtr current_gate_mode_;
-  std::shared_ptr<ros::Time> latest_cmd_received_time_;
-  double time_threshold_;
-
-  void onTimer(const ros::TimerEvent & event);
-  void produceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
-  bool checkRemoteTopicRate();
 };
-
-#endif  // REMOTE_CMD_CONVERTER_REMOTE_CMD_CONVERTER_NODE_HPP_
