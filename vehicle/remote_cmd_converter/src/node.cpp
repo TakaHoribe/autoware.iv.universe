@@ -54,7 +54,8 @@ RemoteCmdConverter::RemoteCmdConverter() : nh_(""), pnh_("~")
 
   // Diagnostics
   updater_.setHardwareID("remote_cmd_converter");
-  updater_.add("remote_cmd_converter", this, &RemoteCmdConverter::produceDiagnostics);
+  updater_.add("remote_control_topic_status", this, &RemoteCmdConverter::checkTopicStatus);
+  updater_.add("emergency_stop_operation", this, &RemoteCmdConverter::checkEmergency);
 
   // Set default values
   current_shift_cmd_ = boost::make_shared<autoware_vehicle_msgs::ShiftStamped>();
@@ -147,18 +148,29 @@ double RemoteCmdConverter::getShiftVelocitySign(const autoware_vehicle_msgs::Shi
   return 0.0;
 }
 
-void RemoteCmdConverter::produceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat)
+void RemoteCmdConverter::checkTopicStatus(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   using diagnostic_msgs::DiagnosticStatus;
 
   DiagnosticStatus status;
+  if (!checkRemoteTopicRate()) {
+    status.level = DiagnosticStatus::ERROR;
+    status.message = "low topic rate for remote vehicle_cmd";
+  } else {
+    status.level = DiagnosticStatus::OK;
+  }
 
+  stat.summary(status.level, status.message);
+}
+
+void RemoteCmdConverter::checkEmergency(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  using diagnostic_msgs::DiagnosticStatus;
+
+  DiagnosticStatus status;
   if (current_emergency_cmd_) {
     status.level = DiagnosticStatus::ERROR;
     status.message = "remote emergency requested";
-  } else if (!checkRemoteTopicRate()) {
-    status.level = DiagnosticStatus::ERROR;
-    status.message = "low topic rate for remote vehicle_cmd";
   } else {
     status.level = DiagnosticStatus::OK;
   }

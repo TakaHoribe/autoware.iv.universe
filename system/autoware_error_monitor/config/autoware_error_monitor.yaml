@@ -16,6 +16,7 @@ required_conditions:
   remote_control:
     - control
     - remote_control
+    - safety
     - vehicle
 
   safe_stop:

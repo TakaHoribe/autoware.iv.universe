@@ -78,7 +78,8 @@ private:
   // Diagnostics
   diagnostic_updater::Updater updater_;
 
-  void produceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void checkTopicStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void checkEmergency(diagnostic_updater::DiagnosticStatusWrapper & stat);
   bool checkRemoteTopicRate();
 
   // Algorithm
