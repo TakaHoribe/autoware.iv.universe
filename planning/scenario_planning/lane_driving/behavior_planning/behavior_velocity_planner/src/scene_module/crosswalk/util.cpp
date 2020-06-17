@@ -115,6 +115,17 @@ bool insertTargetVelocityPoint(
     target_point_with_lane_id = output.points.at(target_velocity_point_idx);
     target_point_with_lane_id.point.pose.position.x = target_point.x();
     target_point_with_lane_id.point.pose.position.y = target_point.y();
+    if (insert_target_point_idx > 0) {
+      //calculate z-position of the target point (Internal division point of point1/point2)
+      //if insert_target_point_idx is zero, use z-position of target_velocity_point_idx
+      const double internal_div_ratio =
+        (point1 - target_point).norm() /
+        ((point1 - target_point).norm() + (point2 - target_point).norm());
+      target_point_with_lane_id.point.pose.position.z =
+        output.points.at(insert_target_point_idx).point.pose.position.z * (1 - internal_div_ratio) +
+        output.points.at(insert_target_point_idx - 1).point.pose.position.z * internal_div_ratio;
+    }
+
     if ((point1 - point2).norm() > 1.0E-3) {
       const double yaw = std::atan2(point1.y() - point2.y(), point1.x() - point2.x());
       target_point_with_lane_id.point.pose.orientation = planning_utils::getQuaternionFromYaw(yaw);
