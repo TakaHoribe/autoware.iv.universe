@@ -41,7 +41,7 @@ bool BusFilter::filter(
     return false;
   }
 
-  if (s < 0.5 && max_length * max_width < s) {
+  if (max_length * max_width < s) {
     return false;
   }
   return true;
