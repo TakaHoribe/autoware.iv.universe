@@ -96,14 +96,14 @@ int main(int argc, char ** argv)
   AdditionalVehicleInfo add_vehicle_info;
   add_vehicle_info.vehicle_length =
     vehicle_info.front_overhang + vehicle_info.wheel_base + vehicle_info.rear_overhang;
-  add_vehicle_info.vehicle_width = vehicle_info.wheel_tread + vehicle_info.wheel_width +
+  add_vehicle_info.vehicle_width = vehicle_info.wheel_tread +
                                    vehicle_info.left_overhang + vehicle_info.right_overhang;
   add_vehicle_info.min_longitudinal_offset = -vehicle_info.rear_overhang;
   add_vehicle_info.max_longitudinal_offset = vehicle_info.front_overhang + vehicle_info.wheel_base;
   add_vehicle_info.min_lateral_offset =
-    -((vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.right_overhang);
+    -(vehicle_info.wheel_tread / 2.0 + vehicle_info.right_overhang);
   add_vehicle_info.max_lateral_offset =
-    (vehicle_info.wheel_tread + vehicle_info.wheel_width) / 2.0 + vehicle_info.left_overhang;
+    vehicle_info.wheel_tread / 2.0 + vehicle_info.left_overhang;
   add_vehicle_info.min_height_offset = 0.0;
   add_vehicle_info.max_height_offset = vehicle_info.vehicle_height;
 
