@@ -63,7 +63,7 @@
     <param name="steer_rate_lim" value="$(arg steer_rate_lim)"/>
     <param name="accel_rate" value="$(arg accel_rate)" />
     <param name="vel_time_delay" value="$(arg vel_time_delay)"/>
-    <param name ="acc_time_delay" value="$(arg acc_time_delay)" />
+    <param name="acc_time_delay" value="$(arg acc_time_delay)" />
     <param name="vel_time_constant" value="$(arg vel_time_constant)"/>
     <param name="acc_time_constant" value="$(arg acc_time_constant)"/>
     <param name="steer_time_delay" value="$(arg steer_time_delay)"/>
