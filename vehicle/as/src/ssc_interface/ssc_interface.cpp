@@ -61,8 +61,9 @@ SSCInterface::SSCInterface()
     nh_, "as/brake_feedback", 10);
   gear_feedback_sub_ = new message_filters::Subscriber<automotive_platform_msgs::GearFeedback>(
     nh_, "as/gear_feedback", 10);
-  velocity_accel_cov_sub_ = new message_filters::Subscriber<automotive_platform_msgs::VelocityAccelCov>(
-    nh_, "as/velocity_accel_cov", 10);
+  velocity_accel_cov_sub_ =
+    new message_filters::Subscriber<automotive_platform_msgs::VelocityAccelCov>(
+      nh_, "as/velocity_accel_cov", 10);
   // subscribers from PACMod
   wheel_speed_sub_ = new message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>(
     nh_, "pacmod/parsed_tx/wheel_speed_rpt", 10);
@@ -258,11 +259,13 @@ void SSCInterface::publishCommand()
   bool timeouted = (((ros::Time::now() - command_time_).toSec() * 1000) > command_timeout_);
 
   if (emergency) {
-    ROS_ERROR_THROTTLE(1.0, "Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
+    ROS_ERROR_THROTTLE(
+      1.0, "Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_speed = 0.0;
     deceleration_limit = 0.0;
   } else if (timeouted) {
-    ROS_ERROR_THROTTLE(1.0, "Timeout Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
+    ROS_ERROR_THROTTLE(
+      1.0, "Timeout Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_speed = 0.0;
   }
 
@@ -302,10 +305,10 @@ void SSCInterface::publishCommand()
   turn_signal_pub_.publish(turn_signal);
   gear_pub_.publish(gear_cmd);
 
-  ROS_INFO_STREAM(
-    "Mode: " << (int)desired_mode << ", "
-             << "Speed: " << speed_mode.speed << ", "
-             << "Curvature: " << steer_mode.curvature << ", "
-             << "Gear: " << (int)gear_cmd.command.gear << ", "
-             << "TurnSignal: " << (int)turn_signal.turn_signal);
+  ROS_INFO_STREAM_THROTTLE(
+    1.0, "Mode: " << (int)desired_mode << ", "
+                  << "Speed: " << speed_mode.speed << ", "
+                  << "Curvature: " << steer_mode.curvature << ", "
+                  << "Gear: " << (int)gear_cmd.command.gear << ", "
+                  << "TurnSignal: " << (int)turn_signal.turn_signal);
 }
