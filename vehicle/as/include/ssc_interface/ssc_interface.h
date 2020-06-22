@@ -38,7 +38,7 @@
 #include <automotive_platform_msgs/SteerMode.h>
 #include <automotive_platform_msgs/ThrottleFeedback.h>
 #include <automotive_platform_msgs/TurnSignalCommand.h>
-#include <automotive_platform_msgs/VelocityAccel.h>
+#include <automotive_platform_msgs/VelocityAccelCov.h>
 #include <pacmod_msgs/SystemRptFloat.h>
 #include <pacmod_msgs/WheelSpeedRpt.h>
 
@@ -60,7 +60,7 @@ public:
 
 private:
   typedef message_filters::sync_policies::ApproximateTime<
-    automotive_platform_msgs::VelocityAccel, automotive_platform_msgs::CurvatureFeedback,
+    automotive_platform_msgs::VelocityAccelCov, automotive_platform_msgs::CurvatureFeedback,
     automotive_platform_msgs::ThrottleFeedback, automotive_platform_msgs::BrakeFeedback,
     automotive_platform_msgs::GearFeedback, pacmod_msgs::WheelSpeedRpt, pacmod_msgs::SystemRptFloat>
     SSCFeedbacksSyncPolicy;
@@ -74,7 +74,7 @@ private:
   ros::Subscriber turn_signal_cmd_sub_;
   ros::Subscriber engage_sub_;
   ros::Subscriber module_states_sub_;
-  message_filters::Subscriber<automotive_platform_msgs::VelocityAccel> * velocity_accel_sub_;
+  message_filters::Subscriber<automotive_platform_msgs::VelocityAccelCov> * velocity_accel_cov_sub_;
   message_filters::Subscriber<automotive_platform_msgs::CurvatureFeedback> *
     curvature_feedback_sub_;
   message_filters::Subscriber<automotive_platform_msgs::ThrottleFeedback> * throttle_feedback_sub_;
@@ -137,7 +137,7 @@ private:
   void callbackFromEngage(const std_msgs::BoolConstPtr & msg);
   void callbackFromSSCModuleStates(const automotive_navigation_msgs::ModuleStateConstPtr & msg);
   void callbackFromSSCFeedbacks(
-    const automotive_platform_msgs::VelocityAccelConstPtr & msg_velocity,
+    const automotive_platform_msgs::VelocityAccelCovConstPtr & msg_velocity,
     const automotive_platform_msgs::CurvatureFeedbackConstPtr & msg_curvature,
     const automotive_platform_msgs::ThrottleFeedbackConstPtr & msg_throttle,
     const automotive_platform_msgs::BrakeFeedbackConstPtr & msg_brake,

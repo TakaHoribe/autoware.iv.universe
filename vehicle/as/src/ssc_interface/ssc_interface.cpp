@@ -61,15 +61,15 @@ SSCInterface::SSCInterface()
     nh_, "as/brake_feedback", 10);
   gear_feedback_sub_ = new message_filters::Subscriber<automotive_platform_msgs::GearFeedback>(
     nh_, "as/gear_feedback", 10);
-  velocity_accel_sub_ = new message_filters::Subscriber<automotive_platform_msgs::VelocityAccel>(
-    nh_, "as/velocity_accel", 10);
+  velocity_accel_cov_sub_ = new message_filters::Subscriber<automotive_platform_msgs::VelocityAccelCov>(
+    nh_, "as/velocity_accel_cov", 10);
   // subscribers from PACMod
   wheel_speed_sub_ = new message_filters::Subscriber<pacmod_msgs::WheelSpeedRpt>(
     nh_, "pacmod/parsed_tx/wheel_speed_rpt", 10);
   steering_wheel_sub_ = new message_filters::Subscriber<pacmod_msgs::SystemRptFloat>(
     nh_, "pacmod/parsed_tx/steer_rpt", 10);
   ssc_feedbacks_sync_ = new message_filters::Synchronizer<SSCFeedbacksSyncPolicy>(
-    SSCFeedbacksSyncPolicy(10), *velocity_accel_sub_, *curvature_feedback_sub_,
+    SSCFeedbacksSyncPolicy(10), *velocity_accel_cov_sub_, *curvature_feedback_sub_,
     *throttle_feedback_sub_, *brake_feedback_sub_, *gear_feedback_sub_, *wheel_speed_sub_,
     *steering_wheel_sub_);
   ssc_feedbacks_sync_->registerCallback(
@@ -132,7 +132,7 @@ void SSCInterface::callbackFromSSCModuleStates(
 }
 
 void SSCInterface::callbackFromSSCFeedbacks(
-  const automotive_platform_msgs::VelocityAccelConstPtr & msg_velocity,
+  const automotive_platform_msgs::VelocityAccelCovConstPtr & msg_velocity,
   const automotive_platform_msgs::CurvatureFeedbackConstPtr & msg_curvature,
   const automotive_platform_msgs::ThrottleFeedbackConstPtr & msg_throttle,
   const automotive_platform_msgs::BrakeFeedbackConstPtr & msg_brake,
@@ -217,6 +217,7 @@ void SSCInterface::publishCommand()
 
   // Speed for SSC speed_model
   double desired_speed = vehicle_cmd_.control.velocity;
+  double deceleration_limit = deceleration_limit_;
 
   // Curvature for SSC steer_model
   double desired_steering_angle = !use_adaptive_gear_ratio_
@@ -228,11 +229,11 @@ void SSCInterface::publishCommand()
   // Gear (TODO: Use vehicle_cmd.gear)
   unsigned char desired_shift = automotive_platform_msgs::Gear::NONE;
   if (engage_) {
-    if (vehicle_cmd_.shift.data = autoware_vehicle_msgs::Shift::DRIVE) {
+    if (vehicle_cmd_.shift.data == autoware_vehicle_msgs::Shift::DRIVE) {
       desired_shift = automotive_platform_msgs::Gear::DRIVE;
-    } else if (vehicle_cmd_.shift.data = autoware_vehicle_msgs::Shift::PARKING) {
+    } else if (vehicle_cmd_.shift.data == autoware_vehicle_msgs::Shift::PARKING) {
       desired_shift = automotive_platform_msgs::Gear::PARK;
-    } else if (vehicle_cmd_.shift.data = autoware_vehicle_msgs::Shift::REVERSE) {
+    } else if (vehicle_cmd_.shift.data == autoware_vehicle_msgs::Shift::REVERSE) {
       desired_shift = automotive_platform_msgs::Gear::REVERSE;
     }
   }
@@ -256,8 +257,12 @@ void SSCInterface::publishCommand()
   bool emergency = (vehicle_cmd_.emergency == 1);
   bool timeouted = (((ros::Time::now() - command_time_).toSec() * 1000) > command_timeout_);
 
-  if (emergency || timeouted) {
-    ROS_ERROR("Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
+  if (emergency) {
+    ROS_ERROR_THROTTLE(1.0, "Emergency Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
+    desired_speed = 0.0;
+    deceleration_limit = 0.0;
+  } else if (timeouted) {
+    ROS_ERROR_THROTTLE(1.0, "Timeout Stopping, emergency = %d, timeouted = %d", emergency, timeouted);
     desired_speed = 0.0;
   }
 
@@ -268,7 +273,7 @@ void SSCInterface::publishCommand()
   speed_mode.mode = desired_mode;
   speed_mode.speed = desired_speed;
   speed_mode.acceleration_limit = acceleration_limit_;
-  speed_mode.deceleration_limit = deceleration_limit_;
+  speed_mode.deceleration_limit = deceleration_limit;
 
   // steer command
   automotive_platform_msgs::SteerMode steer_mode;
