@@ -233,6 +233,7 @@ void VehicleCmdGate::publishControlCommands(const Commands & commands)
   vehicle_cmd.header = filtered_commands.control.header;
   vehicle_cmd.control = filtered_commands.control.control;
   vehicle_cmd.shift = filtered_commands.shift.shift;
+  vehicle_cmd.emergency = (use_emergency_handling_ && is_emergency_);
 
   // Add frame_id to prevent RViz warnings
   fillFrameId(&vehicle_cmd.header.frame_id, "base_link");
