@@ -39,7 +39,7 @@
     <remap from="~output/status" to="/sim/status" />
     <remap from="~output/control_mode" to="/vehicle/status/control_mode" />
     <remap from="~input/vehicle_cmd" to="/sim/vehicle_cmd" />
-    <remap from="~input/turn_signal_cmd" to="/vehicle/turn_signal_cmd" />
+    <remap from="~input/turn_signal_cmd" to="/control/turn_signal_cmd" />
     <remap from="~input/initial_twist" to="/initialtwist" />
     <remap from="~input/engage" to="/vehicle/engage" />
 

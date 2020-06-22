@@ -58,7 +58,7 @@ PacmodInterface::PacmodInterface()
   raw_vehicle_cmd_sub_ =
     nh_.subscribe("/vehicle/raw_vehicle_cmd", 1, &PacmodInterface::callbackVehicleCmd, this);
   turn_signal_cmd_sub_ =
-    nh_.subscribe("/vehicle/turn_signal_cmd", 1, &PacmodInterface::callbackTurnSignalCmd, this);
+    nh_.subscribe("/control/turn_signal_cmd", 1, &PacmodInterface::callbackTurnSignalCmd, this);
   engage_cmd_sub_ = nh_.subscribe("/vehicle/engage", 1, &PacmodInterface::callbackEngage, this);
 
   // From pacmod
