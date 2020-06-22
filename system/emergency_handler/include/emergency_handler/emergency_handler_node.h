@@ -44,6 +44,7 @@ private:
 
   // Parameter
   double update_rate_;
+  bool use_parking_after_stopped_;
 
   // Subscriber
   ros::Subscriber sub_autoware_state_;

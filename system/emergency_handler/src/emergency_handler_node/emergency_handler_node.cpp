@@ -103,7 +103,7 @@ void EmergencyHandlerNode::onTimer(const ros::TimerEvent & event)
   }
 
   // Shift
-  if (isStopped()) {
+  if (use_parking_after_stopped_ && isStopped()) {
     autoware_vehicle_msgs::ShiftStamped shift;
     shift.header.stamp = stamp;
     shift.shift.data = autoware_vehicle_msgs::Shift::PARKING;
@@ -130,8 +130,7 @@ bool EmergencyHandlerNode::isEmergency()
     const auto is_in_target_state =
       (autoware_state_->state != AutowareState::InitializingVehicle) &&
       (autoware_state_->state != AutowareState::WaitingForRoute) &&
-      (autoware_state_->state != AutowareState::Planning) &&
-      (autoware_state_->state != AutowareState::WaitingForEngage);
+      (autoware_state_->state != AutowareState::Planning);
 
     if (is_in_target_state && !driving_capability_->autonomous_driving) {
       ROS_WARN_THROTTLE(1.0, "autonomous_driving is failed");
@@ -147,6 +146,7 @@ bool EmergencyHandlerNode::isEmergency()
   }
 
   if (!driving_capability_->manual_driving) {
+    ROS_WARN_THROTTLE(1.0, "manual_driving is failed");
     return true;
   }
 
@@ -190,6 +190,7 @@ EmergencyHandlerNode::EmergencyHandlerNode()
 {
   // Parameter
   private_nh_.param("update_rate", update_rate_, 10.0);
+  private_nh_.param("use_parking_after_stopped", use_parking_after_stopped_, false);
 
   // Subscriber
   sub_autoware_state_ =

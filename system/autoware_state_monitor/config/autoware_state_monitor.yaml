@@ -88,8 +88,3 @@ tf_configs:
     from: "map"
     to: "base_link"
     timeout: 1.0
-
-  - module: "localization"
-    from: "base_link"
-    to: "gnss_link"
-    timeout: 1.0
