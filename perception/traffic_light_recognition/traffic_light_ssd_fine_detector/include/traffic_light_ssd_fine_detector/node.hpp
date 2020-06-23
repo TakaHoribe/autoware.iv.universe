@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef TRAFFIC_LIGHT_DETECTOR_H
-#define TRAFFIC_LIGHT_DETECTOR_H
+
+#pragma once
 
 #include <memory>
 #include <string>
 
+#include <opencv/cv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "TrtNet.h"
-#include "data_reader.h"
+#include "trt_ssd.h"
 
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
@@ -45,13 +47,33 @@ typedef struct Detection
 
 namespace traffic_light
 {
-class TrafficLightFineDetectorNode
+class TrafficLightSSDFineDetector
 {
-private:
-  // variables
+public:
+  TrafficLightSSDFineDetector();
+  ~TrafficLightSSDFineDetector();
 
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
+private:
+  // functions
+  void callback(
+    const sensor_msgs::Image::ConstPtr & image_msg,
+    const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr & traffic_light_roi_msg);
+
+  bool cvMat2CnnInput(const std::vector<cv::Mat> & in_imgs, const int num_rois, std::vector<float> & data);
+  bool cnnOutput2BoxDetection(
+    const float * scores, const float * boxes, const int tlr_id, const std::vector<cv::Mat> & in_imgs,
+    const int num_rois, std::vector<Detection> & detctions);
+  bool rosMsg2CvMat(const sensor_msgs::Image::ConstPtr & image_msg, cv::Mat & image);
+  bool fitInFrame(cv::Point & lt, cv::Point & rb, const cv::Size & size);
+  void cvRect2TlRoiMsg(
+    const cv::Rect & rect, const int32_t id, autoware_perception_msgs::TrafficLightRoi & tl_roi);
+
+  // variables
+  ros::NodeHandle nh_, pnh_;
+  image_transport::ImageTransport image_transport_;
+  image_transport::SubscriberFilter image_sub_;
+  message_filters::Subscriber<autoware_perception_msgs::TrafficLightRoiArray> roi_sub_;
+  ros::Publisher output_roi_pub_;
 
   typedef message_filters::sync_policies::ExactTime<
     sensor_msgs::Image, autoware_perception_msgs::TrafficLightRoiArray>
@@ -63,44 +85,18 @@ private:
 
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy> > sync_;
   std::shared_ptr<message_filters::Synchronizer<ApproximateSyncPolicy> > approximate_sync_;
-  message_filters::Subscriber<sensor_msgs::Image> image_sub_;
-  message_filters::Subscriber<autoware_perception_msgs::TrafficLightRoiArray>
-    traffic_light_roi_sub_;
-  ros::Publisher output_rois_pub_;
 
   bool is_approximate_sync_;
   double score_thresh_;
 
-  std::unique_ptr<Tn::trtNet> net_ptr_;
-  std::vector<std::vector<int> > output_shape = {{1, 18, 8, 8}, {1, 18, 16, 16}, {1, 18, 32, 32}};
-  std::vector<std::vector<int> > g_masks = {{6, 7, 8}, {3, 4, 5}, {0, 1, 2}};
-  std::vector<std::vector<int> > g_anchors = {{72, 35},  {53, 58},  {127, 43}, {90, 62},  {61, 104},
-                                              {141, 70}, {105, 95}, {95, 154}, {157, 135}};
+  int channel_;
+  int width_;
+  int height_;
+  int class_num_;
+  int detection_per_class_;
 
-  // functions
-  void initROS();
+  std::unique_ptr<ssd::Net> net_ptr_;
 
-  void callback(
-    const sensor_msgs::Image::ConstPtr & image_msg,
-    const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr & traffic_light_roi_msg);
-
-  inline float sigmoid(float in) { return 1.f / (1.f + std::exp(-in)); }
-
-  std::vector<float> prepareImage(cv::Mat & in_img);
-  std::vector<Tn::Bbox> postProcessImg(float * output, const int classes, cv::Mat & img);
-  void doNms(std::vector<Detection> & detections, float nms_thresh);
-  bool rosmsg2cvmat(const sensor_msgs::Image::ConstPtr & image_msg, cv::Mat & image);
-  bool fit_in_frame(cv::Point & lt, cv::Point & rb, const cv::Size & size);
-  void cvrect2tlroimsg(
-    const cv::Rect & rect, const int32_t id, autoware_perception_msgs::TrafficLightRoi & tl_roi);
-
-public:
-  TrafficLightFineDetectorNode();
-  ~TrafficLightFineDetectorNode();
-  void run();
-
-};  // TrafficLightFineDetector
+};  // TrafficLightSSDFineDetector
 
 }  // namespace traffic_light
-
-#endif

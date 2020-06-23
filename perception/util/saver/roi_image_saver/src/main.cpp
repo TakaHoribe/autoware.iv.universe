@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include <ros/ros.h>
-#include "node.hpp"
+#include "roi_image_saver/node.hpp"
 
 int main(int argc, char ** argv)
 {

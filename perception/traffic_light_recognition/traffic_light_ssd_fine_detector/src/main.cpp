@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "traffic_light_fine_detector/traffic_light_fine_detector.h"
+#include "traffic_light_ssd_fine_detector/node.hpp"
 
 int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "traffic_light_fine_detector");
 
-  traffic_light::TrafficLightFineDetectorNode node;
-  node.run();
+  traffic_light::TrafficLightSSDFineDetector node;
+  ros::spin();
 
   return 0;
 }

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 
 add_compile_options(-std=c++14)
 
-project(traffic_light_fine_detector)
+project(traffic_light_ssd_fine_detector)
 
 option(CUDA_VERBOSE "Verbose output of CUDA modules" OFF)
 
@@ -17,18 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV REQUIRED)
-find_package(Eigen3 QUIET)
-
-if (NOT EIGEN3_FOUND)
-  # Fallback to cmake_modules
-  find_package(cmake_modules REQUIRED)
-  find_package(Eigen REQUIRED)
-  set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
-  set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
-  # Possibly map additional variables to the EIGEN3_ prefix.
-else ()
-  set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-endif ()
 
 # set flags for CUDA availability
 option(CUDA_AVAIL "CUDA available" OFF)
@@ -91,11 +79,11 @@ set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
 if (NOT EXISTS "${PATH}")
   execute_process(COMMAND mkdir -p ${PATH})
 endif()
-set(FILE "${PATH}/yolov3-tlr.onnx")
-message(STATUS "Checking and downloading yolov3-tlr.onnx")
+set(FILE "${PATH}/mb2-ssd-lite-tlr.onnx")
+message(STATUS "Checking and downloading mb2-ssd-lite-tlr.onnx")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1goWNFhKYqPrjfPnWTbwaIhjUeX1L7VTS" -O ${PATH}/yolov3-tlr.onnx)
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1PGxVstVV_sVOLEEyl47m5lNXdLy_Iyob" -O ${PATH}/mb2-ssd-lite-tlr.onnx)
 
 endif()
 
@@ -103,31 +91,29 @@ endif()
 if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   include_directories(
     include
-    ${Eigen3_INCLUDE_DIRS}
     ${Opencv_INCLUDE_DIRS}
     ${CUDA_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
   )
 
   catkin_package(
-    INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} include
+    INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
   )
 
-  set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS} -fpic -std=c++14 -pthread")
+  set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS} -fpic -std=c++11 -pthread")
 
-  ### tlr_detector ###
-  add_library(tlrdetector
-    lib/src/EntropyCalibrator.cpp
-    lib/src/TrtNet.cpp
+  ### ssd ###
+  add_library(ssd
+    lib/src/trt_ssd.cpp
   )
 
-  target_include_directories(tlrdetector PUBLIC
+  target_include_directories(ssd PUBLIC
     lib/include
   )
 
-  target_link_libraries(tlrdetector
+  target_link_libraries(ssd
     ${NVINFER}
     ${NVONNXPARSER}
     ${NVINFER_PLUGIN}
@@ -137,31 +123,22 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${CUDNN_LIBRARY}
   )
 
-  add_executable(traffic_light_fine_detector
-    src/traffic_light_fine_detector_main.cpp
-    src/traffic_light_fine_detector.cpp
+  add_executable(traffic_light_ssd_fine_detector
+    src/main.cpp
+    src/node.cpp
   )
-  target_link_libraries(traffic_light_fine_detector
+  target_link_libraries(traffic_light_ssd_fine_detector
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
-    tlrdetector
+    ssd
   )
-  add_dependencies(traffic_light_fine_detector
+  add_dependencies(traffic_light_ssd_fine_detector
     ${catkin_EXPORTED_TARGETS}
   )
 
-  add_executable(traffic_light_roi_image_saver_node
-    src/roi_image_saver/node.cpp
-    src/roi_image_saver/main.cpp)
-  add_dependencies(traffic_light_roi_image_saver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-  target_link_libraries(traffic_light_roi_image_saver_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-  )
-
   install(TARGETS
-    traffic_light_fine_detector
-    tlrdetector
+    traffic_light_ssd_fine_detector
+    ssd
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -173,9 +150,10 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
       data
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
+
 else()
   find_package(catkin REQUIRED)
   catkin_package()
-  message("TrafficLightFineDetector won't be built, CUDA and/or TensorRT were not found.")
+  message("TrafficLightSSDFineDetector won't be built, CUDA and/or TensorRT were not found.")
 endif()
 
