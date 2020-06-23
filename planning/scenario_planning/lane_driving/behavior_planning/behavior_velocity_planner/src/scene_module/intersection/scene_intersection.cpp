@@ -166,9 +166,18 @@ bool IntersectionModule::checkCollision(
     }
 
     // keep vehicle in detection_area
+    Polygon2d obj_poly;
+    if (object.shape.type == autoware_perception_msgs::Shape::POLYGON) {
+      obj_poly = toBoostPoly(object.shape.footprint);
+    } else {
+      // cylinder type is treated as square-polygon
+      obj_poly = obj2polygon(object_pose, object.shape.dimensions);
+    }
+
     for (const auto & detection_area : detection_areas) {
+      const auto detection_poly = lanelet::utils::to2D(detection_area).basicPolygon();
       const bool is_in_objective_lanelet =
-        bg::within(to_bg2d(object_pose.position), lanelet::utils::to2D(detection_area));
+        !boost::geometry::disjoint(obj_poly, toBoostPoly(detection_poly));
       if (is_in_objective_lanelet) {
         target_objects.objects.push_back(object);
         break;
