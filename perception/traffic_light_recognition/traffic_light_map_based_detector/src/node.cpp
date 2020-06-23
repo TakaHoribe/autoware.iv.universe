@@ -183,7 +183,7 @@ void MapBasedDetector::mapCallback(const autoware_lanelet2_msgs::MapBin & input_
   lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(lanelet_map_ptr_);
   std::vector<lanelet::AutowareTrafficLightConstPtr> all_lanelet_traffic_lights =
     lanelet::utils::query::autowareTrafficLights(all_lanelets);
-  all_traffic_lights_ptr_ = std::make_shared<std::vector<lanelet::ConstLineString3d>>();
+  all_traffic_lights_ptr_ = std::make_shared<MapBasedDetector::TrafficLightSet>();
   // for each traffic light in map check if in range and in view angle of camera
   for (auto tl_itr = all_lanelet_traffic_lights.begin(); tl_itr != all_lanelet_traffic_lights.end();
        ++tl_itr) {
@@ -193,8 +193,7 @@ void MapBasedDetector::mapCallback(const autoware_lanelet2_msgs::MapBin & input_
     for (auto lsp : lights) {
       if (!lsp.isLineString())  // traffic ligths must be linestrings
         continue;
-
-      all_traffic_lights_ptr_->push_back(static_cast<lanelet::ConstLineString3d>(lsp));
+      all_traffic_lights_ptr_->insert(static_cast<lanelet::ConstLineString3d>(lsp));
     }
   }
 }
@@ -213,7 +212,7 @@ void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstP
   }
   std::vector<lanelet::AutowareTrafficLightConstPtr> route_lanelet_traffic_lights =
     lanelet::utils::query::autowareTrafficLights(route_lanelets);
-  route_traffic_lights_ptr_ = std::make_shared<std::vector<lanelet::ConstLineString3d>>();
+  route_traffic_lights_ptr_ = std::make_shared<MapBasedDetector::TrafficLightSet>();
   for (auto tl_itr = route_lanelet_traffic_lights.begin();
        tl_itr != route_lanelet_traffic_lights.end(); ++tl_itr) {
     lanelet::AutowareTrafficLightConstPtr tl = *tl_itr;
@@ -222,13 +221,13 @@ void MapBasedDetector::routeCallback(const autoware_planning_msgs::Route::ConstP
     for (auto lsp : lights) {
       if (!lsp.isLineString())  // traffic ligths must be linestrings
         continue;
-      route_traffic_lights_ptr_->push_back(static_cast<lanelet::ConstLineString3d>(lsp));
+      route_traffic_lights_ptr_->insert(static_cast<lanelet::ConstLineString3d>(lsp));
     }
   }
 }
 
 void MapBasedDetector::isInVisibility(
-  const std::vector<lanelet::ConstLineString3d> & all_traffic_lights,
+  const MapBasedDetector::TrafficLightSet & all_traffic_lights,
   const geometry_msgs::Pose & camera_pose, const sensor_msgs::CameraInfo & camera_info,
   std::vector<lanelet::ConstLineString3d> & visible_traffic_lights)
 {
@@ -280,7 +279,6 @@ void MapBasedDetector::isInVisibility(
     camera2tl_point.y = tf_camera2tl.getOrigin().y();
     camera2tl_point.z = tf_camera2tl.getOrigin().z();
     if (!isInImageFrame(camera_info, camera2tl_point)) continue;
-
     visible_traffic_lights.push_back(traffic_light);
   }
 }

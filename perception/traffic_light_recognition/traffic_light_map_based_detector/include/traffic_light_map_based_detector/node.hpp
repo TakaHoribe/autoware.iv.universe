@@ -55,6 +55,12 @@ private:
     double max_vibration_depth;
   };
 
+  struct IdLessThan {
+    bool operator()(const lanelet::ConstLineString3d& left, const lanelet::ConstLineString3d& right) const {
+      return left.id() < right.id();
+    }
+  };
+
 private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -67,9 +73,11 @@ private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
+  using TrafficLightSet = std::set<lanelet::ConstLineString3d, IdLessThan>;
+
   sensor_msgs::CameraInfo::ConstPtr camera_info_ptr_;
-  std::shared_ptr<std::vector<lanelet::ConstLineString3d>> all_traffic_lights_ptr_;
-  std::shared_ptr<std::vector<lanelet::ConstLineString3d>> route_traffic_lights_ptr_;
+  std::shared_ptr<TrafficLightSet> all_traffic_lights_ptr_;
+  std::shared_ptr<TrafficLightSet> route_traffic_lights_ptr_;
 
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
@@ -80,7 +88,7 @@ private:
   void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr & input_msg);
   void routeCallback(const autoware_planning_msgs::Route::ConstPtr & input_msg);
   void isInVisibility(
-    const std::vector<lanelet::ConstLineString3d> & all_traffic_lights,
+    const TrafficLightSet & all_traffic_lights,
     const geometry_msgs::Pose & camera_pose, const sensor_msgs::CameraInfo & camera_info,
     std::vector<lanelet::ConstLineString3d> & visible_traffic_lights);
   bool isInDistanceRange(
