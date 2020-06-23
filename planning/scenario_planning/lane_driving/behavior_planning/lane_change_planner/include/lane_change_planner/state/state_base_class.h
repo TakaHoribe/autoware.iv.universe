@@ -39,7 +39,7 @@ std::ostream & operator<<(std::ostream & ostream, const State & state);
 struct Status
 {
   autoware_planning_msgs::PathWithLaneId lane_follow_path;
-  autoware_planning_msgs::PathWithLaneId lane_change_path;
+  LaneChangePath lane_change_path;
   std::vector<uint64_t> lane_follow_lane_ids;
   std::vector<uint64_t> lane_change_lane_ids;
   bool lane_change_available;
@@ -48,7 +48,7 @@ struct Status
 
 struct DebugData
 {
-  std::vector<LaneChangeCandidatePath> lane_change_candidate_paths;
+  std::vector<LaneChangePath> lane_change_candidate_paths;
   autoware_planning_msgs::PathWithLaneId selected_path;
   autoware_planning_msgs::PathPointWithLaneId stop_point;
 };
@@ -73,7 +73,7 @@ public:
   virtual autoware_planning_msgs::PathWithLaneId getPath() const = 0;
 
   Status getStatus() const;
-  DebugData  getDebugData() const;
+  DebugData getDebugData() const;
 };
 }  // namespace lane_change_planner
 

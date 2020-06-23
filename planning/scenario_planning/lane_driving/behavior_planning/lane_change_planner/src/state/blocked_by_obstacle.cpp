@@ -104,7 +104,7 @@ void BlockedByObstacleState::update()
   }
 
   // update lane_change_lane
-  status_.lane_change_path = autoware_planning_msgs::PathWithLaneId();  // clear path
+  status_.lane_change_path = LaneChangePath();  // clear path
   status_.lane_change_lane_ids.clear();
   found_safe_path_ = false;
   constexpr double check_distance = 100.0;
@@ -125,13 +125,13 @@ void BlockedByObstacleState::update()
     }
 
     // select valid path
-    autoware_planning_msgs::PathWithLaneId selected_path;
+    LaneChangePath selected_path;
     if (state_machine::common_functions::selectLaneChangePath(
           lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
           current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
-    debug_data_.selected_path = selected_path;
+    debug_data_.selected_path = selected_path.path;
     status_.lane_change_path = selected_path;
   }
 
@@ -151,14 +151,14 @@ void BlockedByObstacleState::update()
     }
 
     // select valid path
-    autoware_planning_msgs::PathWithLaneId selected_path;
+    LaneChangePath selected_path;
     if (state_machine::common_functions::selectLaneChangePath(
           lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
           current_twist_->twist, ros_parameters_, &selected_path)) {
       found_safe_path_ = true;
     }
 
-    debug_data_.selected_path = selected_path;
+    debug_data_.selected_path = selected_path.path;
     status_.lane_change_path = selected_path;
   }
 

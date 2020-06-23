@@ -179,7 +179,8 @@ void LaneChanger::run(const ros::TimerEvent & event)
   lane_change_available_msg.data = lane_change_status.lane_change_available;
   lane_change_available_publisher_.publish(lane_change_available_msg);
 
-  auto candidate_path = util::convertToPathFromPathWithLaneId(lane_change_status.lane_change_path);
+  auto candidate_path =
+    util::convertToPathFromPathWithLaneId(lane_change_status.lane_change_path.path);
   candidate_path.header.frame_id = "map";
   candidate_path.header.stamp = ros::Time::now();
   candidate_path_publisher_.publish(candidate_path);
@@ -205,9 +206,9 @@ void LaneChanger::publishDebugMarkers()
   visualization_msgs::MarkerArray debug_markers;
   // get ego vehicle path marker
   const auto & status = state_machine_ptr_->getStatus();
-  if (!status.lane_change_path.points.empty()) {
+  if (!status.lane_change_path.path.points.empty()) {
     const auto & vehicle_predicted_path = util::convertToPredictedPath(
-      status.lane_change_path, current_twist->twist, current_pose.pose, prediction_duration,
+      status.lane_change_path.path, current_twist->twist, current_pose.pose, prediction_duration,
       time_resolution, 0);
     const auto & resampled_path =
       util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
@@ -221,7 +222,7 @@ void LaneChanger::publishDebugMarkers()
   if (!status.lane_follow_path.points.empty()) {
     const auto & vehicle_predicted_path = util::convertToPredictedPath(
       status.lane_follow_path, current_twist->twist, current_pose.pose, prediction_duration,
-      time_resolution, 0);
+      time_resolution, 0.0);
     const auto & resampled_path =
       util::resamplePredictedPath(vehicle_predicted_path, time_resolution, prediction_duration);
 
@@ -237,7 +238,7 @@ void LaneChanger::publishDebugMarkers()
     constexpr double check_distance = 100.0;
     // get lanes used for detection
     const auto & check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-      status.lane_change_path, target_lanes, check_distance);
+      status.lane_change_path.path, target_lanes, check_distance);
 
     const auto object_indices = util::filterObjectsByLanelets(*dynamic_objects, check_lanes);
     for (const auto & i : object_indices) {

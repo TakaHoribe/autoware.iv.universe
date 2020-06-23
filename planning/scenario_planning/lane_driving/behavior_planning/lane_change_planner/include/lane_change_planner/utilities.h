@@ -27,6 +27,11 @@
 #include <autoware_planning_msgs/Path.h>
 #include <autoware_planning_msgs/PathWithLaneId.h>
 
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometry.hpp>
+
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_routing/Route.h>
 
@@ -37,6 +42,9 @@ namespace lane_change_planner
 {
 namespace util
 {
+using Point = boost::geometry::model::d2::point_xy<double>;
+using Polygon = boost::geometry::model::polygon<Point>;
+using LineString = boost::geometry::model::linestring<Point>;
 struct FrenetCoordinate3d
 {
   double length;
@@ -78,8 +86,7 @@ double getDistance3d(const geometry_msgs::Point & p1, const geometry_msgs::Point
 double getDistanceBetweenPredictedPaths(
   const autoware_perception_msgs::PredictedPath & path1,
   const autoware_perception_msgs::PredictedPath & path2, const double start_time,
-  const double end_time, const double resolution, const bool use_vehicle_width,
-  const double vehicle_width = 0.0);
+  const double end_time, const double resolution);
 
 std::vector<size_t> filterObjectsByLanelets(
   const autoware_perception_msgs::DynamicObjectArray & objects,
@@ -89,6 +96,14 @@ std::vector<size_t> filterObjectsByLanelets(
 std::vector<size_t> filterObjectsByLanelets(
   const autoware_perception_msgs::DynamicObjectArray & objects,
   const lanelet::ConstLanelets & target_lanelets);
+
+bool calcObjectPolygon(
+  const autoware_perception_msgs::DynamicObject & object, Polygon * object_polygon);
+
+std::vector<size_t> filterObjectsByPath(
+  const autoware_perception_msgs::DynamicObjectArray & objects,
+  const std::vector<size_t> & object_indices,
+  const autoware_planning_msgs::PathWithLaneId & ego_path, const double vehicle_width);
 
 const geometry_msgs::Pose refineGoal(
   const geometry_msgs::Pose & goal, const lanelet::ConstLanelet & goal_lanelet);

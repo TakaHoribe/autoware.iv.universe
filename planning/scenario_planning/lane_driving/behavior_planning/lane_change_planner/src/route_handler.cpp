@@ -680,12 +680,12 @@ lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Po
   return target_lanelets;
 }
 
-std::vector<LaneChangeCandidatePath> RouteHandler::getLaneChangePaths(
+std::vector<LaneChangePath> RouteHandler::getLaneChangePaths(
   const lanelet::ConstLanelets & original_lanelets, const lanelet::ConstLanelets & target_lanelets,
   const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist,
   const LaneChangerParameters & parameter) const
 {
-  std::vector<LaneChangeCandidatePath> candidate_paths;
+  std::vector<LaneChangePath> candidate_paths;
 
   if (original_lanelets.empty() || target_lanelets.empty()) {
     return candidate_paths;
@@ -743,7 +743,7 @@ std::vector<LaneChangeCandidatePath> RouteHandler::getLaneChangePaths(
       reference_path2 = getReferencePath(target_lanelets, s_start, s_end);
     }
 
-    LaneChangeCandidatePath candidate_path;
+    LaneChangePath candidate_path;
     candidate_path.acceleration = acceleration;
     candidate_path.preparation_length = straight_distance;
     candidate_path.lane_change_length = lane_change_distance;

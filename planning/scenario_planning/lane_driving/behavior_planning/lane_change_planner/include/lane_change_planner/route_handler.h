@@ -35,7 +35,7 @@ namespace lane_change_planner
 {
 enum class LaneChangeDirection { NONE, LEFT, RIGHT };
 
-struct LaneChangeCandidatePath
+struct LaneChangePath
 {
   autoware_planning_msgs::PathWithLaneId path;
   double acceleration = 0.0;
@@ -115,7 +115,7 @@ public:
 
   int getNumLaneToPreferredLane(const lanelet::ConstLanelet & lanelet) const;
   bool isInPreferredLane(const geometry_msgs::PoseStamped & pose) const;
-  std::vector<LaneChangeCandidatePath> getLaneChangePaths(
+  std::vector<LaneChangePath> getLaneChangePaths(
     const lanelet::ConstLanelets & original_lanes, const lanelet::ConstLanelets & target_lanes,
     const geometry_msgs::Pose & pose, const geometry_msgs::Twist & twist,
     const LaneChangerParameters & parameter) const;

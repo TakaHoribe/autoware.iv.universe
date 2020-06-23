@@ -39,7 +39,7 @@ void ForcingLaneChangeState::entry()
 
 autoware_planning_msgs::PathWithLaneId ForcingLaneChangeState::getPath() const
 {
-  return status_.lane_change_path;
+  return status_.lane_change_path.path;
 }
 
 void ForcingLaneChangeState::update()
@@ -55,7 +55,7 @@ void ForcingLaneChangeState::update()
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
-    status_.lane_change_path.drivable_area =
+    status_.lane_change_path.path.drivable_area =
       util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
   }
 }

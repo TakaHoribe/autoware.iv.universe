@@ -394,11 +394,9 @@ double getDistance3d(const geometry_msgs::Point & p1, const geometry_msgs::Point
 
 double getDistanceBetweenPredictedPaths(
   const PredictedPath & object_path, const PredictedPath & ego_path, const double start_time,
-  const double end_time, const double resolution, const bool use_vehicle_width,
-  const double vehicle_width)
+  const double end_time, const double resolution)
 {
   ros::Duration t_delta(resolution);
-  // ros::Duration prediction_duration(duration);
   double min_distance = std::numeric_limits<double>::max();
   ros::Time ros_start_time = ros::Time::now() + ros::Duration(start_time);
   ros::Time ros_end_time = ros::Time::now() + ros::Duration(end_time);
@@ -410,15 +408,6 @@ double getDistanceBetweenPredictedPaths(
     }
     if (!lerpByTimeStamp(ego_path, t, &ego_pose)) {
       continue;
-    }
-    if (use_vehicle_width) {
-      FrenetCoordinate3d frenet_coordinate;
-      if (convertToFrenetCoordinate3d(
-            ego_path_point_array, object_pose.position, &frenet_coordinate)) {
-        if (frenet_coordinate.distance > vehicle_width) {
-          continue;
-        }
-      }
     }
     double distance = getDistance3d(object_pose.position, ego_pose.position);
     if (distance < min_distance) {
@@ -442,12 +431,23 @@ std::vector<size_t> filterObjectsByLanelets(
     lanelet::utils::getPolygonFromArcLength(target_lanelets, start_arc_length, end_arc_length);
   const auto polygon2d = lanelet::utils::to2D(polygon).basicPolygon();
   for (size_t i = 0; i < objects.objects.size(); i++) {
-    const auto & obj_position = objects.objects.at(i).state.pose_covariance.pose.position;
-    lanelet::BasicPoint2d obj_position2d(obj_position.x, obj_position.y);
+    const auto obj = objects.objects.at(i);
+    // create object polygon
+    Polygon obj_polygon;
+    if (!calcObjectPolygon(obj, &obj_polygon)) {
+      continue;
+    }
+    // create lanelet polygon
+    Polygon lanelet_polygon;
+    for (const auto & lanelet_point : polygon2d) {
+      lanelet_polygon.outer().push_back(Point(lanelet_point.x(), lanelet_point.y()));
+    }
+    lanelet_polygon.outer().push_back(lanelet_polygon.outer().front());
 
-    double distance = boost::geometry::distance(polygon2d, obj_position2d);
-    if (distance < std::numeric_limits<double>::epsilon()) {
+    // check the object does not intersect the lanelet
+    if (!boost::geometry::disjoint(lanelet_polygon, obj_polygon)) {
       indices.push_back(i);
+      continue;
     }
   }
   return indices;
@@ -464,15 +464,123 @@ std::vector<size_t> filterObjectsByLanelets(
   }
 
   for (size_t i = 0; i < objects.objects.size(); i++) {
-    const auto & obj_position = objects.objects.at(i).state.pose_covariance.pose.position;
-    lanelet::BasicPoint2d obj_position2d(obj_position.x, obj_position.y);
+    // create object polygon
+    const auto obj = objects.objects.at(i);
+    // create object polygon
+    Polygon obj_polygon;
+    if (!calcObjectPolygon(obj, &obj_polygon)) {
+      continue;
+    }
 
     for (const auto & llt : target_lanelets) {
+      // create lanelet polygon
       const auto polygon2d = llt.polygon2d().basicPolygon();
-      double distance = boost::geometry::distance(polygon2d, obj_position2d);
-      if (distance < std::numeric_limits<double>::epsilon()) {
-        indices.push_back(i);
+      Polygon lanelet_polygon;
+      for (const auto & lanelet_point : polygon2d) {
+        lanelet_polygon.outer().push_back(
+          boost::geometry::make<Point>(lanelet_point.x(), lanelet_point.y()));
       }
+      lanelet_polygon.outer().push_back(lanelet_polygon.outer().front());
+
+      // check the object does not intersect the lanelet
+      if (!boost::geometry::disjoint(lanelet_polygon, obj_polygon)) {
+        indices.push_back(i);
+        continue;
+      }
+    }
+  }
+  return indices;
+}
+
+bool calcObjectPolygon(
+  const autoware_perception_msgs::DynamicObject & object, Polygon * object_polygon)
+{
+  const double obj_x = object.state.pose_covariance.pose.position.x;
+  const double obj_y = object.state.pose_covariance.pose.position.y;
+  if (object.shape.type == autoware_perception_msgs::Shape::BOUNDING_BOX) {
+    const double len_x = object.shape.dimensions.x;
+    const double len_y = object.shape.dimensions.y;
+
+    tf2::Transform tf_map2obj;
+    tf2::fromMsg(object.state.pose_covariance.pose, tf_map2obj);
+
+    // set vertices at map coordinate
+    tf2::Vector3 p1_map, p2_map, p3_map, p4_map;
+
+    p1_map.setX(len_x / 2);
+    p1_map.setY(len_y / 2);
+    p1_map.setZ(0.0);
+    p1_map.setW(1.0);
+
+    p2_map.setX(-len_x / 2);
+    p2_map.setY(len_y / 2);
+    p2_map.setZ(0.0);
+    p2_map.setW(1.0);
+
+    p3_map.setX(-len_x / 2);
+    p3_map.setY(-len_y / 2);
+    p3_map.setZ(0.0);
+    p3_map.setW(1.0);
+
+    p4_map.setX(len_x / 2);
+    p4_map.setY(-len_y / 2);
+    p4_map.setZ(0.0);
+    p4_map.setW(1.0);
+
+    // transform vertices from map coordinate to object coordinate
+    tf2::Vector3 p1_obj, p2_obj, p3_obj, p4_obj;
+
+    p1_obj = tf_map2obj * p1_map;
+    p2_obj = tf_map2obj * p2_map;
+    p3_obj = tf_map2obj * p3_map;
+    p4_obj = tf_map2obj * p4_map;
+
+    object_polygon->outer().push_back(Point(p1_obj.x(), p1_obj.y()));
+    object_polygon->outer().push_back(Point(p2_obj.x(), p2_obj.y()));
+    object_polygon->outer().push_back(Point(p3_obj.x(), p3_obj.y()));
+    object_polygon->outer().push_back(Point(p4_obj.x(), p4_obj.y()));
+
+  } else if (object.shape.type == autoware_perception_msgs::Shape::CYLINDER) {
+    const size_t N = 20;
+    const double r = object.shape.dimensions.x / 2;
+    for (size_t i = 0; i < N; ++i) {
+      object_polygon->outer().push_back(
+        Point(obj_x + r * std::cos(2.0 * M_PI / N * i), obj_y + r * std::sin(2.0 * M_PI / N * i)));
+    }
+  } else if (object.shape.type == autoware_perception_msgs::Shape::POLYGON) {
+    const auto obj_points = object.shape.footprint.points;
+    for (const auto & obj_point : obj_points) {
+      object_polygon->outer().push_back(Point(obj_point.x, obj_point.y));
+    }
+  } else {
+    ROS_WARN("Object shape unknown!");
+    return false;
+  }
+  object_polygon->outer().push_back(object_polygon->outer().front());
+
+  return true;
+}
+
+std::vector<size_t> filterObjectsByPath(
+  const autoware_perception_msgs::DynamicObjectArray & objects,
+  const std::vector<size_t> & object_indices,
+  const autoware_planning_msgs::PathWithLaneId & ego_path, const double vehicle_width)
+{
+  std::vector<size_t> indices;
+  const auto ego_path_point_array = convertToGeometryPointArray(ego_path);
+  for (const auto & i : object_indices) {
+    Polygon obj_polygon;
+    if (!calcObjectPolygon(objects.objects.at(i), &obj_polygon)) {
+      continue;
+    }
+    LineString ego_path_line;
+    for (size_t j = 0; j < ego_path_point_array.size(); ++j) {
+      boost::geometry::append(
+        ego_path_line, Point(ego_path_point_array.at(j).x, ego_path_point_array.at(j).y));
+    }
+    const double distance = boost::geometry::distance(obj_polygon, ego_path_line);
+    if (distance < vehicle_width) {
+      indices.push_back(i);
     }
   }
   return indices;

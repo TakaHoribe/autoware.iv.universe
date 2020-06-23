@@ -46,7 +46,7 @@ void ExecutingLaneChangeState::entry()
 
 autoware_planning_msgs::PathWithLaneId ExecutingLaneChangeState::getPath() const
 {
-  return status_.lane_change_path;
+  return status_.lane_change_path.path;
 }
 
 void ExecutingLaneChangeState::update()
@@ -64,7 +64,7 @@ void ExecutingLaneChangeState::update()
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
-    status_.lane_change_path.drivable_area =
+    status_.lane_change_path.path.drivable_area =
       util::convertLanesToDrivableArea(lanes, current_pose_, width, height, resolution);
   }
 }
@@ -103,11 +103,12 @@ bool ExecutingLaneChangeState::isAbortConditionSatisfied() const
     constexpr double check_distance = 100.0;
     // get lanes used for detection
     const auto & check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-      status_.lane_change_path, target_lanes_, check_distance);
+      status_.lane_change_path.path, target_lanes_, check_distance);
 
     is_path_safe = state_machine::common_functions::isLaneChangePathSafe(
-      status_.lane_change_path, original_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
-      current_twist_->twist, ros_parameters_, false);
+      status_.lane_change_path.path, original_lanes_, check_lanes, dynamic_objects_,
+      current_pose_.pose, current_twist_->twist, ros_parameters_, false,
+      status_.lane_change_path.acceleration);
   }
 
   // check vehicle velocity thresh
