@@ -859,5 +859,152 @@ autoware_planning_msgs::PathPointWithLaneId insertStopPoint(
   return stop_point;
 }
 
+/*
+ * spline interpolation
+ */
+SplineInterpolate::SplineInterpolate() {}
+
+void SplineInterpolate::generateSpline(
+  const std::vector<double> & base_index, const std::vector<double> & base_value)
+{
+  int N = base_value.size();
+
+  a_.clear();
+  b_.clear();
+  c_.clear();
+  d_.clear();
+  h_.clear();
+
+  a_ = base_value;
+
+  for (size_t i = 0; i < N - 1; ++i) {
+    h_.push_back(base_index[i + 1] - base_index[i]);
+  }
+
+  c_ = solveLinearSystem(1.8, 100);
+
+  for (int i = 0; i < N - 1; i++) {
+    d_.push_back((c_[i + 1] - c_[i]) / (3.0 * h_[i]));
+    b_.push_back((a_[i + 1] - a_[i]) / h_[i] - h_[i] * (2.0 * c_[i] + c_[i + 1]) / 3.0);
+  }
+
+  d_.push_back(0.0);
+  b_.push_back(0.0);
+
+  initialized_ = true;
+};
+
+double SplineInterpolate::getValue(
+  const double & query, const std::vector<double> & base_index) const
+{
+  if (!initialized_) {
+    std::cerr << "[interpolate] spline is uninitialized" << std::endl;
+    return 0.0;
+  }
+
+  size_t j = 0;
+  while (base_index[j] <= query) ++j;
+  --j;
+  const double ds = query - base_index[j];
+  return a_[j] + (b_[j] + (c_[j] + d_[j] * ds) * ds) * ds;
+}
+
+bool SplineInterpolate::interpolate(
+  const std::vector<double> & base_index, const std::vector<double> & base_value,
+  const std::vector<double> & return_index, std::vector<double> & return_value)
+{
+  if (!isValidInput(base_index, base_value, return_index, return_value)) {
+    std::cerr << "[interpolate] invalid input. interpolation failed." << std::endl;
+    return false;
+  }
+
+  // calculate spline coefficients
+  generateSpline(base_index, base_value);
+
+  // interpolate values at query points
+  for (size_t i = 0; i < return_index.size(); ++i) {
+    return_value.push_back(getValue(return_index[i], base_index));
+  }
+  return true;
+}
+
+bool SplineInterpolate::isIncrease(const std::vector<double> & x) const
+{
+  for (int i = 0; i < static_cast<int>(x.size()) - 1; ++i) {
+    if (x[i] > x[i + 1]) return false;
+  }
+  return true;
+};
+
+bool SplineInterpolate::isValidInput(
+  const std::vector<double> & base_index, const std::vector<double> & base_value,
+  const std::vector<double> & return_index, std::vector<double> & return_value) const
+{
+  if (base_index.empty() || base_value.empty() || return_index.empty()) {
+    std::cout << "bad index : some vector is empty. base_index: " << base_index.size()
+              << ", base_value: " << base_value.size() << ", return_index: " << return_index.size()
+              << std::endl;
+    return false;
+  }
+  if (!isIncrease(base_index)) {
+    std::cout << "bad index : base_index is not monotonically increasing. base_index = ["
+              << base_index.front() << ", " << base_index.back() << "]" << std::endl;
+    return false;
+  }
+  if (!isIncrease(return_index)) {
+    std::cout << "bad index : base_index is not monotonically increasing. return_index = ["
+              << return_index.front() << ", " << return_index.back() << "]" << std::endl;
+    return false;
+  }
+  if (return_index.front() < base_index.front()) {
+    std::cout << "bad index : return_index.front() < base_index.front()" << std::endl;
+    return false;
+  }
+  if (base_index.back() < return_index.back()) {
+    std::cout << "bad index : base_index.back() < return_index.back()" << std::endl;
+    return false;
+  }
+  if (base_index.size() != base_value.size()) {
+    std::cout << "bad index : base_index.size() != base_value.size()" << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+std::vector<double> SplineInterpolate::solveLinearSystem(
+  const double omega, const size_t max_iter) const
+{
+  // solve A * ans = rhs by SOR method
+  constexpr double converge_range = 0.00001;
+  std::vector<double> ans(a_.size(), 1.0);
+  std::vector<double> ans_next(a_.size(), 0.0);
+  size_t num_iter = 0;
+
+  while (!isConvergeL1(ans, ans_next, converge_range) && num_iter <= max_iter) {
+    ans = ans_next;
+    for (size_t i = 1; i < a_.size() - 1; ++i) {
+      const double rhs = 3.0 / h_[i] * (a_[i + 1] - a_[i]) - 3.0 / h_[i - 1] * (a_[i] - a_[i - 1]);
+      ans_next[i] += omega / (2.0 * (h_[i - 1] + h_[i])) *
+                     (rhs - (h_[i - 1] * ans_next[i - 1] + 2.0 * (h_[i - 1] + h_[i]) * ans[i] +
+                             h_[i] * ans[i + 1]));
+    }
+    ++num_iter;
+  }
+
+  if (num_iter > max_iter) ROS_WARN("[interpolate] unconverged!");
+  return ans_next;
+}
+
+bool SplineInterpolate::isConvergeL1(
+  const std::vector<double> & r1, const std::vector<double> & r2, const double converge_range) const
+{
+  double d = 0.0;
+  for (size_t i = 0; i < r1.size(); ++i) {
+    d += std::fabs(r1.at(i) - r2.at(i));
+  }
+  return d < converge_range;
+}
+
 }  // namespace util
 }  // namespace lane_change_planner

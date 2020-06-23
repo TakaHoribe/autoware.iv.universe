@@ -121,6 +121,35 @@ lanelet::Polygon3d getVehiclePolygon(
 autoware_planning_msgs::PathPointWithLaneId insertStopPoint(
   double length, autoware_planning_msgs::PathWithLaneId * path);
 
+class SplineInterpolate
+{
+  bool initialized_;
+  std::vector<double> a_;
+  std::vector<double> b_;
+  std::vector<double> c_;
+  std::vector<double> d_;
+  std::vector<double> h_;
+
+public:
+  SplineInterpolate();
+  bool interpolate(
+    const std::vector<double> & base_index, const std::vector<double> & base_value,
+    const std::vector<double> & return_index, std::vector<double> & return_value);
+
+private:
+  double getValue(const double & query, const std::vector<double> & base_index) const;
+  void generateSpline(
+    const std::vector<double> & base_index, const std::vector<double> & base_value);
+  bool isIncrease(const std::vector<double> & x) const;
+  bool isValidInput(
+    const std::vector<double> & base_index, const std::vector<double> & base_value,
+    const std::vector<double> & return_index, std::vector<double> & return_value) const;
+  std::vector<double> solveLinearSystem(const double omega, const size_t max_iter) const;
+  bool isConvergeL1(
+    const std::vector<double> & r1, const std::vector<double> & r2,
+    const double converge_range) const;
+};
+
 }  // namespace util
 }  // namespace lane_change_planner
 

@@ -63,10 +63,101 @@ bool isRouteLooped(const autoware_planning_msgs::Route & route_msg)
   return false;
 }
 
-PathWithLaneId combineReferencePath(const PathWithLaneId path1, const PathWithLaneId path2)
+PathWithLaneId combineReferencePath(
+  const PathWithLaneId path1, const PathWithLaneId path2, const double interval,
+  const size_t N_sample)
 {
   PathWithLaneId path;
   path.points.insert(path.points.end(), path1.points.begin(), path1.points.end());
+
+  const double dx =
+    path2.points.front().point.pose.position.x - path1.points.back().point.pose.position.x;
+  const double dy =
+    path2.points.front().point.pose.position.y - path1.points.back().point.pose.position.y;
+  const double ds = std::hypot(dx, dy);
+  if (interval < ds) {
+    //calculate samples
+    std::vector<size_t> prev_samples;
+    std::vector<size_t> next_samples;
+    for (size_t i = 0; i < N_sample; ++i) {
+      prev_samples.push_back(path1.points.size() - N_sample + i);
+      next_samples.push_back(i);
+    }
+
+    std::vector<double> base_x;
+    std::vector<double> base_y;
+    std::vector<double> base_z;
+    for (size_t i = 0; i < N_sample; ++i) {
+      base_x.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.x);
+      base_y.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.y);
+      base_z.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.z);
+    }
+    for (size_t i = 0; i < N_sample; ++i) {
+      base_x.push_back(path2.points.at(next_samples.at(i)).point.pose.position.x);
+      base_y.push_back(path2.points.at(next_samples.at(i)).point.pose.position.y);
+      base_z.push_back(path2.points.at(next_samples.at(i)).point.pose.position.z);
+    }
+
+    std::vector<double> base_s = {0.0};
+    for (size_t i = 1; i < base_x.size(); ++i) {
+      const double base_dx = base_x.at(i) - base_x.at(i - 1);
+      const double base_dy = base_y.at(i) - base_y.at(i - 1);
+      base_s.push_back(base_s.at(i - 1) + std::hypot(base_dx, base_dy));
+    }
+
+    //calculate query
+    std::vector<double> inner_s;
+    for (double d = (base_s.at(N_sample - 1) + interval); d < base_s.at(N_sample); d += interval) {
+      inner_s.push_back(d);
+    }
+
+    lane_change_planner::util::SplineInterpolate spline;
+    std::vector<PathPointWithLaneId> inner_points;
+    std::vector<double> inner_x;
+    std::vector<double> inner_y;
+    std::vector<double> inner_z;
+    if (
+      spline.interpolate(base_s, base_x, inner_s, inner_x) &&
+      spline.interpolate(base_s, base_y, inner_s, inner_y) &&
+      spline.interpolate(base_s, base_z, inner_s, inner_z)) {
+      //set position and other data
+      for (size_t i = 0; i < inner_s.size(); ++i) {
+        PathPointWithLaneId inner_point;
+        inner_point.lane_ids = path1.points.back().lane_ids;
+        inner_point.point.type = path1.points.back().point.type;
+        inner_point.point.twist = path1.points.back().point.twist;
+        inner_point.point.pose.position.x = inner_x.at(i);
+        inner_point.point.pose.position.y = inner_y.at(i);
+        inner_point.point.pose.position.z = inner_z.at(i);
+        inner_points.push_back(inner_point);
+      }
+
+      //set yaw
+      for (size_t i = 0; i < inner_points.size(); ++i) {
+        geometry_msgs::Point prev, next;
+        if (i == 0) {
+          prev = path1.points.back().point.pose.position;
+        } else {
+          prev = inner_points.at(i - 1).point.pose.position;
+        }
+        if (i == (inner_s.size() - 1)) {
+          next = path2.points.front().point.pose.position;
+        } else {
+          next = inner_points.at(i + 1).point.pose.position;
+        }
+
+        double yaw = std::atan2(next.y - prev.y, next.x - prev.x);
+        tf2::Quaternion q;
+        q.setRPY(0, 0, yaw);
+        inner_points.at(i).point.pose.orientation = tf2::toMsg(q);
+      }
+
+      path.points.insert(path.points.end(), inner_points.begin(), inner_points.end());
+
+    } else {
+      ROS_WARN("[LaneChageModule::splineInterpolate] spline interpolation failed.");
+    }
+  }
   path.points.insert(path.points.end(), path2.points.begin(), path2.points.end());
   return path;
 }
@@ -656,7 +747,7 @@ std::vector<LaneChangeCandidatePath> RouteHandler::getLaneChangePaths(
     candidate_path.acceleration = acceleration;
     candidate_path.preparation_length = straight_distance;
     candidate_path.lane_change_length = lane_change_distance;
-    candidate_path.path = combineReferencePath(reference_path1, reference_path2);
+    candidate_path.path = combineReferencePath(reference_path1, reference_path2, 5.0, 2);
 
     // set fixed flag
     for (auto & pt : candidate_path.path.points) {
@@ -737,8 +828,7 @@ lanelet::ConstLanelets RouteHandler::getCheckTargetLanesFromPath(
     }
   }
   // return emtpy lane if failed to find root lane_id
-  if(root_lane_id == lanelet::InvalId)
-  {
+  if (root_lane_id == lanelet::InvalId) {
     return target_lanes;
   }
   lanelet::ConstLanelet root_lanelet;
