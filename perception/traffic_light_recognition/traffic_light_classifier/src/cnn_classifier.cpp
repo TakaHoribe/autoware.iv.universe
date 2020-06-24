@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 #include "traffic_light_classifier/cnn_classifier.hpp"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 namespace traffic_light
 {
@@ -98,10 +100,12 @@ void CNNClassifier::outputDebugImage(
 {
   float probability;
   std::string label;
-  for (auto state : states) {
+  for (int i=0; i<states.size(); i++) {
+    auto state = states.at(i);
     // all lamp confidence are the same
     probability = state.confidence;
     label += state2label_[state.type];
+    if (i < states.size() - 1) label += ",";
   }
 
   int expand_w = 200;
@@ -161,25 +165,21 @@ bool CNNClassifier::postProcess(
 
   std::string match_label = labels_[sorted_indices[0]];
   float probability = probs[sorted_indices[0]];
-  if (match_label == "stop") {
+
+  // label names are assumed to be comma-separated to represent each lamp
+  // e.g.
+  // match_label: "left,red,right,straight"
+  // splited_label: ["left","red","right","straight"]
+  std::vector<std::string> splited_label;
+  boost::algorithm::split(splited_label, match_label, boost::is_any_of(","));
+  for (auto label : splited_label) {
+    if (label2state_.find(label) == label2state_.end()) {
+      ROS_DEBUG("cnn_classifier does not have a key [%s]", label);
+      continue;
+    }
     autoware_perception_msgs::LampState state;
-    state.type = autoware_perception_msgs::LampState::RED;
+    state.type = label2state_[label];
     state.confidence = probability;
-    states.push_back(state);
-  } else if (match_label == "warning") {
-    autoware_perception_msgs::LampState state;
-    state.type = autoware_perception_msgs::LampState::YELLOW;
-    state.confidence = probability;
-    states.push_back(state);
-  } else if (match_label == "go") {
-    autoware_perception_msgs::LampState state;
-    state.type = autoware_perception_msgs::LampState::GREEN;
-    state.confidence = probability;
-    states.push_back(state);
-  } else {
-    autoware_perception_msgs::LampState state;
-    state.type = autoware_perception_msgs::LampState::UNKNOWN;
-    state.confidence = 0.0;
     states.push_back(state);
   }
 

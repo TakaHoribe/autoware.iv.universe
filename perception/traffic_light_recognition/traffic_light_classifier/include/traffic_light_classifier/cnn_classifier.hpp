@@ -54,11 +54,25 @@ private:
 
 private:
   std::map<int, std::string> state2label_{
-    {autoware_perception_msgs::LampState::RED, "stop"},
-    {autoware_perception_msgs::LampState::YELLOW, "warning"},
-    {autoware_perception_msgs::LampState::GREEN, "go"},
+    {autoware_perception_msgs::LampState::RED, "red"},
+    {autoware_perception_msgs::LampState::YELLOW, "yellow"},
+    {autoware_perception_msgs::LampState::GREEN, "green"},
+    {autoware_perception_msgs::LampState::UP, "straight"},
+    {autoware_perception_msgs::LampState::LEFT, "left"},
+    {autoware_perception_msgs::LampState::RIGHT, "right"},
     {autoware_perception_msgs::LampState::UNKNOWN, "unknown"},
   };
+
+  std::map<std::string, int> label2state_{
+    {"red", autoware_perception_msgs::LampState::RED},
+    {"yellow", autoware_perception_msgs::LampState::YELLOW},
+    {"green", autoware_perception_msgs::LampState::GREEN},
+    {"straight", autoware_perception_msgs::LampState::UP},
+    {"left", autoware_perception_msgs::LampState::LEFT},
+    {"right", autoware_perception_msgs::LampState::RIGHT},
+    {"unknown", autoware_perception_msgs::LampState::UNKNOWN},
+  };
+
   std::shared_ptr<Tn::TrtCommon> trt_;
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
