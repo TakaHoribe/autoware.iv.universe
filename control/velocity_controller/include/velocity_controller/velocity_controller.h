@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VELOCITY_CONTROLLER
-#define VELOCITY_CONTROLLER
+#ifndef AUTOWARE_CONTROL_VELOCITY_CONTROLLER_H
+#define AUTOWARE_CONTROL_VELOCITY_CONTROLLER_H
 
 #include <memory>
 
@@ -65,7 +65,6 @@ private:
 
   // parameters
   // enabled flags
-  bool show_debug_info_;  //!< @brief flag to show debug info
   bool enable_smooth_stop_;
   bool enable_overshoot_emergency_;
   bool enable_slope_compensation_;
@@ -200,6 +199,8 @@ private:
   double applyRateFilter(
     const double input_val, const double prev_val, const double dt, const double max_val,
     const double min_val) const;
+  double applyRateFilter(
+    const double input_val, const double prev_val, const double dt, const double lim_val) const;
   double applySlopeCompensation(const double acc, const double pitch, const Shift shift) const;
   double calcStopDistance(
     const autoware_planning_msgs::Trajectory & trajectory, const int closest) const;
