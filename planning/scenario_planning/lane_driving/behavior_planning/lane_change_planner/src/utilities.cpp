@@ -880,7 +880,72 @@ double getDistanceToNextIntersection(
   }
 
   return std::numeric_limits<double>::max();
-}  // namespace util
+}
+
+double getDistanceToCrosswalk(
+  const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets,
+  const lanelet::routing::RoutingGraphContainer & overall_graphs)
+{
+  const auto & arc_coordinates = lanelet::utils::getArcCoordinates(lanelets, current_pose);
+
+  lanelet::ConstLanelet current_lanelet;
+  if (!lanelet::utils::query::getClosestLanelet(lanelets, current_pose, &current_lanelet)) {
+    return std::numeric_limits<double>::max();
+  }
+
+  double distance = 0;
+  bool is_after_current_lanelet = false;
+  for (const auto & llt : lanelets) {
+    if (llt == current_lanelet) {
+      is_after_current_lanelet = true;
+    }
+    if (is_after_current_lanelet) {
+      const auto conflicting_crosswalks = overall_graphs.conflictingInGraph(llt, 1);
+      if (!(conflicting_crosswalks.empty())) {
+        // create centerline
+        const lanelet::ConstLineString2d lanelet_centerline = llt.centerline2d();
+        LineString centerline;
+        for (const auto & point : lanelet_centerline) {
+          boost::geometry::append(centerline, Point(point.x(), point.y()));
+        }
+
+        //create crosswalk polygon and calculate distance
+        double min_distance_to_crosswalk = std::numeric_limits<double>::max();
+        for (const auto & crosswalk : conflicting_crosswalks) {
+          lanelet::CompoundPolygon2d lanelet_crosswalk_polygon = crosswalk.polygon2d();
+          Polygon polygon;
+          for (const auto & point : lanelet_crosswalk_polygon) {
+            polygon.outer().push_back(Point(point.x(), point.y()));
+          }
+          polygon.outer().push_back(polygon.outer().front());
+
+          std::vector<Point> points_intersection;
+          boost::geometry::intersection(centerline, polygon, points_intersection);
+
+          for (const auto & point : points_intersection) {
+            lanelet::ConstLanelets lanelets = {llt};
+            geometry_msgs::Pose pose_point;
+            pose_point.position.x = point.x();
+            pose_point.position.y = point.y();
+            const lanelet::ArcCoordinates & arc_crosswalk =
+              lanelet::utils::getArcCoordinates(lanelets, pose_point);
+
+            const double distance_to_crosswalk = arc_crosswalk.length;
+            if (distance_to_crosswalk < min_distance_to_crosswalk) {
+              min_distance_to_crosswalk = distance_to_crosswalk;
+            }
+          }
+        }
+        if (distance + min_distance_to_crosswalk > arc_coordinates.length) {
+          return distance + min_distance_to_crosswalk - arc_coordinates.length;
+        }
+      }
+    }
+    distance += lanelet::utils::getLaneletLength3d(llt);
+  }
+
+  return std::numeric_limits<double>::max();
+}
 
 std::vector<uint64_t> getIds(const lanelet::ConstLanelets & lanelets)
 {

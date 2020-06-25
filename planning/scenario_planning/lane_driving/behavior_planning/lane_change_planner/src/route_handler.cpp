@@ -201,6 +201,19 @@ void RouteHandler::mapCallback(const autoware_lanelet2_msgs::MapBin & map_msg)
   lanelet_map_ptr_ = std::make_shared<lanelet::LaneletMap>();
   lanelet::utils::conversion::fromBinMsg(
     map_msg, lanelet_map_ptr_, &traffic_rules_ptr_, &routing_graph_ptr_);
+
+  const auto traffic_rules = lanelet::traffic_rules::TrafficRulesFactory::create(
+    lanelet::Locations::Germany, lanelet::Participants::Vehicle);
+  const auto pedestrian_rules = lanelet::traffic_rules::TrafficRulesFactory::create(
+    lanelet::Locations::Germany, lanelet::Participants::Pedestrian);
+  lanelet::routing::RoutingGraphConstPtr vehicle_graph =
+    lanelet::routing::RoutingGraph::build(*lanelet_map_ptr_, *traffic_rules);
+  lanelet::routing::RoutingGraphConstPtr pedestrian_graph =
+    lanelet::routing::RoutingGraph::build(*lanelet_map_ptr_, *pedestrian_rules);
+  lanelet::routing::RoutingGraphContainer overall_graphs({vehicle_graph, pedestrian_graph});
+  overall_graphs_ptr_ =
+    std::make_shared<const lanelet::routing::RoutingGraphContainer>(overall_graphs);
+
   is_map_msg_ready_ = true;
   is_handler_ready_ = false;
 
@@ -854,6 +867,11 @@ lanelet::ConstLanelets RouteHandler::getCheckTargetLanesFromPath(
     }
   }
   return check_lanelets;
+}
+
+lanelet::routing::RoutingGraphContainer RouteHandler::getOverallGraph() const
+{
+  return *overall_graphs_ptr_;
 }
 
 }  // namespace lane_change_planner

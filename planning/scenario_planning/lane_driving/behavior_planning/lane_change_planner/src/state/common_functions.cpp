@@ -26,6 +26,7 @@ namespace common_functions
 bool selectLaneChangePath(
   const std::vector<LaneChangePath> & paths, const lanelet::ConstLanelets & current_lanes,
   const lanelet::ConstLanelets & target_lanes,
+  const lanelet::routing::RoutingGraphContainer & overall_graphs,
   const autoware_perception_msgs::DynamicObjectArray::ConstPtr & dynamic_objects,
   const geometry_msgs::Pose & current_pose, const geometry_msgs::Twist & current_twist,
   const LaneChangerParameters & ros_parameters, LaneChangePath * selected_path)
@@ -36,7 +37,7 @@ bool selectLaneChangePath(
           ros_parameters, true, path.acceleration)) {
       continue;
     }
-    if (!hasEnoughDistance(path, current_lanes, target_lanes, current_pose)) {
+    if (!hasEnoughDistance(path, current_lanes, target_lanes, current_pose, overall_graphs)) {
       continue;
     }
     *selected_path = path;
@@ -54,7 +55,8 @@ bool selectLaneChangePath(
 
 bool hasEnoughDistance(
   const LaneChangePath & path, const lanelet::ConstLanelets & current_lanes,
-  const lanelet::ConstLanelets & target_lanes, const geometry_msgs::Pose & current_pose)
+  const lanelet::ConstLanelets & target_lanes, const geometry_msgs::Pose & current_pose,
+  const lanelet::routing::RoutingGraphContainer & overall_graphs)
 {
   const double lane_change_prepare_distance = path.preparation_length;
   const double lane_changing_distance = path.lane_change_length;
@@ -66,6 +68,12 @@ bool hasEnoughDistance(
 
   if (
     lane_change_total_distance > util::getDistanceToNextIntersection(current_pose, current_lanes)) {
+    return false;
+  }
+
+  if (
+    lane_change_total_distance >
+    util::getDistanceToCrosswalk(current_pose, current_lanes, overall_graphs)) {
     return false;
   }
   return true;

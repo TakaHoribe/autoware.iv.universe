@@ -26,6 +26,9 @@
 // lanelet
 #include <lanelet2_routing/Route.h>
 #include <lanelet2_routing/RoutingCost.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_routing/RoutingGraphContainer.h>
+#include <lanelet2_traffic_rules/TrafficRulesFactory.h>
 
 #include <lane_change_planner/parameters.h>
 
@@ -53,6 +56,7 @@ private:
   lanelet::LaneletMapPtr lanelet_map_ptr_;
   lanelet::routing::RoutingGraphPtr routing_graph_ptr_;
   lanelet::traffic_rules::TrafficRulesPtr traffic_rules_ptr_;
+  std::shared_ptr<const lanelet::routing::RoutingGraphContainer> overall_graphs_ptr_;
   autoware_planning_msgs::Route route_msg_;
 
   bool is_map_msg_ready_;
@@ -136,6 +140,8 @@ public:
   lanelet::ConstLanelets getCheckTargetLanesFromPath(
     const autoware_planning_msgs::PathWithLaneId & path,
     const lanelet::ConstLanelets & target_lanes, const double check_length);
+
+  lanelet::routing::RoutingGraphContainer getOverallGraph() const;
 };
 }  // namespace lane_change_planner
 #endif  // LANE_CHANGE_PLANNER_ROUTE_HANDLER_H

@@ -105,8 +105,9 @@ void FollowingLaneState::update()
       // select valid path
       LaneChangePath selected_path;
       if (state_machine::common_functions::selectLaneChangePath(
-            lane_change_paths, current_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
-            current_twist_->twist, ros_parameters_, &selected_path)) {
+            lane_change_paths, current_lanes_, check_lanes, route_handler_ptr_->getOverallGraph(),
+            dynamic_objects_, current_pose_.pose, current_twist_->twist, ros_parameters_,
+            &selected_path)) {
         found_safe_path = true;
       }
       debug_data_.selected_path = selected_path.path;
@@ -180,14 +181,21 @@ bool FollowingLaneState::isLaneBlocked(const lanelet::ConstLanelets & lanes) con
   }
 
   for (const auto & obj : dynamic_objects_->objects) {
-    const auto velocity = util::l2Norm(obj.state.twist_covariance.twist.linear);
-    if (velocity < static_obj_velocity_thresh) {
-      const auto position =
-        lanelet::utils::conversion::toLaneletPoint(obj.state.pose_covariance.pose.position);
-      const auto distance = boost::geometry::distance(
-        lanelet::utils::to2D(position).basicPoint(), lanelet::utils::to2D(polygon).basicPolygon());
-      if (distance < std::numeric_limits<double>::epsilon()) {
-        return true;
+    if (
+      obj.semantic.type == autoware_perception_msgs::Semantic::CAR ||
+      obj.semantic.type == autoware_perception_msgs::Semantic::TRUCK ||
+      obj.semantic.type == autoware_perception_msgs::Semantic::BUS ||
+      obj.semantic.type == autoware_perception_msgs::Semantic::MOTORBIKE) {
+      const auto velocity = util::l2Norm(obj.state.twist_covariance.twist.linear);
+      if (velocity < static_obj_velocity_thresh) {
+        const auto position =
+          lanelet::utils::conversion::toLaneletPoint(obj.state.pose_covariance.pose.position);
+        const auto distance = boost::geometry::distance(
+          lanelet::utils::to2D(position).basicPoint(),
+          lanelet::utils::to2D(polygon).basicPolygon());
+        if (distance < std::numeric_limits<double>::epsilon()) {
+          return true;
+        }
       }
     }
   }

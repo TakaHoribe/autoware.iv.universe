@@ -34,6 +34,8 @@
 
 #include <lanelet2_core/geometry/Lanelet.h>
 #include <lanelet2_routing/Route.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <lanelet2_routing/RoutingGraphContainer.h>
 
 #include <limits>
 #include <vector>
@@ -123,6 +125,9 @@ double getDistanceToEndOfLane(
 
 double getDistanceToNextIntersection(
   const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets);
+double getDistanceToCrosswalk(
+  const geometry_msgs::Pose & current_pose, const lanelet::ConstLanelets & lanelets,
+  const lanelet::routing::RoutingGraphContainer & overall_graphs);
 
 std::vector<uint64_t> getIds(const lanelet::ConstLanelets & lanelets);
 
