@@ -16,6 +16,28 @@
 
 #include "ssc_interface/ssc_interface.h"
 
+namespace
+{
+template <class T>
+T waitForParam(const ros::NodeHandle & nh, const std::string & key)
+{
+  T value;
+  ros::Rate rate(1.0);
+
+  while (ros::ok()) {
+    const auto result = nh.getParam(key, value);
+    if (result) {
+      return value;
+    }
+
+    ROS_WARN("waiting for parameter `%s` ...", key.c_str());
+    rate.sleep();
+  }
+
+  return {};
+}
+}  // namespace
+
 SSCInterface::SSCInterface()
 : nh_(),
   private_nh_("~"),
@@ -28,8 +50,8 @@ SSCInterface::SSCInterface()
   private_nh_.param<bool>("use_adaptive_gear_ratio", use_adaptive_gear_ratio_, true);
   private_nh_.param<int>("command_timeout", command_timeout_, 1000);
   private_nh_.param<double>("loop_rate", loop_rate_, 30.0);
-  private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
-  private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, 0.39);
+  tire_radius_ = waitForParam<double>(private_nh_, "/vehicle_info/wheel_radius");
+  wheel_base_ = waitForParam<double>(private_nh_, "/vehicle_info/wheel_base");
   private_nh_.param<double>("ssc_gear_ratio", ssc_gear_ratio_, 16.135);
   private_nh_.param<double>("acceleration_limit", acceleration_limit_, 3.0);
   private_nh_.param<double>("deceleration_limit", deceleration_limit_, 3.0);

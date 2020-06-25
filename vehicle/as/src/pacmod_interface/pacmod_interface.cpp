@@ -16,6 +16,28 @@
 
 #include "pacmod_interface/pacmod_interface.h"
 
+namespace
+{
+template <class T>
+T waitForParam(const ros::NodeHandle & nh, const std::string & key)
+{
+  T value;
+  ros::Rate rate(1.0);
+
+  while (ros::ok()) {
+    const auto result = nh.getParam(key, value);
+    if (result) {
+      return value;
+    }
+
+    ROS_WARN("waiting for parameter `%s` ...", key.c_str());
+    rate.sleep();
+  }
+
+  return {};
+}
+}  // namespace
+
 PacmodInterface::PacmodInterface()
 : nh_(),
   private_nh_("~"),
@@ -32,8 +54,8 @@ PacmodInterface::PacmodInterface()
   private_nh_.param<bool>("show_debug_info", show_debug_info_, false);
 
   /* parameters for vehicle specifications */
-  private_nh_.param<double>("/vehicle_info/wheel_radius", tire_radius_, 0.39);
-  private_nh_.param<double>("/vehicle_info/wheel_base", wheel_base_, 2.79);
+  tire_radius_ = waitForParam<double>(private_nh_, "/vehicle_info/wheel_radius");
+  wheel_base_ = waitForParam<double>(private_nh_, "/vehicle_info/wheel_base");
   private_nh_.param<double>("steering_offset", steering_offset_, 0.0);
   private_nh_.param<bool>("enable_steering_rate_control", enable_steering_rate_control_, false);
 
