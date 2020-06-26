@@ -19,7 +19,7 @@
   <arg name="steer_rate_lim" default="5.0"/>
   <arg name="vel_time_delay" default="0.25"/>
   <arg name="vel_time_constant" default="0.61"/>
-  <arg name="acc_time_delay" default="0.3"/>
+  <arg name="acc_time_delay" default="0.1"/>
   <arg name="acc_time_constant" default="0.1"/>
   <arg name="steer_time_delay" default="0.24"/>
   <arg name="steer_time_constant" default="0.27"/>
