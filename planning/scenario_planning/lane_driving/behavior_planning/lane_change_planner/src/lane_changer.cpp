@@ -294,6 +294,25 @@ void LaneChanger::publishDebugMarkers()
     }
   }
 
+  // stop point
+  {
+    if (state_machine_ptr_->getState() == State::STOPPING_LANE_CHANGE) {
+      // calculate virtual wall pose
+      geometry_msgs::Pose wall_pose;
+      tf2::Transform tf_map2base_link;
+      tf2::fromMsg(debug_data.stop_point.point.pose, tf_map2base_link);
+      tf2::Transform tf_base_link2front(
+        tf2::Quaternion(0.0, 0.0, 0.0, 1.0),
+        tf2::Vector3(ros_parameters.base_link2front, 0.0, 0.0));
+      tf2::Transform tf_map2front = tf_map2base_link * tf_base_link2front;
+      tf2::toMsg(tf_map2front, wall_pose);
+      const auto virtual_wall_markers = createVirtualWall(wall_pose, 1, "Stopping");
+      debug_markers.markers.insert(
+        debug_markers.markers.end(), virtual_wall_markers.markers.begin(),
+        virtual_wall_markers.markers.end());
+    }
+  }
+
   path_marker_publisher_.publish(debug_markers);
 }
 

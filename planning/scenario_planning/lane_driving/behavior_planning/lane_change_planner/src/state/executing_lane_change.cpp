@@ -61,6 +61,9 @@ void ExecutingLaneChangeState::update()
     lanes.insert(lanes.end(), original_lanes_.begin(), original_lanes_.end());
     lanes.insert(lanes.end(), target_lanes_.begin(), target_lanes_.end());
 
+    status_.lane_change_path.path =
+      route_handler_ptr_->updatePathTwist(status_.lane_change_path.path);
+
     const double width = ros_parameters_.drivable_area_width;
     const double height = ros_parameters_.drivable_area_height;
     const double resolution = ros_parameters_.drivable_area_resolution;
@@ -72,6 +75,9 @@ void ExecutingLaneChangeState::update()
 State ExecutingLaneChangeState::getNextState() const
 {
   if (isAbortConditionSatisfied()) {
+    if (isNearEndOfLane() && isCurrentSpeedLow()) {
+      return State::STOPPING_LANE_CHANGE;
+    }
     return State::FOLLOWING_LANE;
   }
 
@@ -79,6 +85,19 @@ State ExecutingLaneChangeState::getNextState() const
     return State::FOLLOWING_LANE;
   }
   return State::EXECUTING_LANE_CHANGE;
+}
+
+bool ExecutingLaneChangeState::isNearEndOfLane() const
+{
+  const double threshold = 5 + ros_parameters_.minimum_lane_change_length;
+  return std::max(0.0, util::getDistanceToEndOfLane(current_pose_.pose, original_lanes_)) <
+         threshold;
+}
+
+bool ExecutingLaneChangeState::isCurrentSpeedLow() const
+{
+  const double threshold_kmph = 10;
+  return util::l2Norm(current_twist_->twist.linear) < threshold_kmph * 1000 / 3600;
 }
 
 bool ExecutingLaneChangeState::isAbortConditionSatisfied() const

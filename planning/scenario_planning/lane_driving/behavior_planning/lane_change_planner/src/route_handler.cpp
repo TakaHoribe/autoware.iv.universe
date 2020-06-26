@@ -675,6 +675,18 @@ PathWithLaneId RouteHandler::getReferencePath(
   return reference_path;
 }
 
+PathWithLaneId RouteHandler::updatePathTwist(const PathWithLaneId & path) const
+{
+  PathWithLaneId updated_path = path;
+  for (auto & point : updated_path.points) {
+    const auto id = point.lane_ids.at(0);
+    const auto llt = lanelet_map_ptr_->laneletLayer.get(id);
+    lanelet::traffic_rules::SpeedLimitInformation limit = traffic_rules_ptr_->speedLimit(llt);
+    point.point.twist.linear.x = limit.speedLimit.value();
+  }
+  return updated_path;
+}
+
 lanelet::ConstLanelets RouteHandler::getLaneChangeTarget(const geometry_msgs::Pose & pose) const
 {
   lanelet::ConstLanelet lanelet;

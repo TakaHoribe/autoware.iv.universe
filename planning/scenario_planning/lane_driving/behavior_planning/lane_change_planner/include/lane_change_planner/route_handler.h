@@ -130,6 +130,8 @@ public:
   autoware_planning_msgs::PathWithLaneId getReferencePath(
     const lanelet::ConstLanelets & lanelet_sequence, const double s_start, const double s_end,
     bool use_exact = true) const;
+  autoware_planning_msgs::PathWithLaneId updatePathTwist(
+    const autoware_planning_msgs::PathWithLaneId & path) const;
   bool getLaneChangeTarget(
     const lanelet::ConstLanelet & lanelet, lanelet::ConstLanelet * target_lanelet) const;
   lanelet::ConstLanelets getLaneChangeTarget(const geometry_msgs::Pose & pose) const;

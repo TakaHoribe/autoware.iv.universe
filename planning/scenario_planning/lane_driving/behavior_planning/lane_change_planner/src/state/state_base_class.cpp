@@ -33,6 +33,9 @@ std::ostream & operator<<(std::ostream & ostream, const State & state)
     case State::ABORTING_LANE_CHANGE:
       ostream << std::string("ABORTING_LANE_CHANGE");
       break;
+    case State::STOPPING_LANE_CHANGE:
+      ostream << std::string("STOPPING_LANE_CHANGE");
+      break;
     case State::FORCING_LANE_CHANGE:
       ostream << std::string("FORCING_LANE_CHANGE");
       break;
