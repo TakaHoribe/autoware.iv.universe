@@ -102,13 +102,15 @@ bool ExecutingLaneChangeState::isAbortConditionSatisfied() const
   {
     constexpr double check_distance = 100.0;
     // get lanes used for detection
-    const auto & check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-      status_.lane_change_path.path, target_lanes_, check_distance);
+    const auto & path = status_.lane_change_path;
+    const double check_distance_with_path =
+      check_distance + path.preparation_length + path.lane_change_length;
+    const auto check_lanes =
+      route_handler_ptr_->getCheckTargetLanesFromPath(path.path, target_lanes_, check_distance_with_path);
 
     is_path_safe = state_machine::common_functions::isLaneChangePathSafe(
-      status_.lane_change_path.path, original_lanes_, check_lanes, dynamic_objects_,
-      current_pose_.pose, current_twist_->twist, ros_parameters_, false,
-      status_.lane_change_path.acceleration);
+      path.path, original_lanes_, check_lanes, dynamic_objects_, current_pose_.pose,
+      current_twist_->twist, ros_parameters_, false, status_.lane_change_path.acceleration);
   }
 
   // check vehicle velocity thresh

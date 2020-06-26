@@ -236,7 +236,7 @@ PredictedPath convertToPredictedPath(
   predicted_pose.pose.pose.position = pt;
   predicted_path.path.push_back(predicted_pose);
 
-  for (double t = 0; t < duration; t += resolution) {
+  for (double t = resolution; t < duration; t += resolution) {
     double accelerated_velocity = prev_vehicle_speed + acceleration * t;
     double travel_distance = 0;
     if (accelerated_velocity < min_speed) {
@@ -328,7 +328,7 @@ geometry_msgs::Point lerpByLength(
   for (const auto & pt : point_array) {
     const double distance = getDistance3d(prev_pt, pt);
     if (accumulated_length + distance > length) {
-      return lerpByPoint(prev_pt, pt, (length - accumulated_length) / length);
+      return lerpByPoint(prev_pt, pt, (length - accumulated_length) / distance);
     }
     accumulated_length += distance;
     prev_pt = pt;
@@ -376,8 +376,8 @@ bool lerpByTimeStamp(
     const auto & prev_pt = path.path.at(i - 1);
     if (t < pt.header.stamp) {
       const ros::Duration duration = safeSubtraction(pt.header.stamp, prev_pt.header.stamp);
-      const auto off_set = t - prev_pt.header.stamp;
-      const auto ratio = off_set.toSec() / duration.toSec();
+      const auto offset = t - prev_pt.header.stamp;
+      const auto ratio = offset.toSec() / duration.toSec();
       *lerped_pt = lerpByPose(prev_pt.pose.pose, pt.pose.pose, ratio);
       return true;
     }

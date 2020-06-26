@@ -77,25 +77,30 @@ PathWithLaneId combineReferencePath(
   const double ds = std::hypot(dx, dy);
   if (interval < ds) {
     //calculate samples
-    std::vector<size_t> prev_samples;
-    std::vector<size_t> next_samples;
-    for (size_t i = 0; i < N_sample; ++i) {
-      prev_samples.push_back(path1.points.size() - N_sample + i);
-      next_samples.push_back(i);
-    }
-
     std::vector<double> base_x;
     std::vector<double> base_y;
     std::vector<double> base_z;
+    int n_sample_path1 = 0;
+
     for (size_t i = 0; i < N_sample; ++i) {
-      base_x.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.x);
-      base_y.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.y);
-      base_z.push_back(path1.points.at(prev_samples.at(i)).point.pose.position.z);
+      const int idx = static_cast<int>(path1.points.size()) - N_sample + i;
+      if (idx < 0) {
+        continue;
+      }
+      base_x.push_back(path1.points.at(idx).point.pose.position.x);
+      base_y.push_back(path1.points.at(idx).point.pose.position.y);
+      base_z.push_back(path1.points.at(idx).point.pose.position.z);
+      n_sample_path1++;
     }
+    int n_sample_path2 = 0;
     for (size_t i = 0; i < N_sample; ++i) {
-      base_x.push_back(path2.points.at(next_samples.at(i)).point.pose.position.x);
-      base_y.push_back(path2.points.at(next_samples.at(i)).point.pose.position.y);
-      base_z.push_back(path2.points.at(next_samples.at(i)).point.pose.position.z);
+      if (i >= path2.points.size()) {
+        continue;
+      }
+      base_x.push_back(path2.points.at(i).point.pose.position.x);
+      base_y.push_back(path2.points.at(i).point.pose.position.y);
+      base_z.push_back(path2.points.at(i).point.pose.position.z);
+      n_sample_path2++;
     }
 
     std::vector<double> base_s = {0.0};
@@ -107,7 +112,8 @@ PathWithLaneId combineReferencePath(
 
     //calculate query
     std::vector<double> inner_s;
-    for (double d = (base_s.at(N_sample - 1) + interval); d < base_s.at(N_sample); d += interval) {
+    for (double d = (base_s.at(n_sample_path1 - 1) + interval); d < base_s.at(n_sample_path1);
+         d += interval) {
       inner_s.push_back(d);
     }
 
@@ -748,12 +754,19 @@ std::vector<LaneChangePath> RouteHandler::getLaneChangePaths(
     {
       const double lane_length = lanelet::utils::getLaneletLength2d(target_lanelets);
       const auto arc_position = lanelet::utils::getArcCoordinates(target_lanelets, pose);
-      const double s_start = arc_position.length + straight_distance + lane_change_distance;
-      double s_end = s_start + forward_path_length;
       const int num = std::abs(getNumLaneToPreferredLane(target_lanelets.back()));
+      double s_start = arc_position.length + straight_distance + lane_change_distance;
+      s_start = std::min(s_start, lane_length - num * minimum_lane_change_length);
+      double s_end = s_start + forward_path_length;
       s_end = std::min(s_end, lane_length - num * minimum_lane_change_length);
       s_end = std::max(s_end, s_start + std::numeric_limits<double>::epsilon());
       reference_path2 = getReferencePath(target_lanelets, s_start, s_end);
+    }
+
+    if(reference_path1.points.empty() || reference_path2.points.empty())
+    {
+      ROS_ERROR_STREAM("reference path is empty!! something wrong...");
+      continue;
     }
 
     LaneChangePath candidate_path;
@@ -852,7 +865,7 @@ lanelet::ConstLanelets RouteHandler::getCheckTargetLanesFromPath(
   }
 
   const auto sequences = lanelet::utils::query::getPreceedingLaneletSequences(
-    routing_graph_ptr_, root_lanelet, check_length);
+    routing_graph_ptr_, root_lanelet, check_length + lanelet::utils::getLaneletLength3d(root_lanelet));
   lanelet::ConstLanelets check_lanelets;
   for (const auto & sequence : sequences) {
     for (const auto & llt : sequence) {

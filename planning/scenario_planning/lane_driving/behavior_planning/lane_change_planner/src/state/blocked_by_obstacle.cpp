@@ -120,8 +120,11 @@ void BlockedByObstacleState::update()
     // get lanes used for detection
     lanelet::ConstLanelets check_lanes;
     if (!lane_change_paths.empty()) {
+      const auto & longest_path = lane_change_paths.front();
+      const double check_distance_with_path =
+        check_distance + longest_path.preparation_length + longest_path.lane_change_length;
       check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-        lane_change_paths.front().path, right_lanes, check_distance);
+        longest_path.path, right_lanes, check_distance_with_path);
     }
 
     // select valid path
@@ -147,8 +150,11 @@ void BlockedByObstacleState::update()
     // get lanes used for detection
     lanelet::ConstLanelets check_lanes;
     if (!lane_change_paths.empty()) {
+      const auto & longest_path = lane_change_paths.front();
+      const double check_distance_with_path =
+        check_distance + longest_path.preparation_length + longest_path.lane_change_length;
       check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-        lane_change_paths.front().path, left_lanes, check_distance);
+        longest_path.path, left_lanes, check_distance_with_path);
     }
 
     // select valid path

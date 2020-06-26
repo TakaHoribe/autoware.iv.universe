@@ -98,8 +98,12 @@ void FollowingLaneState::update()
       // get lanes used for detection
       lanelet::ConstLanelets check_lanes;
       if (!lane_change_paths.empty()) {
+        const auto & longest_path = lane_change_paths.front();
+        // we want to see check_distance [m] behind vehicle so add lane changing length
+        const double check_distance_with_path =
+          check_distance + longest_path.preparation_length + longest_path.lane_change_length;
         check_lanes = route_handler_ptr_->getCheckTargetLanesFromPath(
-          lane_change_paths.front().path, lane_change_lanes_, check_distance);
+          longest_path.path, lane_change_lanes_, check_distance_with_path);
       }
 
       // select valid path
