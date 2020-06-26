@@ -84,7 +84,12 @@ message(STATUS "Checking and downloading mb2-ssd-lite-tlr.onnx")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
   execute_process(COMMAND gdown "https://drive.google.com/uc?id=1PGxVstVV_sVOLEEyl47m5lNXdLy_Iyob" -O ${PATH}/mb2-ssd-lite-tlr.onnx)
-
+endif()
+set(FILE "${PATH}/voc_labels_tl.txt")
+message(STATUS "Checking and downloading voc_labels_tl.txt")
+if (NOT EXISTS "${FILE}")
+  message(STATUS "... file does not exist. Downloading now ...")
+  execute_process(COMMAND gdown "https://drive.google.com/uc?id=1hPcKvKgKz0fqEo0cNAXH7roEletqZErL" -O ${PATH}/voc_labels_tl.txt)
 endif()
 
 

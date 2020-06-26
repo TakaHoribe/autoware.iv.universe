@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <chrono>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -36,6 +38,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/Header.h>
 
 #include <autoware_perception_msgs/TrafficLightRoiArray.h>
@@ -59,14 +62,17 @@ private:
     const sensor_msgs::Image::ConstPtr & image_msg,
     const autoware_perception_msgs::TrafficLightRoiArray::ConstPtr & traffic_light_roi_msg);
 
-  bool cvMat2CnnInput(const std::vector<cv::Mat> & in_imgs, const int num_rois, std::vector<float> & data);
+  bool cvMat2CnnInput(
+    const std::vector<cv::Mat> & in_imgs, const int num_rois, std::vector<float> & data);
   bool cnnOutput2BoxDetection(
-    const float * scores, const float * boxes, const int tlr_id, const std::vector<cv::Mat> & in_imgs,
-    const int num_rois, std::vector<Detection> & detctions);
+    const float * scores, const float * boxes, const int tlr_id,
+    const std::vector<cv::Mat> & in_imgs, const int num_rois, std::vector<Detection> & detctions);
   bool rosMsg2CvMat(const sensor_msgs::Image::ConstPtr & image_msg, cv::Mat & image);
   bool fitInFrame(cv::Point & lt, cv::Point & rb, const cv::Size & size);
   void cvRect2TlRoiMsg(
     const cv::Rect & rect, const int32_t id, autoware_perception_msgs::TrafficLightRoi & tl_roi);
+  bool readLabelFile(std::string filepath, std::vector<std::string> & labels);
+  bool getTlrIdFromLabel(const std::vector<std::string> & labels, int & tlr_id);
 
   // variables
   ros::NodeHandle nh_, pnh_;
@@ -74,6 +80,7 @@ private:
   image_transport::SubscriberFilter image_sub_;
   message_filters::Subscriber<autoware_perception_msgs::TrafficLightRoiArray> roi_sub_;
   ros::Publisher output_roi_pub_;
+  ros::Publisher exe_time_pub_;
 
   typedef message_filters::sync_policies::ExactTime<
     sensor_msgs::Image, autoware_perception_msgs::TrafficLightRoiArray>
@@ -89,11 +96,15 @@ private:
   bool is_approximate_sync_;
   double score_thresh_;
 
+  int tlr_id_;
   int channel_;
   int width_;
   int height_;
   int class_num_;
   int detection_per_class_;
+
+  std::vector<float> mean_;
+  std::vector<float> std_;
 
   std::unique_ptr<ssd::Net> net_ptr_;
 
