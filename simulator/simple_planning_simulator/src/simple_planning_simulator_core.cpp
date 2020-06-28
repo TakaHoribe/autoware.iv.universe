@@ -20,11 +20,33 @@
 #define DEBUG_INFO(...) { ROS_INFO(__VA_ARGS__); }
 
 // clang-format on
+namespace
+{
+template <class T>
+T waitForParam(const ros::NodeHandle & nh, const std::string & key)
+{
+  T value;
+  ros::Rate rate(1.0);
+
+  while (ros::ok()) {
+    const auto result = nh.getParam(key, value);
+    if (result) {
+      return value;
+    }
+
+    ROS_WARN("waiting for parameter `%s` ...", key.c_str());
+    rate.sleep();
+  }
+
+  return {};
+}
+}  // namespace
+
 Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initialized_(false)
 {
   /* simple_planning_simulator parameters */
   pnh_.param("loop_rate", loop_rate_, double(50.0));
-  nh_.param("/vehicle_info/wheel_base", wheelbase_, double(2.7));
+  wheelbase_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
   pnh_.param("sim_steering_gear_ratio", sim_steering_gear_ratio_, double(15.0));
   pnh_.param("simulation_frame_id", simulation_frame_id_, std::string("base_link"));
   pnh_.param("map_frame_id", map_frame_id_, std::string("map"));
