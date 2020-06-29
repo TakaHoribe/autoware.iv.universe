@@ -48,6 +48,23 @@ target_link_libraries(voxel_grid_based_euclidean_cluster_node
 add_dependencies(voxel_grid_based_euclidean_cluster_node
   ${catkin_EXPORTED_TARGETS})
 
+install(
+  TARGETS
+    euclidean_cluster_node
+    voxel_grid_based_euclidean_cluster_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  TARGETS
+    euclidean_cluster
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)    
+
 install(FILES nodelets.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
