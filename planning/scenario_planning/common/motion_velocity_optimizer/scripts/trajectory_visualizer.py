@@ -145,9 +145,10 @@ class TrajectoryVisualizer():
             ax1.plot(x, y, label="4-5: opt final", marker="*", ls="--")
 
         closest = self.calcClosestTrajectory(self.trajectory_final)
-        x_closest = x[closest]
-        ax1.plot(x_closest, self.localization_twist.linear.x, label="localization twist vx", color="r", marker="*", ls=":", markersize=10)
-        ax1.plot(x_closest, self.vehicle_twist.linear.x, label="vehicle twist vx", color="k", marker="+", ls=":", markersize=10)
+        if closest >= 0:
+            x_closest = x[closest]
+            ax1.plot(x_closest, self.localization_twist.linear.x, label="localization twist vx", color="r", marker="*", ls=":", markersize=10)
+            ax1.plot(x_closest, self.vehicle_twist.linear.x, label="vehicle twist vx", color="k", marker="+", ls=":", markersize=10)
 
 
 
