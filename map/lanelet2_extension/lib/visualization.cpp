@@ -359,7 +359,7 @@ void visualization::polygon2Triangle(
       }
     }
     if (clipped_vertex < 0 || clipped_vertex >= N) {
-      ROS_ERROR(
+      ROS_WARN(
         "Could not find valid vertex for ear clipping triangulation. Triangulation result might be "
         "invalid");
       clipped_vertex = 0;
