@@ -19,6 +19,8 @@
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <diagnostic_msgs/KeyValue.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2/utils.h>
@@ -47,6 +49,7 @@ public:
 
 private:
   void pathCallback(const autoware_planning_msgs::Trajectory::ConstPtr & input_msg);
+  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr & input_msg);
   void dynamicObjectCallback(
     const autoware_perception_msgs::DynamicObjectArray::ConstPtr & input_msg);
   void currentVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr & input_msg);
@@ -57,7 +60,11 @@ private:
   bool getPose(
     const std::string & source, const std::string & target, const ros::Time & time,
     geometry_msgs::Pose & pose);
-  void getNearestObjInfo(double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point);
+  void getNearestObstacle(double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point);
+  void getNearestObstacleByPointCloud(
+    double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point);
+  void getNearestObstacleByDynamicObject(
+    double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point);
   void checkSurroundObstacle(const double min_dist_to_obj, bool * is_surround_obstacle);
   size_t getClosestIdx(
     const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::Pose current_pose);
@@ -79,6 +86,7 @@ private:
   ros::Subscriber path_sub_;
   ros::Subscriber current_velocity_sub_;
   ros::Subscriber dynamic_object_sub_;
+  ros::Subscriber pointcloud_sub_;
   ros::Publisher path_pub_;
   ros::Publisher stop_reason_diag_pub_;
   std::shared_ptr<SurroundObstacleCheckerDebugNode> debug_ptr_;
@@ -87,10 +95,13 @@ private:
 
   // parameter
   geometry_msgs::TwistStamped::ConstPtr current_velocity_ptr_;
+  sensor_msgs::PointCloud2::ConstPtr pointcloud_ptr_;
   autoware_perception_msgs::DynamicObjectArray::ConstPtr object_ptr_;
   double wheel_base_, front_overhang_, rear_overhang_, left_overhang_, right_overhang_,
     wheel_tread_, vehicle_width_, vehicle_length_;
   Polygon2d self_poly_;
+  bool use_pointcloud_;
+  bool use_dynamic_object_;
   double surround_check_distance_;
   // For preventing chattering,
   // surround_check_recover_distance_ must be  bigger than surround_check_distance_

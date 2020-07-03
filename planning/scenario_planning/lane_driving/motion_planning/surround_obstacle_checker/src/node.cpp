@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
+#include <tf2_eigen/tf2_eigen.h>
+
 #include <surround_obstacle_checker/node.hpp>
+
+#define EIGEN_MPL2_ONLY
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 template <class T>
 T waitForParam(const ros::NodeHandle & nh, const std::string & key)
@@ -39,6 +49,8 @@ SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
 : nh_(), pnh_("~"), tf_listener_(tf_buffer_), is_surround_obstacle_(false)
 {
   // Parameters
+  pnh_.param<bool>("use_pointcloud", use_pointcloud_, true);
+  pnh_.param<bool>("use_dynamic_object", use_dynamic_object_, true);
   pnh_.param<double>("surround_check_distance", surround_check_distance_, 2.0);
   pnh_.param<double>("surround_check_recover_distance", surround_check_recover_distance_, 2.5);
   pnh_.param<double>("stop_state_ego_speed", stop_state_ego_speed_, 0.1);
@@ -61,16 +73,23 @@ SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
   // Subscriber
   path_sub_ =
     pnh_.subscribe("input/trajectory", 1, &SurroundObstacleCheckerNode::pathCallback, this);
-  current_velocity_sub_ =
-    pnh_.subscribe("input/twist", 1, &SurroundObstacleCheckerNode::currentVelocityCallback, this);
+  pointcloud_sub_ =
+    pnh_.subscribe("input/pointcloud", 1, &SurroundObstacleCheckerNode::pointCloudCallback, this);
   dynamic_object_sub_ =
     pnh_.subscribe("input/objects", 1, &SurroundObstacleCheckerNode::dynamicObjectCallback, this);
+  current_velocity_sub_ =
+    pnh_.subscribe("input/twist", 1, &SurroundObstacleCheckerNode::currentVelocityCallback, this);
 }
 
 void SurroundObstacleCheckerNode::pathCallback(
   const autoware_planning_msgs::Trajectory::ConstPtr & input_msg)
 {
-  if (!object_ptr_) {
+  if (use_pointcloud_ && !pointcloud_ptr_) {
+    ROS_WARN_THROTTLE(1.0, "waiting for pointcloud info...");
+    return;
+  }
+
+  if (use_dynamic_object_ && !object_ptr_) {
     ROS_WARN_THROTTLE(1.0, "waiting for dynamic object info...");
     return;
   }
@@ -92,14 +111,14 @@ void SurroundObstacleCheckerNode::pathCallback(
 
   //get current pose in traj frame
   if (!getPose(input_msg->header.frame_id, "base_link", input_msg->header.stamp, current_pose)) {
-    ROS_WARN_STREAM_THROTTLE(0.5, "cannot get tf from base_link to " << input_msg->header.stamp);
+    return;
   }
 
   //get closest idx
   closest_idx = getClosestIdx(*input_msg, current_pose);
 
   // get nearest object
-  getNearestObjInfo(&min_dist_to_obj, &nearest_obj_point);
+  getNearestObstacle(&min_dist_to_obj, &nearest_obj_point);
 
   //check current obstacle status (exist or not)
   checkSurroundObstacle(min_dist_to_obj, &is_surround_obstacle_);
@@ -125,6 +144,12 @@ void SurroundObstacleCheckerNode::pathCallback(
   path_pub_.publish(output_msg);
   stop_reason_diag_pub_.publish(no_start_reason_diag);
   debug_ptr_->publish();
+}
+
+void SurroundObstacleCheckerNode::pointCloudCallback(
+  const sensor_msgs::PointCloud2::ConstPtr & input_msg)
+{
+  pointcloud_ptr_ = input_msg;
 }
 
 void SurroundObstacleCheckerNode::dynamicObjectCallback(
@@ -161,6 +186,8 @@ bool SurroundObstacleCheckerNode::getPose(
     tf2::fromMsg(ros_src2tgt.transform, transform);
     tf2::toMsg(transform, pose);
   } catch (tf2::TransformException & ex) {
+    ROS_WARN_STREAM_THROTTLE(
+      0.5, "[surround_obstacle_checker]: cannot get tf from " << source << " to " << target);
     return false;
   }
 }
@@ -179,6 +206,8 @@ bool SurroundObstacleCheckerNode::convertPose(
     ros_src2tgt = tf_buffer_.lookupTransform(source, target, time, ros::Duration(0.1));
     tf2::fromMsg(ros_src2tgt.transform, src2tgt);
   } catch (tf2::TransformException & ex) {
+    ROS_WARN_STREAM_THROTTLE(
+      0.5, "[surround obstacle chekcer] cannot get tf from " << source << " to " << target);
     return false;
   }
 
@@ -206,7 +235,59 @@ size_t SurroundObstacleCheckerNode::getClosestIdx(
   return min_dist_idx;
 }
 
-void SurroundObstacleCheckerNode::getNearestObjInfo(
+void SurroundObstacleCheckerNode::getNearestObstacle(
+  double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point)
+{
+  if (use_pointcloud_) {
+    getNearestObstacleByPointCloud(min_dist_to_obj, nearest_obj_point);
+  }
+
+  if (use_dynamic_object_) {
+    getNearestObstacleByDynamicObject(min_dist_to_obj, nearest_obj_point);
+  }
+}
+
+void SurroundObstacleCheckerNode::getNearestObstacleByPointCloud(
+  double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point)
+{
+  // waint to transform pointcloud
+  geometry_msgs::TransformStamped transform_stamped;
+  try {
+    transform_stamped = tf_buffer_.lookupTransform(
+      "base_link", pointcloud_ptr_->header.frame_id, pointcloud_ptr_->header.stamp,
+      ros::Duration(0.5));
+  } catch (tf2::TransformException & ex) {
+    ROS_WARN_STREAM_THROTTLE(
+      0.5, "[surround obstacle chekcer] failed to get base_link to "
+             << pointcloud_ptr_->header.frame_id << " transform.");
+    return;
+  }
+
+  Eigen::Matrix4f affine_matrix =
+    tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
+  sensor_msgs::PointCloud2 transformed_pointcloud;
+  pcl_ros::transformPointCloud(affine_matrix, *pointcloud_ptr_, transformed_pointcloud);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromROSMsg(transformed_pointcloud, *pcl);
+
+  for (const auto p : *pcl) {
+    //create boost point
+    Point2d boost_p(p.x, p.y);
+
+    //calc distance
+    const double dist_to_obj = boost::geometry::distance(self_poly_, boost_p);
+
+    //get minimum distance to obj
+    if (dist_to_obj < *min_dist_to_obj) {
+      *min_dist_to_obj = dist_to_obj;
+      nearest_obj_point->x = p.x;
+      nearest_obj_point->y = p.y;
+      nearest_obj_point->z = p.z;
+    }
+  }
+}
+
+void SurroundObstacleCheckerNode::getNearestObstacleByDynamicObject(
   double * min_dist_to_obj, geometry_msgs::Point * nearest_obj_point)
 {
   const auto obj_frame = object_ptr_->header.frame_id;
@@ -216,7 +297,7 @@ void SurroundObstacleCheckerNode::getNearestObjInfo(
     geometry_msgs::Pose pose_baselink;
     if (!convertPose(
           obj.state.pose_covariance.pose, obj_frame, "base_link", obj_time, pose_baselink)) {
-      ROS_WARN_STREAM_THROTTLE(0.5, "cannot get tf from " << obj_frame << " to base_link");
+      return;
     }
 
     //create obj polygon

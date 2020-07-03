@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
 )
 
+find_package(Eigen3 REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
@@ -35,6 +37,7 @@ catkin_package(
 
 include_directories(
   include
+  ${EIGEN3_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -47,7 +50,6 @@ add_dependencies(surround_obstacle_checker_node ${${PROJECT_NAME}_EXPORTED_TARGE
 
 target_link_libraries(surround_obstacle_checker_node
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
 )
 
 install(
