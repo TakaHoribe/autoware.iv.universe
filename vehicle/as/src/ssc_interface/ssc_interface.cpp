@@ -173,6 +173,8 @@ void SSCInterface::callbackFromSSCFeedbacks(
       ? (msg_velocity->velocity)
       : (msg_wheel_speed->rear_left_wheel_speed + msg_wheel_speed->rear_right_wheel_speed) *
           tire_radius_ / 2.;
+  speed = std::abs(speed);
+  if (msg_gear->current_gear.gear == automotive_platform_msgs::Gear::REVERSE) speed *= -1.0;
 
   // update adaptive gear ratio (avoiding zero divizion)
   adaptive_gear_ratio_ = std::max(
