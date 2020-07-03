@@ -206,9 +206,19 @@ void ObstacleStopPlannerNode::pathCallback(
     new pcl::PointCloud<pcl::PointXYZ>);
   {
     // transform pointcloud
-    geometry_msgs::TransformStamped transform_stamped = tf_buffer_.lookupTransform(
-      trajectory.header.frame_id, obstacle_ros_pointcloud_ptr_->header.frame_id,
-      obstacle_ros_pointcloud_ptr_->header.stamp, ros::Duration(0.5));
+    geometry_msgs::TransformStamped transform_stamped;
+    try {
+      transform_stamped = tf_buffer_.lookupTransform(
+        trajectory.header.frame_id, obstacle_ros_pointcloud_ptr_->header.frame_id,
+        obstacle_ros_pointcloud_ptr_->header.stamp, ros::Duration(0.5));
+    } catch (tf2::TransformException & ex) {
+      ROS_ERROR_STREAM(
+        "[obstacle_stop_plannnr] Failed to look up transform from "
+        << trajectory.header.frame_id << " to " << obstacle_ros_pointcloud_ptr_->header.frame_id);
+      // do not publish path
+      return;
+    }
+
     Eigen::Matrix4f affine_matrix =
       tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
     sensor_msgs::PointCloud2 transformed_obstacle_ros_pointcloud;
