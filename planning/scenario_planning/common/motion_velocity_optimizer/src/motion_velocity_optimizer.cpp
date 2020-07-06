@@ -271,7 +271,7 @@ autoware_planning_msgs::Trajectory MotionVelocityOptimizer::calcTrajectoryVeloci
   /* for debug */
   publishFloat(output.points.at(traj_resampled_closest).twist.linear.x, debug_closest_velocity_);
   publishFloat(output.points.at(traj_resampled_closest).accel.linear.x, debug_closest_acc_);
-  publishStopDistance(traj_resampled, traj_resampled_closest);
+  publishStopDistance(output, traj_resampled_closest);
   if (publish_debug_trajs_) {
     pub_trajectory_raw_.publish(traj_extracted);
     pub_trajectory_vel_lim_.publish(traj_vel_limtted);
