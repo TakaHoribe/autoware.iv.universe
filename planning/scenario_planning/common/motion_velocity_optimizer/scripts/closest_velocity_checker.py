@@ -86,7 +86,7 @@ class VelocityChecker:
             "/localization/twist", TwistStamped, self.CallBackLocalizationTwist, queue_size=1, tcp_nodelay=True
         )
         self.sub_localization_twist = rospy.Subscriber(
-            "/vehicle/twist", TwistStamped, self.CallBackVehicleTwist, queue_size=1, tcp_nodelay=True
+            "/vehicle/status/twist", TwistStamped, self.CallBackVehicleTwist, queue_size=1, tcp_nodelay=True
         )
 
         # publish data
