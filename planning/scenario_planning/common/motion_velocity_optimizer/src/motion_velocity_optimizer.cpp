@@ -423,12 +423,6 @@ void MotionVelocityOptimizer::calcInitialMotion(
     }
   }
 
-  if (vehicle_speed < engage_vel_thr && target_vel <= planning_param_.engage_velocity) {
-    ROS_WARN_DELAYED_THROTTLE(
-      1.0, "target velocity (%.3f) is lower than engage_velocity (%.3f). not engaged.", target_vel,
-      planning_param_.engage_velocity);
-  }
-
   /* normal update: use closest in prev_output */
   initialize_type_ = InitializeType::NORMAL;
   initial_vel = prev_output.points.at(prev_output_closest).twist.linear.x;
