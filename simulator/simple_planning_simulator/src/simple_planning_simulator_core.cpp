@@ -101,7 +101,7 @@ Simulator::Simulator() : nh_(""), pnh_("~"), tf_listener_(tf_buffer_), is_initia
 
   /* set vehicle model type */
   std::string vehicle_model_type_str;
-  pnh_.param("vehicle_model_type", vehicle_model_type_str, std::string("IDEAL_TWIST"));
+  pnh_.param("vehicle_model_type", vehicle_model_type_str, std::string("IDEAL_STEER"));
   ROS_INFO("vehicle_model_type = %s", vehicle_model_type_str.c_str());
   if (vehicle_model_type_str == "IDEAL_STEER") {
     vehicle_model_type_ = VehicleModelType::IDEAL_STEER;
