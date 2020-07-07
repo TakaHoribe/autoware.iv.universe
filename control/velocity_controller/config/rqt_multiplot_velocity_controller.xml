@@ -35,7 +35,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
@@ -48,7 +48,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -86,11 +86,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/8</field>
+                                    <field>data/14</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -99,7 +99,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -137,11 +137,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/18</field>
+                                    <field>data/19</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -150,7 +150,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -188,11 +188,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/19</field>
+                                    <field>data/20</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -201,7 +201,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -239,11 +239,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/20</field>
+                                    <field>data/21</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -252,7 +252,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -290,11 +290,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/9</field>
+                                    <field>data/15</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -303,7 +303,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -341,11 +341,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/10</field>
+                                    <field>data/16</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -354,7 +354,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -392,11 +392,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/11</field>
+                                    <field>data/17</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -405,7 +405,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -443,11 +443,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/12</field>
+                                    <field>data/18</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -456,7 +456,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -644,7 +644,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
@@ -657,7 +657,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -695,7 +695,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
@@ -708,7 +708,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -845,11 +845,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/7</field>
+                                    <field>data/13</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -858,7 +858,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/control/velocity_controller/debug_values</topic>
+                                    <topic>/control/trajectory_follower/velocity_controller/debug_values</topic>
                                     <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
@@ -889,7 +889,7 @@
                         <visible>true</visible>
                     </legend>
                     <plot_rate>30</plot_rate>
-                    <title>velocity controller state</title>
+                    <title>velocity controller mode</title>
                 </column_0>
                 <column_1>
                     <axes>

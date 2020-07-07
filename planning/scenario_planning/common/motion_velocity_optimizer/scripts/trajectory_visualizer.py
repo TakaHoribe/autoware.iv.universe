@@ -9,10 +9,22 @@ from geometry_msgs.msg import PoseStamped, Pose, TwistStamped, Twist
 import matplotlib.pyplot as plt
 import numpy as np
 import tf
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-l', '--length', help='max arclength in plot')
+
+args = parser.parse_args()
+
+if args.length == None:
+    PLOT_MAX_ARCLENGTH = 200
+else:
+    PLOT_MAX_ARCLENGTH = int(args.length)
+print('max arclength = ' + str(PLOT_MAX_ARCLENGTH))
+
 
 # PLOT_TYPE = "VEL_ACC_JERK"
 PLOT_TYPE = "VEL_ONLY"
-PLOT_MAX_ARCLENGTH = 200
 
 PATH_ORIGIN_FRAME = "map"
 SELF_POSE_FRAME = "base_link"
