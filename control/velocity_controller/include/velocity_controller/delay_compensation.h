@@ -26,6 +26,23 @@ public:
   DelayCompensator();
   ~DelayCompensator();
 
+  static geometry_msgs::PoseStamped calcPoseAfterTimeDelay(
+    const geometry_msgs::PoseStamped & current_pose, const double delay_time,
+    const double current_vel)
+  {
+    //simple linear prediction
+    const double yaw = tf2::getYaw(current_pose.pose.orientation);
+    const double running_distance = delay_time * current_vel;
+    const double dx = running_distance * std::cos(yaw);
+    const double dy = running_distance * std::sin(yaw);
+
+    auto pred_pose = current_pose;
+    pred_pose.pose.position.x += dx;
+    pred_pose.pose.position.y += dy;
+    pred_pose.header.stamp += ros::Duration(delay_time);
+    return pred_pose;
+  }
+
   static int getTrajectoryPointIndexAfterTimeDelay(
     const autoware_planning_msgs::Trajectory & trajectory, int32_t closest_waypoint_index,
     double delay_time, double current_velocity)

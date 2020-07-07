@@ -233,13 +233,21 @@ CtrlCmd VelocityController::calcCtrlCmd()
     return CtrlCmd{vel_cmd, acc_cmd};
   }
 
-  double current_vel = current_vel_ptr_->twist.linear.x;
+  const double current_vel = current_vel_ptr_->twist.linear.x;
+  const double closest_vel = calcInterpolatedTargetValue(
+    *trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx, "twist");
+  const double closest_acc = calcInterpolatedTargetValue(
+    *trajectory_ptr_, *current_pose_ptr_, current_vel, closest_idx, "accel");
   int target_idx = DelayCompensator::getTrajectoryPointIndexAfterTimeDelay(
     *trajectory_ptr_, closest_idx, delay_compensation_time_, current_vel);
+  auto target_pose = DelayCompensator::calcPoseAfterTimeDelay(
+    *current_pose_ptr_, delay_compensation_time_, current_vel);
   double target_vel =
-    calcInterpolatedTargetVelocity(*trajectory_ptr_, *current_pose_ptr_, current_vel, target_idx);
-  double target_acc = DelayCompensator::getAccelerationAfterTimeDelay(
-    *trajectory_ptr_, closest_idx, delay_compensation_time_, current_vel);
+    calcInterpolatedTargetValue(*trajectory_ptr_, target_pose, closest_vel, target_idx, "twist");
+  double target_acc =
+    calcInterpolatedTargetValue(*trajectory_ptr_, target_pose, closest_vel, target_idx, "accel");
+  const double pred_vel_in_target =
+    predictedVelocityInTargetPoint(current_vel, closest_acc, delay_compensation_time_);
 
   /* shift check */
   const Shift shift = getCurrentShift(target_vel);
@@ -248,7 +256,9 @@ CtrlCmd VelocityController::calcCtrlCmd()
 
   const double pitch_filtered = lpf_pitch_.filter(getPitch(current_pose.orientation));
   const double stop_dist = calcStopDistance(*trajectory_ptr_, closest_idx);
-  writeDebugValues(dt, current_vel, target_vel, target_acc, shift, pitch_filtered, closest_idx);
+  writeDebugValues(
+    dt, current_vel, pred_vel_in_target, target_vel, target_acc, shift, pitch_filtered,
+    closest_idx);
 
   /* ===== STOPPED =====
    *
@@ -302,7 +312,8 @@ CtrlCmd VelocityController::calcCtrlCmd()
     double smooth_stop_acc_cmd = calcSmoothStopAcc();
     double acc_cmd = calcFilteredAcc(smooth_stop_acc_cmd, pitch_filtered, dt, shift);
     controller_mode_ = ControlMode::SMOOTH_STOP;
-    ROS_WARN_THROTTLE(0.5, "[smooth stop]: Smooth stopping. vel: %3.3f, acc: %3.3f", target_vel, acc_cmd);
+    ROS_WARN_THROTTLE(
+      0.5, "[smooth stop]: Smooth stopping. vel: %3.3f, acc: %3.3f", target_vel, acc_cmd);
     return CtrlCmd{target_vel, acc_cmd};
   }
 
@@ -314,7 +325,7 @@ CtrlCmd VelocityController::calcCtrlCmd()
    * Output acceleration : calculated by PID controller with max_acceleration & max_jerk limit.
    *
    */
-  double feedback_acc_cmd = applyVelocityFeedback(target_acc, target_vel, dt, current_vel);
+  double feedback_acc_cmd = applyVelocityFeedback(target_acc, target_vel, dt, pred_vel_in_target);
   double acc_cmd = calcFilteredAcc(feedback_acc_cmd, pitch_filtered, dt, shift);
   controller_mode_ = ControlMode::PID_CONTROL;
   ROS_DEBUG(
@@ -346,6 +357,25 @@ void VelocityController::resetHandling(const ControlMode control_mode)
     lpf_vel_error_.reset();
   } else if (control_mode == ControlMode::PID_CONTROL) {
     resetSmoothStop();
+  }
+}
+
+void VelocityController::storeAccelCmd(const double accel)
+{
+  //convert format
+  autoware_control_msgs::ControlCommandStamped cmd;
+  cmd.header.stamp = ros::Time::now();
+  cmd.control.acceleration = accel;
+
+  //store published ctrl cmd
+  ctrl_cmd_vec_.emplace_back(cmd);
+
+  //remove unused ctrl cmd
+  if (ctrl_cmd_vec_.size() <= 2) {
+    return;
+  }
+  if ((ros::Time::now() - ctrl_cmd_vec_.at(1).header.stamp).toSec() > delay_compensation_time_) {
+    ctrl_cmd_vec_.erase(ctrl_cmd_vec_.begin());
   }
 }
 
@@ -427,7 +457,7 @@ bool VelocityController::checkEmergency(int closest, double target_vel) const
 }
 
 double VelocityController::calcFilteredAcc(
-  const double raw_acc, const double pitch, const double dt, const Shift shift) const
+  const double raw_acc, const double pitch, const double dt, const Shift shift)
 {
   double acc_max_filtered = applyLimitFilter(raw_acc, max_acc_, min_acc_);
   debug_values_.data.at(DBGVAL::ACCCMD_ACC_LIMITED) = acc_max_filtered;
@@ -435,6 +465,9 @@ double VelocityController::calcFilteredAcc(
   double acc_jerk_filtered =
     applyRateFilter(acc_max_filtered, prev_acc_cmd_, dt, max_jerk_, min_jerk_);
   debug_values_.data.at(DBGVAL::ACCCMD_JERK_LIMITED) = acc_jerk_filtered;
+
+  //store ctrl cmd without slope filter
+  storeAccelCmd(acc_jerk_filtered);
 
   double acc_slope_filtered = applySlopeCompensation(acc_jerk_filtered, pitch, shift);
   debug_values_.data.at(DBGVAL::ACCCMD_SLOPE_APPLIED) = acc_slope_filtered;
@@ -530,30 +563,79 @@ double VelocityController::calcStopDistance(
   return stop_dist;
 }
 
-double VelocityController::calcInterpolatedTargetVelocity(
-  const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::PoseStamped & curr_pose,
-  const double curr_vel, const int closest) const
+double VelocityController::predictedVelocityInTargetPoint(
+  const double current_vel, const double closest_acc, const double delay_compensation_time)
 {
-  const double closest_vel = traj.points.at(closest).twist.linear.x;
-
-  if (traj.points.size() < 2) {
-    return closest_vel;
+  if (ctrl_cmd_vec_.size() == 0) {
+    const double pred_vel = current_vel + closest_acc * delay_compensation_time;
+    //avoid to change sign of current_vel and pred_vel
+    return current_vel * pred_vel > 0 ? pred_vel : 0.0;
   }
 
-  /* If the current position is at the edge of the reference trajectory, enable the edge velocity. Else, calc secondary
-   * closest index for interpolation */
+  double pred_vel = current_vel;
+
+  const double past_delay_time = ros::Time::now().toSec() - delay_compensation_time;
+  for (int i = 0; i < ctrl_cmd_vec_.size(); i++) {
+    if ((ros::Time::now() - ctrl_cmd_vec_.at(i).header.stamp).toSec() < delay_compensation_time_) {
+      if (i == 0) {
+        //lack of data
+        return current_vel + ctrl_cmd_vec_.at(i).control.acceleration * delay_compensation_time;
+      }
+      //add velocity to accel * dt
+      const double current_acc = ctrl_cmd_vec_.at(i - 1).control.acceleration;
+      const double time_to_next_acc = std::min(
+        ctrl_cmd_vec_.at(i).header.stamp.toSec() - ctrl_cmd_vec_.at(i - 1).header.stamp.toSec(),
+        ctrl_cmd_vec_.at(i).header.stamp.toSec() - past_delay_time);
+      pred_vel += current_acc * time_to_next_acc;
+    }
+  }
+
+  const double last_acc = ctrl_cmd_vec_.at(ctrl_cmd_vec_.size() - 1).control.acceleration;
+  const double time_to_current =
+    (ros::Time::now() - ctrl_cmd_vec_.at(ctrl_cmd_vec_.size() - 1).header.stamp).toSec();
+  pred_vel += last_acc * time_to_current;
+
+  //avoid to change sign of current_vel and pred_vel
+  return current_vel * pred_vel > 0 ? pred_vel : 0.0;
+}
+
+double VelocityController::getPointValue(
+  const autoware_planning_msgs::TrajectoryPoint & point, const std::string & value_type)
+{
+  if (value_type == "twist") {
+    return point.twist.linear.x;
+  } else if (value_type == "accel") {
+    return point.accel.linear.x;
+  }
+
+  ROS_WARN_STREAM("value_type in VelocityController::getPointValue is invalid.");
+  return 0.0;
+}
+
+double VelocityController::calcInterpolatedTargetValue(
+  const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::PoseStamped & curr_pose,
+  const double current_vel, const int closest, const std::string & value_type)
+{
+  const double closest_value = getPointValue(traj.points.at(closest), value_type);
+
+  if (traj.points.size() < 2) {
+    return closest_value;
+  }
+
+  /* If the current position is at the edge of the reference trajectory, enable the edge value(vel/acc).
+   * Else, calc secondary closest index for interpolation */
   int closest_second;
   const auto & closest_pos = traj.points.at(closest).pose;
   geometry_msgs::Point rel_pos =
     vcutils::transformToRelativeCoordinate2D(curr_pose.pose.position, closest_pos);
   if (closest == 0) {
-    if (rel_pos.x * curr_vel <= 0.0) {
-      return closest_vel;
+    if (rel_pos.x * current_vel <= 0.0) {
+      return closest_value;
     }
     closest_second = 1;
   } else if (closest == (int)traj.points.size() - 1) {
-    if (rel_pos.x * curr_vel >= 0.0) {
-      return closest_vel;
+    if (rel_pos.x * current_vel >= 0.0) {
+      return closest_value;
     }
     closest_second = traj.points.size() - 2;
   } else {
@@ -566,11 +648,11 @@ double VelocityController::calcInterpolatedTargetVelocity(
   const double dist_c1 = vcutils::calcDistance2D(curr_pose.pose, closest_pos);
   const double dist_c2 =
     vcutils::calcDistance2D(curr_pose.pose, traj.points.at(closest_second).pose);
-  const double v1 = traj.points.at(closest).twist.linear.x;
-  const double v2 = traj.points.at(closest_second).twist.linear.x;
-  const double vel_interp = (dist_c1 * v2 + dist_c2 * v1) / (dist_c1 + dist_c2);
+  const double v1 = getPointValue(traj.points.at(closest), value_type);
+  const double v2 = getPointValue(traj.points.at(closest_second), value_type);
+  const double value_interp = (dist_c1 * v2 + dist_c2 * v1) / (dist_c1 + dist_c2);
 
-  return vel_interp;
+  return value_interp;
 }
 
 double VelocityController::applyLimitFilter(
@@ -641,8 +723,9 @@ void VelocityController::resetSmoothStop()
 void VelocityController::resetEmergencyStop() { is_emergency_stop_ = false; }
 
 void VelocityController::writeDebugValues(
-  const double dt, const double current_vel, const double target_vel, const double target_acc,
-  const Shift shift, const double pitch, const int32_t closest)
+  const double dt, const double current_vel, const double predicted_velocity,
+  const double target_vel, const double target_acc, const Shift shift, const double pitch,
+  const int32_t closest)
 {
   constexpr double rad2deg = 180.0 / 3.141592;
   const double raw_pitch = getPitch(current_pose_ptr_->pose.orientation);
@@ -650,8 +733,11 @@ void VelocityController::writeDebugValues(
   debug_values_.data.at(DBGVAL::CURR_V) = current_vel;
   debug_values_.data.at(DBGVAL::TARGET_V) = target_vel;
   debug_values_.data.at(DBGVAL::TARGET_ACC) = target_acc;
-  debug_values_.data.at(DBGVAL::CLOSEST_V) = trajectory_ptr_->points.at(closest).twist.linear.x;
-  debug_values_.data.at(DBGVAL::CLOSEST_ACC) = trajectory_ptr_->points.at(closest).accel.linear.x;
+  debug_values_.data.at(DBGVAL::CLOSEST_V) = calcInterpolatedTargetValue(
+    *trajectory_ptr_, *current_pose_ptr_, current_vel, closest, "twist");
+  debug_values_.data.at(DBGVAL::PREDICTED_V) = predicted_velocity;
+  debug_values_.data.at(DBGVAL::CLOSEST_ACC) = calcInterpolatedTargetValue(
+    *trajectory_ptr_, *current_pose_ptr_, current_vel, closest, "accel");
   debug_values_.data.at(DBGVAL::SHIFT) = static_cast<double>(shift);
   debug_values_.data.at(DBGVAL::PITCH_LPFED_RAD) = pitch;
   debug_values_.data.at(DBGVAL::PITCH_LPFED_DEG) = pitch * rad2deg;

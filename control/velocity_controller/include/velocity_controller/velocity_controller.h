@@ -121,6 +121,9 @@ private:
   // velocity feedback
   double current_vel_threshold_pid_integrate_;
 
+  //buffer of send command
+  std::vector<autoware_control_msgs::ControlCommandStamped> ctrl_cmd_vec_;
+
   // controller mode (0: init check, 1: PID, 2: Stop, 3: Smooth stop, 4: Emergency stop, 5: Error)
   enum class ControlMode {
     INIT = 0,
@@ -186,13 +189,18 @@ private:
 
   /* calc control command */
   CtrlCmd calcCtrlCmd();
+  void storeAccelCmd(const double accel);
   void publishCtrlCmd(const double vel, const double acc);
-  double calcInterpolatedTargetVelocity(
+  double predictedVelocityInTargetPoint(
+    const double current_vel, const double closest_acc, const double delay_compensation_time);
+  double getPointValue(
+    const autoware_planning_msgs::TrajectoryPoint & point, const std::string & value_type);
+  double calcInterpolatedTargetValue(
     const autoware_planning_msgs::Trajectory & traj, const geometry_msgs::PoseStamped & curr_pose,
-    const double current_vel, const int closest) const;
+    const double current_vel, const int closest, const std::string & value_type);
   double calcSmoothStopAcc();
   double calcFilteredAcc(
-    const double raw_acc, const double pitch, const double dt, const Shift shift) const;
+    const double raw_acc, const double pitch, const double dt, const Shift shift);
   double applyVelocityFeedback(
     const double target_acc, const double target_vel, const double dt, const double current_vel);
   double applyLimitFilter(const double input_val, const double max_val, const double min_val) const;
@@ -232,12 +240,13 @@ private:
     ACCCMD_FB_D_CONTRIBUTION = 21,
     FLAG_SMOOTH_STOP = 22,
     FLAG_EMERGENCY_STOP = 23,
+    PREDICTED_V = 24,
   };
-  static constexpr unsigned int num_debug_values_ = 24;
+  static constexpr unsigned int num_debug_values_ = 25;
 
   void writeDebugValues(
-    const double dt, const double current_velocity, const double target_vel,
-    const double target_acc, const Shift shift, const double pitch,
+    const double dt, const double current_velocity, const double predicted_velocity,
+    const double target_vel, const double target_acc, const Shift shift, const double pitch,
     const int32_t closest_waypoint_index);
 };
 
