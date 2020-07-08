@@ -71,52 +71,65 @@ private:
     double min_behavior_stop_margin;
 
     //!< @brief use tracking objects for estimating object velocity or not
-    bool use_object_to_estimate_vel;
+    bool use_object_to_est_vel;
 
     //!< @brief use pcl for estimating object velocity or not
-    bool use_pcl_to_estimate_vel;
+    bool use_pcl_to_est_vel;
 
     //!< @brief consider forward vehicle velocity to self upper velocity or not
     bool consider_obj_velocity;
 
-    static constexpr double object_length_margin = 2.0;
-    static constexpr double object_width_margin = 0.5;
-    static constexpr double valid_est_vel_dif_time = 1.0;
-    static constexpr double valid_est_vel_max = 20;
-    static constexpr double valid_est_vel_min = -20;
-    static constexpr double valid_vel_que_time = 0.5;
-    static constexpr double thresh_vel_to_stop = 0.5;
+    //!< @brief The distance to extend the polygon length the object in pointcloud-object matching
+    double object_polygon_length_margin;
+
+    //!< @brief The distance to extend the polygon width the object in pointcloud-object matching
+    double object_polygon_width_margin;
+
+    //!< @breif Maximum time difference treated as continuous points in speed estimation using a point cloud
+    double valid_est_vel_diff_time;
+
+    //!< @brief Time width of information used for speed estimation in speed estimation using a point cloud
+    double valid_vel_que_time;
+
+    //!< @brief Maximum value of valid speed estimation results in speed estimation using a point cloud
+    double valid_est_vel_max;
+
+    //!< @brief Minimum value of valid speed estimation results in speed estimation using a point cloud
+    double valid_est_vel_min;
+
+    //!< @brief Embed a stop line if the maximum speed calculated by ACC is lowar than this speed
+    double thresh_vel_to_stop;
 
     /* parameter for acc */
     //!< @brief threshold of forward obstacle velocity to insert stop line (to stop acc)
-    static constexpr double obstacle_stop_velocity_thresh = 1.0;
+    double obstacle_stop_velocity_thresh;
 
     //!< @brief supposed minimum acceleration in emergency stop
-    static constexpr double emergency_stop_acceleration = -5.0;
+    double emergency_stop_acceleration;
 
     //!< @brief supposed idling time to start emergency stop
-    static constexpr double emergency_stop_idling_time = 0.5;
+    double emergency_stop_idling_time;
 
     //!< @brief minimum distance of emergency stop
-    static constexpr double min_dist_stop = 4.0;
+    double min_dist_stop;
 
     //!< @brief supposed maximum acceleration in active cruise control
-    static constexpr double max_standard_acceleration = 0.5;
+    double max_standard_acceleration;
 
     //!< @brief supposed minimum acceleration(deceleration) in active cruise control
-    static constexpr double min_standard_acceleration = -1.0;
+    double min_standard_acceleration;
 
     //!< @brief supposed idling time to react object in active cruise control
-    static constexpr double standard_idling_time = 0.5;
+    double standard_idling_time;
 
-    //!< @brief supposed idling time to stop active cruise control
-    static constexpr double min_dist_standard = 4.0;
+    //!< @brief minimum distance in active cruise control
+    double min_dist_standard;
 
     //!< @brief supposed minimum acceleration of forward obstacle
-    static constexpr double obstacle_min_standard_acceleration = -1.5;
+    double obstacle_min_standard_acceleration;
 
     //!< @brief margin to insert upper velocity
-    static constexpr double margin_rate_to_change_vel = 0.3;
+    double margin_rate_to_change_vel;
 
     /* parameter for pid used in acc */
     //!< @brief coefficient P in PID control (used when target dist -current_dist >=0)
@@ -125,10 +138,10 @@ private:
     //!< @brief coefficient P in PID control (used when target dist -current_dist <0)
     double p_coeff_neg;
 
-    //!< @brief coefficient P in PID control (used when delta_dist >=0)
+    //!< @brief coefficient D in PID control (used when delta_dist >=0)
     double d_coeff_pos;
 
-    //!< @brief coefficient P in PID control (used when delta_dist <0)
+    //!< @brief coefficient D in PID control (used when delta_dist <0)
     double d_coeff_neg;
 
     static constexpr double d_coeff_valid_time = 1.0;

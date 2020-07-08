@@ -3,16 +3,11 @@
   <arg name="input_twist" default="/localization/twist" />
   <arg name="enable_slow_down" default="false" />
   <node pkg="obstacle_stop_planner" type="obstacle_stop_planner_node" name="obstacle_stop_planner" output="screen">
+    <rosparam command="load" file="$(find obstacle_stop_planner)/config/adaptive_cruise_control.yaml" />
     <remap from="~output/stop_reason" to="/planning/scenario_planning/status/stop_reason" />
     <remap from="~input/objects" to="$(arg input_objects)" />
     <remap from="~input/twist" to="$(arg input_twist)" />
     <param name="enable_slow_down" value="$(arg enable_slow_down)" />
-    <param name="use_object_to_estimate_vel" value="true" />
-    <param name="use_pcl_to_estimate_vel" value="true" />
-    <param name="p_coefficient_positive" value="0.1" />
-    <param name="p_coefficient_negative" value="0.3" />
-    <param name="d_coefficient_positive" value="0.0" />
-    <param name="d_coefficient_negative" value="0.1" />
   </node>
 
 </launch>
