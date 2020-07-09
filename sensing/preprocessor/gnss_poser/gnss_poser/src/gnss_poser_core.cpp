@@ -117,7 +117,7 @@ void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr & nav_s
 
   // get TF from base_link to gnss_antenna
   geometry_msgs::TransformStamped::Ptr TF_base_to_gnss_ptr(new geometry_msgs::TransformStamped);
-  getTransform(gnss_frame_, base_frame_, TF_base_to_gnss_ptr);
+  getStaticTransform(gnss_frame_, base_frame_, TF_base_to_gnss_ptr, nav_sat_fix_msg_ptr->header.stamp);
 
   // transform pose from gnss_antenna to base_link
   geometry_msgs::PoseStamped gnss_base_pose_msg;
@@ -267,6 +267,48 @@ bool GNSSPoser::getTransform(
       1, "Please publish TF " << target_frame.c_str() << " to " << source_frame.c_str());
 
     transform_stamped_ptr->header.stamp = ros::Time::now();
+    transform_stamped_ptr->header.frame_id = target_frame;
+    transform_stamped_ptr->child_frame_id = source_frame;
+    transform_stamped_ptr->transform.translation.x = 0.0;
+    transform_stamped_ptr->transform.translation.y = 0.0;
+    transform_stamped_ptr->transform.translation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.x = 0.0;
+    transform_stamped_ptr->transform.rotation.y = 0.0;
+    transform_stamped_ptr->transform.rotation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.w = 1.0;
+    return false;
+  }
+  return true;
+}
+
+bool GNSSPoser::getStaticTransform(
+  const std::string & target_frame, const std::string & source_frame,
+  const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr,
+  const ros::Time & stamp)
+{
+  if (target_frame == source_frame) {
+    transform_stamped_ptr->header.stamp = stamp;
+    transform_stamped_ptr->header.frame_id = target_frame;
+    transform_stamped_ptr->child_frame_id = source_frame;
+    transform_stamped_ptr->transform.translation.x = 0.0;
+    transform_stamped_ptr->transform.translation.y = 0.0;
+    transform_stamped_ptr->transform.translation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.x = 0.0;
+    transform_stamped_ptr->transform.rotation.y = 0.0;
+    transform_stamped_ptr->transform.rotation.z = 0.0;
+    transform_stamped_ptr->transform.rotation.w = 1.0;
+    return true;
+  }
+
+  try {
+    *transform_stamped_ptr =
+      tf2_buffer_.lookupTransform(target_frame, source_frame, stamp);
+  } catch (tf2::TransformException & ex) {
+    ROS_WARN_STREAM_THROTTLE(1, ex.what());
+    ROS_WARN_STREAM_THROTTLE(
+      1, "Please publish TF " << target_frame.c_str() << " to " << source_frame.c_str());
+
+    transform_stamped_ptr->header.stamp = stamp;
     transform_stamped_ptr->header.frame_id = target_frame;
     transform_stamped_ptr->child_frame_id = source_frame;
     transform_stamped_ptr->transform.translation.x = 0.0;

@@ -59,6 +59,10 @@ private:
   bool getTransform(
     const std::string & target_frame, const std::string & source_frame,
     const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr);
+  bool getStaticTransform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::TransformStamped::Ptr & transform_stamped_ptr,
+    const ros::Time & stamp);
   void publishTF(
     const std::string & frame_id, const std::string & child_frame_id,
     const geometry_msgs::PoseStamped & pose_msg);
