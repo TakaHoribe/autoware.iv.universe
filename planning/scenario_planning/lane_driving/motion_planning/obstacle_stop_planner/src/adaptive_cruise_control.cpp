@@ -234,9 +234,6 @@ void AdaptiveCruiseController::insertAdaptiveCruiseVelocity(
   const double upper_velocity =
     calcUpperVelocity(col_point_distance, point_velocity, current_velocity);
 
-  ROS_ERROR_STREAM("col_point_distance" << col_point_distance);
-  ROS_ERROR_STREAM("upper velocity" << upper_velocity);
-
   if (upper_velocity <= param_.thresh_vel_to_stop) {
     //if upper velocity is too low, need to stop
     ROS_DEBUG_THROTTLE(1.0, "Upper velocity is too low. Insert stop line.");
