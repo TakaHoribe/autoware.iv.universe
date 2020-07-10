@@ -136,7 +136,7 @@ void PurePursuitNode::onTimer(const ros::TimerEvent & event)
     publishCommand(*target_values);
     publishDebugMarker();
   } else {
-    ROS_ERROR("failed to solve pure_pursuit");
+    ROS_WARN_THROTTLE(5.0, "failed to solve pure_pursuit");
     publishCommand({0.0, 0.0, 0.0});
   }
 }
@@ -163,6 +163,12 @@ void PurePursuitNode::publishDebugMarker() const
 
 boost::optional<TargetValues> PurePursuitNode::calcTargetValues() const
 {
+  // Ignore invalid trajectory
+  if (trajectory_->points.size() < 3) {
+    ROS_INFO_THROTTLE(5.0, "received path size is < 3, ignored");
+    return {};
+  }
+
   // Calculate target point for velocity/acceleration
   const auto target_point = calcTargetPoint();
   if (!target_point) {
