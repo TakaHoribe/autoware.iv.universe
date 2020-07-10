@@ -13,6 +13,7 @@
     <script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
     <script type="text/javascript" src="js/autoware_state.js"></script>
     <script type="text/javascript" src="js/autoware_engage.js"></script>
+    <script type="text/javascript" src="js/vehicle_engage.js"></script>
     <script type="text/javascript" src="js/velocity_limit.js"></script>
     <script type="text/javascript" src="js/localization_diagnostic.js"></script>
     <script type="text/javascript" src="js/lane_change_approval.js"></script>
@@ -59,6 +60,17 @@
             <div>
                 <span>Status:</span>
                 <span id="autoware_engage_status"> - </span>
+            </div>
+            <h3>Vehicle Engage</h3>
+            <form action="javascript:VehicleEngagePublisher.send();" id="ui">
+                <input type="submit" value="Engage" id="btn" /><br />
+            </form>
+            <form action="javascript:VehicleDisengagePublisher.send();" id="ui">
+                <input type="submit" value="Disengage" id="btn" /><br />
+            </form>
+            <div>
+                <span>Status:</span>
+                <span id="vehicle_engage_status"> - </span>
             </div>
             <h3>Velocity Limit : <span id="velocity_limit_info"> - </span></h3>
             <form action="javascript:VelocityLimitPublisher.send();" id="ui" name="velocity_limit_form">
