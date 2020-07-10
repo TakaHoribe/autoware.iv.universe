@@ -161,7 +161,7 @@ void VehicleCmdGate::onEmergencyCtrlCmd(
 {
   emergency_commands_.control = *msg;
 
-  if (is_emergency_) {
+  if (use_emergency_handling_ && is_emergency_) {
     publishControlCommands(emergency_commands_);
   }
 }
