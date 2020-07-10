@@ -121,6 +121,11 @@ void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr & nav_s
 
   // transform pose from gnss_antenna to base_link
   geometry_msgs::PoseStamped gnss_base_pose_msg;
+  //remove rotation
+  TF_base_to_gnss_ptr->transform.rotation.x = 0.0;
+  TF_base_to_gnss_ptr->transform.rotation.y = 0.0;
+  TF_base_to_gnss_ptr->transform.rotation.z = 0.0;
+  TF_base_to_gnss_ptr->transform.rotation.w = 1.0;
   tf2::doTransform(gnss_antenna_pose_msg, gnss_base_pose_msg, *TF_base_to_gnss_ptr);
   gnss_base_pose_msg.header.frame_id = map_frame_;
 
