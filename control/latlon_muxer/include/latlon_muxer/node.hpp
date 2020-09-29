@@ -20,7 +20,7 @@
 #include <memory>
 
 #include <autoware_control_msgs/ControlCommandStamped.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 class LatLonMuxer
 {
