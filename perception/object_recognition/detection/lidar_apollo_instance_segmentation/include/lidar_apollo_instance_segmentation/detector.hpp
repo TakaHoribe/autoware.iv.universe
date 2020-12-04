@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "TrtNet.hpppp"
+#include "TrtNet.hpp"
 #include "cluster2d.h"
 #include "feature_generator.h"
 #include "lidar_apollo_instance_segmentation/node.hpp"
