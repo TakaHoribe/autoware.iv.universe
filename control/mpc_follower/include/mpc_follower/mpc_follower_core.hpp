@@ -174,6 +174,9 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;  //!< @brief tf listener
+  bool is_tf_ready = false;
+  void blockUntilVehiclePositionAvailable();
+
 
   /**
    * @brief compute and publish control command for path follow with a constant control period

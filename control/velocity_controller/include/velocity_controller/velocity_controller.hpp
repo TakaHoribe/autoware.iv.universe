@@ -60,6 +60,7 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;  //!< @brief tf listener
+  bool is_tf_ready = false;
 
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
   rcl_interfaces::msg::SetParametersResult paramCallback(
@@ -181,6 +182,7 @@ private:
   void callbackTimerControl();
 
   bool updateCurrentPose();
+  void blockUntilVehiclePositionAvailable();
 
   double getPitch(const geometry_msgs::msg::Quaternion & quaternion) const;
   double getDt();
