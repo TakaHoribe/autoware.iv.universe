@@ -173,26 +173,23 @@ MPCFollower::~MPCFollower()
   publishCtrlCmd(stop_cmd);
 }
 
-void MPCFollower::blockUntilVehiclePositionAvailable()
+bool MPCFollower::checkTFAvailable()
 {
-  auto duration = tf2::durationFromSec(5.0);
   static constexpr auto input = "map", output = "base_link";
-  while (!tf_buffer_->canTransform(input, output, tf2::TimePointZero, tf2::durationFromSec(0.0)) &&
-    rclcpp::ok())
-  {
-    RCLCPP_INFO(
-      get_logger(), "waiting %d ms for %s->%s transform to become available",
-      std::chrono::duration_cast<std::chrono::milliseconds>(duration).count(), input, output);
-    rclcpp::sleep_for(duration);
+  if (!tf_buffer_->canTransform(input, output, rclcpp::Time(0))) {
+    RCLCPP_INFO(get_logger(), "waiting for %s->%s transform to become available", input, output);
+    return false;
   }
   RCLCPP_INFO(get_logger(), "transform available");
   is_tf_ready = true;
+  return true;
 }
 
 void MPCFollower::timerCallback()
 {
-  if (!is_tf_ready) {
-    blockUntilVehiclePositionAvailable();
+  if (!is_tf_ready && !checkTFAvailable()) {
+    rclcpp::sleep_for(tf2::durationFromSec(5.0));
+    return;
   }
   updateCurrentPose();
 

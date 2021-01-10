@@ -182,7 +182,7 @@ private:
   void callbackTimerControl();
 
   bool updateCurrentPose();
-  void blockUntilVehiclePositionAvailable();
+  bool checkTFAvailable();
 
   double getPitch(const geometry_msgs::msg::Quaternion & quaternion) const;
   double getDt();
